@@ -2,28 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>ZEROBOX // Redirecting to Tactical Operations Suite...</title>
+    <title>ZEROBOX // Redirecting...</title>
     <script>
-      // Single-Page Application (SPA) GitHub Pages Router Fallback
       (function() {
-        var path = window.location.pathname;
-        var search = window.location.search;
-        var hash = window.location.hash;
-        if (window.location.hostname.endsWith('github.io')) {
-          if (!path.includes('/docs/')) {
-            var target = path.replace(/\/+$/, '') + '/docs/' + search + hash;
-            window.location.replace(target);
-            return;
-          }
+        var path = location.pathname.replace(/^\/ctf-tracker\/?/, '');
+        if (path.startsWith('docs/')) {
+          path = path.replace(/^docs\/?/, '');
         }
-        window.location.replace('./');
+        var hash = location.hash || (path ? ('#/' + path) : '');
+        location.replace('/ctf-tracker/' + hash);
       })();
     </script>
   </head>
   <body style="background-color: #0B0F19; color: #10B981; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
-    <div style="text-align: center;">
-      <p style="letter-spacing: 2px; font-weight: bold;">[ZEROBOX] ROUTING DATASTREAM &middot; REDIRECTING...</p>
-      <p style="color: #64748B; font-size: 12px;">If not redirected automatically, <a href="./docs/" style="color: #06B6D4;">click here to launch</a>.</p>
-    </div>
+    <p>[ZEROBOX] ROUTING SECURE CHANNEL &middot; REDIRECTING...</p>
   </body>
 </html>
