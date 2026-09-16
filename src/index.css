@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Tactical Light Mode - Crisp, High-Contrast Slate Palette */
+  --cyber-bg: 248 250 252;          /* #F8FAFC slate-50 */
+  --cyber-card: 255 255 255;        /* #FFFFFF pure white */
+  --cyber-card-hover: 241 245 249;  /* #F1F5F9 slate-100 */
+  --cyber-border: 226 232 240;      /* #E2E8F0 slate-200 */
+  --cyber-border-glow: 203 213 225; /* #CBD5E1 slate-300 */
+  --cyber-text: 15 23 42;           /* #0F172A slate-900 */
+  --cyber-muted: 100 116 139;       /* #64748B slate-500 */
+  --cyber-code: 241 245 249;        /* #F1F5F9 slate-100 */
+}
+
+.dark {
+  /* Tactical Cyber Dark Mode - Midnight Navy Matrix */
+  --cyber-bg: 11 15 25;             /* #0B0F19 */
+  --cyber-card: 17 24 39;           /* #111827 */
+  --cyber-card-hover: 22 31 51;     /* #161F33 */
+  --cyber-border: 31 41 55;         /* #1F2937 */
+  --cyber-border-glow: 55 65 81;    /* #374151 */
+  --cyber-text: 226 232 240;        /* #E2E8F0 */
+  --cyber-muted: 148 163 184;       /* #94A3B8 */
+  --cyber-code: 9 13 22;            /* #090D16 */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-cyber-bg text-cyber-text antialiased;
+    font-family: 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: rgba(6, 182, 212, 0.25);
+    color: inherit;
+  }
+
+  button, [role="button"], [data-selectable="false"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* Butter-Smooth 120 FPS Instant Theme Transition */
+html.theme-transition,
+html.theme-transition body,
+html.theme-transition header,
+html.theme-transition aside,
+html.theme-transition main,
+html.theme-transition nav,
+html.theme-transition div,
+html.theme-transition button,
+html.theme-transition input,
+html.theme-transition select,
+html.theme-transition span,
+html.theme-transition p,
+html.theme-transition h1,
+html.theme-transition h2,
+html.theme-transition h3 {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-delay: 0s !important;
+}
+
+/* Semantic Light Mode Adaptions */
+html:not(.dark) .text-white:not(button *):not(button):not(.bg-cyber-crimson *):not(.bg-cyber-purple *):not(.bg-purple-600 *):not(.bg-purple-700 *):not(.bg-blue-600 *):not(.bg-red-500 *):not(.bg-red-600 *):not(.bg-emerald-600 *):not(.keep-white) {
+  color: rgb(var(--cyber-text));
+}
+
+html:not(.dark) .bg-black\/40,
+html:not(.dark) .bg-black\/50,
+html:not(.dark) .bg-black\/60,
+html:not(.dark) .bg-black\/70,
+html:not(.dark) .bg-black\/80 {
+  background-color: rgb(var(--cyber-code));
+}
+
+html:not(.dark) .border-gray-800,
+html:not(.dark) .border-gray-900 {
+  border-color: rgb(var(--cyber-border));
+}
+
+/* Custom Cyber Scrollbars with Neon Glow */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--cyber-bg));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--cyber-border));
+  border-radius: 3px;
+  transition: all 0.25s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10B981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+}
+
+/* Slow tactical rotation for crosshairs */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* 60/120 FPS Rendering & GPU Acceleration Optimization */
+.cyber-card-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 260px;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}

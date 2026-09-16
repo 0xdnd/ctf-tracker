@@ -1,0 +1,85 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+dist
+dist-ssr
+*.local
+
+# Dependencies
+node_modules/
+
+# OS / Editor files
+.DS_Store
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==========================================================
+# CRITICAL SECURITY: SENSITIVE ENVIRONMENT & SECRET FILES
+# (NEVER COMMIT OR PUSH UNDER ANY CIRCUMSTANCES)
+# ==========================================================
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+!.env.example
+
+# Credentials, Keys, Tokens & Certificates
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.token
+*.secret
+*.secrets
+secrets.*
+credentials.*
+id_rsa*
+id_ed25519*
+
+# Private Notes Vaults & User Exports
+*_vault.json
+*-vault-export.json
+cpts-notes-vault-export.json
+notes_vault/
+private/
+
+# Scratch, Intermediate & Offline PDFs
+linux_full.svg
+linux_path.txt
+windows*.svg
+HackTheBoxPDF/
+*.pdf
+scratch/
+scripts/index-cpts-notes.cjs
+
+
+.mcp.json
+.agentsroom/
+.claude/
+.agents/mcp_config.json

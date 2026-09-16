@@ -1,0 +1,49 @@
+{
+  "name": "zerobox",
+  "private": true,
+  "version": "2.0.0",
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "export-notes": "node scripts/index-cpts-notes.cjs",
+    "index-notes": "node scripts/index-cpts-notes.cjs",
+    "build": "tsc && vite build && node scripts/postbuild.cjs",
+    "share": "npx --yes localtunnel --port 3000",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/is-prop-valid": "^1.4.0",
+    "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.18.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.474.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.3",
+    "tailwind-merge": "^2.6.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/jszip": "^3.4.0",
+    "@types/node": "^22.13.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.5.1",
+    "simple-icons": "^16.29.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^5.0.0"
+  }
+}
