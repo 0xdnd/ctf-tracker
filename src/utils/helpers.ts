@@ -207,6 +207,6 @@ export const CREATOR_PROFILE_LINKS = {
   portfolio: 'https://0xdnd.github.io/',
   linkedin: 'https://www.linkedin.com/in/daniel-dayan-a66322352/',
   github: 'https://github.com/0xdnd',
-  writeups: 'https://xxdndxx.gitbook.io/thm-writeups/',
-  coffee: 'https://buymeacoffee.com/xxdndxx'
+  writeups: 'https://0xdnd.gitbook.io/thm-writeups/',
+  coffee: 'https://buymeacoffee.com/0xdnd'
 } as const;

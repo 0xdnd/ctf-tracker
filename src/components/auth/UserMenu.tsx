@@ -383,7 +383,7 @@ export const UserMenu: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#FFDD00]/20 hover:bg-[#FFDD00]/30 text-[#FFDD00] hover:text-white border border-[#FFDD00]/50 transition-all text-[10px] font-bold shadow-sm"
-                title="Buy Daniel Dayan a Coffee (buymeacoffee.com/xxdndxx)"
+                title="Buy Daniel Dayan a Coffee (buymeacoffee.com/0xdnd)"
               >
                 <Coffee className="w-3 h-3 flex-shrink-0" />
                 <span className="truncate">COFFEE</span>

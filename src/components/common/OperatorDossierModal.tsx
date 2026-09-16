@@ -275,7 +275,7 @@ export const OperatorDossierModal: React.FC = () => {
                       <span>CTF Write-ups</span>
                       <ExternalLink className="w-3 h-3 text-cyber-muted opacity-60" />
                     </div>
-                    <div className="text-[10px] text-cyber-muted truncate">xxdndxx.gitbook.io</div>
+                    <div className="text-[10px] text-cyber-muted truncate">0xdnd.gitbook.io</div>
                   </div>
                 </a>
                 <button
@@ -303,7 +303,7 @@ export const OperatorDossierModal: React.FC = () => {
                       <span>Buy Me a Coffee // Sponsor Daniel Dayan</span>
                       <ExternalLink className="w-3 h-3 text-cyber-muted opacity-60" />
                     </div>
-                    <div className="text-[10px] text-cyber-muted truncate">buymeacoffee.com/xxdndxx • Support open-source offensive security tools & research</div>
+                    <div className="text-[10px] text-cyber-muted truncate">buymeacoffee.com/0xdnd • Support open-source offensive security tools & research</div>
                   </div>
                 </a>
                 <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end flex-shrink-0">

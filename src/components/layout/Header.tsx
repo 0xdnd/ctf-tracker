@@ -361,7 +361,7 @@ export const Header: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#FFDD00]/10 hover:bg-[#FFDD00]/20 border border-[#FFDD00]/40 hover:border-[#FFDD00] text-[#FFDD00] hover:text-white transition-all text-[10px] font-bold shadow-sm group flex-shrink-0"
-                  title="Support Daniel Dayan on Buy Me a Coffee (buymeacoffee.com/xxdndxx)"
+                  title="Support Daniel Dayan on Buy Me a Coffee (buymeacoffee.com/0xdnd)"
                 >
                   <Coffee className="w-3.5 h-3.5 text-[#FFDD00] group-hover:scale-110 transition-transform flex-shrink-0" />
                   <span className="hidden 2xl:inline">BUY A COFFEE</span>
