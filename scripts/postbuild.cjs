@@ -38,21 +38,7 @@ fs.cpSync(distDir, docsDir, { recursive: true, force: true });
 cleanStaleAssets(path.join(docsDir, 'assets'), validAssetFiles);
 console.log('✓ Mirrored dist to docs/ for GitHub Pages compatibility');
 
-// 3. Mirror dist/assets to root assets/ so if GitHub Pages serves main root, assets resolve
-const rootAssetsDir = path.join(rootDir, 'assets');
-if (fs.existsSync(distAssetsDir)) {
-  fs.cpSync(distAssetsDir, rootAssetsDir, { recursive: true, force: true });
-  cleanStaleAssets(rootAssetsDir, validAssetFiles);
-  console.log('✓ Mirrored assets/ to root and cleaned stale chunks');
-}
-
-// 4. Copy 404.html to root
-const root404 = path.join(rootDir, '404.html');
-if (fs.existsSync(distIndex)) {
-  fs.copyFileSync(distIndex, root404);
-}
-
-// 5. Explicitly mirror all favicon and icon assets to root and docs
+// 3. Mirror all favicon and icon assets to dist and docs
 const iconFiles = [
   'favicon.ico',
   'favicon.png',
@@ -72,15 +58,13 @@ iconFiles.forEach(file => {
   if (fs.existsSync(srcPub)) {
     fs.copyFileSync(srcPub, path.join(distDir, file));
     fs.copyFileSync(srcPub, path.join(docsDir, file));
-    fs.copyFileSync(srcPub, path.join(rootDir, file));
     if (file === 'manifest.webmanifest') {
       fs.copyFileSync(srcPub, path.join(distDir, 'assets', file));
       fs.copyFileSync(srcPub, path.join(docsDir, 'assets', file));
-      fs.copyFileSync(srcPub, path.join(rootDir, 'assets', file));
     }
   }
 });
-console.log('✓ Mirrored all icon and favicon variants across root, dist, and docs');
+console.log('✓ Mirrored all icon and favicon variants across dist and docs');
 
 // Safety assertion: Ensure no .env or sensitive files were ever copied to dist or docs
 const sensitiveChecks = ['.env', '.env.local', 'secrets.json', 'cpts-notes-vault-export.json'];

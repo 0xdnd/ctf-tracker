@@ -19,6 +19,7 @@ pids
 # Build artifacts
 dist
 dist-ssr
+/assets/
 *.local
 
 # Dependencies
