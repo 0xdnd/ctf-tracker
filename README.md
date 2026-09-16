@@ -94,7 +94,7 @@ Built with an **offline-first architecture** (Zustand + LocalStorage/IndexedDB),
 
 ```bash
 # Clone the repository
-git clone https://github.com/xXDNDXx/ctf-tracker.git
+git clone https://github.com/0xdnd/ctf-tracker.git
 cd ctf-tracker
 
 # Install dependencies
@@ -114,15 +114,15 @@ npm run preview
 
 ## 👨‍💻 Creator & System Architect
 
-**ZeroBox** is designed, engineered, and maintained by **Daniel Dayan** ([@xXDNDXx](https://github.com/xXDNDXx)) — Cybersecurity Researcher, Penetration Tester, and Offensive Security Architect.
+**ZeroBox** is designed, engineered, and maintained by **Daniel Dayan** ([@0xdnd](https://github.com/0xdnd)) — Cybersecurity Researcher, Penetration Tester, and Offensive Security Architect.
 
 <div align="center">
 
 | Channel | Identifier | Link |
 |:---|:---|:---|
-| 🌐 **Official Portfolio** | `Daniel Dayan Security & Research` | [**xXDNDXx.github.io**](https://xXDNDXx.github.io/) |
+| 🌐 **Official Portfolio** | `Daniel Dayan Security & Research` | [**0xdnd.github.io**](https://0xdnd.github.io/) |
 | 💼 **LinkedIn Profile** | `daniel-dayan-a66322352` | [**Connect on LinkedIn**](https://www.linkedin.com/in/daniel-dayan-a66322352/) |
-| 💻 **GitHub Repositories** | `@xXDNDXx` | [**Follow on GitHub**](https://github.com/xXDNDXx) |
+| 💻 **GitHub Repositories** | `@0xdnd` | [**Follow on GitHub**](https://github.com/0xdnd) |
 | 📝 **CTF Write-ups & Docs** | `THM & HTB Research Vault` | [**Read GitBook Writeups**](https://xxdndxx.gitbook.io/thm-writeups/) |
 | ☕ **Buy Me a Coffee** | `xxdndxx` | [**Support on Buy Me a Coffee**](https://buymeacoffee.com/xxdndxx) |
 
