@@ -55,6 +55,14 @@ export const ZEROBOX_BRAND: BrandTheme = {
 
 export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];
 
+export type ThemePreset = 'htb' | 'matrix' | 'kali' | 'zerobox';
+
+export function applyThemePreset(preset: ThemePreset) {
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', preset);
+  }
+}
+
 interface CtfStoreState {
   machines: Machine[];
   activeTargetId: string | null;
@@ -77,6 +85,7 @@ interface CtfStoreState {
   mobileMenuOpen: boolean;
   crtOverlay: boolean;
   soundEnabled: boolean;
+  themePreset: ThemePreset;
   uiScale: 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
   
   // Timer State
@@ -118,6 +127,7 @@ interface CtfStoreState {
   setAssignIpMachineId: (id: string | null) => void;
   toggleCrtOverlay: () => void;
   toggleSound: () => void;
+  setThemePreset: (preset: ThemePreset) => void;
   setUiScale: (scale: 'tiny' | 'compact' | 'normal' | 'large' | 'huge') => void;
   cycleUiScale: () => void;
   zoomIn: () => void;
@@ -553,6 +563,7 @@ export const useCtfStore = create<CtfStoreState>()(
       assignIpMachineId: null,
       crtOverlay: false,
       soundEnabled: true,
+      themePreset: 'zerobox',
       uiScale: 'normal',
       isTimerRunning: false,
       activeTimerSeconds: 0,
@@ -636,6 +647,10 @@ export const useCtfStore = create<CtfStoreState>()(
       setAssignIpMachineId: (id) => set({ assignIpMachineId: id }),
       toggleCrtOverlay: () => set((s) => ({ crtOverlay: !s.crtOverlay })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+      setThemePreset: (preset: ThemePreset) => {
+        applyThemePreset(preset);
+        set({ themePreset: preset });
+      },
       setUiScale: (scale) => set({ uiScale: scale }),
       zoomIn: () => set((s) => {
         const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
@@ -1474,10 +1489,13 @@ export const useCtfStore = create<CtfStoreState>()(
       merge: (persistedState: any, currentState: CtfStoreState) => {
         const persisted = (persistedState as Partial<CtfStoreState>) || {};
         const userSolvesReset = Boolean(persisted.userSolvesReset);
+        const themePreset = (persisted.themePreset as ThemePreset) || 'zerobox';
+        applyThemePreset(themePreset);
         return {
           ...currentState,
           ...persisted,
           appBrand: 'zerobox',
+          themePreset,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
@@ -1487,6 +1505,7 @@ export const useCtfStore = create<CtfStoreState>()(
       partialize: (state) => ({
         currentProfileId: state.currentProfileId,
         appBrand: state.appBrand,
+        themePreset: state.themePreset,
         userSolvesReset: state.userSolvesReset,
         customNotes: state.customNotes,
         deletedNoteIds: state.deletedNoteIds,

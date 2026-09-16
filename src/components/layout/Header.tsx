@@ -6,7 +6,6 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { 
   Search, 
   Plus, 
-  Tv, 
   Volume2, 
   VolumeX, 
   Database, 
@@ -40,6 +39,7 @@ import { EditableIpBadge } from '../common/EditableIpBadge';
 import { playCyberSound, formatSeconds, triggerRootCelebration, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { UserMenu } from '../auth/UserMenu';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
 
 const ZEROBOX_BRAND = { 
   id: 'zerobox', 
@@ -149,8 +149,6 @@ export const Header: React.FC = () => {
     startTimer,
     pauseTimer,
     resetTimer,
-    crtOverlay,
-    toggleCrtOverlay,
     soundEnabled,
     toggleSound,
     globalVars,
@@ -179,8 +177,6 @@ export const Header: React.FC = () => {
       startTimer: s.startTimer,
       pauseTimer: s.pauseTimer,
       resetTimer: s.resetTimer,
-      crtOverlay: s.crtOverlay,
-      toggleCrtOverlay: s.toggleCrtOverlay,
       soundEnabled: s.soundEnabled,
       toggleSound: s.toggleSound,
       globalVars: s.globalVars,
@@ -432,17 +428,7 @@ export const Header: React.FC = () => {
           {/* Tactical Utilities (Theme, CRT, Sound, Backup) */}
           <div className="hidden sm:flex items-center gap-1.5 border-r border-slate-200 dark:border-cyber-border/80 pr-2">
             <ThemeToggle size="sm" soundEnabled={soundEnabled} />
-            <button
-              onClick={toggleCrtOverlay}
-              className={`p-1.5 rounded-md border transition-all ${
-                crtOverlay 
-                  ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan shadow-glow-cyan/50' 
-                  : 'bg-slate-100 dark:bg-cyber-card border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Toggle Retro CRT Scanline Overlay"
-            >
-              <Tv className="w-3.5 h-3.5" />
-            </button>
+            <ThemePresetDropdown />
 
             <button
               onClick={toggleSound}

@@ -5,7 +5,6 @@ import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { CommandPalette } from './components/layout/CommandPalette';
-import { CrtOverlay } from './components/common/CrtOverlay';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTopButton } from './components/common/BackToTopButton';
 import { ScrollProvider, useScrollActions, useScrollState } from './context/ScrollContext';
@@ -173,9 +172,6 @@ const MainAppContent: React.FC = () => {
 
       {/* Floating Tactical Thruster Back to Top */}
       <BackToTopButton />
-
-      {/* Cyberpunk CRT Scanline Overlay */}
-      <CrtOverlay />
 
       {/* Global Quick Command Palette (Ctrl+K) */}
       <CommandPalette />

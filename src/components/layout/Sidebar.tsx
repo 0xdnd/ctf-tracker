@@ -19,7 +19,6 @@ import {
   Globe,
   Share2,
   BookOpen,
-  Tv,
   ListTodo
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';

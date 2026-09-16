@@ -1,4 +1,4 @@
-import{r as h,j as e,a5 as j,bf as w,bg as N,bh as v,y as k,z as T,bi as C,A as S,aV as A,aR as E,f as L,C as $,d as R}from"./vendor-framework-BGAONF_S.js";import{q as M,T as d,p as c}from"./index-C2RJ_vD6.js";import{m as x}from"./vendor-ui-CPX9HTj8.js";import"./vendor-utils-oQXWb4Lk.js";import"./tracks-data-y2k3R6DB.js";import"./methodology-data-CbduTmc6.js";const z=()=>{const{theme:n,effectiveTheme:g,isDark:s,setTheme:l,toggleTheme:b,prefersReducedMotion:P,systemTheme:u}=M(),[f,p]=h.useState(!1),[t,m]=h.useState("preview"),y=()=>{navigator.clipboard.writeText(`import { ThemeToggle } from './components/common/ThemeToggle';
+import{r as h,j as e,k as j,bf as w,bg as N,bh as v,E as k,I as T,bi as C,T as S,aV as A,aR as E,f as L,C as $,d as R}from"./vendor-framework-Dpe2BZp9.js";import{q as M,T as d,p as c}from"./index-2OC1M9QW.js";import{m as x}from"./vendor-ui-Bo53bknG.js";import"./vendor-utils-oQXWb4Lk.js";import"./tracks-data-y2k3R6DB.js";import"./methodology-data-CbduTmc6.js";const I=()=>{const{theme:n,effectiveTheme:g,isDark:s,setTheme:l,toggleTheme:b,prefersReducedMotion:P,systemTheme:u}=M(),[f,p]=h.useState(!1),[t,m]=h.useState("preview"),y=()=>{navigator.clipboard.writeText(`import { ThemeToggle } from './components/common/ThemeToggle';
 import { useTheme } from './hooks/useTheme';
 
 export function NavigationBar() {
@@ -22,4 +22,4 @@ export function NavigationBar() {
       <ThemeToggle size="md" showLabel soundEnabled />
     </header>
   );
-}`})]})]})]})})};export{z as ThemeShowcaseDemo};
+}`})]})]})]})})};export{I as ThemeShowcaseDemo};

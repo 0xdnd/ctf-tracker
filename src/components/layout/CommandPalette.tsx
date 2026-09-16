@@ -6,7 +6,7 @@ import {
   ShieldAlert, 
   Plus, 
   Database, 
-  Tv, 
+  Palette, 
   FileText, 
   X, 
   ChevronRight, 
@@ -41,7 +41,7 @@ export const CommandPalette: React.FC = () => {
     setBackupModalOpen,
     setReconAutomationModalOpen,
     setOperatorModalOpen,
-    toggleCrtOverlay,
+    setThemePreset,
     setFlexCardModalOpen,
     setShortcutsModalOpen,
   } = useCtfStore(
@@ -56,7 +56,7 @@ export const CommandPalette: React.FC = () => {
       setBackupModalOpen: s.setBackupModalOpen,
       setReconAutomationModalOpen: s.setReconAutomationModalOpen,
       setOperatorModalOpen: s.setOperatorModalOpen,
-      toggleCrtOverlay: s.toggleCrtOverlay,
+      setThemePreset: s.setThemePreset,
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
     }))
@@ -191,13 +191,24 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'action-crt',
-        label: 'Toggle CRT Scanlines',
-        icon: Tv,
-        colorClass: 'text-cyber-amber',
-        bgHoverClass: 'hover:bg-cyber-amber/10 hover:border-cyber-amber/40',
+        id: 'theme-htb',
+        label: 'Switch Theme: Hack The Box (Toxic Lime & Matte Dark)',
+        icon: Palette,
+        colorClass: 'text-[#9FEF00]',
+        bgHoverClass: 'hover:bg-[#9FEF00]/10 hover:border-[#9FEF00]/40',
         execute: () => {
-          toggleCrtOverlay();
+          setThemePreset('htb');
+          setCommandPaletteOpen(false);
+        },
+      },
+      {
+        id: 'theme-matrix',
+        label: 'Switch Theme: Matrix Terminal (Phosphor Green & Black)',
+        icon: Terminal,
+        colorClass: 'text-[#00FF66]',
+        bgHoverClass: 'hover:bg-[#00FF66]/10 hover:border-[#00FF66]/40',
+        execute: () => {
+          setThemePreset('matrix');
           setCommandPaletteOpen(false);
         },
       },
@@ -246,7 +257,7 @@ export const CommandPalette: React.FC = () => {
         },
       },
     ],
-    [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, toggleCrtOverlay, setFlexCardModalOpen, setShortcutsModalOpen]
+    [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, setThemePreset, setFlexCardModalOpen, setShortcutsModalOpen]
   );
 
   // Filter actions based on search

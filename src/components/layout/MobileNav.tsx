@@ -11,7 +11,6 @@ import {
   X, 
   BarChart3, 
   GraduationCap, 
-  Tv, 
   Volume2, 
   VolumeX, 
   Database, 
@@ -31,6 +30,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { CyberLogo } from '../common/CyberLogo';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
 
 export const MobileNav: React.FC = () => {
   const navigate = useNavigate();
@@ -47,8 +47,6 @@ export const MobileNav: React.FC = () => {
     setCommandPaletteOpen,
     setNewMachineModalOpen,
     setBackupModalOpen,
-    crtOverlay,
-    toggleCrtOverlay,
     soundEnabled,
     toggleSound,
     globalVars,
@@ -69,8 +67,6 @@ export const MobileNav: React.FC = () => {
       setCommandPaletteOpen: s.setCommandPaletteOpen,
       setNewMachineModalOpen: s.setNewMachineModalOpen,
       setBackupModalOpen: s.setBackupModalOpen,
-      crtOverlay: s.crtOverlay,
-      toggleCrtOverlay: s.toggleCrtOverlay,
       soundEnabled: s.soundEnabled,
       toggleSound: s.toggleSound,
       globalVars: s.globalVars,
@@ -449,31 +445,28 @@ export const MobileNav: React.FC = () => {
                     <ThemeToggle size="sm" showLabel />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={toggleCrtOverlay}
-                      className={`p-2.5 rounded-lg border flex items-center gap-2 text-left transition-colors ${
-                        crtOverlay 
-                          ? 'bg-cyber-cyan/15 border-cyber-cyan text-cyber-cyan font-bold' 
-                          : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Tv className="w-4 h-4" />
-                      <span>CRT Lines</span>
-                    </button>
-
-                    <button
-                      onClick={toggleSound}
-                      className={`p-2.5 rounded-lg border flex items-center gap-2 text-left transition-colors ${
-                        soundEnabled 
-                          ? 'bg-cyber-emerald/15 border-cyber-emerald text-cyber-emerald font-bold' 
-                          : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                      <span>Cyber Audio</span>
-                    </button>
+                  {/* Theme Presets (Hack The Box, Matrix, Kali, ZeroBox) */}
+                  <div className="p-3 rounded-lg border border-cyber-border bg-cyber-bg flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>Hacker Theme</span>
+                      </div>
+                      <div className="text-[10px] text-cyber-muted">HTB, Matrix, Kali, ZeroBox</div>
+                    </div>
+                    <ThemePresetDropdown />
                   </div>
+
+                  <button
+                    onClick={toggleSound}
+                    className={`w-full p-2.5 rounded-lg border flex items-center justify-center gap-2 text-left transition-colors ${
+                      soundEnabled 
+                        ? 'bg-cyber-emerald/15 border-cyber-emerald text-cyber-emerald font-bold' 
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    <span>{soundEnabled ? 'Cyber Audio Enabled' : 'Cyber Audio Muted'}</span>
+                  </button>
                 </div>
 
                 {/* 4. Creator & Support Card */}
