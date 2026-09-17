@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useMemo, useState } from 'react';
 import { 
   X, 
@@ -247,7 +248,7 @@ export const FilterDrawer: React.FC = () => {
 
   if (!filterDrawerOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] font-mono">
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
@@ -618,6 +619,7 @@ export const FilterDrawer: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
