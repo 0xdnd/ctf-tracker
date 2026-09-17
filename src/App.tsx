@@ -1,20 +1,22 @@
 import React, { useRef, useEffect, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/layout/Header';
+import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
+import { SnippetsDrawer } from './components/layout/SnippetsDrawer';
+import { RevShellModal } from './components/modals/RevShellModal';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTopButton } from './components/common/BackToTopButton';
-import { ScrollProvider, useScrollActions, useScrollState } from './context/ScrollContext';
+import { ScrollProvider, useScrollActions } from './context/ScrollContext';
 import { TrackerView } from './components/tracker/TrackerView';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { ThemeRippleOverlay } from './components/common/ThemeRippleOverlay';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
 import { useCtfStore, mergeMachinesWithCatalog } from './store/useCtfStore';
-import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -28,6 +30,7 @@ const QuickAssignIpModal = lazy(() => import('./components/common/QuickAssignIpM
 const KeyboardShortcutsModal = lazy(() => import('./components/common/KeyboardShortcutsModal').then(m => ({ default: m.KeyboardShortcutsModal })));
 const BackupModal = lazy(() => import('./components/backup/BackupModal').then(m => ({ default: m.BackupModal })));
 const ReconAutomationModal = lazy(() => import('./components/automation/ReconAutomationModal').then(m => ({ default: m.ReconAutomationModal })));
+const SettingsModal = lazy(() => import('./components/common/SettingsModal').then(m => ({ default: m.SettingsModal })));
 
 // Code-Split Route Modules (Zero-overhead on initial tracker load)
 const CheatsheetView = lazy(() => import('./components/cheatsheet/CheatsheetView').then(m => ({ default: m.CheatsheetView })));
@@ -41,37 +44,18 @@ const ThemeShowcaseDemo = lazy(() => import('./components/common/ThemeShowcaseDe
 const CyberRouteLoader: React.FC = () => (
   <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 font-mono">
     <div className="relative flex items-center justify-center">
-      <div className="w-12 h-12 rounded border-2 border-cyber-cyan/30 border-t-cyber-cyan animate-spin" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-2 h-2 rounded-full bg-cyber-emerald animate-ping" />
-      </div>
+      <div className="w-10 h-10 rounded border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
     </div>
     <div className="text-center space-y-1">
-      <div className="text-xs tracking-wider text-cyber-cyan font-bold uppercase flex items-center justify-center gap-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-cyber-cyan animate-pulse" />
-        INITIALIZING TACTICAL MODULE
+      <div className="text-xs tracking-wider text-slate-700 dark:text-slate-300 font-semibold uppercase">
+        Loading module...
       </div>
-      <div className="text-[10px] text-cyber-muted tracking-widest uppercase">
-        DECRYPTING DATASTREAM &middot; SECURE CHANNEL ACTIVE
+      <div className="text-[10px] text-slate-500 tracking-wider">
+        Local offline datastore
       </div>
     </div>
   </div>
 );
-
-const ParallaxBackdrop: React.FC = React.memo(() => {
-  const { scrollProgressMotion } = useScrollState();
-  const y = useTransform(scrollProgressMotion, [0, 1], [0, -60]);
-  return (
-    <motion.div 
-      className="absolute inset-0 pointer-events-none opacity-[0.04] transform-gpu"
-      style={{
-        backgroundImage: `linear-gradient(#06B6D4 1px, transparent 1px), linear-gradient(90deg, #06B6D4 1px, transparent 1px)`,
-        backgroundSize: '36px 36px',
-        y,
-      }}
-    />
-  );
-});
 
 const TimerController: React.FC = () => {
   const isTimerRunning = useCtfStore((s) => s.isTimerRunning);
@@ -104,10 +88,56 @@ const MainAppContent: React.FC = () => {
   const notesImportModalOpen = useCtfStore((s) => s.notesImportModalOpen);
   const flexCardModalOpen = useCtfStore((s) => s.flexCardModalOpen);
   const shortcutsModalOpen = useCtfStore((s) => s.shortcutsModalOpen);
+  const settingsModalOpen = useCtfStore((s) => s.settingsModalOpen);
+  const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
+  const focusMode = useCtfStore((s) => s.focusMode);
+  const setFocusMode = useCtfStore((s) => s.setFocusMode);
   const uiScale = useCtfStore((s) => s.uiScale || 'normal');
 
   // Tactical keyboard hotkeys engine
   useTacticalHotkeys();
+
+  // Escape key handler to easily exit Zen Focus Mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && focusMode) {
+        const isAnyModalOpen = Boolean(
+          selectedMachineId ||
+          commandPaletteOpen ||
+          newMachineModalOpen ||
+          backupModalOpen ||
+          reconAutomationModalOpen ||
+          reportMachineId ||
+          operatorModalOpen ||
+          licenseModalOpen ||
+          notesImportModalOpen ||
+          flexCardModalOpen ||
+          shortcutsModalOpen ||
+          settingsModalOpen
+        );
+        if (!isAnyModalOpen) {
+          setFocusMode(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    focusMode,
+    setFocusMode,
+    selectedMachineId,
+    commandPaletteOpen,
+    newMachineModalOpen,
+    backupModalOpen,
+    reconAutomationModalOpen,
+    reportMachineId,
+    operatorModalOpen,
+    licenseModalOpen,
+    notesImportModalOpen,
+    flexCardModalOpen,
+    shortcutsModalOpen,
+    settingsModalOpen,
+  ]);
 
   // Handle global UI scale (Tiny: 80%, Compact: 90%, Normal: 100%, Large: 110%, Huge: 122%)
   useEffect(() => {
@@ -156,14 +186,16 @@ const MainAppContent: React.FC = () => {
     } else if (path.startsWith('/analytics')) {
       setActiveTab('analytics');
     } else if (path.startsWith('/exam')) {
-      setActiveTab('exam' as any);
+      setActiveTab('exam');
+    } else if (path.startsWith('/theme')) {
+      setActiveTab('theme');
     } else {
       setActiveTab('tracker');
     }
   }, [location.pathname, setActiveTab]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative">
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative">
       {/* Top glowing laser scroll progress bar */}
       <ScrollProgressBar />
 
@@ -172,6 +204,32 @@ const MainAppContent: React.FC = () => {
 
       {/* Floating Tactical Thruster Back to Top */}
       <BackToTopButton />
+
+      {/* Floating Zen Focus Mode Recovery Banner */}
+      <AnimatePresence>
+        {focusMode && (
+          <motion.div
+            initial={{ opacity: 0, y: -25, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -25, scale: 0.95 }}
+            transition={{ duration: 0.18 }}
+            className="fixed top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2 bg-slate-900/90 dark:bg-zinc-900/95 text-white border border-cyan-500/50 dark:border-cyan-400/60 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-md text-xs font-mono"
+          >
+            <span className="flex items-center gap-2 text-cyan-400 font-bold tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+              ZEN FOCUS MODE
+            </span>
+            <span className="text-zinc-400 text-[11px] hidden sm:inline">Press Esc or</span>
+            <button
+              onClick={() => setFocusMode(false)}
+              className="px-3 py-1 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition-all flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
+              title="Exit Zen Focus Mode"
+            >
+              ✕ Exit Zen
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Global Quick Command Palette (Ctrl+K) */}
       <CommandPalette />
@@ -196,25 +254,34 @@ const MainAppContent: React.FC = () => {
           {notesImportModalOpen && <NotesImportModal />}
           {flexCardModalOpen && <OperatorFlexCardModal />}
           {shortcutsModalOpen && <KeyboardShortcutsModal />}
+          {settingsModalOpen && <SettingsModal />}
         </Suspense>
       </RouteErrorBoundary>
 
       {/* Background Timer Controller (Zero-Lag 1Hz Clock Isolation) */}
       <TimerController />
 
+      {/* Slide-over Cheatsheet & Snippets Drawer (Alt+S) */}
+      <SnippetsDrawer />
+
+      {/* Rapid Reverse Shell Crafter Modal */}
+      <RevShellModal />
+
       {/* Tactical Top Header */}
-      <Header />
+      {!focusMode && <Header />}
 
       {/* Main Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Responsive Collapsible Sidebar */}
-        <Sidebar />
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Responsive Collapsible Sidebar - Hidden in Focus Mode */}
+        {!focusMode && <Sidebar />}
 
-        {/* Dynamic Main Stage View with Cyber Grid Backdrop */}
-        <main ref={setScrollElement} className="flex-1 overflow-y-auto p-3 pb-24 sm:p-4 md:p-6 md:pb-6 relative bg-slate-50/70 dark:bg-cyber-bg">
-          {/* Isolated Parallax Backdrop (Zero Root Re-Renders on Scroll) */}
-          <ParallaxBackdrop />
-
+        {/* Main Stage View */}
+        <main
+          ref={setScrollElement}
+          className={`flex-1 overflow-y-auto min-h-0 p-3 pb-24 sm:p-4 md:p-6 md:pb-6 relative bg-slate-50/70 dark:bg-cyber-bg transition-all ${
+            focusMode ? 'max-w-7xl mx-auto w-full' : ''
+          }`}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -259,7 +326,7 @@ const MainAppContent: React.FC = () => {
       <FloatingPayloadBar />
 
       {/* Tactical Mobile Bottom Navigation Bar (md:hidden) */}
-      <MobileNav />
+      {!focusMode && <MobileNav />}
     </div>
   );
 };
