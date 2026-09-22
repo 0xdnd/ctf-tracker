@@ -1,8 +1,17 @@
 {
   "name": "zerobox",
+  "productName": "ZeroBox",
+  "description": "ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard",
   "private": true,
   "version": "2.0.0",
   "license": "SEE LICENSE IN LICENSE",
+  "author": "Daniel Dayan <0xdnd>",
+  "homepage": "https://github.com/0xdnd/ctf-tracker#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xdnd/ctf-tracker.git"
+  },
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,10 +20,16 @@
     "export-notes": "node scripts/index-cpts-notes.cjs",
     "index-notes": "node scripts/index-cpts-notes.cjs",
     "build": "tsc && vite build && node scripts/postbuild.cjs",
+    "electron:dev": "electron . --dev",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:build": "npm run build && electron-builder",
     "share": "npx --yes localtunnel --port 3000",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
     "@emotion/is-prop-valid": "^1.4.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -38,6 +53,9 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "electron": "^44.4.3",
+    "electron-builder": "^26.15.3",
+    "electron-updater": "^6.8.9",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.1",
     "simple-icons": "^16.29.0",
@@ -45,5 +63,66 @@
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vitest": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.zerobox.tacticaltracker",
+    "productName": "ZeroBox",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "0xdnd",
+      "repo": "ctf-tracker",
+      "releaseType": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ZeroBox"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "icon": "public/icon-512.png"
+    }
   }
 }

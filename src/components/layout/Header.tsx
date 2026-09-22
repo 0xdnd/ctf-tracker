@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -31,7 +31,9 @@ import {
   Coffee,
   Award,
   Keyboard,
-  Layers
+  Layers,
+  DownloadCloud,
+  RefreshCw
 } from 'lucide-react';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
@@ -40,6 +42,7 @@ import { playCyberSound, formatSeconds, triggerRootCelebration, safeCopyToClipbo
 import { UserMenu } from '../auth/UserMenu';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
+import { useDesktopUpdater } from '../../hooks/useDesktopUpdater';
 
 const ZEROBOX_BRAND = { 
   id: 'zerobox', 
@@ -205,14 +208,42 @@ export const Header: React.FC = () => {
   );
 
   const { user } = useAuthStore();
+  const updater = useDesktopUpdater();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [targetSelectorOpen, setTargetSelectorOpen] = useState(false);
   const [copiedTargetIp, setCopiedTargetIp] = useState(false);
   const [copiedVar, setCopiedVar] = useState<'lhost' | 'lport' | 'target' | null>(null);
   const [tacticalArsenalOpen, setTacticalArsenalOpen] = useState(false);
 
+  // Close menus on route change
+  useEffect(() => {
+    setTacticalArsenalOpen(false);
+    setTargetSelectorOpen(false);
+  }, [location.pathname]);
+
   const activeBrand = BRAND_THEMES.find((b) => b.id === 'zerobox') || BRAND_THEMES[0];
+
+  const [windowWidth, setWindowWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1920));
+
+  useEffect(() => {
+    if (uiScale !== 'auto') return;
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [uiScale]);
+
+  const getAutoZoomPercent = (width: number): string => {
+    if (width >= 1600) return '100%';
+    if (width >= 1360) return '90%';
+    if (width >= 1150) return '82%';
+    if (width >= 960) return '75%';
+    if (width >= 768) return '70%';
+    return '100%';
+  };
 
   useEffect(() => {
     if (appBrand !== 'zerobox') {
@@ -262,12 +293,12 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-cyber-border bg-white/95 dark:bg-cyber-bg/95 text-slate-900 dark:text-cyber-text backdrop-blur-md transition-colors">
       
       {/* Tier 1: Primary Bar (Brand on Left, Centered Global Search, Tools & Profile on Right) */}
-      <div className="w-full px-4 xl:px-6 py-2 border-b border-slate-200/60 dark:border-cyber-border/40 flex items-center justify-between gap-3">
+      <div className="w-full px-4 xl:px-6 py-2 border-b border-slate-200/60 dark:border-cyber-border/40 flex items-center justify-between gap-2 xl:gap-3 overflow-x-clip">
         
         {/* Left: Brand Identity */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0 min-w-0">
           <div className="relative">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-shrink-0">
               <Link to="/tracker" className="flex items-center gap-3 group flex-shrink-0">
                 <CyberLogo size="lg" />
                 <div className="text-left whitespace-nowrap">
@@ -285,7 +316,7 @@ export const Header: React.FC = () => {
               </Link>
 
               {/* Creator & Social Operations Capsule (Responsive Tiering) */}
-              <div className="hidden lg:flex items-center gap-1.5 ml-1.5 pl-2 border-l border-slate-300 dark:border-cyber-border/70 font-mono text-xs">
+              <div className="hidden lg:flex items-center gap-1.5 ml-1.5 pl-2 border-l border-slate-300 dark:border-cyber-border/70 font-mono text-xs flex-shrink-0">
                 {/* Creator Avatar & Dossier Trigger */}
                 <button
                   onClick={() => {
@@ -351,30 +382,6 @@ export const Header: React.FC = () => {
                   </a>
                 </div>
 
-                {/* Buy Me a Coffee Sponsor Pill */}
-                <a
-                  href={CREATOR_PROFILE_LINKS.coffee}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#FFDD00]/10 hover:bg-[#FFDD00]/20 border border-[#FFDD00]/40 hover:border-[#FFDD00] text-[#FFDD00] hover:text-white transition-all text-[10px] font-bold shadow-sm group flex-shrink-0"
-                  title="Support Daniel Dayan on Buy Me a Coffee (buymeacoffee.com/0xdnd)"
-                >
-                  <Coffee className="w-3.5 h-3.5 text-[#FFDD00] group-hover:scale-110 transition-transform flex-shrink-0" />
-                  <span className="hidden 2xl:inline">BUY A COFFEE</span>
-                </a>
-
-                {/* Non-Commercial License Badge Button */}
-                <button
-                  onClick={() => {
-                    setLicenseModalOpen(true);
-                    if (soundEnabled) playCyberSound('click');
-                  }}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-cyber-amber/10 hover:bg-cyber-amber/20 border border-cyber-amber/40 hover:border-cyber-amber text-cyber-amber hover:text-white transition-all text-[10px] font-bold shadow-sm group flex-shrink-0"
-                  title="ZeroBox Source-Available Non-Commercial License (ZNSL 1.0) — Commercial Use Prohibited"
-                >
-                  <Scale className="w-3.5 h-3.5 text-cyber-amber group-hover:scale-110 transition-transform flex-shrink-0" />
-                  <span className="hidden 2xl:inline">NON-COMMERCIAL</span>
-                </button>
               </div>
 
               {/* Compact Mobile / Tablet Creator Trigger */}
@@ -389,50 +396,41 @@ export const Header: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-cyber-emerald" />
                 <span className="text-slate-900 dark:text-white font-bold">Daniel Dayan</span>
               </button>
-
-              {/* Compact Mobile / Tablet Buy Me a Coffee Link */}
-              <a
-                href={CREATOR_PROFILE_LINKS.coffee}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:flex lg:hidden p-1.5 rounded-lg bg-[#FFDD00]/10 border border-[#FFDD00]/40 text-[#FFDD00] hover:bg-[#FFDD00]/20 transition-all ml-1 flex-shrink-0"
-                title="Support Daniel Dayan on Buy Me a Coffee"
-              >
-                <Coffee className="w-3 h-3" />
-              </a>
             </div>
           </div>
         </div>
 
-        {/* Center: Global Quick Command Search (Ctrl+K) */}
-        <div className="hidden xl:flex items-center flex-1 max-w-xs xl:max-w-md mx-2 xl:mx-4">
+        {/* Center: Quick Command Search (Ctrl+K) */}
+        <div className="hidden xl:flex items-center justify-center flex-1 min-w-0 max-w-xs 2xl:max-w-sm mx-auto">
           <button
             onClick={() => setCommandPaletteOpen(true)}
-            className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-mono rounded-lg bg-cyber-card/80 border border-cyber-border text-cyber-muted hover:text-cyber-text hover:border-cyber-cyan/50 transition-all shadow-inner group"
+            className="w-full max-w-[240px] 2xl:max-w-[280px] flex items-center justify-between px-3 py-1.5 text-xs font-mono rounded-lg bg-cyber-card/80 border border-cyber-border text-cyber-muted hover:text-cyber-text hover:border-cyber-cyan/50 transition-all shadow-inner group flex-shrink-0"
             title="Global Quick Search (Ctrl+K)"
           >
             <div className="flex items-center gap-2 truncate">
               <Search className="w-3.5 h-3.5 text-cyber-emerald group-hover:text-cyber-cyan transition-colors flex-shrink-0" />
-              <span className="text-[11px] text-slate-500 dark:text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate">
-                Search machines, cheats, tools...
+              <span className="text-[10px] 2xl:text-[11px] text-slate-500 dark:text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate">
+                Search...
               </span>
             </div>
-            <kbd className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-cyan font-bold shadow-sm flex-shrink-0 ml-1">
+            <kbd className="hidden lg:inline-block px-1 py-0.5 rounded text-[9px] bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-cyan font-bold shadow-sm flex-shrink-0 ml-1">
               Ctrl+K
             </kbd>
           </button>
         </div>
 
         {/* Right: Tactical Toggles & GOOGLE PROFILE (PERMANENTLY PINNED TOP RIGHT) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
           {/* Tactical Utilities (Theme, CRT, Sound, Backup) */}
-          <div className="hidden sm:flex items-center gap-1.5 border-r border-slate-200 dark:border-cyber-border/80 pr-2">
-            <ThemeToggle size="sm" soundEnabled={soundEnabled} />
-            <ThemePresetDropdown />
+          <div className="hidden sm:flex items-center gap-1.5 border-r border-slate-200 dark:border-cyber-border/80 pr-2 flex-shrink-0">
+            <ThemeToggle size="sm" soundEnabled={soundEnabled} className="flex-shrink-0" />
+            <div className="flex-shrink-0">
+              <ThemePresetDropdown />
+            </div>
 
             <button
               onClick={toggleSound}
-              className={`p-1.5 rounded-md border transition-all ${
+              className={`p-1.5 rounded-md border transition-all flex-shrink-0 ${
                 soundEnabled 
                   ? 'bg-slate-100 dark:bg-cyber-card border-slate-300 dark:border-cyber-border text-cyber-emerald hover:border-cyber-emerald/50' 
                   : 'bg-slate-100 dark:bg-cyber-card border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -444,7 +442,7 @@ export const Header: React.FC = () => {
 
             <button
               onClick={() => setBackupModalOpen(true)}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-purple transition-all"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-purple transition-all flex-shrink-0"
               title="Backup & Restore JSON State"
             >
               <Database className="w-3.5 h-3.5" />
@@ -452,7 +450,7 @@ export const Header: React.FC = () => {
 
             {/* Tactical Display Scale / Zoom Controls (Zoom Out, Badge, Zoom In) */}
             <div 
-              className="flex items-center rounded-md border border-slate-300 dark:border-cyber-border bg-slate-100 dark:bg-cyber-card/90 p-0.5 shadow-sm text-xs font-mono"
+              className="flex items-center rounded-md border border-slate-300 dark:border-cyber-border bg-slate-100 dark:bg-cyber-card/90 p-0.5 shadow-sm text-xs font-mono flex-shrink-0"
               data-testid="ui-zoom-controller"
             >
               {/* Zoom Out / Make Smaller Button */}
@@ -480,9 +478,31 @@ export const Header: React.FC = () => {
                     ? 'bg-cyber-cyan/20 text-cyan-800 dark:text-cyber-cyan border border-cyber-cyan/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]'
                     : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                 }`}
-                title={`Display Scale: ${uiScale === 'tiny' ? '80% (Tiny)' : uiScale === 'compact' ? '90% (Compact)' : uiScale === 'large' ? '110% (Large)' : uiScale === 'huge' ? '122% (Huge)' : '100% (Normal)'}. Click to cycle or reset.`}
+                title={`Display Scale: ${
+                  uiScale === 'auto'
+                    ? `Auto-Resolution (${getAutoZoomPercent(windowWidth)} dynamic)`
+                    : uiScale === 'tiny'
+                    ? '80% (Tiny)'
+                    : uiScale === 'compact'
+                    ? '90% (Compact)'
+                    : uiScale === 'large'
+                    ? '110% (Large)'
+                    : uiScale === 'huge'
+                    ? '122% (Huge)'
+                    : '100% (Normal)'
+                }. Click to cycle.`}
               >
-                {uiScale === 'tiny' ? '80%' : uiScale === 'compact' ? '90%' : uiScale === 'large' ? '110%' : uiScale === 'huge' ? '122%' : '100%'}
+                {uiScale === 'auto'
+                  ? `AUTO ${getAutoZoomPercent(windowWidth)}`
+                  : uiScale === 'tiny'
+                  ? '80%'
+                  : uiScale === 'compact'
+                  ? '90%'
+                  : uiScale === 'large'
+                  ? '110%'
+                  : uiScale === 'huge'
+                  ? '122%'
+                  : '100%'}
               </button>
 
               {/* Zoom In / Make Bigger Button */}
@@ -499,10 +519,61 @@ export const Header: React.FC = () => {
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            {/* Desktop Auto-Updater Widget (Active only in Electron) */}
+            {updater.isElectron && (
+              <div className="flex items-center flex-shrink-0" data-testid="desktop-updater-widget">
+                {updater.status === 'downloaded' ? (
+                  <button
+                    onClick={updater.quitAndInstall}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-[11px] animate-bounce shadow-[0_0_12px_rgba(16,185,129,0.5)] transition-all cursor-pointer"
+                    title={`Update v${updater.latestVersion} ready. Click to restart and install.`}
+                  >
+                    <DownloadCloud className="w-3.5 h-3.5" />
+                    <span>Restart to Apply</span>
+                  </button>
+                ) : updater.status === 'downloading' ? (
+                  <div 
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyber-card border border-cyber-cyan/50 text-cyber-cyan text-[11px] font-mono shadow-sm"
+                    title="Downloading latest update from GitHub Releases"
+                  >
+                    <RefreshCw className="w-3 h-3 animate-spin text-cyber-cyan" />
+                    <span>Updating {updater.progressPercent}%</span>
+                  </div>
+                ) : updater.status === 'available' ? (
+                  <div 
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyber-card border border-cyber-amber/50 text-cyber-amber text-[11px] font-mono"
+                    title={`Found update v${updater.latestVersion}, preparing download...`}
+                  >
+                    <DownloadCloud className="w-3 h-3 text-cyber-amber animate-pulse" />
+                    <span>v{updater.latestVersion} Available</span>
+                  </div>
+                ) : updater.status === 'checking' ? (
+                  <div 
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted text-[10px] font-mono"
+                    title="Checking GitHub for new releases..."
+                  >
+                    <RefreshCw className="w-3 h-3 animate-spin text-cyber-muted" />
+                    <span className="hidden xl:inline">Checking</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => updater.checkForUpdates()}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-cyber-cyan hover:border-cyber-cyan transition-all text-[11px] font-mono cursor-pointer"
+                    title={`ZeroBox Desktop v${updater.version || '2.0.0'}. Click to check GitHub for updates.`}
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span className="hidden xl:inline">v{updater.version || '2.0.0'}</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* User Profile & 1-Click Save Station */}
-          <UserMenu />
+          <div className="flex-shrink-0">
+            <UserMenu />
+          </div>
         </div>
       </div>
 
@@ -821,124 +892,68 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-
-
-        {/* Right: Live Variable Injection Hub (LHOST, LPORT, TARGET) */}
+        {/* Tier 2 Right: Live Variable Injection Hub (LHOST, LPORT, TARGET) & RevShell */}
         <div className="hidden sm:flex items-center gap-1.5 bg-cyber-card/80 border border-cyber-border/80 rounded-lg p-1 px-2 font-mono text-xs flex-shrink-0">
-          <span className="text-[10px] uppercase font-semibold text-cyber-cyan tracking-wider flex items-center gap-1">
+          <span className="text-[10px] uppercase font-semibold text-cyber-cyan tracking-wider flex items-center gap-1 mr-1">
             <Server className="w-3 h-3" />
-            <span className="hidden xl:inline">VARS:</span>
+            <span className="hidden xl:inline">VARS</span>
           </span>
 
           {/* LHOST */}
-          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${
-            copiedVar === 'lhost'
-              ? 'border-cyber-emerald shadow-[0_0_10px_rgba(16,185,129,0.35)] bg-cyber-emerald/10'
-              : 'border-cyber-border focus-within:border-cyber-cyan'
-          }`}>
+          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${copiedVar === 'lhost' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-cyan'}`}>
             <span className="text-[10px] text-cyber-muted font-bold flex-shrink-0">L:</span>
             <input
               type="text"
               id="header-lhost-input"
               name="header-lhost"
-              aria-label="Attacker IP LHOST"
-              size={15}
-              title={`LHOST: ${globalVars.lhost || '10.10.14.x'} (Click to edit, full IP always visible)`}
+              aria-label="Attacker Listening Host IP"
               value={globalVars.lhost}
               onChange={(e) => setGlobalVars({ lhost: e.target.value })}
               onFocus={(e) => e.target.select()}
-              className="w-[110px] bg-transparent text-slate-900 dark:text-white font-mono text-[11px] tracking-tight focus:outline-none selection:bg-cyan-500/25 selection:text-current"
+              className="w-[90px] bg-transparent text-slate-900 dark:text-white font-mono text-[11px] tracking-tight focus:outline-none"
               placeholder="10.10.14.x"
             />
-            <button
-              onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
-              className={`p-0.5 rounded transition-all flex items-center flex-shrink-0 ${
-                copiedVar === 'lhost'
-                  ? 'text-cyber-emerald'
-                  : 'text-cyber-muted hover:text-cyber-cyan'
-              }`}
-              title="Copy LHOST to clipboard"
-            >
-              {copiedVar === 'lhost' ? (
-                <Check className="w-3 h-3 stroke-[3] text-cyber-emerald" />
-              ) : (
-                <Copy className="w-3 h-3" />
-              )}
+            <button onClick={() => handleCopyVar(globalVars.lhost, 'lhost')} className="p-0.5 text-cyber-muted hover:text-cyber-cyan">
+              {copiedVar === 'lhost' ? <Check className="w-3 h-3 text-cyber-emerald" /> : <Copy className="w-3 h-3" />}
             </button>
           </div>
 
           {/* LPORT */}
-          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${
-            copiedVar === 'lport'
-              ? 'border-cyber-emerald shadow-[0_0_10px_rgba(16,185,129,0.35)] bg-cyber-emerald/10'
-              : 'border-cyber-border focus-within:border-cyber-cyan'
-          }`}>
+          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${copiedVar === 'lport' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-cyan'}`}>
             <span className="text-[10px] text-cyber-muted font-bold flex-shrink-0">P:</span>
             <input
               type="text"
               id="header-lport-input"
               name="header-lport"
-              aria-label="Attacker Port LPORT"
-              size={5}
-              title={`LPORT: ${globalVars.lport || '4444'}`}
+              aria-label="Attacker Listening Port"
               value={globalVars.lport}
               onChange={(e) => setGlobalVars({ lport: e.target.value })}
               onFocus={(e) => e.target.select()}
-              className="w-[44px] bg-transparent text-slate-900 dark:text-white font-mono text-[11px] text-center tracking-tight focus:outline-none selection:bg-cyan-500/25 selection:text-current"
+              className="w-[40px] bg-transparent text-slate-900 dark:text-white font-mono text-[11px] text-center tracking-tight focus:outline-none"
               placeholder="4444"
             />
-            <button
-              onClick={() => handleCopyVar(globalVars.lport, 'lport')}
-              className={`p-0.5 rounded transition-all flex items-center flex-shrink-0 ${
-                copiedVar === 'lport'
-                  ? 'text-cyber-emerald'
-                  : 'text-cyber-muted hover:text-cyber-cyan'
-              }`}
-              title="Copy LPORT to clipboard"
-            >
-              {copiedVar === 'lport' ? (
-                <Check className="w-3 h-3 stroke-[3] text-cyber-emerald" />
-              ) : (
-                <Copy className="w-3 h-3" />
-              )}
+            <button onClick={() => handleCopyVar(globalVars.lport, 'lport')} className="p-0.5 text-cyber-muted hover:text-cyber-cyan">
+              {copiedVar === 'lport' ? <Check className="w-3 h-3 text-cyber-emerald" /> : <Copy className="w-3 h-3" />}
             </button>
           </div>
 
-          {/* TARGET_IP */}
-          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${
-            copiedVar === 'target'
-              ? 'border-cyber-emerald shadow-[0_0_10px_rgba(16,185,129,0.35)] bg-cyber-emerald/10'
-              : 'border-cyber-border focus-within:border-cyber-emerald'
-          }`}>
-            <span className="text-[10px] text-cyber-muted font-bold flex-shrink-0">T:</span>
+          {/* TARGET */}
+          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${copiedVar === 'target' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-emerald'}`}>
+            <span className="text-[10px] text-cyber-emerald font-bold flex-shrink-0">T:</span>
             <input
               type="text"
               id="header-target-ip-input"
               name="header-target-ip"
-              aria-label="Target IP Address"
+              aria-label="Target Host IP"
               data-testid="header-target-ip-input"
-              size={15}
-              title={`Target IP: ${globalVars.targetIp || '10.10.10.x'} (Click to edit, full IP always visible)`}
               value={globalVars.targetIp}
               onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
               onFocus={(e) => e.target.select()}
-              className="w-[110px] bg-transparent text-emerald-800 dark:text-cyber-emerald font-mono text-[11px] font-semibold tracking-tight focus:outline-none selection:bg-cyan-500/25 selection:text-current"
+              className="w-[90px] bg-transparent text-emerald-800 dark:text-cyber-emerald font-mono text-[11px] font-semibold tracking-tight focus:outline-none"
               placeholder="10.10.10.x"
             />
-            <button
-              onClick={() => handleCopyVar(globalVars.targetIp, 'target')}
-              className={`p-0.5 rounded transition-all flex items-center flex-shrink-0 ${
-                copiedVar === 'target'
-                  ? 'text-cyber-emerald'
-                  : 'text-cyber-muted hover:text-cyber-emerald'
-              }`}
-              title="Copy Target IP to clipboard"
-            >
-              {copiedVar === 'target' ? (
-                <Check className="w-3 h-3 stroke-[3] text-cyber-emerald" />
-              ) : (
-                <Copy className="w-3 h-3" />
-              )}
+            <button onClick={() => handleCopyVar(globalVars.targetIp, 'target')} className="p-0.5 text-cyber-muted hover:text-cyber-emerald">
+              {copiedVar === 'target' ? <Check className="w-3 h-3 text-cyber-emerald" /> : <Copy className="w-3 h-3" />}
             </button>
           </div>
 
@@ -956,7 +971,6 @@ export const Header: React.FC = () => {
             <span className="hidden lg:inline">RevShell</span>
           </button>
         </div>
-
       </div>
 
     </header>

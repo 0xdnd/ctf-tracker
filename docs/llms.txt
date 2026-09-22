@@ -1,0 +1,12 @@
+# ZEROBOX CTF Tracker
+
+> ZEROBOX is an offline Lab & CTF Tracker designed for penetration testers, security researchers, and cybersecurity students.
+
+## Features
+- [Kanban Board](/tracker): Track target lifecycle
+- [Methodology](/methodology): Penetration testing methodology
+- [Arsenal](/arsenal): Tactical snippets and reverse shell generators
+
+## Notes
+- Built with React, Tailwind CSS, and Vite
+- Privacy-first offline architecture

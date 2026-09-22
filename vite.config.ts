@@ -9,7 +9,10 @@ function localVaultPlugin() {
     configureServer(server: any) {
       server.middlewares.use('/api/local-vault', async (_req: any, res: any) => {
         try {
-          const defaultManualPath = 'C:\\Users\\DANIEL\\Desktop\\CPTS Field Manual';
+          const userHome = process.env.USERPROFILE || process.env.HOME || '';
+          const defaultManualPath = process.env.CPTS_VAULT_PATH || 
+            (userHome ? path.join(userHome, 'Desktop', 'CPTS Field Manual') : 'C:\\Users\\DANIEL\\Desktop\\CPTS Field Manual');
+
           if (!fs.existsSync(defaultManualPath)) {
             res.statusCode = 404;
             res.setHeader('Content-Type', 'application/json');
@@ -177,7 +180,7 @@ export default defineConfig({
     port: 3000,
     open: false,
     watch: {
-      ignored: ['**/dist/**', '**/docs/**', '**/assets/**', '**/scratch/**'],
+      ignored: ['**/dist/**', '**/docs/**', '**/assets/**', '**/scratch/**', '**/release/**', '**/*.tmp**'],
     },
   },
   optimizeDeps: {

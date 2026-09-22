@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -36,6 +36,8 @@ import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
 export const TargetDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isFocusMode = location.pathname.endsWith('/focus');
 
   const {
     machines,
@@ -49,6 +51,8 @@ export const TargetDetailPage: React.FC = () => {
     resetTimer,
     soundEnabled,
     setWriteupMachineId,
+    isCatalogLoaded,
+    loadCatalog,
   } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
@@ -62,12 +66,32 @@ export const TargetDetailPage: React.FC = () => {
       resetTimer: s.resetTimer,
       soundEnabled: s.soundEnabled,
       setWriteupMachineId: s.setWriteupMachineId,
+      isCatalogLoaded: s.isCatalogLoaded,
+      loadCatalog: s.loadCatalog,
     }))
   );
 
-  const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === id ? s.activeTimerSeconds : 0));
+  useEffect(() => {
+    if (!isCatalogLoaded) {
+      loadCatalog();
+    }
+  }, [isCatalogLoaded, loadCatalog]);
 
-  const machine = machines.find((m) => m.id === id);
+  const normalizedId = id?.toLowerCase().trim();
+  const machine = machines.find((m) => {
+    if (!normalizedId) return false;
+    const mid = m.id.toLowerCase();
+    const mname = m.name.toLowerCase();
+    return (
+      mid === normalizedId ||
+      mid === `htb-${normalizedId}` ||
+      mid === `thm-${normalizedId}` ||
+      mname === normalizedId ||
+      mname.replace(/[^a-z0-9]/g, '') === normalizedId.replace(/[^a-z0-9]/g, '')
+    );
+  });
+
+  const activeTimerSeconds = useCtfStore((s) => (machine && s.activeTargetId === machine.id ? s.activeTimerSeconds : 0));
 
   const [activeTab, setActiveTab] = useState<'checklist' | 'overview' | 'commands'>('checklist');
   const [showUserFlag, setShowUserFlag] = useState(false);
@@ -76,6 +100,15 @@ export const TargetDetailPage: React.FC = () => {
   const [copiedRoot, setCopiedRoot] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
+
+  if (!isCatalogLoaded) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-6 font-mono space-y-4">
+        <div className="w-8 h-8 border-2 border-cyber-cyan border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-cyber-muted tracking-wider">HYDRATING TARGET CATALOG...</p>
+      </div>
+    );
+  }
 
   if (!machine) {
     return (
@@ -174,6 +207,25 @@ export const TargetDetailPage: React.FC = () => {
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
+          {isFocusMode ? (
+            <button
+              onClick={() => navigate(`/target/${machine.id}`)}
+              className="px-3 py-1.5 rounded-lg bg-cyber-crimson/10 border border-cyber-crimson/30 text-cyber-crimson hover:bg-cyber-crimson hover:text-white font-bold transition-all flex items-center gap-2 shadow-glow-crimson"
+              title="Exit Focus Mode"
+            >
+              <Eye className="w-4 h-4" />
+              <span>EXIT FOCUS</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(`/target/${machine.id}/focus`)}
+              className="p-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyber-cyan transition-colors"
+              title="Enter Focus Mode"
+            >
+              <Crosshair className="w-4 h-4" />
+            </button>
+          )}
+
 
           <div>
             <div className="flex items-center gap-2.5">

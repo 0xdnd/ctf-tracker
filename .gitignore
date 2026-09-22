@@ -19,6 +19,8 @@ pids
 # Build artifacts
 dist
 dist-ssr
+release/
+dist-electron/
 /assets/
 *.local
 

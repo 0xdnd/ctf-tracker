@@ -16,7 +16,7 @@ import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { ThemeRippleOverlay } from './components/common/ThemeRippleOverlay';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
-import { useCtfStore, mergeMachinesWithCatalog } from './store/useCtfStore';
+import { useCtfStore, mergeMachinesWithCatalog, UiScale } from './store/useCtfStore';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -92,7 +92,7 @@ const MainAppContent: React.FC = () => {
   const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
-  const uiScale = useCtfStore((s) => s.uiScale || 'normal');
+  const uiScale = useCtfStore((s) => s.uiScale || 'auto');
 
   // Tactical keyboard hotkeys engine
   useTacticalHotkeys();
@@ -139,18 +139,54 @@ const MainAppContent: React.FC = () => {
     settingsModalOpen,
   ]);
 
-  // Handle global UI scale (Tiny: 80%, Compact: 90%, Normal: 100%, Large: 110%, Huge: 122%)
+  // Handle global UI scale with Viewport-Aware Auto-Resolution Engine
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const zoomMap: Record<string, string> = {
-        tiny: '0.80',
-        compact: '0.90',
-        normal: '1.0',
-        large: '1.10',
-        huge: '1.22',
+    if (typeof document === 'undefined') return;
+
+    const zoomMap: Record<Exclude<UiScale, 'auto'>, string> = {
+      tiny: '0.80',
+      compact: '0.90',
+      normal: '1.0',
+      large: '1.10',
+      huge: '1.22',
+    };
+
+    const getAutoZoom = (width: number): string => {
+      if (width >= 1600) return '1.0';
+      if (width >= 1360) return '0.90';
+      if (width >= 1150) return '0.82';
+      if (width >= 960) return '0.75';
+      if (width >= 768) return '0.70';
+      return '1.0';
+    };
+
+    if (uiScale === 'auto') {
+      let rafId: number | null = null;
+      const applyAutoZoom = () => {
+        const zoom = getAutoZoom(window.innerWidth);
+        (document.documentElement.style as CSSStyleDeclaration & { zoom?: string }).zoom = zoom;
+        document.documentElement.style.setProperty('--app-zoom', zoom);
       };
+
+      applyAutoZoom();
+
+      const handleResize = () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          applyAutoZoom();
+          rafId = null;
+        });
+      };
+
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (rafId !== null) cancelAnimationFrame(rafId);
+      };
+    } else {
       const zoomVal = zoomMap[uiScale] || '1.0';
-      (document.documentElement.style as any).zoom = zoomVal;
+      (document.documentElement.style as CSSStyleDeclaration & { zoom?: string }).zoom = zoomVal;
+      document.documentElement.style.setProperty('--app-zoom', zoomVal);
     }
   }, [uiScale]);
 
@@ -195,7 +231,13 @@ const MainAppContent: React.FC = () => {
   }, [location.pathname, setActiveTab]);
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative">
+    <div 
+      style={{
+        height: 'calc(100vh / var(--app-zoom, 1))',
+        maxHeight: 'calc(100vh / var(--app-zoom, 1))',
+      }}
+      className="w-full overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative"
+    >
       {/* Top glowing laser scroll progress bar */}
       <ScrollProgressBar />
 
