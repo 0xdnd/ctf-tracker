@@ -121,8 +121,34 @@
           ]
         }
       ],
-      "category": "Utility",
-      "icon": "public/icon-512.png"
+      "category": "Utility;Security;01-info-gathering;12-reporting-tools;",
+      "icon": "public/icon-512.png",
+      "synopsis": "ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard",
+      "description": "Tactical cybersecurity HUD, target matrix, methodology engine, notes vault, and CTF/Pentest tracker for offensive security practitioners.",
+      "desktop": {
+        "Name": "ZeroBox",
+        "GenericName": "Tactical Cyber Operations Suite",
+        "Comment": "ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard",
+        "Categories": "Utility;Security;01-info-gathering;12-reporting-tools;",
+        "Terminal": false,
+        "StartupWMClass": "ZeroBox"
+      }
+    },
+    "deb": {
+      "priority": "optional",
+      "section": "utils",
+      "depends": [
+        "libnotify4",
+        "libnss3",
+        "libasound2 | libasound2t64",
+        "libappindicator3-1 | libayatana-appindicator3-1",
+        "libsecret-1-0"
+      ],
+      "afterInstall": "build/linux/after-install.sh",
+      "afterRemove": "build/linux/after-remove.sh"
+    },
+    "appImage": {
+      "license": "LICENSE"
     }
   }
 }

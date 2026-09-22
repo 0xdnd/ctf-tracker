@@ -6,6 +6,13 @@ const { autoUpdater } = require('electron-updater');
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 
+// Synchronous Linux root execution safeguard (crucial for Kali Linux live mode, containers, or root terminals)
+// Chromium crashes if launched as root without --no-sandbox
+if (process.platform === 'linux' && typeof process.getuid === 'function' && process.getuid() === 0) {
+  app.commandLine.appendSwitch('no-sandbox');
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
+}
+
 let mainWindow = null;
 
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev') || !app.isPackaged;

@@ -56,3 +56,28 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder ${{ matrix.target-flag }} --publish always
+
+      - name: Generate Checksums & Attach to Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="${{ github.ref_name }}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.tag }}" && "${{ github.event.inputs.tag }}" != "manual" ]]; then
+            RELEASE_TAG="${{ github.event.inputs.tag }}"
+          fi
+
+          if [ -d "release" ]; then
+            cd release
+            if [[ "${{ runner.os }}" == "Windows" ]]; then
+              sha256sum *.exe > SHA256SUMS-windows.txt 2>/dev/null || true
+              if [ -f "SHA256SUMS-windows.txt" ]; then
+                gh release upload "$RELEASE_TAG" SHA256SUMS-windows.txt --clobber || true
+              fi
+            else
+              sha256sum *.AppImage *.deb > SHA256SUMS-linux.txt 2>/dev/null || true
+              if [ -f "SHA256SUMS-linux.txt" ]; then
+                gh release upload "$RELEASE_TAG" SHA256SUMS-linux.txt --clobber || true
+              fi
+            fi
+          fi
