@@ -15,7 +15,6 @@ import {
   Github, 
   Award, 
   ShieldCheck, 
-  Tv, 
   SlidersHorizontal 
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -35,8 +34,6 @@ export const SettingsDropdown: React.FC = () => {
     zoomOut,
     setUiScale,
     uiScale,
-    crtOverlay,
-    toggleCrtOverlay,
     setShortcutsModalOpen,
     setOperatorModalOpen,
     setLicenseModalOpen,
@@ -53,8 +50,6 @@ export const SettingsDropdown: React.FC = () => {
       zoomOut: s.zoomOut,
       setUiScale: s.setUiScale,
       uiScale: s.uiScale,
-      crtOverlay: s.crtOverlay,
-      toggleCrtOverlay: s.toggleCrtOverlay,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
       setOperatorModalOpen: s.setOperatorModalOpen,
       setLicenseModalOpen: s.setLicenseModalOpen,
@@ -218,23 +213,6 @@ export const SettingsDropdown: React.FC = () => {
               </button>
             </div>
           </div>
-
-          {/* CRT Overlay Toggle */}
-          <button
-            onClick={() => {
-              toggleCrtOverlay();
-              if (soundEnabled) playCyberSound('click');
-            }}
-            className="w-full px-2 py-1.5 rounded-lg hover:bg-zinc-900 flex items-center justify-between text-left text-zinc-300 transition-colors"
-          >
-            <span className="flex items-center gap-2">
-              <Tv className="w-3.5 h-3.5 text-purple-400" />
-              <span>Retro CRT Scanlines</span>
-            </span>
-            <span className={`text-[10px] font-bold ${crtOverlay ? 'text-purple-400' : 'text-zinc-500'}`}>
-              {crtOverlay ? 'ON' : 'OFF'}
-            </span>
-          </button>
 
           <div className="h-px bg-zinc-800/80 my-1" />
 
