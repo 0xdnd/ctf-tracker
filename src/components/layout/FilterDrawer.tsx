@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
@@ -18,14 +19,17 @@ import {
   Shield,
   Key,
   Terminal,
-  Filter
+  Filter,
+  Sparkles,
+  Zap,
+  Award
 } from 'lucide-react';
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { PRACTICE_TRACKS } from '../../data/tracksData';
-import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine } from '../../utils/categoryUtils';
+import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
+import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine, matchesCategory, matchesDomain, isActiveDirectory } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
-import { CyberSelectOption } from '../common/CyberSelect';
+import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 
 const STATUS_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
   { value: 'ALL', label: 'All Statuses' },
@@ -37,79 +41,106 @@ const STATUS_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
 const CERT_OPTIONS: ('ALL' | 'OSCP' | 'CPTS' | 'CRTO')[] = ['ALL', 'OSCP', 'CPTS', 'CRTO'];
 
 const LANGUAGE_OPTIONS: CyberSelectOption<string>[] = [
-  { value: 'ALL', label: 'Language' },
-  { value: 'Python', label: 'Python' },
-  { value: 'PHP', label: 'PHP' },
-  { value: 'NodeJS', label: 'Node.js / JS' },
-  { value: 'Java', label: 'Java' },
-  { value: 'C#', label: 'C# / .NET' },
-  { value: 'C/C++', label: 'C / C++' },
+  { value: 'ALL', label: 'All Languages' },
+  { value: 'Python', label: 'Python (Django, Flask)' },
+  { value: 'PHP', label: 'PHP (Laravel, WordPress)' },
+  { value: 'NodeJS', label: 'Node.js / JavaScript' },
+  { value: 'Java', label: 'Java (Spring, Tomcat)' },
+  { value: 'C#', label: 'C# / .NET / IIS' },
+  { value: 'C/C++', label: 'C / C++ (Binaries / BOF)' },
   { value: 'Go', label: 'Go (Golang)' },
-  { value: 'Ruby', label: 'Ruby' },
-  { value: 'Bash', label: 'Bash / Shell' },
-  { value: 'PowerShell', label: 'PowerShell' },
+  { value: 'Ruby', label: 'Ruby on Rails' },
+  { value: 'Bash', label: 'Bash / Shell Scripting' },
+  { value: 'PowerShell', label: 'PowerShell (.ps1)' },
 ];
 
 const AREA_OF_INTEREST_OPTIONS: CyberSelectOption<string>[] = [
-  { value: 'ALL', label: 'Area of Interest' },
-  { value: 'Web Application', label: 'Web Application' },
-  { value: 'Active Directory', label: 'Active Directory' },
-  { value: 'Cloud Security', label: 'Cloud Security' },
-  { value: 'Binary Exploitation', label: 'Binary Exploitation (Pwn)' },
-  { value: 'Cryptography', label: 'Cryptography' },
-  { value: 'Reverse Engineering', label: 'Reverse Engineering' },
-  { value: 'Forensics', label: 'Forensics' },
-  { value: 'Network Security', label: 'Network Security' },
+  { value: 'ALL', label: 'All Areas of Interest' },
+  { value: 'Web Application', label: 'Web Application Exploitation' },
+  { value: 'Active Directory', label: 'Active Directory & Domain Trusts' },
+  { value: 'Cloud Security', label: 'Cloud Security (AWS / Azure)' },
+  { value: 'Binary Exploitation', label: 'Binary Exploitation (Pwn / ROP)' },
+  { value: 'Cryptography', label: 'Cryptography & Ciphers' },
+  { value: 'Reverse Engineering', label: 'Reverse Engineering (Ghidra)' },
+  { value: 'Forensics', label: 'Digital Forensics & PCAP' },
+  { value: 'Network Security', label: 'Network & Protocol Security' },
 ];
 
 const VULNERABILITY_OPTIONS: CyberSelectOption<string>[] = [
-  { value: 'ALL', label: 'Vulnerability' },
+  { value: 'ALL', label: 'All Vulnerabilities' },
   { value: 'SQL Injection', label: 'SQL Injection (SQLi)' },
   { value: 'RCE / Command Injection', label: 'Remote Code Execution (RCE)' },
   { value: 'LFI / Path Traversal', label: 'LFI / Path Traversal' },
-  { value: 'SSRF', label: 'SSRF' },
-  { value: 'Insecure Deserialization', label: 'Deserialization' },
+  { value: 'SSRF', label: 'Server-Side Request Forgery (SSRF)' },
+  { value: 'Insecure Deserialization', label: 'Insecure Deserialization' },
   { value: 'Authentication Bypass', label: 'Authentication Bypass' },
   { value: 'Privilege Escalation', label: 'Privilege Escalation' },
-  { value: 'Buffer Overflow', label: 'Buffer Overflow' },
-  { value: 'File Upload Bypass', label: 'File Upload Bypass' },
-  { value: 'IDOR', label: 'IDOR / Broken Access' },
-  { value: 'XXE', label: 'XXE Injection' },
-  { value: 'CSRF', label: 'CSRF' },
-  { value: 'Misconfiguration', label: 'Misconfiguration' },
+  { value: 'Buffer Overflow', label: 'Buffer Overflow (BOF)' },
+  { value: 'File Upload Bypass', label: 'Arbitrary File Upload Bypass' },
+  { value: 'IDOR', label: 'IDOR / Broken Object Level Auth' },
+  { value: 'XXE', label: 'XML External Entity (XXE)' },
+  { value: 'CSRF', label: 'Cross-Site Request Forgery (CSRF)' },
+  { value: 'Misconfiguration', label: 'Security Misconfiguration' },
 ];
 
 const AccordionSection: React.FC<{
   title: string;
+  subtitle?: string;
   icon: React.ReactNode;
   sectionKey: string;
   isOpen: boolean;
   onToggle: (key: string) => void;
   badgeCount?: number;
+  badgeContent?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ title, icon, sectionKey, isOpen, onToggle, badgeCount, children }) => (
-  <div className="border border-slate-200 dark:border-cyber-border rounded-lg overflow-hidden bg-white dark:bg-cyber-card">
+}> = ({ title, subtitle, icon, sectionKey, isOpen, onToggle, badgeCount, badgeContent, children }) => (
+  <div className="border border-slate-200/80 dark:border-cyber-border/70 rounded-xl overflow-hidden bg-white/80 dark:bg-cyber-card/60 backdrop-blur-sm shadow-sm transition-all hover:border-slate-300 dark:hover:border-cyber-borderGlow">
     <button
       type="button"
       onClick={() => onToggle(sectionKey)}
-      className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-cyber-cardHover hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors"
+      aria-expanded={isOpen}
+      className="w-full flex items-center justify-between p-3 bg-slate-50/70 dark:bg-cyber-cardHover/40 hover:bg-slate-100/80 dark:hover:bg-cyber-cardHover/80 transition-colors text-left group"
     >
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="text-[11px] uppercase tracking-wider text-slate-700 dark:text-cyber-text font-bold">{title}</span>
-        {badgeCount !== undefined && badgeCount > 0 && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyber-cyan font-bold border border-cyan-500/40 leading-none">
-            {badgeCount}
-          </span>
-        )}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="shrink-0 p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-200/60 dark:border-cyber-border/60 group-hover:border-cyan-500/40 transition-colors">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-wide font-sans">{title}</span>
+            {badgeCount !== undefined && badgeCount > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyber-cyan font-bold border border-cyan-500/40 font-mono leading-none">
+                {badgeCount}
+              </span>
+            )}
+            {badgeContent}
+          </div>
+          {subtitle && (
+            <div className="text-[11px] text-slate-500 dark:text-cyber-muted truncate font-sans mt-0.5">
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
-      {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted" />}
+      <div className="p-1 rounded text-slate-400 dark:text-cyber-muted group-hover:text-slate-700 dark:group-hover:text-white transition-transform duration-200">
+        {isOpen ? <ChevronDown className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" /> : <ChevronRight className="w-4 h-4" />}
+      </div>
     </button>
-    {isOpen && (
-      <div className="px-3 py-3 space-y-3 border-t border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card">
-        {children}
-      </div>
-    )}
+    <AnimatePresence initial={false}>
+      {isOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          className="overflow-hidden"
+        >
+          <div className="p-3.5 space-y-3.5 border-t border-slate-200/70 dark:border-cyber-border/50 bg-white/50 dark:bg-cyber-bg/40 font-sans text-xs">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   </div>
 );
 
@@ -140,6 +171,7 @@ export const FilterDrawer: React.FC = () => {
   });
 
   const [tagSearchTerm, setTagSearchTerm] = useState('');
+  const [trackSearchTerm, setTrackSearchTerm] = useState('');
   const [drawerDomain, setDrawerDomain] = useState<VulnDomainId>('all');
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -154,6 +186,12 @@ export const FilterDrawer: React.FC = () => {
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
     if (soundEnabled) playCyberSound('click');
   };
+
+  const activeTrackIds: string[] = useMemo(() => {
+    return filters.selectedTracks && filters.selectedTracks.length > 0
+      ? filters.selectedTracks
+      : (filters.selectedTrack && filters.selectedTrack !== 'ALL' ? [filters.selectedTrack] : []);
+  }, [filters.selectedTracks, filters.selectedTrack]);
 
   const { categoryCounts } = useMemo(() => {
     const catCounts: Record<string, number> = { ALL: machines.length };
@@ -172,43 +210,46 @@ export const FilterDrawer: React.FC = () => {
     return VULN_CATEGORIES.filter(c => c.domain === drawerDomain);
   }, [drawerDomain, categoryCounts]);
 
-  const techniqueOptions = useMemo(() => {
+  const techniqueOptions = useMemo((): CyberSelectOption<string>[] => {
     const os = filters.selectedOs;
     if (os === 'Linux') {
       return [
-        { value: 'ALL', label: 'Technique' },
-        { value: 'SUID / SGID Exploitation', label: 'SUID / SGID' },
-        { value: 'Sudo Rights (sudo -l)', label: 'Sudo Rights' },
-        { value: 'Cron Jobs / Wildcard Injection', label: 'Cron Jobs' },
-        { value: 'Kernel Exploits / Dirty COW', label: 'Kernel Exploits' },
-        { value: 'Docker Breakout / Socket', label: 'Docker Breakout' },
+        { value: 'ALL', label: 'All Techniques' },
+        { value: 'SUID / SGID Exploitation', label: 'SUID / SGID Exploitation' },
+        { value: 'Sudo Rights (sudo -l)', label: 'Sudo Rights (sudo -l)' },
+        { value: 'Cron Jobs / Wildcard Injection', label: 'Cron Jobs / Wildcards' },
+        { value: 'Kernel Exploits / Dirty COW', label: 'Kernel Exploits (Dirty COW)' },
+        { value: 'Docker Breakout / Socket', label: 'Docker Breakout / Socket' },
       ];
     } else if (os === 'Windows') {
       return [
-        { value: 'ALL', label: 'Technique' },
-        { value: 'Kerberoasting (TGS Request)', label: 'Kerberoasting' },
+        { value: 'ALL', label: 'All Techniques' },
+        { value: 'Kerberoasting (TGS Request)', label: 'Kerberoasting (TGS Request)' },
         { value: 'AS-REP Roasting', label: 'AS-REP Roasting' },
-        { value: 'DCSync / NTDS.dit', label: 'DCSync / NTDS' },
-        { value: 'SeImpersonate (JuicyPotato / PrintSpoofer)', label: 'SeImpersonate' },
-        { value: 'BloodHound Attack Paths', label: 'BloodHound Paths' },
+        { value: 'DCSync / NTDS.dit', label: 'DCSync / NTDS.dit Extraction' },
+        { value: 'SeImpersonate (JuicyPotato / PrintSpoofer)', label: 'SeImpersonate (Juicy / Print)' },
+        { value: 'BloodHound Attack Paths', label: 'BloodHound Attack Paths' },
       ];
     }
     return [
-      { value: 'ALL', label: 'Technique' },
+      { value: 'ALL', label: 'All Techniques' },
       { value: 'SUID / SGID Exploitation', label: 'Linux: SUID / SGID' },
       { value: 'Sudo Rights (sudo -l)', label: 'Linux: Sudo Rights' },
       { value: 'Kerberoasting (TGS Request)', label: 'Win: Kerberoasting' },
       { value: 'SeImpersonate (JuicyPotato / PrintSpoofer)', label: 'Win: SeImpersonate' },
-      { value: 'BloodHound Attack Paths', label: 'Win: BloodHound' },
+      { value: 'BloodHound Attack Paths', label: 'Win: BloodHound Paths' },
     ];
   }, [filters.selectedOs]);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
+  const { allTags, tagCounts } = useMemo(() => {
+    const counts: Record<string, number> = {};
     machines.forEach((m) => {
-      m.tags.forEach((t) => set.add(t));
+      m.tags.forEach((t) => {
+        counts[t] = (counts[t] || 0) + 1;
+      });
     });
-    return Array.from(set).sort();
+    const tags = Object.keys(counts).sort();
+    return { allTags: tags, tagCounts: counts };
   }, [machines]);
 
   const displayedTags = useMemo(() => {
@@ -217,9 +258,23 @@ export const FilterDrawer: React.FC = () => {
     return allTags.filter((t) => t.toLowerCase().includes(q));
   }, [allTags, tagSearchTerm]);
 
-  const activeTrackIds: string[] = filters.selectedTracks && filters.selectedTracks.length > 0
-    ? filters.selectedTracks
-    : (filters.selectedTrack && filters.selectedTrack !== 'ALL' ? [filters.selectedTrack] : []);
+  const trackCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    PRACTICE_TRACKS.forEach((track) => {
+      counts[track.id] = machines.filter(track.filterFn).length;
+    });
+    return counts;
+  }, [machines]);
+
+  const displayedTracks = useMemo(() => {
+    if (!trackSearchTerm.trim()) return PRACTICE_TRACKS;
+    const q = trackSearchTerm.toLowerCase();
+    return PRACTICE_TRACKS.filter((t) => 
+      t.name.toLowerCase().includes(q) || 
+      t.description.toLowerCase().includes(q) ||
+      t.shortName.toLowerCase().includes(q)
+    );
+  }, [trackSearchTerm]);
 
   const handleToggleTrack = (trackId: string) => {
     const next = activeTrackIds.includes(trackId)
@@ -252,45 +307,416 @@ export const FilterDrawer: React.FC = () => {
     if (soundEnabled) playCyberSound('toggle');
   };
 
+  // Live matching target count computation
+  const matchingMachinesCount = useMemo(() => {
+    const q = filters.searchQuery ? filters.searchQuery.trim().toLowerCase() : '';
+    const statusFilter = filters.selectedStatus || 'ALL';
+    const certFilter = filters.selectedCert;
+    const excludeAD = Boolean(filters.excludeActiveDirectory);
+    const vulnCatFilter = filters.selectedVulnCategory;
+    const langFilter = filters.selectedLanguage;
+    const areaFilter = filters.selectedAreaOfInterest;
+    const techFilter = filters.selectedTechnique;
+
+    const activeTracks = activeTrackIds
+      .map((id) => PRACTICE_TRACKS.find((t) => t.id === id))
+      .filter(Boolean) as PracticeTrack[];
+
+    return machines.filter((m) => {
+      if (filters.selectedPlatform !== 'ALL' && m.platform !== filters.selectedPlatform) return false;
+      if (filters.selectedDifficulty !== 'ALL' && m.difficulty !== filters.selectedDifficulty) return false;
+      if (filters.selectedOs && filters.selectedOs !== 'ALL' && m.os !== filters.selectedOs) return false;
+      if (certFilter !== 'ALL' && !m.certifications.includes(certFilter)) return false;
+
+      if (statusFilter !== 'ALL') {
+        const isCompleted = m.status === 'root' || m.status === 'completed';
+        const isFoothold = m.status === 'foothold';
+        if (statusFilter === 'UNCOMPLETED' && isCompleted) return false;
+        if (statusFilter === 'FOOTHOLD' && !isFoothold) return false;
+        if (statusFilter === 'COMPLETED' && !isCompleted) return false;
+      }
+
+      if (excludeAD && isActiveDirectory(m)) return false;
+
+      if (drawerDomain !== 'all' && (!vulnCatFilter || vulnCatFilter === 'ALL')) {
+        if (!matchesDomain(m, drawerDomain)) return false;
+      }
+
+      if (vulnCatFilter && vulnCatFilter !== 'ALL') {
+        if (!matchesCategory(m, vulnCatFilter)) return false;
+      }
+
+      if (activeTracks.length > 0 && !activeTracks.some((t) => t.filterFn(m))) {
+        return false;
+      }
+
+      if (q) {
+        const matchName = m.name.toLowerCase().includes(q);
+        const matchIp = m.ip.includes(q);
+        const matchOs = m.os.toLowerCase().includes(q);
+        const matchTag = m.tags.some((t) => t.toLowerCase().includes(q));
+        if (!matchName && !matchIp && !matchOs && !matchTag) return false;
+      }
+
+      if (filters.selectedTags.length > 0) {
+        if (!filters.selectedTags.every((t) => m.tags.includes(t))) return false;
+      }
+
+      if (langFilter && langFilter !== 'ALL') {
+        const l = langFilter.toLowerCase();
+        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
+        let matchesLang = false;
+        if (l === 'python') matchesLang = /python|flask|django|\bpy\b/i.test(textToSearch);
+        else if (l === 'php') matchesLang = /php|laravel|wordpress/i.test(textToSearch);
+        else if (l === 'nodejs' || l === 'javascript') matchesLang = /node|javascript|\bjs\b|express/i.test(textToSearch);
+        else if (l === 'java') matchesLang = /java|spring|tomcat/i.test(textToSearch);
+        else if (l === 'c#') matchesLang = /c#|\.net|asp\.net|iis/i.test(textToSearch);
+        else if (l === 'c/c++') matchesLang = /\bc\b|\bc\+\+|bof|buffer overflow|binary/i.test(textToSearch);
+        else if (l === 'go') matchesLang = /\bgo\b|golang/i.test(textToSearch);
+        else if (l === 'ruby') matchesLang = /ruby|rails/i.test(textToSearch);
+        else if (l === 'bash') matchesLang = /bash|shell|sh\b/i.test(textToSearch);
+        else if (l === 'powershell') matchesLang = /powershell|ps1/i.test(textToSearch);
+        if (!matchesLang) return false;
+      }
+
+      if (areaFilter && areaFilter !== 'ALL') {
+        const a = areaFilter.toLowerCase();
+        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')}`.toLowerCase();
+        if (a.includes('web') && !textToSearch.includes('web') && !m.tags.some(t => /web|http|api|injection/i.test(t))) return false;
+        if (a.includes('active directory') && !isActiveDirectory(m)) return false;
+        if (a.includes('cloud') && !textToSearch.includes('cloud') && !m.tags.some(t => /cloud|aws|azure/i.test(t))) return false;
+        if (a.includes('binary') && !m.tags.some(t => /pwn|bof|binary|buffer/i.test(t))) return false;
+        if (a.includes('crypto') && !m.tags.some(t => /crypto|cipher|rsa/i.test(t))) return false;
+        if (a.includes('reverse') && !m.tags.some(t => /reverse|ghidra|reversing/i.test(t))) return false;
+        if (a.includes('forensics') && !m.tags.some(t => /forensics|wireshark|pcap|memory/i.test(t))) return false;
+      }
+
+      if (techFilter && techFilter !== 'ALL') {
+        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')}`.toLowerCase();
+        const t = techFilter.toLowerCase();
+        if (t.includes('suid') && !textToSearch.includes('suid')) return false;
+        if (t.includes('sudo') && !textToSearch.includes('sudo')) return false;
+        if (t.includes('cron') && !textToSearch.includes('cron')) return false;
+        if (t.includes('kerberoast') && !textToSearch.includes('kerberoast') && !textToSearch.includes('tgs')) return false;
+        if (t.includes('as-rep') && !textToSearch.includes('as-rep') && !textToSearch.includes('asrep')) return false;
+        if (t.includes('dcsync') && !textToSearch.includes('dcsync') && !textToSearch.includes('ntds')) return false;
+        if (t.includes('seimpersonate') && !textToSearch.includes('seimpersonate') && !textToSearch.includes('potato')) return false;
+        if (t.includes('bloodhound') && !textToSearch.includes('bloodhound')) return false;
+      }
+
+      return true;
+    }).length;
+  }, [machines, filters, activeTrackIds, drawerDomain]);
+
+  // Construct active filter chips list
+  const activeFilterList = useMemo(() => {
+    const list: { label: string; onRemove: () => void }[] = [];
+
+    if (filters.selectedStatus && filters.selectedStatus !== 'ALL') {
+      const opt = STATUS_OPTIONS.find(s => s.value === filters.selectedStatus);
+      list.push({
+        label: `Status: ${opt?.label || filters.selectedStatus}`,
+        onRemove: () => setFilters({ selectedStatus: 'ALL' })
+      });
+    }
+
+    if (filters.selectedCert && filters.selectedCert !== 'ALL') {
+      list.push({
+        label: `Cert: ${filters.selectedCert}`,
+        onRemove: () => setFilters({ selectedCert: 'ALL' })
+      });
+    }
+
+    if (filters.excludeActiveDirectory) {
+      list.push({
+        label: 'Exclude AD',
+        onRemove: () => setFilters({ excludeActiveDirectory: false })
+      });
+    }
+
+    activeTrackIds.forEach((tId) => {
+      const track = PRACTICE_TRACKS.find(t => t.id === tId);
+      list.push({
+        label: `Track: ${track ? track.shortName : tId}`,
+        onRemove: () => handleToggleTrack(tId)
+      });
+    });
+
+    if (drawerDomain !== 'all') {
+      const d = VULN_DOMAINS.find(dm => dm.id === drawerDomain);
+      list.push({
+        label: `Domain: ${d ? d.shortLabel : drawerDomain}`,
+        onRemove: () => setDrawerDomain('all')
+      });
+    }
+
+    if (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') {
+      list.push({
+        label: `Vuln: ${filters.selectedVulnCategory}`,
+        onRemove: () => setFilters({ selectedVulnCategory: 'ALL' })
+      });
+    }
+
+    if (filters.selectedLanguage && filters.selectedLanguage !== 'ALL') {
+      list.push({
+        label: `Lang: ${filters.selectedLanguage}`,
+        onRemove: () => setFilters({ selectedLanguage: 'ALL' })
+      });
+    }
+
+    if (filters.selectedAreaOfInterest && filters.selectedAreaOfInterest !== 'ALL') {
+      list.push({
+        label: `Area: ${filters.selectedAreaOfInterest}`,
+        onRemove: () => setFilters({ selectedAreaOfInterest: 'ALL' })
+      });
+    }
+
+    if (filters.selectedTechnique && filters.selectedTechnique !== 'ALL') {
+      list.push({
+        label: `Tech: ${filters.selectedTechnique}`,
+        onRemove: () => setFilters({ selectedTechnique: 'ALL' })
+      });
+    }
+
+    filters.selectedTags.forEach((tag) => {
+      list.push({
+        label: `#${tag}`,
+        onRemove: () => handleTagToggle(tag)
+      });
+    });
+
+    return list;
+  }, [filters, activeTrackIds, drawerDomain]);
+
+  // Subtitle previews for headers
+  const statusSubtitle = useMemo(() => {
+    const parts: string[] = [];
+    if (filters.selectedStatus && filters.selectedStatus !== 'ALL') {
+      const opt = STATUS_OPTIONS.find(s => s.value === filters.selectedStatus);
+      parts.push(opt?.label || filters.selectedStatus);
+    }
+    if (filters.selectedCert && filters.selectedCert !== 'ALL') {
+      parts.push(`Cert: ${filters.selectedCert}`);
+    }
+    if (filters.excludeActiveDirectory) {
+      parts.push('No AD');
+    }
+    return parts.length > 0 ? parts.join(' · ') : 'All Statuses & Certifications';
+  }, [filters.selectedStatus, filters.selectedCert, filters.excludeActiveDirectory]);
+
+  const tracksSubtitle = useMemo(() => {
+    if (activeTrackIds.length === 0) return 'No tracks selected';
+    if (activeTrackIds.length === 1) {
+      const tr = PRACTICE_TRACKS.find(t => t.id === activeTrackIds[0]);
+      return tr ? tr.name : '1 Track selected';
+    }
+    return `${activeTrackIds.length} Tracks selected`;
+  }, [activeTrackIds]);
+
+  const domainsSubtitle = useMemo(() => {
+    const d = VULN_DOMAINS.find(dm => dm.id === drawerDomain)?.shortLabel || 'All Vectors';
+    if (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') {
+      return `${d} · ${filters.selectedVulnCategory}`;
+    }
+    return d;
+  }, [drawerDomain, filters.selectedVulnCategory]);
+
+  const specializedSubtitle = useMemo(() => {
+    const parts: string[] = [];
+    if (filters.selectedLanguage && filters.selectedLanguage !== 'ALL') parts.push(filters.selectedLanguage);
+    if (filters.selectedAreaOfInterest && filters.selectedAreaOfInterest !== 'ALL') parts.push(filters.selectedAreaOfInterest);
+    if (filters.selectedTechnique && filters.selectedTechnique !== 'ALL') parts.push(filters.selectedTechnique);
+    return parts.length > 0 ? parts.join(' · ') : 'Language, Area & Techniques';
+  }, [filters.selectedLanguage, filters.selectedAreaOfInterest, filters.selectedTechnique]);
+
+  const tagsSubtitle = useMemo(() => {
+    if (filters.selectedTags.length === 0) return 'No tags selected';
+    return `${filters.selectedTags.length} tag${filters.selectedTags.length > 1 ? 's' : ''} applied`;
+  }, [filters.selectedTags]);
+
   if (!filterDrawerOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] font-mono">
+    <div className="fixed inset-0 z-[100]">
+      {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={() => setFilterDrawerOpen(false)}
       />
       
+      {/* Slide-out Drawer */}
       <div 
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label="Advanced filters drawer"
-        className="absolute inset-y-0 right-0 w-80 sm:w-96 bg-slate-50 dark:bg-[#070b14] border-l border-slate-200 dark:border-cyber-border shadow-2xl flex flex-col transform transition-transform will-change-transform animate-in slide-in-from-right duration-200"
+        className="absolute inset-y-0 right-0 w-full max-w-[420px] sm:max-w-[460px] bg-slate-50/95 dark:bg-[#080d19]/95 backdrop-blur-xl border-l border-slate-200 dark:border-cyber-border shadow-2xl flex flex-col transform transition-transform will-change-transform animate-in slide-in-from-right duration-200"
         style={{ transform: 'translate3d(0, 0, 0)', contain: 'layout paint' }}
       >
         
         {/* Drawer Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-            <SlidersHorizontal className="w-5 h-5 text-cyan-600 dark:text-cyber-cyan" />
-            <h2 className="font-bold text-sm tracking-wider">ADVANCED FILTERS</h2>
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-cyan-600 dark:text-cyber-cyan shadow-sm">
+              <SlidersHorizontal className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-sm tracking-wide text-slate-900 dark:text-white font-sans">
+                  Advanced Filters
+                </h2>
+                {activeFilterList.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-800 dark:text-cyber-cyan border border-cyan-500/40 font-mono">
+                    {activeFilterList.length} Active
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-cyber-muted font-sans">
+                Fine-tune targets, certifications & vectors
+              </div>
+            </div>
           </div>
           <button
             onClick={() => setFilterDrawerOpen(false)}
-            className="p-1.5 rounded-lg text-slate-500 dark:text-cyber-muted hover:bg-slate-100 dark:hover:bg-cyber-bg hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-cyber-cyan"
+            title="Close Drawer (Esc)"
+            aria-label="Close filter drawer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20 custom-scrollbar">
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-20 custom-scrollbar">
           
-          {/* Status & Completion */}
+          {/* Target Match Counter HUD Banner */}
+          <div className="p-3 rounded-xl bg-slate-900/90 dark:bg-[#050913] border border-cyan-500/30 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+                <Target className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                  <span className="text-cyber-cyan text-sm">{matchingMachinesCount}</span>
+                  <span className="text-slate-400 font-normal">/</span>
+                  <span>{machines.length} TARGETS</span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-sans">
+                  {matchingMachinesCount === machines.length
+                    ? 'All targets currently visible'
+                    : `${Math.round((matchingMachinesCount / (machines.length || 1)) * 100)}% pass criteria`}
+                </div>
+              </div>
+            </div>
+            {activeFilterList.length > 0 && (
+              <button
+                onClick={() => {
+                  resetFilters();
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-2 py-1 rounded bg-rose-500/10 border border-rose-500/30 flex items-center gap-1 transition-colors hover:bg-rose-500/20"
+                title="Reset all filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Active Filter Chips Ribbon */}
+          {activeFilterList.length > 0 && (
+            <div className="p-3 rounded-xl bg-cyan-950/20 dark:bg-cyber-cyan/5 border border-cyan-500/30 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-bold text-cyan-800 dark:text-cyber-cyan flex items-center gap-1.5 font-sans">
+                  <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
+                  Active Filters ({activeFilterList.length})
+                </span>
+                <span className="text-[10px] text-slate-400 font-sans">Click to remove</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
+                {activeFilterList.map((item, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-500/10 dark:bg-cyber-cyan/15 text-cyan-800 dark:text-cyan-300 border border-cyan-500/30 transition-colors"
+                  >
+                    <span className="truncate max-w-[180px]">{item.label}</span>
+                    <button
+                      type="button"
+                      onClick={item.onRemove}
+                      className="hover:text-white p-0.5 rounded transition-colors"
+                      title="Remove filter"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Presets Bar */}
+          <div className="p-3 rounded-xl bg-slate-100/70 dark:bg-cyber-card/40 border border-slate-200/80 dark:border-cyber-border/60 space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-cyber-muted flex items-center gap-1.5 font-mono">
+              <Zap className="w-3 h-3 text-amber-500" />
+              Quick Tactical Presets
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setFilters({ selectedStatus: 'UNCOMPLETED' })}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
+                  filters.selectedStatus === 'UNCOMPLETED'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-sm'
+                    : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                }`}
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                Uncompleted
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilters({ selectedTracks: ['cpts-windows'], selectedTrack: 'cpts-windows' })}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
+                  activeTrackIds.includes('cpts-windows')
+                    ? 'bg-purple-500/20 text-purple-400 border-purple-500/50 shadow-sm'
+                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30'
+                }`}
+              >
+                <Award className="w-3 h-3" />
+                CPTS Win
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilters({ selectedVulnCategory: 'Active Directory' })}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
+                  filters.selectedVulnCategory === 'Active Directory'
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-sm'
+                    : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'
+                }`}
+              >
+                <Key className="w-3 h-3" />
+                Active Directory
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilters({ selectedVulnCategory: 'SQLi' })}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
+                  filters.selectedVulnCategory === 'SQLi'
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-sm'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                }`}
+              >
+                <Globe className="w-3 h-3" />
+                SQLi
+              </button>
+            </div>
+          </div>
+
+          {/* Section 1: Status & Completion */}
           <AccordionSection
-            title="Status & Completion"
-            icon={<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+            title="Status & Certification Scopes"
+            subtitle={statusSubtitle}
+            icon={<CheckCircle2 className="w-4 h-4 text-emerald-500" />}
             sectionKey="status"
             isOpen={openSections.status}
             onToggle={toggleSection}
@@ -298,25 +724,26 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold">Target Status (HTB Matrix)</label>
+                <label className="text-[11px] text-slate-700 dark:text-slate-300 font-bold block">Target Completion Status</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {STATUS_OPTIONS.map((st) => {
                     const isSelected = (filters.selectedStatus || 'ALL') === st.value;
                     return (
                       <button
                         key={st.value}
+                        type="button"
                         onClick={() => {
                           setFilters({ selectedStatus: st.value });
                           if (soundEnabled) playCyberSound('toggle');
                         }}
-                        className={`px-2.5 py-1.5 rounded text-[11px] font-bold border flex items-center justify-between transition-colors ${
+                        className={`px-3 py-2 rounded-lg text-xs font-semibold border flex items-center justify-between transition-all ${
                           isSelected
-                            ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                            ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 shadow-sm'
                             : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border'
                         }`}
                       >
                         <span>{st.label}</span>
-                        {isSelected && <Check className="w-3 h-3" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-emerald-500" />}
                       </button>
                     );
                   })}
@@ -324,20 +751,21 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-cyber-border/60">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold">Certification Scopes</label>
+                <label className="text-[11px] text-slate-700 dark:text-slate-300 font-bold block">Certification Scopes</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {CERT_OPTIONS.map((cert) => {
                     const isSelected = filters.selectedCert === cert;
                     return (
                       <button
                         key={cert}
+                        type="button"
                         onClick={() => {
                           setFilters({ selectedCert: cert });
                           if (soundEnabled) playCyberSound('toggle');
                         }}
-                        className={`px-1 py-1 rounded text-[10px] font-bold border transition-colors ${
+                        className={`py-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
                           isSelected
-                            ? 'border-purple-500/50 bg-purple-500/10 text-purple-700 dark:text-purple-400'
+                            ? 'border-purple-500/60 bg-purple-500/15 text-purple-800 dark:text-purple-300 shadow-sm'
                             : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border'
                         }`}
                       >
@@ -348,16 +776,23 @@ export const FilterDrawer: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-cyber-border/60 space-y-2">
-                <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-xs font-bold text-slate-700 dark:text-cyber-text group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Exclude Active Directory</span>
-                  <div className={`w-8 h-4 rounded-full transition-colors flex items-center px-0.5 ${filters.excludeActiveDirectory ? 'bg-cyan-500/30' : 'bg-slate-200 dark:bg-cyber-bg'}`}>
-                    <div className={`w-3 h-3 rounded-full bg-cyan-600 dark:bg-cyber-cyan transition-transform ${filters.excludeActiveDirectory ? 'translate-x-4' : 'bg-slate-400 dark:bg-slate-600'}`} />
+              <div className="pt-2 border-t border-slate-100 dark:border-cyber-border/60">
+                <label className="flex items-center justify-between cursor-pointer group py-1">
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan transition-colors">
+                      Exclude Active Directory
+                    </span>
+                    <span className="block text-[10px] text-slate-500 dark:text-cyber-muted">
+                      Hide domains, Kerberos, and forest lab boxes
+                    </span>
+                  </div>
+                  <div className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${filters.excludeActiveDirectory ? 'bg-cyan-500' : 'bg-slate-200 dark:bg-cyber-bg'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${filters.excludeActiveDirectory ? 'translate-x-4' : 'translate-x-0 bg-slate-400 dark:bg-slate-600'}`} />
                   </div>
                   <input
                     type="checkbox"
                     className="sr-only"
-                    checked={filters.excludeActiveDirectory}
+                    checked={Boolean(filters.excludeActiveDirectory)}
                     onChange={(e) => {
                       setFilters({ excludeActiveDirectory: e.target.checked });
                       if (soundEnabled) playCyberSound('toggle');
@@ -368,10 +803,11 @@ export const FilterDrawer: React.FC = () => {
             </div>
           </AccordionSection>
 
-          {/* Practice Tracks */}
+          {/* Section 2: Practice Tracks */}
           <AccordionSection
-            title="Practice Tracks"
-            icon={<Target className="w-3.5 h-3.5 text-rose-500" />}
+            title="Curated Practice Tracks"
+            subtitle={tracksSubtitle}
+            icon={<Target className="w-4 h-4 text-rose-500" />}
             sectionKey="tracks"
             isOpen={openSections.tracks}
             onToggle={toggleSection}
@@ -380,61 +816,64 @@ export const FilterDrawer: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <button
+                  type="button"
                   onClick={handleSelectAllTracks}
-                  className="flex-1 px-2 py-1 rounded border border-slate-200 dark:border-cyber-border/70 text-[10px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-all"
+                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-all text-center"
                 >
                   Select All
                 </button>
                 <button
+                  type="button"
                   onClick={handleClearTracks}
-                  className="flex-1 px-2 py-1 rounded border border-slate-200 dark:border-cyber-border/70 text-[10px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-all"
+                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-all text-center"
                 >
                   Clear Tracks
                 </button>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold">Quick Select</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: 'cpts-windows', label: 'CPTS Win' },
-                    { id: 'cwee-web', label: 'CWES' },
-                    { id: 'ippsec-favorites', label: 'IppSec' },
-                    { id: 'ad-mastery', label: 'AD' },
-                  ].map((quick) => {
-                    const isActive = activeTrackIds.includes(quick.id);
-                    return (
-                      <button
-                        key={quick.id}
-                        onClick={() => handleToggleTrack(quick.id)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
-                          isActive
-                            ? 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-400'
-                            : 'border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg text-slate-500 dark:text-cyber-muted'
-                        }`}
-                      >
-                        {quick.label}
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* Track Search */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted" />
+                <input
+                  type="text"
+                  placeholder="Search curated tracks..."
+                  value={trackSearchTerm}
+                  onChange={(e) => setTrackSearchTerm(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded-lg text-xs text-slate-700 dark:text-cyber-text focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+                />
+                {trackSearchTerm && (
+                  <button onClick={() => setTrackSearchTerm('')} className="absolute right-2 top-2">
+                    <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-white" />
+                  </button>
+                )}
               </div>
 
-              <div className="space-y-1 max-h-48 overflow-y-auto pr-1 border border-slate-200 dark:border-cyber-border rounded-lg p-1 bg-slate-50 dark:bg-cyber-bg custom-scrollbar">
-                {PRACTICE_TRACKS.map((track) => {
+              {/* Track List */}
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 border border-slate-200 dark:border-cyber-border rounded-xl p-1.5 bg-slate-50/50 dark:bg-cyber-bg/50 custom-scrollbar">
+                {displayedTracks.map((track) => {
                   const isSelected = activeTrackIds.includes(track.id);
+                  const count = trackCounts[track.id] || 0;
                   return (
                     <button
                       key={track.id}
+                      type="button"
                       onClick={() => handleToggleTrack(track.id)}
-                      className={`w-full px-2.5 py-1.5 rounded-lg border text-left flex items-center justify-between transition-all text-xs ${
+                      className={`w-full px-3 py-2 rounded-lg border text-left flex items-center justify-between transition-all ${
                         isSelected
-                          ? 'border-cyan-500/40 bg-cyan-50 dark:bg-cyber-cyan/10 text-cyan-700 dark:text-cyber-cyan font-bold shadow-sm'
+                          ? 'border-cyan-500/50 bg-cyan-50/80 dark:bg-cyber-cyan/15 text-cyan-800 dark:text-cyber-cyan font-bold shadow-sm'
                           : 'border-transparent hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      <span className="truncate pr-2">{track.name}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan shrink-0" />}
+                      <div className="min-w-0 pr-2">
+                        <div className="truncate text-xs">{track.name}</div>
+                        <div className="text-[10px] text-slate-400 dark:text-cyber-muted truncate font-normal">{track.description}</div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-normal bg-slate-200/60 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted">
+                          {count}
+                        </span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />}
+                      </div>
                     </button>
                   );
                 })}
@@ -442,61 +881,68 @@ export const FilterDrawer: React.FC = () => {
             </div>
           </AccordionSection>
 
-          {/* Knowledge Domains */}
+          {/* Section 3: Knowledge Domains */}
           <AccordionSection
-            title="Knowledge Domains"
-            icon={<ShieldAlert className="w-3.5 h-3.5 text-purple-500" />}
+            title="Vulnerability Domains"
+            subtitle={domainsSubtitle}
+            icon={<ShieldAlert className="w-4 h-4 text-purple-500" />}
             sectionKey="domains"
             isOpen={openSections.domains}
             onToggle={toggleSection}
             badgeCount={filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL' ? 1 : 0}
           >
             <div className="space-y-3">
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {VULN_DOMAINS.map(domain => {
                   const isActive = drawerDomain === domain.id;
                   const Icon = domain.id === 'web' ? Globe : domain.id === 'ad' ? Key : domain.id === 'system' ? Terminal : domain.id === 'advanced' ? Shield : Filter;
                   return (
                     <button
                       key={domain.id}
+                      type="button"
                       onClick={() => setDrawerDomain(domain.id as VulnDomainId)}
-                      className={`px-2 py-1 rounded-md text-[10px] font-medium border flex items-center gap-1.5 transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
                         isActive 
-                          ? 'bg-purple-500/10 border-purple-500/40 text-purple-700 dark:text-purple-400' 
+                          ? 'bg-purple-500/15 border-purple-500/50 text-purple-800 dark:text-purple-300 shadow-sm' 
                           : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-borderGlow'
                       }`}
                     >
-                      <Icon className="w-3 h-3" />
+                      <Icon className="w-3.5 h-3.5" />
                       {domain.label}
                     </button>
                   );
                 })}
               </div>
               
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
                 <button
+                  type="button"
                   onClick={() => setFilters({ selectedVulnCategory: 'ALL' })}
-                  className={`px-2 py-1 rounded-md text-[10px] border transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all text-left flex items-center justify-between ${
                     !filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL'
-                      ? 'bg-purple-500/10 border-purple-500/40 text-purple-700 dark:text-purple-400 font-bold'
-                      : 'border-slate-200 dark:border-cyber-border/70 text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-purple-500/15 border-purple-500/50 text-purple-800 dark:text-purple-300 font-bold'
+                      : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  All Categories
+                  <span>All Categories</span>
+                  {(!filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL') && <Check className="w-3 h-3 text-purple-400" />}
                 </button>
                 {displayedCategories.map(cat => {
                   const isActive = filters.selectedVulnCategory === cat.id;
+                  const count = categoryCounts[cat.id] || 0;
                   return (
                     <button
                       key={cat.id}
+                      type="button"
                       onClick={() => setFilters({ selectedVulnCategory: cat.id })}
-                      className={`px-2 py-1 rounded-md text-[10px] border transition-colors ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all text-left flex items-center justify-between ${
                         isActive
-                          ? 'bg-purple-500/10 border-purple-500/40 text-purple-700 dark:text-purple-400 font-bold'
-                          : 'border-slate-200 dark:border-cyber-border/70 text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-purple-500/15 border-purple-500/50 text-purple-800 dark:text-purple-300 font-bold shadow-sm'
+                          : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      <span className="truncate block w-full text-left">{cat.label}</span>
+                      <span className="truncate pr-1">{cat.label}</span>
+                      <span className="text-[10px] font-mono opacity-70 shrink-0">({count})</span>
                     </button>
                   );
                 })}
@@ -504,63 +950,88 @@ export const FilterDrawer: React.FC = () => {
             </div>
           </AccordionSection>
 
-          {/* Specialized Filters */}
+          {/* Section 4: Specialized Filters */}
           <AccordionSection
-            title="Specialized Filters"
-            icon={<Layers className="w-3.5 h-3.5 text-amber-500" />}
+            title="Specialized & Tactical Filters"
+            subtitle={specializedSubtitle}
+            icon={<Layers className="w-4 h-4 text-amber-500" />}
             sectionKey="specialized"
             isOpen={openSections.specialized}
             onToggle={toggleSection}
             badgeCount={(filters.selectedLanguage && filters.selectedLanguage !== 'ALL' ? 1 : 0) + (filters.selectedAreaOfInterest && filters.selectedAreaOfInterest !== 'ALL' ? 1 : 0) + (filters.selectedTechnique && filters.selectedTechnique !== 'ALL' ? 1 : 0)}
           >
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold ml-1">Language</label>
-                <select
+            <div className="space-y-3.5">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">Target Language / Stack</label>
+                <CyberSelect
                   value={filters.selectedLanguage || 'ALL'}
-                  onChange={(e) => setFilters({ selectedLanguage: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded px-2 py-1 text-xs text-slate-700 dark:text-cyber-text"
-                >
-                  {LANGUAGE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+                  onChange={(val) => {
+                    setFilters({ selectedLanguage: val });
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  options={LANGUAGE_OPTIONS}
+                  placeholder="Select Language..."
+                  variant="card"
+                  size="sm"
+                  soundEnabled={soundEnabled}
+                />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold ml-1">Area of Interest</label>
-                <select
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">Area of Security Focus</label>
+                <CyberSelect
                   value={filters.selectedAreaOfInterest || 'ALL'}
-                  onChange={(e) => setFilters({ selectedAreaOfInterest: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded px-2 py-1 text-xs text-slate-700 dark:text-cyber-text"
-                >
-                  {AREA_OF_INTEREST_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+                  onChange={(val) => {
+                    setFilters({ selectedAreaOfInterest: val });
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  options={AREA_OF_INTEREST_OPTIONS}
+                  placeholder="Select Area of Focus..."
+                  variant="card"
+                  size="sm"
+                  soundEnabled={soundEnabled}
+                />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold ml-1">Specific Vulnerability</label>
-                <select
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">Specific Vulnerability Vector</label>
+                <CyberSelect
                   value={filters.selectedVulnCategory || 'ALL'}
-                  onChange={(e) => setFilters({ selectedVulnCategory: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded px-2 py-1 text-xs text-slate-700 dark:text-cyber-text"
-                >
-                  {VULNERABILITY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+                  onChange={(val) => {
+                    setFilters({ selectedVulnCategory: val });
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  options={VULNERABILITY_OPTIONS}
+                  placeholder="Select Vulnerability..."
+                  variant="card"
+                  size="sm"
+                  soundEnabled={soundEnabled}
+                />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold ml-1">Technique (OS Aware)</label>
-                <select
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">OS-Specific Technique</label>
+                <CyberSelect
                   value={filters.selectedTechnique || 'ALL'}
-                  onChange={(e) => setFilters({ selectedTechnique: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded px-2 py-1 text-xs text-slate-700 dark:text-cyber-text"
-                >
-                  {techniqueOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+                  onChange={(val) => {
+                    setFilters({ selectedTechnique: val });
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  options={techniqueOptions}
+                  placeholder="Select Technique..."
+                  variant="card"
+                  size="sm"
+                  soundEnabled={soundEnabled}
+                />
               </div>
             </div>
           </AccordionSection>
 
-          {/* Tags */}
+          {/* Section 5: Tags */}
           <AccordionSection
-            title="Tags"
-            icon={<Tag className="w-3.5 h-3.5 text-cyan-500" />}
+            title="Tags & Keywords"
+            subtitle={tagsSubtitle}
+            icon={<Tag className="w-4 h-4 text-cyan-500" />}
             sectionKey="tags"
             isOpen={openSections.tags}
             onToggle={toggleSection}
@@ -568,38 +1039,62 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-3">
               <div className="relative">
-                <Search className="absolute left-2 top-1.5 w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted" />
+                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted" />
                 <input
                   type="text"
-                  placeholder="Search tags..."
+                  placeholder="Search tags (sqli, cve, privesc)..."
                   value={tagSearchTerm}
                   onChange={(e) => setTagSearchTerm(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded text-xs text-slate-700 dark:text-cyber-text focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+                  className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded-lg text-xs text-slate-700 dark:text-cyber-text focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
                 />
                 {tagSearchTerm && (
-                  <button onClick={() => setTagSearchTerm('')} className="absolute right-2 top-1.5">
+                  <button onClick={() => setTagSearchTerm('')} className="absolute right-2 top-2">
                     <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-white" />
                   </button>
                 )}
               </div>
+
+              {/* Pinned Selected Tags */}
+              {filters.selectedTags.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-cyber-muted">Selected Tags</span>
+                  <div className="flex flex-wrap gap-1">
+                    {filters.selectedTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleTagToggle(tag)}
+                        className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-colors hover:bg-rose-500/20 hover:text-rose-400 hover:border-rose-500/40 group"
+                        title="Click to remove tag"
+                      >
+                        <span>#{tag}</span>
+                        <X className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                 {displayedTags.length === 0 ? (
-                  <div className="text-[11px] text-slate-500 dark:text-cyber-muted py-3 text-center w-full">No matching tags found</div>
+                  <div className="text-[11px] text-slate-500 dark:text-cyber-muted py-4 text-center w-full">No matching tags found</div>
                 ) : (
                   displayedTags.map((t) => {
                     const isSelected = filters.selectedTags.includes(t);
+                    const count = tagCounts[t] || 0;
                     return (
                       <button
                         key={t}
+                        type="button"
                         onClick={() => handleTagToggle(t)}
-                        className={`px-2 py-0.5 rounded text-[10px] transition-all border ${
+                        className={`px-2 py-0.5 rounded-md text-[11px] transition-all border flex items-center gap-1 ${
                           isSelected
-                            ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-700 dark:text-cyan-400 font-bold'
-                            : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-border'
+                            ? 'bg-cyan-500/25 border-cyan-500/60 text-cyan-900 dark:text-cyan-300 font-bold shadow-sm'
+                            : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-border hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
-                        {t}
+                        <span>#{t}</span>
+                        <span className="text-[9px] opacity-60 font-mono">({count})</span>
                       </button>
                     );
                   })
@@ -611,24 +1106,34 @@ export const FilterDrawer: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card flex items-center justify-between gap-3 mt-auto shrink-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
+        <div className="p-3.5 border-t border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/95 flex items-center justify-between gap-3 mt-auto shrink-0 z-10 shadow-[0_-4px_15px_rgba(0,0,0,0.12)] backdrop-blur-md">
           <button
+            type="button"
             onClick={() => {
               resetFilters();
               if (soundEnabled) playCyberSound('click');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+            disabled={activeFilterList.length === 0}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+              activeFilterList.length > 0
+                ? 'border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 shadow-sm cursor-pointer'
+                : 'border-transparent text-slate-400 dark:text-slate-600 opacity-40 cursor-not-allowed'
+            }`}
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset All
+            <span>Reset All</span>
           </button>
           
           <button
-            onClick={() => setFilterDrawerOpen(false)}
-            className="flex-1 flex justify-center items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 dark:bg-cyber-cyan text-white dark:text-black hover:bg-cyan-700 dark:hover:bg-cyan-400 transition-colors"
+            type="button"
+            onClick={() => {
+              setFilterDrawerOpen(false);
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className="flex-1 flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all transform active:scale-[0.99] cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
-            Apply Filters
+            <span>Show {matchingMachinesCount} Targets</span>
           </button>
         </div>
       </div>
