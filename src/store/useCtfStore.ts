@@ -78,6 +78,10 @@ export function applyThemePreset(preset: ThemePreset) {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
       document.documentElement.setAttribute('data-mode', 'light');
+    } else {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-mode', 'dark');
     }
 
     // Synchronize browser tab favicon with active theme preset

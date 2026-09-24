@@ -22,6 +22,7 @@ import { PlatformIcon } from '../common/PlatformBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { formatSeconds, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { SettingsDropdown } from './SettingsDropdown';
+import { ThemeToggle } from '../common/ThemeToggle';
 
 const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
   const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
@@ -463,6 +464,9 @@ export const UnifiedHeader: React.FC = () => {
           <Terminal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
           <span className="hidden lg:inline">Snippets</span>
         </button>
+
+        {/* Light / Dark Mode Toggle directly in page header */}
+        <ThemeToggle size="sm" soundEnabled={soundEnabled} className="flex-shrink-0" />
 
         {/* Secondary Settings & Profile Menu */}
         <SettingsDropdown />
