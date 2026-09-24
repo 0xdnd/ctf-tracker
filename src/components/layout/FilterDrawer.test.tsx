@@ -7,24 +7,10 @@ import { useCtfStore } from '../../store/useCtfStore';
 describe('FilterDrawer component', () => {
   beforeEach(() => {
     // Reset store state before each test
+    useCtfStore.getState().resetFilters();
     useCtfStore.setState({
       filterDrawerOpen: true,
       soundEnabled: false,
-      filters: {
-        search: '',
-        selectedDifficulty: 'ALL',
-        selectedOs: 'ALL',
-        selectedStatus: 'ALL',
-        selectedTrack: 'ALL',
-        selectedTracks: [],
-        selectedCert: 'ALL',
-        excludeActiveDirectory: false,
-        selectedVulnCategory: 'ALL',
-        selectedLanguage: 'ALL',
-        selectedAreaOfInterest: 'ALL',
-        selectedTechnique: 'ALL',
-        selectedTags: [],
-      },
     });
   });
 

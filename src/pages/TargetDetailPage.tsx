@@ -21,7 +21,8 @@ import {
   AlertCircle,
   Zap,
   X,
-  Lock
+  Lock,
+  Network
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -32,6 +33,7 @@ import { PlatformBadge } from '../components/common/PlatformBadge';
 import { OsBadge } from '../components/common/OsBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
 import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
+import { TargetReconDropzone } from '../components/tracker/TargetReconDropzone';
 
 const TargetDetailTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === machineId ? s.activeTimerSeconds : 0));
@@ -100,7 +102,7 @@ export const TargetDetailPage: React.FC = () => {
     );
   });
 
-  const [activeTab, setActiveTab] = useState<'checklist' | 'overview' | 'commands'>('checklist');
+  const [activeTab, setActiveTab] = useState<'checklist' | 'overview' | 'commands' | 'recon'>('checklist');
   const [showUserFlag, setShowUserFlag] = useState(false);
   const [showRootFlag, setShowRootFlag] = useState(false);
   const [copiedUser, setCopiedUser] = useState(false);
@@ -364,6 +366,23 @@ export const TargetDetailPage: React.FC = () => {
           <span>FLAGS VAULT & INTEL OVERVIEW</span>
         </button>
         <button
+          onClick={() => setActiveTab('recon')}
+          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all ${
+            activeTab === 'recon'
+              ? 'border-cyber-purple text-cyber-purple bg-cyber-purple/5'
+              : 'border-transparent text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Network className="w-4 h-4 text-cyber-purple" />
+          <span>RECON & ATTACK SURFACE</span>
+          {machine.services && machine.services.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40">
+              {machine.services.length}
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab('commands')}
           className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all ${
             activeTab === 'commands'
@@ -388,6 +407,14 @@ export const TargetDetailPage: React.FC = () => {
       ) : activeTab === 'commands' ? (
         <div className="p-4 sm:p-6 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card">
           <QuickCommandsTab machine={machine} />
+        </div>
+      ) : activeTab === 'recon' ? (
+        <div className="p-4 sm:p-6 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card">
+          <TargetReconDropzone
+            machine={machine}
+            onUpdateMachine={updateMachine}
+            soundEnabled={soundEnabled}
+          />
         </div>
       ) : (
         <div className="p-6 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card space-y-6">
@@ -517,6 +544,36 @@ export const TargetDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Section 2.5: Discovered Open Ports & Attack Surface Summary */}
+          {machine.services && machine.services.length > 0 && (
+            <div className="p-3.5 rounded-lg bg-cyber-bg border border-cyber-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5">
+                  <Network className="w-3.5 h-3.5 text-cyber-purple" /> DISCOVERED ATTACK SURFACE ({machine.services.length} PORTS)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('recon')}
+                  className="text-[11px] text-cyber-purple hover:underline flex items-center gap-1 font-semibold"
+                >
+                  View Full Recon Matrix &rarr;
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {machine.services.map((svc) => (
+                  <span
+                    key={`${svc.port}-${svc.protocol}`}
+                    className="px-2 py-1 rounded bg-cyber-card border border-cyber-border text-[11px] font-mono flex items-center gap-1.5"
+                  >
+                    <span className="text-cyber-cyan font-bold">{svc.port}/{svc.protocol}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold">{svc.service}</span>
+                    {svc.version && <span className="text-cyber-muted text-[10px]">({svc.version})</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Section 3: Spoiler Hint */}
           <div className="p-3.5 rounded-lg bg-cyber-bg border border-cyber-border space-y-2">

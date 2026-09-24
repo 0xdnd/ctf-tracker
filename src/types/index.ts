@@ -6,6 +6,16 @@ export type Difficulty = 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Insane';
 
 export type PipelineStatus = 'backlog' | 'recon' | 'foothold' | 'root' | 'completed';
 
+export interface TargetServicePort {
+  port: number;
+  protocol: 'tcp' | 'udp';
+  state: string;
+  service: string;
+  version?: string;
+  cveNotes?: string;
+  suggestedTools?: string[];
+}
+
 export interface Machine {
   id: string;
   name: string;
@@ -36,6 +46,9 @@ export interface Machine {
   officialWalkthrough?: string;
   isCustom?: boolean;
   openPorts?: number[];
+  services?: TargetServicePort[];
+  scanSummary?: string;
+  rawScanOutput?: string;
   isActive?: boolean;
   checklist?: import('./checklist').MachineChecklistState;
   createdAt: string;

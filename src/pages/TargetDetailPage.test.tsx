@@ -65,4 +65,64 @@ describe('TargetDetailPage slug matching', () => {
 
     expect(screen.getByText('TARGET NOT FOUND')).toBeInTheDocument();
   });
+
+  it('switches to RECON & ATTACK SURFACE tab and displays dropzone', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    render(
+      <MemoryRouter initialEntries={['/target/htb-included']}>
+        <Routes>
+          <Route path="/target/:id" element={<TargetDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const reconTabBtn = screen.getByRole('button', { name: /RECON & ATTACK SURFACE/i });
+    expect(reconTabBtn).toBeInTheDocument();
+
+    fireEvent.click(reconTabBtn);
+    expect(screen.getByText(/RECON ARTIFACT DROPZONE & SERVICE DISCOVERY/i)).toBeInTheDocument();
+    expect(screen.getByText(/Drag & Drop Scan File/i)).toBeInTheDocument();
+  });
+
+  it('renders discovered attack surface in overview tab when machine has services', async () => {
+    const { fireEvent } = await import('@testing-library/react');
+    useCtfStore.setState({
+      machines: [
+        {
+          id: 'htb-included',
+          name: 'Included',
+          ip: '10.129.1.9',
+          os: 'Linux',
+          platform: 'HTB',
+          difficulty: 'Very Easy',
+          status: 'recon',
+          tags: ['TFTP', 'Starting Point'],
+          certifications: ['HTB-Starting-Point'],
+          timeSpentSeconds: 0,
+          services: [
+            { port: 80, protocol: 'tcp', state: 'open', service: 'http', version: 'Apache 2.4.41' },
+            { port: 69, protocol: 'udp', state: 'open', service: 'tftp' },
+          ],
+          openPorts: [80, 69],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/target/htb-included']}>
+        <Routes>
+          <Route path="/target/:id" element={<TargetDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const overviewTabBtn = screen.getByRole('button', { name: /FLAGS VAULT & INTEL OVERVIEW/i });
+    fireEvent.click(overviewTabBtn);
+
+    expect(screen.getByText(/DISCOVERED ATTACK SURFACE \(2 PORTS\)/i)).toBeInTheDocument();
+    expect(screen.getByText('80/tcp')).toBeInTheDocument();
+    expect(screen.getByText('69/udp')).toBeInTheDocument();
+  });
 });
