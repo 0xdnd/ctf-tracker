@@ -175,7 +175,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Actions */}
-      <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+      <td className="py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1.5">
           <button
             type="button"
@@ -360,7 +360,7 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
       className="rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-xl font-mono text-xs pb-6"
     >
       <div className="overflow-x-auto max-h-[calc(100vh-230px)]">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse min-w-[1080px]">
           <thead className="sticky top-0 z-10 bg-cyber-bg border-b border-cyber-border uppercase text-[10px] text-cyber-muted font-bold tracking-wider">
             <tr>
               <th className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors" onClick={() => handleSort('name')}>
@@ -401,7 +401,7 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
                 </div>
               </th>
               <th className="py-3 px-3">TRACKS</th>
-              <th className="py-3 px-4 text-right">ACTIONS</th>
+              <th className="py-3 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]">ACTIONS</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-cyber-border/70">

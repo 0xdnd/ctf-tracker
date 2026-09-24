@@ -91,10 +91,12 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   if (effective === 'dark') {
     root.classList.add('dark');
     root.classList.remove('light');
+    root.setAttribute('data-mode', 'dark');
     root.style.colorScheme = 'dark';
   } else {
     root.classList.remove('dark');
     root.classList.add('light');
+    root.setAttribute('data-mode', 'light');
     root.style.colorScheme = 'light';
   }
 
@@ -158,32 +160,105 @@ export function useThemeEngine(): ThemeContextValue {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const setTheme = useCallback((mode: ThemeMode, _coordinates?: RippleCoordinates) => {
-    setThemeState(mode);
+  const setTheme = useCallback((mode: ThemeMode, eventOrCoords?: React.MouseEvent | React.KeyboardEvent | RippleCoordinates) => {
     const eff = mode === 'system' ? getSystemTheme() : mode;
-    applyThemeToDOM(eff, !getPrefersReducedMotion());
-    try {
-      localStorage.setItem(STORAGE_KEY, mode);
-    } catch {
-      // Ignore storage errors
+    const currentEff = theme === 'system' ? systemTheme : theme;
+    
+    if (eff === currentEff) {
+        setThemeState(mode);
+        try { localStorage.setItem(STORAGE_KEY, mode); } catch {}
+        return;
     }
-  }, []);
 
-  // Instant, buttery-smooth theme toggle with 0ms input lag
+    const updateDOMAndState = () => {
+      applyThemeToDOM(eff, false);
+      setThemeState(mode);
+      try { localStorage.setItem(STORAGE_KEY, mode); } catch {}
+    };
+
+    if (!getPrefersReducedMotion() && 'startViewTransition' in document) {
+      const coords = extractCoordinates(eventOrCoords);
+      document.documentElement.classList.remove('theme-transition');
+
+      const transition = (document as any).startViewTransition(() => {
+        updateDOMAndState();
+      });
+
+      transition.ready.then(() => {
+        const radius = Math.hypot(
+          Math.max(coords.x, window.innerWidth - coords.x),
+          Math.max(coords.y, window.innerHeight - coords.y)
+        );
+
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${coords.x}px ${coords.y}px)`,
+              `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
+            ],
+          },
+          {
+            duration: 350,
+            easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+            pseudoElement: '::view-transition-new(root)',
+          }
+        );
+      });
+    } else {
+      applyThemeToDOM(eff, !getPrefersReducedMotion());
+      updateDOMAndState();
+    }
+  }, [theme, systemTheme]);
+
   const toggleTheme = useCallback(
-    (_event?: React.MouseEvent | React.KeyboardEvent | RippleCoordinates) => {
+    (event?: React.MouseEvent | React.KeyboardEvent | RippleCoordinates) => {
       const nextIsDark = !isDark;
       const nextMode: ThemeMode = nextIsDark ? 'dark' : 'light';
 
-      // Immediately and synchronously update DOM classes to eliminate all input latency
-      applyThemeToDOM(nextMode, !prefersReducedMotion);
+      const updateDOMAndState = () => {
+        // Update DOM classes immediately without the CSS fade transition
+        applyThemeToDOM(nextMode, false);
+        setThemeState(nextMode);
+        try {
+          localStorage.setItem(STORAGE_KEY, nextMode);
+        } catch {}
+      };
 
-      // Update state and persistence
-      setThemeState(nextMode);
-      try {
-        localStorage.setItem(STORAGE_KEY, nextMode);
-      } catch {
-        // Ignore storage errors
+      // Use native View Transitions API if available
+      if (!prefersReducedMotion && 'startViewTransition' in document) {
+        const coords = extractCoordinates(event);
+        
+        // Ensure any existing transition classes are removed first
+        document.documentElement.classList.remove('theme-transition');
+
+        const transition = (document as any).startViewTransition(() => {
+          updateDOMAndState();
+        });
+
+        transition.ready.then(() => {
+          const radius = Math.hypot(
+            Math.max(coords.x, window.innerWidth - coords.x),
+            Math.max(coords.y, window.innerHeight - coords.y)
+          );
+
+          document.documentElement.animate(
+            {
+              clipPath: [
+                `circle(0px at ${coords.x}px ${coords.y}px)`,
+                `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
+              ],
+            },
+            {
+              duration: 350,
+              easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+              pseudoElement: '::view-transition-new(root)',
+            }
+          );
+        });
+      } else {
+        // Fallback for older browsers
+        applyThemeToDOM(nextMode, !prefersReducedMotion);
+        updateDOMAndState();
       }
     },
     [isDark, prefersReducedMotion]

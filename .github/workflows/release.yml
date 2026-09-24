@@ -1,4 +1,4 @@
-name: Release ZeroBox Desktop (Windows & Linux)
+name: Release ZeroBox Desktop (Tauri v2)
 
 on:
   push:
@@ -7,16 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release Tag (e.g. v2.0.0)'
+        description: 'Release Tag (e.g. v2.0.0 - leave blank to use v__VERSION__)'
         required: false
-        default: 'manual'
+        default: ''
 
 permissions:
   contents: write
-
-concurrency:
-  group: 'release-${{ github.ref }}'
-  cancel-in-progress: false
 
 jobs:
   build-and-release:
@@ -24,18 +20,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
-            target-flag: '--win'
-          - os: ubuntu-latest
-            target-flag: '--linux'
+          - platform: 'windows-latest'
+            args: ''
+          - platform: 'ubuntu-22.04'
+            args: ''
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,7 +37,16 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux Dependencies (Ubuntu / Debian / Kali)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Web Dependencies
         run: npm ci
 
       - name: Run Automated Test Suite
@@ -52,32 +55,94 @@ jobs:
       - name: Build Web Application
         run: npm run build
 
-      - name: Package Desktop Artifacts & Publish to GitHub Releases
+      - name: Build & Publish Tauri Release Artifacts
+        uses: tauri-apps/tauri-action@v0
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder ${{ matrix.target-flag }} --publish always
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.event.inputs.tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v__VERSION__' }}
+          releaseName: 'ZeroBox v__VERSION__'
+          releaseBody: 'ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard Release v__VERSION__'
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
 
-      - name: Generate Checksums & Attach to Release
+      - name: Package Standalone Executables & Generate Release Checksums
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_TAG="${{ github.ref_name }}"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.tag }}" && "${{ github.event.inputs.tag }}" != "manual" ]]; then
-            RELEASE_TAG="${{ github.event.inputs.tag }}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG="${{ github.event.inputs.tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}"
+          if [ -z "$TAG" ] || [ "$TAG" = "v__VERSION__" ]; then
+            TAG="v$PKG_VERSION"
           fi
 
-          if [ -d "release" ]; then
-            cd release
-            if [[ "${{ runner.os }}" == "Windows" ]]; then
-              sha256sum *.exe > SHA256SUMS-windows.txt 2>/dev/null || true
-              if [ -f "SHA256SUMS-windows.txt" ]; then
-                gh release upload "$RELEASE_TAG" SHA256SUMS-windows.txt --clobber || true
-              fi
+          echo "Target Release Tag: $TAG"
+
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            echo "Locating Windows standalone executable..."
+            STANDALONE_EXE=""
+            if [ -f "src-tauri/target/release/zerobox.exe" ]; then
+              STANDALONE_EXE="src-tauri/target/release/zerobox.exe"
+            elif [ -f "src-tauri/target/release/ZeroBox.exe" ]; then
+              STANDALONE_EXE="src-tauri/target/release/ZeroBox.exe"
             else
-              sha256sum *.AppImage *.deb > SHA256SUMS-linux.txt 2>/dev/null || true
-              if [ -f "SHA256SUMS-linux.txt" ]; then
-                gh release upload "$RELEASE_TAG" SHA256SUMS-linux.txt --clobber || true
-              fi
+              STANDALONE_EXE=$(find src-tauri/target/release -maxdepth 1 -name "*.exe" | head -n 1)
             fi
+
+            if [ -n "$STANDALONE_EXE" ] && [ -f "$STANDALONE_EXE" ]; then
+              cp "$STANDALONE_EXE" ./ZeroBox.exe
+            fi
+
+            ZIP_NAME="ZeroBox-v${PKG_VERSION}-windows-x64-portable.zip"
+            if command -v 7z >/dev/null 2>&1; then
+              7z a "$ZIP_NAME" ./ZeroBox.exe
+            elif command -v tar >/dev/null 2>&1; then
+              tar -a -cf "$ZIP_NAME" ./ZeroBox.exe
+            else
+              python -m zipfile -c "$ZIP_NAME" ./ZeroBox.exe
+            fi
+
+            echo "Computing SHA256 checksums for Windows..."
+            > SHA256SUMS-windows.txt
+            [ -f "./ZeroBox.exe" ] && sha256sum "./ZeroBox.exe" >> SHA256SUMS-windows.txt
+            [ -f "$ZIP_NAME" ] && sha256sum "$ZIP_NAME" >> SHA256SUMS-windows.txt
+            find src-tauri/target/release -maxdepth 1 -name "*.exe" -type f -exec sha256sum {} + >> SHA256SUMS-windows.txt 2>/dev/null || true
+            if [ -d "src-tauri/target/release/bundle" ]; then
+              find src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.zip" \) -exec sha256sum {} + >> SHA256SUMS-windows.txt 2>/dev/null || true
+            fi
+            sort -u SHA256SUMS-windows.txt -o SHA256SUMS-windows.txt
+            cat SHA256SUMS-windows.txt
+
+            echo "Uploading Windows artifacts to GitHub release $TAG..."
+            for attempt in {1..5}; do
+              if gh release upload "$TAG" ./ZeroBox.exe "$ZIP_NAME" SHA256SUMS-windows.txt --clobber; then
+                echo "Successfully uploaded Windows release assets."
+                break
+              fi
+              echo "Upload attempt $attempt failed, retrying in 5s..."
+              sleep 5
+            done
+
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            echo "Computing SHA256 checksums for Linux release artifacts..."
+            > SHA256SUMS-linux.txt
+            find src-tauri/target/release/bundle -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" \) -exec sha256sum {} + >> SHA256SUMS-linux.txt 2>/dev/null || true
+            find src-tauri/target/release -maxdepth 1 -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" \) -exec sha256sum {} + >> SHA256SUMS-linux.txt 2>/dev/null || true
+            sort -u SHA256SUMS-linux.txt -o SHA256SUMS-linux.txt
+            cat SHA256SUMS-linux.txt
+
+            echo "Uploading Linux checksums to GitHub release $TAG..."
+            for attempt in {1..5}; do
+              if gh release upload "$TAG" SHA256SUMS-linux.txt --clobber; then
+                echo "Successfully uploaded Linux release checksums."
+                break
+              fi
+              echo "Upload attempt $attempt failed, retrying in 5s..."
+              sleep 5
+            done
           fi
+

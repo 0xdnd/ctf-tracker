@@ -12,12 +12,20 @@ import {
   stripDeepFieldsFromMachines, 
   mergeDeepPayloadsIntoMachines, 
   saveDeepProfileData, 
-  loadDeepProfileData 
+  loadDeepProfileData,
+  deleteMachineDeepData,
+  clearDeepProfileData
 } from '../utils/indexedDbDeepStorage';
+import { 
+  exportWorkspaceToJson, 
+  triggerWorkspaceDownload, 
+  validateWorkspacePayload 
+} from '../utils/workspaceStorage';
 
 export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
 export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
 export type SortDirection = 'asc' | 'desc';
+export type HtbTargetStatus = 'ALL' | 'UNCOMPLETED' | 'FOOTHOLD' | 'COMPLETED';
 
 export interface FilterState {
   searchQuery: string;
@@ -29,6 +37,11 @@ export interface FilterState {
   selectedVulnCategory?: string | 'ALL';
   excludeActiveDirectory?: boolean;
   selectedTrack: string | 'ALL';
+  selectedTracks: string[];
+  selectedStatus: HtbTargetStatus;
+  selectedLanguage?: string | 'ALL';
+  selectedAreaOfInterest?: string | 'ALL';
+  selectedTechnique?: string | 'ALL';
   selectedTags: string[];
   sortBy: SortOption;
   sortDirection: SortDirection;
@@ -55,13 +68,40 @@ export const ZEROBOX_BRAND: BrandTheme = {
 
 export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];
 
-export type ThemePreset = 'htb' | 'matrix' | 'kali' | 'zerobox';
+export type ThemePreset = 'neon' | 'zerobox' | 'htb' | 'midnight-blue' | 'slate' | 'oled' | 'light';
+export type UiScale = 'auto' | 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
 
 export function applyThemePreset(preset: ThemePreset) {
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', preset);
+    if (preset === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-mode', 'light');
+    }
+
+    // Synchronize browser tab favicon with active theme preset
+    try {
+      const faviconMap: Record<string, string> = {
+        htb: './logo-htb.png',
+        zerobox: './logo-zerobox.png',
+        neon: './logo-zerobox.png',
+        'midnight-blue': './logo-midnight.png',
+        slate: './logo-midnight.png',
+        oled: './logo-oled.png',
+      };
+      const iconPath = faviconMap[preset] || './logo-zerobox.png';
+      const favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+      favicons.forEach(el => {
+        el.href = iconPath;
+      });
+    } catch {
+      // Ignore in non-browser or mock environments
+    }
   }
 }
+
+export type ActiveTab = 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme';
 
 interface CtfStoreState {
   machines: Machine[];
@@ -72,7 +112,7 @@ interface CtfStoreState {
   
   // UI States
   appBrand: string;
-  activeTab: 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam';
+  activeTab: ActiveTab;
   viewMode: ViewMode;
   selectedMachineId: string | null;
   writeupMachineId: string | null;
@@ -86,18 +126,32 @@ interface CtfStoreState {
   crtOverlay: boolean;
   soundEnabled: boolean;
   themePreset: ThemePreset;
-  uiScale: 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
+  uiScale: UiScale;
+  focusMode: boolean;
+  snippetsDrawerOpen: boolean;
+  revShellModalOpen: boolean;
+  filterDrawerOpen: boolean;
+  unexportedChangesCount: number;
   
   // Timer State
   isTimerRunning: boolean;
   activeTimerSeconds: number;
+  timerLastTick: number | null;
   
   // Filters
   filters: FilterState;
 
   // Actions
+  setFocusMode: (open: boolean) => void;
+  toggleFocusMode: () => void;
+  setSnippetsDrawerOpen: (open: boolean) => void;
+  setRevShellModalOpen: (open: boolean) => void;
+  setFilterDrawerOpen: (open: boolean) => void;
+  resetUnexportedChangesCount: () => void;
+  exportWorkspace: () => void | Promise<void>;
+  importWorkspace: (jsonStr: string) => { success: boolean; count?: number; error?: string };
   setAppBrand: (brandId: string) => void;
-  setActiveTab: (tab: 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam') => void;
+  setActiveTab: (tab: ActiveTab) => void;
   setViewMode: (mode: ViewMode) => void;
   setSelectedMachineId: (id: string | null) => void;
   setWriteupMachineId: (id: string | null) => void;
@@ -113,6 +167,8 @@ interface CtfStoreState {
   setFlexCardModalOpen: (open: boolean) => void;
   shortcutsModalOpen: boolean;
   setShortcutsModalOpen: (open: boolean) => void;
+  settingsModalOpen: boolean;
+  setSettingsModalOpen: (open: boolean) => void;
   notesImportModalOpen: boolean;
   setNotesImportModalOpen: (open: boolean) => void;
   userNotes: CptsNoteEntry[];
@@ -128,7 +184,7 @@ interface CtfStoreState {
   toggleCrtOverlay: () => void;
   toggleSound: () => void;
   setThemePreset: (preset: ThemePreset) => void;
-  setUiScale: (scale: 'tiny' | 'compact' | 'normal' | 'large' | 'huge') => void;
+  setUiScale: (scale: UiScale) => void;
   cycleUiScale: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -183,6 +239,8 @@ interface CtfStoreState {
 
   // Data Import & Export & Profile Data Isolation
   currentProfileId: string;
+  isEphemeralStorage: boolean;
+  setIsEphemeralStorage: (val: boolean) => void;
   loadProfileData: (profileId: string) => void;
   saveProfileData: (profileId?: string) => void;
   exportBackup: (options?: { redactSecrets?: boolean }) => string;
@@ -212,6 +270,11 @@ const DEFAULT_FILTERS: FilterState = {
   selectedVulnCategory: 'ALL',
   excludeActiveDirectory: false,
   selectedTrack: 'ALL',
+  selectedTracks: [],
+  selectedStatus: 'ALL',
+  selectedLanguage: 'ALL',
+  selectedAreaOfInterest: 'ALL',
+  selectedTechnique: 'ALL',
   selectedTags: [],
   sortBy: 'default',
   sortDirection: 'asc',
@@ -220,10 +283,73 @@ const DEFAULT_FILTERS: FilterState = {
 
 export const getProfileStorageKey = (profileId: string) => `specter_ctf_profile_${profileId || 'guest'}`;
 
+export const SYNC_CHANNEL_NAME = 'zerobox_cross_tab_sync';
+export const syncChannel: BroadcastChannel | null =
+  typeof window !== 'undefined' && 'BroadcastChannel' in window
+    ? new BroadcastChannel(SYNC_CHANNEL_NAME)
+    : null;
+
+export const broadcastCrossTabMessage = (
+  type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED',
+  payload?: any
+) => {
+  try {
+    syncChannel?.postMessage({ type, payload, timestamp: Date.now() });
+  } catch {}
+};
+
+const inMemoryFallbackStorage = new Map<string, string>();
+let isStorageEphemeral = false;
+let profileLoadGeneration = 0;
+
+export const safeLocalStorage = {
+  getItem: (name: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const val = localStorage.getItem(name);
+      return val !== null ? val : (inMemoryFallbackStorage.get(name) || null);
+    } catch {
+      isStorageEphemeral = true;
+      return inMemoryFallbackStorage.get(name) || null;
+    }
+  },
+  setItem: (name: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(name, value);
+    } catch {
+      isStorageEphemeral = true;
+      inMemoryFallbackStorage.set(name, value);
+    }
+  },
+  removeItem: (name: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      isStorageEphemeral = true;
+      inMemoryFallbackStorage.delete(name);
+    }
+  },
+  isEphemeral: (): boolean => {
+    if (isStorageEphemeral) return true;
+    if (typeof window === 'undefined') return false;
+    try {
+      const test = '__zb_storage_test__';
+      localStorage.setItem(test, '1');
+      localStorage.removeItem(test);
+      return false;
+    } catch {
+      isStorageEphemeral = true;
+      return true;
+    }
+  }
+};
+
 export const getInitialProfileId = (): string => {
   if (typeof window !== 'undefined') {
     try {
-      const auth = localStorage.getItem('rootvector_auth_session');
+      const auth = safeLocalStorage.getItem('rootvector_auth_session');
       if (auth) {
         const parsed = JSON.parse(auth);
         if (parsed.state?.user?.id) {
@@ -238,11 +364,11 @@ export const getInitialProfileId = (): string => {
 export const loadInitialProfileData = (profileId: string) => {
   if (typeof window !== 'undefined') {
     try {
-      const raw = localStorage.getItem(getProfileStorageKey(profileId));
+      const raw = safeLocalStorage.getItem(getProfileStorageKey(profileId));
       if (raw) {
         return JSON.parse(raw);
       }
-      const legacy = localStorage.getItem('specter_ctf_store_v2');
+      const legacy = safeLocalStorage.getItem('specter_ctf_store_v2');
       if (legacy) {
         const parsed = JSON.parse(legacy);
         const state = parsed.state || parsed;
@@ -556,6 +682,7 @@ export const useCtfStore = create<CtfStoreState>()(
       licenseModalOpen: false,
       flexCardModalOpen: false,
       shortcutsModalOpen: false,
+      settingsModalOpen: false,
       notesImportModalOpen: false,
       userNotes: [],
       userWikilinkMap: {},
@@ -564,12 +691,80 @@ export const useCtfStore = create<CtfStoreState>()(
       crtOverlay: false,
       soundEnabled: true,
       themePreset: 'zerobox',
-      uiScale: 'normal',
+      uiScale: 'auto',
+      focusMode: false,
+      snippetsDrawerOpen: false,
+      revShellModalOpen: false,
+      filterDrawerOpen: false,
+      unexportedChangesCount: 0,
+      isEphemeralStorage: safeLocalStorage.isEphemeral(),
+      setIsEphemeralStorage: (val) => set({ isEphemeralStorage: val }),
       isTimerRunning: false,
       activeTimerSeconds: 0,
+      timerLastTick: null,
       filters: DEFAULT_FILTERS,
       isCatalogLoaded: false,
       isCatalogLoading: false,
+
+      setFocusMode: (open) => set({ focusMode: open }),
+      toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+      setSnippetsDrawerOpen: (open) => set({ snippetsDrawerOpen: open }),
+      setRevShellModalOpen: (open) => set({ revShellModalOpen: open }),
+      setFilterDrawerOpen: (open) => set({ filterDrawerOpen: open }),
+      resetUnexportedChangesCount: () => set({ unexportedChangesCount: 0 }),
+      exportWorkspace: async () => {
+        const state = get();
+        let machinesToExport = state.machines;
+        try {
+          const profileId = state.currentProfileId || 'guest';
+          const deep = await loadDeepProfileData(profileId);
+          if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
+            machinesToExport = mergeDeepPayloadsIntoMachines(machinesToExport, deep.writeups);
+          }
+        } catch (e) {
+          console.warn('[ZeroBox] Could not preload deep writeups for workspace export:', e);
+        }
+
+        const json = exportWorkspaceToJson({
+          machines: machinesToExport,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          customNotes: state.customNotes,
+          userNotes: state.userNotes,
+          userWikilinkMap: state.userWikilinkMap,
+          deletedNoteIds: state.deletedNoteIds,
+          userSolvesReset: state.userSolvesReset,
+        });
+        triggerWorkspaceDownload(json, 'zerobox-workspace');
+        set({ unexportedChangesCount: 0 });
+      },
+      importWorkspace: (jsonStr: string) => {
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const validated = validateWorkspacePayload(parsed);
+          if (!validated.success || !validated.data) {
+            return { success: false, error: validated.error || 'Invalid workspace backup format.' };
+          }
+          const data = validated.data;
+          set((state) => ({
+            machines: data.machines ? mergeMachinesWithCatalog(data.machines, data.userSolvesReset) : state.machines,
+            globalVars: data.globalVars ? { ...state.globalVars, ...data.globalVars } : state.globalVars,
+            cheatsheets: data.cheatsheets ? [...data.cheatsheets] : state.cheatsheets,
+            activitySessions: data.activitySessions ? [...data.activitySessions] : state.activitySessions,
+            customNotes: data.customNotes ? [...data.customNotes] : state.customNotes,
+            userNotes: data.userNotes ? [...data.userNotes] : state.userNotes,
+            userWikilinkMap: data.userWikilinkMap ? { ...data.userWikilinkMap } : state.userWikilinkMap,
+            deletedNoteIds: data.deletedNoteIds ? [...data.deletedNoteIds] : state.deletedNoteIds,
+            userSolvesReset: data.userSolvesReset !== undefined ? data.userSolvesReset : state.userSolvesReset,
+            unexportedChangesCount: 0,
+          }));
+          get().saveProfileData();
+          return { success: true, count: validated.restoredCount };
+        } catch (err: any) {
+          return { success: false, error: err?.message || 'Failed to parse JSON file' };
+        }
+      },
 
       loadCatalog: async () => {
         if (get().isCatalogLoaded || get().isCatalogLoading) return;
@@ -604,6 +799,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setLicenseModalOpen: (open) => set({ licenseModalOpen: open }),
       setFlexCardModalOpen: (open) => set({ flexCardModalOpen: open }),
       setShortcutsModalOpen: (open) => set({ shortcutsModalOpen: open }),
+      setSettingsModalOpen: (open) => set({ settingsModalOpen: open }),
       setNotesImportModalOpen: (open) => set({ notesImportModalOpen: open }),
       setUserNotes: (notes) => set({ userNotes: notes }),
       setUserWikilinkMap: (map) => set({ userWikilinkMap: map }),
@@ -653,21 +849,27 @@ export const useCtfStore = create<CtfStoreState>()(
       },
       setUiScale: (scale) => set({ uiScale: scale }),
       zoomIn: () => set((s) => {
-        const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'normal');
-        const nextIdx = Math.min(order.length - 1, currentIdx + 1);
-        return { uiScale: order[nextIdx] };
+        const steps: UiScale[] = ['tiny', 'compact', 'normal', 'large', 'huge'];
+        if (s.uiScale === 'auto') {
+          return { uiScale: 'large' };
+        }
+        const currentIdx = steps.indexOf(s.uiScale);
+        const nextIdx = Math.min(steps.length - 1, (currentIdx === -1 ? 2 : currentIdx) + 1);
+        return { uiScale: steps[nextIdx] };
       }),
       zoomOut: () => set((s) => {
-        const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'normal');
-        const nextIdx = Math.max(0, currentIdx - 1);
-        return { uiScale: order[nextIdx] };
+        const steps: UiScale[] = ['tiny', 'compact', 'normal', 'large', 'huge'];
+        if (s.uiScale === 'auto') {
+          return { uiScale: 'compact' };
+        }
+        const currentIdx = steps.indexOf(s.uiScale);
+        const nextIdx = Math.max(0, (currentIdx === -1 ? 2 : currentIdx) - 1);
+        return { uiScale: steps[nextIdx] };
       }),
       cycleUiScale: () => set((s) => {
-        const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'normal');
-        const nextIdx = (currentIdx + 1) % order.length;
+        const order: UiScale[] = ['auto', 'tiny', 'compact', 'normal', 'large', 'huge'];
+        const currentIdx = order.indexOf(s.uiScale || 'auto');
+        const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % order.length;
         return { uiScale: order[nextIdx] };
       }),
 
@@ -723,10 +925,36 @@ export const useCtfStore = create<CtfStoreState>()(
             ];
           }
 
+          // Auto-sync active target and RHOST (targetIp) when entering Active Recon or Foothold Obtained
+          let activeId = state.activeTargetId;
+          let newGlobalVars = state.globalVars;
+          let assignIpId = state.assignIpMachineId;
+          let shouldStartTimer = state.isTimerRunning;
+
+          if (status === 'recon' || status === 'foothold') {
+            activeId = id;
+            const targetM = state.machines.find((x) => x.id === id);
+            if (targetM) {
+              const isPlaceholder = !targetM.ip || targetM.ip.toLowerCase().includes('x') || targetM.ip === '10.10.10.X';
+              if (isPlaceholder) {
+                assignIpId = id;
+              } else {
+                newGlobalVars = {
+                  ...state.globalVars,
+                  targetIp: targetM.ip,
+                };
+              }
+            }
+          }
+
           return { 
             machines: updated, 
             activitySessions: sessions,
-            isTimerRunning: shouldStopTimer ? false : state.isTimerRunning,
+            isTimerRunning: shouldStopTimer ? false : shouldStartTimer,
+            activeTargetId: activeId,
+            globalVars: newGlobalVars,
+            assignIpMachineId: assignIpId,
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
         });
       },
@@ -821,6 +1049,9 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       deleteMachine: (id) => {
+        const profileId = get().currentProfileId || 'guest';
+        deleteMachineDeepData(profileId, id).catch(() => {});
+        broadcastCrossTabMessage('MACHINE_DELETED', { id, profileId });
         set((state) => ({
           machines: state.machines.filter((m) => m.id !== id),
           activeTargetId: state.activeTargetId === id ? null : state.activeTargetId,
@@ -831,18 +1062,21 @@ export const useCtfStore = create<CtfStoreState>()(
       toggleUserFlag: (id, flagValue) => {
         set((state) => {
           const now = new Date().toISOString();
+          const currentElapsed = id === state.activeTargetId ? state.activeTimerSeconds : undefined;
           const updated = state.machines.map((m) => {
             if (m.id !== id) return m;
             const hadUser = Boolean(m.userPwnedAt);
             const userPwnedAt = hadUser ? undefined : now;
             let status = m.status;
-            if (!hadUser && status === 'backlog') status = 'foothold';
+            if (!hadUser && (status === 'backlog' || status === 'recon')) status = 'foothold';
+            const totalSeconds = currentElapsed !== undefined ? Math.max(m.timeSpentSeconds, currentElapsed) : m.timeSpentSeconds;
             return {
               ...m,
               userFlag: flagValue !== undefined ? flagValue : m.userFlag,
               userPwnedAt,
               status,
-              timeToUserSeconds: !hadUser ? m.timeSpentSeconds : m.timeToUserSeconds,
+              timeSpentSeconds: totalSeconds,
+              timeToUserSeconds: !hadUser ? totalSeconds : m.timeToUserSeconds,
               updatedAt: now,
             };
           });
@@ -853,18 +1087,21 @@ export const useCtfStore = create<CtfStoreState>()(
       toggleRootFlag: (id, flagValue) => {
         set((state) => {
           const now = new Date().toISOString();
+          const currentElapsed = id === state.activeTargetId ? state.activeTimerSeconds : undefined;
           const updated = state.machines.map((m) => {
             if (m.id !== id) return m;
             const hadRoot = Boolean(m.rootPwnedAt);
             const rootPwnedAt = hadRoot ? undefined : now;
             let status = m.status;
             if (!hadRoot) status = 'root';
+            const totalSeconds = currentElapsed !== undefined ? Math.max(m.timeSpentSeconds, currentElapsed) : m.timeSpentSeconds;
             return {
               ...m,
               rootFlag: flagValue !== undefined ? flagValue : m.rootFlag,
               rootPwnedAt,
               status,
-              timeToRootSeconds: !hadRoot ? m.timeSpentSeconds : m.timeToRootSeconds,
+              timeSpentSeconds: totalSeconds,
+              timeToRootSeconds: !hadRoot ? totalSeconds : m.timeToRootSeconds,
               updatedAt: now,
             };
           });
@@ -1018,7 +1255,7 @@ export const useCtfStore = create<CtfStoreState>()(
           }
 
           const m = updatedMachines.find((x) => x.id === id);
-          const isPlaceholderIp = Boolean(m && (!m.ip || m.ip.includes('x')));
+          const isPlaceholderIp = Boolean(m && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
           return {
             machines: updatedMachines,
             activeTargetId: id,
@@ -1026,30 +1263,34 @@ export const useCtfStore = create<CtfStoreState>()(
             assignIpMachineId: isPlaceholderIp ? id : null,
             globalVars: {
               ...state.globalVars,
-              targetIp: m?.ip && !m.ip.includes('x') ? m.ip : state.globalVars.targetIp,
+              targetIp: m?.ip && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
             },
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
         });
       },
 
-      startTimer: () => set({ isTimerRunning: true }),
+      startTimer: () => set({ isTimerRunning: true, timerLastTick: Date.now() }),
 
       pauseTimer: () => {
         set((state) => {
-          if (!state.activeTargetId) return { isTimerRunning: false };
+          if (!state.activeTargetId) return { isTimerRunning: false, timerLastTick: null };
+          const now = Date.now();
+          const extra = state.timerLastTick ? Math.round((now - state.timerLastTick) / 1000) : 0;
+          const finalSeconds = state.activeTimerSeconds + (extra > 0 ? extra : 0);
           const updated = state.machines.map((m) =>
             m.id === state.activeTargetId
-              ? { ...m, timeSpentSeconds: state.activeTimerSeconds }
+              ? { ...m, timeSpentSeconds: finalSeconds }
               : m
           );
-          return { machines: updated, isTimerRunning: false };
+          return { machines: updated, activeTimerSeconds: finalSeconds, isTimerRunning: false, timerLastTick: null };
         });
       },
 
       resetTimer: (machineId) => {
         set((state) => {
           const targetId = machineId || state.activeTargetId;
-          if (!targetId) return { isTimerRunning: false, activeTimerSeconds: 0 };
+          if (!targetId) return { isTimerRunning: false, activeTimerSeconds: 0, timerLastTick: null };
           const updated = state.machines.map((m) =>
             m.id === targetId ? { ...m, timeSpentSeconds: 0 } : m
           );
@@ -1057,6 +1298,7 @@ export const useCtfStore = create<CtfStoreState>()(
             machines: updated,
             activeTimerSeconds: targetId === state.activeTargetId ? 0 : state.activeTimerSeconds,
             isTimerRunning: false,
+            timerLastTick: null,
           };
         });
       },
@@ -1064,7 +1306,13 @@ export const useCtfStore = create<CtfStoreState>()(
       tickTimer: () => {
         set((state) => {
           if (!state.isTimerRunning || !state.activeTargetId) return {};
-          return { activeTimerSeconds: state.activeTimerSeconds + 1 };
+          const now = Date.now();
+          const last = state.timerLastTick || now;
+          const deltaSeconds = Math.max(1, Math.round((now - last) / 1000));
+          return {
+            activeTimerSeconds: state.activeTimerSeconds + deltaSeconds,
+            timerLastTick: now,
+          };
         });
       },
 
@@ -1123,7 +1371,15 @@ export const useCtfStore = create<CtfStoreState>()(
         }));
       },
 
-      setFilters: (f) => set((s) => ({ filters: { ...s.filters, ...f } })),
+      setFilters: (f) => set((s) => {
+        const nextFilters = { ...s.filters, ...f };
+        if (f.selectedTracks !== undefined) {
+          nextFilters.selectedTrack = f.selectedTracks.length > 0 ? f.selectedTracks[0] : 'ALL';
+        } else if (f.selectedTrack !== undefined) {
+          nextFilters.selectedTracks = f.selectedTrack === 'ALL' ? [] : [f.selectedTrack];
+        }
+        return { filters: nextFilters };
+      }),
       resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
       addCustomNote: (note) => {
@@ -1282,6 +1538,8 @@ export const useCtfStore = create<CtfStoreState>()(
           cheatsheets: state.cheatsheets,
           activitySessions: state.activitySessions,
           customNotes: state.customNotes,
+          userNotes: state.userNotes || [],
+          userWikilinkMap: state.userWikilinkMap || {},
           deletedNoteIds: state.deletedNoteIds,
           userSolvesReset: state.userSolvesReset,
         };
@@ -1311,6 +1569,8 @@ export const useCtfStore = create<CtfStoreState>()(
               cheatsheets: Array.isArray(data.cheatsheets) ? data.cheatsheets : state.cheatsheets,
               activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : state.activitySessions,
               customNotes: Array.isArray(data.customNotes) ? data.customNotes : state.customNotes,
+              userNotes: Array.isArray(data.userNotes) ? data.userNotes : state.userNotes,
+              userWikilinkMap: (data.userWikilinkMap && typeof data.userWikilinkMap === 'object') ? data.userWikilinkMap : state.userWikilinkMap,
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
               userSolvesReset,
             }));
@@ -1324,11 +1584,12 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       loadProfileData: (profileId: string) => {
+        const gen = ++profileLoadGeneration;
         const currentId = get().currentProfileId || 'guest';
         get().saveProfileData(currentId);
 
         const targetKey = getProfileStorageKey(profileId);
-        const raw = localStorage.getItem(targetKey);
+        const raw = safeLocalStorage.getItem(targetKey);
         if (raw) {
           try {
             const data = JSON.parse(raw);
@@ -1347,6 +1608,9 @@ export const useCtfStore = create<CtfStoreState>()(
 
             // Asynchronously enrich with deep writeups from IndexedDB
             loadDeepProfileData(profileId).then((deep) => {
+              if (gen !== profileLoadGeneration || get().currentProfileId !== profileId) {
+                return; // Discard stale load from previous rapid profile switch
+              }
               if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
                 const currentMachines = get().machines;
                 const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
@@ -1371,14 +1635,14 @@ export const useCtfStore = create<CtfStoreState>()(
             deletedNoteIds: get().deletedNoteIds,
             userSolvesReset: get().userSolvesReset,
           };
-          localStorage.setItem(targetKey, JSON.stringify(payload));
+          safeLocalStorage.setItem(targetKey, JSON.stringify(payload));
           set({ currentProfileId: profileId });
           return;
         }
 
         set({
           currentProfileId: profileId,
-          machines: cachedCatalog || STARTER_MACHINES,
+          machines: mergeMachinesWithCatalog([], false),
           activeTargetId: null,
           globalVars: DEFAULT_GLOBAL_VARS,
           cheatsheets: INITIAL_CHEATSHEET,
@@ -1421,7 +1685,7 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset: state.userSolvesReset,
         };
         try {
-          localStorage.setItem(targetKey, JSON.stringify(payload));
+          safeLocalStorage.setItem(targetKey, JSON.stringify(payload));
         } catch (e: any) {
           // Quota guard: prune writeups from localStorage if quota exceeded (safely stored in IndexedDB)
           if (e?.name === 'QuotaExceededError' || e?.code === 22 || (typeof e?.message === 'string' && e.message.toLowerCase().includes('quota'))) {
@@ -1431,7 +1695,7 @@ export const useCtfStore = create<CtfStoreState>()(
                 ...payload,
                 machines: stripDeepFieldsFromMachines(payload.machines),
               };
-              localStorage.setItem(targetKey, JSON.stringify(leanPayload));
+              safeLocalStorage.setItem(targetKey, JSON.stringify(leanPayload));
             } catch (innerErr) {
               console.error('Failed to save even stripped profile data:', innerErr);
             }
@@ -1453,33 +1717,74 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         }
         const targetId = get().currentProfileId || 'guest';
+        // Explicitly clear IndexedDB deep storage and vault notes to prevent orphaned data accumulation
+        await clearDeepProfileData(targetId);
+        await clearVaultFromIndexedDb();
         set(() => ({
-          machines: catalog,
+          machines: mergeMachinesWithCatalog([], true, catalog),
           activeTargetId: null,
           isTimerRunning: false,
           activitySessions: [],
           customNotes: [],
+          userNotes: [],
+          userWikilinkMap: {},
           deletedNoteIds: [],
           userSolvesReset: true,
           isCatalogLoaded: true,
+          unexportedChangesCount: 0,
         }));
         get().saveProfileData(targetId);
+        broadcastCrossTabMessage('STATE_UPDATED', { profileId: targetId });
       }
     }),
     {
       name: 'zerobox-tactical-store',
       version: 2,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (name: string): string | null => {
+          if (typeof window === 'undefined') return null;
+          try {
+            const raw = safeLocalStorage.getItem(name);
+            if (!raw) return null;
+            // Validate JSON syntax without throwing uncaught SyntaxError at boot
+            JSON.parse(raw);
+            return raw;
+          } catch (err) {
+            console.warn(
+              `[ZeroBox Storage] Corrupted JSON detected in '${name}'. Quarantining and falling back to clean default state:`,
+              err
+            );
+            try {
+              const corrupted = safeLocalStorage.getItem(name);
+              if (corrupted) {
+                safeLocalStorage.setItem(`${name}_corrupted_backup_${Date.now()}`, corrupted);
+              }
+              safeLocalStorage.removeItem(name);
+            } catch {}
+            return null;
+          }
+        },
+        setItem: (name: string, value: string): void => {
+          safeLocalStorage.setItem(name, value);
+        },
+        removeItem: (name: string): void => {
+          safeLocalStorage.removeItem(name);
+        },
+      })),
       migrate: (persistedState: any) => {
         const currentState = useCtfStore?.getState() || {};
         const persisted = persistedState || {};
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
         }
+        if (!persisted.uiScale || persisted.uiScale === 'normal') {
+          persisted.uiScale = 'auto';
+        }
         const userSolvesReset = Boolean(persisted.userSolvesReset);
         return {
           ...persisted,
           appBrand: 'zerobox',
+          uiScale: (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : persisted.uiScale,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
@@ -1491,16 +1796,25 @@ export const useCtfStore = create<CtfStoreState>()(
         const userSolvesReset = Boolean(persisted.userSolvesReset);
         const themePreset = (persisted.themePreset as ThemePreset) || 'zerobox';
         applyThemePreset(themePreset);
+        const resolvedUiScale: UiScale = (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : (persisted.uiScale as UiScale);
         return {
           ...currentState,
           ...persisted,
           appBrand: 'zerobox',
           themePreset,
+          uiScale: resolvedUiScale,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
           machines: mergeMachinesWithCatalog(persisted.machines, userSolvesReset),
         };
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (!state.uiScale || state.uiScale === 'normal') {
+            state.uiScale = 'auto';
+          }
+        }
       },
       partialize: (state) => ({
         currentProfileId: state.currentProfileId,
@@ -1581,7 +1895,7 @@ const flushProfileSave = () => {
     userSolvesReset: state.userSolvesReset,
   };
   try {
-    localStorage.setItem(targetKey, JSON.stringify(payload));
+    safeLocalStorage.setItem(targetKey, JSON.stringify(payload));
     lastSavedMachines = state.machines;
     lastSavedTargetId = state.activeTargetId;
     lastSavedGlobalVars = state.globalVars;
@@ -1590,6 +1904,7 @@ const flushProfileSave = () => {
     lastSavedCustomNotes = state.customNotes;
     lastSavedDeletedNoteIds = state.deletedNoteIds;
     lastSavedUserSolvesReset = state.userSolvesReset;
+    broadcastCrossTabMessage('WRITEUPS_UPDATED', { profileId: state.currentProfileId });
   } catch (err: any) {
     if (err?.name === 'QuotaExceededError' || err?.code === 22 || (typeof err?.message === 'string' && err.message.toLowerCase().includes('quota'))) {
       console.warn('[ZeroBox] LocalStorage quota reached in flushProfileSave. Pruning writeup bodies from localStorage.');
@@ -1598,7 +1913,7 @@ const flushProfileSave = () => {
           ...payload,
           machines: stripDeepFieldsFromMachines(payload.machines),
         };
-        localStorage.setItem(targetKey, JSON.stringify(leanPayload));
+        safeLocalStorage.setItem(targetKey, JSON.stringify(leanPayload));
         lastSavedMachines = state.machines;
       } catch {}
     }
@@ -1636,8 +1951,85 @@ if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       flushProfileSave();
+    } else if (document.visibilityState === 'visible') {
+      if (useCtfStore.getState().isTimerRunning) {
+        useCtfStore.getState().tickTimer();
+      }
     }
   });
+
+  // Cross-tab auto-sync: Reconcile external storage modifications across open tabs
+  window.addEventListener('storage', (event) => {
+    if (!event.key || !event.newValue) return;
+    const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
+    const profileKey = getProfileStorageKey(currentProfileId);
+    if (event.key === profileKey || event.key === 'zerobox-tactical-store') {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        const data = parsed.state || parsed;
+        if (data && Array.isArray(data.machines)) {
+          const userSolvesReset = Boolean(data.userSolvesReset);
+          useCtfStore.setState((state) => ({
+            userSolvesReset,
+            machines: mergeMachinesWithCatalog(data.machines, userSolvesReset),
+            activeTargetId: 'activeTargetId' in data ? (data.activeTargetId ?? null) : state.activeTargetId,
+            globalVars: data.globalVars || state.globalVars,
+            cheatsheets: data.cheatsheets || state.cheatsheets,
+            activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : state.activitySessions,
+            customNotes: Array.isArray(data.customNotes) ? data.customNotes : state.customNotes,
+            deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
+          }));
+        }
+      } catch (err) {
+        console.warn('[ZeroBox] Failed to synchronize cross-tab storage event', err);
+      }
+    }
+  });
+
+  // Cross-tab BroadcastChannel listener for deep storage updates
+  syncChannel?.addEventListener('message', async (event) => {
+    const { type, payload } = event.data || {};
+    const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
+    if (type === 'WRITEUPS_UPDATED') {
+      if (!payload?.profileId || payload.profileId === currentProfileId) {
+        try {
+          const deep = await loadDeepProfileData(currentProfileId);
+          if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
+            const currentMachines = useCtfStore.getState().machines;
+            const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
+            useCtfStore.setState({ machines: merged });
+          }
+        } catch (err) {
+          console.warn('[ZeroBox] Could not sync writeups from BroadcastChannel:', err);
+        }
+      }
+    } else if (type === 'MACHINE_DELETED' && payload?.id) {
+      if (!payload?.profileId || payload.profileId === currentProfileId) {
+        useCtfStore.setState((s) => ({
+          machines: s.machines.filter((m) => m.id !== payload.id),
+        }));
+      }
+    } else if (type === 'STATE_UPDATED') {
+      const profileData = loadInitialProfileData(currentProfileId);
+      if (profileData && Array.isArray(profileData.machines)) {
+        useCtfStore.setState({
+          machines: mergeMachinesWithCatalog(profileData.machines, profileData.userSolvesReset),
+          globalVars: profileData.globalVars || useCtfStore.getState().globalVars,
+          cheatsheets: profileData.cheatsheets || useCtfStore.getState().cheatsheets,
+        });
+      }
+    }
+  });
+
+  // Tauri v2 native close listener: flush profile immediately before process destruction
+  const isTauri = Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__);
+  if (isTauri) {
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen('tauri-app-close-requested', () => {
+        flushProfileSave();
+      });
+    }).catch(() => {});
+  }
 
   // Asynchronously hydrate user's private CPTS field manual notes from IndexedDB
   loadVaultFromIndexedDb().then((vault) => {

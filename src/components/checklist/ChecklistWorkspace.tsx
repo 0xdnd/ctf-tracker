@@ -445,8 +445,8 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               max="65535"
               value={customPortInput}
               onChange={(e) => setCustomPortInput(e.target.value)}
-              placeholder="Custom Port..."
-              className="w-24 bg-cyber-bg px-2 py-0.5 rounded border border-cyber-border text-white text-xs focus:outline-none focus:border-cyber-cyan"
+              placeholder="+ Port..."
+              className="w-28 bg-cyber-bg px-2 py-0.5 rounded border border-cyber-border text-white text-xs focus:outline-none focus:border-cyber-cyan"
             />
             <button
               type="submit"

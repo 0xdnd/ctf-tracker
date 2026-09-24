@@ -57,9 +57,9 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
   }[size];
 
   const themeClasses = isHTB
-    ? 'border-emerald-300 dark:border-cyber-emerald/40 bg-emerald-100 dark:bg-cyber-emerald/10 text-emerald-900 dark:text-cyber-emerald shadow-sm hover:border-emerald-500 dark:hover:border-cyber-emerald hover:shadow-md'
+    ? 'border-emerald-300 dark:border-cyber-emerald/50 bg-emerald-100 dark:bg-cyber-emerald/10 text-emerald-900 dark:text-cyber-emerald shadow-sm hover:border-emerald-500 dark:hover:border-cyber-emerald hover:shadow-md'
     : isTHM
-    ? 'border-red-300 dark:border-cyber-crimson/40 bg-red-100 dark:bg-cyber-crimson/10 text-red-900 dark:text-cyber-crimson shadow-sm hover:border-red-500 dark:hover:border-cyber-crimson hover:shadow-md'
+    ? 'border-red-300 dark:border-cyber-crimson/50 bg-red-100 dark:bg-cyber-crimson/10 text-red-900 dark:text-cyber-crimson shadow-sm hover:border-red-500 dark:hover:border-cyber-crimson hover:shadow-md'
     : 'border-slate-300 dark:border-cyber-border bg-slate-100 dark:bg-cyber-card text-slate-800 dark:text-cyber-muted';
 
   return (

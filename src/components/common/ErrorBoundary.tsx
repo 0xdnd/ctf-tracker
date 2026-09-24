@@ -29,8 +29,19 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public handleReset = () => {
     try {
+      localStorage.removeItem('zerobox-tactical-store');
+      localStorage.removeItem('specter_ctf_store_v2');
       localStorage.removeItem('specter_ctf_store_v3');
       localStorage.removeItem('specter_ctf_profile_guest');
+      // Purge all user profile storage keys and corrupted backups
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('specter_ctf_profile_') || key.startsWith('zerobox-') || key.includes('_corrupted_backup_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
     } catch (_) {}
     window.location.reload();
   };

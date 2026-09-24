@@ -5,7 +5,8 @@ import {
   mergeDeepPayloadsIntoMachines,
   saveDeepProfileData,
   loadDeepProfileData,
-  clearDeepProfileData
+  clearDeepProfileData,
+  deleteMachineDeepData
 } from './indexedDbDeepStorage';
 import { Machine } from '../types';
 
@@ -106,6 +107,10 @@ describe('indexedDbDeepStorage', () => {
       expect(loaded === null || typeof loaded === 'object').toBe(true);
 
       await expect(clearDeepProfileData('guest')).resolves.not.toThrow();
+    });
+
+    it('handles deleteMachineDeepData without throwing errors', async () => {
+      await expect(deleteMachineDeepData('guest', 'box-1')).resolves.not.toThrow();
     });
   });
 });

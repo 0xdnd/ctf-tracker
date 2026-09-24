@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Header } from './components/layout/Header';
+import { UnifiedHeader } from './components/layout/UnifiedHeader';
 import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
 import { SnippetsDrawer } from './components/layout/SnippetsDrawer';
-import { RevShellModal } from './components/modals/RevShellModal';
+import { RevShellModal } from './components/common/RevShellModal';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { CommandPalette } from './components/layout/CommandPalette';
@@ -17,6 +17,7 @@ import { ThemeRippleOverlay } from './components/common/ThemeRippleOverlay';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
 import { useCtfStore, mergeMachinesWithCatalog, UiScale } from './store/useCtfStore';
+import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -97,6 +98,13 @@ const MainAppContent: React.FC = () => {
   // Tactical keyboard hotkeys engine
   useTacticalHotkeys();
 
+  // Safari ITP defense: request persistent storage
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+  }, []);
+
   // Escape key handler to easily exit Zen Focus Mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -152,11 +160,9 @@ const MainAppContent: React.FC = () => {
     };
 
     const getAutoZoom = (width: number): string => {
-      if (width >= 1600) return '1.0';
-      if (width >= 1360) return '0.90';
-      if (width >= 1150) return '0.82';
-      if (width >= 960) return '0.75';
-      if (width >= 768) return '0.70';
+      if (width >= 1200) return '1.0';
+      if (width >= 1024) return '0.90';
+      if (width >= 768) return '0.85';
       return '1.0';
     };
 
@@ -309,8 +315,11 @@ const MainAppContent: React.FC = () => {
       {/* Rapid Reverse Shell Crafter Modal */}
       <RevShellModal />
 
-      {/* Tactical Top Header */}
-      {!focusMode && <Header />}
+      {/* Ephemeral Memory Fallback Storage Alert Banner */}
+      <EphemeralStorageBanner />
+
+      {/* Tactical Top Header (Unified Single Bar Cockpit) */}
+      {!focusMode && <UnifiedHeader />}
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden min-h-0">

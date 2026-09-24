@@ -106,7 +106,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
       title={`Primary Vector: ${primary} • All Categories: ${categories.join(', ')}`}
     >
       {showIcon && getIcon()}
-      <span className="truncate max-w-[110px]">{primary}</span>
+      <span className="truncate max-w-[80px]">{primary}</span>
     </span>
   );
 });

@@ -171,20 +171,20 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
         className={`group/ip inline-flex items-center gap-1 font-mono ${sizeClasses.text} ${className}`}
       >
         {showLabel && <span className="text-slate-600 dark:text-cyber-muted text-[10px]">IP:</span>}
-        <div className="inline-flex items-center rounded border border-amber-300 dark:border-amber-500/50 bg-amber-100 dark:bg-amber-500/10 shadow-sm overflow-hidden">
+        <div className="inline-flex items-center rounded border border-amber-300/60 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5 shadow-sm overflow-hidden">
           <button
             type="button"
             onClick={handleOpenQuickModal}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 text-amber-900 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-500/25 hover:text-amber-950 dark:hover:text-white transition-all font-bold tracking-wide"
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 text-amber-800 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:text-amber-900 dark:hover:text-amber-200 transition-all font-bold tracking-wide"
             title="Dynamic spawned IP needed! Click to quickly assign spawned instance IP"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500/70 dark:bg-amber-400/80 animate-pulse" />
             <span>SET IP {initialIp ? `(${initialIp})` : ''}</span>
           </button>
           <button
             type="button"
             onClick={handleStartEdit}
-            className="px-1.5 py-0.5 text-amber-800 dark:text-amber-400/70 hover:text-amber-950 dark:hover:text-white hover:bg-amber-200 dark:hover:bg-amber-500/30 border-l border-amber-300 dark:border-amber-500/30 transition-colors"
+            className="px-1.5 py-0.5 text-amber-700 dark:text-amber-400/50 hover:text-amber-900 dark:hover:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-500/30 border-l border-amber-300/60 dark:border-amber-500/30 transition-colors"
             title="Edit inline"
           >
             <Pencil className={sizeClasses.icon} />

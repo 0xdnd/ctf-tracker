@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Save,
   Coffee,
-  Scale
+  Scale,
+  Settings
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -55,6 +56,7 @@ export const MobileNav: React.FC = () => {
     currentProfileId,
     setOperatorModalOpen,
     setLicenseModalOpen,
+    setSettingsModalOpen,
   } = useCtfStore(
     useShallow((s) => ({
       activeTab: s.activeTab,
@@ -75,6 +77,7 @@ export const MobileNav: React.FC = () => {
       currentProfileId: s.currentProfileId,
       setOperatorModalOpen: s.setOperatorModalOpen,
       setLicenseModalOpen: s.setLicenseModalOpen,
+      setSettingsModalOpen: s.setSettingsModalOpen,
     }))
   );
 
@@ -445,16 +448,31 @@ export const MobileNav: React.FC = () => {
                     <ThemeToggle size="sm" showLabel />
                   </div>
 
-                  {/* Theme Presets (Hack The Box, Matrix, Kali, ZeroBox) */}
+                  {/* Theme Presets (Minimalist Black & Blue, OLED, Slate, Light) */}
                   <div className="p-3 rounded-lg border border-cyber-border bg-cyber-bg flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <span>Hacker Theme</span>
+                        <span>Minimalist Theme</span>
                       </div>
-                      <div className="text-[10px] text-cyber-muted">HTB, Matrix, Kali, ZeroBox</div>
+                      <div className="text-[10px] text-cyber-muted">Black & Blue, OLED, Slate, Light</div>
                     </div>
                     <ThemePresetDropdown />
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setSettingsModalOpen(true);
+                      if (soundEnabled) playCyberSound('click');
+                    }}
+                    className="w-full p-2.5 rounded-lg border border-cyber-border bg-cyber-bg hover:border-cyber-cyan/50 text-slate-700 dark:text-cyber-text hover:text-cyber-cyan flex items-center justify-between text-xs font-mono transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-cyber-cyan" />
+                      <span className="font-bold">Operator Settings & Themes</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-cyber-muted" />
+                  </button>
 
                   <button
                     onClick={toggleSound}

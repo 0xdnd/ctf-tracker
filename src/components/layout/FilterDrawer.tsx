@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import React, { useMemo, useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
   RotateCcw, 
@@ -133,6 +134,11 @@ export const FilterDrawer: React.FC = () => {
     }))
   );
 
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: filterDrawerOpen,
+    onClose: () => setFilterDrawerOpen(false),
+  });
+
   const [tagSearchTerm, setTagSearchTerm] = useState('');
   const [drawerDomain, setDrawerDomain] = useState<VulnDomainId>('all');
   
@@ -255,7 +261,14 @@ export const FilterDrawer: React.FC = () => {
         onClick={() => setFilterDrawerOpen(false)}
       />
       
-      <div className="absolute inset-y-0 right-0 w-80 sm:w-96 bg-slate-50 dark:bg-[#070b14] border-l border-slate-200 dark:border-cyber-border shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-200">
+      <div 
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Advanced filters drawer"
+        className="absolute inset-y-0 right-0 w-80 sm:w-96 bg-slate-50 dark:bg-[#070b14] border-l border-slate-200 dark:border-cyber-border shadow-2xl flex flex-col transform transition-transform will-change-transform animate-in slide-in-from-right duration-200"
+        style={{ transform: 'translate3d(0, 0, 0)', contain: 'layout paint' }}
+      >
         
         {/* Drawer Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card">
@@ -572,7 +585,7 @@ export const FilterDrawer: React.FC = () => {
               
               <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                 {displayedTags.length === 0 ? (
-                  <div className="text-[11px] text-slate-400 dark:text-cyber-muted py-3 text-center w-full">No matching tags found</div>
+                  <div className="text-[11px] text-slate-500 dark:text-cyber-muted py-3 text-center w-full">No matching tags found</div>
                 ) : (
                   displayedTags.map((t) => {
                     const isSelected = filters.selectedTags.includes(t);

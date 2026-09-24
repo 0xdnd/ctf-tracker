@@ -28,20 +28,38 @@ function openDeepDatabase(): Promise<IDBDatabase | null> {
       resolve(null);
       return;
     }
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => {
-      console.warn('[ZeroBox Deep Storage] Failed to open Deep Storage IndexedDB', request.error);
+      request.onblocked = () => {
+        console.warn('[ZeroBox Deep Storage] Database upgrade blocked by another open tab');
+        resolve(null);
+      };
+
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onversionchange = () => {
+          console.warn('[ZeroBox Deep Storage] Database version change detected, closing connection.');
+          try { db.close(); } catch {}
+        };
+        resolve(db);
+      };
+
+      request.onerror = () => {
+        console.warn('[ZeroBox Deep Storage] Failed to open Deep Storage IndexedDB', request.error);
+        resolve(null);
+      };
+    } catch (err) {
+      console.warn('[ZeroBox Deep Storage] Synchronous error opening IndexedDB:', err);
       resolve(null);
-    };
+    }
   });
 }
 
@@ -130,30 +148,48 @@ export async function saveDeepProfileData(
     customNotes?: any[];
   }
 ): Promise<void> {
+  let db: IDBDatabase | null = null;
   try {
-    const db = await openDeepDatabase();
-    if (!db) return;
-    return new Promise((resolve, reject) => {
+    const activeDb = await openDeepDatabase();
+    if (!activeDb) return;
+    db = activeDb;
+    await new Promise<void>((resolve) => {
+      let isResolved = false;
+      const safeDone = () => {
+        if (!isResolved) {
+          isResolved = true;
+          try { activeDb.close(); } catch {}
+          resolve();
+        }
+      };
+
       try {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const tx = activeDb.transaction(STORE_NAME, 'readwrite');
+        tx.oncomplete = () => safeDone();
+        tx.onerror = (e) => {
+          console.warn('[ZeroBox Deep Storage] Transaction error in saveDeepProfileData:', tx.error || e);
+          safeDone();
+        };
+        tx.onabort = (e) => {
+          console.warn('[ZeroBox Deep Storage] Transaction aborted (e.g. QuotaExceededError):', tx.error || e);
+          safeDone();
+        };
+
         const store = tx.objectStore(STORE_NAME);
         const payload: DeepProfilePayload = {
           writeups: data.writeups || {},
           customNotes: data.customNotes || [],
           updatedAt: new Date().toISOString(),
         };
-        const req = store.put(payload, profileId || 'guest');
-
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error || new Error('Failed to put deep profile in IndexedDB'));
-        tx.oncomplete = () => db.close();
+        store.put(payload, profileId || 'guest');
       } catch (err) {
-        db.close();
-        reject(err);
+        console.warn('[ZeroBox Deep Storage] Synchronous write error:', err);
+        safeDone();
       }
     });
   } catch (err) {
     console.warn('[ZeroBox Deep Storage] Could not persist to IndexedDB:', err);
+    try { db?.close(); } catch {}
   }
 }
 
@@ -161,28 +197,42 @@ export async function saveDeepProfileData(
  * Asynchronously loads deep profile payloads from IndexedDB.
  */
 export async function loadDeepProfileData(profileId: string): Promise<DeepProfilePayload | null> {
+  let db: IDBDatabase | null = null;
   try {
-    const db = await openDeepDatabase();
-    if (!db) return null;
-    return new Promise((resolve, reject) => {
+    const activeDb = await openDeepDatabase();
+    if (!activeDb) return null;
+    db = activeDb;
+    return await new Promise<DeepProfilePayload | null>((resolve) => {
+      let isResolved = false;
+      const safeDone = (res: DeepProfilePayload | null) => {
+        if (!isResolved) {
+          isResolved = true;
+          try { activeDb.close(); } catch {}
+          resolve(res);
+        }
+      };
+
       try {
-        const tx = db.transaction(STORE_NAME, 'readonly');
+        const tx = activeDb.transaction(STORE_NAME, 'readonly');
+        tx.onerror = () => safeDone(null);
+        tx.onabort = () => safeDone(null);
+
         const store = tx.objectStore(STORE_NAME);
         const req = store.get(profileId || 'guest');
 
         req.onsuccess = () => {
           const result = req.result as DeepProfilePayload | undefined;
-          resolve(result || null);
+          safeDone(result || null);
         };
-        req.onerror = () => reject(req.error || new Error('Failed to get deep profile from IndexedDB'));
-        tx.oncomplete = () => db.close();
+        req.onerror = () => safeDone(null);
       } catch (err) {
-        db.close();
-        reject(err);
+        console.warn('[ZeroBox Deep Storage] Synchronous read error:', err);
+        safeDone(null);
       }
     });
   } catch (err) {
     console.warn('[ZeroBox Deep Storage] Could not read from IndexedDB:', err);
+    try { db?.close(); } catch {}
     return null;
   }
 }
@@ -191,24 +241,84 @@ export async function loadDeepProfileData(profileId: string): Promise<DeepProfil
  * Deletes deep profile data from IndexedDB.
  */
 export async function clearDeepProfileData(profileId: string): Promise<void> {
+  let db: IDBDatabase | null = null;
   try {
-    const db = await openDeepDatabase();
-    if (!db) return;
-    return new Promise((resolve, reject) => {
-      try {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.delete(profileId || 'guest');
+    const activeDb = await openDeepDatabase();
+    if (!activeDb) return;
+    db = activeDb;
+    await new Promise<void>((resolve) => {
+      let isResolved = false;
+      const safeDone = () => {
+        if (!isResolved) {
+          isResolved = true;
+          try { activeDb.close(); } catch {}
+          resolve();
+        }
+      };
 
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error || new Error('Failed to delete deep profile in IndexedDB'));
-        tx.oncomplete = () => db.close();
+      try {
+        const tx = activeDb.transaction(STORE_NAME, 'readwrite');
+        tx.oncomplete = () => safeDone();
+        tx.onerror = () => safeDone();
+        tx.onabort = () => safeDone();
+
+        const store = tx.objectStore(STORE_NAME);
+        store.delete(profileId || 'guest');
       } catch (err) {
-        db.close();
-        reject(err);
+        safeDone();
       }
     });
   } catch (err) {
     console.warn('[ZeroBox Deep Storage] Could not clear IndexedDB:', err);
+    try { db?.close(); } catch {}
+  }
+}
+
+/**
+ * Deletes a single machine's writeup and notes entry from a deep profile in IndexedDB.
+ */
+export async function deleteMachineDeepData(profileId: string, machineId: string): Promise<void> {
+  let db: IDBDatabase | null = null;
+  try {
+    const activeDb = await openDeepDatabase();
+    if (!activeDb) return;
+    db = activeDb;
+    await new Promise<void>((resolve) => {
+      let isResolved = false;
+      const safeDone = () => {
+        if (!isResolved) {
+          isResolved = true;
+          try { activeDb.close(); } catch {}
+          resolve();
+        }
+      };
+
+      try {
+        const tx = activeDb.transaction(STORE_NAME, 'readwrite');
+        tx.oncomplete = () => safeDone();
+        tx.onerror = () => safeDone();
+        tx.onabort = () => safeDone();
+
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(profileId || 'guest');
+
+        req.onsuccess = () => {
+          const profile = req.result as DeepProfilePayload | undefined;
+          if (profile && profile.writeups && profile.writeups[machineId]) {
+            delete profile.writeups[machineId];
+            profile.updatedAt = new Date().toISOString();
+            store.put(profile, profileId || 'guest');
+          } else {
+            safeDone();
+          }
+        };
+        req.onerror = () => safeDone();
+      } catch (err) {
+        safeDone();
+      }
+    });
+  } catch (err) {
+    console.warn('[ZeroBox Deep Storage] Could not delete machine deep data:', err);
+    try { db?.close(); } catch {}
   }
 }

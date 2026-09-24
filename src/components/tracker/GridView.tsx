@@ -244,13 +244,23 @@ const GridCard = React.memo<GridCardProps>(({
             <AnimatePresence initial={false}>
               <motion.div 
                 layout
-                className={`p-2 rounded border text-[11px] font-mono leading-relaxed transition-[background-color,border-color] duration-150 ${
+                className={`rounded border text-[11px] font-mono leading-relaxed transition-all duration-200 ${
                   isHintRevealed
-                    ? 'bg-amber-50 border-amber-200 text-slate-800 dark:bg-cyber-amber/10 dark:border-cyber-amber/40 dark:text-cyber-text'
-                    : 'bg-cyber-bg border-cyber-border/70 text-transparent select-none blur-[3px]'
+                    ? 'p-2 bg-amber-50 border-amber-200 text-slate-800 dark:bg-cyber-amber/10 dark:border-cyber-amber/40 dark:text-cyber-text max-h-48 overflow-y-auto'
+                    : 'p-1.5 px-2 bg-cyber-bg/60 border-cyber-border/60 text-slate-600 dark:text-cyber-muted/60 select-none flex items-center justify-center cursor-pointer hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-cyber-amber'
                 }`}
+                onClick={(e) => {
+                  if (!isHintRevealed) onToggleHint(e, m.id);
+                }}
               >
-                {m.hint}
+                {isHintRevealed ? (
+                  m.hint
+                ) : (
+                  <span className="flex items-center gap-1.5 text-[10px] font-sans font-medium tracking-wide">
+                    <Eye className="w-3 h-3 text-amber-600 dark:text-cyber-amber/70" />
+                    <span>Click to reveal tactical hint spoiler</span>
+                  </span>
+                )}
               </motion.div>
             </AnimatePresence>
           </div>

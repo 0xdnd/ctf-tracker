@@ -39,6 +39,12 @@ export function useTacticalHotkeys() {
     zoomIn,
     zoomOut,
     setUiScale,
+    snippetsDrawerOpen,
+    setSnippetsDrawerOpen,
+    revShellModalOpen,
+    setRevShellModalOpen,
+    filterDrawerOpen,
+    setFilterDrawerOpen,
   } = useCtfStore(
     useShallow((s) => ({
       setViewMode: s.setViewMode,
@@ -69,6 +75,12 @@ export function useTacticalHotkeys() {
       zoomIn: s.zoomIn,
       zoomOut: s.zoomOut,
       setUiScale: s.setUiScale,
+      snippetsDrawerOpen: s.snippetsDrawerOpen,
+      setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
+      revShellModalOpen: s.revShellModalOpen,
+      setRevShellModalOpen: s.setRevShellModalOpen,
+      filterDrawerOpen: s.filterDrawerOpen,
+      setFilterDrawerOpen: s.setFilterDrawerOpen,
     }))
   );
 
@@ -90,6 +102,19 @@ export function useTacticalHotkeys() {
           return;
         }
 
+        if (snippetsDrawerOpen) {
+          setSnippetsDrawerOpen(false);
+          return;
+        }
+        if (revShellModalOpen) {
+          setRevShellModalOpen(false);
+          return;
+        }
+        if (filterDrawerOpen) {
+          setFilterDrawerOpen(false);
+          return;
+        }
+
         setShortcutsModalOpen(false);
         setCommandPaletteOpen(false);
         setReconAutomationModalOpen(false);
@@ -105,12 +130,35 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // Key repeat bounce protection for modal and drawer triggers
+      if (e.repeat && (e.ctrlKey || e.altKey || e.metaKey || ['?', '/', '1', '2', '3', '4', 't', 'T', 'v', 'V', 'u', 'U', 'r', 'R', ' '].includes(e.key))) {
+        return;
+      }
+
       // Tactical 1-Click Save (Ctrl+S / Cmd+S)
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         e.stopPropagation();
         saveProfileData(currentProfileId);
         if (soundEnabled) playCyberSound('root');
+        return;
+      }
+
+      // Alt+S or Ctrl+Space: Toggle Snippets Drawer
+      if ((e.altKey && (e.key === 's' || e.key === 'S')) || (e.ctrlKey && e.code === 'Space')) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSnippetsDrawerOpen(!snippetsDrawerOpen);
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
+      // Alt+F: Toggle Focus Mode
+      if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (soundEnabled) playCyberSound('toggle');
         return;
       }
 
@@ -135,6 +183,14 @@ export function useTacticalHotkeys() {
           activeEl.tagName === 'SELECT' ||
           activeEl.isContentEditable)
       ) {
+        return;
+      }
+
+      // Focus Mode toggle: 'f' or 'F' (when outside inputs)
+      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        
+        if (soundEnabled) playCyberSound('toggle');
         return;
       }
 
@@ -333,5 +389,11 @@ export function useTacticalHotkeys() {
     zoomIn,
     zoomOut,
     setUiScale,
+    snippetsDrawerOpen,
+    setSnippetsDrawerOpen,
+    revShellModalOpen,
+    setRevShellModalOpen,
+    filterDrawerOpen,
+    setFilterDrawerOpen,
   ]);
 }

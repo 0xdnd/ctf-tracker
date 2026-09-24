@@ -1,10 +1,13 @@
 import { Machine } from '../types';
+import { sanitizeFilename } from './workspaceStorage';
 
 /**
  * Escapes HTML entities to prevent stored XSS vulnerabilities.
  */
 export function escapeHtml(str: string): string {
-  return str
+  if (str === null || str === undefined) return '';
+  const s = typeof str !== 'string' ? String(str) : str;
+  return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -14,28 +17,32 @@ export function escapeHtml(str: string): string {
 
 /**
  * Parses inline markdown: bold, italic, strikethrough, inline code, links, images.
+ * Hardened with non-backtracking character classes to prevent ReDoS CPU freezes.
  */
 export function parseInlineMarkdown(text: string): string {
   let escaped = escapeHtml(text);
 
-  // Images: ![alt](url) -> sanitized img tag (allows relative paths or data URIs)
-  escaped = escaped.replace(/!\[(.*?)\]\((.*?)\)/g, (_match, alt, src) => {
-    // Only allow http(s), data:, or relative paths
-    const cleanSrc = src.trim();
-    if (/^(https?:\/\/|data:image\/|\/|\.\/)/i.test(cleanSrc)) {
-      return `<img src="${cleanSrc}" alt="${alt}" class="writeup-img" loading="lazy" />`;
-    }
-    return `[Image: ${alt}]`;
-  });
+  // Images: ![alt](url) -> sanitized img tag (allows relative paths or safe raster data URIs)
+  if (escaped.includes('![')) {
+    escaped = escaped.replace(/!\[([^\[\]\n]*)\]\(([^)\n]+)\)/g, (_match, alt, src) => {
+      const cleanSrc = src.trim().replace(/[\0\x00-\x1f]/g, '');
+      if (/^(https?:\/\/|\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp);base64,)/i.test(cleanSrc)) {
+        return `<img src="${cleanSrc}" alt="${alt}" class="writeup-img" loading="lazy" />`;
+      }
+      return `[Image: ${alt}]`;
+    });
+  }
 
-  // Links: [title](url)
-  escaped = escaped.replace(/\[(.*?)\]\((.*?)\)/g, (_match, title, href) => {
-    const cleanHref = href.trim();
-    if (/^(https?:\/\/|mailto:|#|\/|\.\/)/i.test(cleanHref)) {
-      return `<a href="${cleanHref}" target="_blank" rel="noopener noreferrer" class="writeup-link">${title}</a>`;
-    }
-    return title;
-  });
+  // Links: [title](url) -> sanitized anchor tag (hardened against ReDoS & scheme injection)
+  if (escaped.includes('](')) {
+    escaped = escaped.replace(/\[([^\[\]\n]+)\]\(([^)\n]+)\)/g, (_match, title, href) => {
+      const cleanHref = href.trim().replace(/[\0\x00-\x1f]/g, '');
+      if (/^(https?:\/\/|mailto:|#|\/|\.\/)/i.test(cleanHref)) {
+        return `<a href="${cleanHref}" target="_blank" rel="noopener noreferrer" class="writeup-link">${title}</a>`;
+      }
+      return title;
+    });
+  }
 
   // Inline code: `code`
   escaped = escaped.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
@@ -1030,7 +1037,8 @@ export function downloadWriteupHtml(
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  const slug = (machine.name || 'target').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const rawSlug = (machine.name || 'target').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const slug = sanitizeFilename(rawSlug, 'target');
   link.download = `${slug}-writeup.html`;
   document.body.appendChild(link);
   link.click();

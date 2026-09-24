@@ -589,7 +589,7 @@ export const NotesImportModal: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="text-[11px] text-slate-400 pt-1">
+                    <div className="text-[11px] text-slate-500 pt-1">
                       Works directly with <code className="text-purple-300 font-bold">CPTS Field Manual</code> folder or <code className="text-purple-300 font-bold">CPTS-Field-Manual.zip</code> on Desktop.
                     </div>
                   </div>

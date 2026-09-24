@@ -92,16 +92,16 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
   },
   {
     id: 'cwee-web',
-    name: 'HTB CWEE & Advanced Web Exploitation (OSWE)',
-    shortName: 'CWEE / Web Expert',
+    name: 'HTB CWEE & CWES Advanced Web Exploitation',
+    shortName: 'CWEE / CWES Track',
     category: 'certification',
-    description: 'Certified Web Exploitation Expert targets: white-box code review, SSRF, Deserialization, SQLi, SSTI, and auth bypass.',
+    description: 'Certified Web Exploitation Expert & Specialist (CWEE/CWES): code review, SSRF, Deserialization, SQLi, SSTI, and auth bypass.',
     badgeColor: 'border-amber-400/40 bg-amber-400/10 text-amber-400',
     accentColor: '#F59E0B',
     filterFn: (m) => 
       CWEE_NAMES.has(m.name.toLowerCase()) ||
-      m.certifications?.some(c => ['cwee', 'cwt', 'oswe', 'ewpt'].includes(c.toUpperCase())) ||
-      m.tags?.some(t => ['cwee', 'cwt', 'oswe', 'deserialization', 'ssti', 'ssrf', 'sqli', 'prototype pollution', 'graphql', 'jwt', 'xxe'].includes(t.toLowerCase())),
+      m.certifications?.some(c => ['cwee', 'cwes', 'cwt', 'oswe', 'ewpt'].includes(c.toUpperCase())) ||
+      m.tags?.some(t => ['cwee', 'cwes', 'cwt', 'oswe', 'deserialization', 'ssti', 'ssrf', 'sqli', 'prototype pollution', 'graphql', 'jwt', 'xxe'].includes(t.toLowerCase())),
   },
   {
     id: 'popular-classics',

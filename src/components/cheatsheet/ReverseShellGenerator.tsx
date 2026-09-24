@@ -486,7 +486,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
           <div className="flex items-center gap-2">
             {/* Encoding Switcher */}
             <div className="flex items-center gap-0.5 bg-slate-200/70 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border rounded-lg p-0.5">
-              <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-cyber-muted uppercase px-1 hidden sm:inline select-none">
+              <span className="text-[9px] font-mono font-bold text-slate-600 dark:text-cyber-muted uppercase px-1 hidden sm:inline select-none">
                 ENC:
               </span>
               {(['RAW', 'URL', 'BASE64', 'BASH_B64', 'PS_ENC'] as EncodingType[]).map((enc) => (
@@ -510,7 +510,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
 
             {/* Optional Wrapper */}
             <div className="hidden lg:flex items-center gap-0.5 bg-slate-200/70 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border rounded-lg p-0.5">
-              <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-cyber-muted uppercase px-1 select-none">
+              <span className="text-[9px] font-mono font-bold text-slate-600 dark:text-cyber-muted uppercase px-1 select-none">
                 WRAP:
               </span>
               {(['none', 'bash -c', 'cmd /c'] as CommandWrapper[]).map((w) => (

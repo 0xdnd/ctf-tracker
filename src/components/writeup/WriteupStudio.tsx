@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   FileText, 
@@ -23,10 +23,178 @@ import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
 import { playCyberSound, interpolateCommand, safeCopyToClipboard } from '../../utils/helpers';
 import { downloadWriteupHtml } from '../../utils/writeupHtmlExporter';
+import { sanitizeFilename } from '../../utils/workspaceStorage';
 import { PentestReportModal } from './PentestReportModal';
 import { CPTS_NOTES, CptsNoteEntry, searchCptsNotes, getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+const renderLineWithWikilinks = (text: string, keyPrefix: string | number) => {
+  if (!text.includes('[[')) return text;
+  const parts = text.split(/(\[\[[^\]]+\]\])/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('[[') && part.endsWith(']]')) {
+      const raw = part.slice(2, -2);
+      const [target, alias] = raw.split('|');
+      return (
+        <span
+          key={`${keyPrefix}-wl-${i}`}
+          className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[11px] font-semibold mx-0.5"
+          title={`Wikilink: ${target.trim()}`}
+        >
+          <BookOpen className="w-2.5 h-2.5 text-purple-400 inline" />
+          {alias ? alias.trim() : target.trim()}
+        </span>
+      );
+    }
+    return part;
+  });
+};
+
+const renderMarkdownPreview = (text: string) => {
+  const lines = text.split('\n');
+  let inFrontmatter = false;
+  let frontmatterLines: string[] = [];
+  let inCodeBlock = false;
+  let codeBlockLang = '';
+  let codeBlockLines: string[] = [];
+
+  const elements: React.ReactNode[] = [];
+
+  lines.forEach((line, idx) => {
+    // Frontmatter detection
+    if (idx === 0 && line.trim() === '---') {
+      inFrontmatter = true;
+      return;
+    }
+    if (inFrontmatter) {
+      if (line.trim() === '---') {
+        inFrontmatter = false;
+        elements.push(
+          <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-cyber-bg border border-cyber-cyan/30 text-[11px] font-mono text-cyber-cyan/90 space-y-0.5">
+            <div className="text-[10px] uppercase font-bold text-cyber-muted mb-1 flex items-center gap-1">
+              <FolderGit2 className="w-3 h-3 text-cyber-cyan" /> OBSIDIAN / GITBOOK YAML FRONTMATTER
+            </div>
+            {frontmatterLines.map((fl, fIdx) => (
+              <div key={fIdx}>{fl}</div>
+            ))}
+          </div>
+        );
+        return;
+      }
+      frontmatterLines.push(line);
+      return;
+    }
+
+    // Codeblock detection
+    if (line.startsWith('```')) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        codeBlockLang = line.replace('```', '').trim();
+        codeBlockLines = [];
+      } else {
+        inCodeBlock = false;
+        elements.push(
+          <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-cyber-border bg-cyber-code">
+            {codeBlockLang && (
+              <div className="bg-cyber-bg/80 px-3 py-1 text-[10px] text-cyber-muted font-mono uppercase border-b border-cyber-border flex items-center justify-between">
+                <span>{codeBlockLang}</span>
+                <Code className="w-3 h-3" />
+              </div>
+            )}
+            <pre className="p-3 text-xs text-cyber-emerald font-mono overflow-x-auto whitespace-pre-wrap">
+              {codeBlockLines.join('\n')}
+            </pre>
+          </div>
+        );
+      }
+      return;
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(line);
+      return;
+    }
+
+    // Headings
+    if (line.startsWith('# ')) {
+      elements.push(
+        <h1 key={idx} className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2 pb-1 border-b border-cyber-border">
+          {renderLineWithWikilinks(line.replace('# ', ''), idx)}
+        </h1>
+      );
+    } else if (line.startsWith('## ')) {
+      elements.push(
+        <h2 key={idx} className="text-base font-bold text-cyber-cyan mt-4 mb-1.5 flex items-center gap-2">
+          {renderLineWithWikilinks(line.replace('## ', ''), idx)}
+        </h2>
+      );
+    } else if (line.startsWith('### ')) {
+      elements.push(
+        <h3 key={idx} className="text-sm font-semibold text-cyber-text mt-3 mb-1">
+          {renderLineWithWikilinks(line.replace('### ', ''), idx)}
+        </h3>
+      );
+    } else if (line.startsWith('---')) {
+      elements.push(<hr key={idx} className="my-3 border-cyber-border" />);
+    } else if (line.startsWith('- ')) {
+      elements.push(
+        <li key={idx} className="ml-4 text-xs text-cyber-text list-disc my-0.5">
+          {renderLineWithWikilinks(line.replace('- ', ''), idx)}
+        </li>
+      );
+    } else if (line.trim() === '') {
+      elements.push(<div key={idx} className="h-2" />);
+    } else {
+      elements.push(
+        <p key={idx} className="text-xs text-cyber-text leading-relaxed font-sans">
+          {renderLineWithWikilinks(line, idx)}
+        </p>
+      );
+    }
+  });
+
+  return elements;
+};
+
+interface DeferredMarkdownPreviewPaneProps {
+  content: string;
+}
+
+const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = React.memo(({ content }) => {
+  const deferredContent = useDeferredValue(content);
+  const isStale = deferredContent !== content;
+
+  const renderedPreview = useMemo(() => {
+    return renderMarkdownPreview(deferredContent);
+  }, [deferredContent]);
+
+  return (
+    <div
+      className={`flex flex-col rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
+      style={{ contain: 'content' }}
+    >
+      <div className="flex items-center justify-between border-b border-cyber-border px-4 py-2.5 bg-cyber-bg/70 text-xs">
+        <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <Eye className="w-4 h-4 text-cyber-emerald" /> LIVE RENDERED PREVIEW
+        </span>
+        <div className="flex items-center gap-2">
+          {isStale && (
+            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/30 animate-pulse">
+              SYNCING AST...
+            </span>
+          )}
+          <span className="text-[10px] text-cyber-emerald font-semibold flex items-center gap-1">
+            <BookOpen className="w-3 h-3" /> OBSIDIAN PREVIEW
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-cyber-card/40">
+        {renderedPreview}
+      </div>
+    </div>
+  );
+});
 
 export const WriteupStudio: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -95,7 +263,7 @@ export const WriteupStudio: React.FC = () => {
     const tagsList = m.tags.length > 0 ? m.tags.join(', ') : 'ctf, pentest, writeup';
 
     return `---
-title: "HTB / CTF Writeup - ${m.name}"
+title: "${m.platform || 'CTF'} Writeup - ${m.name}"
 target_ip: "${m.ip}"
 platform: "${m.platform}"
 os: "${m.os}"
@@ -262,7 +430,9 @@ cat /root/root.txt
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${selectedMachine.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-writeup.md`;
+    const rawSlug = (selectedMachine.name || 'writeup').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const safeSlug = sanitizeFilename(rawSlug, 'writeup');
+    link.download = `${safeSlug}-writeup.md`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -279,112 +449,6 @@ cat /root/root.txt
     if (soundEnabled) playCyberSound('export');
   };
 
-  // Simple, robust markdown preview renderer supporting codeblocks, frontmatter, and headers
-  const renderMarkdownPreview = (text: string) => {
-    const lines = text.split('\n');
-    let inFrontmatter = false;
-    let frontmatterLines: string[] = [];
-    let inCodeBlock = false;
-    let codeBlockLang = '';
-    let codeBlockLines: string[] = [];
-
-    const elements: React.ReactNode[] = [];
-
-    lines.forEach((line, idx) => {
-      // Frontmatter detection
-      if (idx === 0 && line.trim() === '---') {
-        inFrontmatter = true;
-        return;
-      }
-      if (inFrontmatter) {
-        if (line.trim() === '---') {
-          inFrontmatter = false;
-          elements.push(
-            <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-cyber-bg border border-cyber-cyan/30 text-[11px] font-mono text-cyber-cyan/90 space-y-0.5">
-              <div className="text-[10px] uppercase font-bold text-cyber-muted mb-1 flex items-center gap-1">
-                <FolderGit2 className="w-3 h-3 text-cyber-cyan" /> OBSIDIAN / GITBOOK YAML FRONTMATTER
-              </div>
-              {frontmatterLines.map((fl, fIdx) => (
-                <div key={fIdx}>{fl}</div>
-              ))}
-            </div>
-          );
-          return;
-        }
-        frontmatterLines.push(line);
-        return;
-      }
-
-      // Codeblock detection
-      if (line.startsWith('```')) {
-        if (!inCodeBlock) {
-          inCodeBlock = true;
-          codeBlockLang = line.replace('```', '').trim();
-          codeBlockLines = [];
-        } else {
-          inCodeBlock = false;
-          elements.push(
-            <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-cyber-border bg-cyber-code">
-              {codeBlockLang && (
-                <div className="bg-cyber-bg/80 px-3 py-1 text-[10px] text-cyber-muted font-mono uppercase border-b border-cyber-border flex items-center justify-between">
-                  <span>{codeBlockLang}</span>
-                  <Code className="w-3 h-3" />
-                </div>
-              )}
-              <pre className="p-3 text-xs text-cyber-emerald font-mono overflow-x-auto whitespace-pre-wrap">
-                {codeBlockLines.join('\n')}
-              </pre>
-            </div>
-          );
-        }
-        return;
-      }
-
-      if (inCodeBlock) {
-        codeBlockLines.push(line);
-        return;
-      }
-
-      // Headings
-      if (line.startsWith('# ')) {
-        elements.push(
-          <h1 key={idx} className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2 pb-1 border-b border-cyber-border">
-            {line.replace('# ', '')}
-          </h1>
-        );
-      } else if (line.startsWith('## ')) {
-        elements.push(
-          <h2 key={idx} className="text-base font-bold text-cyber-cyan mt-4 mb-1.5 flex items-center gap-2">
-            {line.replace('## ', '')}
-          </h2>
-        );
-      } else if (line.startsWith('### ')) {
-        elements.push(
-          <h3 key={idx} className="text-sm font-semibold text-cyber-text mt-3 mb-1">
-            {line.replace('### ', '')}
-          </h3>
-        );
-      } else if (line.startsWith('---')) {
-        elements.push(<hr key={idx} className="my-3 border-cyber-border" />);
-      } else if (line.startsWith('- ')) {
-        elements.push(
-          <li key={idx} className="ml-4 text-xs text-cyber-text list-disc my-0.5">
-            {line.replace('- ', '')}
-          </li>
-        );
-      } else if (line.trim() === '') {
-        elements.push(<div key={idx} className="h-2" />);
-      } else {
-        elements.push(
-          <p key={idx} className="text-xs text-cyber-text leading-relaxed font-sans">
-            {line}
-          </p>
-        );
-      }
-    });
-
-    return elements;
-  };
 
   return (
     <div className="space-y-4 w-full font-mono">
@@ -611,12 +675,12 @@ cat /root/root.txt
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch min-h-[calc(100vh-250px)]">
         
         {/* Left Pane: Raw Markdown Editor */}
-        <div className="flex flex-col rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg">
+        <div className="flex flex-col rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg" style={{ contain: 'content' }}>
           <div className="flex items-center justify-between border-b border-cyber-border px-4 py-2.5 bg-cyber-bg/70 text-xs">
             <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Code className="w-4 h-4 text-cyber-cyan" /> RAW MARKDOWN (YAML & BODY)
             </span>
-            <span className="text-[10px] text-cyber-muted">
+            <span className="text-[10px] text-cyber-muted font-mono">
               {editorContent.length} chars · {editorContent.split('\n').length} lines
             </span>
           </div>
@@ -634,21 +698,8 @@ cat /root/root.txt
           />
         </div>
 
-        {/* Right Pane: Live Rendered Preview */}
-        <div className="flex flex-col rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between border-b border-cyber-border px-4 py-2.5 bg-cyber-bg/70 text-xs">
-            <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Eye className="w-4 h-4 text-cyber-emerald" /> LIVE RENDERED PREVIEW
-            </span>
-            <span className="text-[10px] text-cyber-emerald font-semibold flex items-center gap-1">
-              <BookOpen className="w-3 h-3" /> OBSIDIAN PREVIEW
-            </span>
-          </div>
-
-          <div className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-cyber-card/40">
-            {renderMarkdownPreview(editorContent)}
-          </div>
-        </div>
+        {/* Right Pane: Live Rendered Preview (Deferred AST tokenization) */}
+        <DeferredMarkdownPreviewPane content={editorContent} />
 
       </div>
 

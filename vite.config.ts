@@ -175,6 +175,9 @@ function localVaultPlugin() {
 export default defineConfig({
   plugins: [react(), localVaultPlugin()],
   base: './',
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'zustand'],
+  },
   server: {
     host: true,
     port: 3000,
@@ -189,7 +192,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
@@ -210,8 +213,10 @@ export default defineConfig({
           }
           if (id.includes('node_modules')) {
             if (id.includes('react') || id.includes('zustand')) return 'vendor-framework';
-            if (id.includes('framer-motion') || id.includes('lucide-react') || id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui';
-            if (id.includes('canvas-confetti')) return 'vendor-utils';
+            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui-utils';
+            if (id.includes('canvas-confetti') || id.includes('jszip')) return 'vendor-utils';
           }
         }
       }

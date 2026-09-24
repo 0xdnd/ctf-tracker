@@ -11,7 +11,6 @@
     "type": "git",
     "url": "https://github.com/0xdnd/ctf-tracker.git"
   },
-  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,10 +19,9 @@
     "export-notes": "node scripts/index-cpts-notes.cjs",
     "index-notes": "node scripts/index-cpts-notes.cjs",
     "build": "tsc && vite build && node scripts/postbuild.cjs",
-    "electron:dev": "electron . --dev",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:linux": "npm run build && electron-builder --linux",
-    "electron:build": "npm run build && electron-builder",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "share": "npx --yes localtunnel --port 3000",
     "preview": "vite preview"
   },
@@ -31,6 +29,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
     "@emotion/is-prop-valid": "^1.4.0",
+    "@tauri-apps/plugin-updater": "^2.12.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
@@ -43,6 +42,8 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/cli": "^2.11.5",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -53,9 +54,8 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
-    "electron": "^44.4.3",
-    "electron-builder": "^26.15.3",
-    "electron-updater": "^6.8.9",
+    "axe-core": "^4.13.0",
+    "fast-check": "^4.10.2",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.1",
     "simple-icons": "^16.29.0",
@@ -63,92 +63,5 @@
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vitest": "^5.0.0"
-  },
-  "build": {
-    "appId": "com.zerobox.tacticaltracker",
-    "productName": "ZeroBox",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "public/**/*",
-      "package.json"
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "0xdnd",
-      "repo": "ctf-tracker",
-      "releaseType": "release"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "public/favicon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "ZeroBox"
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "deb",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "category": "Utility;Security;01-info-gathering;12-reporting-tools;",
-      "icon": "public/icon-512.png",
-      "synopsis": "ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard",
-      "description": "Tactical cybersecurity HUD, target matrix, methodology engine, notes vault, and CTF/Pentest tracker for offensive security practitioners.",
-      "desktop": {
-        "Name": "ZeroBox",
-        "GenericName": "Tactical Cyber Operations Suite",
-        "Comment": "ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard",
-        "Categories": "Utility;Security;01-info-gathering;12-reporting-tools;",
-        "Terminal": false,
-        "StartupWMClass": "ZeroBox"
-      }
-    },
-    "deb": {
-      "priority": "optional",
-      "section": "utils",
-      "depends": [
-        "libnotify4",
-        "libnss3",
-        "libasound2 | libasound2t64",
-        "libappindicator3-1 | libayatana-appindicator3-1",
-        "libsecret-1-0"
-      ],
-      "afterInstall": "build/linux/after-install.sh",
-      "afterRemove": "build/linux/after-remove.sh"
-    },
-    "appImage": {
-      "license": "LICENSE"
-    }
   }
 }

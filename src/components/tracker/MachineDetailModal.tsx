@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
   Flag, 
@@ -53,6 +54,17 @@ import { classifyMachine, VULN_CATEGORIES } from '../../utils/categoryUtils';
 import { getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
 import { QuickCommandsTab } from './QuickCommandsTab';
 
+const ModalSessionTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
+  const activeTimerSeconds = useCtfStore((s) =>
+    s.activeTargetId === machineId ? s.activeTimerSeconds : 0
+  );
+  return (
+    <div className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 font-mono">
+      {formatSeconds(isActiveTarget ? activeTimerSeconds : fallbackSeconds)}
+    </div>
+  );
+});
+
 export const MachineDetailModal: React.FC = () => {
   const {
     selectedMachineId,
@@ -102,10 +114,6 @@ export const MachineDetailModal: React.FC = () => {
       globalVars: s.globalVars,
       userNotes: s.userNotes,
     }))
-  );
-
-  const activeTimerSeconds = useCtfStore((s) =>
-    s.selectedMachineId && s.activeTargetId === s.selectedMachineId ? s.activeTimerSeconds : 0
   );
 
   const navigate = useNavigate();
@@ -172,17 +180,10 @@ export const MachineDetailModal: React.FC = () => {
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const recommendedNotes = useMemo(() => (machine ? getRecommendedNotesForMachine(machine, 4) : []), [machine]);
 
-  // Handle ESC key to dismiss modal
-  useEffect(() => {
-    if (!selectedMachineId) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setSelectedMachineId(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedMachineId, setSelectedMachineId]);
+  const modalRef = useFocusTrap<HTMLDivElement>({
+    isActive: Boolean(selectedMachineId),
+    onClose: () => setSelectedMachineId(null),
+  });
 
   // Prevent background body scroll when modal is open
   useEffect(() => {
@@ -290,6 +291,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
       onClick={() => setSelectedMachineId(null)}
     >
       <motion.div 
+        ref={modalRef}
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 10 }}
@@ -839,7 +841,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 ))}
               </div>
             ) : (
-              <div className="text-[11px] text-slate-500 dark:text-cyber-muted font-mono flex items-center gap-1.5 py-1">
+              <div className="text-[11px] text-slate-600 dark:text-cyber-muted font-mono flex items-center gap-1.5 py-1">
                 <span>No open ports recorded yet. Drag & drop a <code>.nmap</code> or <code>.gnmap</code> file directly onto this card to ingest.</span>
               </div>
             )}
@@ -876,9 +878,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <div className="text-[10px] uppercase font-semibold text-slate-500 dark:text-cyber-muted flex items-center gap-1">
                 <Clock className="w-3 h-3 text-cyan-600 dark:text-cyber-cyan" /> SESSION TIMER
               </div>
-              <div className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 font-mono">
-                {formatSeconds(isActiveTarget ? activeTimerSeconds : machine.timeSpentSeconds)}
-              </div>
+              <ModalSessionTimerDisplay machineId={machine.id} fallbackSeconds={machine.timeSpentSeconds} isActiveTarget={isActiveTarget} />
               <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
                 {isActiveTarget ? 'Active Engagement' : 'Standby'}
               </div>
@@ -1391,7 +1391,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                             <button
                               type="button"
                               onClick={() => setExpandedNotes(prev => ({ ...prev, [note.id]: true }))}
-                              className="text-[9px] text-slate-500 dark:text-cyber-muted hover:text-purple-700 dark:hover:text-purple-300 transition-colors flex items-center gap-1 font-mono"
+                              className="text-[9px] text-slate-600 dark:text-cyber-muted hover:text-purple-700 dark:hover:text-purple-300 transition-colors flex items-center gap-1 font-mono"
                             >
                               <span>+ {extraCommandsCount} more commands from this note...</span>
                             </button>

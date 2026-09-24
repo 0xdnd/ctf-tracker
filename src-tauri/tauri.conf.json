@@ -1,0 +1,56 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "ZeroBox",
+  "version": "2.0.0",
+  "identifier": "com.zerobox.tacticaltracker",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "ZEROBOX // Tactical Cyber Operations Suite",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: asset: blob:; font-src 'self' data:; connect-src 'self' https://api.github.com https://github.com https://www.googleapis.com; media-src 'self' data: blob:;"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "ZEROBOX // Tactical Cybersecurity Lab",
+    "longDescription": "Tactical cybersecurity HUD, target matrix, methodology engine, notes vault, and CTF/Pentest tracker for offensive security practitioners.",
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/0xdnd/ctf-tracker/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVBNUNDQjg5Q0NGMTAxMkYKUldRdkFmSE1pY3RjNnRxUWZlU0pTRDBSWWQzK01QWFBFblJPeUI3QWdHRUhZc01uT0p5VTRxTEwK"
+    }
+  }
+}

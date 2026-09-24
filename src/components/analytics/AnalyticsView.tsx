@@ -209,19 +209,34 @@ export const AnalyticsView: React.FC = () => {
     );
   };
 
-  // Activity Heatmap Calendar (Past 90 Days)
+  // Activity Heatmap Calendar (Past 90 Days) - Synthesized from study timer sessions & machine pwn dates
   const heatmapData = useMemo(() => {
     const days: { date: string; count: number }[] = [];
     const today = new Date();
+
+    // Index machine pwn and solve dates for instant O(1) lookup across 90 days
+    const pwnDateCounts: Record<string, number> = {};
+    for (const m of machines) {
+      if (m.rootPwnedAt) {
+        const d = m.rootPwnedAt.slice(0, 10);
+        pwnDateCounts[d] = (pwnDateCounts[d] || 0) + 1;
+      }
+      if (m.userPwnedAt) {
+        const d = m.userPwnedAt.slice(0, 10);
+        pwnDateCounts[d] = (pwnDateCounts[d] || 0) + 1;
+      }
+    }
+
     for (let i = 89; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dStr = d.toISOString().slice(0, 10);
-      const matches = activitySessions.filter((s) => s.date === dStr).length;
-      days.push({ date: dStr, count: matches });
+      const sessionMatches = activitySessions.filter((s) => s.date === dStr).length;
+      const pwnMatches = pwnDateCounts[dStr] || 0;
+      days.push({ date: dStr, count: sessionMatches + pwnMatches });
     }
     return days;
-  }, [activitySessions]);
+  }, [activitySessions, machines]);
 
   return (
     <div className="space-y-6 w-full font-mono pb-12">

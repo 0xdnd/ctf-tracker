@@ -21,23 +21,23 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = React.memo(({
   const getTheme = () => {
     switch (difficulty) {
       case 'Very Easy':
-        return 'text-purple-900 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800/50';
+        return 'text-cyan-800 dark:text-diff-very-easy bg-diff-very-easy/15 dark:bg-diff-very-easy/10 border-diff-very-easy/40 dark:border-diff-very-easy/60';
       case 'Easy':
-        return 'text-emerald-900 dark:text-cyber-emerald bg-emerald-100 dark:bg-cyber-emerald/10 border-emerald-300 dark:border-cyber-emerald/30';
+        return 'text-emerald-800 dark:text-diff-easy bg-diff-easy/15 dark:bg-diff-easy/10 border-diff-easy/40 dark:border-diff-easy/60';
       case 'Medium':
-        return 'text-amber-900 dark:text-cyber-amber bg-amber-100 dark:bg-cyber-amber/10 border-amber-300 dark:border-cyber-amber/30';
+        return 'text-amber-800 dark:text-diff-medium bg-diff-medium/15 dark:bg-diff-medium/10 border-diff-medium/40 dark:border-diff-medium/60';
       case 'Hard':
-        return 'text-rose-900 dark:text-cyber-crimson bg-rose-100 dark:bg-cyber-crimson/10 border-rose-300 dark:border-cyber-crimson/30';
+        return 'text-rose-800 dark:text-diff-hard bg-diff-hard/15 dark:bg-diff-hard/10 border-diff-hard/40 dark:border-diff-hard/60';
       case 'Insane':
-        return 'text-purple-950 dark:text-purple-300 bg-purple-200 dark:bg-purple-950/60 border-purple-400 dark:border-purple-700';
+        return 'text-purple-800 dark:text-diff-insane bg-diff-insane/15 dark:bg-diff-insane/10 border-diff-insane/40 dark:border-diff-insane/60';
       default:
-        return 'text-slate-800 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/40 border-slate-300 dark:border-slate-700';
+        return 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/40 border-slate-300 dark:border-slate-700';
     }
   };
 
   return (
     <span
-      className={`inline-flex items-center font-mono font-bold uppercase tracking-wider border ${getTheme()} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center font-mono font-bold uppercase tracking-wider border whitespace-nowrap shadow-sm ${getTheme()} ${sizeClasses} ${className}`}
       title={`Difficulty: ${difficulty}`}
     >
       {difficulty}

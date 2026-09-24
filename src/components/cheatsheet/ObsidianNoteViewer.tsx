@@ -131,6 +131,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   // Helper to parse Obsidian inline formatting: ==highlight==, **bold**, *italic*, `code`, ~~strike~~
   const parseInlineMarkdownText = (rawText: string, keyPrefix: string): React.ReactNode[] => {
     if (!rawText) return [];
+    if (!/[=*`~]/.test(rawText)) return [rawText];
     const tokenRegex = /(==[^=\n]+==|\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|~~[^~\n]+~~)/g;
     const tokens: React.ReactNode[] = [];
     let lastIdx = 0;
@@ -189,6 +190,9 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
 
   const renderWithWikilinks = (text: string): React.ReactNode => {
     if (!text) return null;
+    if (!text.includes('[[')) {
+      return parseInlineMarkdownText(text, 'plain');
+    }
     const parts: React.ReactNode[] = [];
     const linkRegex = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g;
     let lastIndex = 0;

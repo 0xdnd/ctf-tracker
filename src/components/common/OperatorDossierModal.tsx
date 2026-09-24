@@ -82,7 +82,7 @@ export const OperatorDossierModal: React.FC = () => {
         </div>
 
         {/* Scrollable Dossier Content */}
-        <div className="overflow-y-auto p-5 sm:p-6 space-y-6 font-mono text-xs">
+        <div className="overflow-y-auto p-5 sm:p-6 space-y-6 font-mono text-xs scrollbar-thin">
           
           {/* Hero Profile Banner */}
           <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-cyber-card/90 via-cyber-bg to-[#0d1527] border border-cyber-emerald/40 relative overflow-hidden shadow-lg">

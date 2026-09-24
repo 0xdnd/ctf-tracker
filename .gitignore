@@ -19,7 +19,9 @@ pids
 # Build artifacts
 dist
 dist-ssr
+docs/
 release/
+src-tauri/target/
 dist-electron/
 /assets/
 *.local
@@ -86,3 +88,4 @@ scripts/index-cpts-notes.cjs
 .agentsroom/
 .claude/
 .agents/mcp_config.json
+archive_standalone_hud/

@@ -654,7 +654,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         
         {/* Left Column: Categories & Filters */}
         <div className="space-y-3">
-          <div className="p-3 rounded-xl border border-cyber-border bg-cyber-card shadow-md space-y-1">
+          <div className="p-3 rounded-xl border border-cyber-border bg-cyber-card shadow-md space-y-1 overflow-hidden">
             <div className="px-2 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between select-none">
               <span>{viewMode === 'tactical' ? 'TACTICAL CATEGORIES' : 'FIELD MANUAL CATEGORIES'}</span>
               <span className="text-cyan-700 dark:text-cyber-cyan font-mono font-semibold">{viewMode === 'tactical' ? cheatsheets.length : CPTS_NOTES.length}</span>
@@ -692,20 +692,20 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-transparent'
                     }`}
                   >
-                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    <span>Bookmarked / Starred</span>
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+                    <span>Starred Snippets</span>
                   </motion.button>
                 </div>
               </>
             ) : (
               <>
                 {/* CPTS Field Manual Tree Explorer Header & Actions */}
-                <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-purple-200 dark:border-purple-900/30">
-                  <span className="text-[10px] text-purple-800 dark:text-purple-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-purple-200 dark:border-purple-900/30">
+                  <span className="text-[10px] text-purple-800 dark:text-purple-300 font-bold uppercase tracking-wider flex items-center gap-1.5 flex-shrink-0">
                     <FolderOpen className="w-3.5 h-3.5 text-purple-400" />
                     <span>TREE EXPLORER</span>
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     <button
                       type="button"
                       onClick={handleExpandAllTreeFolders}
@@ -725,7 +725,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <button
                       type="button"
                       onClick={() => setIsNewCptsModalOpen(true)}
-                      className="px-2 py-0.5 rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                      className="px-2 py-0.5 rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer flex-shrink-0 shadow-sm"
                       title="Create custom field manual note"
                     >
                       <Plus className="w-3 h-3" />
@@ -915,7 +915,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         viewport={{ once: true, margin: '-30px' }}
                         transition={{ duration: 0.25, delay: Math.min((idx % 10) * 0.04, 0.3) }}
                         whileHover={{ y: -2 }}
-                        className="p-3.5 rounded-xl border border-cyber-border bg-cyber-card hover:border-cyber-cyan/40 hover:shadow-glow-cyan/15 transition-all shadow-sm group"
+                        className="cyber-snippet-contain p-3.5 rounded-xl border border-cyber-border bg-cyber-card hover:border-cyber-cyan/40 hover:shadow-glow-cyan/15 transition-all shadow-sm group"
                       >
                         {/* Snippet Header */}
                         <div className="flex items-start justify-between gap-2 mb-1.5">

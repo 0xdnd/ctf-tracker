@@ -33,6 +33,15 @@ import { OsBadge } from '../components/common/OsBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
 import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
 
+const TargetDetailTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
+  const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === machineId ? s.activeTimerSeconds : 0));
+  return (
+    <span className="text-sm font-bold text-slate-900 dark:text-white">
+      {formatSeconds(isActiveTarget ? activeTimerSeconds : fallbackSeconds)}
+    </span>
+  );
+});
+
 export const TargetDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -90,8 +99,6 @@ export const TargetDetailPage: React.FC = () => {
       mname.replace(/[^a-z0-9]/g, '') === normalizedId.replace(/[^a-z0-9]/g, '')
     );
   });
-
-  const activeTimerSeconds = useCtfStore((s) => (machine && s.activeTargetId === machine.id ? s.activeTimerSeconds : 0));
 
   const [activeTab, setActiveTab] = useState<'checklist' | 'overview' | 'commands'>('checklist');
   const [showUserFlag, setShowUserFlag] = useState(false);
@@ -282,9 +289,7 @@ export const TargetDetailPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-cyber-bg border border-cyber-border px-3 py-1.5 rounded-lg">
             <Clock className="w-4 h-4 text-cyber-cyan" />
-            <span className="text-sm font-bold text-slate-900 dark:text-white">
-              {formatSeconds(isActiveTarget ? activeTimerSeconds : machine.timeSpentSeconds)}
-            </span>
+            <TargetDetailTimerDisplay machineId={machine.id} fallbackSeconds={machine.timeSpentSeconds} isActiveTarget={isActiveTarget} />
             {isActiveTarget ? (
               <div className="flex items-center gap-1">
                 {isTimerRunning ? (

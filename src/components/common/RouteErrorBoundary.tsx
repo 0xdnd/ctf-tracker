@@ -41,7 +41,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   TACTICAL MODULE CHUNK FAILURE
                 </h2>
-                <p className="text-[11px] text-slate-500 dark:text-cyber-muted">
+                <p className="text-[11px] text-slate-600 dark:text-cyber-muted">
                   A transient network or chunk delivery error occurred while streaming this view.
                 </p>
               </div>

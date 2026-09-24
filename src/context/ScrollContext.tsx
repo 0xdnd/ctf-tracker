@@ -4,7 +4,7 @@ import { useMotionValue, MotionValue } from 'framer-motion';
 export interface ScrollActionsContextType {
   scrollElement: HTMLElement | null;
   setScrollElement: (el: HTMLElement | null) => void;
-  scrollToTop: () => void;
+  scrollToTop: (behavior?: ScrollBehavior | unknown) => void;
 }
 
 export interface ScrollStateContextType {
@@ -59,9 +59,19 @@ export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setScrollElementState(el);
   }, []);
 
-  const scrollToTop = useCallback(() => {
+  const scrollToTop = useCallback((behavior?: ScrollBehavior | unknown) => {
     if (scrollElementRef.current) {
-      scrollElementRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      const mode: ScrollBehavior = typeof behavior === 'string' && (behavior === 'instant' || behavior === 'auto' || behavior === 'smooth') 
+        ? behavior 
+        : 'smooth';
+      if (mode === 'instant') {
+        scrollElementRef.current.scrollTop = 0;
+      }
+      if (typeof scrollElementRef.current.scrollTo === 'function') {
+        scrollElementRef.current.scrollTo({ top: 0, behavior: mode });
+      } else {
+        scrollElementRef.current.scrollTop = 0;
+      }
     }
   }, []);
 

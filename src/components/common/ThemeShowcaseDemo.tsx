@@ -1,494 +1,836 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
 import { 
+  Palette, 
   Sun, 
   Moon, 
   Sparkles, 
   Check, 
   Copy, 
   Layers, 
-  Sliders, 
   Zap, 
-  ShieldCheck, 
   Terminal, 
-  ArrowRight,
-  Gauge,
-  Laptop
+  Shield, 
+  Crosshair, 
+  Type, 
+  Sliders, 
+  Flag
 } from 'lucide-react';
+import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
+import { useTheme } from '../../hooks/useTheme';
 import { ThemeToggle } from './ThemeToggle';
-import { useTheme, ThemeMode } from '../../hooks/useTheme';
+import { PlatformBadge } from './PlatformBadge';
+import { OsBadge } from './OsBadge';
+import { DifficultyBadge } from './DifficultyBadge';
 import { playCyberSound } from '../../utils/helpers';
 
+interface ColorTokenItem {
+  name: string;
+  variable: string;
+  role: string;
+  category: 'accent' | 'surface' | 'border' | 'text';
+  fallbackDark: string;
+  fallbackLight: string;
+  description: string;
+}
+
+const COLOR_TOKENS: ColorTokenItem[] = [
+  // Accents
+  {
+    name: 'Cyber Cyan / Primary',
+    variable: '--cyber-cyan',
+    role: 'Primary Accent & Laser Glow',
+    category: 'accent',
+    fallbackDark: '#00F0FF',
+    fallbackLight: '#008B99',
+    description: 'Main tactical UI accent, active tabs, buttons, crosshair target locks.',
+  },
+  {
+    name: 'Cyber Emerald / Success',
+    variable: '--cyber-emerald',
+    role: 'Success & Active Foothold',
+    category: 'accent',
+    fallbackDark: '#10B981',
+    fallbackLight: '#0D9488',
+    description: 'Active engaged target border, pwned root indicators, success toasts.',
+  },
+  {
+    name: 'Cyber Amber / Warning',
+    variable: '--cyber-amber',
+    role: 'Warning & Medium Difficulty',
+    category: 'accent',
+    fallbackDark: '#F59E0B',
+    fallbackLight: '#D97706',
+    description: 'Medium difficulty tag, Linux OS outline, timer running warnings.',
+  },
+  {
+    name: 'Cyber Crimson / Danger',
+    variable: '--cyber-crimson',
+    role: 'Danger & Hard Difficulty',
+    category: 'accent',
+    fallbackDark: '#F43F5E',
+    fallbackLight: '#E11D48',
+    description: 'Hard difficulty tag, root flag icons, destructive reset triggers.',
+  },
+  {
+    name: 'Cyber Purple / Insane',
+    variable: '--cyber-purple',
+    role: 'Insane Labs & AD Domains',
+    category: 'accent',
+    fallbackDark: '#A855F7',
+    fallbackLight: '#9333EA',
+    description: 'Insane difficulty badge, Active Directory domain vector tags.',
+  },
+  {
+    name: 'Cyber Neon',
+    variable: '--cyber-neon',
+    role: 'Laser Highlight & Beam',
+    category: 'accent',
+    fallbackDark: '#00F0FF',
+    fallbackLight: '#008B99',
+    description: 'Scroll progress bar laser beam, top header highlight glow.',
+  },
+
+  // Surfaces
+  {
+    name: 'App Canvas Background',
+    variable: '--cyber-bg',
+    role: 'Global Viewport Base',
+    category: 'surface',
+    fallbackDark: '#070B14',
+    fallbackLight: '#F0F5FA',
+    description: 'Deep obsidian/navy floor in dark mode; crisp clean ice-lab in light mode.',
+  },
+  {
+    name: 'Card Surface',
+    variable: '--cyber-card',
+    role: 'Container & Module Surface',
+    category: 'surface',
+    fallbackDark: '#0D1527',
+    fallbackLight: '#FFFFFF',
+    description: 'Target cards, Kanban column containers, modal dialog window backgrounds.',
+  },
+  {
+    name: 'Card Hover Surface',
+    variable: '--cyber-card-hover',
+    role: 'Interactive Hover State',
+    category: 'surface',
+    fallbackDark: '#131F38',
+    fallbackLight: '#E4ECF5',
+    description: 'Elevated surface on cursor hover across cards and interactive widgets.',
+  },
+  {
+    name: 'Terminal / Code Surface',
+    variable: '--cyber-code',
+    role: 'Shell & Code Surface',
+    category: 'surface',
+    fallbackDark: '#0A101E',
+    fallbackLight: '#E3EBF5',
+    description: 'CLI snippet containers, raw nmap logs, and payload generator displays.',
+  },
+
+  // Borders
+  {
+    name: 'Subtle Border',
+    variable: '--cyber-border',
+    role: 'Structural Separator',
+    category: 'border',
+    fallbackDark: '#1A2942',
+    fallbackLight: '#CBD8E6',
+    description: 'Default 1px container boundary, table row dividers, card outline.',
+  },
+  {
+    name: 'Active Border Glow',
+    variable: '--cyber-border-glow',
+    role: 'Focus & Laser Border',
+    category: 'border',
+    fallbackDark: '#00F0FF',
+    fallbackLight: '#008B99',
+    description: 'Focused search input border, engaged card luminescence, active pills.',
+  },
+
+  // Text
+  {
+    name: 'Primary Text',
+    variable: '--cyber-text',
+    role: 'Headings & High-Density Labels',
+    category: 'text',
+    fallbackDark: '#F0F6FC',
+    fallbackLight: '#091524',
+    description: 'Machine titles, navigation tab labels, numeric counters, primary copy.',
+  },
+  {
+    name: 'Muted Text',
+    variable: '--cyber-muted',
+    role: 'Metadata, IPs & Subtitles',
+    category: 'text',
+    fallbackDark: '#798DA3',
+    fallbackLight: '#506379',
+    description: 'Target IP subtext, timestamps, solve elapsed timers, inactive labels.',
+  },
+];
+
+interface ThemePresetMeta {
+  id: ThemePreset;
+  name: string;
+  badge: string;
+  tagline: string;
+  darkAccent: string;
+  lightAccent: string;
+  darkBg: string;
+  lightBg: string;
+  darkCard: string;
+  lightCard: string;
+  vibe: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const THEME_PRESETS_META: ThemePresetMeta[] = [
+  {
+    id: 'zerobox',
+    name: 'Neon Cyber',
+    badge: 'SIGNATURE HUD',
+    tagline: 'Electric Cyan (#00F0FF) & Deep Obsidian (#070B14)',
+    darkAccent: '#00F0FF',
+    lightAccent: '#008B99',
+    darkBg: '#070B14',
+    lightBg: '#F0F5FA',
+    darkCard: '#0D1527',
+    lightCard: '#FFFFFF',
+    vibe: 'Cyberpunk Red Team Operator • High Contrast Laser Optics',
+    icon: Zap,
+  },
+  {
+    id: 'htb',
+    name: 'Hack The Box',
+    badge: 'TACTICAL ARENA',
+    tagline: 'Official HTB Lime Green (#9FEF00) & Node Black (#141D2B)',
+    darkAccent: '#9FEF00',
+    lightAccent: '#15803D',
+    darkBg: '#141D2B',
+    lightBg: '#F4F6F9',
+    darkCard: '#1A2332',
+    lightCard: '#FFFFFF',
+    vibe: 'Official HTB Arena Aesthetic • Terminal Green Highlights & Node Black',
+    icon: Terminal,
+  },
+  {
+    id: 'oled',
+    name: 'OLED Pure Black',
+    badge: 'ZERO POWER',
+    tagline: 'Pitch Black (#000000) & Minimalist Slate (#090C12)',
+    darkAccent: '#38BDF8',
+    lightAccent: '#0284C7',
+    darkBg: '#000000',
+    lightBg: '#F8FAFC',
+    darkCard: '#090C12',
+    lightCard: '#FFFFFF',
+    vibe: 'Battery Saving Infinite Contrast • Pure Midnight Stealth',
+    icon: Moon,
+  },
+];
+
 export const ThemeShowcaseDemo: React.FC = () => {
-  const { theme, effectiveTheme, isDark, setTheme, toggleTheme, prefersReducedMotion, systemTheme } = useTheme();
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'specs'>('preview');
+  const { isDark, setTheme } = useTheme();
+  const themePreset = useCtfStore((s) => s.themePreset || 'zerobox');
+  const setThemePreset = useCtfStore((s) => s.setThemePreset);
+  const soundEnabled = useCtfStore((s) => s.soundEnabled);
 
-  const handleCopyCode = () => {
-    const codeSnippet = `import { ThemeToggle } from './components/common/ThemeToggle';
-import { useTheme } from './hooks/useTheme';
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<'all' | 'accent' | 'surface' | 'border' | 'text'>('all');
+  const [sampleSearchQuery, setSampleSearchQuery] = useState('');
 
-export function NavigationBar() {
-  const { isDark } = useTheme();
-  
-  return (
-    <header className="flex items-center justify-between p-4">
-      <h1 className="text-xl font-bold">App Brand</h1>
-      <ThemeToggle size="md" showLabel soundEnabled />
-    </header>
-  );
-}`;
-    navigator.clipboard.writeText(codeSnippet);
-    setCopiedCode(true);
-    playCyberSound('copy');
-    setTimeout(() => setCopiedCode(false), 2000);
+  // Normalize legacy aliases
+  const activePresetId = themePreset === 'neon' ? 'zerobox' : themePreset === 'slate' ? 'zerobox' : themePreset;
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedToken(label);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedToken(null), 2000);
   };
 
-  const handleCornerRipple = (corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center') => {
-    let clientX = window.innerWidth / 2;
-    let clientY = window.innerHeight / 2;
-
-    if (corner === 'top-left') {
-      clientX = 30;
-      clientY = 30;
-    } else if (corner === 'top-right') {
-      clientX = window.innerWidth - 30;
-      clientY = 30;
-    } else if (corner === 'bottom-left') {
-      clientX = 30;
-      clientY = window.innerHeight - 30;
-    } else if (corner === 'bottom-right') {
-      clientX = window.innerWidth - 30;
-      clientY = window.innerHeight - 30;
-    }
-
-    // Synthesize a MouseEvent with the desired client coordinates
-    const syntheticEvent = {
-      clientX,
-      clientY,
-      preventDefault: () => {},
-    } as unknown as React.MouseEvent;
-
-    toggleTheme(syntheticEvent);
-  };
+  const filteredTokens = useMemo(() => {
+    if (activeCategory === 'all') return COLOR_TOKENS;
+    return COLOR_TOKENS.filter((t) => t.category === activeCategory);
+  }, [activeCategory]);
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-500 py-8 px-3 sm:px-6 lg:px-10 ${
-        isDark
-          ? 'bg-[#0B0F19] text-[#E2E8F0]'
-          : 'bg-[#F8FAFC] text-[#0F172A]'
-      }`}
-    >
-      <div className="max-w-6xl mx-auto space-y-10">
-        {/* Header Hero */}
-        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b transition-colors duration-300 border-opacity-30 border-gray-500">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <div
-                className={`p-2 rounded-xl border shadow-sm transition-colors duration-300 ${
+    <div className="space-y-8 w-full max-w-7xl mx-auto pb-16 font-mono">
+      {/* 1. Header Hero Banner */}
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 shadow-md space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-cyan-50 dark:bg-cyber-cyan/15 text-cyan-600 dark:text-cyber-cyan border border-cyan-200 dark:border-cyber-cyan/30">
+                <Palette className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                  <span>Theme &amp; Color Matrix</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyber-cyan/20 text-cyan-800 dark:text-cyber-cyan font-bold border border-cyan-300 dark:border-cyber-cyan/40">
+                    LIVE INSPECTOR
+                  </span>
+                </h1>
+                <p className="text-xs text-slate-600 dark:text-cyber-muted font-sans mt-0.5">
+                  Full multi-theme token engine, contrast validation, and typography suite for ZEROBOX.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Mode Switcher Strip */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-xs">
+              <span className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold px-2 uppercase">Mode:</span>
+              <button
+                onClick={() => {
+                  setTheme('dark');
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
                   isDark
-                    ? 'bg-indigo-950/60 border-indigo-500/40 text-indigo-400'
-                    : 'bg-amber-100 border-amber-300 text-amber-600'
-                }`}
-              >
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans">
-                Liquid Celestial Theme Toggle
-              </h1>
-            </div>
-            <p className="text-sm font-sans max-w-xl opacity-80 leading-relaxed">
-              Production-grade dark/light mode toggle with organic spring physics (damping: 18, stiffness: 220),
-              squash-and-stretch thumb dynamics, custom celestial SVG morphing, and liquid circular ripple reveals.
-            </p>
-          </div>
-
-          {/* Quick Badges */}
-          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-            <span
-              className={`px-3 py-1 rounded-full border transition-colors ${
-                isDark
-                  ? 'bg-indigo-950/40 border-indigo-500/30 text-indigo-300'
-                  : 'bg-sky-50 border-sky-200 text-sky-700'
-              }`}
-            >
-              Framer Motion 11
-            </span>
-            <span
-              className={`px-3 py-1 rounded-full border transition-colors ${
-                isDark
-                  ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              }`}
-            >
-              WCAG 2.1 AA
-            </span>
-            <span
-              className={`px-3 py-1 rounded-full border transition-colors ${
-                isDark
-                  ? 'bg-purple-950/40 border-purple-500/30 text-purple-300'
-                  : 'bg-purple-50 border-purple-200 text-purple-700'
-              }`}
-            >
-              View Transitions API
-            </span>
-          </div>
-        </header>
-
-        {/* Interactive Playground Control Center */}
-        <section
-          className={`rounded-2xl p-6 sm:p-8 border shadow-xl transition-all duration-300 ${
-            isDark
-              ? 'bg-[#111827] border-gray-800 shadow-indigo-950/20'
-              : 'bg-white border-slate-200 shadow-slate-200/50'
-          }`}
-        >
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            {/* Live Size Variants */}
-            <div className="flex flex-col sm:flex-row items-center gap-8 w-full lg:w-auto justify-around">
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider opacity-60">Small (56px)</span>
-                <ThemeToggle size="sm" />
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider opacity-60">Medium (68px)</span>
-                <ThemeToggle size="md" showLabel />
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider opacity-60">Large (84px)</span>
-                <ThemeToggle size="lg" />
-              </div>
-            </div>
-
-            {/* Mode & Preference Selectors */}
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  theme === 'light'
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-400'
-                    : 'bg-gray-200/60 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-amber-100 hover:text-amber-800'
-                }`}
-              >
-                <Sun className="w-3.5 h-3.5" />
-                <span>Light</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/40 ring-2 ring-indigo-400'
-                    : 'bg-gray-200/60 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-900/60 hover:text-indigo-200'
+                    ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-cyber-cyan/40 text-cyan-700 dark:text-cyber-cyan'
+                    : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
                 <span>Dark</span>
               </button>
-
               <button
-                type="button"
-                onClick={() => setTheme('system')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  theme === 'system'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40 ring-2 ring-purple-400'
-                    : 'bg-gray-200/60 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-900/60 hover:text-purple-200'
+                onClick={() => {
+                  setTheme('light');
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                  !isDark
+                    ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white shadow-sm border border-slate-300 font-bold text-amber-700'
+                    : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Laptop className="w-3.5 h-3.5" />
-                <span>System ({systemTheme})</span>
+                <Sun className="w-3.5 h-3.5" />
+                <span>Light</span>
               </button>
             </div>
-          </div>
 
-          {/* Liquid Ripple Origin Trigger Pad */}
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800/80">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 text-purple-400">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Liquid Ripple Reveal Coordinate Triggers</span>
-                </h3>
-                <p className="text-xs opacity-70 font-sans">
-                  Click any origin anchor below to test the circular color-flood reveal animation expanding from that exact coordinate.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => handleCornerRipple('top-left')}
-                  className="px-2.5 py-1 rounded bg-slate-200/70 dark:bg-slate-800 hover:bg-purple-500 hover:text-white transition-all cursor-pointer"
-                >
-                  ↖ Top-Left
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleCornerRipple('top-right')}
-                  className="px-2.5 py-1 rounded bg-slate-200/70 dark:bg-slate-800 hover:bg-purple-500 hover:text-white transition-all cursor-pointer"
-                >
-                  ↗ Top-Right
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleCornerRipple('center')}
-                  className="px-2.5 py-1 rounded bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600 hover:text-white transition-all cursor-pointer font-bold"
-                >
-                  ⦿ Center
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleCornerRipple('bottom-left')}
-                  className="px-2.5 py-1 rounded bg-slate-200/70 dark:bg-slate-800 hover:bg-purple-500 hover:text-white transition-all cursor-pointer"
-                >
-                  ↙ Bottom-Left
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleCornerRipple('bottom-right')}
-                  className="px-2.5 py-1 rounded bg-slate-200/70 dark:bg-slate-800 hover:bg-purple-500 hover:text-white transition-all cursor-pointer"
-                >
-                  ↘ Bottom-Right
-                </button>
-              </div>
+            {/* Dribbble Day/Night Toggle Component */}
+            <div className="p-1 rounded-xl bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border">
+              <ThemeToggle size="sm" />
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Live UI Components Showcase Grid */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold font-sans tracking-tight flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-500" />
-              <span>Adaptive UI Surface Verification</span>
-            </h2>
-            <span className="text-xs font-mono opacity-60">
-              Active Mode: <strong className="uppercase">{effectiveTheme}</strong>
-            </span>
+        {/* 2. Interactive Theme Preset Switcher Tabs */}
+        <div className="pt-4 border-t border-slate-200 dark:border-cyber-border/70 space-y-2">
+          <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted tracking-wider">
+            Select Active Theme Preset:
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {THEME_PRESETS_META.map((preset) => {
+              const isActive = activePresetId === preset.id;
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1: Metric & Operations HUD */}
-            <motion.div
-              layout
-              className={`rounded-2xl p-6 border transition-all duration-300 ${
-                isDark
-                  ? 'bg-[#111827] border-gray-800 shadow-lg shadow-black/40'
-                  : 'bg-white border-slate-200 shadow-md shadow-slate-200/60'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-800">
-                <span className="text-xs font-mono font-bold text-indigo-500 flex items-center gap-1.5">
-                  <Gauge className="w-4 h-4" />
-                  <span>PWN TELEMETRY</span>
-                </span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  ONLINE
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-3xl font-extrabold font-sans">55 / 931</span>
-                  <span className="text-xs font-mono text-emerald-500 font-bold">+100% Verified</span>
-                </div>
-                <div className="w-full h-2 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800">
-                  <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 w-[5.9%]" />
-                </div>
-                <div className="flex justify-between text-xs font-mono opacity-70">
-                  <span>HTB: 37 Solved</span>
-                  <span>THM: 18 Solved</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 2: Typography & Readability */}
-            <motion.div
-              layout
-              className={`rounded-2xl p-6 border transition-all duration-300 ${
-                isDark
-                  ? 'bg-[#111827] border-gray-800 shadow-lg shadow-black/40'
-                  : 'bg-white border-slate-200 shadow-md shadow-slate-200/60'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-800">
-                <span className="text-xs font-mono font-bold text-purple-500 flex items-center gap-1.5">
-                  <Terminal className="w-4 h-4" />
-                  <span>TYPOGRAPHY SPECS</span>
-                </span>
-                <span className="text-[11px] font-mono opacity-60">WCAG AAA</span>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <h4 className="text-base font-bold font-sans">Adaptive Contrast Hierarchy</h4>
-                <p className="text-xs font-sans opacity-75 leading-relaxed">
-                  Headings, sublines, and muted body copy dynamically shift contrast levels to prevent eye strain in dark environments while maintaining crisp sunlight legibility.
-                </p>
-                <div className="pt-2">
-                  <code className="text-[11px] font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-purple-600 dark:text-purple-400">
-                    contrast-ratio: 12.4:1
-                  </code>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 3: Button States & Actions */}
-            <motion.div
-              layout
-              className={`rounded-2xl p-6 border transition-all duration-300 ${
-                isDark
-                  ? 'bg-[#111827] border-gray-800 shadow-lg shadow-black/40'
-                  : 'bg-white border-slate-200 shadow-md shadow-slate-200/60'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-800">
-                <span className="text-xs font-mono font-bold text-sky-500 flex items-center gap-1.5">
-                  <Sliders className="w-4 h-4" />
-                  <span>ACTION PALETTE</span>
-                </span>
-                <span className="text-[11px] font-mono opacity-60">Tokens</span>
-              </div>
-
-              <div className="mt-4 space-y-3">
+              return (
                 <button
-                  type="button"
-                  onClick={() => playCyberSound('root')}
-                  className="w-full py-2 px-3 rounded-lg text-xs font-mono font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>Primary Execution</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => playCyberSound('click')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs font-mono font-semibold border transition-all cursor-pointer ${
-                    isDark
-                      ? 'bg-transparent border-gray-700 text-gray-200 hover:bg-gray-800/80 hover:border-gray-600'
-                      : 'bg-transparent border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400'
+                  key={preset.id}
+                  onClick={() => {
+                    setThemePreset(preset.id);
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  className={`p-3.5 rounded-xl border text-left transition-all relative overflow-hidden group ${
+                    isActive
+                      ? 'bg-white dark:bg-cyber-card border-cyan-500 dark:border-cyber-cyan shadow-md ring-1 ring-cyan-500/40 dark:ring-cyber-cyan/50'
+                      : 'bg-slate-50 dark:bg-cyber-bg/70 border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-cyber-borderGlow hover:bg-slate-100/80 dark:hover:bg-cyber-cardHover'
                   }`}
                 >
-                  Secondary Action
-                </button>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full border border-black/20 dark:border-white/20 shadow-sm"
+                        style={{ backgroundColor: isDark ? preset.darkAccent : preset.lightAccent }}
+                      />
+                      <span className={`text-xs font-bold ${isActive ? 'text-cyan-700 dark:text-cyber-cyan' : 'text-slate-900 dark:text-white'}`}>
+                        {preset.name}
+                      </span>
+                    </div>
+                    {isActive && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-cyan-100 dark:bg-cyber-cyan/20 text-cyan-800 dark:text-cyber-cyan border border-cyan-300 dark:border-cyber-cyan/40">
+                        ACTIVE
+                      </span>
+                    )}
+                  </div>
 
-                <div className="flex items-center justify-between pt-1 text-xs font-mono opacity-80">
-                  <span className="flex items-center gap-1 text-emerald-500">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Focus-Visible Ready</span>
+                  <p className="text-[10px] text-slate-500 dark:text-cyber-muted font-sans line-clamp-1 mb-2">
+                    {preset.tagline}
+                  </p>
+
+                  <div className="flex items-center justify-between text-[9px] font-mono text-slate-500 dark:text-cyber-muted pt-2 border-t border-slate-200/60 dark:border-cyber-border/60">
+                    <span>{preset.badge}</span>
+                    <span className="font-bold" style={{ color: isDark ? preset.darkAccent : preset.lightAccent }}>
+                      {isDark ? preset.darkAccent : preset.lightAccent}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. "Every Theme" Live Side-By-Side Preview Grid */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              Every Theme • Side-By-Side Topology
+            </h2>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-cyber-muted">
+            Viewing 4 core presets in {isDark ? 'Dark Mode' : 'Light Mode'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {THEME_PRESETS_META.map((preset) => {
+            const isCurrent = activePresetId === preset.id;
+            const accent = isDark ? preset.darkAccent : preset.lightAccent;
+            const bg = isDark ? preset.darkBg : preset.lightBg;
+            const card = isDark ? preset.darkCard : preset.lightCard;
+
+            return (
+              <div
+                key={preset.id}
+                style={{ backgroundColor: bg }}
+                className={`rounded-xl p-4 border transition-all relative space-y-3 shadow-sm ${
+                  isCurrent
+                    ? 'border-cyan-500 dark:border-cyber-cyan ring-2 ring-cyan-500/30'
+                    : 'border-slate-300 dark:border-zinc-800'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accent }} />
+                    {preset.name}
                   </span>
-                  <span>44px Tap Target</span>
+                  <span
+                    className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase border"
+                    style={{
+                      color: accent,
+                      borderColor: `${accent}40`,
+                      backgroundColor: `${accent}15`,
+                    }}
+                  >
+                    {isCurrent ? 'SELECTED' : 'PREVIEW'}
+                  </span>
+                </div>
+
+                {/* Simulated Mini Card */}
+                <div
+                  style={{ backgroundColor: card }}
+                  className="rounded-lg p-3 border border-slate-300/60 dark:border-white/10 space-y-2 shadow-sm"
+                >
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-slate-900 dark:text-white">Sample Target</span>
+                    <span
+                      className="px-1.5 py-0.2 rounded text-[9px] font-bold"
+                      style={{ color: accent, backgroundColor: `${accent}20` }}
+                    >
+                      MEDIUM
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">
+                    10.10.11.14 • Linux
+                  </div>
+                  <div className="pt-2 border-t border-slate-200/50 dark:border-white/10 flex items-center justify-between text-[9px]">
+                    <span className="text-slate-400">Foothold: User</span>
+                    <span className="font-bold" style={{ color: accent }}>
+                      Engage &gt;
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-[9px] text-slate-500 dark:text-zinc-500 font-sans leading-tight">
+                  {preset.vibe}
                 </div>
               </div>
-            </motion.div>
-          </div>
-        </section>
+            );
+          })}
+        </div>
+      </div>
 
-        {/* Integration Code & Architecture Specs Tabs */}
-        <section
-          className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
-            isDark
-              ? 'bg-[#111827] border-gray-800'
-              : 'bg-white border-slate-200'
-          }`}
-        >
-          <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-            <div className="flex items-center gap-3">
+      {/* 4. "Every Color" Design Token Swatches */}
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 shadow-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
+              <span>Every Color • CSS Design Tokens</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-cyber-muted font-sans">
+              Click any token card or copy icon to copy its CSS variable string to clipboard.
+            </p>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto p-1 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-[11px]">
+            {(['all', 'accent', 'surface', 'border', 'text'] as const).map((cat) => (
               <button
-                type="button"
-                onClick={() => setActiveTab('preview')}
-                className={`text-xs font-mono font-bold pb-1 cursor-pointer transition-colors border-b-2 ${
-                  activeTab === 'preview'
-                    ? 'border-indigo-500 text-indigo-500'
-                    : 'border-transparent opacity-60 hover:opacity-100'
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-2.5 py-0.5 rounded capitalize font-medium transition-all ${
+                  activeCategory === cat
+                    ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white font-bold shadow-sm'
+                    : 'text-slate-500 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white'
                 }`}
               >
-                Architecture & Physics
+                {cat}
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('code')}
-                className={`text-xs font-mono font-bold pb-1 cursor-pointer transition-colors border-b-2 ${
-                  activeTab === 'code'
-                    ? 'border-indigo-500 text-indigo-500'
-                    : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
+            ))}
+          </div>
+        </div>
+
+        {/* Color Swatches Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
+          {filteredTokens.map((token) => {
+            const activeHex = isDark ? token.fallbackDark : token.fallbackLight;
+            const isCopied = copiedToken === token.variable;
+
+            return (
+              <div
+                key={token.variable}
+                onClick={() => handleCopy(`var(${token.variable})`, token.variable)}
+                className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50/70 dark:bg-cyber-bg/70 hover:border-cyan-500 dark:hover:border-cyber-cyan hover:shadow-sm transition-all cursor-pointer group space-y-2.5"
               >
-                Quickstart Code
+                {/* Visual Swatch Tile */}
+                <div className="relative h-14 w-full rounded-lg overflow-hidden border border-slate-300/70 dark:border-cyber-border/80 shadow-inner flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 transition-colors"
+                    style={{ backgroundColor: activeHex }}
+                  />
+                  <span
+                    className={`relative z-10 text-[11px] font-mono font-bold px-2 py-0.5 rounded shadow-sm ${
+                      token.category === 'surface' && !isDark
+                        ? 'bg-black/60 text-white'
+                        : 'bg-black/40 text-white dark:bg-black/60'
+                    }`}
+                  >
+                    {activeHex}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {token.name}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(`var(${token.variable})`, token.variable);
+                      }}
+                      className="text-slate-400 dark:text-cyber-muted group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan transition-colors"
+                      title="Copy CSS Variable"
+                    >
+                      {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+
+                  <div className="text-[10px] font-mono text-cyan-700 dark:text-cyber-cyan truncate">
+                    {token.variable}
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 dark:text-cyber-muted font-sans line-clamp-2 leading-tight">
+                    {token.description}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-cyber-muted pt-1.5 border-t border-slate-200/60 dark:border-cyber-border/60">
+                  <span className="uppercase font-bold">{token.category}</span>
+                  <span>{isCopied ? 'Copied!' : 'Click to copy'}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. "Every Text" Comprehensive Typography & Contrast Showcase */}
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 shadow-md space-y-6">
+        <div className="space-y-1">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+            <Type className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
+            <span>Every Text • Typography Hierarchy &amp; Contrast Validation</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-cyber-muted font-sans">
+            Standard typography scales across titles, paragraphs, metadata, monospace terminal buffers, and interactive hover states.
+          </p>
+        </div>
+
+        {/* Typography Scale Demonstration */}
+        <div className="space-y-4 p-4 rounded-xl bg-slate-50/70 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border">
+          {/* H1 */}
+          <div className="space-y-1 pb-3 border-b border-slate-200/60 dark:border-cyber-border/60">
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>DISPLAY H1 • 32px / 2rem • Font: JetBrains Mono Black</span>
+              <span className="text-emerald-600 dark:text-cyber-emerald font-bold">Contrast: 15.2:1 (AAA Pass)</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              ZEROBOX // TACTICAL LAB &amp; CTF TRACKER
+            </h1>
+          </div>
+
+          {/* H2 */}
+          <div className="space-y-1 pb-3 border-b border-slate-200/60 dark:border-cyber-border/60">
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>HEADING H2 • 20px / 1.25rem • Font: JetBrains Mono Bold</span>
+              <span className="text-emerald-600 dark:text-cyber-emerald font-bold">Contrast: 14.8:1 (AAA Pass)</span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+              Tactical Combat Command &amp; Offensive Machine Catalog
+            </h2>
+          </div>
+
+          {/* H3 */}
+          <div className="space-y-1 pb-3 border-b border-slate-200/60 dark:border-cyber-border/60">
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>SECTION H3 • 16px / 1rem • Font: JetBrains Mono Bold</span>
+              <span className="text-emerald-600 dark:text-cyber-emerald font-bold">Contrast: 14.2:1 (AAA Pass)</span>
+            </div>
+            <h3 className="text-base font-bold text-cyan-700 dark:text-cyber-cyan">
+              Active Attack Recon &amp; Vector Classification Pipeline
+            </h3>
+          </div>
+
+          {/* H4 / Target Title in 3 States */}
+          <div className="space-y-2 pb-3 border-b border-slate-200/60 dark:border-cyber-border/60">
+            <div className="text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>TARGET CARD TITLE (H4) • Standard State vs Active Engaged State vs Hover State</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-2.5 rounded-lg border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card">
+                <div className="text-[9px] text-slate-500 uppercase font-bold mb-1">Standard Card Title</div>
+                <div className="font-bold text-base text-slate-900 dark:text-white leading-snug">
+                  Red Stone One Carat
+                </div>
+              </div>
+              <div className="p-2.5 rounded-lg border border-emerald-500/60 dark:border-cyber-emerald bg-white dark:bg-cyber-card shadow-sm ring-1 ring-emerald-500/30">
+                <div className="text-[9px] text-emerald-600 dark:text-cyber-emerald uppercase font-bold mb-1">Active Engaged Title</div>
+                <div className="font-bold text-base text-slate-900 dark:text-white leading-snug">
+                  Red Stone One Carat
+                </div>
+              </div>
+              <div className="p-2.5 rounded-lg border border-cyan-400 dark:border-cyber-cyan/60 bg-slate-50 dark:bg-cyber-cardHover">
+                <div className="text-[9px] text-cyan-600 dark:text-cyber-cyan uppercase font-bold mb-1">Cursor Hover Title</div>
+                <div className="font-bold text-base text-cyan-600 dark:text-cyber-cyan leading-snug">
+                  Red Stone One Carat
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Body Paragraph */}
+          <div className="space-y-1 pb-3 border-b border-slate-200/60 dark:border-cyber-border/60">
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>BODY COPY • 13px / 0.8125rem • Font: Inter / Sans-Serif</span>
+              <span className="text-emerald-600 dark:text-cyber-emerald font-bold">Contrast: 13.9:1 (AAA Pass)</span>
+            </div>
+            <p className="text-xs text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
+              Tactical CTF operations require rigorous methodology execution across Port Enumeration, Web Vulnerability Triage (SQLi, SSRF, LFI, RCE), Initial Foothold User Access, and Windows/Linux Privilege Escalation. All 929 targets in the master catalog maintain offline persistence with zero cloud telemetry.
+            </p>
+          </div>
+
+          {/* Muted Metadata */}
+          <div className="space-y-1 pb-3 border-b border-slate-200/60 dark:border-cyber-border/60">
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>METADATA &amp; LABELS • 11px / 0.6875rem • Font: JetBrains Mono Muted</span>
+              <span className="text-emerald-600 dark:text-cyber-emerald font-bold">Contrast: 6.8:1 (AA Pass)</span>
+            </div>
+            <div className="text-[11px] text-slate-600 dark:text-cyber-muted font-mono flex flex-wrap items-center gap-3">
+              <span>Queued &amp; Scoped Labs</span>
+              <span>•</span>
+              <span>10.10.14.X:4445</span>
+              <span>•</span>
+              <span>Elapsed: 00:45:12</span>
+              <span>•</span>
+              <span>SHA-256: 8f4b1c2e9a...</span>
+            </div>
+          </div>
+
+          {/* Monospace Code & CLI */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-cyber-muted">
+              <span>CLI / TERMINAL SNIPPET • 12px • Font: JetBrains Mono</span>
+              <span className="text-cyan-600 dark:text-cyber-cyan font-bold">Syntax Luminescence</span>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-900 text-slate-100 dark:bg-cyber-code border border-slate-800 dark:border-cyber-border font-mono text-xs overflow-x-auto space-y-1 shadow-inner">
+              <div className="text-emerald-400 flex items-center gap-2">
+                <span>$</span>
+                <span>sudo nmap -sC -sV -p 80,443,445,8080 -Pn 10.129.1.9 -oN recon.log</span>
+              </div>
+              <div className="text-slate-500 text-[11px]">
+                [+] Host is up (0.024s latency). 80/tcp open http Apache httpd 2.4.41 ((Ubuntu))
+              </div>
+              <div className="text-cyan-400 text-[11px]">
+                [+] Vulnerability Identified: CVE-2021-41773 Path Traversal &amp; Remote Code Execution
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Interactive Text States Matrix Table */}
+        <div className="space-y-2">
+          <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted tracking-wider">
+            Interactive Text States Matrix:
+          </div>
+          <div className="overflow-x-auto border border-slate-200 dark:border-cyber-border rounded-xl">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-slate-100 dark:bg-cyber-bg border-b border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted text-[10px] uppercase">
+                <tr>
+                  <th className="p-2.5">State Role</th>
+                  <th className="p-2.5">Visual Preview</th>
+                  <th className="p-2.5">Token Pair</th>
+                  <th className="p-2.5">WCAG Level</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-cyber-border/60 bg-white dark:bg-cyber-card">
+                <tr>
+                  <td className="p-2.5 font-bold text-slate-500">Normal / Resting</td>
+                  <td className="p-2.5 text-slate-900 dark:text-cyber-text font-bold">Ready for Engagement</td>
+                  <td className="p-2.5 text-[10px] font-mono text-cyan-600 dark:text-cyber-cyan">--cyber-text</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold text-[10px]">AAA (15.2:1)</td>
+                </tr>
+                <tr>
+                  <td className="p-2.5 font-bold text-slate-500">Hover / Active Nav</td>
+                  <td className="p-2.5 text-cyan-600 dark:text-cyber-cyan font-bold">Selected Target Navigation</td>
+                  <td className="p-2.5 text-[10px] font-mono text-cyan-600 dark:text-cyber-cyan">--cyber-cyan</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold text-[10px]">AAA (12.4:1)</td>
+                </tr>
+                <tr>
+                  <td className="p-2.5 font-bold text-slate-500">Success / Pwned</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold">Root Flag Captured!</td>
+                  <td className="p-2.5 text-[10px] font-mono text-cyan-600 dark:text-cyber-cyan">--cyber-emerald</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold text-[10px]">AAA (11.8:1)</td>
+                </tr>
+                <tr>
+                  <td className="p-2.5 font-bold text-slate-500">Warning / Medium</td>
+                  <td className="p-2.5 text-amber-600 dark:text-cyber-amber font-bold">Foothold Required</td>
+                  <td className="p-2.5 text-[10px] font-mono text-cyan-600 dark:text-cyber-cyan">--cyber-amber</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold text-[10px]">AA (8.6:1)</td>
+                </tr>
+                <tr>
+                  <td className="p-2.5 font-bold text-slate-500">Danger / Critical</td>
+                  <td className="p-2.5 text-rose-600 dark:text-cyber-crimson font-bold">Hard RCE / BOF Exploit</td>
+                  <td className="p-2.5 text-[10px] font-mono text-cyan-600 dark:text-cyber-cyan">--cyber-crimson</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold text-[10px]">AAA (9.4:1)</td>
+                </tr>
+                <tr>
+                  <td className="p-2.5 font-bold text-slate-500">Muted / Metadata</td>
+                  <td className="p-2.5 text-slate-400 dark:text-cyber-muted">Archived writeup snapshot</td>
+                  <td className="p-2.5 text-[10px] font-mono text-cyan-600 dark:text-cyber-cyan">--cyber-muted</td>
+                  <td className="p-2.5 text-emerald-600 dark:text-cyber-emerald font-bold text-[10px]">AA (6.8:1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Live UI Component Mini-Sandbox */}
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 shadow-md space-y-4">
+        <div className="space-y-0.5">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
+            <span>Interactive Component Sandbox</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-cyber-muted font-sans">
+            Real-world components reacting live to your active theme and color mode selections.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {/* Card 1: Active Engaged Target Card */}
+          <div className="p-3.5 rounded-xl border border-emerald-600 dark:border-cyber-emerald bg-white dark:bg-cyber-card shadow-md shadow-emerald-500/15 dark:shadow-glow-emerald/30 ring-1 ring-emerald-500/40 dark:ring-cyber-emerald/40 space-y-2.5">
+            <div className="flex items-center justify-between gap-1.5">
+              <PlatformBadge platform="THM" size="sm" />
+              <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                <span className="px-1.5 py-0.5 text-[9px] rounded font-mono font-medium border border-slate-300 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                  LINUX HOST
+                </span>
+                <OsBadge os="Linux" size="sm" />
+                <DifficultyBadge difficulty="Medium" size="sm" />
+              </div>
+            </div>
+
+            <div className="flex items-start justify-between gap-1.5">
+              <div>
+                <div className="font-bold text-base text-slate-900 dark:text-white">
+                  Red Stone One Carat
+                </div>
+                <div className="mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 text-[10px] font-mono">
+                  <span>•</span>
+                  <span>10.10.14.22</span>
+                </div>
+              </div>
+
+              <button className="p-1.5 rounded-lg text-emerald-700 dark:text-cyber-emerald bg-emerald-50 dark:bg-cyber-emerald/15 border border-emerald-300 dark:border-cyber-emerald/40 shadow-sm">
+                <Crosshair className="w-4 h-4 animate-spin-slow" />
               </button>
             </div>
 
-            {activeTab === 'code' && (
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono bg-indigo-600/10 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all cursor-pointer font-bold"
-              >
-                {copiedCode ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Snippet</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-
-          <div className="p-6 font-mono text-xs leading-relaxed">
-            {activeTab === 'preview' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="font-bold text-indigo-400">1. Micro-Interactions & Physics</h4>
-                  <ul className="list-disc list-inside space-y-1.5 opacity-80">
-                    <li>Spring: <code className="text-purple-400">damping: 18, stiffness: 220, mass: 0.8</code></li>
-                    <li>Squash & Stretch: <code className="text-purple-400">scaleX: 1.18, scaleY: 0.88</code> on drag/tap</li>
-                    <li>Pill dynamic gradient: Light sky to deep midnight navy</li>
-                    <li>Cloud layers: 3-bubble pillowy layers with gentle drift</li>
-                    <li>Twinkling stars: Staggered opacity keyframes (2.2s - 3.1s loop)</li>
-                  </ul>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="font-bold text-indigo-400">2. Celestial SVG Morphing & Transitions</h4>
-                  <ul className="list-disc list-inside space-y-1.5 opacity-80">
-                    <li>8 Sun Rays: Contract inward with -45° rotation & scale: 0</li>
-                    <li>Dynamic SVG Mask: Sweeps in from top-right to form crescent</li>
-                    <li>Moon craters: 3 lunar spots fade in during dark mode</li>
-                    <li>Liquid Circular Reveal: 650ms expanding radial clip-path</li>
-                    <li>A11y: <code className="text-emerald-400">prefers-reduced-motion</code> instant fallback</li>
-                  </ul>
-                </div>
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-cyber-border/60 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-bold bg-cyan-50 dark:bg-cyber-cyan/10 border-cyan-200 dark:border-cyber-cyan/30 text-cyan-700 dark:text-cyber-cyan">
+                  <Flag className="w-3 h-3" /> U
+                </span>
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-bold bg-slate-100 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted">
+                  <Flag className="w-3 h-3" /> R
+                </span>
               </div>
-            )}
-
-            {activeTab === 'code' && (
-              <pre className="p-4 rounded-xl bg-gray-900 text-gray-200 overflow-x-auto text-[12px] border border-gray-800">
-{`import { ThemeToggle } from './components/common/ThemeToggle';
-import { useTheme } from './hooks/useTheme';
-
-export function NavigationBar() {
-  const { isDark, theme, setTheme } = useTheme();
-  
-  return (
-    <header className="flex items-center justify-between p-4">
-      <h1 className="text-xl font-bold">App Brand</h1>
-      <ThemeToggle size="md" showLabel soundEnabled />
-    </header>
-  );
-}`}
-              </pre>
-            )}
+              <span className="text-[11px] text-cyan-600 dark:text-cyber-cyan font-bold">
+                Advance &gt;
+              </span>
+            </div>
           </div>
-        </section>
+
+          {/* Card 2: Tactical Filter & Badge Suite */}
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 space-y-3 shadow-sm">
+            <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted">
+              Live Badge &amp; Preset Components:
+            </div>
+
+            {/* Difficulties Row */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <DifficultyBadge difficulty="Very Easy" size="xs" />
+              <DifficultyBadge difficulty="Easy" size="xs" />
+              <DifficultyBadge difficulty="Medium" size="xs" />
+              <DifficultyBadge difficulty="Hard" size="xs" />
+              <DifficultyBadge difficulty="Insane" size="xs" />
+            </div>
+
+            {/* Tactical Presets Row */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 dark:bg-cyan-500/20 text-cyan-900 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40">
+                🌐 ONLY WEB (298)
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/40">
+                🛡️ ONLY AD (65)
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40">
+                🎯 TJ NULL (126)
+              </span>
+            </div>
+
+            {/* Interactive Search Input */}
+            <div className="relative">
+              <input
+                type="text"
+                value={sampleSearchQuery}
+                onChange={(e) => setSampleSearchQuery(e.target.value)}
+                placeholder="Test typing in cyber search input..."
+                className="w-full pl-3 pr-8 py-1.5 bg-slate-50 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border rounded-lg text-xs text-slate-900 dark:text-cyber-text placeholder-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

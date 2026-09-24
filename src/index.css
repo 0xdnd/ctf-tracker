@@ -37,7 +37,7 @@
 }
 
 /* 🟩 HACK THE BOX THEME: Clean HTB Matte Dark + Subtle Lime Accents */
-[data-theme="htb"] {
+[data-theme="htb"].dark {
   --cyber-bg: 17 24 39;             /* #111827 Matte HTB dark background */
   --cyber-card: 20 30 45;           /* #141E2D Matte HTB slate card */
   --cyber-card-hover: 26 38 56;     /* #1A2638 */
@@ -53,7 +53,7 @@
 }
 
 /* 🟢 TERMINAL THEME: Subtle Matte Monospace Green */
-[data-theme="matrix"] {
+[data-theme="matrix"].dark {
   --cyber-bg: 10 15 12;             /* #0A0F0C Calm dark slate */
   --cyber-card: 16 24 19;           /* #101813 */
   --cyber-card-hover: 22 32 26;     /* #16201A */
@@ -69,7 +69,25 @@
 }
 
 /* 🔴 OFFSEC CRIMSON: Matte Carbon Dark with Crimson Accents */
-[data-theme="kali"] {
+
+/* OLED PURE BLACK THEME */
+[data-theme="oled"].dark {
+  --cyber-bg: 0 0 0;                /* Pure black */
+  --cyber-card: 10 10 10;           /* Almost black */
+  --cyber-card-hover: 18 18 18;
+  --cyber-border: 26 26 26;
+  --cyber-border-glow: 40 40 40;
+  --cyber-text: 226 232 240;
+  --cyber-muted: 100 116 139;
+  --cyber-code: 5 5 5;
+  --cyber-cyan: 56 189 248;         /* Sky Blue */
+  --cyber-emerald: 16 185 129;
+  --cyber-crimson: 239 68 68;
+  --cyber-neon: 56 189 248;         /* Match cyan */
+}
+
+/* OFFSEC CRIMSON */
+[data-theme="kali"].dark {
   --cyber-bg: 15 15 18;             /* #0F0F12 Matte carbon */
   --cyber-card: 22 22 28;           /* #16161C */
   --cyber-card-hover: 30 30 38;     /* #1E1E26 */
@@ -82,6 +100,17 @@
   --cyber-emerald: 225 29 72;       /* Crimson */
   --cyber-crimson: 225 29 72;
   --cyber-neon: 225 29 72;
+}
+
+
+[data-theme="htb"]:not(.dark) {
+  --cyber-emerald: 21 128 61;
+  --cyber-neon: 21 128 61;
+}
+
+[data-theme="oled"]:not(.dark) {
+  --cyber-cyan: 82 82 91;
+  --cyber-neon: 82 82 91;
 }
 
 @layer base {
@@ -184,6 +213,32 @@ html:not(.dark) .border-gray-900 {
 .cyber-card-contain {
   content-visibility: auto;
   contain-intrinsic-size: 1px 260px;
+  contain: layout paint;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+.cyber-kanban-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 170px;
+  contain: layout paint;
+}
+
+.cyber-snippet-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 100px;
+  contain: layout paint;
+}
+
+/* View Transitions API overrides for circular theme reveal */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
 }

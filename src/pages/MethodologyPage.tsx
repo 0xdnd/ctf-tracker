@@ -308,7 +308,7 @@ export const MethodologyPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="text-[11px] text-slate-500 dark:text-cyber-muted flex items-center gap-2">
+          <div className="text-[11px] text-slate-600 dark:text-cyber-muted flex items-center gap-2">
             {viewMode === 'playbook' ? (
               <span>Standard 8-Phase Reference Playbook with copyable command templates</span>
             ) : (
@@ -499,10 +499,10 @@ export const MethodologyPage: React.FC = () => {
         </div>
 
         {/* 8-Phase Step Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scroll-smooth py-0.5">
           <button
             onClick={() => setSelectedPhaseNumber('all')}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-all ${
+            className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-all ${
               selectedPhaseNumber === 'all'
                 ? 'bg-cyber-cyan text-black border-cyber-cyan font-bold shadow-glow-cyan'
                 : 'bg-white dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -517,7 +517,7 @@ export const MethodologyPage: React.FC = () => {
               <button
                 key={phase.id}
                 onClick={() => setSelectedPhaseNumber(phase.phaseNumber)}
-                className={`px-3 py-1.5 rounded-lg border text-xs whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs whitespace-nowrap transition-all flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-cyber-cyan text-black border-cyber-cyan font-bold shadow-glow-cyan'
                     : 'bg-white dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -534,11 +534,11 @@ export const MethodologyPage: React.FC = () => {
 
         {/* Service Branches Pills (A-G) */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <span className="text-[10px] text-slate-600 dark:text-cyber-muted uppercase font-bold mr-1">Branches:</span>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scroll-smooth">
+            <span className="shrink-0 text-[10px] text-slate-600 dark:text-cyber-muted uppercase font-bold mr-1">Branches:</span>
             <button
               onClick={() => setSelectedBranch('all')}
-              className={`px-2.5 py-1 rounded text-[11px] border transition-all ${
+              className={`shrink-0 px-2.5 py-1 rounded text-[11px] border transition-all ${
                 selectedBranch === 'all'
                   ? 'bg-emerald-100 dark:bg-cyber-card text-emerald-950 dark:text-white border-emerald-400 dark:border-cyber-emerald font-bold'
                   : 'bg-white dark:bg-transparent border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -553,7 +553,7 @@ export const MethodologyPage: React.FC = () => {
                 <button
                   key={b.type}
                   onClick={() => setSelectedBranch(b.type)}
-                  className={`px-2.5 py-1 rounded text-[11px] border transition-all flex items-center gap-1.5 ${
+                  className={`shrink-0 px-2.5 py-1 rounded text-[11px] border transition-all flex items-center gap-1.5 ${
                     isSelected
                       ? 'bg-emerald-100 dark:bg-cyber-card text-emerald-950 dark:text-white border-emerald-400 dark:border-cyber-emerald shadow-glow-emerald font-bold'
                       : 'bg-white dark:bg-transparent border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'

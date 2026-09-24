@@ -54,7 +54,7 @@ import {
 } from '../../utils/categoryUtils';
 
 const SORT_OPTIONS: CyberSelectOption[] = [
-  { value: 'default', label: 'Default Order' },
+  { value: 'default', label: 'Randomized' },
   { value: 'difficulty', label: 'Difficulty (Easy → Hard)' },
   { value: 'name', label: 'Target Name (A-Z)' },
   { value: 'ip', label: 'IP Address' },
@@ -141,9 +141,6 @@ export const TrackerView: React.FC = () => {
     soundEnabled,
     loadCatalog,
     setFilterDrawerOpen,
-    focusMode,
-    setFocusMode,
-    toggleFocusMode,
   } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
@@ -156,13 +153,12 @@ export const TrackerView: React.FC = () => {
       soundEnabled: s.soundEnabled,
       loadCatalog: s.loadCatalog,
       setFilterDrawerOpen: s.setFilterDrawerOpen,
-      focusMode: s.focusMode,
-      setFocusMode: s.setFocusMode,
-      toggleFocusMode: s.toggleFocusMode,
     }))
   );
 
   const location = useLocation();
+
+  const sessionSeed = React.useMemo(() => Math.floor(Math.random() * 1000000), []);
 
   // Lazy-load master machine catalog when TrackerView mounts
   React.useEffect(() => {
@@ -516,7 +512,7 @@ export const TrackerView: React.FC = () => {
     });
 
     // Apply Sorting
-    if (deferredFilters.sortBy && deferredFilters.sortBy !== 'default') {
+    if (deferredFilters.sortBy) {
       const difficultyWeights: Record<string, number> = {
         'Very Easy': 1,
         'Easy': 2,
@@ -525,9 +521,19 @@ export const TrackerView: React.FC = () => {
         'Insane': 5,
       };
 
+      const hashString = (str: string) => {
+        let hash = sessionSeed;
+        for (let i = 0; i < str.length; i++) {
+          hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
+        }
+        return hash;
+      };
+
       list.sort((a, b) => {
         let cmp = 0;
-        if (deferredFilters.sortBy === 'difficulty') {
+        if (deferredFilters.sortBy === 'default') {
+          cmp = hashString(a.id) - hashString(b.id);
+        } else if (deferredFilters.sortBy === 'difficulty') {
           const wa = difficultyWeights[a.difficulty] || 0;
           const wb = difficultyWeights[b.difficulty] || 0;
           cmp = wa - wb;
@@ -546,7 +552,7 @@ export const TrackerView: React.FC = () => {
     }
 
     return list;
-  }, [machines, deferredFilters]);
+  }, [machines, deferredFilters, sessionSeed]);
 
   const platformList: (Platform | 'ALL')[] = ['ALL', 'HTB', 'THM', 'Custom'];
   const difficultyList: (Difficulty | 'ALL')[] = ['ALL', 'Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
@@ -699,7 +705,7 @@ export const TrackerView: React.FC = () => {
   return (
     <div className="space-y-3 w-full">
       {/* 2-Row Compact Toolbar */}
-      {!focusMode && (
+      {!false && (
       <div className="font-sans text-xs antialiased text-slate-700 dark:text-cyber-text space-y-0 shadow-sm p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90">
         
         {/* Row 1: Track & Actions Bar */}
@@ -790,11 +796,11 @@ export const TrackerView: React.FC = () => {
 
             {/* Zen Mode */}
             <button
-              onClick={toggleFocusMode}
-              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${focusMode ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border-cyan-500/60 shadow-[0_0_8px_rgba(6,182,212,0.3)] animate-pulse' : 'bg-slate-50 dark:bg-cyber-bg/80 border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'}`}
-              title={focusMode ? 'Exit Zen (Esc)' : 'Zen Mode'}
+              onClick={(() => {})}
+              className={`p-1.5 rounded-lg border transition-all cursor-pointer `}
+              title={false ? 'Exit Zen (Esc)' : 'Zen Mode'}
             >
-              <Eye className={`w-3.5 h-3.5 ${focusMode ? 'text-cyan-500' : ''}`} />
+              <Eye className={`w-3.5 h-3.5 `} />
             </button>
           </div>
         </div>
@@ -855,7 +861,7 @@ export const TrackerView: React.FC = () => {
             <CyberSelect<Difficulty | 'ALL'>
               id="htb-difficulty-select"
               name="htb-difficulty-select"
-              aria-label="Filter difficulty"
+              aria-label="Filter Difficulties"
               value={filters.selectedDifficulty}
               onChange={(val) => setFilters({ selectedDifficulty: val })}
               options={DIFFICULTY_FILTER_OPTIONS}
@@ -892,7 +898,7 @@ export const TrackerView: React.FC = () => {
               <CyberSelect
                 id="tracker-sort-select"
                 name="tracker-sort-select"
-                aria-label="Sort targets"
+                aria-label={`Sort targets - ${SORT_OPTIONS.find(o => o.value === (filters.sortBy || 'default'))?.label || 'Default Order'}`}
                 value={filters.sortBy || 'default'}
                 onChange={(val) => setFilters({ sortBy: val as any })}
                 options={SORT_OPTIONS}
@@ -904,7 +910,7 @@ export const TrackerView: React.FC = () => {
             </div>
 
             {/* Result Counter */}
-            <span className="text-slate-500 dark:text-cyber-muted text-[11px] whitespace-nowrap font-mono">
+            <span className="text-slate-600 dark:text-cyber-muted text-[11px] whitespace-nowrap font-mono">
               <strong className="text-slate-900 dark:text-white">{filteredMachines.length}</strong>
               <span className="mx-0.5">/</span>
               {machines.length}

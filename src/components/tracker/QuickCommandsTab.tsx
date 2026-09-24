@@ -37,16 +37,24 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Determine active IP (priority: real machine IP -> global targetIp -> fallback)
+  // Determine if machine IP has been actively configured
+  const isIpConfigured = useMemo(() => {
+    return Boolean(
+      machine.ip && 
+      machine.ip !== '10.10.x.x' && 
+      machine.ip !== '10.10.10.x' && 
+      !machine.ip.includes('x.x') &&
+      !machine.ip.toLowerCase().includes('set ip')
+    );
+  }, [machine.ip]);
+
+  // Determine active IP (enforce real machine IP or placeholder if unconfigured)
   const targetIp = useMemo(() => {
-    if (machine.ip && machine.ip !== '10.10.x.x' && !machine.ip.includes('x.x')) {
+    if (isIpConfigured) {
       return machine.ip;
     }
-    if (globalVars.targetIp && globalVars.targetIp !== '10.10.10.X' && !globalVars.targetIp.includes('X')) {
-      return globalVars.targetIp;
-    }
-    return machine.ip || '10.10.10.x';
-  }, [machine.ip, globalVars.targetIp]);
+    return '<TARGET_IP>';
+  }, [machine.ip, isIpConfigured]);
 
   const lhost = globalVars.lhost || '10.10.14.x';
   const lport = globalVars.lport || '4444';
@@ -66,13 +74,15 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
     const isWindows = machine.os === 'Windows' || isAD;
     const isLinux = machine.os === 'Linux';
 
+    const machineSlug = machine.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
     // 1. RECON & PORT DISCOVERY
     list.push({
       id: 'recon-nmap-fast',
       category: 'recon',
       title: 'Fast TCP SYN Scan (All Ports)',
       description: 'Ultra-fast port discovery scan across all 65,535 TCP ports with 1,000 packet rate.',
-      command: `nmap -p- --min-rate=1000 -sS -Pn -oN nmap/${machine.name.toLowerCase()}_allports.nmap ${targetIp}`,
+      command: `nmap -p- --min-rate=1000 -sS -Pn -oN "nmap/${machineSlug}_allports.nmap" ${targetIp}`,
       relevance: 'Standard Initial Reconnaissance',
     });
 
@@ -82,8 +92,8 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
       title: 'Targeted Service & Script Scan',
       description: 'Executes default scripts and version detection on discovered ports.',
       command: openPorts.length > 0 
-        ? `nmap -sC -sV -p${openPorts.join(',')} -Pn -oN nmap/${machine.name.toLowerCase()}_services.nmap ${targetIp}`
-        : `nmap -sC -sV -p21,22,53,80,88,139,389,443,445,1433,3306,3389,8080 -Pn -oN nmap/${machine.name.toLowerCase()}_services.nmap ${targetIp}`,
+        ? `nmap -sC -sV -p${openPorts.join(',')} -Pn -oN "nmap/${machineSlug}_services.nmap" ${targetIp}`
+        : `nmap -sC -sV -p21,22,53,80,88,139,389,443,445,1433,3306,3389,8080 -Pn -oN "nmap/${machineSlug}_services.nmap" ${targetIp}`,
       relevance: openPorts.length > 0 ? `Targeting ${openPorts.length} known open ports` : 'Common ports fallback',
     });
 
@@ -325,18 +335,24 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
     <div className="space-y-4 font-mono text-xs">
       {/* Top Banner: Target Telemetry & Injected Variables */}
       <div className="p-3 rounded-xl bg-[#090e1c] border border-cyber-border flex flex-wrap items-center justify-between gap-3 text-xs shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-cyber-emerald animate-pulse shadow-glow-emerald" />
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`w-2 h-2 rounded-full ${isIpConfigured ? 'bg-cyber-emerald shadow-glow-emerald animate-pulse' : 'bg-amber-500 shadow-glow-amber'}`} />
           <span className="text-cyber-muted font-bold">TARGET:</span>
           <strong className="text-white">{machine.name}</strong>
           <span className="text-cyber-border">|</span>
           <span className="text-cyber-muted font-bold">INJECTED IP:</span>
-          <code className="px-1.5 py-0.5 rounded bg-cyber-card border border-cyber-emerald/40 text-cyber-emerald font-bold">
-            {targetIp}
-          </code>
+          {isIpConfigured ? (
+            <code className="px-1.5 py-0.5 rounded bg-cyber-card border border-cyber-emerald/40 text-cyber-emerald font-bold">
+              {targetIp}
+            </code>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
+              <span>⚠️ UNCONFIGURED (SET IP ABOVE)</span>
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 text-[11px]">
+        <div className="flex items-center gap-2 text-[11px] flex-shrink-0">
           <span className="text-cyber-muted font-bold">LHOST:</span>
           <code className="text-cyber-cyan font-bold">{lhost}</code>
           <span className="text-cyber-muted font-bold">LPORT:</span>
@@ -345,8 +361,8 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
       </div>
 
       {/* Category Pills & Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full flex-wrap">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -366,8 +382,8 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
           ))}
         </div>
 
-        <div className="relative w-full sm:w-56">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-cyber-muted" />
+        <div className="relative w-full lg:w-64 flex-shrink-0">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-cyber-muted" />
           <input
             id="quick-commands-search-input"
             name="quick-commands-search"
@@ -375,7 +391,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search commands..."
+            placeholder="Search commands, flags, tools..."
             className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-xs text-white placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan"
           />
         </div>
