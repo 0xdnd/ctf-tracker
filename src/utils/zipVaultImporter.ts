@@ -26,6 +26,116 @@ function cleanText(text: string): string {
 }
 
 /**
+ * Enforces strict bounds checking on relative file paths within vault imports (Zip Slip and Path Traversal defense).
+ * Neutralizes:
+ * - Empty, null, undefined, non-string, or oversized paths (>1024 chars)
+ * - Single, double, and N-tier URL-encoded traversal sequences (%2e, %252e, %25252e, etc.)
+ * - Malformed percent sequences and overlong UTF-8 bytes
+ * - Unicode compatibility/fullwidth normalization bypasses (NFKC)
+ * - Control characters and null bytes ([\0\x00-\x1f\x7f-\x9f])
+ * - Absolute Unix paths (/...)
+ * - Windows drive letters (C:/, D:\, etc.) and URI protocol schemes (file://, etc.)
+ * - Windows/SMB UNC network paths (//... or \\...)
+ * - NTFS Alternate Data Streams (colon in segment) and Win32 trailing dots
+ * - Path segments equaling, starting with, or containing '..' or '.'
+ */
+export function isSafeRelativePath(relativePath: string): boolean {
+  // Layer 1: Type, existence, and path length bounds (max 1024 chars)
+  if (!relativePath || typeof relativePath !== 'string') return false;
+  const trimmed = relativePath.trim();
+  if (!trimmed || trimmed.length > 1024) return false;
+
+  // Layer 2: Raw control character and null byte check
+  if (/[\0\x00-\x1f\x7f-\x9f]/.test(trimmed)) return false;
+
+  // Layer 2.5: Reject paths containing percent-encoded dots (%2e), slashes (%2f, %5c), or double-encoding (%25)
+  if (/%2e|%2f|%5c|%25/i.test(trimmed)) return false;
+
+  // Layer 3: Iterative URL-decoding to a stable fixed point (bounded loop)
+  let decoded = trimmed;
+  let prev = '';
+  let iterations = 0;
+  const MAX_DECODE_ITERATIONS = 5;
+
+  try {
+    while (decoded !== prev && iterations < MAX_DECODE_ITERATIONS) {
+      prev = decoded;
+      decoded = decodeURIComponent(decoded);
+      // Check for null bytes or control characters exposed after each decode pass
+      if (/[\0\x00-\x1f\x7f-\x9f]/.test(decoded)) {
+        return false;
+      }
+      iterations++;
+    }
+  } catch {
+    // Malformed percent-encoding, invalid hex, or overlong UTF-8 bytes
+    return false;
+  }
+
+  // Layer 4: Fixed-point convergence verification
+  // If loop exhausted iterations without stabilizing or still contains %, reject as adversarial/malformed
+  if (decoded !== prev || decoded.includes('%')) {
+    return false;
+  }
+
+  // Layer 5: Encoded traversal residue rejection
+  if (/%2e|%2f|%5c/i.test(decoded)) {
+    return false;
+  }
+
+  // Layer 6: Unicode NFKC Normalization (neutralizes fullwidth/compatibility dots and slashes)
+  const normalizedUnicode = decoded.normalize('NFKC');
+  if (/[\0\x00-\x1f\x7f-\x9f]/.test(normalizedUnicode)) {
+    return false;
+  }
+
+  // Layer 7: Path separator normalization
+  const normalized = normalizedUnicode.replace(/\\/g, '/');
+
+  // Layer 8: Absolute paths, UNC network shares, drive letters, and protocol schemes
+  // UNC paths: starts with // (or \\ before normalization)
+  if (normalized.startsWith('//')) return false;
+
+  // Absolute Unix paths: starts with /
+  if (normalized.startsWith('/')) return false;
+
+  // Windows drive letters: e.g. C:, D:, etc.
+  if (/^[a-zA-Z]:/i.test(normalized)) return false;
+
+  // Protocol schemes: e.g. file://, http://, ms-appdata://
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/i.test(normalized)) return false;
+
+  // Layer 9: Strip optional leading './'
+  const cleanPath = normalized.startsWith('./') ? normalized.slice(2) : normalized;
+  if (!cleanPath || cleanPath === '.' || cleanPath === '..') return false;
+
+  // Layer 10: Segment-level decomposition and exhaustive validation
+  const segments = cleanPath.split('/');
+  for (const seg of segments) {
+    const s = seg.trim();
+    // Empty segment (consecutive slashes // or trailing slash)
+    if (s === '') return false;
+
+    // Dot or parent directory segment
+    if (s === '.' || s === '..') return false;
+
+    // Any segment containing .. anywhere
+    if (s.includes('..')) return false;
+
+    // Any segment starting with .. or ending with . (Win32 trailing dot stripping)
+    if (s.startsWith('..') || s.endsWith('.')) return false;
+
+    // Colon (NTFS Alternate Data Streams, drive letters) or lingering backslash
+    if (s.includes(':') || s.includes('\\')) return false;
+
+    // Encoded residue check on segment
+    if (/%2e|%2f|%5c|%25/i.test(s) || s.toLowerCase() === '%2e%2e') return false;
+  }
+
+  return true;
+}
+
+/**
  * Checks if a relative file path should be ignored (system/hidden folders or non-markdown assets)
  */
 export function isIgnoredVaultPath(relativePath: string): boolean {
@@ -152,11 +262,13 @@ export async function parseObsidianRawItems(
   rawItems: { path: string; getText: () => Promise<string> }[],
   onProgress?: (progress: VaultZipImportProgress) => void
 ): Promise<VaultZipImportResult> {
-  // Normalize slashes on all incoming items
-  let items = rawItems.map((item) => ({
-    ...item,
-    path: item.path.replace(/\\/g, '/').replace(/^\.\//, ''),
-  }));
+  // Filter out any unsafe paths before normalization (Zip Slip prevention)
+  let items = rawItems
+    .filter((item) => isSafeRelativePath(item.path))
+    .map((item) => ({
+      ...item,
+      path: item.path.replace(/\\/g, '/').replace(/^\.\//, ''),
+    }));
 
   // Strip common root directory if all items share the exact same top-level folder
   while (items.length > 0) {
@@ -365,6 +477,11 @@ export async function parseObsidianVaultZip(
 
   zip.forEach((relativePath, entry) => {
     if (entry.dir) return;
+
+    // Enforce path bounds against Zip Slip and path traversal
+    if (!isSafeRelativePath(relativePath)) {
+      return;
+    }
 
     const normalizedPath = relativePath.replace(/\\/g, '/').replace(/^\.\//, '');
     if (isIgnoredVaultPath(normalizedPath)) {

@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: asset: blob:; font-src 'self' data:; connect-src 'self' https://api.github.com https://github.com https://www.googleapis.com; media-src 'self' data: blob:;"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' data: blob:;"
     }
   },
   "bundle": {
@@ -47,9 +47,7 @@
   },
   "plugins": {
     "updater": {
-      "endpoints": [
-        "https://github.com/0xdnd/ctf-tracker/releases/latest/download/latest.json"
-      ],
+      "endpoints": [],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVBNUNDQjg5Q0NGMTAxMkYKUldRdkFmSE1pY3RjNnRxUWZlU0pTRDBSWWQzK01QWFBFblJPeUI3QWdHRUhZc01uT0p5VTRxTEwK"
     }
   }

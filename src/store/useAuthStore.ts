@@ -7,12 +7,15 @@ import { useCtfStore } from './useCtfStore';
 const AUTH_STORAGE_KEY = 'rootvector_auth_session';
 const CLIENT_ID_STORAGE_KEY = 'rootvector_google_client_id';
 
-export const DEFAULT_DANIEL_PROFILE: User = {
+export const DEFAULT_AVATAR_DATA_URI =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23111827'/%3E%3Ccircle cx='16' cy='12' r='6' fill='%2310B981'/%3E%3Cpath d='M6 28c0-5.5 4.5-10 10-10s10 4.5 10 10' fill='%2310B981'/%3E%3C/svg%3E";
+
+export const DEFAULT_DANIEL_PROFILE: User & { avatarUrl: string } = {
   id: 'usr_daniel',
   googleId: '',
   email: 'daniel@operator.lab',
   name: 'Daniel',
-  avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+  avatarUrl: DEFAULT_AVATAR_DATA_URI,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
@@ -60,7 +63,7 @@ export const useAuthStore = create<AuthState>()(
             googleId: '',
             email: email?.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '')}@operator.lab`,
             name: cleanName,
-            avatarUrl: avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+            avatarUrl: avatarUrl || DEFAULT_AVATAR_DATA_URI,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };

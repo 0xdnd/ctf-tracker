@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
 import {
+  isSafeRelativePath,
   isIgnoredVaultPath,
   parseFrontmatterAndBody,
   extractCommands,
@@ -224,5 +225,98 @@ See [[nmap]].
       const sqliNote = result.notes.find((n) => n.filename === 'sqli');
       expect(sqliNote?.outgoingWikilinks).toContain(nmapNote?.id);
     });
+
+    it('rejects zip slip entries and ignores out-of-bounds traversal paths inside archives', async () => {
+      const zip = new JSZip();
+      zip.file('../../etc/passwd', 'root:x:0:0:root:/root:/bin/bash');
+      zip.file('..\\..\\Windows\\System32\\cmd.exe', 'binary');
+      zip.file('/var/log/syslog', 'log entry');
+      zip.file('legit/recon.md', '---\ntitle: Legit Note\n---\n# Legit Note\nValid content.');
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const result = await parseObsidianVaultZip(zipBlob);
+
+      expect(result.notes.length).toBe(1);
+      expect(result.notes[0].title).toBe('Legit Note');
+      expect(result.notes.some((n) => n.relPath.includes('passwd'))).toBe(false);
+      expect(result.notes.some((n) => n.relPath.includes('cmd.exe'))).toBe(false);
+      expect(result.notes.some((n) => n.relPath.includes('/var/log'))).toBe(false);
+    });
+  });
+
+  describe('isSafeRelativePath', () => {
+    it('accepts safe relative paths with forward slashes and subdirectories', () => {
+      expect(isSafeRelativePath('notes/recon.md')).toBe(true);
+      expect(isSafeRelativePath('CPTS/01 Information Gathering/SMB/smb-enum.md')).toBe(true);
+      expect(isSafeRelativePath('single-note.markdown')).toBe(true);
+      expect(isSafeRelativePath('sub/dir/nested/deep/file.txt')).toBe(true);
+    });
+
+    it('accepts safe relative paths with Windows-style backslashes', () => {
+      expect(isSafeRelativePath('notes\\recon.md')).toBe(true);
+      expect(isSafeRelativePath('CPTS\\02 Exploitation\\web.md')).toBe(true);
+    });
+
+    it('accepts safe paths with leading ./ notation', () => {
+      expect(isSafeRelativePath('./notes/recon.md')).toBe(true);
+      expect(isSafeRelativePath('.\\notes\\recon.md')).toBe(true);
+    });
+
+    it('rejects empty, null, undefined, or whitespace paths', () => {
+      expect(isSafeRelativePath('')).toBe(false);
+      expect(isSafeRelativePath('   ')).toBe(false);
+      expect(isSafeRelativePath(null as unknown as string)).toBe(false);
+      expect(isSafeRelativePath(undefined as unknown as string)).toBe(false);
+      expect(isSafeRelativePath('./')).toBe(false);
+      expect(isSafeRelativePath('.')).toBe(false);
+    });
+
+    it('rejects absolute Unix paths starting with /', () => {
+      expect(isSafeRelativePath('/etc/passwd')).toBe(false);
+      expect(isSafeRelativePath('/var/www/html/shell.php')).toBe(false);
+      expect(isSafeRelativePath('/root/.ssh/id_rsa')).toBe(false);
+    });
+
+    it('rejects Windows drive letters and UNC paths', () => {
+      expect(isSafeRelativePath('C:/Windows/System32/calc.exe')).toBe(false);
+      expect(isSafeRelativePath('D:\\notes\\vault.md')).toBe(false);
+      expect(isSafeRelativePath('c:file.txt')).toBe(false);
+      expect(isSafeRelativePath('//10.10.10.10/share/exploit.exe')).toBe(false);
+      expect(isSafeRelativePath('\\\\attacker\\smb\\payload.dll')).toBe(false);
+    });
+
+    it('rejects directory traversal sequences with parent directory references', () => {
+      expect(isSafeRelativePath('..')).toBe(false);
+      expect(isSafeRelativePath('../secret.txt')).toBe(false);
+      expect(isSafeRelativePath('notes/../../etc/passwd')).toBe(false);
+      expect(isSafeRelativePath('sub/dir/../..')).toBe(false);
+      expect(isSafeRelativePath('folder/..')).toBe(false);
+      expect(isSafeRelativePath('folder/../other/file.md')).toBe(false);
+      expect(isSafeRelativePath('..\\secret.txt')).toBe(false);
+      expect(isSafeRelativePath('notes\\..\\..\\windows\\system32')).toBe(false);
+    });
+
+    it('rejects URL-encoded directory traversal sequences', () => {
+      expect(isSafeRelativePath('%2e%2e/etc/passwd')).toBe(false);
+      expect(isSafeRelativePath('%2e%2e\\secret.txt')).toBe(false);
+      expect(isSafeRelativePath('notes/%2e%2e/evil.md')).toBe(false);
+      expect(isSafeRelativePath('notes%2f%2e%2e%2fsecret')).toBe(false);
+      expect(isSafeRelativePath('%2e/single.md')).toBe(false);
+    });
+
+    it('rejects null bytes and control characters', () => {
+      expect(isSafeRelativePath('notes\0.md')).toBe(false);
+      expect(isSafeRelativePath('notes\x00evil.md')).toBe(false);
+      expect(isSafeRelativePath('notes/\x08test.md')).toBe(false);
+      expect(isSafeRelativePath('notes/\x1fpayload.md')).toBe(false);
+      expect(isSafeRelativePath('notes/\x7fdelete.md')).toBe(false);
+    });
+
+    it('rejects segments containing invalid colons, backslashes, or internal double dots', () => {
+      expect(isSafeRelativePath('notes/..hidden/file.md')).toBe(false);
+      expect(isSafeRelativePath('notes/file..name/test.md')).toBe(false);
+      expect(isSafeRelativePath('notes/file:stream')).toBe(false);
+    });
   });
 });
+

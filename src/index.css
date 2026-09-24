@@ -1,8 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 :root {
   /* Tactical Light Mode - Crisp, High-Contrast Slate Palette */
@@ -119,7 +118,7 @@
   }
   body {
     @apply bg-cyber-bg text-cyber-text antialiased;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     overflow-x: hidden;
   }
 

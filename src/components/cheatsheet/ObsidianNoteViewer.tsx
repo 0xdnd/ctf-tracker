@@ -33,6 +33,7 @@ import {
   ObsidianCallout 
 } from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound } from '../../utils/helpers';
+import { sanitizeHtml, sanitizeSvg } from '../../utils/securityUtils';
 import { GlobalVariables } from '../../types';
 import { ShareLinkButton } from '../common/ShareLinkButton';
 
@@ -652,6 +653,36 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           </div>
         );
         continue;
+      }
+
+      // Sanitized SVG diagram support (e.g. Mermaid or architectural SVG diagrams embedded in Obsidian note)
+      if (line.trim().startsWith('<svg') && line.trim().endsWith('</svg>')) {
+        const cleanSvg = sanitizeSvg(line.trim());
+        if (cleanSvg) {
+          elements.push(
+            <div
+              key={'svg-' + i}
+              className="my-3 overflow-x-auto rounded-lg border border-purple-900/30 p-2 bg-slate-950/60"
+              dangerouslySetInnerHTML={{ __html: cleanSvg }}
+            />
+          );
+          continue;
+        }
+      }
+
+      // Sanitized HTML block support
+      if (line.trim().startsWith('<') && line.trim().endsWith('>') && !line.trim().startsWith('<!--')) {
+        const cleanHtml = sanitizeHtml(line.trim());
+        if (cleanHtml) {
+          elements.push(
+            <div
+              key={'html-' + i}
+              className="my-2"
+              dangerouslySetInnerHTML={{ __html: cleanHtml }}
+            />
+          );
+          continue;
+        }
       }
 
       if (line.trim()) {

@@ -1,5 +1,6 @@
 import { Machine } from '../types';
 import { sanitizeFilename } from './workspaceStorage';
+import { sanitizeHtml } from './securityUtils';
 
 /**
  * Escapes HTML entities to prevent stored XSS vulnerabilities.
@@ -22,11 +23,11 @@ export function escapeHtml(str: string): string {
 export function parseInlineMarkdown(text: string): string {
   let escaped = escapeHtml(text);
 
-  // Images: ![alt](url) -> sanitized img tag (allows relative paths or safe raster data URIs)
+  // Images: ![alt](url) -> sanitized img tag (Air-gapped zero-egress: disallows remote http/https; only allows relative paths or safe data URIs)
   if (escaped.includes('![')) {
     escaped = escaped.replace(/!\[([^\[\]\n]*)\]\(([^)\n]+)\)/g, (_match, alt, src) => {
       const cleanSrc = src.trim().replace(/[\0\x00-\x1f]/g, '');
-      if (/^(https?:\/\/|\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp);base64,)/i.test(cleanSrc)) {
+      if (/^(\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,)/i.test(cleanSrc)) {
         return `<img src="${cleanSrc}" alt="${alt}" class="writeup-img" loading="lazy" />`;
       }
       return `[Image: ${alt}]`;
@@ -928,7 +929,7 @@ export function exportWriteupToHtml(
   const brand = options.brandName || 'ZEROBOX';
   const author = options.author || 'ZeroBox Operator';
   const generatedDate = new Date().toISOString().slice(0, 10);
-  const bodyHtml = parseMarkdownToHtml(markdownContent);
+  const bodyHtml = sanitizeHtml(parseMarkdownToHtml(markdownContent));
   const styles = getEmbeddedStyles();
   const script = getEmbeddedScript(markdownContent);
 
@@ -941,6 +942,7 @@ export function exportWriteupToHtml(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob:; media-src 'self' data: blob:;">
   <title>${escapeHtml(machine.name)} — Penetration Testing Writeup</title>
   <style>
 ${styles}

@@ -87,5 +87,6 @@ scripts/index-cpts-notes.cjs
 .mcp.json
 .agentsroom/
 .claude/
-.agents/mcp_config.json
+.agents/
+TEST_READY.md
 archive_standalone_hud/

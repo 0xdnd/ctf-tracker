@@ -1,6 +1,12 @@
-import { parseObsidianRawItems, isIgnoredVaultPath, VaultZipImportProgress, VaultZipImportResult } from './zipVaultImporter';
+import {
+  parseObsidianRawItems,
+  isIgnoredVaultPath,
+  isSafeRelativePath,
+  VaultZipImportProgress,
+  VaultZipImportResult
+} from './zipVaultImporter';
 
-export { isIgnoredVaultPath };
+export { isIgnoredVaultPath, isSafeRelativePath };
 
 /**
  * Recursively traverses a FileSystemEntry (standard HTML5 directory drag-and-drop entry)
@@ -16,7 +22,7 @@ export async function traverseFileSystemEntry(
       entry.file(resolve, reject);
     });
     const relativePath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
-    if (!isIgnoredVaultPath(relativePath) && /\.(md|markdown)$/i.test(entry.name)) {
+    if (isSafeRelativePath(relativePath) && !isIgnoredVaultPath(relativePath) && /\.(md|markdown)$/i.test(entry.name)) {
       results.push({ path: relativePath, file });
     }
   } else if (entry.isDirectory) {
@@ -35,7 +41,7 @@ export async function traverseFileSystemEntry(
     }
 
     const nextPath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
-    if (!isIgnoredVaultPath(nextPath)) {
+    if (isSafeRelativePath(nextPath) && !isIgnoredVaultPath(nextPath)) {
       for (const child of entries) {
         const childResults = await traverseFileSystemEntry(child, nextPath);
         results.push(...childResults);
@@ -66,7 +72,7 @@ export async function extractFilesFromDataTransfer(
           collected.push(...files);
         } else {
           const file = item.getAsFile();
-          if (file && /\.(md|markdown)$/i.test(file.name)) {
+          if (file && isSafeRelativePath(file.name) && /\.(md|markdown)$/i.test(file.name)) {
             collected.push({ path: file.name, file });
           }
         }
@@ -76,7 +82,7 @@ export async function extractFilesFromDataTransfer(
     for (let i = 0; i < dataTransfer.files.length; i++) {
       const file = dataTransfer.files[i];
       const relPath = (file as any).webkitRelativePath || file.name;
-      if (!isIgnoredVaultPath(relPath) && /\.(md|markdown)$/i.test(file.name)) {
+      if (isSafeRelativePath(relPath) && !isIgnoredVaultPath(relPath) && /\.(md|markdown)$/i.test(file.name)) {
         collected.push({ path: relPath, file });
       }
     }
@@ -122,8 +128,12 @@ export async function parseObsidianVaultDirectory(
     }
   }
 
-  // Filter markdown files and ignore system folders
+  // Filter markdown files, enforce bounds checking, and ignore system folders
   for (const { path, file } of fileArray) {
+    if (!isSafeRelativePath(path)) {
+      continue;
+    }
+
     const normalizedPath = path.replace(/\\/g, '/');
     if (isIgnoredVaultPath(normalizedPath)) {
       continue;

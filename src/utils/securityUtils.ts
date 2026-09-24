@@ -1,0 +1,55 @@
+import DOMPurify from 'dompurify';
+
+/**
+ * Strict DOMPurify sanitization for HTML content (Markdown renders, notes, writeups).
+ * Blocks all script execution, iframe/object embedding, and inline event handlers (on*).
+ */
+export function sanitizeHtml(dirty: string): string {
+  if (!dirty || typeof dirty !== 'string' || !dirty.trim()) return '';
+
+  const result = DOMPurify.sanitize(dirty, {
+    ALLOWED_TAGS: [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'b', 'i', 'strong', 'em', 'strike', 'del',
+      'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'hr', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td', 'span', 'div', 'mark', 'a', 'img', 'br', 'sub', 'sup', 'kbd',
+      'dl', 'dt', 'dd', 'input', 'button', 'details', 'summary'
+    ],
+    ALLOWED_ATTR: [
+      'href', 'title', 'class', 'id', 'target', 'rel', 'src', 'alt', 'width', 'height',
+      'loading', 'type', 'checked', 'disabled', 'aria-label', 'aria-hidden', 'role', 'name'
+    ],
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'style', 'link', 'meta', 'base', 'applet'],
+    FORBID_ATTR: [
+      'onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur',
+      'onchange', 'onsubmit', 'onkeydown', 'onkeypress', 'onkeyup', 'style', 'formaction'
+    ],
+  });
+
+  return typeof result === 'string' && !result.trim() ? '' : result;
+}
+
+/**
+ * Strict DOMPurify sanitization for SVG diagrams and vector graphics (Mermaid diagrams, attack graphs).
+ * Preserves SVG visual structure while forbidding script tags, external links, animations, and event handlers.
+ */
+export function sanitizeSvg(dirtySvg: string): string {
+  if (!dirtySvg || typeof dirtySvg !== 'string' || !dirtySvg.trim()) return '';
+
+  const result = DOMPurify.sanitize(dirtySvg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ['foreignObject'],
+    ADD_ATTR: ['dominant-baseline'],
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: [
+      'script', 'iframe', 'object', 'embed', 'link', 'meta',
+      'animate', 'set', 'animateTransform', 'animateMotion', 'discard', 'handler'
+    ],
+    FORBID_ATTR: [
+      'onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur',
+      'onbegin', 'onend', 'onrepeat', 'xlink:href'
+    ],
+  });
+
+  return typeof result === 'string' && !result.trim() ? '' : result;
+}
