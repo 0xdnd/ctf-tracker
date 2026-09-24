@@ -220,8 +220,8 @@ Before declaring any task or feature deliverable complete:
 1. **Global LHOST/LPORT Floating Payload Bar**:
    - A persistent, minimizable floating pill bar at the bottom of all routes (Tracker, Methodology, Field Manual).
    - Allows changing `LHOST` or `LPORT` once and instantly copying interpolated reverse shells or listeners without switching pages.
-2. **Automated Nmap Service Parser in Tracker**:
-   - Allow dropping an `.nmap` or `.gnmap` file directly into the Target Detail page to automatically populate the open ports grid.
+2. **Automated Nmap Service Parser in Tracker** *(Completed)*:
+   - Interactive drag-and-drop artifact dropzone (`TargetReconDropzone.tsx`) in Target Detail page supporting `.nmap`, `.gnmap`, and XML scan files, auto-populating the open ports grid, service banners, and CVE exploit recommendations.
 3. **1-Click Writeup Export to PDF / HTML Archive**:
    - Export formatted writeups with styling, screenshots, and CVSS scores directly into a self-contained PDF or offline zip archive.
 
