@@ -90,3 +90,8 @@ scripts/index-cpts-notes.cjs
 .agents/
 TEST_READY.md
 archive_standalone_hud/
+
+# Large Archives & Ephemeral Testing Artifacts
+*.zip
+crop_deploy.png
+scripts/*.py
