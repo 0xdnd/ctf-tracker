@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   GraduationCap, 
@@ -12,728 +13,1010 @@ import {
   Clock, 
   FileDown, 
   CheckCircle2, 
-  Copy, 
-  ExternalLink,
   ChevronRight,
   ChevronDown,
-  Server,
-  Layers,
   Terminal,
   Trophy,
+  Coffee,
+  Sparkles,
   Zap,
-  CheckSquare,
-  Square,
-  Camera,
-  FileCode,
+  Target,
+  ArrowRight,
+  User,
+  Shield,
+  Layers,
   HelpCircle,
-  Sparkles
+  ExternalLink,
+  Flame,
+  X
 } from 'lucide-react';
-import { useCtfStore } from '../store/useCtfStore';
+import { useExamStore } from '../store/examStore';
 import { OsBadge } from '../components/common/OsBadge';
 import { DifficultyBadge } from '../components/common/DifficultyBadge';
-import { playCyberSound, triggerRootCelebration } from '../utils/helpers';
+import { triggerRootCelebration } from '../utils/helpers';
+import { playCyberAlert } from '../utils/audioAlerts';
 import { 
   ExamTrack, 
   ExamBox, 
-  ExamSessionState, 
-  validateFlagFormat, 
-  generateExamTargetsForTrack, 
+  ExamSessionState,
+  EXAM_TRACK_CONFIGS,
   calculateExamScore, 
-  generateExamReportMarkdown 
+  generateExamReportMarkdown,
+  validateFlagFormat,
+  isActiveDirectoryBox,
+  isDomainControllerBox
 } from '../utils/examComplianceUtils';
-
-const STORAGE_KEY = 'zerobox_exam_session_v2';
+import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
+import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
+import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
+import { ExamReportModal } from '../components/exam/ExamReportModal';
 
 export const ExamSimulatorPage: React.FC = () => {
-  const machines = useCtfStore((s) => s.machines);
-  const soundEnabled = useCtfStore((s) => s.soundEnabled);
+  const {
+    id,
+    track,
+    status,
+    boxes,
+    startedAt,
+    examExpiresAt,
+    totalDurationSeconds,
+    timerPausedRemainingSeconds,
+    remainingSeconds,
+    activeBreak,
+    breakHistory,
+    milestones,
+    scratchNotes,
+    includeBonusPoints,
+    candidateName,
+    candidateCallsign,
+    osid,
+    startExam,
+    pauseExam,
+    resumeExam,
+    resetExam,
+    setTrack,
+    shuffleTargets,
+    submitFlag,
+    togglePwn,
+    setCandidateInfo,
+    setScratchNotes,
+    setIncludeBonusPoints,
+    getRemainingSeconds,
+    getBreakRemainingSeconds,
+    getScore,
+    getPassingStatus,
+    tick,
+  } = useExamStore(
+    useShallow((s) => ({
+      id: s.id,
+      track: s.track,
+      status: s.status,
+      boxes: s.boxes,
+      startedAt: s.startedAt,
+      examExpiresAt: s.examExpiresAt,
+      totalDurationSeconds: s.totalDurationSeconds,
+      timerPausedRemainingSeconds: s.timerPausedRemainingSeconds,
+      remainingSeconds: s.remainingSeconds,
+      activeBreak: s.activeBreak,
+      breakHistory: s.breakHistory,
+      milestones: s.milestones,
+      scratchNotes: s.scratchNotes,
+      includeBonusPoints: s.includeBonusPoints,
+      candidateName: s.candidateName,
+      candidateCallsign: s.candidateCallsign,
+      osid: s.osid,
+      startExam: s.startExam,
+      pauseExam: s.pauseExam,
+      resumeExam: s.resumeExam,
+      resetExam: s.resetExam,
+      setTrack: s.setTrack,
+      shuffleTargets: s.shuffleTargets,
+      submitFlag: s.submitFlag,
+      togglePwn: s.togglePwn,
+      setCandidateInfo: s.setCandidateInfo,
+      setScratchNotes: s.setScratchNotes,
+      setIncludeBonusPoints: s.setIncludeBonusPoints,
+      getRemainingSeconds: s.getRemainingSeconds,
+      getBreakRemainingSeconds: s.getBreakRemainingSeconds,
+      getScore: s.getScore,
+      getPassingStatus: s.getPassingStatus,
+      tick: s.tick,
+    }))
+  );
 
-  // Load initial session or create default
-  const [session, setSession] = useState<ExamSessionState>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.boxes && parsed.boxes.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load exam session:', e);
-    }
-
-    const defaultTrack: ExamTrack = 'OSCP';
-    const boxes = generateExamTargetsForTrack(defaultTrack, machines);
-    return {
-      track: defaultTrack,
-      examStartedAt: Date.now(),
-      examDurationSeconds: 24 * 3600,
-      examExpiresAt: Date.now() + 24 * 3600 * 1000,
-      isTimerRunning: false,
-      timerPausedRemainingSeconds: 24 * 3600,
-      boxes,
-      scratchNotes: '# CANDIDATE LOG\n\n## Target Credential Vault\n- administrator : P@ssw0rd2024!\n\n## Active Tunnels\n- Chisel SOCKS5 proxy on 127.0.0.1:1080 -> 172.16.1.0/24',
-      candidateName: 'Daniel Dayan',
-      candidateCallsign: '0xdnd',
-      osid: 'OS-94821',
-    };
-  });
-
-  // Track expanded box IDs
+  // Expanded box card for evidence dropzones
   const [expandedBoxId, setExpandedBoxId] = useState<string | null>(null);
+  const [activeProofTab, setActiveProofTab] = useState<'user' | 'root'>('user');
 
-  // Remaining seconds derived from absolute epoch timestamp to prevent drift
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(() => {
-    if (!session.isTimerRunning) {
-      return session.timerPausedRemainingSeconds ?? 24 * 3600;
-    }
-    if (!session.examExpiresAt) return 24 * 3600;
-    return Math.max(0, Math.floor((session.examExpiresAt - Date.now()) / 1000));
-  });
+  // Bio-Break Modal visibility
+  const [isBioBreakModalOpen, setIsBioBreakModalOpen] = useState(false);
 
-  // Persist session to localStorage with 400ms debouncing and flush on beforeunload
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-      } catch (e) {
-        console.error('Failed to persist exam session:', e);
-      }
-    }, 400);
+  // Exam Report Generator Modal visibility
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-    return () => clearTimeout(timer);
-  }, [session]);
+  // Victory celebration state
+  const [showVictoryBanner, setShowVictoryBanner] = useState(false);
+  const prevIsPassingRef = useRef(false);
 
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-      } catch {}
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [session]);
-
-  // Timer Tick (Driven by absolute epoch timestamp)
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (session.isTimerRunning && session.examExpiresAt) {
-      interval = setInterval(() => {
-        const remaining = Math.max(0, Math.floor((session.examExpiresAt! - Date.now()) / 1000));
-        setRemainingSeconds(remaining);
-        if (remaining <= 0) {
-          setSession((prev) => ({ ...prev, isTimerRunning: false, timerPausedRemainingSeconds: 0 }));
-        }
-      }, 500);
-    } else {
-      if (session.timerPausedRemainingSeconds !== null) {
-        setRemainingSeconds(session.timerPausedRemainingSeconds);
-      }
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [session.isTimerRunning, session.examExpiresAt, session.timerPausedRemainingSeconds]);
-
-  // Toggle Timer Run/Pause
-  const toggleTimer = () => {
-    if (session.isTimerRunning) {
-      // Pause: capture remaining seconds
-      const currentRemaining = Math.max(0, Math.floor(((session.examExpiresAt || Date.now()) - Date.now()) / 1000));
-      setSession((prev) => ({
-        ...prev,
-        isTimerRunning: false,
-        timerPausedRemainingSeconds: currentRemaining,
-        examExpiresAt: null,
-      }));
-    } else {
-      // Start: set absolute expiration from paused seconds
-      const duration = session.timerPausedRemainingSeconds ?? 24 * 3600;
-      setSession((prev) => ({
-        ...prev,
-        isTimerRunning: true,
-        examExpiresAt: Date.now() + duration * 1000,
-        timerPausedRemainingSeconds: null,
-      }));
-    }
-    if (soundEnabled) playCyberSound('timer');
-  };
-
-  // Reset Timer to 24h
-  const resetTimer = () => {
-    const defaultDuration = session.track === 'CPTS' ? 48 * 3600 : 24 * 3600;
-    setSession((prev) => ({
-      ...prev,
-      isTimerRunning: false,
-      examDurationSeconds: defaultDuration,
-      examExpiresAt: null,
-      timerPausedRemainingSeconds: defaultDuration,
-    }));
-    setRemainingSeconds(defaultDuration);
-    if (soundEnabled) playCyberSound('click');
-  };
-
-  // Switch Track
-  const handleTrackChange = (newTrack: ExamTrack) => {
-    if (newTrack === session.track) return;
-    const newBoxes = generateExamTargetsForTrack(newTrack, machines);
-    const duration = newTrack === 'CPTS' ? 48 * 3600 : 24 * 3600;
-    setSession((prev) => ({
-      ...prev,
-      track: newTrack,
-      boxes: newBoxes,
-      examStartedAt: Date.now(),
-      examDurationSeconds: duration,
-      examExpiresAt: null,
-      isTimerRunning: false,
-      timerPausedRemainingSeconds: duration,
-    }));
-    setRemainingSeconds(duration);
-    if (soundEnabled) playCyberSound('click');
-  };
-
-  // Reset Exam Session / Pick New Mock Set
-  const handleNewMockSet = () => {
-    const newBoxes = generateExamTargetsForTrack(session.track, machines);
-    setSession((prev) => ({
-      ...prev,
-      boxes: newBoxes,
-      examStartedAt: Date.now(),
-    }));
-    if (soundEnabled) playCyberSound('shuffle');
-  };
-
-  // Score & Compliance calculations
+  // Score & passing status
   const scoreData = useMemo(() => {
-    return calculateExamScore(session.track, session.boxes);
-  }, [session.track, session.boxes]);
+    return calculateExamScore(track, boxes, { includeBonusPoints });
+  }, [track, boxes, includeBonusPoints]);
 
-  // Format Timer
-  const formatTimer = (secs: number) => {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
+  const passingStatus = getPassingStatus();
+  const currentRemaining = getRemainingSeconds();
+  const trackConfig = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
 
-  // Update Box Proof or Flag
-  const updateBoxProof = (
-    boxId: string,
-    flagType: 'user' | 'root',
-    field: 'flagText' | 'whoamiOutput' | 'ipconfigOutput' | 'screenshotTaken',
-    val: any
-  ) => {
-    setSession((prev) => {
-      const updatedBoxes = prev.boxes.map((b) => {
-        if (b.id !== boxId) return b;
-        const proofKey = flagType === 'user' ? 'userProof' : 'rootProof';
-        const updatedProof = {
-          ...b[proofKey],
-          [field]: val,
-        };
+  // Dynamic Pacing Telemetry
+  const pacing = useMemo(() => {
+    return computeExamPacing(
+      {
+        examStartedAt: startedAt,
+        examExpiresAt,
+        timerPausedRemainingSeconds,
+        totalDurationSeconds,
+        boxes,
+      },
+      {
+        totalScore: scoreData.totalScore,
+        passThreshold: scoreData.passThreshold,
+      }
+    );
+  }, [startedAt, examExpiresAt, timerPausedRemainingSeconds, totalDurationSeconds, boxes, scoreData]);
 
-        // Automatically toggle pwned if valid flag is entered
-        let willBePwned = flagType === 'user' ? b.userPwned : b.rootPwned;
-        if (field === 'flagText') {
-          const validation = validateFlagFormat(val);
-          if (validation.valid && !willBePwned) {
-            willBePwned = true;
-            if (flagType === 'root') {
-              triggerRootCelebration();
-              if (soundEnabled) playCyberSound('root');
-            } else {
-              if (soundEnabled) playCyberSound('flag');
-            }
-          }
-        }
+  // Victory Celebration Trigger when passing threshold is first reached
+  useEffect(() => {
+    if (scoreData.isPassing && !prevIsPassingRef.current && status !== 'idle') {
+      setShowVictoryBanner(true);
+      triggerRootCelebration();
+      playCyberAlert('victory_fanfare');
+    }
+    prevIsPassingRef.current = scoreData.isPassing;
+  }, [scoreData.isPassing, status]);
 
-        return {
-          ...b,
-          [flagType === 'user' ? 'userPwned' : 'rootPwned']: willBePwned,
-          [proofKey]: updatedProof,
-        };
-      });
-      return { ...prev, boxes: updatedBoxes };
-    });
-  };
-
-  // Toggle Pwn Flag manually
-  const togglePwn = (boxId: string, flagType: 'user' | 'root') => {
-    setSession((prev) => {
-      const updated = prev.boxes.map((b) => {
-        if (b.id !== boxId) return b;
-        const willBePwned = flagType === 'user' ? !b.userPwned : !b.rootPwned;
-        if (willBePwned) {
-          if (flagType === 'root') {
-            triggerRootCelebration();
-            if (soundEnabled) playCyberSound('root');
-          } else {
-            if (soundEnabled) playCyberSound('flag');
-          }
-        } else {
-          if (soundEnabled) playCyberSound('toggle');
-        }
-        return {
-          ...b,
-          [flagType === 'user' ? 'userPwned' : 'rootPwned']: willBePwned,
-        };
-      });
-      return { ...prev, boxes: updated };
-    });
-  };
-
-  // Export OffSec Report (.md)
+  // Open 1-Click Submission-Ready Exam Report Modal & trigger export
   const handleExportReport = () => {
-    const md = generateExamReportMarkdown(session);
+    setIsReportModalOpen(true);
+    const sessionPayload: ExamSessionState = {
+      id,
+      track,
+      candidateName,
+      candidateCallsign,
+      osid,
+      examStartedAt: startedAt || Date.now(),
+      examDurationSeconds: totalDurationSeconds,
+      examExpiresAt,
+      isTimerRunning: status === 'running',
+      timerPausedRemainingSeconds,
+      boxes,
+      scratchNotes,
+      includeBonusPoints,
+    };
+    const md = generateExamReportMarkdown(sessionPayload);
     const blob = new Blob([md], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${session.track}_EXAM_REPORT_${session.candidateCallsign}_${new Date().toISOString().slice(0, 10)}.md`;
-    a.click();
+    a.download = `${track}_EXAM_REPORT_${candidateCallsign || 'candidate'}_${new Date().toISOString().slice(0, 10)}.md`;
+    try {
+      a.click();
+    } catch {}
     URL.revokeObjectURL(url);
-    if (soundEnabled) playCyberSound('export');
   };
 
+  // Toggle Timer Play / Pause
+  const handleToggleTimer = () => {
+    if (status === 'running') {
+      pauseExam();
+    } else if (status === 'paused') {
+      resumeExam();
+    }
+  };
+
+  // Handle Starting the Exam from Pre-flight Setup
+  const handleStartExam = () => {
+    startExam(track, { candidateName, candidateCallsign, osid });
+  };
+
+  // Separate Active Directory boxes from Standalones
+  const adBoxes = useMemo(() => {
+    return boxes.filter((b) => isActiveDirectoryBox(b));
+  }, [boxes]);
+
+  const standaloneBoxes = useMemo(() => {
+    return boxes.filter((b) => !isActiveDirectoryBox(b));
+  }, [boxes]);
+
   return (
-    <div className="w-full space-y-5 font-mono">
-      {/* 1. Exam Header & Telemetry Dashboard */}
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          
-          {/* Header Title */}
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-cyber-bg border border-emerald-400/50 dark:border-cyber-emerald/40 shadow-glow-emerald/20 text-emerald-700 dark:text-cyber-emerald">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <div>
+    <div
+      className="w-full space-y-6 font-mono pb-12"
+      data-testid="exam-simulator-page"
+    >
+      {/* ================================================================= */}
+      {/* VICTORY CELEBRATION MODAL / BANNER                                */}
+      {/* ================================================================= */}
+      <AnimatePresence>
+        {showVictoryBanner && scoreData.isPassing && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.96 }}
+            data-testid="exam-victory-banner"
+            className="p-4 rounded-xl bg-[#18181b] border border-emerald-500 shadow-xs relative overflow-hidden font-mono"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                  <Trophy className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 rounded-md font-black uppercase tracking-widest bg-emerald-500 text-slate-950">
+                      VICTORY CONFIRMED
+                    </span>
+                    <span className="text-xs text-emerald-400 font-bold">
+                      {scoreData.totalScore} / {scoreData.maxScore} PTS ACHIEVED
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold text-white mt-0.5 tracking-wide">
+                    {track} PASSING THRESHOLD SURPASSED!
+                  </h2>
+                  <p className="text-xs text-zinc-300 mt-0.5">
+                    Congratulations operator! Verify all proof screenshots, `whoami`, and network outputs before exporting your report.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wider">
-                  OFFSEC // EXAM COMPLIANCE & SCORING ENGINE
-                </h1>
-                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/30 text-emerald-900 dark:text-cyber-emerald">
-                  {session.track} COMPLIANT
-                </span>
+                <button
+                  type="button"
+                  onClick={handleExportReport}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] shadow-xs"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span>Export Report (.md)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowVictoryBanner(false)}
+                  className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-[#27272a] active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+                  aria-label="Dismiss victory banner"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <p className="text-xs text-slate-600 dark:text-cyber-muted">
-                Official scoring matrices, proof verification checklists, regex flag auditor, and report generator.
-              </p>
             </div>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Exam Track Switcher */}
-          <div className="flex flex-wrap items-center gap-2">
-            {(['OSCP', 'CPTS', 'CRTP'] as ExamTrack[]).map((t) => (
+      {/* ================================================================= */}
+      {/* 1. SETUP / PRE-FLIGHT VIEW (status === 'idle')                     */}
+      {/* ================================================================= */}
+      {status === 'idle' && (
+        <div
+          data-testid="exam-setup-view"
+          className="space-y-6 animate-in fade-in duration-200"
+        >
+          {/* Header Banner */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-xs space-y-4 font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
+                    ZEROBOX // CERTIFICATION EXAM SIMULATOR
+                  </h1>
+                  <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1">
+                    Authentic OffSec OSCP, HTB CPTS & CRTO hands-on lab environments with persistent scoring matrices & evidence engine.
+                  </p>
+                </div>
+              </div>
+
+              {/* Start Exam CTA */}
               <button
-                key={t}
-                onClick={() => handleTrackChange(t)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                  session.track === t
-                    ? 'bg-emerald-100 dark:bg-cyber-emerald/20 border-emerald-500 dark:border-cyber-emerald text-emerald-950 dark:text-cyber-emerald shadow-glow-emerald/30'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                }`}
+                type="button"
+                data-testid="exam-start-btn"
+                onClick={handleStartExam}
+                className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-xs active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color]"
               >
-                {t} ({t === 'CPTS' ? '85 Pts' : t === 'CRTP' ? '100 Pts' : '70 Pts'})
+                <Play className="w-4 h-4 fill-current" />
+                <span>Launch {track} Exam Clock</span>
               </button>
-            ))}
+            </div>
           </div>
 
-        </div>
-
-        {/* Telemetry Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-3 border-t border-slate-200 dark:border-cyber-border/80">
-          
-          {/* Score Counter */}
-          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border flex items-center justify-between">
-            <div>
-              <span className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase font-bold tracking-wider">
-                {session.track} EXAM SCORE
+          {/* Track Selection Cards */}
+          <div className="space-y-3 font-mono">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                1. Select Certification Ruleset
+              </h2>
+              <span className="text-[10px] text-slate-500 dark:text-zinc-400">
+                Calibrated to authentic syllabus standards
               </span>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className={`text-2xl font-black ${scoreData.isPassing ? 'text-emerald-700 dark:text-cyber-emerald' : 'text-amber-700 dark:text-cyber-amber'}`}>
-                  {scoreData.totalScore}
-                </span>
-                <span className="text-slate-500 dark:text-cyber-muted text-xs">/ {scoreData.maxScore} PTS</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(['OSCP', 'CPTS', 'CRTO'] as ExamTrack[]).map((t) => {
+                const conf = EXAM_TRACK_CONFIGS[t];
+                const isSelected = track === t;
+                return (
+                  <div
+                    key={t}
+                    role="button"
+                    tabIndex={0}
+                    data-testid={`exam-track-select-${t.toLowerCase()}`}
+                    onClick={() => setTrack(t)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setTrack(t);
+                      }
+                    }}
+                    className={`cursor-pointer p-4 rounded-xl border text-left transition-colors ${
+                      isSelected
+                        ? 'bg-slate-50 dark:bg-[#18181b] border-2 border-emerald-500 shadow-xs'
+                        : 'bg-white dark:bg-[#09090b] border-slate-200 dark:border-[#27272a] hover:border-slate-300 dark:hover:border-[#3f3f46]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        {t}
+                      </span>
+                      <span className="text-[11px] font-bold text-cyan-500 dark:text-cyan-400">
+                        Pass: {conf.passThreshold} Pts
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">{conf.name}</h3>
+                    <p className="text-[11px] text-slate-600 dark:text-zinc-400 line-clamp-3 mb-3 leading-relaxed">
+                      {conf.description}
+                    </p>
+
+                    <div className="pt-2 border-t border-slate-200 dark:border-[#27272a] text-[10px] text-slate-500 dark:text-zinc-400 flex items-center justify-between">
+                      <span>Duration: {Math.round(conf.durationSeconds / 3600)}h</span>
+                      <span>{conf.targetSummary}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Candidate Profile & Configuration */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-xs space-y-4 font-mono">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
+              <User className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+              <span>2. Candidate Identity & Lab Parameters</span>
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label htmlFor="candidate-name" className="block text-[11px] text-slate-500 dark:text-zinc-400 mb-1">
+                  Candidate Full Name
+                </label>
+                <input
+                  id="candidate-name"
+                  name="candidateName"
+                  type="text"
+                  value={candidateName}
+                  onChange={(e) => setCandidateInfo({ candidateName: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-cyan-500 transition-colors"
+                  placeholder="Daniel Dayan"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="candidate-callsign" className="block text-[11px] text-slate-500 dark:text-zinc-400 mb-1">
+                  Candidate Callsign
+                </label>
+                <input
+                  id="candidate-callsign"
+                  name="candidateCallsign"
+                  type="text"
+                  value={candidateCallsign}
+                  onChange={(e) => setCandidateInfo({ candidateCallsign: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-cyan-500 transition-colors"
+                  placeholder="0xdnd"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="candidate-osid" className="block text-[11px] text-slate-500 dark:text-zinc-400 mb-1">
+                  OffSec OSID / HTB ID
+                </label>
+                <input
+                  id="candidate-osid"
+                  name="osid"
+                  type="text"
+                  value={osid}
+                  onChange={(e) => setCandidateInfo({ osid: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-lg px-3 py-1.5 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-cyan-500 transition-colors"
+                  placeholder="OS-94821"
+                />
               </div>
             </div>
 
-            <div className="text-right">
+            {/* Bonus Points Option */}
+            <div className="pt-2">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={includeBonusPoints}
+                  onChange={(e) => setIncludeBonusPoints(e.target.checked)}
+                  className="rounded-md border-slate-300 dark:border-[#27272a] bg-slate-50 dark:bg-[#09090b] text-cyan-500 focus:ring-0"
+                />
+                <span>
+                  Include +10 Bonus Points (OffSec lab exercise completion & approved writeup)
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Target Set Preview */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-xs space-y-4 font-mono">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                <span>3. Generated Mock Target Set ({boxes.length} Machines)</span>
+              </h2>
+              <button
+                type="button"
+                onClick={shuffleTargets}
+                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#09090b] hover:dark:bg-slate-900 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-slate-200 dark:border-[#27272a] flex items-center gap-1 active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] shadow-xs"
+              >
+                <Shuffle className="w-3.5 h-3.5" />
+                <span>Re-roll Mock Targets</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {boxes.map((b) => (
+                <div
+                  key={b.id}
+                  className="p-3 rounded-xl bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] text-xs space-y-1.5 font-mono shadow-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-white truncate">{b.name}</span>
+                    <DifficultyBadge difficulty={b.difficulty} size="xs" />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
+                    <span>IP: <strong className="text-cyan-600 dark:text-cyan-400">{b.ip}</strong></span>
+                    <OsBadge os={b.os} size="xs" />
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 pt-1 border-t border-slate-200 dark:border-[#27272a] flex items-center justify-between">
+                    <span>{b.label}</span>
+                    <span className="font-bold text-slate-700 dark:text-zinc-300">
+                      {b.userPoints + b.rootPoints} PTS
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* 2. ACTIVE COCKPIT VIEW (status === 'running' | 'paused')          */}
+      {/* ================================================================= */}
+      {(status === 'running' || status === 'paused') && (
+        <div
+          data-testid="exam-active-cockpit"
+          className="space-y-6 animate-in fade-in duration-200 font-mono"
+        >
+          {/* Top Telemetry & Control HUD */}
+          <div className="p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-xs space-y-4 font-mono">
+            {/* Header Identity Row */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#27272a]">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-wide">
+                      {trackConfig.name} // ACTIVE COCKPIT
+                    </h1>
+                    <span
+                      data-testid="exam-status-badge"
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+                        scoreData.isPassing
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                          : passingStatus === 'Critical'
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse'
+                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                      }`}
+                    >
+                      {passingStatus}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-zinc-400">
+                    Candidate: <strong className="text-slate-800 dark:text-zinc-200">{candidateName} ({candidateCallsign})</strong> • OSID: {osid}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons: Bio-Break & Export */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  data-testid="exam-open-bio-break-btn"
+                  onClick={() => setIsBioBreakModalOpen(true)}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.98] shadow-xs ${
+                    activeBreak.isActive
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-400 animate-pulse'
+                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-[#09090b] hover:dark:bg-slate-900 border-slate-200 dark:border-[#27272a] text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                  title="Open Operator Bio-Break Manager"
+                >
+                  <Coffee className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                  <span>{activeBreak.isActive ? 'Active Break' : 'Bio Break'}</span>
+                  {activeBreak.isActive && (
+                    <span className="font-mono text-amber-500 dark:text-amber-400">
+                      ({formatSecondsToHms(getBreakRemainingSeconds())})
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="exam-export-report-btn"
+                  onClick={handleExportReport}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.98] shadow-xs"
+                  title="Download formal Markdown Exam Log"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Export Report</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Telemetry Numbers Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Card 1: Score Counter */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] flex items-center justify-between shadow-xs">
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase font-bold tracking-wider">
+                    Total Exam Score
+                  </span>
+                  <div
+                    data-testid="exam-score-display"
+                    className="flex items-baseline gap-1 mt-0.5"
+                  >
+                    <span
+                      className={`text-2xl font-bold font-mono ${
+                        scoreData.isPassing ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {scoreData.totalScore}
+                    </span>
+                    <span className="text-slate-500 text-xs font-mono">/ {scoreData.maxScore} PTS</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {scoreData.isPassing ? (
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30">
+                      PASSED
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30">
+                      {scoreData.pointsNeeded} PTS NEEDED
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 2: Countdown Timer */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] flex items-center justify-between shadow-xs">
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-cyan-500 dark:text-cyan-400" />
+                    <span>Countdown Clock</span>
+                  </span>
+                  <div
+                    data-testid="exam-countdown-timer"
+                    className="text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white tracking-widest mt-0.5 tabular-nums"
+                  >
+                    {formatSecondsToHms(currentRemaining)}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    data-testid="exam-timer-toggle-btn"
+                    onClick={handleToggleTimer}
+                    className={`p-2 rounded-lg border transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
+                      status === 'running'
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300'
+                        : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
+                    }`}
+                    title={status === 'running' ? 'Pause Exam' : 'Resume Exam'}
+                  >
+                    {status === 'running' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="exam-timer-reset-btn"
+                    onClick={() => resetExam(track)}
+                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#18181b] border border-slate-200 dark:border-[#27272a] text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] shadow-xs"
+                    title="Reset Exam Session"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Pacing Velocity */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] shadow-xs">
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-amber-500 dark:text-amber-400" />
+                  <span>Velocity Pacing</span>
+                </span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">
+                    {pacing.currentPacePtsPerHour}
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono">pts / hr current</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 font-mono">
+                  Required: {pacing.requiredPacePtsPerHour} pts/hr
+                </div>
+              </div>
+
+              {/* Card 4: Unrooted Boxes & Time Budget */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] shadow-xs">
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-1">
+                  <Layers className="w-3 h-3 text-purple-400" />
+                  <span>Target Budget</span>
+                </span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">
+                    {pacing.unrootedBoxesCount}
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono">unrooted targets</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 font-mono">
+                  ~{Math.round(pacing.timeRemainingPerUnrootedBoxSeconds / 60)}m per box
+                </div>
+              </div>
+            </div>
+
+            {/* Pacing Recommendation Strip */}
+            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] text-xs text-slate-700 dark:text-zinc-300 flex items-center gap-2 shadow-xs">
+              <Zap className="w-4 h-4 text-cyan-500 dark:text-cyan-400 flex-shrink-0" />
+              <span className="text-[11px] leading-snug">
+                <strong>Tactical Guidance:</strong> {pacing.recommendation}
+              </span>
+            </div>
+
+            {/* Compliance Warning if flags lack proofs */}
+            {scoreData.complianceIssues.length > 0 && scoreData.totalScore > 0 && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-2.5 shadow-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-bold flex items-center gap-2">
+                    <span>PROOF COMPLIANCE ALERT ({scoreData.complianceIssues.length} items missing)</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-200">
+                      RISK
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90 mt-0.5">
+                    Certifications require verified proof screenshots, `whoami`, and network configuration (`ip a`/`ipconfig`) output for every flag! Expand targets below to attach evidence.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Target Inventory Sections */}
+          <div className="space-y-4 font-mono">
+            {/* Section A: Active Directory Set (for OSCP / AD tracks) */}
+            {adBoxes.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/40 font-mono">
+                      Active Directory Set (40 PTS)
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-zinc-400">
+                      {scoreData.adSetCompromised ? '✓ Fully Compromised' : 'Chained domain privilege escalation'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {adBoxes.map((box) => renderTargetCard(box))}
+                </div>
+              </div>
+            )}
+
+            {/* Section B: Standalone Targets */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-mono">
+                    Standalone Machines ({standaloneBoxes.length} Boxes)
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-zinc-400">
+                    Independent Foothold & Root Flags
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {standaloneBoxes.map((box) => renderTargetCard(box))}
+              </div>
+            </div>
+          </div>
+
+          {/* Exam Scratchpad & Evidence Vault */}
+          <div className="p-5 rounded-xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-none space-y-3 font-mono">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+                <span>OFFICIAL EXAM EVIDENCE VAULT & CREDENTIAL SCRATCHPAD</span>
+              </span>
+              <span className="text-[10px] text-slate-500 dark:text-zinc-400">
+                Embedded directly into exported exam reports
+              </span>
+            </div>
+            <textarea
+              id="exam-scratch-notes"
+              data-testid="exam-scratch-notes"
+              aria-label="Exam Scratchpad Notes"
+              value={scratchNotes}
+              onChange={(e) => setScratchNotes(e.target.value)}
+              rows={6}
+              className="w-full p-3.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] text-xs text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 font-mono focus:outline-none focus:border-cyan-500 leading-relaxed shadow-none resize-none"
+              placeholder="Record compromised credentials, active SOCKS5 tunnels, pivot routing tables, and Nmap discovery logs here..."
+            />
+          </div>
+
+          {/* Operational Timeline / Milestones */}
+          {milestones.length > 0 && (
+            <div className="p-5 rounded-xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-none space-y-3 font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-purple-400" />
+                  <span>OPERATIONAL MILESTONE AUDIT TRAIL ({milestones.length})</span>
+                </span>
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-1.5">
+                {milestones.slice().reverse().map((m, idx) => (
+                  <div
+                    key={`${m.id}_${idx}`}
+                    className="p-2 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] text-xs flex items-start justify-between gap-3"
+                  >
+                    <span className="text-slate-800 dark:text-zinc-300 font-mono">{m.notes}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-500 font-mono flex-shrink-0">
+                      {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* 3. COMPLETION VIEW (status === 'completed')                        */}
+      {/* ================================================================= */}
+      {status === 'completed' && (
+        <div
+          data-testid="exam-completion-view"
+          className="p-6 rounded-2xl border border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#18181b] shadow-none space-y-6 text-center animate-in fade-in font-mono"
+        >
+          <div className="max-w-md mx-auto space-y-3">
+            <div className="inline-flex p-3 rounded-xl bg-slate-100 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] text-cyan-600 dark:text-cyan-400 mb-2">
+              <Trophy className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold font-mono text-slate-900 dark:text-white tracking-wider">
+              EXAM SESSION CONCLUDED
+            </h1>
+            <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+              Final score evaluation completed for candidate <strong>{candidateName} ({candidateCallsign})</strong>.
+            </p>
+          </div>
+
+          {/* Final Score Card */}
+          <div className="max-w-xs mx-auto p-4 rounded-xl bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] space-y-2 shadow-none">
+            <div className="text-[11px] text-slate-500 dark:text-zinc-400 uppercase font-bold">Final Score</div>
+            <div className="text-3xl font-bold font-mono text-slate-900 dark:text-white">
+              {scoreData.totalScore} / {scoreData.maxScore} PTS
+            </div>
+            <div>
               {scoreData.isPassing ? (
-                <div className="flex items-center gap-1.5 text-emerald-900 dark:text-cyber-emerald font-bold text-xs bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/30 px-2.5 py-1 rounded">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-cyber-emerald" />
-                  <span>PASS CONFIRMED</span>
-                </div>
+                <span className="px-3 py-1 rounded-md text-xs font-bold uppercase bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40">
+                  PASSED (Threshold: {scoreData.passThreshold} pts)
+                </span>
               ) : (
-                <div className="flex items-center gap-1.5 text-amber-900 dark:text-cyber-amber font-bold text-xs bg-amber-100 dark:bg-cyber-amber/10 border border-amber-300 dark:border-cyber-amber/30 px-2.5 py-1 rounded">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-cyber-amber" />
-                  <span>{scoreData.pointsNeeded} PTS NEEDED</span>
-                </div>
+                <span className="px-3 py-1 rounded-md text-xs font-bold uppercase bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40">
+                  FAILED (Threshold: {scoreData.passThreshold} pts)
+                </span>
               )}
             </div>
           </div>
 
-          {/* Exam Countdown Timer */}
-          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border flex items-center justify-between">
-            <div>
-              <span className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase font-bold tracking-wider flex items-center gap-1">
-                <Clock className="w-3 h-3 text-cyan-600 dark:text-cyber-cyan" /> {session.track === 'CPTS' ? '48H' : '24H'} COUNTDOWN CLOCK
-              </span>
-              <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-widest mt-0.5 font-mono">
-                {formatTimer(remainingSeconds)}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                onClick={toggleTimer}
-                className={`p-2 rounded-lg border transition-all ${
-                  session.isTimerRunning
-                    ? 'bg-amber-100 dark:bg-cyber-amber/20 border-amber-400 dark:border-cyber-amber text-amber-950 dark:text-cyber-amber font-bold'
-                    : 'bg-emerald-100 dark:bg-cyber-emerald/20 border-emerald-400 dark:border-cyber-emerald text-emerald-950 dark:text-cyber-emerald font-bold'
-                }`}
-                title={session.isTimerRunning ? 'Pause Exam Clock' : 'Start Exam Clock'}
-              >
-                {session.isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={resetTimer}
-                className="p-2 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white"
-                title="Reset Clock"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Generator & Report Controls */}
-          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:col-span-2 lg:col-span-1">
+          {/* Action CTAs */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
             <button
-              onClick={handleNewMockSet}
-              className="flex-1 py-2 px-2.5 rounded-lg bg-white dark:bg-cyber-card border border-cyan-400/40 text-cyan-800 dark:text-cyber-cyan hover:bg-cyan-400 hover:text-black dark:hover:bg-cyber-cyan dark:hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5"
-              title="Pick random real boxes matching exam difficulty"
-            >
-              <Shuffle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="whitespace-nowrap">New Mock Set</span>
-            </button>
-
-            <button
+              type="button"
               onClick={handleExportReport}
-              className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/20 border border-emerald-300 dark:border-cyber-emerald/50 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-glow-emerald/20"
-              title="Download formal Markdown Exam Log"
+              className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-[transform,box-shadow,background-color,border-color,color] shadow-none active:scale-[0.98]"
             >
-              <FileDown className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="whitespace-nowrap">Export Report</span>
+              <FileDown className="w-4 h-4" />
+              <span>Export Submission Report (.md)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => resetExam(track)}
+              className="px-5 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#09090b] hover:dark:bg-slate-900 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#27272a] font-bold text-xs uppercase tracking-wider transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-none"
+            >
+              Start New Simulation
             </button>
           </div>
-
         </div>
+      )}
 
-        {/* 2. Compliance Warning & Status Banner */}
-        {scoreData.complianceIssues.length > 0 && scoreData.totalScore > 0 && (
-          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-500/50 text-amber-900 dark:text-amber-300 text-xs flex items-start gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <div className="font-bold flex items-center gap-2">
-                <span>OFFSEC PROOF COMPLIANCE ALERT ({scoreData.complianceIssues.length} items missing)</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-200 dark:bg-amber-500/20 border border-amber-400 dark:border-amber-500/40 text-amber-950 dark:text-amber-200">
-                  DISQUALIFICATION RISK
-                </span>
-              </div>
-              <p className="text-[11px] text-amber-800 dark:text-amber-200/90 mt-0.5">
-                Official OffSec regulations require an interactive shell with <code>whoami</code> and <code>ipconfig / ifconfig</code> outputs and proof screenshots. Points are rejected without verified proof artifacts!
-              </p>
-            </div>
-          </div>
-        )}
+      {/* ================================================================= */}
+      {/* BIO-BREAK MANAGER MODAL                                           */}
+      {/* ================================================================= */}
+      <ExamBioBreakModal
+        isOpen={isBioBreakModalOpen}
+        onClose={() => setIsBioBreakModalOpen(false)}
+      />
 
-        {scoreData.isCompliant && scoreData.totalScore >= scoreData.passThreshold && (
-          <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-500/50 text-emerald-900 dark:text-emerald-300 text-xs flex items-center gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-            <span className="font-bold">
-              100% OFFSEC COMPLIANT: All mandatory screenshot checkpoints, whoami executions, and network proof commands verified!
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* 3. Exam Targets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {session.boxes.map((box) => {
-          const isExpanded = expandedBoxId === box.id;
-          const isAd = box.type.startsWith('ad') || box.type.includes('dc');
-          const isFullyPwned = (box.userPoints === 0 || box.userPwned) && (box.rootPoints === 0 || box.rootPwned);
-
-          const userVal = validateFlagFormat(box.userProof?.flagText || "");
-          const rootVal = validateFlagFormat(box.rootProof?.flagText || "");
-
-          return (
-            <div
-              key={box.id}
-              className={`p-4 rounded-xl border bg-white dark:bg-cyber-card/95 relative overflow-hidden transition-all shadow-sm ${
-                isFullyPwned
-                  ? 'border-emerald-500 dark:border-cyber-emerald shadow-[0_0_20px_rgba(16,185,129,0.2)]'
-                  : 'border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-cyber-borderGlow'
-              }`}
-            >
-              {/* Category Header */}
-              <div className="flex items-center justify-between gap-2 mb-2.5">
-                <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
-                  isAd ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-400 border border-purple-300 dark:border-purple-800/40' : 'bg-cyan-100 dark:bg-cyber-bg text-cyan-900 dark:text-cyber-cyan border border-cyan-300 dark:border-cyber-cyan/30'
-                }`}>
-                  {box.label}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white px-2 py-0.5 rounded bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border">
-                    {box.userPoints + box.rootPoints} PTS TOTAL
-                  </span>
-                  <button
-                    onClick={() => setExpandedBoxId(isExpanded ? null : box.id)}
-                    className="p-1 rounded bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white"
-                    title={isExpanded ? 'Collapse proof checklist' : 'Expand proof checklist'}
-                  >
-                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Box Identity */}
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">{box.name}</h3>
-                  <div className="text-[11px] text-slate-600 dark:text-cyber-muted font-mono flex items-center gap-2 mt-0.5">
-                    <span>IP: <strong className="text-cyan-700 dark:text-cyber-cyan">{box.ip}</strong></span>
-                    <span>•</span>
-                    <OsBadge os={box.os} size="xs" />
-                  </div>
-                </div>
-
-                <DifficultyBadge difficulty={box.difficulty} size="xs" />
-              </div>
-
-              {/* Quick Action Pwn Toggles */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {box.userPoints > 0 ? (
-                  <button
-                    onClick={() => togglePwn(box.id, 'user')}
-                    className={`p-2 rounded-lg border text-xs flex items-center justify-between transition-all ${
-                      box.userPwned
-                        ? 'bg-amber-100 dark:bg-cyber-amber/20 border-amber-400 dark:border-cyber-amber text-amber-950 dark:text-cyber-amber font-bold shadow-sm'
-                        : 'bg-slate-50 hover:bg-slate-100 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Flag className="w-3 h-3" />
-                      User Flag
-                    </span>
-                    <span>{box.userPwned ? `✓ +${box.userPoints}` : `+${box.userPoints}`}</span>
-                  </button>
-                ) : <div />}
-
-                {box.rootPoints > 0 ? (
-                  <button
-                    onClick={() => togglePwn(box.id, 'root')}
-                    className={`p-2 rounded-lg border text-xs flex items-center justify-between transition-all ${
-                      box.rootPwned
-                        ? 'bg-emerald-100 dark:bg-cyber-emerald/20 border-emerald-400 dark:border-cyber-emerald text-emerald-950 dark:text-cyber-emerald font-bold shadow-sm'
-                        : 'bg-slate-50 hover:bg-slate-100 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Trophy className="w-3 h-3" />
-                      Root Flag
-                    </span>
-                    <span>{box.rootPwned ? `👑 +${box.rootPoints}` : `+${box.rootPoints}`}</span>
-                  </button>
-                ) : <div />}
-              </div>
-
-              {/* Expandable Proof Checklist */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="pt-3 border-t border-slate-200 dark:border-cyber-border/70 space-y-4 text-xs"
-                  >
-                    {/* User Proof Section */}
-                    {box.userPoints > 0 && (
-                      <div className="p-3 rounded-lg bg-slate-50 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border/80 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-amber-800 dark:text-cyber-amber flex items-center gap-1.5">
-                            <Flag className="w-3.5 h-3.5" />
-                            USER PROOF (local.txt)
-                          </span>
-                          {box.userProof.flagText && (
-                            <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                              userVal.valid ? 'bg-emerald-100 dark:bg-cyber-emerald/20 text-emerald-900 dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/40' : 'bg-red-100 dark:bg-red-950 text-red-900 dark:text-red-400 border border-red-300 dark:border-red-800'
-                            }`}>
-                              {userVal.label}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Flag Input */}
-                        <div>
-                          <input
-                            id={`box-user-flag-${box.id}`}
-                            name={`box-user-flag-${box.id}`}
-                            aria-label="Captured user flag string or hash"
-                            type="text"
-                            value={box.userProof?.flagText || ""}
-                            onChange={(e) => updateBoxProof(box.id, 'user', 'flagText', e.target.value)}
-                            placeholder="Enter captured user flag string or hash..."
-                            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted text-xs font-mono focus:outline-none focus:border-amber-500 dark:focus:border-cyber-amber shadow-sm"
-                          />
-                        </div>
-
-                        {/* Checklist items */}
-                        <div className="space-y-1.5 pt-1">
-                          <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-gray-300">
-                            <input
-                              id={`box-user-screenshot-${box.id}`}
-                              name={`box-user-screenshot-${box.id}`}
-                              aria-label="Screenshot taken showing local.txt, whoami, and ipconfig"
-                              type="checkbox"
-                              checked={box.userProof?.screenshotTaken || false}
-                              onChange={(e) => updateBoxProof(box.id, 'user', 'screenshotTaken', e.target.checked)}
-                              className="rounded border-slate-300 dark:border-cyber-border bg-white dark:bg-cyber-card text-amber-600 dark:text-cyber-amber focus:ring-0"
-                            />
-                            <span className="flex items-center gap-1 text-[11px]">
-                              <Camera className="w-3 h-3 text-amber-600 dark:text-cyber-amber" />
-                              Mandatory Screenshot taken showing local.txt + whoami + ipconfig
-                            </span>
-                          </label>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <input
-                              id={`box-user-whoami-${box.id}`}
-                              name={`box-user-whoami-${box.id}`}
-                              aria-label="whoami command output"
-                              type="text"
-                              value={box.userProof?.whoamiOutput || ""}
-                              onChange={(e) => updateBoxProof(box.id, 'user', 'whoamiOutput', e.target.value)}
-                              placeholder="whoami command output..."
-                              className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-[11px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted font-mono focus:outline-none focus:border-amber-500 dark:focus:border-cyber-amber shadow-sm"
-                            />
-                            <input
-                              id={`box-user-ipconfig-${box.id}`}
-                              name={`box-user-ipconfig-${box.id}`}
-                              aria-label="ipconfig / ifconfig output"
-                              type="text"
-                              value={box.userProof?.ipconfigOutput || ""}
-                              onChange={(e) => updateBoxProof(box.id, 'user', 'ipconfigOutput', e.target.value)}
-                              placeholder="ipconfig / ifconfig output..."
-                              className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-[11px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted font-mono focus:outline-none focus:border-amber-500 dark:focus:border-cyber-amber shadow-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Root Proof Section */}
-                    {box.rootPoints > 0 && (
-                      <div className="p-3 rounded-lg bg-slate-50 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border/80 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-emerald-800 dark:text-cyber-emerald flex items-center gap-1.5">
-                            <Trophy className="w-3.5 h-3.5" />
-                            ROOT / SYSTEM PROOF (proof.txt)
-                          </span>
-                          {box.rootProof.flagText && (
-                            <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                              rootVal.valid ? 'bg-emerald-100 dark:bg-cyber-emerald/20 text-emerald-900 dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/40' : 'bg-red-100 dark:bg-red-950 text-red-900 dark:text-red-400 border border-red-300 dark:border-red-800'
-                            }`}>
-                              {rootVal.label}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Flag Input */}
-                        <div>
-                          <input
-                            id={`box-root-flag-${box.id}`}
-                            name={`box-root-flag-${box.id}`}
-                            aria-label="Captured root flag string or hash"
-                            type="text"
-                            value={box.rootProof?.flagText || ""}
-                            onChange={(e) => updateBoxProof(box.id, 'root', 'flagText', e.target.value)}
-                            placeholder="Enter captured root flag string or hash..."
-                            className="w-full px-2.5 py-1.5 rounded bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted text-xs font-mono focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald shadow-sm"
-                          />
-                        </div>
-
-                        {/* Checklist items */}
-                        <div className="space-y-1.5 pt-1">
-                          <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-gray-300">
-                            <input
-                              id={`box-root-screenshot-${box.id}`}
-                              name={`box-root-screenshot-${box.id}`}
-                              aria-label="Screenshot taken showing proof.txt, whoami, and ipconfig"
-                              type="checkbox"
-                              checked={box.rootProof?.screenshotTaken || false}
-                              onChange={(e) => updateBoxProof(box.id, 'root', 'screenshotTaken', e.target.checked)}
-                              className="rounded border-slate-300 dark:border-cyber-border bg-white dark:bg-cyber-card text-emerald-600 dark:text-cyber-emerald focus:ring-0"
-                            />
-                            <span className="flex items-center gap-1 text-[11px]">
-                              <Camera className="w-3 h-3 text-emerald-600 dark:text-cyber-emerald" />
-                              Mandatory Screenshot taken showing proof.txt + whoami + ipconfig
-                            </span>
-                          </label>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <input
-                              id={`box-root-whoami-${box.id}`}
-                              name={`box-root-whoami-${box.id}`}
-                              aria-label="whoami output (root / system)"
-                              type="text"
-                              value={box.rootProof?.whoamiOutput || ""}
-                              onChange={(e) => updateBoxProof(box.id, 'root', 'whoamiOutput', e.target.value)}
-                              placeholder="whoami output (root / system)..."
-                              className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-[11px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted font-mono focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald shadow-sm"
-                            />
-                            <input
-                              id={`box-root-ipconfig-${box.id}`}
-                              name={`box-root-ipconfig-${box.id}`}
-                              aria-label="ipconfig / ifconfig output"
-                              type="text"
-                              value={box.rootProof?.ipconfigOutput || ""}
-                              onChange={(e) => updateBoxProof(box.id, 'root', 'ipconfigOutput', e.target.value)}
-                              placeholder="ipconfig / ifconfig output..."
-                              className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-[11px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted font-mono focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald shadow-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 4. Exam Scratchpad & Evidence Vault */}
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 shadow-md space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
-            OFFICIAL EXAM EVIDENCE VAULT & CREDENTIAL SCRATCHPAD
-          </span>
-          <span className="text-[10px] text-slate-500 dark:text-cyber-muted">Persisted automatically in local storage • Embedded in exported report</span>
-        </div>
-        <textarea
-          id="exam-scratch-notes"
-          name="exam-scratch-notes"
-          aria-label="Exam Scratchpad Notes"
-          value={session.scratchNotes}
-          onChange={(e) => setSession((prev) => ({ ...prev, scratchNotes: e.target.value }))}
-          rows={6}
-          className="w-full p-3 rounded-lg bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted font-mono focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan leading-relaxed shadow-inner"
-          placeholder="Paste credentials, pivot routes, Nmap outputs, and command reproduction logs here..."
-        />
-      </div>
+      {/* ================================================================= */}
+      {/* 1-CLICK SUBMISSION-READY EXAM REPORT MODAL                         */}
+      {/* ================================================================= */}
+      <ExamReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
     </div>
   );
+
+  // Helper renderer for Target Cards in Cockpit
+  function renderTargetCard(box: ExamBox) {
+    const isExpanded = expandedBoxId === box.id;
+    const isFullyPwned =
+      (box.userPoints === 0 || box.userPwned) && (box.rootPoints === 0 || box.rootPwned);
+
+    return (
+      <div
+        key={box.id}
+        className={`p-4 rounded-xl border bg-white dark:bg-[#18181b] transition-[box-shadow,background-color,border-color,color] font-mono shadow-none ${
+          isFullyPwned
+            ? 'border-emerald-500'
+            : 'border-slate-200 dark:border-[#27272a] hover:border-slate-300 dark:hover:border-[#3f3f46]'
+        }`}
+      >
+        {/* Card Header */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#09090b] text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-[#27272a]">
+            {box.label}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-900 dark:text-white px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a]">
+              {box.userPoints + box.rootPoints} PTS TOTAL
+            </span>
+            <button
+              type="button"
+              onClick={() => setExpandedBoxId(isExpanded ? null : box.id)}
+              className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-[#09090b] hover:dark:bg-slate-900 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] border border-slate-200 dark:border-[#27272a] active:scale-[0.98]"
+              title={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
+            >
+              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Identity & Difficulty */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">{box.name}</h3>
+            <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono flex items-center gap-2 mt-0.5">
+              <span>IP: <strong className="text-cyan-600 dark:text-cyan-400">{box.ip}</strong></span>
+              <span>•</span>
+              <OsBadge os={box.os} size="xs" />
+            </div>
+          </div>
+          <DifficultyBadge difficulty={box.difficulty} size="xs" />
+        </div>
+
+        {/* Pwn Quick Action Buttons */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {box.userPoints > 0 ? (
+            <button
+              type="button"
+              onClick={() => togglePwn(box.id, 'user')}
+              className={`p-2 rounded-lg border text-xs flex items-center justify-between transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-none ${
+                box.userPwned
+                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300 font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#09090b] hover:dark:bg-slate-900 border-slate-200 dark:border-[#27272a] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Flag className="w-3.5 h-3.5" />
+                <span>User Flag</span>
+              </span>
+              <span>{box.userPwned ? `✓ +${box.userPoints}` : `+${box.userPoints}`}</span>
+            </button>
+          ) : <div />}
+
+          {box.rootPoints > 0 ? (
+            <button
+              type="button"
+              onClick={() => togglePwn(box.id, 'root')}
+              className={`p-2 rounded-lg border text-xs flex items-center justify-between transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-none ${
+                box.rootPwned
+                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300 font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#09090b] hover:dark:bg-slate-900 border-slate-200 dark:border-[#27272a] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5" />
+                <span>Root Flag</span>
+              </span>
+              <span>{box.rootPwned ? `👑 +${box.rootPoints}` : `+${box.rootPoints}`}</span>
+            </button>
+          ) : <div />}
+        </div>
+
+        {/* Expandable Evidence Dropzone Component */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="pt-3 border-t border-slate-200 dark:border-[#27272a] space-y-3"
+            >
+              {/* Flag Evidence Tabs (User vs Root) */}
+              <div className="flex gap-2">
+                {box.userPoints > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveProofTab('user')}
+                    className={`flex-1 py-1 px-2 rounded-md text-xs font-bold border transition-[transform,box-shadow,background-color,border-color,color] shadow-none active:scale-[0.98] ${
+                      activeProofTab === 'user'
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300'
+                        : 'bg-slate-50 dark:bg-[#09090b] border-slate-200 dark:border-[#27272a] text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    User Evidence ({box.userProof.flagText ? '✓' : '○'})
+                  </button>
+                )}
+
+                {box.rootPoints > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveProofTab('root')}
+                    className={`flex-1 py-1 px-2 rounded-md text-xs font-bold border transition-[transform,box-shadow,background-color,border-color,color] shadow-none active:scale-[0.98] ${
+                      activeProofTab === 'root'
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
+                        : 'bg-slate-50 dark:bg-[#09090b] border-slate-200 dark:border-[#27272a] text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    Root Evidence ({box.rootProof.flagText ? '✓' : '○'})
+                  </button>
+                )}
+              </div>
+
+              {/* Render Evidence Dropzone for selected tab */}
+              <ExamEvidenceDropzone
+                box={box}
+                flagType={activeProofTab}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
 };

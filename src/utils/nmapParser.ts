@@ -28,8 +28,8 @@ export function parseNmapScanOutput(rawText: string): {
 
   // Regex for Nmap port line:
   // e.g., "80/tcp   open  http    Apache httpd 2.4.41"
-  // or "53/udp open domain"
-  const portRegex = /^(\d+)\/(tcp|udp)\s+(\w+)\s+([\w\-.]+)?(?:\s+(.*))?/im;
+  // or "53/udp open|filtered domain"
+  const portRegex = /^(\d+)\/(tcp|udp)\s+([\w|]+)\s+([\w\-.]+)?(?:\s+(.*))?/im;
 
   const lines = rawText.split('\n');
 
@@ -45,7 +45,8 @@ export function parseNmapScanOutput(rawText: string): {
       const service = match[4] || '';
       const version = match[5] || '';
 
-      if (state.includes('open') && !state.includes('filtered') && !seenPorts.has(portNum)) {
+      const isOpenState = state === 'open' || state === 'open|filtered';
+      if (isOpenState && !seenPorts.has(portNum)) {
         seenPorts.add(portNum);
         ports.push(portNum);
         details.push({

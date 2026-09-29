@@ -132,7 +132,7 @@ export function parseNmapXml(xmlContent: string): ScanImportResult | null {
       portNodes.forEach((portEl) => {
         const stateEl = portEl.querySelector('state');
         const state = stateEl?.getAttribute('state') || 'closed';
-        if (state !== 'open') return;
+        if (state !== 'open' && state !== 'open|filtered') return;
 
         const portNum = parseInt(portEl.getAttribute('portid') || '0', 10);
         if (!isValidPort(portNum)) return;
@@ -150,7 +150,7 @@ export function parseNmapXml(xmlContent: string): ScanImportResult | null {
         ports.push({
           port: portNum,
           protocol,
-          state: 'open',
+          state,
           service,
           version: fullVersion,
           suggestedTools: tools,
@@ -205,12 +205,13 @@ export function parseGrepableNmap(content: string): ScanImportResult | null {
             const service = parts[4]?.toLowerCase() || 'unknown';
             const version = (parts[6] || parts[5] || 'Unknown Version').trim();
 
-            if (state === 'open' && isValidPort(portNum)) {
+            const isOpenState = state === 'open' || state === 'open|filtered';
+            if (isOpenState && isValidPort(portNum)) {
               const { tools, cve } = getServiceIntelligence(portNum, service, version);
               ports.push({
                 port: portNum,
                 protocol: proto,
-                state: 'open',
+                state: state || 'open',
                 service,
                 version,
                 suggestedTools: tools,
@@ -309,7 +310,7 @@ export function parseNmapText(content: string): ScanImportResult | null {
   const hostMatch = content.match(/Nmap scan report for ([^\s(]+)/);
   const osMatch = content.match(/Service Info:[^\n\r]*?\bOSs?:\s*([^;\n\r]+)/i);
 
-  const portRegex = /([0-9]{1,5})\/(tcp|udp)\s+open\s+([^\s]+)\s*([^\r\n]*)/gi;
+  const portRegex = /([0-9]{1,5})\/(tcp|udp)\s+(open(?:\|filtered)?)\s+([^\s]+)\s*([^\r\n]*)/gi;
   const ports: ParsedPort[] = [];
   let match: RegExpExecArray | null;
 
@@ -317,15 +318,16 @@ export function parseNmapText(content: string): ScanImportResult | null {
     const portNum = parseInt(match[1], 10);
     if (!isValidPort(portNum)) continue;
     const proto = match[2].toLowerCase();
-    const service = match[3].toLowerCase();
-    const version = match[4].trim() || 'Unknown Version';
+    const state = match[3].toLowerCase();
+    const service = match[4].toLowerCase();
+    const version = match[5].trim() || 'Unknown Version';
 
     const { tools, cve } = getServiceIntelligence(portNum, service, version);
 
     ports.push({
       port: portNum,
       protocol: proto,
-      state: 'open',
+      state,
       service,
       version,
       suggestedTools: tools,

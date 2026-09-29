@@ -50,7 +50,7 @@ Nmap done: 1 IP address scanned in 8.35 seconds
     expect(result.details[1].protocol).toBe('udp');
   });
 
-  it('filters out closed, filtered, and open|filtered ports', () => {
+  it('filters out closed and strictly filtered ports while preserving open and open|filtered states', () => {
     const rawNmap = `
 21/tcp   closed   ftp
 22/tcp   open     ssh
@@ -61,9 +61,10 @@ Nmap done: 1 IP address scanned in 8.35 seconds
 
     const result = parseNmapScanOutput(rawNmap);
 
-    expect(result.ports).toEqual([22, 443]);
-    expect(result.details).toHaveLength(2);
-    expect(result.details.map((d) => d.port)).toEqual([22, 443]);
+    expect(result.ports).toEqual([22, 80, 443]);
+    expect(result.details).toHaveLength(3);
+    expect(result.details.map((d) => d.port)).toEqual([22, 80, 443]);
+    expect(result.details.find((d) => d.port === 80)?.state).toBe('open|filtered');
   });
 
   it('deduplicates ports and sorts them in ascending order', () => {

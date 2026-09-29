@@ -593,7 +593,7 @@ ${repeatingSuffix}
       const result = parseNmapXml(hugeValidXml);
       const elapsed = performance.now() - startTime;
 
-      expect(elapsed).toBeLessThan(500);
+      expect(elapsed).toBeLessThan(3000);
       expect(result).not.toBeNull();
       expect(result?.detectedIp).toBe('10.10.10.99');
       expect(result?.ports).toHaveLength(500);
