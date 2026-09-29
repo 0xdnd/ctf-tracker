@@ -34,6 +34,20 @@ export const OsIcon: React.FC<OsIconProps> = ({ os, className = 'w-3.5 h-3.5' })
         </svg>
       );
 
+    case 'Android':
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="#3DDC84" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4116 13.8533 8.082 12 8.082s-3.5902.3296-5.1368.8677L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396" />
+        </svg>
+      );
+
+    case 'BSD':
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="#E11D48" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm-2.2 4.5c.5 0 .9.2 1.2.5.3.3.4.7.4 1.1 0 .6-.3 1.2-.7 1.6-.4.4-1 .6-1.6.6-.7 0-1.3-.2-1.7-.7-.4-.5-.6-1.1-.6-1.8 0-.4.1-.7.4-.9.3-.2.7-.4 1-.4zm6.4 0c.4 0 .8.2 1.1.4.3.2.4.5.4.9 0 .7-.2 1.3-.6 1.8-.4.5-1 .7-1.7.7-.6 0-1.2-.2-1.6-.6-.4-.4-.7-1-.7-1.6 0-.4.1-.8.4-1.1.3-.3.7-.5 1.3-.5zM12 18.2c-3.1 0-5.5-2-5.7-4.7h11.4c-.2 2.7-2.6 4.7-5.7 4.7z"/>
+        </svg>
+      );
+
     default:
       return (
         <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" xmlns="http://www.w3.org/2000/svg">
@@ -75,6 +89,12 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
         return 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/30';
       case 'Windows':
         return 'text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-500/40';
+      case 'BSD':
+        return 'text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-500/40';
+      case 'Android':
+        return 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-500/40';
+      case 'macOS':
+        return 'text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/40';
       default:
         return 'text-slate-700 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-bg/60 border-slate-300 dark:border-cyber-border';
     }
@@ -82,7 +102,7 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded font-mono font-medium border ${getTheme()} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md font-mono font-medium border ${getTheme()} ${sizeClasses[size]} ${className}`}
       title={`Operating System: ${os || 'Unknown'}`}
     >
       <OsIcon os={os} className={iconSizes[size]} />

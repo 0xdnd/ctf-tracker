@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -31,7 +31,10 @@ import {
   Upload,
   Hash,
   ArrowUpDown,
-  RotateCcw
+  RotateCcw,
+  PanelRight,
+  Maximize2,
+  ExternalLink
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -56,6 +59,7 @@ import {
   formatNoteNumberBadge,
 } from '../../utils/obsidianManualUtils';
 import { ObsidianNoteViewer } from './ObsidianNoteViewer';
+import { SplitOrientation } from '../../types/workspace';
 import { CptsTreeItem } from './CptsTreeItem';
 import { NewCptsNoteModal } from './NewCptsNoteModal';
 import { ReverseShellGenerator } from './ReverseShellGenerator';
@@ -156,7 +160,145 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const [activeObsidianNote, setActiveObsidianNote] = useState<CptsNoteEntry | null>(null);
+  // Multi-Tab Field Manual Workspace State
+  const [openObsidianNotes, setOpenObsidianNotes] = useState<CptsNoteEntry[]>(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const noteParam = params.get('note');
+      if (noteParam) {
+        const found = getNoteById(noteParam);
+        if (found) return [found];
+      }
+    } catch {}
+    return [];
+  });
+  const [activeObsidianNoteId, setActiveObsidianNoteId] = useState<string | null>(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const noteParam = params.get('note');
+      if (noteParam) {
+        const found = getNoteById(noteParam);
+        if (found) return found.id;
+      }
+    } catch {}
+    return null;
+  });
+
+  // Check if current view is a detached standalone pop-out window
+  const isPopout = useMemo(() => {
+    return new URLSearchParams(location.search).get('popout') === 'true';
+  }, [location.search]);
+
+  // Dual-mode viewing state: 'docked' (in-page side-by-side split) vs 'modal' (floating centered dialog)
+  const [noteViewerMode, setNoteViewerMode] = useState<'docked' | 'modal'>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_note_viewer_mode');
+      return saved === 'modal' ? 'modal' : 'docked';
+    } catch {
+      return 'docked';
+    }
+  });
+
+  const handleToggleViewerMode = useCallback(() => {
+    setNoteViewerMode((prev) => {
+      const next = prev === 'docked' ? 'modal' : 'docked';
+      try {
+        localStorage.setItem('zerobox_note_viewer_mode', next);
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Docked Note Viewer Maximize state
+  const [isDockedMaximized, setIsDockedMaximized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('zerobox_docked_maximized') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleDockedMaximize = useCallback(() => {
+    setIsDockedMaximized((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('zerobox_docked_maximized', String(next));
+      } catch {}
+      return next;
+    });
+    if (soundEnabled) playCyberSound('click');
+  }, [soundEnabled]);
+
+  // Modal Note Viewer Maximize state
+  const [isModalMaximized, setIsModalMaximized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('zerobox_modal_maximized') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleModalMaximize = useCallback(() => {
+    setIsModalMaximized((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('zerobox_modal_maximized', String(next));
+      } catch {}
+      return next;
+    });
+    if (soundEnabled) playCyberSound('click');
+  }, [soundEnabled]);
+
+  const activeObsidianNote = useMemo(() => {
+    if (!activeObsidianNoteId) return null;
+    return openObsidianNotes.find((n) => n.id === activeObsidianNoteId) || openObsidianNotes[0] || null;
+  }, [openObsidianNotes, activeObsidianNoteId]);
+
+  const handleOpenObsidianNote = useCallback((note: CptsNoteEntry) => {
+    setOpenObsidianNotes((prev) => {
+      const exists = prev.some((n) => n.id === note.id);
+      if (!exists) {
+        return [...prev, note];
+      }
+      return prev;
+    });
+    setActiveObsidianNoteId(note.id);
+  }, []);
+
+  const handleSelectObsidianTab = useCallback((noteId: string) => {
+    setActiveObsidianNoteId(noteId);
+  }, []);
+
+  const handleCloseObsidianTab = useCallback((noteId: string) => {
+    setOpenObsidianNotes((prev) => {
+      const idx = prev.findIndex((n) => n.id === noteId);
+      if (idx === -1) return prev;
+      const nextNotes = prev.filter((n) => n.id !== noteId);
+      setActiveObsidianNoteId((currentActive) => {
+        if (currentActive === noteId) {
+          if (nextNotes.length === 0) return null;
+          const nextActive = nextNotes[Math.min(Math.max(0, idx), nextNotes.length - 1)];
+          return nextActive ? nextActive.id : null;
+        }
+        return currentActive;
+      });
+      return nextNotes;
+    });
+  }, []);
+
+  const handleCloseAllObsidianTabs = useCallback(() => {
+    setOpenObsidianNotes([]);
+    setActiveObsidianNoteId(null);
+  }, []);
+
+  // Backward compatibility alias: sets active note or opens as tab
+  const setActiveObsidianNote = useCallback((note: CptsNoteEntry | null) => {
+    if (note) {
+      handleOpenObsidianNote(note);
+    } else {
+      handleCloseAllObsidianTabs();
+    }
+  }, [handleOpenObsidianNote, handleCloseAllObsidianTabs]);
 
   // Sync viewMode and activeObsidianNote when route or search query changes
   useEffect(() => {
@@ -170,7 +312,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     const params = new URLSearchParams(location.search);
     const noteParam = params.get('note');
     if (noteParam) {
-      const found = getNoteById(noteParam);
+      const found = getNoteById(noteParam, allActiveNotes.length > 0 ? allActiveNotes : undefined) || getNoteById(noteParam);
       if (found) {
         setActiveObsidianNote(found);
         setViewMode('cpts-manual');
@@ -276,6 +418,299 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
     return Array.from(set).sort();
   }, [allActiveNotes]);
+
+  // Multi-Pane Split Workspace State
+  const [isSplitView, setIsSplitView] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('zerobox_workspace_is_split_v1') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [splitOrientation, setSplitOrientation] = useState<SplitOrientation>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_workspace_split_orient_v1');
+      return saved === 'vertical' ? 'vertical' : 'horizontal';
+    } catch {
+      return 'horizontal';
+    }
+  });
+
+  const [secondaryOpenNotes, setSecondaryOpenNotes] = useState<CptsNoteEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_workspace_secondary_tabs_v1');
+      if (saved) {
+        const ids: string[] = JSON.parse(saved);
+        const resolved = ids.map((id) => getNoteById(id)).filter(Boolean) as CptsNoteEntry[];
+        if (resolved.length > 0) return resolved;
+      }
+    } catch {}
+    return [];
+  });
+
+  const [secondaryActiveNoteId, setSecondaryActiveNoteId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('zerobox_workspace_secondary_active_v1') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [activePaneId, setActivePaneId] = useState<'pane-primary' | 'pane-secondary'>('pane-primary');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('zerobox_workspace_is_split_v1', isSplitView ? 'true' : 'false');
+      localStorage.setItem('zerobox_workspace_split_orient_v1', splitOrientation);
+      localStorage.setItem('zerobox_workspace_secondary_tabs_v1', JSON.stringify(secondaryOpenNotes.map((n) => n.id)));
+      if (secondaryActiveNoteId) {
+        localStorage.setItem('zerobox_workspace_secondary_active_v1', secondaryActiveNoteId);
+      } else {
+        localStorage.removeItem('zerobox_workspace_secondary_active_v1');
+      }
+    } catch {}
+  }, [isSplitView, splitOrientation, secondaryOpenNotes, secondaryActiveNoteId]);
+
+  const secondaryActiveNote = useMemo(() => {
+    if (!secondaryActiveNoteId) return secondaryOpenNotes[0] || null;
+    return secondaryOpenNotes.find((n) => n.id === secondaryActiveNoteId) || secondaryOpenNotes[0] || null;
+  }, [secondaryOpenNotes, secondaryActiveNoteId]);
+
+  const handleSelectSecondaryTab = useCallback((noteId: string) => {
+    setSecondaryActiveNoteId(noteId);
+  }, []);
+
+  const handleOpenSecondaryNote = useCallback((note: CptsNoteEntry) => {
+    setSecondaryOpenNotes((prev) => {
+      if (!prev.some((n) => n.id === note.id)) {
+        return [...prev, note];
+      }
+      return prev;
+    });
+    setSecondaryActiveNoteId(note.id);
+  }, []);
+
+  const handleCloseSecondaryTab = useCallback((noteId: string) => {
+    setSecondaryOpenNotes((prev) => {
+      const idx = prev.findIndex((n) => n.id === noteId);
+      if (idx === -1) return prev;
+      const nextNotes = prev.filter((n) => n.id !== noteId);
+      setSecondaryActiveNoteId((current) => {
+        if (current === noteId) {
+          if (nextNotes.length === 0) return null;
+          const nextActive = nextNotes[Math.min(Math.max(0, idx), nextNotes.length - 1)];
+          return nextActive ? nextActive.id : null;
+        }
+        return current;
+      });
+      return nextNotes;
+    });
+  }, []);
+
+  const handleCloseSecondaryPane = useCallback(() => {
+    setOpenObsidianNotes((prev) => {
+      const merged = [...prev];
+      for (const sn of secondaryOpenNotes) {
+        if (!merged.some((pn) => pn.id === sn.id)) {
+          merged.push(sn);
+        }
+      }
+      return merged;
+    });
+    setSecondaryOpenNotes([]);
+    setSecondaryActiveNoteId(null);
+    setIsSplitView(false);
+  }, [secondaryOpenNotes]);
+
+  const handleToggleSplit = useCallback((orientation?: SplitOrientation) => {
+    setIsSplitView((prev) => {
+      if (prev) {
+        if (!orientation || orientation === splitOrientation) {
+          setOpenObsidianNotes((currentPrimary) => {
+            const merged = [...currentPrimary];
+            for (const sn of secondaryOpenNotes) {
+              if (!merged.some((pn) => pn.id === sn.id)) {
+                merged.push(sn);
+              }
+            }
+            return merged;
+          });
+          setSecondaryOpenNotes([]);
+          setSecondaryActiveNoteId(null);
+          return false;
+        }
+        setSplitOrientation(orientation);
+        return true;
+      }
+
+      const nextOrient = orientation || 'horizontal';
+      setSplitOrientation(nextOrient);
+
+      if (secondaryOpenNotes.length === 0) {
+        if (openObsidianNotes.length > 1) {
+          const tabToMove = openObsidianNotes[openObsidianNotes.length - 1];
+          setSecondaryOpenNotes([tabToMove]);
+          setSecondaryActiveNoteId(tabToMove.id);
+          setOpenObsidianNotes((p) => p.filter((t) => t.id !== tabToMove.id));
+        } else {
+          const alt = allActiveNotes.find((n) => n.id !== activeObsidianNote?.id) || allActiveNotes[0];
+          if (alt) {
+            setSecondaryOpenNotes([alt]);
+            setSecondaryActiveNoteId(alt.id);
+          }
+        }
+      }
+      return true;
+    });
+  }, [splitOrientation, secondaryOpenNotes, openObsidianNotes, allActiveNotes, activeObsidianNote?.id]);
+
+  const handleMoveTabBetweenPanes = useCallback((tabId: string, fromPane: 'pane-primary' | 'pane-secondary') => {
+    if (fromPane === 'pane-primary') {
+      const noteToMove = openObsidianNotes.find((n) => n.id === tabId);
+      if (!noteToMove || openObsidianNotes.length <= 1) return;
+      handleCloseObsidianTab(tabId);
+      handleOpenSecondaryNote(noteToMove);
+      setActivePaneId('pane-secondary');
+    } else {
+      const noteToMove = secondaryOpenNotes.find((n) => n.id === tabId);
+      if (!noteToMove || secondaryOpenNotes.length <= 1) return;
+      handleCloseSecondaryTab(tabId);
+      handleOpenObsidianNote(noteToMove);
+      setActivePaneId('pane-primary');
+    }
+  }, [openObsidianNotes, secondaryOpenNotes, handleCloseObsidianTab, handleOpenSecondaryNote, handleCloseSecondaryTab, handleOpenObsidianNote]);
+
+  const renderWorkspacePanes = (mode: 'docked' | 'modal' | 'popout') => {
+    if (!activeObsidianNote) return null;
+
+    if (!isSplitView || !secondaryActiveNote) {
+      return (
+        <ObsidianNoteViewer
+          note={activeObsidianNote}
+          openNotes={openObsidianNotes}
+          onSelectNote={handleSelectObsidianTab}
+          onCloseTab={handleCloseObsidianTab}
+          onNewTab={handleOpenObsidianNote}
+          onCloseAllTabs={handleCloseAllObsidianTabs}
+          allAvailableNotes={allActiveNotes}
+          globalVars={globalVars}
+          soundEnabled={soundEnabled}
+          onClose={handleCloseAllObsidianTabs}
+          onNavigateToNote={(noteId) => {
+            const found = getNoteById(noteId, allActiveNotes);
+            if (found) handleOpenObsidianNote(found);
+          }}
+          onDeleteNote={(noteId) => {
+            deleteNote(noteId);
+            if (soundEnabled) playCyberSound('root');
+            handleCloseObsidianTab(noteId);
+          }}
+          defaultLanguage={cptsLangMode}
+          displayMode={mode}
+          onToggleDisplayMode={handleToggleViewerMode}
+          isMaximized={mode === 'docked' ? isDockedMaximized : isModalMaximized}
+          onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : handleToggleModalMaximize}
+          onPopoutWindow={() => {
+            const popoutUrl = `${window.location.origin}${window.location.pathname}#/field-manual?note=${activeObsidianNote.id}&popout=true`;
+            window.open(popoutUrl, `ZeroBoxFieldManual_${activeObsidianNote.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
+          }}
+          isSplitView={isSplitView}
+          splitOrientation={splitOrientation}
+          onToggleSplit={handleToggleSplit}
+          onMoveTabToOtherPane={(tabId) => handleMoveTabBetweenPanes(tabId, 'pane-primary')}
+          paneId="pane-primary"
+          isPaneActive={activePaneId === 'pane-primary'}
+          onFocusPane={() => setActivePaneId('pane-primary')}
+        />
+      );
+    }
+
+    const splitContent = (
+      <div 
+        data-testid="dual-split-workspace"
+        className={`w-full h-full flex ${splitOrientation === 'horizontal' ? 'flex-col md:flex-row' : 'flex-col'} gap-2 overflow-hidden`}
+      >
+        <div className={`${splitOrientation === 'horizontal' ? 'w-full md:w-1/2' : 'w-full h-1/2'} min-h-0 flex flex-col`}>
+          <ObsidianNoteViewer
+            note={activeObsidianNote}
+            openNotes={openObsidianNotes}
+            onSelectNote={handleSelectObsidianTab}
+            onCloseTab={handleCloseObsidianTab}
+            onNewTab={handleOpenObsidianNote}
+            onCloseAllTabs={handleCloseAllObsidianTabs}
+            allAvailableNotes={allActiveNotes}
+            globalVars={globalVars}
+            soundEnabled={soundEnabled}
+            onClose={handleCloseAllObsidianTabs}
+            onNavigateToNote={(noteId) => {
+              const found = getNoteById(noteId, allActiveNotes);
+              if (found) handleOpenObsidianNote(found);
+            }}
+            defaultLanguage={cptsLangMode}
+            displayMode="docked"
+            onToggleDisplayMode={handleToggleViewerMode}
+            isMaximized={mode === 'docked' ? isDockedMaximized : false}
+            onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : undefined}
+            isSplitView={true}
+            splitOrientation={splitOrientation}
+            onToggleSplit={handleToggleSplit}
+            onMoveTabToOtherPane={(tabId) => handleMoveTabBetweenPanes(tabId, 'pane-primary')}
+            paneId="pane-primary"
+            isPaneActive={activePaneId === 'pane-primary'}
+            onFocusPane={() => setActivePaneId('pane-primary')}
+          />
+        </div>
+        <div className={`${splitOrientation === 'horizontal' ? 'w-full md:w-1/2' : 'w-full h-1/2'} min-h-0 flex flex-col`}>
+          <ObsidianNoteViewer
+            note={secondaryActiveNote}
+            openNotes={secondaryOpenNotes}
+            onSelectNote={handleSelectSecondaryTab}
+            onCloseTab={handleCloseSecondaryTab}
+            onNewTab={handleOpenSecondaryNote}
+            onCloseAllTabs={handleCloseSecondaryPane}
+            allAvailableNotes={allActiveNotes}
+            globalVars={globalVars}
+            soundEnabled={soundEnabled}
+            onClose={handleCloseSecondaryPane}
+            onNavigateToNote={(noteId) => {
+              const found = getNoteById(noteId, allActiveNotes);
+              if (found) handleOpenSecondaryNote(found);
+            }}
+            defaultLanguage={cptsLangMode}
+            displayMode="docked"
+            onToggleDisplayMode={handleToggleViewerMode}
+            isMaximized={mode === 'docked' ? isDockedMaximized : false}
+            onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : undefined}
+            isSplitView={true}
+            splitOrientation={splitOrientation}
+            onToggleSplit={handleToggleSplit}
+            onMoveTabToOtherPane={(tabId) => handleMoveTabBetweenPanes(tabId, 'pane-secondary')}
+            paneId="pane-secondary"
+            isPaneActive={activePaneId === 'pane-secondary'}
+            onFocusPane={() => setActivePaneId('pane-secondary')}
+          />
+        </div>
+      </div>
+    );
+
+    if (mode === 'modal') {
+      return (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Field Manual Split View Workspace"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn outline-none"
+        >
+          <div className="w-full max-w-[98vw] 2xl:max-w-7xl max-h-[94vh] h-[94vh] flex flex-col outline-none">
+            {splitContent}
+          </div>
+        </div>
+      );
+    }
+
+    return splitContent;
+  };
 
   const filteredCptsNotes = useMemo(() => {
     let pool = searchCptsNotes(deferredSearchQuery, selectedCptsCategory, selectedCptsSubCategory, allActiveNotes);
@@ -457,6 +892,18 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }, 3000);
   };
 
+  // Standalone detached pop-out window view (e.g. secondary monitor or external browser window)
+  if (isPopout && activeObsidianNote) {
+    return (
+      <div 
+        data-testid="standalone-popout-window"
+        className="fixed inset-0 w-full h-full min-h-screen bg-slate-950 font-mono z-[99999] overflow-hidden flex flex-col"
+      >
+        {renderWorkspacePanes('popout')}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 w-full font-mono pb-12">
       {/* Top Banner & Dynamic Variable Tuning Station */}
@@ -485,10 +932,10 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             {/* Mode Switcher / Tactical Pill */}
             {viewMode === 'tactical' ? (
               <div className="flex items-center gap-2 select-none">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-800 dark:text-cyan-300 font-mono font-bold text-xs shadow-sm">
-                  <Terminal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyber-cyan/30 bg-cyber-cyan/10 text-cyber-cyan font-mono font-bold text-xs shadow-sm">
+                  <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
                   <span>Tactical Snippets</span>
-                  <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 text-[10px] font-semibold">
+                  <span className="px-1.5 py-0.2 rounded bg-cyber-cyan/20 text-cyber-cyan text-[10px] font-semibold">
                     {cheatsheets.length}
                   </span>
                 </div>
@@ -498,7 +945,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     setViewMode('cpts-manual');
                     navigate('/field-manual');
                   }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 text-xs font-semibold transition-all"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 text-xs font-semibold transition-colors"
                   title="Switch to Obsidian Field Manual"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-purple-500" />
@@ -510,7 +957,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     if (soundEnabled) playCyberSound('click');
                     setNotesImportModalOpen(true);
                   }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-purple-500/40 bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 text-purple-900 dark:text-purple-300 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-purple-500/40 bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 text-purple-900 dark:text-purple-300 text-xs font-semibold transition-[box-shadow,background-color,border-color,color] shadow-sm cursor-pointer"
                   title="Import your Obsidian Vault (.ZIP or folder)"
                 >
                   <Upload className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -525,7 +972,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     setViewMode('tactical');
                     setSearchQuery('');
                   }}
-                  className="px-3 py-1 rounded font-bold transition-all flex items-center gap-1.5 text-cyber-muted hover:text-white"
+                  className="px-3 py-1 rounded font-bold transition-colors flex items-center gap-1.5 text-cyber-muted hover:text-white"
                 >
                   <Terminal className="w-3.5 h-3.5" />
                   <span>Tactical Snippets ({cheatsheets.length})</span>
@@ -541,7 +988,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     if (soundEnabled) playCyberSound('click');
                     setNotesImportModalOpen(true);
                   }}
-                  className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/40 hover:border-purple-400 transition-all flex items-center gap-1.5 shadow-sm"
+                  className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/40 hover:border-purple-400 transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm"
                   title="Import or manage your local private offensive field notes vault (IndexedDB)"
                 >
                   <Upload className="w-3 h-3 text-purple-400" />
@@ -553,7 +1000,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     type="button"
                     data-testid="header-delete-notes-btn"
                     onClick={handleWipeVaultConfirm}
-                    className={`px-2.5 py-1 text-xs font-mono font-medium rounded transition-all flex items-center gap-1.5 shadow-sm border ${
+                    className={`px-2.5 py-1 text-xs font-mono font-medium rounded transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm border ${
                       confirmWipeVault
                         ? 'bg-rose-600 text-white border-rose-500 font-bold animate-pulse'
                         : 'bg-rose-100 dark:bg-rose-950/40 hover:bg-rose-200 dark:hover:bg-rose-900/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-500/40 hover:border-rose-400'
@@ -577,7 +1024,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   <button
                     type="button"
                     onClick={handleRestoreDeletedNotes}
-                    className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-amber-100 dark:bg-amber-950/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 hover:border-amber-400 transition-all flex items-center gap-1.5 shadow-sm"
+                    className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-amber-100 dark:bg-amber-950/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 hover:border-amber-400 transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm"
                     title="Restore deleted notes back to vault"
                   >
                     <RotateCcw className="w-3 h-3 text-amber-500 dark:text-amber-400" />
@@ -608,7 +1055,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               aria-label="Attacker Host LHOST"
               value={globalVars.lhost}
               onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-              className="w-28 bg-white dark:bg-cyber-card px-2 py-1 rounded border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-cyan-500 transition-all shadow-sm"
+              className="w-28 bg-white dark:bg-cyber-card px-2 py-1 rounded border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
             />
           </div>
 
@@ -621,7 +1068,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               aria-label="Attacker Port LPORT"
               value={globalVars.lport}
               onChange={(e) => setGlobalVars({ lport: e.target.value })}
-              className="w-16 bg-white dark:bg-cyber-card px-2 py-1 rounded border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-cyan-500 transition-all shadow-sm"
+              className="w-16 bg-white dark:bg-cyber-card px-2 py-1 rounded border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
             />
           </div>
 
@@ -634,7 +1081,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               aria-label="Target IP Address"
               value={globalVars.targetIp}
               onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
-              className="w-28 bg-white dark:bg-cyber-card px-2 py-1 rounded border border-slate-300 dark:border-cyber-border text-emerald-700 dark:text-cyber-emerald font-bold text-xs focus:outline-none focus:border-emerald-500 transition-all shadow-sm"
+              className="w-28 bg-white dark:bg-cyber-card px-2 py-1 rounded border border-slate-300 dark:border-cyber-border text-emerald-700 dark:text-cyber-emerald font-bold text-xs focus:outline-none focus:border-emerald-500 transition-[box-shadow,background-color,border-color,color] shadow-sm"
             />
           </div>
 
@@ -642,7 +1089,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsNewModalOpen(true)}
-            className="flex items-center gap-1 px-3 py-1 rounded bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-semibold transition-all ml-1 shadow-glow-cyan/20"
+            className="flex items-center gap-1 px-3 py-1 rounded bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-semibold transition-[box-shadow,background-color,border-color,color] ml-1 shadow-glow-cyan/20"
           >
             <Plus className="w-3.5 h-3.5" /> Add Snippet
           </motion.button>
@@ -657,7 +1104,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           <div className="p-3 rounded-xl border border-cyber-border bg-cyber-card shadow-md space-y-1 overflow-hidden">
             <div className="px-2 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between select-none">
               <span>{viewMode === 'tactical' ? 'TACTICAL CATEGORIES' : 'FIELD MANUAL CATEGORIES'}</span>
-              <span className="text-cyan-700 dark:text-cyber-cyan font-mono font-semibold">{viewMode === 'tactical' ? cheatsheets.length : CPTS_NOTES.length}</span>
+              <span className="text-cyber-cyan font-mono font-semibold">{viewMode === 'tactical' ? cheatsheets.length : CPTS_NOTES.length}</span>
             </div>
 
             {viewMode === 'tactical' ? (
@@ -670,9 +1117,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       whileTap={{ scale: 0.98 }}
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all text-left relative select-none ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors text-left relative select-none ${
                         isSelected
-                          ? 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-900 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40 font-bold shadow-sm'
+                          ? 'bg-cyber-cyan/10 dark:bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/40 font-bold shadow-sm'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-transparent'
                       }`}
                     >
@@ -686,7 +1133,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     whileHover={{ x: 3 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedCategory('starred')}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all text-left select-none ${
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors text-left select-none ${
                       selectedCategory === 'starred'
                         ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 font-bold shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-transparent'
@@ -725,7 +1172,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <button
                       type="button"
                       onClick={() => setIsNewCptsModalOpen(true)}
-                      className="px-2 py-0.5 rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer flex-shrink-0 shadow-sm"
+                      className="px-2 py-0.5 rounded bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 text-[10px] font-bold transition-[box-shadow,background-color,border-color,color] flex items-center gap-1 cursor-pointer flex-shrink-0 shadow-sm"
                       title="Create custom field manual note"
                     >
                       <Plus className="w-3 h-3" />
@@ -744,7 +1191,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     setSelectedCptsSubCategory('ALL');
                     setCptsLimit(30);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
                     selectedTreePath === null && selectedCptsCategory === 'ALL'
                       ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/40 font-bold shadow-md'
                       : 'text-slate-600 dark:text-cyber-muted hover:text-purple-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg border border-transparent'
@@ -788,7 +1235,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             if (soundEnabled) playCyberSound('click');
                             setNotesImportModalOpen(true);
                           }}
-                          className="w-full py-1.5 px-2.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                          className="w-full py-1.5 px-2.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                         >
                           <FolderOpen className="w-3 h-3" />
                           <span>Import Notes Directory</span>
@@ -800,7 +1247,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             setIsNewCptsModalOpen(true);
                             if (soundEnabled) playCyberSound('click');
                           }}
-                          className="w-full py-1.5 px-2.5 rounded bg-white hover:bg-purple-50 dark:bg-cyber-bg dark:hover:bg-cyber-card text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 text-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="w-full py-1.5 px-2.5 rounded bg-white hover:bg-purple-50 dark:bg-cyber-bg dark:hover:bg-cyber-card text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                           <span>Create Custom Note</span>
@@ -840,7 +1287,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       setViewMode('tactical');
                       setSearchQuery('');
                     }}
-                    className="w-full px-3 py-2 rounded-lg border border-cyber-border text-cyber-muted hover:text-white hover:bg-cyber-bg text-xs flex items-center gap-2 transition-all cursor-pointer"
+                    className="w-full px-3 py-2 rounded-lg border border-cyber-border text-cyber-muted hover:text-white hover:bg-cyber-bg text-xs flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
                     <span>← Back to Tactical Snippets</span>
@@ -875,7 +1322,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     ? `Search ${allActiveNotes.length} field manual notes, tags, summaries, and commands (e.g. kerberoast, suid, bloodhound)...`
                     : 'Search field manual notes and commands...'
                 }
-                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border rounded-lg text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 transition-all shadow-sm"
+                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border rounded-lg text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
               />
               {searchQuery && (
                 <button
@@ -915,7 +1362,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         viewport={{ once: true, margin: '-30px' }}
                         transition={{ duration: 0.25, delay: Math.min((idx % 10) * 0.04, 0.3) }}
                         whileHover={{ y: -2 }}
-                        className="cyber-snippet-contain p-3.5 rounded-xl border border-cyber-border bg-cyber-card hover:border-cyber-cyan/40 hover:shadow-glow-cyan/15 transition-all shadow-sm group"
+                        className="cyber-snippet-contain p-3.5 rounded-xl border border-cyber-border bg-cyber-card hover:border-cyber-cyan/40 hover:shadow-glow-cyan/15 transition-[box-shadow,background-color,border-color,color] shadow-sm group"
                       >
                         {/* Snippet Header */}
                         <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -965,13 +1412,11 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               </motion.button>
                             )}
 
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <button
                               onClick={() => handleCopy(interpolated, cmd.id)}
-                              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                                 isCopied
-                                  ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald shadow-glow-emerald/30'
+                                  ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
                                   : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-cyan'
                               }`}
                             >
@@ -986,7 +1431,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   <span>Copy</span>
                                 </>
                               )}
-                            </motion.button>
+                            </button>
                           </div>
                         </div>
 
@@ -1059,7 +1504,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setJumpDropdownOpen((prev) => !prev)}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-cyber-bg border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 text-xs flex items-center gap-1.5 font-semibold transition-all shadow-sm"
+                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-cyber-bg border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 text-xs flex items-center gap-1.5 font-semibold transition-[box-shadow,background-color,border-color,color] shadow-sm"
                         title="Quick search and jump to any note directly"
                       >
                         <Search className="w-3.5 h-3.5 text-purple-400" />
@@ -1102,7 +1547,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                  .map((note) => (
                                    <div
                                      key={note.id}
-                                     className="flex items-center gap-1 w-full rounded hover:bg-purple-900/40 transition-all p-1 group"
+                                     className="flex items-center gap-1 w-full rounded hover:bg-purple-900/40 transition-colors p-1 group"
                                    >
                                      <button
                                        type="button"
@@ -1111,7 +1556,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                          setActiveObsidianNote(note);
                                          if (soundEnabled) playCyberSound('root');
                                        }}
-                                       className="flex-1 text-left px-1.5 py-1 rounded transition-all flex flex-col min-w-0 cursor-pointer"
+                                       className="flex-1 text-left px-1.5 py-1 rounded transition-colors flex flex-col min-w-0 cursor-pointer"
                                        title="Open full Obsidian note"
                                      >
                                        <div className="flex items-center justify-between gap-1">
@@ -1154,7 +1599,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           setCptsLimit(30);
                           if (soundEnabled) playCyberSound('click');
                         }}
-                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
                           cptsSortOrder === 'number'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1171,7 +1616,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           setCptsLimit(30);
                           if (soundEnabled) playCyberSound('click');
                         }}
-                        className={`px-2 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        className={`px-2 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
                           cptsSortOrder === 'topic'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1188,7 +1633,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           setCptsLimit(30);
                           if (soundEnabled) playCyberSound('click');
                         }}
-                        className={`px-2 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        className={`px-2 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
                           cptsSortOrder === 'title'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1205,7 +1650,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setCptsDisplayLayout('cards')}
-                        className={`px-2 py-0.5 rounded text-xs font-bold transition-all flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors flex items-center gap-1 ${
                           cptsDisplayLayout === 'cards'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1218,7 +1663,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setCptsDisplayLayout('quick-index')}
-                        className={`px-2 py-0.5 rounded text-xs font-bold transition-all flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors flex items-center gap-1 ${
                           cptsDisplayLayout === 'quick-index'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1231,7 +1676,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setCptsDisplayLayout('grouped')}
-                        className={`px-2 py-0.5 rounded text-xs font-bold transition-all flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors flex items-center gap-1 ${
                           cptsDisplayLayout === 'grouped'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1240,6 +1685,27 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       >
                         <Folder className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Grouped</span>
+                      </button>
+                    </div>
+
+                    {/* Note Pane Docked / Modal layout toggle */}
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-cyber-bg/90 p-1 rounded-lg border border-purple-300 dark:border-purple-500/30 text-xs">
+                      <button
+                        type="button"
+                        data-testid="hud-toggle-dock-mode"
+                        onClick={() => {
+                          if (soundEnabled) playCyberSound('click');
+                          handleToggleViewerMode();
+                        }}
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
+                          noteViewerMode === 'docked'
+                            ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
+                            : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                        title={noteViewerMode === 'docked' ? "Docked side-by-side mode active · Click to switch to floating modal" : "Floating modal mode active · Click to switch to docked side-by-side"}
+                      >
+                        <PanelRight className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="hidden md:inline">{noteViewerMode === 'docked' ? 'Docked Pane' : 'Floating Modal'}</span>
                       </button>
                     </div>
 
@@ -1252,7 +1718,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           if (soundEnabled) playCyberSound('click');
                           setCptsLangMode('en');
                         }}
-                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
                           cptsLangMode === 'en'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1268,7 +1734,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           if (soundEnabled) playCyberSound('click');
                           setCptsLangMode('he');
                         }}
-                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
                           cptsLangMode === 'he'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1284,7 +1750,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setNotesTextDirection('auto')}
-                        className={`px-2 py-0.5 rounded text-xs font-bold transition-all ${
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
                           notesTextDirection === 'auto'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1296,7 +1762,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setNotesTextDirection('ltr')}
-                        className={`px-2 py-0.5 rounded text-xs font-bold transition-all ${
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
                           notesTextDirection === 'ltr'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1308,7 +1774,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setNotesTextDirection('rtl')}
-                        className={`px-2 py-0.5 rounded text-xs font-bold transition-all ${
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
                           notesTextDirection === 'rtl'
                             ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40'
                             : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1354,7 +1820,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           setSelectedCptsSubCategory('ALL');
                           setCptsLimit(30);
                         }}
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all ${
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
                           selectedCptsSubCategory === 'ALL'
                             ? 'bg-purple-600 text-white shadow-sm'
                             : 'bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1372,7 +1838,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               setSelectedCptsSubCategory(isGroupActive ? 'ALL' : tg.group);
                               setCptsLimit(30);
                             }}
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all flex items-center gap-1.5 ${
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors flex items-center gap-1.5 ${
                               isGroupActive
                                 ? 'bg-purple-600 text-white shadow-md shadow-purple-600/40 border border-purple-400'
                                 : 'bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-purple-900 dark:hover:text-purple-200 hover:border-purple-400'
@@ -1401,7 +1867,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               setSelectedCptsSubCategory(leaf.leaf);
                               setCptsLimit(30);
                             }}
-                            className="px-2 py-0.2 rounded text-[10px] font-mono bg-purple-100 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 transition-all flex-shrink-0"
+                            className="px-2 py-0.2 rounded text-[10px] font-mono bg-purple-100 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 transition-colors flex-shrink-0"
                           >
                             {leaf.leaf} ({leaf.count})
                           </button>
@@ -1424,8 +1890,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 </div>
               </div>
 
-              {/* VIEW RENDERER 1: QUICK INDEX TABLE MODE (High-Density Anti-Scroll Table) */}
-              {cptsDisplayLayout === 'quick-index' && (
+              {/* Main Content Area: Split View when Note is Docked, Full Width otherwise */}
+              <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
+                {/* Left Column: Index Table / Grouped List / Cards */}
+                <div className={`w-full ${activeObsidianNote && noteViewerMode === 'docked' ? (isDockedMaximized ? 'hidden' : 'lg:w-[48%] xl:w-[42%] min-w-0') : 'w-full'} space-y-4`}>
+                  {/* VIEW RENDERER 1: QUICK INDEX TABLE MODE (High-Density Anti-Scroll Table) */}
+                  {cptsDisplayLayout === 'quick-index' && (
                 <div className="rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs font-mono">
@@ -1454,7 +1924,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     if (soundEnabled) playCyberSound('click');
                                     setNotesImportModalOpen(true);
                                   }}
-                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs font-mono inline-flex items-center gap-2 transition-all cursor-pointer shadow-md"
+                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs font-mono inline-flex items-center gap-2 transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-md"
                                 >
                                   <Upload className="w-3.5 h-3.5" />
                                   <span>Import Notes Vault (.json)</span>
@@ -1566,7 +2036,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                         onClick={() =>
                                           setExpandedIndexRows((prev) => ({ ...prev, [note.id]: !prev[note.id] }))
                                         }
-                                        className={`px-2 py-1 rounded text-[11px] font-bold transition-all inline-flex items-center gap-1 ${
+                                        className={`px-2 py-1 rounded text-[11px] font-bold transition-colors inline-flex items-center gap-1 ${
                                           isRowExpanded
                                             ? 'bg-purple-600 text-white shadow-sm'
                                             : 'bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800/50 text-purple-800 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/60'
@@ -1591,7 +2061,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                           if (soundEnabled) playCyberSound('click');
                                           setActiveObsidianNote(note);
                                         }}
-                                        className="px-2 py-1 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800/50 text-purple-800 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-all inline-flex items-center gap-1 cursor-pointer"
+                                        className="px-2 py-1 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800/50 text-purple-800 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors inline-flex items-center gap-1 cursor-pointer"
                                         title="Open Obsidian personal note"
                                       >
                                         <BookOpen className="w-2.5 h-2.5" />
@@ -1601,7 +2071,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                         <button
                                           type="button"
                                           onClick={() => handleCopyAllNoteCommands(note)}
-                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer ${
+                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer ${
                                             copiedId === `all-${note.id}`
                                               ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
                                               : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-purple-400'
@@ -1657,7 +2127,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                               <button
                                                 type="button"
                                                 onClick={() => handleCopy(interpolated, cmdId)}
-                                                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 transition-all ${
+                                                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 transition-colors ${
                                                   isCopied
                                                     ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
                                                     : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-cyan'
@@ -1691,33 +2161,33 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               {cptsDisplayLayout === 'grouped' && (
                 <div className="space-y-4">
                   {allActiveNotes.length === 0 ? (
-                    <div className="p-8 sm:p-12 text-center rounded-2xl border-2 border-dashed border-purple-300 dark:border-purple-500/40 bg-purple-50/90 dark:bg-purple-950/20 space-y-4 max-w-xl mx-auto my-8 shadow-sm dark:shadow-[0_0_40px_rgba(168,85,247,0.1)]">
-                      <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-500/10 border border-purple-300 dark:border-purple-500/30 flex items-center justify-center mx-auto text-purple-600 dark:text-purple-400">
-                        <BookOpen className="w-8 h-8" />
+                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-cyber-border bg-cyber-card/60 space-y-3 max-w-lg mx-auto my-4 shadow-xs">
+                      <div className="w-10 h-10 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-center mx-auto text-cyber-cyan shadow-xs">
+                        <BookOpen className="w-4 h-4" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                        <h3 className="text-sm font-bold text-cyber-text tracking-wide font-mono">
                           Private Local-First Field Manual Vault
                         </h3>
-                        <p className="text-xs text-slate-700 dark:text-purple-200/80 font-medium leading-relaxed">
+                        <p className="text-xs text-cyber-muted font-normal leading-relaxed">
                           ZeroBox keeps notes 100% private. Notes are never bundled or published online. Import your personal Obsidian vault export to access your offensive playbooks, methodologies, and commands offline.
                         </p>
                       </div>
-                      <div className="pt-2">
+                      <div className="pt-1">
                         <button
                           type="button"
                           onClick={() => {
                             if (soundEnabled) playCyberSound('click');
                             setNotesImportModalOpen(true);
                           }}
-                          className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs font-mono shadow-lg shadow-purple-600/30 transition-all inline-flex items-center gap-2 cursor-pointer"
+                          className="px-4 py-2 bg-cyber-cyan hover:opacity-90 text-black font-bold rounded-lg text-xs font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer shadow-xs"
                         >
-                          <Upload className="w-4 h-4" />
+                          <Upload className="w-3.5 h-3.5" />
                           <span>Import Your Notes Vault (.json)</span>
                         </button>
                       </div>
-                      <div className="text-[11px] text-slate-600 dark:text-cyber-muted font-mono flex items-center justify-center gap-1.5 pt-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <div className="text-[10px] text-cyber-muted font-mono flex items-center justify-center gap-1.5 pt-0.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-cyber-emerald" />
                         <span>IndexedDB Browser Sandbox · 0 Network Calls · 0 Data Leakage</span>
                       </div>
                     </div>
@@ -1778,7 +2248,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     key={note.id}
                                     id={`cpts-note-${note.id}`}
                                     dir={isRtlCard ? 'rtl' : 'ltr'}
-                                    className={`p-3.5 rounded-xl border border-cyber-border bg-cyber-bg/40 hover:border-purple-500/50 hover:shadow-lg transition-all space-y-2.5 group ${
+                                    className={`p-3.5 rounded-xl border border-cyber-border bg-cyber-bg/40 hover:border-purple-500/50 hover:shadow-lg transition-[box-shadow,background-color,border-color,color] space-y-2.5 group ${
                                       isRtlCard ? 'text-right' : 'text-left'
                                     } ${isHighlighted ? 'ring-2 ring-purple-400 bg-purple-950/30' : ''}`}
                                   >
@@ -1819,7 +2289,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                              if (soundEnabled) playCyberSound('click');
                                              setActiveObsidianNote(note);
                                            }}
-                                           className="px-2 py-1 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 transition-all flex items-center gap-1 cursor-pointer"
+                                           className="px-2 py-1 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 transition-colors flex items-center gap-1 cursor-pointer"
                                            title="Open Obsidian personal note"
                                          >
                                            <BookOpen className="w-2.5 h-2.5" />
@@ -1829,7 +2299,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                            <button
                                              type="button"
                                              onClick={() => handleCopyAllNoteCommands(note)}
-                                             className="px-2 py-1 rounded text-[10px] font-semibold bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 transition-all flex items-center gap-1 cursor-pointer"
+                                             className="px-2 py-1 rounded text-[10px] font-semibold bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 transition-colors flex items-center gap-1 cursor-pointer"
                                            >
                                              <Copy className="w-3 h-3" />
                                              <span>Copy All ({note.commands.length})</span>
@@ -1838,7 +2308,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
-                                            className="p-1 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 border border-cyber-border hover:border-rose-900/50 transition-all cursor-pointer"
+                                            className="p-1 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 border border-cyber-border hover:border-rose-900/50 transition-colors cursor-pointer"
                                             title="Delete field note"
                                           >
                                             <Trash2 className="w-3 h-3" />
@@ -1878,33 +2348,33 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               {cptsDisplayLayout === 'cards' && (
                 <div className="space-y-3">
                   {allActiveNotes.length === 0 ? (
-                    <div className="p-8 sm:p-12 text-center rounded-2xl border-2 border-dashed border-purple-300 dark:border-purple-500/40 bg-purple-50/90 dark:bg-purple-950/20 space-y-4 max-w-xl mx-auto my-8 shadow-sm dark:shadow-[0_0_40px_rgba(168,85,247,0.1)]">
-                      <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-500/10 border border-purple-300 dark:border-purple-500/30 flex items-center justify-center mx-auto text-purple-600 dark:text-purple-400">
-                        <BookOpen className="w-8 h-8" />
+                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-cyber-border bg-cyber-card/60 space-y-3 max-w-lg mx-auto my-4 shadow-xs">
+                      <div className="w-10 h-10 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-center mx-auto text-cyber-cyan shadow-xs">
+                        <BookOpen className="w-4 h-4" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                        <h3 className="text-sm font-bold text-cyber-text tracking-wide font-mono">
                           Private Local-First Field Manual Vault
                         </h3>
-                        <p className="text-xs text-slate-700 dark:text-purple-200/80 font-medium leading-relaxed">
+                        <p className="text-xs text-cyber-muted font-normal leading-relaxed">
                           ZeroBox keeps notes 100% private. Notes are never bundled or published online. Import your personal Obsidian vault export to access your offensive playbooks, methodologies, and commands offline.
                         </p>
                       </div>
-                      <div className="pt-2">
+                      <div className="pt-1">
                         <button
                           type="button"
                           onClick={() => {
                             if (soundEnabled) playCyberSound('click');
                             setNotesImportModalOpen(true);
                           }}
-                          className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs font-mono shadow-lg shadow-purple-600/30 transition-all inline-flex items-center gap-2 cursor-pointer"
+                          className="px-4 py-2 bg-cyber-cyan hover:opacity-90 text-black font-bold rounded-lg text-xs font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer shadow-xs"
                         >
-                          <Upload className="w-4 h-4" />
+                          <Upload className="w-3.5 h-3.5" />
                           <span>Import Your Notes Vault (.json)</span>
                         </button>
                       </div>
-                      <div className="text-[11px] text-slate-600 dark:text-cyber-muted font-mono flex items-center justify-center gap-1.5 pt-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <div className="text-[10px] text-cyber-muted font-mono flex items-center justify-center gap-1.5 pt-0.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-cyber-emerald" />
                         <span>IndexedDB Browser Sandbox · 0 Network Calls · 0 Data Leakage</span>
                       </div>
                     </div>
@@ -1930,7 +2400,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           key={note.id}
                           id={`cpts-note-${note.id}`}
                           dir={isRtlCard ? 'rtl' : 'ltr'}
-                          className={`p-4 rounded-xl border border-cyber-border bg-cyber-card hover:border-purple-500/50 hover:shadow-lg transition-all space-y-3 group ${
+                          className={`p-4 rounded-xl border border-cyber-border bg-cyber-card hover:border-purple-500/50 hover:shadow-lg transition-[box-shadow,background-color,border-color,color] space-y-3 group ${
                             isRtlCard ? 'text-right' : 'text-left'
                           } ${isHighlighted ? 'ring-2 ring-purple-400 bg-purple-950/30' : ''}`}
                         >
@@ -2043,7 +2513,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   if (soundEnabled) playCyberSound('click');
                                   setActiveObsidianNote(note);
                                 }}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 hover:border-purple-400 transition-all cursor-pointer shadow-sm"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 hover:border-purple-400 transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
                                 title="Open full authentic Obsidian personal note"
                               >
                                 <BookOpen className="w-3.5 h-3.5 text-purple-400" />
@@ -2053,9 +2523,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 <button
                                   type="button"
                                   onClick={() => handleCopyAllNoteCommands(note)}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold flex-shrink-0 transition-all cursor-pointer ${
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer shadow-xs ${
                                     copiedId === `all-${note.id}`
-                                      ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald shadow-glow-emerald/30'
+                                      ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
                                       : 'bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-purple-900 dark:text-purple-300 hover:border-purple-400 hover:text-purple-950 dark:hover:text-white'
                                   }`}
                                   title="Copy all commands in this note to clipboard"
@@ -2076,7 +2546,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               <button
                                 type="button"
                                 onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
-                                className="p-1.5 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 border border-cyber-border hover:border-rose-900/50 transition-all cursor-pointer"
+                                className="p-1.5 rounded-md text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 border border-cyber-border hover:border-rose-900/50 transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
                                 title="Delete field note"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2095,7 +2565,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 return (
                                   <div
                                     key={cIdx}
-                                    className="flex items-center justify-between gap-2 p-2 rounded bg-cyber-code border border-cyber-border group-hover:border-purple-900/40 text-xs font-mono"
+                                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-cyber-code border border-cyber-border group-hover:border-purple-900/40 text-xs font-mono"
                                   >
                                     <pre className="text-cyber-cyan overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all" title={interpolated}>
                                       {interpolated}
@@ -2103,9 +2573,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     <button
                                       type="button"
                                       onClick={() => handleCopy(interpolated, cmdId)}
-                                      className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold flex-shrink-0 transition-all ${
+                                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                                         isCopied
-                                          ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald shadow-glow-emerald/30'
+                                          ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
                                           : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-cyan'
                                       }`}
                                     >
@@ -2160,7 +2630,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   <button
                     type="button"
                     onClick={() => setCptsLimit((prev) => prev + 30)}
-                    className="px-5 py-2 rounded-lg bg-purple-500/20 border border-purple-500/50 hover:bg-purple-500 hover:text-black text-purple-300 font-bold text-xs transition-all shadow-md flex items-center gap-2"
+                    className="px-5 py-2 rounded-lg bg-purple-500/20 border border-purple-500/50 hover:bg-purple-500 hover:text-black text-purple-300 font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md flex items-center gap-2"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>LOAD NEXT 30 NOTES ({filteredCptsNotes.length - visibleCptsNotes.length} REMAINING)</span>
@@ -2168,12 +2638,24 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   <button
                     type="button"
                     onClick={() => setCptsLimit(filteredCptsNotes.length)}
-                    className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border hover:border-white text-cyber-muted hover:text-white text-xs font-semibold transition-all"
+                    className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border hover:border-white text-cyber-muted hover:text-white text-xs font-semibold transition-colors"
                   >
                     SHOW ALL ({filteredCptsNotes.length})
                   </button>
                 </div>
               )}
+                </div>
+
+                {/* Right Column: Docked Split Field Manual Note Viewer */}
+                {activeObsidianNote && noteViewerMode === 'docked' && (
+                  <div 
+                    data-testid="docked-note-viewer-pane"
+                    className={`w-full ${isDockedMaximized ? 'w-full' : 'lg:w-[52%] xl:w-[58%]'} lg:sticky lg:top-4 h-[75vh] lg:h-[calc(100vh-2.5rem)] min-w-0 flex flex-col`}
+                  >
+                    {renderWorkspacePanes('docked')}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -2186,7 +2668,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-lg rounded-xl border border-cyber-border bg-cyber-card shadow-2xl p-5 space-y-4"
+            className="w-full max-w-lg rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl p-6 space-y-4"
           >
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Code className="w-4 h-4 text-cyber-cyan" /> ADD CUSTOM EXPLOITATION SNIPPET
@@ -2276,45 +2758,24 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white"
+                  className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
                 >
                   Cancel
                 </button>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-cyber-cyan text-black font-bold hover:bg-cyber-cyan/90 transition-all shadow-glow-cyan"
+                  className="px-4 py-2 rounded-lg bg-cyber-cyan text-black font-bold text-xs hover:bg-cyber-cyan/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
                 >
                   Save Snippet
-                </motion.button>
+                </button>
               </div>
             </form>
           </motion.div>
         </div>
       )}
 
-      {/* Authentic Obsidian Personal Note Viewer Modal */}
-      {activeObsidianNote && (
-        <ObsidianNoteViewer
-          note={activeObsidianNote}
-          globalVars={globalVars}
-          soundEnabled={soundEnabled}
-          onClose={() => setActiveObsidianNote(null)}
-          onNavigateToNote={(noteId) => {
-            const found = getNoteById(noteId);
-            if (found) {
-              setActiveObsidianNote(found);
-            }
-          }}
-          onDeleteNote={(noteId) => {
-            deleteNote(noteId);
-            if (soundEnabled) playCyberSound('root');
-            setActiveObsidianNote(null);
-          }}
-          defaultLanguage={cptsLangMode}
-        />
-      )}
+      {/* Authentic Obsidian Personal Note Viewer Modal (Modal Mode) */}
+      {activeObsidianNote && noteViewerMode === 'modal' && renderWorkspacePanes('modal')}
 
       {/* New Custom CPTS Note Modal */}
       <NewCptsNoteModal

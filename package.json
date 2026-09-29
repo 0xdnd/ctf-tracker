@@ -16,6 +16,7 @@
     "dev": "vite",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "python scripts/run_webapp_tests.py",
     "export-notes": "node scripts/index-cpts-notes.cjs",
     "index-notes": "node scripts/index-cpts-notes.cjs",
     "build": "tsc && vite build && node scripts/postbuild.cjs",
@@ -29,6 +30,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
     "@emotion/is-prop-valid": "^1.4.0",
+    "@tanstack/react-virtual": "^3.14.13",
     "@tauri-apps/plugin-updater": "^2.12.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -40,6 +42,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.3",
     "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

@@ -129,7 +129,7 @@ export const TargetDetailPage: React.FC = () => {
         </p>
         <Link
           to="/tracker"
-          className="px-4 py-2 rounded-lg bg-cyber-card border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-bold text-xs transition-all"
+          className="px-4 py-2 rounded-lg bg-cyber-card border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-bold text-xs transition-colors"
         >
           Return to Tracker
         </Link>
@@ -204,14 +204,14 @@ export const TargetDetailPage: React.FC = () => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="max-w-6xl mx-auto space-y-6 font-mono text-xs pb-16"
+      className="max-w-6xl mx-auto space-y-4 font-mono text-xs pb-12"
     >
       {/* Page Header Bar */}
-      <div className="p-4 rounded-xl border border-cyber-border bg-cyber-card shadow-lg flex flex-wrap items-center justify-between gap-4">
+      <div className="p-3 rounded-xl border border-cyber-border bg-cyber-card shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/tracker')}
-            className="p-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-cyan transition-colors"
+            className="p-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyber-text hover:border-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
             title="Back to Target List"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -219,7 +219,7 @@ export const TargetDetailPage: React.FC = () => {
           {isFocusMode ? (
             <button
               onClick={() => navigate(`/target/${machine.id}`)}
-              className="px-3 py-1.5 rounded-lg bg-cyber-crimson/10 border border-cyber-crimson/30 text-cyber-crimson hover:bg-cyber-crimson hover:text-white font-bold transition-all flex items-center gap-2 shadow-glow-crimson"
+              className="px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white font-bold active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-2 shadow-xs"
               title="Exit Focus Mode"
             >
               <Eye className="w-4 h-4" />
@@ -228,7 +228,7 @@ export const TargetDetailPage: React.FC = () => {
           ) : (
             <button
               onClick={() => navigate(`/target/${machine.id}/focus`)}
-              className="p-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyber-cyan transition-colors"
+              className="p-2 rounded-lg bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-zinc-400 hover:text-cyber-cyan hover:border-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               title="Enter Focus Mode"
             >
               <Crosshair className="w-4 h-4" />
@@ -241,16 +241,16 @@ export const TargetDetailPage: React.FC = () => {
               <PlatformBadge platform={machine.platform} size="md" />
               <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">{machine.name}</h1>
               <OsBadge os={machine.os} size="sm" />
-              <span className={`text-xs px-2 py-0.5 rounded font-bold ${
-                machine.difficulty === 'Easy' ? 'bg-cyber-emerald/10 text-cyber-emerald border border-cyber-emerald/30' :
-                machine.difficulty === 'Medium' ? 'bg-cyber-amber/10 text-cyber-amber border border-cyber-amber/30' :
-                machine.difficulty === 'Hard' ? 'bg-cyber-crimson/10 text-cyber-crimson border border-cyber-crimson/30' :
+              <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${
+                machine.difficulty === 'Easy' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30' :
+                machine.difficulty === 'Medium' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30' :
+                machine.difficulty === 'Hard' ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30' :
                 'bg-purple-950/40 text-purple-400 border border-purple-800'
               }`}>
                 {machine.difficulty}
               </span>
               {machine.isActive && (
-                <span className="text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                <span className="text-[11px] px-2 py-0.5 rounded-md font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
                   <Lock className="w-3 h-3 text-amber-400" />
                   <span>ACTIVE LAB</span>
                 </span>
@@ -263,13 +263,13 @@ export const TargetDetailPage: React.FC = () => {
                   href={sanitizeExternalUrl(machine.roomUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-cyber-cyan hover:underline"
+                  className="flex items-center gap-1 text-cyan-600 dark:text-cyber-cyan hover:underline"
                 >
                   Official Room <ExternalLink className="w-3 h-3" />
                 </a>
               )}
               {machine.isActive ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/40">
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/40">
                   <Lock className="w-3 h-3 text-amber-400" />
                   <span>ACTIVE LAB · WRITEUPS PROHIBITED (HTB ToS)</span>
                 </span>
@@ -278,7 +278,7 @@ export const TargetDetailPage: React.FC = () => {
                   href={sanitizeExternalUrl(machine.writeupUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-cyber-purple hover:underline"
+                  className="flex items-center gap-1 text-purple-600 dark:text-cyber-purple hover:underline"
                 >
                   Writeup <ExternalLink className="w-3 h-3" />
                 </a>
@@ -289,17 +289,17 @@ export const TargetDetailPage: React.FC = () => {
 
         {/* Stopwatch & Action Buttons */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-cyber-bg border border-cyber-border px-3 py-1.5 rounded-lg">
-            <Clock className="w-4 h-4 text-cyber-cyan" />
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border px-3 py-1.5 rounded-lg">
+            <Clock className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
             <TargetDetailTimerDisplay machineId={machine.id} fallbackSeconds={machine.timeSpentSeconds} isActiveTarget={isActiveTarget} />
             {isActiveTarget ? (
               <div className="flex items-center gap-1">
                 {isTimerRunning ? (
-                  <button onClick={pauseTimer} className="p-1 text-cyber-amber hover:text-slate-900 dark:hover:text-white" title="Pause">
+                  <button onClick={pauseTimer} className="p-1 text-amber-600 dark:text-cyber-amber hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-[transform,background-color,border-color,color]" title="Pause">
                     <Pause className="w-3.5 h-3.5" />
                   </button>
                 ) : (
-                  <button onClick={startTimer} className="p-1 text-cyber-emerald hover:text-slate-900 dark:hover:text-white" title="Resume">
+                  <button onClick={startTimer} className="p-1 text-emerald-600 dark:text-cyber-emerald hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-[transform,background-color,border-color,color]" title="Resume">
                     <Play className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -308,7 +308,7 @@ export const TargetDetailPage: React.FC = () => {
                     setActiveTarget(null);
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="p-1 text-cyber-muted hover:text-cyber-crimson transition-colors"
+                  className="p-1 text-zinc-400 hover:text-rose-500 active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   title="Disengage Active Target"
                   aria-label="Disengage active target"
                 >
@@ -321,7 +321,7 @@ export const TargetDetailPage: React.FC = () => {
                   setActiveTarget(machine.id);
                   startTimer();
                 }}
-                className="px-2 py-0.5 rounded bg-cyber-emerald/20 text-cyber-emerald text-[10px] font-bold border border-cyber-emerald/40 hover:bg-cyber-emerald hover:text-black transition-all"
+                className="px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-[10px] font-bold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               >
                 Engage
               </button>
@@ -333,7 +333,7 @@ export const TargetDetailPage: React.FC = () => {
               setWriteupMachineId(machine.id);
               navigate('/writeup');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-semibold transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-cyber-card border border-cyber-cyan/40 text-cyan-700 dark:text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <FileText className="w-4 h-4" /> Writeup Studio
           </button>
@@ -341,13 +341,14 @@ export const TargetDetailPage: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center border-b border-cyber-border bg-cyber-card/60 px-4 rounded-t-xl">
+      <div className="flex items-center border-b border-cyber-border bg-cyber-bg px-3 rounded-t-xl">
         <button
           onClick={() => setActiveTab('checklist')}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all ${
+          data-testid="tab-checklist"
+          className={`flex items-center gap-1.5 py-2 px-3.5 font-bold text-xs border-b-2 transition-colors ${
             activeTab === 'checklist'
-              ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/5'
-              : 'border-transparent text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/10'
+              : 'border-transparent text-cyber-muted hover:text-cyber-text'
           }`}
         >
           <ListChecks className="w-4 h-4" />
@@ -356,10 +357,11 @@ export const TargetDetailPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all ${
+          data-testid="tab-flags"
+          className={`flex items-center gap-1.5 py-2 px-3.5 font-bold text-xs border-b-2 transition-colors ${
             activeTab === 'overview'
-              ? 'border-cyber-emerald text-cyber-emerald bg-cyber-emerald/5'
-              : 'border-transparent text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              ? 'border-cyber-emerald text-cyber-emerald bg-cyber-emerald/10'
+              : 'border-transparent text-cyber-muted hover:text-cyber-text'
           }`}
         >
           <Crosshair className="w-4 h-4" />
@@ -367,10 +369,11 @@ export const TargetDetailPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('recon')}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all ${
+          data-testid="tab-recon"
+          className={`flex items-center gap-1.5 py-2 px-3.5 font-bold text-xs border-b-2 transition-colors ${
             activeTab === 'recon'
-              ? 'border-cyber-purple text-cyber-purple bg-cyber-purple/5'
-              : 'border-transparent text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              ? 'border-cyber-purple text-cyber-purple bg-cyber-purple/10'
+              : 'border-transparent text-cyber-muted hover:text-cyber-text'
           }`}
         >
           <Network className="w-4 h-4 text-cyber-purple" />
@@ -384,10 +387,11 @@ export const TargetDetailPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('commands')}
-          className={`flex items-center gap-2 py-3 px-5 font-bold text-xs border-b-2 transition-all ${
+          data-testid="tab-commands"
+          className={`flex items-center gap-1.5 py-2 px-3.5 font-bold text-xs border-b-2 transition-colors ${
             activeTab === 'commands'
-              ? 'border-cyber-amber text-cyber-amber bg-cyber-amber/5'
-              : 'border-transparent text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              ? 'border-cyber-amber text-cyber-amber bg-cyber-amber/10'
+              : 'border-transparent text-cyber-muted hover:text-cyber-text'
           }`}
         >
           <Zap className="w-4 h-4 text-cyber-amber" />
@@ -405,11 +409,11 @@ export const TargetDetailPage: React.FC = () => {
           }} 
         />
       ) : activeTab === 'commands' ? (
-        <div className="p-4 sm:p-6 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card">
+        <div className="p-3.5 sm:p-4 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card shadow-xs">
           <QuickCommandsTab machine={machine} />
         </div>
       ) : activeTab === 'recon' ? (
-        <div className="p-4 sm:p-6 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card">
+        <div className="p-3.5 sm:p-4 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card shadow-xs">
           <TargetReconDropzone
             machine={machine}
             onUpdateMachine={updateMachine}
@@ -417,11 +421,11 @@ export const TargetDetailPage: React.FC = () => {
           />
         </div>
       ) : (
-        <div className="p-6 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card space-y-6">
+        <div className="p-3.5 sm:p-4 rounded-b-xl border border-t-0 border-cyber-border bg-cyber-card shadow-xs space-y-4">
           
           {/* Section 1: Pipeline Stage Selector */}
           <div>
-            <div className="text-[10px] uppercase font-bold tracking-wider text-cyber-muted mb-2 flex items-center gap-1.5">
+            <div className="text-[10px] uppercase font-bold tracking-wider text-cyber-muted mb-2 flex items-center gap-1.5 font-mono">
               <Crosshair className="w-3.5 h-3.5 text-cyber-emerald" /> ATTACK LIFECYCLE PIPELINE
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -431,10 +435,10 @@ export const TargetDetailPage: React.FC = () => {
                   <button
                     key={stage.id}
                     onClick={() => handleStatusChange(stage.id)}
-                    className={`p-2.5 rounded-lg border text-center font-semibold transition-all ${
+                    className={`p-2.5 rounded-lg border text-center font-mono text-xs font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color] ${
                       isSelected
-                        ? `bg-cyber-bg border-2 ${stage.color} shadow-md`
-                        : 'bg-cyber-bg/40 border-cyber-border/80 text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-border'
+                        ? `bg-slate-100 dark:bg-cyber-card border-2 ${stage.color} shadow-xs`
+                        : 'bg-slate-50 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'
                     }`}
                   >
                     {stage.label}
@@ -446,19 +450,19 @@ export const TargetDetailPage: React.FC = () => {
 
           {/* Section 2: Flags Vault */}
           <div>
-            <div className="text-[10px] uppercase font-bold tracking-wider text-cyber-muted mb-2 flex items-center gap-1.5">
+            <div className="text-[10px] uppercase font-bold tracking-wider text-cyber-muted mb-2 flex items-center gap-1.5 font-mono">
               <Flag className="w-3.5 h-3.5 text-cyber-crimson" /> FLAGS VAULT
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {/* User Flag */}
-              <div className="p-3.5 rounded-lg bg-cyber-bg border border-cyber-border space-y-2">
+              <div className="p-2.5 rounded-xl bg-cyber-bg border border-cyber-border space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-cyber-cyan flex items-center gap-1">
+                  <span className="font-semibold text-cyber-cyan font-mono text-xs flex items-center gap-1">
                     <Flag className="w-3 h-3" /> USER FLAG
                   </span>
                   {isUserPwned && (
-                    <span className="text-[10px] text-cyber-emerald flex items-center gap-1">
+                    <span className="text-[10px] font-mono text-cyber-emerald flex items-center gap-1">
                       <Check className="w-3 h-3" /> PWNED
                     </span>
                   )}
@@ -480,17 +484,17 @@ export const TargetDetailPage: React.FC = () => {
                       });
                     }}
                     placeholder="Enter user flag..."
-                    className="flex-1 bg-cyber-card px-2.5 py-1.5 rounded border border-cyber-border text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyber-cyan"
+                    className="flex-1 bg-cyber-card px-3 py-1.5 rounded-lg border border-cyber-border text-cyber-text text-xs font-mono focus:outline-none focus:border-cyber-cyan transition-colors"
                   />
                   <button
                     onClick={() => setShowUserFlag(!showUserFlag)}
-                    className="p-1.5 rounded bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                    className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-text active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {showUserFlag ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                   <button
                     onClick={() => handleCopy(machine.userFlag || '', 'user')}
-                    className="p-1.5 rounded bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-cyan"
+                    className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {copiedUser ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
@@ -498,13 +502,13 @@ export const TargetDetailPage: React.FC = () => {
               </div>
 
               {/* Root Flag */}
-              <div className="p-3.5 rounded-lg bg-cyber-bg border border-cyber-border space-y-2">
+              <div className="p-2.5 rounded-xl bg-cyber-bg border border-cyber-border space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-cyber-emerald flex items-center gap-1">
+                  <span className="font-semibold text-cyber-emerald font-mono text-xs flex items-center gap-1">
                     <Flag className="w-3 h-3" /> ROOT / SYSTEM FLAG
                   </span>
                   {isRootPwned && (
-                    <span className="text-[10px] text-cyber-emerald flex items-center gap-1">
+                    <span className="text-[10px] font-mono text-cyber-emerald flex items-center gap-1">
                       <Check className="w-3 h-3" /> ROOTED
                     </span>
                   )}
@@ -526,17 +530,17 @@ export const TargetDetailPage: React.FC = () => {
                       });
                     }}
                     placeholder="Enter root flag..."
-                    className="flex-1 bg-cyber-card px-2.5 py-1.5 rounded border border-cyber-border text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyber-emerald"
+                    className="flex-1 bg-cyber-card px-3 py-1.5 rounded-lg border border-cyber-border text-cyber-text text-xs font-mono focus:outline-none focus:border-cyber-emerald transition-colors"
                   />
                   <button
                     onClick={() => setShowRootFlag(!showRootFlag)}
-                    className="p-1.5 rounded bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                    className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-text active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {showRootFlag ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                   <button
                     onClick={() => handleCopy(machine.rootFlag || '', 'root')}
-                    className="p-1.5 rounded bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-emerald"
+                    className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-emerald active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {copiedRoot ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
@@ -547,15 +551,15 @@ export const TargetDetailPage: React.FC = () => {
 
           {/* Section 2.5: Discovered Open Ports & Attack Surface Summary */}
           {machine.services && machine.services.length > 0 && (
-            <div className="p-3.5 rounded-lg bg-cyber-bg border border-cyber-border space-y-2">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5">
-                  <Network className="w-3.5 h-3.5 text-cyber-purple" /> DISCOVERED ATTACK SURFACE ({machine.services.length} PORTS)
+                <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5 font-mono">
+                  <Network className="w-3.5 h-3.5 text-purple-400" /> DISCOVERED ATTACK SURFACE ({machine.services.length} PORTS)
                 </span>
                 <button
                   type="button"
                   onClick={() => setActiveTab('recon')}
-                  className="text-[11px] text-cyber-purple hover:underline flex items-center gap-1 font-semibold"
+                  className="text-[11px] text-purple-400 hover:underline flex items-center gap-1 font-mono font-semibold"
                 >
                   View Full Recon Matrix &rarr;
                 </button>
@@ -564,7 +568,7 @@ export const TargetDetailPage: React.FC = () => {
                 {machine.services.map((svc) => (
                   <span
                     key={`${svc.port}-${svc.protocol}`}
-                    className="px-2 py-1 rounded bg-cyber-card border border-cyber-border text-[11px] font-mono flex items-center gap-1.5"
+                    className="px-2 py-1 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-[11px] font-mono flex items-center gap-1.5"
                   >
                     <span className="text-cyber-cyan font-bold">{svc.port}/{svc.protocol}</span>
                     <span className="text-slate-700 dark:text-slate-300 font-semibold">{svc.service}</span>
@@ -576,20 +580,20 @@ export const TargetDetailPage: React.FC = () => {
           )}
 
           {/* Section 3: Spoiler Hint */}
-          <div className="p-3.5 rounded-lg bg-cyber-bg border border-cyber-border space-y-2">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 text-cyber-amber" /> INTEL HINT
+              <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1 font-mono">
+                <AlertCircle className="w-3 h-3 text-amber-500" /> INTEL HINT
               </span>
               <button
                 onClick={() => setShowHint(!showHint)}
-                className="text-[10px] text-cyber-amber hover:underline"
+                className="text-[10px] font-mono text-amber-500 hover:underline"
               >
                 {showHint ? 'Hide Hint' : 'Reveal Hint'}
               </button>
             </div>
-            <div className={`p-2.5 rounded border text-xs ${
-              showHint ? 'bg-cyber-amber/10 border-cyber-amber/30 text-slate-900 dark:text-white' : 'filter blur-[4px] select-none text-transparent'
+            <div className={`p-2.5 rounded-lg border text-xs font-mono ${
+              showHint ? 'bg-amber-500/10 border-amber-500/30 text-slate-900 dark:text-white' : 'filter blur-[4px] select-none text-transparent border-slate-200 dark:border-cyber-border'
             }`}>
               {machine.hint || 'No specific hints recorded for this target.'}
             </div>
@@ -597,14 +601,14 @@ export const TargetDetailPage: React.FC = () => {
 
           {/* Section 4: Tags & Tactical Field Notes */}
           <div className="space-y-3">
-            <div className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-cyber-purple" /> ATTACK VECTORS & TAGS
+            <div className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5 font-mono">
+              <Tag className="w-3.5 h-3.5 text-purple-400" /> ATTACK VECTORS & TAGS
             </div>
             <div className="flex flex-wrap gap-1.5">
               {machine.tags.map((t) => (
-                <span key={t} className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border text-cyber-cyan text-xs flex items-center gap-1">
+                <span key={t} className="px-2 py-1 rounded-md bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-cyber-cyan text-xs font-mono flex items-center gap-1">
                   <span>{t}</span>
-                  <button onClick={() => handleRemoveTag(t)} className="text-cyber-muted hover:text-cyber-crimson">✕</button>
+                  <button onClick={() => handleRemoveTag(t)} className="text-cyber-muted hover:text-rose-500">✕</button>
                 </span>
               ))}
             </div>
@@ -618,11 +622,11 @@ export const TargetDetailPage: React.FC = () => {
                 onChange={(e) => setNewTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
                 placeholder="Add vector tag..."
-                className="flex-1 bg-cyber-bg px-2.5 py-1 rounded border border-cyber-border text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyber-purple"
+                className="flex-1 bg-white dark:bg-cyber-bg px-3 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-purple-500 transition-colors"
               />
               <button
                 onClick={handleAddTag}
-                className="px-3 py-1 rounded bg-cyber-purple/20 border border-cyber-purple/50 text-cyber-purple hover:bg-cyber-purple hover:text-slate-900 dark:hover:text-white font-semibold"
+                className="px-3.5 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500 hover:text-slate-950 font-mono text-xs font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               >
                 Add
               </button>
@@ -631,7 +635,7 @@ export const TargetDetailPage: React.FC = () => {
 
           {/* Section 5: Field Notes */}
           <div className="space-y-1.5">
-            <div className="text-[10px] uppercase font-bold text-cyber-muted">
+            <div className="text-[10px] uppercase font-bold text-cyber-muted font-mono">
               TACTICAL FIELD NOTES
             </div>
             <textarea
@@ -642,7 +646,7 @@ export const TargetDetailPage: React.FC = () => {
               value={machine.quickNotes || ''}
               onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
               placeholder="Record notes, credentials, and pivot paths..."
-              className="w-full bg-cyber-bg p-3 rounded-lg border border-cyber-border text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-cyber-emerald resize-none"
+              className="w-full bg-slate-50 dark:bg-cyber-bg p-3 rounded-xl border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-cyber-emerald resize-none shadow-xs transition-colors"
             />
           </div>
 

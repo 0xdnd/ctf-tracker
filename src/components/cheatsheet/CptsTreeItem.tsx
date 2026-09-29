@@ -40,7 +40,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
             onToggleFolder(node.id);
             onSelectFolder(node.fullPath);
           }}
-          className={`flex items-center justify-between py-1 px-1.5 rounded-md cursor-pointer transition-all group ${
+          className={`flex items-center justify-between py-1 px-1.5 rounded-md cursor-pointer transition-colors group ${
             isSelected
               ? 'bg-purple-100 dark:bg-purple-600/30 text-purple-950 dark:text-purple-200 border border-purple-300 dark:border-purple-400/40 font-bold shadow-sm'
               : 'text-slate-700 dark:text-cyber-muted hover:text-purple-950 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-cyber-bg/70 border border-transparent'
@@ -54,7 +54,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                 e.stopPropagation();
                 onToggleFolder(node.id);
               }}
-              className="p-0.5 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 text-slate-400 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 focus:outline-none transition-all cursor-pointer"
+              className="p-0.5 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 text-slate-400 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 focus:outline-none transition-colors cursor-pointer"
               title={isExpanded ? 'Collapse folder' : 'Expand folder'}
             >
               <ChevronRight
@@ -81,7 +81,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                   e.stopPropagation();
                   onAddNoteToFolder(node.fullPath);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-purple-600 dark:text-purple-400 hover:text-white hover:bg-purple-600 transition-all cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-purple-600 dark:text-purple-400 hover:text-white hover:bg-purple-600 transition-[opacity,background-color,border-color,color] cursor-pointer"
                 title={`Add note inside ${node.name}`}
               >
                 <Plus className="w-3 h-3" />
@@ -128,7 +128,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
       onClick={() => onSelectNote(note)}
       data-tree-type="note"
       data-note-id={note.id}
-      className="flex items-center justify-between py-1 px-1.5 rounded-md text-xs font-mono cursor-pointer transition-all text-slate-700 dark:text-cyber-muted hover:text-purple-950 dark:hover:text-white hover:bg-purple-100 dark:hover:bg-purple-950/40 group border border-transparent hover:border-purple-200 dark:hover:border-purple-800/40"
+      className="flex items-center justify-between py-1 px-1.5 rounded-md text-xs font-mono cursor-pointer transition-colors text-slate-700 dark:text-cyber-muted hover:text-purple-950 dark:hover:text-white hover:bg-purple-100 dark:hover:bg-purple-950/40 group border border-transparent hover:border-purple-200 dark:hover:border-purple-800/40"
       title={noteTitle}
     >
       <div className="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1 pl-4">
@@ -150,7 +150,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
               e.stopPropagation();
               onDeleteNote(note.id, noteTitle);
             }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 transition-all cursor-pointer"
+            className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 transition-[opacity,background-color,border-color,color] cursor-pointer"
             title="Delete note"
           >
             <Trash2 className="w-3 h-3" />

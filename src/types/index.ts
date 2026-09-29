@@ -1,6 +1,6 @@
 export type Platform = 'HTB' | 'THM' | 'Custom';
 
-export type OperatingSystem = 'Linux' | 'Windows' | 'Android' | 'BSD' | 'Other';
+export type OperatingSystem = 'Linux' | 'Windows' | 'BSD' | 'Android' | 'macOS' | 'Other';
 
 export type Difficulty = 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Insane';
 
@@ -56,6 +56,7 @@ export interface Machine {
 }
 
 export * from './checklist';
+export * from './graph';
 
 export interface CheatsheetCommand {
   id: string;

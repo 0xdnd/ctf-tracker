@@ -168,12 +168,13 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         {/* Active Target Engage Button */}
         <button
           onClick={(e) => onSetTarget(e, m.id)}
-          className={`p-1.5 rounded-lg transition-[transform,colors] duration-150 hover:scale-110 active:scale-95 ${
+          className={`p-1.5 rounded-lg transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
             isActiveTarget
               ? 'text-emerald-700 dark:text-cyber-emerald bg-emerald-50 dark:bg-cyber-emerald/15 border border-emerald-300 dark:border-cyber-emerald/40 shadow-sm'
               : 'text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-cyber-bg/80 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border'
           }`}
           title={isActiveTarget ? 'Currently Engaged' : 'Engage Target & Start Timer'}
+          aria-label={isActiveTarget ? `Currently engaged target: ${m.name}` : `Engage target ${m.name} and start timer`}
         >
           <Crosshair className={`w-4 h-4 ${isActiveTarget ? 'animate-spin-slow' : ''}`} />
         </button>
@@ -183,22 +184,24 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-slate-200 dark:border-cyber-border/60 text-xs opacity-80 group-hover:opacity-100 transition-opacity">
         <div className="flex items-center gap-1.5">
           <span
-            className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-bold ${
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-bold ${
               hasUser
                 ? 'bg-cyan-50 dark:bg-cyber-cyan/10 border-cyan-200 dark:border-cyber-cyan/30 text-cyan-700 dark:text-cyber-cyan'
                 : 'bg-slate-100 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-slate-400 dark:text-cyber-muted'
             }`}
-            title={hasUser ? 'User Flag Captured' : 'User Flag Pending'}
+            title={hasUser ? 'User Flag Captured (Initial Foothold)' : 'User Flag Pending (Foothold required)'}
+            aria-label={hasUser ? `User flag captured for ${m.name}` : `User flag pending for ${m.name}`}
           >
             <Flag className="w-3 h-3" /> U
           </span>
           <span
-            className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-bold ${
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-bold ${
               hasRoot
                 ? 'bg-rose-50 dark:bg-cyber-crimson/10 border-rose-200 dark:border-cyber-crimson/30 text-rose-700 dark:text-cyber-crimson'
                 : 'bg-slate-100 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-slate-400 dark:text-cyber-muted'
             }`}
-            title={hasRoot ? 'Root Flag Captured' : 'Root Flag Pending'}
+            title={hasRoot ? 'Root / System Flag Captured (PrivEsc complete)' : 'Root Flag Pending (Privilege escalation required)'}
+            aria-label={hasRoot ? `Root flag captured for ${m.name}` : `Root flag pending for ${m.name}`}
           >
             <Flag className="w-3 h-3" /> R
           </span>
@@ -209,15 +212,16 @@ const KanbanCard = React.memo<KanbanCardProps>(({
             path={`/target/${m.id}`}
             title={m.name}
             iconOnly
-            className="p-1 rounded bg-slate-100 dark:bg-cyber-bg/60 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-cyan-600 dark:hover:text-cyber-cyan transition-colors"
+            className="p-1 rounded-md bg-slate-100 dark:bg-cyber-bg/60 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-cyan-600 dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
           />
           <button
             onClick={(e) => {
               e.stopPropagation();
               onOpenReport(m.id);
             }}
-            className="p-1 rounded bg-slate-100 dark:bg-cyber-bg/60 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-purple-600 dark:hover:text-cyber-purple transition-colors"
+            className="p-1 rounded-md bg-slate-100 dark:bg-cyber-bg/60 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-purple-600 dark:hover:text-cyber-purple transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Open Pentest Pre-Report"
+            aria-label={`Open pentest pre-report for ${m.name}`}
           >
             <FileText className="w-3 h-3" />
           </button>
@@ -234,7 +238,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           {m.certifications.map((cert) => (
             <span
               key={cert}
-              className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted font-semibold"
+              className="text-[9px] px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted font-semibold"
             >
               {cert}
             </span>
@@ -247,8 +251,9 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         {prevLane ? (
           <button
             onClick={(e) => onRetreat(e, m, prevLane)}
-            className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white hover:-translate-x-0.5 transition-all"
-            title="Move back"
+            className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white hover:-translate-x-0.5 transition-[transform,background-color,border-color,color]"
+            title={`Move back to ${prevLane}`}
+            aria-label={`Move ${m.name} back to ${prevLane}`}
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>
@@ -257,8 +262,9 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         {nextLane ? (
           <button
             onClick={(e) => onAdvance(e, m, nextLane)}
-            className="flex items-center gap-0.5 text-[10px] text-cyan-600 dark:text-cyber-cyan hover:underline hover:translate-x-0.5 transition-all font-semibold ml-auto"
-            title="Advance stage"
+            className="flex items-center gap-0.5 text-[10px] text-cyan-600 dark:text-cyber-cyan hover:underline hover:translate-x-0.5 transition-[transform,background-color,border-color,color] font-semibold ml-auto"
+            title={`Advance stage to ${nextLane}`}
+            aria-label={`Advance ${m.name} to ${nextLane}`}
           >
             Advance <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -315,11 +321,11 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
       ref={setNodeRef}
       className={`rounded-xl border transition-colors ${
         isOver 
-          ? 'border-cyan-500 dark:border-cyber-cyan bg-cyan-50/50 dark:bg-cyber-cyan/10' 
+          ? 'border-cyber-cyan bg-cyber-cyan/10' 
           : 'border-slate-200 dark:border-cyber-border bg-white/80 dark:bg-cyber-card/60'
       } backdrop-blur-sm overflow-hidden shadow-sm hover:border-slate-300 dark:hover:border-cyber-borderGlow ${
-        isMobileActive ? 'flex flex-col' : 'hidden md:flex md:flex-col'
-      } md:h-[calc(100vh-270px)] md:min-h-[480px]`}
+        isMobileActive ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'
+      } lg:h-[calc(100vh-270px)] lg:min-h-[480px]`}
     >
       <div className={`border-b border-slate-200 dark:border-cyber-border/80 p-2.5 bg-slate-50/90 dark:bg-cyber-bg/80 flex-shrink-0`}>
         <div className="flex items-center justify-between">
@@ -330,7 +336,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
             {laneMachines.length > limit && (
               <button
                 onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
-                className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyber-cyan/10 text-cyan-700 dark:text-cyber-cyan border border-cyan-200 dark:border-cyber-cyan/30 font-bold hover:bg-cyan-100 dark:hover:bg-cyber-cyan/20 transition-all"
+                className="text-[9px] px-1.5 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 font-bold hover:bg-cyber-cyan/20 transition-colors"
                 title="Render all targets in this lane immediately"
               >
                 All ({laneMachines.length})
@@ -366,18 +372,18 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         {laneMachines.length > displayedMachines.length && (
           <div className="pt-2.5 pb-1.5 px-2 flex flex-col items-center gap-2 border-t border-slate-200 dark:border-cyber-border/80 bg-slate-50 dark:bg-cyber-bg/60 rounded-xl">
             <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
-              Showing <span className="text-slate-900 dark:text-white font-bold">{displayedMachines.length}</span> of <span className="text-cyan-600 dark:text-cyber-cyan font-bold">{laneMachines.length}</span> targets
+              Showing <span className="text-slate-900 dark:text-white font-bold">{displayedMachines.length}</span> of <span className="text-cyber-cyan font-bold">{laneMachines.length}</span> targets
             </div>
             <div className="flex items-center gap-2 w-full">
               <button
                 onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }))}
-                className="flex-1 py-1.5 px-2 rounded-lg bg-white dark:bg-cyber-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyan-500/50 dark:hover:border-cyber-cyan text-cyan-600 dark:text-cyber-cyan text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
+                className="flex-1 py-1.5 px-2 rounded-lg bg-white dark:bg-cyber-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyber-cyan text-cyber-cyan text-[11px] font-bold transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-1 shadow-sm"
               >
                 <Sparkles className="w-3.5 h-3.5" /> Load +60 More
               </button>
               <button
                 onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
-                className="py-1.5 px-3 rounded-lg bg-white dark:bg-cyber-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] transition-all font-semibold shadow-sm"
+                className="py-1.5 px-3 rounded-lg bg-white dark:bg-cyber-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] transition-[box-shadow,background-color,border-color,color] font-semibold shadow-sm"
                 title="Render all targets in this lane"
               >
                 Scroll All ({laneMachines.length})
@@ -387,12 +393,12 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         )}
 
         {laneMachines.length === 0 && (
-          <div className="group flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-300 dark:border-cyber-border/60 hover:border-cyan-400 dark:hover:border-cyber-cyan/60 rounded-xl h-36 bg-slate-50/50 dark:bg-cyber-bg/30 opacity-80 hover:opacity-100 transition-all">
+          <div className="group flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-300 dark:border-cyber-border/60 hover:border-cyber-cyan/60 rounded-xl h-36 bg-slate-50/50 dark:bg-cyber-bg/30 opacity-80 hover:opacity-100 transition-[transform,background-color,border-color,color]">
             <div className="relative mb-3 group-hover:scale-110 transition-transform">
-              <div className="absolute inset-0 bg-cyan-400/20 dark:bg-cyber-cyan/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <Crosshair className="w-8 h-8 text-slate-400 dark:text-cyber-muted/80 group-hover:text-cyan-500 dark:group-hover:text-cyber-cyan relative z-10 transition-colors" />
+              <div className="absolute inset-0 bg-cyber-cyan/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <Crosshair className="w-8 h-8 text-slate-400 dark:text-cyber-muted/80 group-hover:text-cyber-cyan relative z-10 transition-colors" />
             </div>
-            <div className="text-xs text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan transition-colors">No targets in this lane</div>
+            <div className="text-xs text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider group-hover:text-cyber-cyan transition-colors">No targets in this lane</div>
             <div className="text-[10px] text-slate-500 dark:text-cyber-muted mt-1.5 max-w-[200px]">Advance a target to this stage to track progress</div>
           </div>
         )}
@@ -469,10 +475,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
   const gridColsClass = React.useMemo(() => {
     const count = visibleLanes.length;
     if (count === 1) return 'grid-cols-1';
-    if (count === 2) return 'grid-cols-1 md:grid-cols-2';
-    if (count === 3) return 'grid-cols-1 md:grid-cols-3';
-    if (count === 4) return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4';
-    return 'grid-cols-1 md:grid-cols-3 xl:grid-cols-5';
+    if (count === 2) return 'grid-cols-1 lg:grid-cols-2';
+    if (count === 3) return 'grid-cols-1 lg:grid-cols-3';
+    if (count === 4) return 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-4';
+    return 'grid-cols-1 lg:grid-cols-3 xl:grid-cols-5';
   }, [visibleLanes.length]);
 
   const sensors = useSensors(
@@ -514,8 +520,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       onDragEnd={handleDragEnd}
     >
       <div className="w-full font-mono pb-8">
-      {/* 1. MOBILE RESPONSIVE STICKY LANE TABS (< md) - Eliminates Nested Scroll Trap */}
-      <div className="md:hidden sticky top-0 z-20 bg-slate-50/95 dark:bg-cyber-bg/95 py-1.5 mb-2 backdrop-blur-md">
+      {/* 1. MOBILE RESPONSIVE STICKY LANE TABS (< lg) - Eliminates Nested Scroll Trap & Pinching */}
+      <div className="lg:hidden sticky top-0 z-20 bg-slate-50/95 dark:bg-cyber-bg/95 py-1.5 mb-2 backdrop-blur-md">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {visibleLanes.map((lane) => {
             const laneCount = filteredMachines.filter((m) => m.status === lane.id).length;
@@ -527,16 +533,16 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
                   setMobileActiveLane(lane.id);
                   if (soundEnabled) playCyberSound('toggle');
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-sm ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm ${
                   isSelected
-                    ? 'bg-cyan-600 dark:bg-cyber-cyan text-white dark:text-black font-black'
+                    ? 'bg-cyber-cyan text-slate-900 dark:text-black font-black'
                     : 'bg-white dark:bg-cyber-card text-slate-600 dark:text-cyber-muted border border-slate-200 dark:border-cyber-border'
                 }`}
               >
                 <span>{lane.title.replace('TARGET ', '')}</span>
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                   isSelected 
-                    ? 'bg-black/20 text-white dark:text-black' 
+                    ? 'bg-black/20 text-slate-900 dark:text-black' 
                     : 'bg-slate-100 dark:bg-cyber-bg text-slate-700 dark:text-cyber-muted'
                 }`}>
                   {laneCount}
@@ -548,7 +554,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       </div>
 
       {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
-      <div className={`grid ${gridColsClass} gap-3.5 items-start transition-all`}>
+      <div className={`grid ${gridColsClass} gap-3.5 items-start transition-colors`}>
         {visibleLanes.map((lane) => {
           const laneMachines = filteredMachines.filter((m) => m.status === lane.id);
           const limit = laneLimits[lane.id] ?? 60;
@@ -595,7 +601,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       </div>
       <DragOverlay>
         {activeDragMachine ? (
-          <div className="rotate-2 scale-105 shadow-2xl shadow-cyan-500/20 opacity-90 cursor-grabbing">
+          <div className="rotate-2 scale-105 shadow-2xl shadow-glow-cyan opacity-90 cursor-grabbing">
             <KanbanCard
               machine={activeDragMachine}
               isActiveTarget={activeTargetId === activeDragMachine.id}

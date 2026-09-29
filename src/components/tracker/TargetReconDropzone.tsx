@@ -233,9 +233,9 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleFileDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`p-6 sm:p-8 rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
+            className={`p-5 sm:p-6 rounded-xl border-2 border-dashed transition-colors flex flex-col items-center justify-center text-center cursor-pointer ${
               isDragging
-                ? 'border-cyber-cyan bg-cyber-cyan/10 shadow-[0_0_20px_rgba(6,182,212,0.25)]'
+                ? 'border-cyber-cyan bg-cyber-cyan/10'
                 : 'border-cyber-border hover:border-cyber-cyan/60 bg-cyber-card/40 hover:bg-cyber-card/70'
             }`}
           >
@@ -269,7 +269,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               <button
                 type="button"
                 onClick={() => setPastedText('')}
-                className="px-3 py-1.5 rounded-lg border border-cyber-border text-xs text-cyber-muted hover:text-white"
+                className="px-3 py-1.5 rounded-lg border border-cyber-border text-xs text-cyber-muted hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               >
                 Clear Text
               </button>
@@ -277,7 +277,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                 type="button"
                 onClick={() => handleProcessScanText(pastedText)}
                 disabled={!pastedText.trim()}
-                className="px-4 py-1.5 rounded-lg bg-cyber-cyan text-black font-bold text-xs hover:bg-cyan-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-4 py-1.5 rounded-lg bg-cyber-cyan text-black font-bold text-xs hover:bg-cyan-400 transition-[transform,background-color,border-color,color] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>Parse & Apply Scan</span>
@@ -345,7 +345,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                           {svc.cveNotes}
                         </span>
                       ) : (
-                        <span className="text-cyber-muted text-[11px]">—</span>
+                        <span className="text-cyber-muted text-[11px]">-</span>
                       )}
                     </td>
                     <td className="py-2.5 px-4 text-right whitespace-nowrap">
@@ -369,7 +369,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                           ))}
                         </div>
                       ) : (
-                        <span className="text-cyber-muted text-[11px]">—</span>
+                        <span className="text-cyber-muted text-[11px]">-</span>
                       )}
                     </td>
                   </tr>

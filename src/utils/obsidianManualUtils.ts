@@ -141,11 +141,70 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
     n.titleEn.toLowerCase() === lower ||
     (n.titleHe && n.titleHe === target) ||
     (n.filename && n.filename.replace(/^\d+[\s_.-]*/, '').toLowerCase() === stripped) ||
-    n.id === `cpts-${slug}`
+    n.id === `cpts-${slug}` ||
+    n.id === slug
   );
 
   if (found) {
     return { targetNoteId: found.id, label: target, exists: true };
+  }
+
+  // 4. Handle emoji-separated titles (e.g. "1 Enumeration Methodology 🔍 Enumeration")
+  const emojiRegex = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}]/u;
+  const partsByEmoji = target.split(emojiRegex);
+  const titleBeforeEmoji = partsByEmoji[0].trim();
+  const lowerBeforeEmoji = titleBeforeEmoji.toLowerCase();
+  const strippedBeforeEmoji = lowerBeforeEmoji.replace(/^\d+[\s_.-]*/, '').trim();
+
+  if (titleBeforeEmoji && titleBeforeEmoji !== target) {
+    if (activeMap[lowerBeforeEmoji]) {
+      return { targetNoteId: activeMap[lowerBeforeEmoji], label: target, exists: true };
+    }
+    if (strippedBeforeEmoji && activeMap[strippedBeforeEmoji]) {
+      return { targetNoteId: activeMap[strippedBeforeEmoji], label: target, exists: true };
+    }
+    const foundByEmoji = pool.find(n =>
+      (n.filename && n.filename.toLowerCase() === lowerBeforeEmoji) ||
+      n.title.toLowerCase() === lowerBeforeEmoji ||
+      n.titleEn.toLowerCase() === lowerBeforeEmoji ||
+      (n.filename && n.filename.replace(/^\d+[\s_.-]*/, '').toLowerCase() === strippedBeforeEmoji) ||
+      (strippedBeforeEmoji && n.title.toLowerCase().includes(strippedBeforeEmoji))
+    );
+    if (foundByEmoji) {
+      return { targetNoteId: foundByEmoji.id, label: target, exists: true };
+    }
+  }
+
+  // 5. Match by numeric prefix (e.g. "1 Enumeration..." -> note with prefix 01 or 1)
+  const numMatch = target.match(/^0*(\d+)[\s_.-]+(.*)$/);
+  if (numMatch) {
+    const noteNum = parseInt(numMatch[1], 10);
+    const restText = numMatch[2].replace(emojiRegex, '').trim().toLowerCase();
+    const foundByNum = pool.find(n => {
+      const nNumMatch = (n.filename || n.title || n.id).match(/^0*(\d+)[\s_.-]+(.*)$/);
+      if (nNumMatch && parseInt(nNumMatch[1], 10) === noteNum) {
+        if (!restText || (n.title.toLowerCase().includes(restText) || (n.titleEn || '').toLowerCase().includes(restText))) {
+          return true;
+        }
+      }
+      return false;
+    });
+    if (foundByNum) {
+      return { targetNoteId: foundByNum.id, label: target, exists: true };
+    }
+  }
+
+  // 6. Fuzzy keyword/substring match in pool
+  const foundFuzzy = pool.find(n => {
+    const tLower = n.title.toLowerCase();
+    const tEnLower = (n.titleEn || '').toLowerCase();
+    return (
+      (stripped && stripped.length > 2 && (tLower.includes(stripped) || tEnLower.includes(stripped))) ||
+      (strippedBeforeEmoji && strippedBeforeEmoji.length > 2 && (tLower.includes(strippedBeforeEmoji) || tEnLower.includes(strippedBeforeEmoji)))
+    );
+  });
+  if (foundFuzzy) {
+    return { targetNoteId: foundFuzzy.id, label: target, exists: true };
   }
 
   return { label: target, exists: false };

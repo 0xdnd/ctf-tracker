@@ -94,7 +94,7 @@ const AccordionSection: React.FC<{
   badgeContent?: React.ReactNode;
   children: React.ReactNode;
 }> = ({ title, subtitle, icon, sectionKey, isOpen, onToggle, badgeCount, badgeContent, children }) => (
-  <div className="border border-slate-200/80 dark:border-cyber-border/70 rounded-xl overflow-hidden bg-white/80 dark:bg-cyber-card/60 backdrop-blur-sm shadow-sm transition-all hover:border-slate-300 dark:hover:border-cyber-borderGlow">
+  <div className="border border-slate-200/80 dark:border-cyber-border/70 rounded-xl overflow-hidden bg-white/80 dark:bg-cyber-card/60 backdrop-blur-sm shadow-sm transition-[box-shadow,background-color,border-color,color] hover:border-slate-300 dark:hover:border-cyber-borderGlow">
     <button
       type="button"
       onClick={() => onToggle(sectionKey)}
@@ -412,6 +412,27 @@ export const FilterDrawer: React.FC = () => {
   const activeFilterList = useMemo(() => {
     const list: { label: string; onRemove: () => void }[] = [];
 
+    if (filters.selectedPlatform && filters.selectedPlatform !== 'ALL') {
+      list.push({
+        label: `Platform: ${filters.selectedPlatform}`,
+        onRemove: () => setFilters({ selectedPlatform: 'ALL' }),
+      });
+    }
+
+    if (filters.selectedDifficulty && filters.selectedDifficulty !== 'ALL') {
+      list.push({
+        label: `Diff: ${filters.selectedDifficulty}`,
+        onRemove: () => setFilters({ selectedDifficulty: 'ALL' }),
+      });
+    }
+
+    if (filters.selectedOs && filters.selectedOs !== 'ALL') {
+      list.push({
+        label: `OS: ${filters.selectedOs}`,
+        onRemove: () => setFilters({ selectedOs: 'ALL' }),
+      });
+    }
+
     if (filters.selectedStatus && filters.selectedStatus !== 'ALL') {
       const opt = STATUS_OPTIONS.find(s => s.value === filters.selectedStatus);
       list.push({
@@ -576,23 +597,39 @@ export const FilterDrawer: React.FC = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setFilterDrawerOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-cyber-cyan"
-            title="Close Drawer (Esc)"
-            aria-label="Close filter drawer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {activeFilterList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className="text-[11px] text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Reset all active filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            )}
+            <button
+              onClick={() => setFilterDrawerOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-cyber-cyan cursor-pointer"
+              title="Close Drawer (Esc)"
+              aria-label="Close filter drawer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-20 custom-scrollbar">
           
           {/* Target Match Counter HUD Banner */}
-          <div className="p-3 rounded-xl bg-slate-900/90 dark:bg-[#050913] border border-cyan-500/30 shadow-sm flex items-center justify-between">
+          <div className="p-3 rounded-xl bg-slate-900/90 dark:bg-cyber-card border border-slate-700 dark:border-cyber-border shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 dark:bg-cyber-cyan/15 border border-cyan-500/40 dark:border-cyber-cyan/30 flex items-center justify-center text-cyan-400 dark:text-cyber-cyan shrink-0">
                 <Target className="w-3.5 h-3.5" />
               </div>
               <div>
@@ -614,7 +651,7 @@ export const FilterDrawer: React.FC = () => {
                   resetFilters();
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-2 py-1 rounded bg-rose-500/10 border border-rose-500/30 flex items-center gap-1 transition-colors hover:bg-rose-500/20"
+                className="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-2 py-1 rounded bg-rose-500/10 border border-rose-500/30 flex items-center gap-1 transition-colors hover:bg-rose-500/20 cursor-pointer"
                 title="Reset all filters"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -625,7 +662,7 @@ export const FilterDrawer: React.FC = () => {
 
           {/* Active Filter Chips Ribbon */}
           {activeFilterList.length > 0 && (
-            <div className="p-3 rounded-xl bg-cyan-950/20 dark:bg-cyber-cyan/5 border border-cyan-500/30 space-y-2">
+            <div className="p-3 rounded-xl bg-cyan-950/20 dark:bg-cyber-card border border-cyan-500/30 dark:border-cyber-border space-y-2">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-bold text-cyan-800 dark:text-cyber-cyan flex items-center gap-1.5 font-sans">
                   <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
@@ -637,13 +674,13 @@ export const FilterDrawer: React.FC = () => {
                 {activeFilterList.map((item, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-500/10 dark:bg-cyber-cyan/15 text-cyan-800 dark:text-cyan-300 border border-cyan-500/30 transition-colors"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-500/10 dark:bg-cyber-cyan/15 text-cyan-800 dark:text-cyber-cyan border border-cyan-500/30 dark:border-cyber-cyan/30 transition-colors"
                   >
                     <span className="truncate max-w-[180px]">{item.label}</span>
                     <button
                       type="button"
                       onClick={item.onRemove}
-                      className="hover:text-white p-0.5 rounded transition-colors"
+                      className="hover:text-white p-0.5 rounded transition-colors cursor-pointer"
                       title="Remove filter"
                     >
                       <X className="w-3 h-3" />
@@ -656,58 +693,107 @@ export const FilterDrawer: React.FC = () => {
 
           {/* Quick Presets Bar */}
           <div className="p-3 rounded-xl bg-slate-100/70 dark:bg-cyber-card/40 border border-slate-200/80 dark:border-cyber-border/60 space-y-2">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-cyber-muted flex items-center gap-1.5 font-mono">
-              <Zap className="w-3 h-3 text-amber-500" />
-              Quick Tactical Presets
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-cyber-muted flex items-center gap-1.5 font-mono">
+                <Zap className="w-3 h-3 text-amber-500" />
+                1-Click Tactical Presets
+              </div>
+              <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-sans">Quick Focus</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                onClick={() => setFilters({ selectedStatus: 'UNCOMPLETED' })}
-                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
-                  filters.selectedStatus === 'UNCOMPLETED'
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-sm'
-                    : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
-                }`}
-              >
-                <CheckCircle2 className="w-3 h-3" />
-                Uncompleted
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilters({ selectedTracks: ['cpts-windows'], selectedTrack: 'cpts-windows' })}
-                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
-                  activeTrackIds.includes('cpts-windows')
-                    ? 'bg-purple-500/20 text-purple-400 border-purple-500/50 shadow-sm'
-                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30'
-                }`}
-              >
-                <Award className="w-3 h-3" />
-                CPTS Win
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilters({ selectedVulnCategory: 'Active Directory' })}
-                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
-                  filters.selectedVulnCategory === 'Active Directory'
-                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-sm'
-                    : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'
-                }`}
-              >
-                <Key className="w-3 h-3" />
-                Active Directory
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilters({ selectedVulnCategory: 'SQLi' })}
-                className={`px-2 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
-                  filters.selectedVulnCategory === 'SQLi'
+                onClick={() => {
+                  setFilters({ selectedCert: 'OSCP', selectedStatus: 'UNCOMPLETED' });
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  filters.selectedCert === 'OSCP' && filters.selectedStatus === 'UNCOMPLETED'
                     ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-sm'
                     : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30'
                 }`}
+                title="Filter for unsolved OSCP machines"
+              >
+                <span>🎓 OSCP Sprint</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({ selectedVulnCategory: 'Active Directory', excludeActiveDirectory: false });
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  filters.selectedVulnCategory === 'Active Directory' && !filters.excludeActiveDirectory
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-sm'
+                    : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'
+                }`}
+                title="Filter for Active Directory lab environments"
+              >
+                <Key className="w-3 h-3" />
+                <span>Active Directory</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({ selectedAreaOfInterest: 'Web Application', selectedVulnCategory: 'ALL' });
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  filters.selectedAreaOfInterest === 'Web Application'
+                    ? 'bg-cyan-500/20 dark:bg-cyber-cyan/20 text-cyan-900 dark:text-cyber-cyan border-cyan-500/50 dark:border-cyber-cyan shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-card dark:hover:bg-cyber-cardHover text-slate-700 dark:text-cyber-muted border-slate-200 dark:border-cyber-border'
+                }`}
+                title="Filter for Web Application exploits"
               >
                 <Globe className="w-3 h-3" />
-                SQLi
+                <span>Web Exploits</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({ selectedDifficulty: 'Easy', selectedStatus: 'UNCOMPLETED' });
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  filters.selectedDifficulty === 'Easy' && filters.selectedStatus === 'UNCOMPLETED'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-sm'
+                    : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                }`}
+                title="Filter for Easy uncompleted machines"
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Easy Unsolved</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({ selectedStatus: 'COMPLETED' });
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  filters.selectedStatus === 'COMPLETED'
+                    ? 'bg-purple-500/20 text-purple-400 border-purple-500/50 shadow-sm'
+                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30'
+                }`}
+                title="Filter for Completed and Pwned solves"
+              >
+                <Award className="w-3 h-3" />
+                <span>Completed Solves</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({ selectedTracks: ['cpts-windows'], selectedTrack: 'cpts-windows' });
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  activeTrackIds.includes('cpts-windows')
+                    ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50 shadow-sm'
+                    : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-500/30'
+                }`}
+                title="Filter for CPTS Windows track"
+              >
+                <span>CPTS Win</span>
               </button>
             </div>
           </div>
@@ -736,7 +822,7 @@ export const FilterDrawer: React.FC = () => {
                           setFilters({ selectedStatus: st.value });
                           if (soundEnabled) playCyberSound('toggle');
                         }}
-                        className={`px-3 py-2 rounded-lg text-xs font-semibold border flex items-center justify-between transition-all ${
+                        className={`px-3 py-2 rounded-lg text-xs font-semibold border flex items-center justify-between transition-colors ${
                           isSelected
                             ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 shadow-sm'
                             : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border'
@@ -763,7 +849,7 @@ export const FilterDrawer: React.FC = () => {
                           setFilters({ selectedCert: cert });
                           if (soundEnabled) playCyberSound('toggle');
                         }}
-                        className={`py-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
+                        className={`py-1.5 rounded-lg text-xs font-bold border transition-colors text-center ${
                           isSelected
                             ? 'border-purple-500/60 bg-purple-500/15 text-purple-800 dark:text-purple-300 shadow-sm'
                             : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border'
@@ -786,7 +872,7 @@ export const FilterDrawer: React.FC = () => {
                       Hide domains, Kerberos, and forest lab boxes
                     </span>
                   </div>
-                  <div className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${filters.excludeActiveDirectory ? 'bg-cyan-500' : 'bg-slate-200 dark:bg-cyber-bg'}`}>
+                  <div className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${filters.excludeActiveDirectory ? 'bg-cyan-500 dark:bg-cyber-cyan' : 'bg-slate-200 dark:bg-cyber-bg'}`}>
                     <div className={`w-4 h-4 rounded-full bg-white transition-transform ${filters.excludeActiveDirectory ? 'translate-x-4' : 'translate-x-0 bg-slate-400 dark:bg-slate-600'}`} />
                   </div>
                   <input
@@ -818,14 +904,14 @@ export const FilterDrawer: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSelectAllTracks}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-all text-center"
+                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-colors text-center"
                 >
                   Select All
                 </button>
                 <button
                   type="button"
                   onClick={handleClearTracks}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-all text-center"
+                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border transition-colors text-center"
                 >
                   Clear Tracks
                 </button>
@@ -858,9 +944,9 @@ export const FilterDrawer: React.FC = () => {
                       key={track.id}
                       type="button"
                       onClick={() => handleToggleTrack(track.id)}
-                      className={`w-full px-3 py-2 rounded-lg border text-left flex items-center justify-between transition-all ${
+                      className={`w-full px-3 py-2 rounded-lg border text-left flex items-center justify-between transition-colors ${
                         isSelected
-                          ? 'border-cyan-500/50 bg-cyan-50/80 dark:bg-cyber-cyan/15 text-cyan-800 dark:text-cyber-cyan font-bold shadow-sm'
+                          ? 'border-cyan-500/50 dark:border-cyber-cyan/50 bg-cyan-50/80 dark:bg-cyber-cyan/15 text-cyan-800 dark:text-cyber-cyan font-bold shadow-sm'
                           : 'border-transparent hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
@@ -901,7 +987,7 @@ export const FilterDrawer: React.FC = () => {
                       key={domain.id}
                       type="button"
                       onClick={() => setDrawerDomain(domain.id as VulnDomainId)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border flex items-center gap-1.5 transition-all ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border flex items-center gap-1.5 transition-colors ${
                         isActive 
                           ? 'bg-purple-500/15 border-purple-500/50 text-purple-800 dark:text-purple-300 shadow-sm' 
                           : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-borderGlow'
@@ -918,7 +1004,7 @@ export const FilterDrawer: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFilters({ selectedVulnCategory: 'ALL' })}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all text-left flex items-center justify-between ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs border transition-colors text-left flex items-center justify-between ${
                     !filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL'
                       ? 'bg-purple-500/15 border-purple-500/50 text-purple-800 dark:text-purple-300 font-bold'
                       : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -935,7 +1021,7 @@ export const FilterDrawer: React.FC = () => {
                       key={cat.id}
                       type="button"
                       onClick={() => setFilters({ selectedVulnCategory: cat.id })}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all text-left flex items-center justify-between ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs border transition-colors text-left flex items-center justify-between ${
                         isActive
                           ? 'bg-purple-500/15 border-purple-500/50 text-purple-800 dark:text-purple-300 font-bold shadow-sm'
                           : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -1087,7 +1173,7 @@ export const FilterDrawer: React.FC = () => {
                         key={t}
                         type="button"
                         onClick={() => handleTagToggle(t)}
-                        className={`px-2 py-0.5 rounded-md text-[11px] transition-all border flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded-md text-[11px] transition-colors border flex items-center gap-1 ${
                           isSelected
                             ? 'bg-cyan-500/25 border-cyan-500/60 text-cyan-900 dark:text-cyan-300 font-bold shadow-sm'
                             : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-border hover:text-slate-900 dark:hover:text-white'
@@ -1114,7 +1200,7 @@ export const FilterDrawer: React.FC = () => {
               if (soundEnabled) playCyberSound('click');
             }}
             disabled={activeFilterList.length === 0}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
               activeFilterList.length > 0
                 ? 'border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 shadow-sm cursor-pointer'
                 : 'border-transparent text-slate-400 dark:text-slate-600 opacity-40 cursor-not-allowed'
@@ -1130,7 +1216,7 @@ export const FilterDrawer: React.FC = () => {
               setFilterDrawerOpen(false);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="flex-1 flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all transform active:scale-[0.99] cursor-pointer"
+            className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold bg-cyber-cyan hover:opacity-90 text-black transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Show {matchingMachinesCount} Targets</span>

@@ -9,13 +9,12 @@ import {
   Layers, 
   Zap, 
   Terminal, 
-  Shield, 
   Crosshair, 
   Type, 
   Sliders, 
   Flag
 } from 'lucide-react';
-import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
+import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeToggle } from './ThemeToggle';
 import { PlatformBadge } from './PlatformBadge';
@@ -186,52 +185,52 @@ interface ThemePresetMeta {
 
 const THEME_PRESETS_META: ThemePresetMeta[] = [
   {
-    id: 'zerobox',
-    name: 'Neon Cyber',
-    badge: 'SIGNATURE HUD',
-    tagline: 'Electric Cyan (#00F0FF) & Deep Obsidian (#070B14)',
-    darkAccent: '#00F0FF',
-    lightAccent: '#008B99',
-    darkBg: '#070B14',
-    lightBg: '#F0F5FA',
-    darkCard: '#0D1527',
-    lightCard: '#FFFFFF',
-    vibe: 'Cyberpunk Red Team Operator • High Contrast Laser Optics',
+    id: 'obsidian',
+    name: 'Obsidian Dark / Zinc',
+    badge: 'ZINC DARK',
+    tagline: 'Cold Zinc Dark & Clean Zinc Slate (#0ea5e9)',
+    darkAccent: '#0ea5e9',
+    lightAccent: '#0284c7',
+    darkBg: '#09090b',
+    lightBg: '#f4f4f5',
+    darkCard: '#121215',
+    lightCard: '#ffffff',
+    vibe: 'Cold Slate / Zinc Technical HUD • Crisp Sky Laser Optics',
     icon: Zap,
+  },
+  {
+    id: 'monolith',
+    name: 'Clean Monolith',
+    badge: 'MONOLITH',
+    tagline: 'Architectural Off-White & Crisp Graphite (#fafafa)',
+    darkAccent: '#38bdf8',
+    lightAccent: '#0284c7',
+    darkBg: '#18181b',
+    lightBg: '#fafafa',
+    darkCard: '#27272a',
+    lightCard: '#ffffff',
+    vibe: 'Architectural Off-White Foundation • Crisp Solid Graphite Dark Mode',
+    icon: Sun,
   },
   {
     id: 'htb',
     name: 'Hack The Box',
     badge: 'TACTICAL ARENA',
-    tagline: 'Official HTB Lime Green (#9FEF00) & Node Black (#141D2B)',
-    darkAccent: '#9FEF00',
-    lightAccent: '#15803D',
-    darkBg: '#141D2B',
-    lightBg: '#F4F6F9',
-    darkCard: '#1A2332',
-    lightCard: '#FFFFFF',
-    vibe: 'Official HTB Arena Aesthetic • Terminal Green Highlights & Node Black',
-    icon: Terminal,
-  },
-  {
-    id: 'oled',
-    name: 'OLED Pure Black',
-    badge: 'ZERO POWER',
-    tagline: 'Pitch Black (#000000) & Minimalist Slate (#090C12)',
-    darkAccent: '#38BDF8',
-    lightAccent: '#0284C7',
+    tagline: 'OLED Pitch Black (#000000) & Official HTB Lime (#9fef00)',
+    darkAccent: '#9fef00',
+    lightAccent: '#15803d',
     darkBg: '#000000',
-    lightBg: '#F8FAFC',
-    darkCard: '#090C12',
-    lightCard: '#FFFFFF',
-    vibe: 'Battery Saving Infinite Contrast • Pure Midnight Stealth',
-    icon: Moon,
+    lightBg: '#f1f5f9',
+    darkCard: '#0b1015',
+    lightCard: '#ffffff',
+    vibe: 'Official HTB Arena Aesthetic • Tactical Lime Highlights & Deep Slate',
+    icon: Terminal,
   },
 ];
 
 export const ThemeShowcaseDemo: React.FC = () => {
   const { isDark, setTheme } = useTheme();
-  const themePreset = useCtfStore((s) => s.themePreset || 'zerobox');
+  const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
   const setThemePreset = useCtfStore((s) => s.setThemePreset);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
 
@@ -240,7 +239,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
   const [sampleSearchQuery, setSampleSearchQuery] = useState('');
 
   // Normalize legacy aliases
-  const activePresetId = themePreset === 'neon' ? 'zerobox' : themePreset === 'slate' ? 'zerobox' : themePreset;
+  const activePresetId = normalizeThemePreset(themePreset);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -287,7 +286,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
                   setTheme('dark');
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg font-bold transition-colors flex items-center gap-1.5 ${
                   isDark
                     ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-cyber-cyan/40 text-cyan-700 dark:text-cyber-cyan'
                     : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -301,7 +300,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
                   setTheme('light');
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg font-bold transition-colors flex items-center gap-1.5 ${
                   !isDark
                     ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white shadow-sm border border-slate-300 font-bold text-amber-700'
                     : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -324,7 +323,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
           <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted tracking-wider">
             Select Active Theme Preset:
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {THEME_PRESETS_META.map((preset) => {
               const isActive = activePresetId === preset.id;
 
@@ -335,7 +334,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
                     setThemePreset(preset.id);
                     if (soundEnabled) playCyberSound('toggle');
                   }}
-                  className={`p-3.5 rounded-xl border text-left transition-all relative overflow-hidden group ${
+                  className={`p-3.5 rounded-xl border text-left transition-colors relative overflow-hidden group ${
                     isActive
                       ? 'bg-white dark:bg-cyber-card border-cyan-500 dark:border-cyber-cyan shadow-md ring-1 ring-cyan-500/40 dark:ring-cyber-cyan/50'
                       : 'bg-slate-50 dark:bg-cyber-bg/70 border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-cyber-borderGlow hover:bg-slate-100/80 dark:hover:bg-cyber-cardHover'
@@ -385,11 +384,11 @@ export const ThemeShowcaseDemo: React.FC = () => {
             </h2>
           </div>
           <span className="text-xs text-slate-500 dark:text-cyber-muted">
-            Viewing 4 core presets in {isDark ? 'Dark Mode' : 'Light Mode'}
+            Viewing 3 core presets in {isDark ? 'Dark Mode' : 'Light Mode'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {THEME_PRESETS_META.map((preset) => {
             const isCurrent = activePresetId === preset.id;
             const accent = isDark ? preset.darkAccent : preset.lightAccent;
@@ -400,7 +399,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
               <div
                 key={preset.id}
                 style={{ backgroundColor: bg }}
-                className={`rounded-xl p-4 border transition-all relative space-y-3 shadow-sm ${
+                className={`rounded-xl p-4 border transition-[box-shadow,background-color,border-color,color] relative space-y-3 shadow-sm ${
                   isCurrent
                     ? 'border-cyan-500 dark:border-cyber-cyan ring-2 ring-cyan-500/30'
                     : 'border-slate-300 dark:border-zinc-800'
@@ -476,7 +475,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-2.5 py-0.5 rounded capitalize font-medium transition-all ${
+                className={`px-2.5 py-0.5 rounded capitalize font-medium transition-colors ${
                   activeCategory === cat
                     ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white font-bold shadow-sm'
                     : 'text-slate-500 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white'
@@ -498,7 +497,7 @@ export const ThemeShowcaseDemo: React.FC = () => {
               <div
                 key={token.variable}
                 onClick={() => handleCopy(`var(${token.variable})`, token.variable)}
-                className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50/70 dark:bg-cyber-bg/70 hover:border-cyan-500 dark:hover:border-cyber-cyan hover:shadow-sm transition-all cursor-pointer group space-y-2.5"
+                className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50/70 dark:bg-cyber-bg/70 hover:border-cyan-500 dark:hover:border-cyber-cyan hover:shadow-sm transition-[box-shadow,background-color,border-color,color] cursor-pointer group space-y-2.5"
               >
                 {/* Visual Swatch Tile */}
                 <div className="relative h-14 w-full rounded-lg overflow-hidden border border-slate-300/70 dark:border-cyber-border/80 shadow-inner flex items-center justify-center">

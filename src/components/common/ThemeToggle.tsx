@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../hooks/useTheme';
-import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
 import { playCyberSound } from '../../utils/helpers';
 
 export interface ThemeToggleProps {
@@ -57,16 +56,6 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       playCyberSound(isDark ? 'click' : 'toggle');
     }
     const willBeDark = !isDark;
-    const store = useCtfStore.getState();
-    if (!willBeDark) {
-      if (store.themePreset !== 'light') {
-        try { localStorage.setItem('zb_last_dark_theme', store.themePreset || 'zerobox'); } catch {}
-      }
-      store.setThemePreset('light');
-    } else {
-      const lastDark = (localStorage.getItem('zb_last_dark_theme') as ThemePreset) || 'zerobox';
-      store.setThemePreset(lastDark === 'light' ? 'zerobox' : lastDark);
-    }
     toggleTheme(e);
     if (onToggle) {
       onToggle(willBeDark, e);

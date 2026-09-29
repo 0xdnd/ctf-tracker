@@ -3,113 +3,443 @@
 @tailwind utilities;
 
 
-:root {
-  /* Tactical Light Mode - Crisp, High-Contrast Slate Palette */
-  --cyber-bg: 248 250 252;          /* #F8FAFC slate-50 */
-  --cyber-card: 255 255 255;        /* #FFFFFF pure white */
-  --cyber-card-hover: 241 245 249;  /* #F1F5F9 slate-100 */
-  --cyber-border: 226 232 240;      /* #E2E8F0 slate-200 */
-  --cyber-border-glow: 203 213 225; /* #CBD5E1 slate-300 */
-  --cyber-text: 15 23 42;           /* #0F172A slate-900 */
-  --cyber-muted: 100 116 139;       /* #64748B slate-500 */
-  --cyber-code: 241 245 249;        /* #F1F5F9 slate-100 */
-  --cyber-cyan: 6 182 212;          /* #06B6D4 cyan-500 */
-  --cyber-emerald: 16 185 129;      /* #10B981 emerald-500 */
-  --cyber-crimson: 239 68 68;       /* #EF4444 red-500 */
-  --cyber-neon: 0 255 102;          /* #00FF66 */
+:root,
+[data-theme="obsidian"]:not(.dark),
+[data-theme="zerobox"]:not(.dark),
+[data-theme="neon"]:not(.dark) {
+  /* 1. OBSIDIAN LIGHT - Clean Zinc Slate (#f4f4f5) */
+  --surface-base: 244 244 245;          /* #f4f4f5 - Clean Zinc Foundation */
+  --surface-card: 255 255 255;          /* #ffffff - Pure White Surface */
+  --surface-elevated: 255 255 255;      /* #ffffff - Elevated Popover */
+  --surface-sunken: 228 228 231;        /* #e4e4e7 - Zinc-200 Recessed Input/Code */
+  --surface-hover: 238 238 240;         /* #eeeeef - Subtle Hover */
+
+  --border-subtle: 228 228 231;         /* #e4e4e7 - Sharp Zinc Divider */
+  --border-strong: 212 212 216;         /* #d4d4d8 - High-Contrast Border */
+  --border-accent: 2 132 199;           /* #0284c7 - Deep Sky Accent */
+
+  --text-primary: 9 9 11;               /* #09090b - Deep Contrast (>14:1) */
+  --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
+  --text-muted: 82 82 91;               /* #52525b - Zinc-600 (>5.5:1 WCAG AA) */
+  --text-tertiary: 113 113 122;         /* #71717a - Zinc-500 */
+  --text-dim: 100 116 139;              /* #64748b - Subtle Indicators */
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Legacy & Cyber Token Mappings */
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 2 132 199;
+  --cyber-emerald: 21 128 61;
+  --cyber-crimson: 225 29 72;
+  --cyber-amber: 180 83 9;
+  --cyber-purple: 147 51 234;
+  --cyber-neon: 2 132 199;
+  --cyber-box: 9 9 11;
 }
 
-.dark, [data-theme="zerobox"].dark {
-  /* Tactical Cyber Dark Mode (Original Default) */
-  --cyber-bg: 11 15 25;             /* #0B0F19 */
-  --cyber-card: 17 24 39;           /* #111827 */
-  --cyber-card-hover: 22 31 51;     /* #161F33 */
-  --cyber-border: 31 41 55;         /* #1F2937 */
-  --cyber-border-glow: 45 55 72;    /* subtle border */
-  --cyber-text: 226 232 240;        /* #E2E8F0 */
-  --cyber-muted: 148 163 184;       /* #94A3B8 */
-  --cyber-code: 9 13 22;            /* #090D16 */
-  --cyber-cyan: 6 182 212;          /* #06B6D4 */
-  --cyber-emerald: 16 185 129;      /* #10B981 */
-  --cyber-crimson: 239 68 68;       /* #EF4444 */
-  --cyber-neon: 16 185 129;
-}
+/* 1. OBSIDIAN DARK - Cold Zinc Dark (#09090b) */
+.dark,
+[data-theme="obsidian"].dark,
+[data-theme="zerobox"].dark,
+[data-theme="neon"].dark {
+  --surface-base: 9 9 11;               /* #09090b - Cold Zinc Foundation */
+  --surface-card: 18 18 21;             /* #121215 - Luminance Stack 1 */
+  --surface-elevated: 24 24 27;         /* #18181b - Luminance Stack 2 (Modals/Popovers) */
+  --surface-sunken: 12 12 15;           /* #0c0c0f - Sunken Input/Code Surface */
+  --surface-hover: 30 30 35;            /* #1e1e23 - Tactile Hover */
 
-/* 🟩 HACK THE BOX THEME: Clean HTB Matte Dark + Subtle Lime Accents */
-[data-theme="htb"].dark {
-  --cyber-bg: 17 24 39;             /* #111827 Matte HTB dark background */
-  --cyber-card: 20 30 45;           /* #141E2D Matte HTB slate card */
-  --cyber-card-hover: 26 38 56;     /* #1A2638 */
-  --cyber-border: 35 48 70;         /* #233046 Matte border */
-  --cyber-border-glow: 45 60 85;    /* Subtle border */
-  --cyber-text: 226 232 240;        /* Crisp readable text */
-  --cyber-muted: 148 163 184;       /* #94A3B8 */
-  --cyber-code: 12 18 30;           /* #0C121E */
-  --cyber-cyan: 6 182 212;          /* Keep clean cyan */
-  --cyber-emerald: 159 239 0;       /* #9FEF00 HTB Lime for active items */
-  --cyber-crimson: 239 68 68;
-  --cyber-neon: 159 239 0;
-}
+  --border-subtle: 39 39 42;            /* #27272a - 1px Architectural Divider */
+  --border-strong: 63 63 70;            /* #3f3f46 - High-Contrast Perimeter */
+  --border-accent: 14 165 233;          /* #0ea5e9 - Technical Sky Accent */
 
-/* 🟢 TERMINAL THEME: Subtle Matte Monospace Green */
-[data-theme="matrix"].dark {
-  --cyber-bg: 10 15 12;             /* #0A0F0C Calm dark slate */
-  --cyber-card: 16 24 19;           /* #101813 */
-  --cyber-card-hover: 22 32 26;     /* #16201A */
-  --cyber-border: 28 48 35;         /* #1C3023 Subtle green border */
-  --cyber-border-glow: 36 60 45;
-  --cyber-text: 215 235 220;        /* Soft readable green */
-  --cyber-muted: 110 145 120;
-  --cyber-code: 6 10 8;
-  --cyber-cyan: 52 211 153;         /* Soft emerald */
-  --cyber-emerald: 34 197 94;       /* Terminal green */
-  --cyber-crimson: 239 68 68;
-  --cyber-neon: 34 197 94;
-}
+  --text-primary: 244 244 245;          /* #f4f4f5 - High-Contrast Zinc-100 */
+  --text-secondary: 228 228 231;        /* #e4e4e7 - High-Contrast Zinc-200 */
+  --text-muted: 161 161 170;            /* #a1a1aa - Calibrated Zinc-400 */
+  --text-tertiary: 113 113 122;         /* #71717a - Footnotes & Meta */
+  --text-dim: 113 113 122;              /* #71717a - Muted Indicators */
 
-/* 🔴 OFFSEC CRIMSON: Matte Carbon Dark with Crimson Accents */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-/* OLED PURE BLACK THEME */
-[data-theme="oled"].dark {
-  --cyber-bg: 0 0 0;                /* Pure black */
-  --cyber-card: 10 10 10;           /* Almost black */
-  --cyber-card-hover: 18 18 18;
-  --cyber-border: 26 26 26;
-  --cyber-border-glow: 40 40 40;
-  --cyber-text: 226 232 240;
-  --cyber-muted: 100 116 139;
-  --cyber-code: 5 5 5;
-  --cyber-cyan: 56 189 248;         /* Sky Blue */
+  /* Legacy & Cyber Token Mappings */
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 14 165 233;
   --cyber-emerald: 16 185 129;
   --cyber-crimson: 239 68 68;
-  --cyber-neon: 56 189 248;         /* Match cyan */
+  --cyber-amber: 245 158 11;
+  --cyber-purple: 168 85 247;
+  --cyber-neon: 14 165 233;
+  --cyber-box: 244 244 245;
 }
 
-/* OFFSEC CRIMSON */
-[data-theme="kali"].dark {
-  --cyber-bg: 15 15 18;             /* #0F0F12 Matte carbon */
-  --cyber-card: 22 22 28;           /* #16161C */
-  --cyber-card-hover: 30 30 38;     /* #1E1E26 */
-  --cyber-border: 45 42 55;         /* #2D2A37 */
-  --cyber-border-glow: 55 50 68;
-  --cyber-text: 235 235 242;
-  --cyber-muted: 145 142 160;
-  --cyber-code: 10 10 13;
-  --cyber-cyan: 244 63 94;          /* Rose */
-  --cyber-emerald: 225 29 72;       /* Crimson */
-  --cyber-crimson: 225 29 72;
-  --cyber-neon: 225 29 72;
-}
+/* 2. CLEAN MONOLITH LIGHT - Architectural Off-White (#fafafa) */
+[data-theme="monolith"]:not(.dark),
+[data-theme="light"]:not(.dark) {
+  --surface-base: 250 250 250;          /* #fafafa - Architectural Off-White Foundation */
+  --surface-card: 255 255 255;          /* #ffffff - Pure White Surface */
+  --surface-elevated: 255 255 255;      /* #ffffff - Elevated Popover */
+  --surface-sunken: 244 244 245;        /* #f4f4f5 - Recessed Input/Code */
+  --surface-hover: 244 244 245;         /* #f4f4f5 - Subtle Hover */
 
+  --border-subtle: 228 228 231;         /* #e4e4e7 - Sharp Gray Divider */
+  --border-strong: 212 212 216;         /* #d4d4d8 - High-Contrast Border */
+  --border-accent: 2 132 199;           /* #0284c7 - Deep Slate-Blue */
 
-[data-theme="htb"]:not(.dark) {
+  --text-primary: 9 9 11;               /* #09090b - Deep Contrast (>14:1) */
+  --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
+  --text-muted: 82 82 91;               /* #52525b - Zinc-600 (>5.5:1 WCAG AA) */
+  --text-tertiary: 113 113 122;         /* #71717a - Zinc-500 */
+  --text-dim: 100 116 139;              /* #64748b - Subtle Indicators */
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Legacy & Cyber Token Mappings */
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 2 132 199;
   --cyber-emerald: 21 128 61;
-  --cyber-neon: 21 128 61;
+  --cyber-crimson: 239 68 68;
+  --cyber-amber: 180 83 9;
+  --cyber-purple: 147 51 234;
+  --cyber-neon: 2 132 199;
+  --cyber-box: 9 9 11;
 }
 
+/* 2. CLEAN MONOLITH DARK - Crisp Graphite (#18181b) */
+[data-theme="monolith"].dark,
+[data-theme="light"].dark {
+  --surface-base: 24 24 27;             /* #18181b - Crisp Graphite Foundation */
+  --surface-card: 39 39 42;             /* #27272a - Solid Graphite Card */
+  --surface-elevated: 50 50 56;         /* #323238 - Calibrated Elevated Popover */
+  --surface-sunken: 9 9 11;             /* #09090b - Sunken Input/Code Surface */
+  --surface-hover: 51 51 56;            /* #333338 - Tactile Hover */
+
+  --border-subtle: 63 63 70;            /* #3f3f46 - Crisp Graphite Divider */
+  --border-strong: 82 82 91;            /* #52525b - High-Contrast Border */
+  --border-accent: 56 189 248;          /* #38bdf8 - Electric Sky Accent */
+
+  --text-primary: 244 244 245;          /* #f4f4f5 - High-Contrast Zinc-100 (>11:1) */
+  --text-secondary: 228 228 231;        /* #e4e4e7 - High-Contrast Zinc-200 */
+  --text-muted: 161 161 170;            /* #a1a1aa - Calibrated Zinc-400 (>4.8:1 WCAG AA) */
+  --text-tertiary: 113 113 122;         /* #71717a - Footnotes & Meta */
+  --text-dim: 113 113 122;              /* #71717a - Muted Indicators */
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Legacy & Cyber Token Mappings */
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 56 189 248;
+  --cyber-emerald: 16 185 129;
+  --cyber-crimson: 244 63 94;
+  --cyber-amber: 245 158 11;
+  --cyber-purple: 168 85 247;
+  --cyber-neon: 56 189 248;
+  --cyber-box: 244 244 245;
+}
+
+/* 3. HACK THE BOX DARK - Authentic OLED Black & Neon Lime (#000000 + #9fef00) */
+[data-theme="htb"].dark {
+  --surface-base: 0 0 0;                /* #000000 - True Zero-Nit OLED Black */
+  --surface-card: 11 16 21;             /* #0b1015 - Dark Carbon Surface */
+  --surface-elevated: 18 24 32;         /* #121820 - Elevated Dialog/Popover */
+  --surface-sunken: 5 7 10;             /* #05070a - Sunken Code/Input Surface */
+  --surface-hover: 22 32 44;            /* #16202c - Tactile Hover */
+
+  --border-subtle: 28 38 51;            /* #1c2633 - Sharp 1px Structural Divider */
+  --border-strong: 42 58 78;            /* #2a3a4e - High-Contrast Perimeter */
+  --border-accent: 159 239 0;           /* #9fef00 - Official HTB Lime */
+
+  --text-primary: 255 255 255;          /* #ffffff - Pure White Contrast (>14:1) */
+  --text-secondary: 228 228 231;        /* #e4e4e7 - Slate/Zinc-200 */
+  --text-muted: 148 163 184;            /* #94a3b8 - Zinc/Slate (>4.5:1 WCAG AA) */
+  --text-tertiary: 100 116 139;         /* #64748b - Meta / Footnotes */
+  --text-dim: 113 113 122;              /* #71717a - Muted Indicators */
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Legacy & Cyber Token Mappings */
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 159 239 0;             /* #9fef00 Primary HTB Electric Lime */
+  --cyber-emerald: 159 239 0;          /* #9fef00 HTB Lime */
+  --cyber-crimson: 244 63 94;
+  --cyber-amber: 245 158 11;
+  --cyber-purple: 168 85 247;
+  --cyber-neon: 159 239 0;             /* #9fef00 HTB Neon */
+  --cyber-box: 159 239 0;              /* #9fef00 */
+}
+
+/* 3. HACK THE BOX LIGHT - Crisp Clean Slate & Tactical Lime (#f1f5f9 + #15803d) */
+[data-theme="htb"]:not(.dark) {
+  --surface-base: 241 245 249;          /* #f1f5f9 - Clean Slate Foundation */
+  --surface-card: 255 255 255;          /* #ffffff - Pure White Surface */
+  --surface-elevated: 255 255 255;      /* #ffffff - Elevated Popover */
+  --surface-sunken: 226 232 240;        /* #e2e8f0 - Slate-200 Recessed Input/Code */
+  --surface-hover: 226 232 240;         /* #e2e8f0 - Subtle Hover */
+
+  --border-subtle: 203 213 225;         /* #cbd5e1 - Slate-300 Divider */
+  --border-strong: 148 163 184;         /* #94a3b8 - Slate-400 High-Contrast Border */
+  --border-accent: 21 128 61;           /* #15803d - HTB Tactical Forest Lime (>4.5:1 WCAG AA) */
+
+  --text-primary: 15 23 42;             /* #0f172a - Slate-900 (>15:1 WCAG AAA) */
+  --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
+  --text-muted: 71 85 105;              /* #475569 - Slate-600 (>5.5:1 WCAG AA) */
+  --text-tertiary: 100 116 139;         /* #64748b - Slate-500 */
+  --text-dim: 100 116 139;              /* #64748b - Slate-500 */
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Legacy & Cyber Token Mappings */
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 14 116 144;             /* #0e7490 */
+  --cyber-emerald: 21 128 61;           /* #15803d Tactical Lime */
+  --cyber-crimson: 225 29 72;
+  --cyber-amber: 217 119 6;
+  --cyber-purple: 126 34 206;
+  --cyber-neon: 21 128 61;
+  --cyber-box: 15 23 42;
+}
+
+/* Legacy Fallbacks for Backward Compatibility */
+[data-theme="oled"].dark,
+[data-theme="industrial"].dark {
+  --surface-base: 0 0 0;
+  --surface-card: 10 10 12;
+  --surface-elevated: 18 18 22;
+  --surface-sunken: 5 5 7;
+  --surface-hover: 24 24 28;
+  --border-subtle: 39 39 42;
+  --border-strong: 63 63 70;
+  --border-accent: 56 189 248;
+  --text-primary: 255 255 255;
+  --text-muted: 161 161 170;
+  --text-tertiary: 113 113 122;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 56 189 248;
+  --cyber-emerald: 16 185 129;
+  --cyber-crimson: 244 63 94;
+  --cyber-amber: 245 158 11;
+  --cyber-purple: 168 85 247;
+  --cyber-neon: 56 189 248;
+  --cyber-box: 255 255 255;
+}
+
+[data-theme="industrial"]:not(.dark),
 [data-theme="oled"]:not(.dark) {
-  --cyber-cyan: 82 82 91;
-  --cyber-neon: 82 82 91;
+  --surface-base: 245 245 245;
+  --surface-card: 255 255 255;
+  --surface-elevated: 255 255 255;
+  --surface-sunken: 238 238 238;
+  --surface-hover: 238 238 238;
+  --border-subtle: 220 220 225;
+  --border-strong: 180 180 185;
+  --border-accent: 2 132 199;
+  --text-primary: 9 9 11;
+  --text-muted: 82 82 91;
+  --text-tertiary: 140 140 145;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --cyber-bg: var(--surface-base);
+  --cyber-card: var(--surface-card);
+  --cyber-card-hover: var(--surface-hover);
+  --cyber-border: var(--border-subtle);
+  --cyber-border-glow: var(--border-strong);
+  --cyber-text: var(--text-primary);
+  --cyber-muted: var(--text-muted);
+  --cyber-code: var(--surface-sunken);
+  --cyber-cyan: 2 132 199;
+  --cyber-emerald: 16 185 129;
+  --cyber-crimson: 239 68 68;
+  --cyber-neon: 2 132 199;
+  --cyber-box: 9 9 11;
+}
+
+/* Crisp Technical Brand Box Typography (No Neon Glow) */
+.cyber-box-glow {
+  color: rgb(var(--cyber-box, 244 244 245));
+  font-weight: 800;
+  text-shadow: none;
+}
+
+.dark .cyber-box-glow {
+  text-shadow: none;
+}
+
+:root {
+  /* Motion & Craft: Easing Tokens (Apple Fluid Interfaces & Kowalski Curves) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);         /* Crisp, responsive UI entrance */
+  --ease-in: cubic-bezier(0.32, 0, 0.67, 0);          /* Asymmetric, snappy UI exit */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);     /* Smooth on-screen spatial movement */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);      /* iOS-grade bottom/side drawer curve */
+  --ease-micro: cubic-bezier(0, 0, 0.2, 1);           /* Instant tactile button/surface response */
+
+  /* Motion & Craft: Duration Scale (Sub-300ms High-Frequency Cockpit) */
+  --duration-fast: 100ms;     /* Tactile button push, micro color switches */
+  --duration-normal: 150ms;   /* Dropdowns, tooltips, select menus */
+  --duration-slow: 200ms;     /* Modals, drawers, overlay panes */
+  --duration-layout: 300ms;   /* Sidebar collapse, view-mode transitions */
+}
+
+/* 5-State Interactive Base Contract for Surfaces / Rows / Cards / Tabs */
+.interactive-surface {
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-micro);
+}
+.interactive-surface:hover {
+  background-color: rgb(var(--surface-hover));
+}
+.interactive-surface:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--surface-base)), 0 0 0 4px rgb(var(--border-accent));
+}
+.interactive-surface:disabled,
+.interactive-surface[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 5-State Interactive Contract for Discrete Buttons & Action Chips */
+.interactive-button {
+  transition-property: background-color, border-color, color, transform, box-shadow;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-micro);
+}
+.interactive-button:hover {
+  background-color: rgb(var(--surface-hover));
+}
+.interactive-button:active {
+  transform: scale(0.98);
+}
+.interactive-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--surface-base)), 0 0 0 4px rgb(var(--border-accent));
+}
+.interactive-button:disabled,
+.interactive-button[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Exact Dimension Dim-Pulse Skeleton (No Dazzling Shimmer) */
+@keyframes skeleton-dim {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton-dim {
+  animation: skeleton-dim 1.5s ease-in-out infinite;
+  background-color: rgb(var(--surface-sunken, var(--cyber-code)));
+  border-radius: var(--radius-xs, 2px);
+}
+
+/* Accessibility & Web Interface Guidelines: Reduced Motion (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton-dim {
+    animation: none !important;
+    opacity: 0.6 !important;
+  }
+
+  .animate-spin-slow,
+  .animate-spin,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
 }
 
 @layer base {
@@ -123,13 +453,23 @@
   }
 
   ::selection {
-    background-color: rgba(6, 182, 212, 0.25);
+    background-color: rgba(var(--cyber-cyan, 0 240 255), 0.3);
     color: inherit;
   }
 
   button, [role="button"], [data-selectable="false"] {
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex="0"]:focus-visible {
+    outline: 2px solid rgb(var(--border-accent));
+    outline-offset: 2px;
   }
 }
 
@@ -173,10 +513,10 @@ html:not(.dark) .border-gray-900 {
   border-color: rgb(var(--cyber-border));
 }
 
-/* Custom Cyber Scrollbars with Neon Glow */
+/* Compact Terminal Scrollbars (No Neon Glow) */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -185,13 +525,22 @@ html:not(.dark) .border-gray-900 {
 
 ::-webkit-scrollbar-thumb {
   background: rgb(var(--cyber-border));
-  border-radius: 3px;
-  transition: all 0.25s ease;
+  border-radius: 2px;
+  transition: background-color 0.15s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #10B981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+  background: #3f3f46;
+  box-shadow: none;
+}
+
+/* Utility to completely hide scrollbars while preserving scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Slow tactical rotation for crosshairs */

@@ -10,10 +10,13 @@ export interface CyberLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
   glow?: boolean;
-  theme?: ThemePreset | 'midnight-blue';
+  theme?: ThemePreset | 'midnight-blue' | string;
 }
 
 const THEME_LOGO_MAP: Record<string, string> = {
+  obsidian: logoZerobox,
+  monolith: logoZerobox,
+  industrial: logoOled,
   zerobox: logoZerobox,
   neon: logoZerobox,
   htb: logoHtb,
@@ -23,6 +26,9 @@ const THEME_LOGO_MAP: Record<string, string> = {
 };
 
 const THEME_GLOW_MAP: Record<string, string> = {
+  obsidian: 'drop-shadow-[0_0_8px_rgba(0,240,255,0.4)] group-hover:drop-shadow-[0_0_14px_rgba(0,240,255,0.7)]',
+  monolith: 'drop-shadow-[0_0_6px_rgba(0,139,153,0.25)] group-hover:drop-shadow-[0_0_10px_rgba(0,139,153,0.45)]',
+  industrial: 'drop-shadow-[0_0_8px_rgba(56,189,248,0.4)] group-hover:drop-shadow-[0_0_14px_rgba(165,243,252,0.7)]',
   zerobox: 'drop-shadow-[0_0_8px_rgba(0,240,255,0.4)] group-hover:drop-shadow-[0_0_14px_rgba(0,240,255,0.7)]',
   neon: 'drop-shadow-[0_0_8px_rgba(0,240,255,0.4)] group-hover:drop-shadow-[0_0_14px_rgba(0,240,255,0.7)]',
   htb: 'drop-shadow-[0_0_3px_rgba(159,239,0,0.25)] group-hover:drop-shadow-[0_0_6px_rgba(159,239,0,0.45)]',
@@ -40,7 +46,7 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
   glow = true,
   theme: explicitTheme
 }) => {
-  const currentStoreTheme = useCtfStore((s) => s.themePreset || 'zerobox');
+  const currentStoreTheme = useCtfStore((s) => s.themePreset || 'obsidian');
   const activePreset = explicitTheme || currentStoreTheme;
 
   const currentLogo = THEME_LOGO_MAP[activePreset] || logoDefault;
@@ -56,7 +62,7 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
 
   return (
     <div
-      className={`relative flex-shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-105 ${containerSizeMap[size]} ${
+      className={`relative flex-shrink-0 flex items-center justify-center transition-[transform,background-color,border-color,color] duration-300 group-hover:scale-105 ${containerSizeMap[size]} ${
         glow ? currentGlow : ''
       } ${className}`}
       title={`ZEROBOX // TACTICAL CYBER OPERATIONS (${activePreset.toUpperCase()})`}
@@ -65,7 +71,7 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
         src={currentLogo}
         alt={`ZeroBox Tactical Cyber Operations - ${activePreset}`}
         key={activePreset}
-        className="w-full h-full object-contain select-none filter transition-all duration-300"
+        className="w-full h-full object-contain select-none filter transition-colors duration-300"
       />
     </div>
   );

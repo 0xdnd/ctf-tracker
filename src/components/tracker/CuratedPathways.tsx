@@ -131,7 +131,7 @@ export const CuratedPathways: React.FC = () => {
   const flagshipTrackIds = ['tjnull-oscp', 'cpts-path', 'cwee-web', 'ippsec-vault', 'crto-ad'];
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 font-mono text-xs shadow-sm overflow-hidden transition-all">
+    <div className="rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 font-mono text-xs shadow-sm overflow-hidden transition-[box-shadow,background-color,border-color,color]">
       {/* Collapsed Micro-Bar */}
       <div className="flex flex-wrap items-center justify-between px-3 py-1.5 gap-2">
         {/* Left: Primary/Combined Track Progress Indicator */}
@@ -166,7 +166,7 @@ export const CuratedPathways: React.FC = () => {
           {/* Micro Progress Bar */}
           <div className="w-20 sm:w-28 bg-slate-200 dark:bg-cyber-bg h-1.5 rounded-full overflow-hidden flex-shrink-0 border border-slate-300/60 dark:border-cyber-border/70">
             <div
-              className="h-full bg-cyber-cyan transition-all duration-300"
+              className="h-full bg-cyber-cyan transition-colors duration-300"
               style={{ width: `${combinedActiveStats.stats.percent}%` }}
             />
           </div>
@@ -189,7 +189,7 @@ export const CuratedPathways: React.FC = () => {
                     e.stopPropagation();
                     handleToggleTrack(id);
                   }}
-                  className={`px-2 py-0.5 rounded text-[10px] border transition-all flex items-center gap-1 font-sans ${
+                  className={`px-2 py-0.5 rounded text-[10px] border transition-colors flex items-center gap-1 font-sans ${
                     isActive
                       ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyan-800 dark:text-cyber-cyan font-bold shadow-sm'
                       : 'bg-slate-100 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
@@ -268,7 +268,7 @@ export const CuratedPathways: React.FC = () => {
                 <button
                   key={track.id}
                   onClick={() => handleToggleTrack(track.id)}
-                  className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all relative group ${
+                  className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-colors relative group ${
                     active
                       ? 'bg-cyber-cyan/15 border-cyber-cyan text-slate-900 dark:text-white shadow-sm ring-1 ring-cyber-cyan/50 font-bold'
                       : 'bg-white dark:bg-cyber-card/90 border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-text hover:border-slate-300 dark:hover:border-cyber-borderGlow hover:bg-slate-50 dark:hover:bg-cyber-cardHover'
@@ -295,7 +295,7 @@ export const CuratedPathways: React.FC = () => {
 
                   <div className="w-full bg-slate-200 dark:bg-cyber-bg h-1.5 rounded-full overflow-hidden my-1 border border-slate-300/40 dark:border-cyber-border/60">
                     <div
-                      className="h-full bg-cyber-cyan transition-all duration-300"
+                      className="h-full bg-cyber-cyan transition-colors duration-300"
                       style={{ width: `${stats.percent}%` }}
                     />
                   </div>

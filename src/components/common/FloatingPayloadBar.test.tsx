@@ -169,5 +169,58 @@ describe('FloatingPayloadBar component', () => {
     expect(screen.getByTitle('Copy All Tactical Info')).toBeInTheDocument();
     expect(screen.getByTitle(/Copy Shell Export/i)).toBeInTheDocument();
   });
+
+  it('allows 1-click copying of target IP directly from minimized chip', () => {
+    useCtfStore.setState({
+      machines: [
+        {
+          id: 'test-direct-copy',
+          name: 'Elevating Movement',
+          ip: '10.10.11.205',
+          os: 'Windows',
+          platform: 'HTB',
+          difficulty: 'Hard',
+          status: 'foothold',
+          tags: [],
+          certifications: [],
+          roomUrl: '',
+          timeSpentSeconds: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      activeTargetId: 'test-direct-copy',
+    });
+
+    render(<FloatingPayloadBar />);
+    const targetIpSection = screen.getByTitle('Click to copy target IP (10.10.11.205)');
+    expect(targetIpSection).toBeInTheDocument();
+
+    fireEvent.click(targetIpSection);
+    // Should render checkmark feedback
+    const checkIcon = targetIpSection.querySelector('svg.lucide-check');
+    expect(checkIcon).toBeInTheDocument();
+  });
+
+  it('allows 1-click copying of LHOST directly from minimized chip', () => {
+    useCtfStore.setState({
+      globalVars: {
+        lhost: '10.10.14.88',
+        lport: '4444',
+        targetIp: '10.10.10.1',
+        interface: 'tun0',
+        customVars: {},
+      },
+      activeTargetId: null,
+    });
+
+    render(<FloatingPayloadBar />);
+    const lhostBtn = screen.getByLabelText('Copy LHOST');
+    expect(lhostBtn).toBeInTheDocument();
+
+    fireEvent.click(lhostBtn);
+    const checkIcon = lhostBtn.querySelector('svg.lucide-check');
+    expect(checkIcon).toBeInTheDocument();
+  });
 });
 

@@ -133,7 +133,7 @@ export const FloatingPayloadBar: React.FC = () => {
   };
 
   return (
-    <aside aria-label="Tactical Payload Bar" className="fixed bottom-20 md:bottom-4 right-3 sm:right-4 z-40 font-mono select-none" style={{ contain: 'layout paint' }}>
+    <aside aria-label="Tactical Payload Bar" className="hidden md:block fixed bottom-4 right-4 z-40 font-mono select-none">
       <AnimatePresence initial={false}>
         {!isExpanded ? (
           /* Minimized Tactical Chip */
@@ -142,7 +142,7 @@ export const FloatingPayloadBar: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 8 }}
-            className="relative flex items-center gap-2 p-1.5 px-3 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-cyber-cyan/40 shadow-lg shadow-slate-300/40 dark:shadow-glow-cyan/20 text-slate-800 dark:text-slate-100 hover:border-cyan-500 dark:hover:border-cyber-cyan transition-all cursor-pointer group"
+            className="relative flex items-center gap-2 p-2 px-3.5 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-zinc-700/80 shadow-lg text-slate-800 dark:text-slate-100 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 transition-colors cursor-pointer group"
             onClick={() => setIsExpanded(true)}
           >
             {/* Quick Copy Menu Popover */}
@@ -154,16 +154,16 @@ export const FloatingPayloadBar: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
                   transition={{ duration: 0.14 }}
-                  className="absolute bottom-full mb-2 right-0 w-80 rounded-xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-cyber-cyan/40 shadow-2xl shadow-slate-400/30 dark:shadow-glow-cyan/20 p-2 z-50 space-y-1 text-xs"
+                  className="absolute bottom-full mb-2 right-0 w-80 rounded-xl bg-white dark:bg-[#18181b] border border-slate-300 dark:border-[#27272a] shadow-2xl p-2.5 z-50 space-y-1 text-xs"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between px-2 py-1 text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted border-b border-slate-200 dark:border-slate-800">
-                    <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyber-cyan">
+                  <div className="flex items-center justify-between px-2 py-1 text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted border-b border-slate-200 dark:border-[#27272a]">
+                    <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyber-cyan font-bold">
                       <Copy className="w-3 h-3" /> Quick Copy All / Fields
                     </span>
                     <button
                       onClick={() => setShowCopyMenu(false)}
-                      className="p-0.5 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      className="p-1 rounded-md hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                       title="Close"
                     >
                       <X className="w-3 h-3" />
@@ -176,7 +176,7 @@ export const FloatingPayloadBar: React.FC = () => {
                       copyWithFeedback('menu-all', allTacticalInfo);
                       setTimeout(() => setShowCopyMenu(false), 900);
                     }}
-                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-left transition-colors group"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#09090b] text-left transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer group"
                   >
                     <div className="flex flex-col min-w-0 pr-2">
                       <span className="font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan flex items-center gap-1">
@@ -189,7 +189,7 @@ export const FloatingPayloadBar: React.FC = () => {
                     {copiedKey === 'menu-all' ? (
                       <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                     ) : (
-                      <Copy className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 shrink-0" />
+                      <Copy className="w-4 h-4 text-slate-400 group-hover:text-cyber-cyan shrink-0" />
                     )}
                   </button>
 
@@ -199,7 +199,7 @@ export const FloatingPayloadBar: React.FC = () => {
                       copyWithFeedback('menu-target', targetIp);
                       setTimeout(() => setShowCopyMenu(false), 900);
                     }}
-                    className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-left transition-colors group"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer group"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <Crosshair className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -213,7 +213,7 @@ export const FloatingPayloadBar: React.FC = () => {
                     {copiedKey === 'menu-target' ? (
                       <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-500 shrink-0" />
+                      <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyber-cyan shrink-0" />
                     )}
                   </button>
 
@@ -224,10 +224,10 @@ export const FloatingPayloadBar: React.FC = () => {
                         copyWithFeedback('menu-name', activeMachine.name);
                         setTimeout(() => setShowCopyMenu(false), 900);
                       }}
-                      className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-left transition-colors group"
+                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] px-1 rounded font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300">
                           NAME
                         </span>
                         <span className="text-slate-900 dark:text-white font-medium truncate">
@@ -237,7 +237,7 @@ export const FloatingPayloadBar: React.FC = () => {
                       {copiedKey === 'menu-name' ? (
                         <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       ) : (
-                        <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-500 shrink-0" />
+                        <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyber-cyan shrink-0" />
                       )}
                     </button>
                   )}
@@ -248,7 +248,7 @@ export const FloatingPayloadBar: React.FC = () => {
                       copyWithFeedback('menu-lhost-port', `${lhost}:${lport}`);
                       setTimeout(() => setShowCopyMenu(false), 900);
                     }}
-                    className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-left transition-colors group"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer group"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan shrink-0" />
@@ -262,7 +262,7 @@ export const FloatingPayloadBar: React.FC = () => {
                     {copiedKey === 'menu-lhost-port' ? (
                       <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-500 shrink-0" />
+                      <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyber-cyan shrink-0" />
                     )}
                   </button>
 
@@ -272,18 +272,18 @@ export const FloatingPayloadBar: React.FC = () => {
                       copyWithFeedback('menu-env', envExportString);
                       setTimeout(() => setShowCopyMenu(false), 900);
                     }}
-                    className="w-full flex items-center justify-between p-1.5 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-left transition-colors group border-t border-slate-200 dark:border-slate-800/80 pt-2"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer group border-t border-slate-200 dark:border-cyber-border pt-2"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <Terminal className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="text-[11px] font-mono text-emerald-600 dark:text-cyber-emerald truncate">
+                      <span className="text-[11px] font-mono text-emerald-600 dark:text-cyber-emerald truncate font-bold">
                         {envExportString}
                       </span>
                     </div>
                     {copiedKey === 'menu-env' ? (
                       <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-500 shrink-0" />
+                      <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyber-cyan shrink-0" />
                     )}
                   </button>
                 </motion.div>
@@ -294,26 +294,54 @@ export const FloatingPayloadBar: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-cyber-emerald animate-pulse" />
               <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
               <span>{lhost}:{lport}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyWithFeedback('min-lhost-btn', lhost);
+                }}
+                title={`Copy LHOST (${lhost})`}
+                aria-label="Copy LHOST"
+                className="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-cyan-600 dark:hover:text-cyber-cyan transition-colors cursor-pointer ml-0.5"
+              >
+                {copiedKey === 'min-lhost-btn' ? (
+                  <Check className="w-3 h-3 text-emerald-600 dark:text-cyber-emerald" />
+                ) : (
+                  <Copy className="w-3 h-3" />
+                )}
+              </button>
             </div>
 
             {activeMachine && (
-              <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-500 dark:text-cyber-muted pl-1.5 border-l border-slate-300 dark:border-slate-700">
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyWithFeedback('chip-target-ip', targetIp);
+                }}
+                title={`Click to copy target IP (${targetIp})`}
+                className="hidden sm:flex items-center gap-1 text-[11px] text-slate-500 dark:text-cyber-muted pl-1.5 border-l border-slate-300 dark:border-slate-700 cursor-pointer hover:text-cyan-600 dark:hover:text-cyber-cyan transition-colors"
+              >
                 <Crosshair className="w-3 h-3 text-amber-500 dark:text-amber-400" />
                 <span className="text-slate-900 dark:text-white font-medium">{activeMachine.name}</span>
-                <span className="text-cyan-600 dark:text-cyber-cyan">({targetIp})</span>
+                <span className="text-cyan-600 dark:text-cyber-cyan font-mono font-bold hover:underline">({targetIp})</span>
+                {copiedKey === 'chip-target-ip' && (
+                  <Check className="w-3 h-3 text-emerald-600 dark:text-cyber-emerald ml-0.5" />
+                )}
               </div>
             )}
 
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                // Copy target IP immediately on click for instant clipboard utility
+                copyWithFeedback('min-copy-btn', targetIp);
                 setShowCopyMenu((prev) => !prev);
               }}
-              title="Open Quick Copy Menu (Copy All, Target IP, LHOST)"
+              title={`Copy Target IP (${targetIp}) & Open Tactical Quick Menu`}
               aria-label="Open Quick Copy Menu"
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors ml-1"
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors ml-1 cursor-pointer"
             >
-              {copiedKey?.startsWith('menu') || copiedKey === 'min-lhost' ? (
+              {copiedKey === 'min-copy-btn' || copiedKey?.startsWith('menu') || copiedKey === 'min-lhost' ? (
                 <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" />
               ) : (
                 <Copy className="w-3.5 h-3.5" />
@@ -330,10 +358,10 @@ export const FloatingPayloadBar: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.96 }}
             transition={{ duration: 0.16 }}
-            className="w-[calc(100vw-1.5rem)] sm:w-[480px] rounded-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200/90 dark:border-cyber-cyan/40 shadow-2xl shadow-slate-400/30 dark:shadow-cyber-cyan/10 overflow-hidden text-slate-800 dark:text-slate-100"
+            className="w-[calc(100vw-1.5rem)] sm:w-[480px] rounded-2xl bg-white/95 dark:bg-slate-950/95 border border-slate-300 dark:border-[#27272a] shadow-2xl overflow-hidden text-slate-800 dark:text-slate-100"
           >
             {/* HUD Header */}
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-cyber-cyan/20">
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-[#09090b] border-b border-slate-200 dark:border-[#27272a]">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-cyber-emerald animate-pulse" />
                 <span className="text-xs font-bold tracking-wider text-cyan-700 dark:text-cyber-cyan uppercase flex items-center gap-1">
@@ -345,7 +373,7 @@ export const FloatingPayloadBar: React.FC = () => {
                 <button
                   onClick={() => copyWithFeedback('hud-copy-all', allTacticalInfo)}
                   title="Copy All Tactical Info"
-                  className="text-[10px] px-2 py-0.5 rounded bg-cyan-50 hover:bg-cyan-100 dark:bg-cyber-cyan/15 dark:hover:bg-cyber-cyan/25 text-cyan-700 dark:text-cyber-cyan font-bold border border-cyan-300 dark:border-cyber-cyan/40 flex items-center gap-1 transition-colors"
+                  className="text-[10px] px-2.5 py-1 rounded-md bg-cyan-50 hover:bg-cyan-100 dark:bg-cyber-cyan/15 dark:hover:bg-cyber-cyan/25 text-cyan-700 dark:text-cyber-cyan font-bold border border-cyan-300 dark:border-cyber-cyan/40 flex items-center gap-1 transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
                 >
                   {copiedKey === 'hud-copy-all' ? (
                     <>
@@ -362,7 +390,7 @@ export const FloatingPayloadBar: React.FC = () => {
                 <button
                   onClick={handleInterfaceToggle}
                   title="Toggle Network Interface"
-                  className="text-[10px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-cyan-700 dark:text-cyber-cyan font-bold border border-slate-300 dark:border-cyber-cyan/30 flex items-center gap-1 transition-colors"
+                  className="text-[10px] px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-[#09090b] dark:hover:bg-zinc-800 text-cyan-700 dark:text-cyber-cyan font-bold border border-slate-300 dark:border-[#27272a] flex items-center gap-1 transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
                 >
                   <Radio className="w-2.5 h-2.5" />
                   {currentInterface}
@@ -370,7 +398,7 @@ export const FloatingPayloadBar: React.FC = () => {
                 <button
                   onClick={() => setIsExpanded(false)}
                   title="Minimize Bar"
-                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className="p-1 hover:bg-slate-200 dark:hover:bg-[#09090b] rounded-md text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -386,7 +414,7 @@ export const FloatingPayloadBar: React.FC = () => {
                     <span>LHOST (Attacker)</span>
                     <button
                       onClick={() => copyWithFeedback('lhost', lhost)}
-                      className="text-cyan-600 hover:text-cyan-800 dark:text-cyber-cyan dark:hover:underline flex items-center gap-0.5"
+                      className="text-cyan-600 hover:text-cyan-800 dark:text-cyber-cyan dark:hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       {copiedKey === 'lhost' ? <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-cyber-emerald" /> : <Copy className="w-2.5 h-2.5" />}
                       {copiedKey === 'lhost' ? 'Copied' : 'Copy'}
@@ -398,7 +426,7 @@ export const FloatingPayloadBar: React.FC = () => {
                       value={lhost}
                       onChange={(e) => handleLhostChange(e.target.value)}
                       placeholder="10.10.14.X"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:border-cyan-500 dark:focus:border-cyber-cyan rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-mono outline-none transition-colors"
+                      className="w-full bg-slate-50 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border focus:border-cyan-500 dark:focus:border-cyber-cyan rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -409,7 +437,7 @@ export const FloatingPayloadBar: React.FC = () => {
                     <span>LPORT</span>
                     <button
                       onClick={() => copyWithFeedback('lport', lport)}
-                      className="text-cyan-600 hover:text-cyan-800 dark:text-cyber-cyan dark:hover:underline flex items-center gap-0.5"
+                      className="text-cyan-600 hover:text-cyan-800 dark:text-cyber-cyan dark:hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       {copiedKey === 'lport' ? <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-cyber-emerald" /> : <Copy className="w-2.5 h-2.5" />}
                       {copiedKey === 'lport' ? 'Copied' : 'Copy'}
@@ -422,14 +450,14 @@ export const FloatingPayloadBar: React.FC = () => {
                       value={lport}
                       onChange={(e) => handleLportChange(e.target.value)}
                       placeholder="4444"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:border-cyan-500 dark:focus:border-cyber-cyan rounded-lg px-2.5 py-1 text-xs text-cyan-600 dark:text-cyber-cyan font-bold font-mono outline-none transition-colors"
+                      className="w-full bg-slate-50 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border focus:border-cyan-500 dark:focus:border-cyber-cyan rounded-lg px-2.5 py-1.5 text-xs text-cyan-600 dark:text-cyber-cyan font-bold font-mono outline-none transition-colors"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Active Target Banner */}
-              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-xs">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <Crosshair className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
                   <span className="text-slate-500 dark:text-cyber-muted text-[11px]">Target:</span>
@@ -445,7 +473,7 @@ export const FloatingPayloadBar: React.FC = () => {
                   <button
                     onClick={() => copyWithFeedback('hud-env', envExportString)}
                     title={`Copy Shell Export: ${envExportString}`}
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-cyber-muted hover:text-emerald-600 dark:hover:text-cyber-emerald transition-colors"
+                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-cyber-cardHover rounded-md text-slate-500 dark:text-cyber-muted hover:text-emerald-600 dark:hover:text-cyber-emerald transition-colors cursor-pointer"
                   >
                     {copiedKey === 'hud-env' ? (
                       <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" />
@@ -456,7 +484,7 @@ export const FloatingPayloadBar: React.FC = () => {
                   <button
                     onClick={() => copyWithFeedback('targetIp', targetIp)}
                     title="Copy Target IP"
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-cyber-muted hover:text-cyan-600 dark:hover:text-cyber-cyan transition-colors"
+                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-cyber-cardHover rounded-md text-slate-500 dark:text-cyber-muted hover:text-cyan-600 dark:hover:text-cyber-cyan transition-colors cursor-pointer"
                   >
                     {copiedKey === 'targetIp' ? (
                       <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" />
@@ -471,7 +499,7 @@ export const FloatingPayloadBar: React.FC = () => {
               <div>
                 <button
                   onClick={() => setShowShellDrawer(!showShellDrawer)}
-                  className="w-full flex items-center justify-between px-2.5 py-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/40 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 dark:hover:border-cyber-cyan/40 text-[11px] text-cyan-700 dark:text-cyber-cyan font-semibold transition-all"
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-cyber-card dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyan-500/40 dark:hover:border-cyber-borderGlow text-[11px] text-cyan-700 dark:text-cyber-cyan font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
                 >
                   <span className="flex items-center gap-1.5">
                     <Zap className="w-3 h-3" /> Quick 1-Click Reverse Shells
@@ -496,10 +524,10 @@ export const FloatingPayloadBar: React.FC = () => {
                           <div
                             key={shell.name}
                             onClick={() => copyWithFeedback(`shell-${shell.name}`, cmd)}
-                            className="flex items-center justify-between p-1.5 px-2 rounded bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/90 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800/80 hover:border-cyan-500/50 dark:hover:border-cyber-cyan/50 cursor-pointer group transition-all"
+                            className="flex items-center justify-between p-2 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-cyber-card dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyan-500/50 dark:hover:border-cyber-borderGlow cursor-pointer group transition-[transform,background-color,border-color,color] active:scale-[0.98]"
                           >
                             <div className="flex items-center gap-2 min-w-0 pr-2">
-                              <span className={`text-[9px] px-1 rounded font-bold uppercase ${
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
                                 shell.category === 'linux' ? 'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800' :
                                 shell.category === 'windows' ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800' :
                                 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'

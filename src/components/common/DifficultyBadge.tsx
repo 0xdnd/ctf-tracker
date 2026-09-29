@@ -13,31 +13,31 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = React.memo(({
   className = '',
 }) => {
   const sizeClasses = {
-    xs: 'text-[9px] px-1.5 py-0.5 rounded',
-    sm: 'text-[10px] px-2 py-0.5 rounded',
-    md: 'text-xs px-2.5 py-1 rounded-md',
+    xs: 'text-[9px] px-1.5 py-0.5 rounded-md',
+    sm: 'text-[10px] px-2 py-0.5 rounded-md',
+    md: 'text-xs px-2.5 py-0.5 rounded-md',
   }[size];
 
   const getTheme = () => {
     switch (difficulty) {
       case 'Very Easy':
-        return 'text-cyan-800 dark:text-diff-very-easy bg-diff-very-easy/15 dark:bg-diff-very-easy/10 border-diff-very-easy/40 dark:border-diff-very-easy/60';
+        return 'text-cyan-800 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30 border-cyan-300 dark:border-cyan-800/50';
       case 'Easy':
-        return 'text-emerald-800 dark:text-diff-easy bg-diff-easy/15 dark:bg-diff-easy/10 border-diff-easy/40 dark:border-diff-easy/60';
+        return 'text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/50';
       case 'Medium':
-        return 'text-amber-800 dark:text-diff-medium bg-diff-medium/15 dark:bg-diff-medium/10 border-diff-medium/40 dark:border-diff-medium/60';
+        return 'text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/50';
       case 'Hard':
-        return 'text-rose-800 dark:text-diff-hard bg-diff-hard/15 dark:bg-diff-hard/10 border-diff-hard/40 dark:border-diff-hard/60';
+        return 'text-rose-800 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/50';
       case 'Insane':
-        return 'text-purple-800 dark:text-diff-insane bg-diff-insane/15 dark:bg-diff-insane/10 border-diff-insane/40 dark:border-diff-insane/60';
+        return 'text-purple-800 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800/50';
       default:
-        return 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/40 border-slate-300 dark:border-slate-700';
+        return 'text-slate-700 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 border-slate-300 dark:border-[#27272a]';
     }
   };
 
   return (
     <span
-      className={`inline-flex items-center font-mono font-bold uppercase tracking-wider border whitespace-nowrap shadow-sm ${getTheme()} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center font-mono font-bold uppercase tracking-wider border whitespace-nowrap ${getTheme()} ${sizeClasses} ${className}`}
       title={`Difficulty: ${difficulty}`}
     >
       {difficulty}

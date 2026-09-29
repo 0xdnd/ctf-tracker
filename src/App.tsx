@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, Suspense, lazy } from 'react';
+import React, { useRef, useEffect, Suspense, lazy, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UnifiedHeader } from './components/layout/UnifiedHeader';
@@ -13,17 +13,21 @@ import { BackToTopButton } from './components/common/BackToTopButton';
 import { ScrollProvider, useScrollActions } from './context/ScrollContext';
 import { TrackerView } from './components/tracker/TrackerView';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
-import { ThemeRippleOverlay } from './components/common/ThemeRippleOverlay';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
 import { useCtfStore, mergeMachinesWithCatalog, UiScale } from './store/useCtfStore';
+import { useExamStore } from './store/examStore';
+import { useAuthStore } from './store/useAuthStore';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
+import { ExamQuickActionDrawer } from './components/exam/ExamQuickActionDrawer';
+import { PersistentNotesWorkspace } from './components/workspace/PersistentNotesWorkspace';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
 const NewMachineModal = lazy(() => import('./components/tracker/NewMachineModal').then(m => ({ default: m.NewMachineModal })));
 const PentestReportModal = lazy(() => import('./components/writeup/PentestReportModal').then(m => ({ default: m.PentestReportModal })));
 const OperatorDossierModal = lazy(() => import('./components/common/OperatorDossierModal').then(m => ({ default: m.OperatorDossierModal })));
+const OperatorProfileModal = lazy(() => import('./components/auth/OperatorProfileModal').then(m => ({ default: m.OperatorProfileModal })));
 const LicenseModal = lazy(() => import('./components/common/LicenseModal').then(m => ({ default: m.LicenseModal })));
 const NotesImportModal = lazy(() => import('./components/cheatsheet/NotesImportModal').then(m => ({ default: m.NotesImportModal })));
 const OperatorFlexCardModal = lazy(() => import('./components/common/OperatorFlexCardModal').then(m => ({ default: m.OperatorFlexCardModal })));
@@ -40,6 +44,7 @@ const AnalyticsView = lazy(() => import('./components/analytics/AnalyticsView').
 const TargetDetailPage = lazy(() => import('./pages/TargetDetailPage').then(m => ({ default: m.TargetDetailPage })));
 const MethodologyPage = lazy(() => import('./pages/MethodologyPage').then(m => ({ default: m.MethodologyPage })));
 const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m => ({ default: m.ExamSimulatorPage })));
+const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
 const ThemeShowcaseDemo = lazy(() => import('./components/common/ThemeShowcaseDemo').then(m => ({ default: m.ThemeShowcaseDemo })));
 
 const CyberRouteLoader: React.FC = () => (
@@ -61,6 +66,8 @@ const CyberRouteLoader: React.FC = () => (
 const TimerController: React.FC = () => {
   const isTimerRunning = useCtfStore((s) => s.isTimerRunning);
   const tickTimer = useCtfStore((s) => s.tickTimer);
+  const isExamActive = useExamStore((s) => s.status === 'running' || s.activeBreak.isActive);
+  const tickExam = useExamStore((s) => s.tick);
 
   useEffect(() => {
     if (!isTimerRunning) return;
@@ -70,12 +77,21 @@ const TimerController: React.FC = () => {
     return () => clearInterval(interval);
   }, [isTimerRunning, tickTimer]);
 
+  useEffect(() => {
+    if (!isExamActive) return;
+    const interval = setInterval(() => {
+      tickExam();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isExamActive, tickExam]);
+
   return null;
 };
 
 const MainAppContent: React.FC = () => {
   const { setScrollElement } = useScrollActions();
   const location = useLocation();
+  const isPopout = useMemo(() => new URLSearchParams(location.search).get('popout') === 'true', [location.search]);
   const setActiveTab = useCtfStore((s) => s.setActiveTab);
   const selectedMachineId = useCtfStore((s) => s.selectedMachineId);
   const backupModalOpen = useCtfStore((s) => s.backupModalOpen);
@@ -91,6 +107,7 @@ const MainAppContent: React.FC = () => {
   const shortcutsModalOpen = useCtfStore((s) => s.shortcutsModalOpen);
   const settingsModalOpen = useCtfStore((s) => s.settingsModalOpen);
   const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
+  const operatorProfileModalOpen = useAuthStore((s) => s.operatorProfileModalOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
   const uiScale = useCtfStore((s) => s.uiScale || 'auto');
@@ -117,6 +134,7 @@ const MainAppContent: React.FC = () => {
           reconAutomationModalOpen ||
           reportMachineId ||
           operatorModalOpen ||
+          operatorProfileModalOpen ||
           licenseModalOpen ||
           notesImportModalOpen ||
           flexCardModalOpen ||
@@ -140,6 +158,7 @@ const MainAppContent: React.FC = () => {
     reconAutomationModalOpen,
     reportMachineId,
     operatorModalOpen,
+    operatorProfileModalOpen,
     licenseModalOpen,
     notesImportModalOpen,
     flexCardModalOpen,
@@ -229,6 +248,8 @@ const MainAppContent: React.FC = () => {
       setActiveTab('analytics');
     } else if (path.startsWith('/exam')) {
       setActiveTab('exam');
+    } else if (path.startsWith('/vault') || path.startsWith('/evidence') || path.startsWith('/loot')) {
+      setActiveTab('vault');
     } else if (path.startsWith('/theme')) {
       setActiveTab('theme');
     } else {
@@ -244,33 +265,30 @@ const MainAppContent: React.FC = () => {
       }}
       className="w-full overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative"
     >
-      {/* Top glowing laser scroll progress bar */}
+      {/* Scroll Progress Bar */}
       <ScrollProgressBar />
 
-      {/* Global Liquid Theme Transition Ripple Overlay */}
-      <ThemeRippleOverlay />
-
-      {/* Floating Tactical Thruster Back to Top */}
+      {/* Back to Top */}
       <BackToTopButton />
 
-      {/* Floating Zen Focus Mode Recovery Banner */}
+      {/* Zen Focus Mode Recovery Banner */}
       <AnimatePresence>
         {focusMode && (
           <motion.div
-            initial={{ opacity: 0, y: -25, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -25, scale: 0.95 }}
-            transition={{ duration: 0.18 }}
-            className="fixed top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2 bg-slate-900/90 dark:bg-zinc-900/95 text-white border border-cyan-500/50 dark:border-cyan-400/60 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.5)] backdrop-blur-md text-xs font-mono"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.15 }}
+            className="fixed top-2.5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-3 py-1.5 bg-cyber-card text-cyber-text border border-cyber-cyan rounded-md shadow-sm text-xs font-mono"
           >
-            <span className="flex items-center gap-2 text-cyan-400 font-bold tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span className="flex items-center gap-1.5 text-cyber-cyan font-bold tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyber-cyan" />
               ZEN FOCUS MODE
             </span>
-            <span className="text-zinc-400 text-[11px] hidden sm:inline">Press Esc or</span>
+            <span className="text-cyber-muted text-[11px] hidden sm:inline">Press Esc or</span>
             <button
               onClick={() => setFocusMode(false)}
-              className="px-3 py-1 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition-all flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
+              className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-cyber-cyan text-black hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer"
               title="Exit Zen Focus Mode"
             >
               ✕ Exit Zen
@@ -285,24 +303,52 @@ const MainAppContent: React.FC = () => {
       {/* Heavy Tactical Modals (Deferred Lazy Loading - Fetched strictly when triggered) */}
       <RouteErrorBoundary>
         <Suspense fallback={null}>
-          {backupModalOpen && <BackupModal />}
-          {reconAutomationModalOpen && <ReconAutomationModal />}
-          {selectedMachineId && <MachineDetailModal />}
-          {assignIpMachineId && <QuickAssignIpModal />}
-          {newMachineModalOpen && <NewMachineModal />}
-          {reportMachineId && (
-            <PentestReportModal
-              machineId={reportMachineId}
-              isOpen={Boolean(reportMachineId)}
-              onClose={() => setReportMachineId(null)}
-            />
-          )}
-          {operatorModalOpen && <OperatorDossierModal />}
-          {licenseModalOpen && <LicenseModal />}
-          {notesImportModalOpen && <NotesImportModal />}
-          {flexCardModalOpen && <OperatorFlexCardModal />}
-          {shortcutsModalOpen && <KeyboardShortcutsModal />}
-          {settingsModalOpen && <SettingsModal />}
+          <AnimatePresence>
+            {backupModalOpen && <BackupModal key="backup-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {reconAutomationModalOpen && <ReconAutomationModal key="recon-automation-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {selectedMachineId && <MachineDetailModal key="machine-detail-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {assignIpMachineId && <QuickAssignIpModal key="quick-assign-ip-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {newMachineModalOpen && <NewMachineModal key="new-machine-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {reportMachineId && (
+              <PentestReportModal
+                key="pentest-report-modal"
+                machineId={reportMachineId}
+                isOpen={Boolean(reportMachineId)}
+                onClose={() => setReportMachineId(null)}
+              />
+            )}
+          </AnimatePresence>
+          <AnimatePresence>
+            {operatorModalOpen && <OperatorDossierModal key="operator-dossier-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {operatorProfileModalOpen && <OperatorProfileModal key="operator-profile-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {licenseModalOpen && <LicenseModal key="license-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {notesImportModalOpen && <NotesImportModal key="notes-import-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {flexCardModalOpen && <OperatorFlexCardModal key="flex-card-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {shortcutsModalOpen && <KeyboardShortcutsModal key="shortcuts-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {settingsModalOpen && <SettingsModal key="settings-modal" />}
+          </AnimatePresence>
         </Suspense>
       </RouteErrorBoundary>
 
@@ -312,6 +358,9 @@ const MainAppContent: React.FC = () => {
       {/* Slide-over Cheatsheet & Snippets Drawer (Alt+S) */}
       <SnippetsDrawer />
 
+      {/* Slide-over Exam Mission Quick Action Drawer (Alt+E) */}
+      <ExamQuickActionDrawer />
+
       {/* Rapid Reverse Shell Crafter Modal */}
       <RevShellModal />
 
@@ -319,17 +368,19 @@ const MainAppContent: React.FC = () => {
       <EphemeralStorageBanner />
 
       {/* Tactical Top Header (Unified Single Bar Cockpit) */}
-      {!focusMode && <UnifiedHeader />}
+      {!focusMode && !isPopout && <UnifiedHeader />}
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Responsive Collapsible Sidebar - Hidden in Focus Mode */}
-        {!focusMode && <Sidebar />}
+        {/* Responsive Collapsible Sidebar - Hidden in Focus Mode and Popout Mode */}
+        {!focusMode && !isPopout && <Sidebar />}
 
         {/* Main Stage View */}
         <main
           ref={setScrollElement}
-          className={`flex-1 overflow-y-auto min-h-0 p-3 pb-24 sm:p-4 md:p-6 md:pb-6 relative bg-slate-50/70 dark:bg-cyber-bg transition-all ${
+          className={`flex-1 overflow-y-auto min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
+            isPopout ? 'p-0 pb-0' : 'p-3 pb-24 sm:p-4 md:p-6 md:pb-6'
+          } ${
             focusMode ? 'max-w-7xl mx-auto w-full' : ''
           }`}
         >
@@ -348,9 +399,10 @@ const MainAppContent: React.FC = () => {
                     <Route path="/" element={<Navigate to="/tracker" replace />} />
                     <Route path="/tracker" element={<TrackerView />} />
                     <Route path="/target/:id" element={<TargetDetailPage />} />
+                    <Route path="/targets/:id" element={<TargetDetailPage />} />
                     <Route path="/methodology" element={<MethodologyPage />} />
                     <Route path="/cheatsheets" element={<CheatsheetView />} />
-                    <Route path="/cheatsheet" element={<Navigate to="/cheatsheets" replace />} />
+                    <Route path="/cheatsheet" element={<CheatsheetView />} />
                     <Route path="/notes" element={<CheatsheetView defaultMode="cpts-manual" />} />
                     <Route path="/field-manual" element={<CheatsheetView defaultMode="cpts-manual" />} />
                     <Route path="/cpts" element={<CheatsheetView defaultMode="cpts-manual" />} />
@@ -360,7 +412,10 @@ const MainAppContent: React.FC = () => {
                     <Route path="/writeups" element={<Navigate to="/writeup" replace />} />
                     <Route path="/analytics" element={<AnalyticsView />} />
                     <Route path="/exam" element={<ExamSimulatorPage />} />
-                    <Route path="/exam-simulator" element={<Navigate to="/exam" replace />} />
+                    <Route path="/exam-simulator" element={<ExamSimulatorPage />} />
+                    <Route path="/vault" element={<EvidenceVaultPage />} />
+                    <Route path="/evidence" element={<EvidenceVaultPage />} />
+                    <Route path="/loot" element={<EvidenceVaultPage />} />
                     <Route path="/theme-demo" element={<ThemeShowcaseDemo />} />
                     <Route path="/theme" element={<ThemeShowcaseDemo />} />
                     <Route path="/dark-mode" element={<ThemeShowcaseDemo />} />
@@ -371,13 +426,15 @@ const MainAppContent: React.FC = () => {
             </motion.div>
           </AnimatePresence>
         </main>
+        {/* Global Persistent Multi-Tab Notes Workspace Sidecar (Non-blocking) */}
+        {!isPopout && <PersistentNotesWorkspace />}
       </div>
 
-      {/* Global Floating LHOST/LPORT Payload Bar */}
-      <FloatingPayloadBar />
+      {/* Global Floating LHOST/LPORT Payload Bar - Hidden in Popout Mode */}
+      {!isPopout && <FloatingPayloadBar />}
 
       {/* Tactical Mobile Bottom Navigation Bar (md:hidden) */}
-      {!focusMode && <MobileNav />}
+      {!focusMode && !isPopout && <MobileNav />}
     </div>
   );
 };

@@ -48,7 +48,7 @@ const ZEROBOX_BRAND = {
   id: 'zerobox', 
   namePrefix: 'ZERO', 
   nameSuffix: 'BOX', 
-  suffixColor: 'text-cyber-cyan', 
+  suffixColor: 'cyber-box-glow', 
   tagline: 'Tactical Cyber Operations Suite' 
 };
 const BRAND_THEMES = [ZEROBOX_BRAND];
@@ -309,7 +309,7 @@ export const Header: React.FC = () => {
                     </span>
                   </div>
                   <div className="hidden sm:flex text-[11px] font-mono text-slate-500 dark:text-cyber-muted tracking-tight items-center gap-1.5 whitespace-nowrap">
-                    <span className="w-2 h-2 rounded-full bg-cyber-emerald inline-block shadow-[0_0_8px_#10B981]" />
+                    <span className="w-2 h-2 rounded-full inline-block transition-colors bg-cyber-box" />
                     <span>{activeBrand.tagline}</span>
                   </div>
                 </div>
@@ -323,10 +323,10 @@ export const Header: React.FC = () => {
                     setOperatorModalOpen(true);
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-cyber-card/90 hover:bg-cyber-emerald/10 border border-slate-300 dark:border-cyber-border hover:border-cyber-emerald text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-all group shadow-sm flex-shrink-0"
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-cyber-emerald/10 border border-slate-300 dark:border-cyber-border hover:border-cyber-emerald text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98] group flex-shrink-0"
                   title="View Creator Dossier & Portfolio (Daniel Dayan)"
                 >
-                  <div className="w-5 h-5 rounded-md bg-gradient-to-tr from-cyber-emerald/30 via-cyber-card to-cyber-cyan/30 border border-cyber-emerald/60 flex items-center justify-center text-[10px] font-black text-cyber-emerald shadow-[0_0_6px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform flex-shrink-0">
+                  <div className="w-5 h-5 rounded-md bg-cyber-bg border border-cyber-emerald/60 flex items-center justify-center text-[10px] font-mono font-bold text-cyber-emerald flex-shrink-0">
                     DD
                   </div>
                   <div className="flex flex-col text-left leading-none">
@@ -349,7 +349,7 @@ export const Header: React.FC = () => {
                     href={CREATOR_PROFILE_LINKS.portfolio}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-cyber-emerald/20 border border-slate-300 dark:border-cyber-border hover:border-cyber-emerald text-emerald-700 dark:text-cyber-emerald transition-all hover:scale-105 shadow-sm group"
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-cyber-emerald/20 border border-slate-300 dark:border-cyber-border hover:border-cyber-emerald text-emerald-700 dark:text-cyber-emerald transition-[transform,box-shadow,background-color,border-color,color] hover:scale-105 shadow-sm group"
                     title="Daniel Dayan Official Portfolio Website (0xdnd.github.io)"
                   >
                     <Globe className="w-3.5 h-3.5 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
@@ -360,7 +360,7 @@ export const Header: React.FC = () => {
                     href={CREATOR_PROFILE_LINKS.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-[#0077B5]/25 border border-slate-300 dark:border-cyber-border hover:border-[#0077B5] text-[#0077B5] hover:text-slate-900 dark:hover:text-white transition-all hover:scale-105 shadow-sm group"
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-[#0077B5]/25 border border-slate-300 dark:border-cyber-border hover:border-[#0077B5] text-[#0077B5] hover:text-slate-900 dark:hover:text-white transition-[transform,box-shadow,background-color,border-color,color] hover:scale-105 shadow-sm group"
                     title="Daniel Dayan on LinkedIn"
                   >
                     <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -373,7 +373,7 @@ export const Header: React.FC = () => {
                     href={CREATOR_PROFILE_LINKS.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-300 dark:border-cyber-border hover:border-slate-500 dark:hover:border-white text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all hover:scale-105 shadow-sm group"
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-card hover:bg-slate-200 dark:hover:bg-white/15 border border-slate-300 dark:border-cyber-border hover:border-slate-500 dark:hover:border-white text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-[transform,box-shadow,background-color,border-color,color] hover:scale-105 shadow-sm group"
                     title="0xdnd on GitHub"
                   >
                     <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -390,7 +390,7 @@ export const Header: React.FC = () => {
                   setOperatorModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="hidden sm:flex lg:hidden items-center gap-1.5 px-2 py-1 rounded-lg bg-cyber-emerald/10 border border-cyber-emerald/40 text-cyber-emerald text-[10px] font-bold ml-1 hover:bg-cyber-emerald/20 transition-all flex-shrink-0"
+                className="hidden sm:flex lg:hidden items-center gap-1.5 px-2 py-1 rounded-lg bg-cyber-emerald/10 border border-cyber-emerald/40 text-cyber-emerald text-[10px] font-bold ml-1 hover:bg-cyber-emerald/20 transition-colors flex-shrink-0"
                 title="View Creator Dossier & Portfolio (Daniel Dayan)"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-cyber-emerald" />
@@ -404,7 +404,7 @@ export const Header: React.FC = () => {
         <div className="hidden xl:flex items-center justify-center flex-1 min-w-0 max-w-xs 2xl:max-w-sm mx-auto">
           <button
             onClick={() => setCommandPaletteOpen(true)}
-            className="w-full max-w-[240px] 2xl:max-w-[280px] flex items-center justify-between px-3 py-1.5 text-xs font-mono rounded-lg bg-cyber-card/80 border border-cyber-border text-cyber-muted hover:text-cyber-text hover:border-cyber-cyan/50 transition-all shadow-inner group flex-shrink-0"
+            className="w-full max-w-[240px] 2xl:max-w-[280px] flex items-center justify-between px-3 py-1.5 text-xs font-mono rounded-lg bg-cyber-card/80 border border-cyber-border text-cyber-muted hover:text-cyber-text hover:border-cyber-cyan/50 transition-[box-shadow,background-color,border-color,color] shadow-inner group flex-shrink-0"
             title="Global Quick Search (Ctrl+K)"
           >
             <div className="flex items-center gap-2 truncate">
@@ -430,7 +430,7 @@ export const Header: React.FC = () => {
 
             <button
               onClick={toggleSound}
-              className={`p-1.5 rounded-md border transition-all flex-shrink-0 ${
+              className={`p-1.5 rounded-md border transition-colors flex-shrink-0 ${
                 soundEnabled 
                   ? 'bg-slate-100 dark:bg-cyber-card border-slate-300 dark:border-cyber-border text-cyber-emerald hover:border-cyber-emerald/50' 
                   : 'bg-slate-100 dark:bg-cyber-card border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -442,7 +442,7 @@ export const Header: React.FC = () => {
 
             <button
               onClick={() => setBackupModalOpen(true)}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-purple transition-all flex-shrink-0"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-purple transition-colors flex-shrink-0"
               title="Backup & Restore JSON State"
             >
               <Database className="w-3.5 h-3.5" />
@@ -460,7 +460,7 @@ export const Header: React.FC = () => {
                   if (soundEnabled) playCyberSound('click');
                 }}
                 disabled={uiScale === 'tiny'}
-                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-[opacity,background-color,border-color,color]"
                 title="Make UI Smaller (Zoom Out: 122% → 110% → 100% → 90% → 80%)"
                 aria-label="Make UI smaller"
               >
@@ -473,9 +473,9 @@ export const Header: React.FC = () => {
                   cycleUiScale();
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition-all ${
+                className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition-colors ${
                   uiScale !== 'normal'
-                    ? 'bg-cyber-cyan/20 text-cyan-800 dark:text-cyber-cyan border border-cyber-cyan/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]'
+                    ? 'bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/40 shadow-glow-cyan'
                     : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                 }`}
                 title={`Display Scale: ${
@@ -512,7 +512,7 @@ export const Header: React.FC = () => {
                   if (soundEnabled) playCyberSound('click');
                 }}
                 disabled={uiScale === 'huge'}
-                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-[opacity,background-color,border-color,color]"
                 title="Make UI Bigger (Zoom In: 80% → 90% → 100% → 110% → 122%)"
                 aria-label="Make UI bigger"
               >
@@ -526,7 +526,7 @@ export const Header: React.FC = () => {
                 {updater.status === 'downloaded' ? (
                   <button
                     onClick={updater.quitAndInstall}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-[11px] animate-bounce shadow-[0_0_12px_rgba(16,185,129,0.5)] transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyber-emerald hover:opacity-90 text-black font-mono font-bold text-[11px] transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
                     title={`Update v${updater.latestVersion} ready. Click to restart and install.`}
                   >
                     <DownloadCloud className="w-3.5 h-3.5" />
@@ -559,7 +559,7 @@ export const Header: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => updater.checkForUpdates()}
-                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-cyber-cyan hover:border-cyber-cyan transition-all text-[11px] font-mono cursor-pointer"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-cyber-cyan hover:border-cyber-cyan transition-colors text-[11px] font-mono cursor-pointer"
                     title={`ZeroBox Desktop v${updater.version || '2.0.0'}. Click to check GitHub for updates.`}
                   >
                     <RefreshCw className="w-3 h-3" />
@@ -583,7 +583,7 @@ export const Header: React.FC = () => {
         {/* Left: Active Target HUD / Quick Selector & Action Buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {activeMachine ? (
-            <div className="flex items-center gap-2 bg-cyber-card border border-cyber-emerald/50 px-2.5 py-1 rounded-lg text-xs font-mono shadow-[0_0_15px_rgba(16,185,129,0.25)] relative">
+            <div className="flex items-center gap-2 bg-cyber-card border border-cyber-emerald px-2 py-0.5 rounded-lg text-xs font-mono relative">
               <PlatformIcon platform={activeMachine.platform} className="w-4 h-4 flex-shrink-0" />
               
               {/* Machine Name & IP */}
@@ -612,7 +612,7 @@ export const Header: React.FC = () => {
                 ) : (
                   <button
                     onClick={handleQuickUserPwn}
-                    className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyber-bg hover:bg-cyber-amber hover:text-black text-cyber-amber border border-cyber-amber/50 transition-all flex items-center gap-0.5"
+                    className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyber-bg hover:bg-cyber-amber hover:text-black text-cyber-amber border border-cyber-amber/50 transition-colors flex items-center gap-0.5"
                     title="1-Click: Log User Foothold Pwn"
                   >
                     <Flag className="w-2.5 h-2.5" /> +USER
@@ -629,7 +629,7 @@ export const Header: React.FC = () => {
                 ) : (
                   <button
                     onClick={handleQuickRootPwn}
-                    className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyber-bg hover:bg-cyber-crimson hover:text-white text-cyber-crimson border border-cyber-crimson/60 animate-pulse transition-all flex items-center gap-0.5"
+                    className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyber-bg hover:bg-cyber-crimson hover:text-white text-cyber-crimson border border-cyber-crimson/60 animate-pulse transition-colors flex items-center gap-0.5"
                     title="1-Click: Log Root Pwn (Celebration!)"
                   >
                     <Flag className="w-2.5 h-2.5" /> +ROOT
@@ -726,7 +726,7 @@ export const Header: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setTargetSelectorOpen(!targetSelectorOpen)}
-                className="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border hover:border-cyber-cyan text-slate-800 dark:text-white text-xs font-semibold transition-all shadow-sm group"
+                className="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border hover:border-cyber-cyan text-slate-800 dark:text-white text-xs font-semibold transition-[box-shadow,background-color,border-color,color] shadow-sm group"
               >
                 <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-cyber-muted group-hover:bg-cyber-cyan transition-colors" />
                 <span>ENGAGE TARGET</span>
@@ -751,7 +751,7 @@ export const Header: React.FC = () => {
               setNewMachineModalOpen(true);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/15 hover:bg-emerald-200 dark:hover:bg-cyber-emerald/25 text-emerald-900 dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/40 hover:border-emerald-400 dark:hover:border-cyber-emerald font-mono text-xs font-bold transition-all shadow-sm active:scale-95 flex-shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/15 hover:bg-emerald-200 dark:hover:bg-cyber-emerald/25 text-emerald-900 dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/40 hover:border-emerald-400 dark:hover:border-cyber-emerald font-mono text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] shadow-sm active:scale-[0.98] flex-shrink-0"
             title="Deploy Custom Lab Box (Create Target)"
             aria-label="Deploy Custom Lab Box"
           >
@@ -765,11 +765,11 @@ export const Header: React.FC = () => {
               setReconAutomationModalOpen(true);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan font-mono text-xs font-semibold transition-all shadow-sm active:scale-95 flex-shrink-0"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-slate-700 dark:text-slate-300 hover:text-cyber-cyan font-mono text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] shadow-sm active:scale-[0.98] flex-shrink-0"
             title="Tactical Automation Hub (Nmap, Masscan, Rustscan, Nessus multi-format scan parser)"
             aria-label="Open Scans Automation Hub"
           >
-            <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
+            <Zap className="w-3.5 h-3.5 text-cyber-cyan" />
             <span className="hidden sm:inline">Scans</span>
           </button>
 
@@ -780,10 +780,10 @@ export const Header: React.FC = () => {
                 setTacticalArsenalOpen(!tacticalArsenalOpen);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-semibold transition-all shadow-sm active:scale-95 border ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] shadow-sm active:scale-[0.98] border ${
                 tacticalArsenalOpen
-                  ? 'bg-cyber-cyan/15 text-cyber-cyan border-cyber-cyan shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                  : 'bg-cyber-bg border-cyber-border hover:border-cyber-cyan text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan'
+                  ? 'bg-cyber-cyan/15 text-cyber-cyan border-cyber-cyan shadow-glow-cyan'
+                  : 'bg-cyber-bg border-cyber-border hover:border-cyber-cyan text-slate-700 dark:text-slate-300 hover:text-cyber-cyan'
               }`}
               title="Tactical Operations Arsenal (Flex Scorecard, Shortcuts, Pentest Reports, Payloads)"
               aria-label="Open Tactical Arsenal Menu"
@@ -814,7 +814,7 @@ export const Header: React.FC = () => {
                   }}
                   className="w-full px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-cyber-bg flex items-center gap-2.5 text-left text-slate-700 dark:text-slate-200 hover:text-cyber-cyan transition-colors group"
                 >
-                  <Terminal className="w-4 h-4 text-cyan-500 group-hover:scale-110 transition-transform flex-shrink-0" />
+                  <Terminal className="w-4 h-4 text-cyber-cyan group-hover:scale-110 transition-transform flex-shrink-0" />
                   <div className="flex flex-col">
                     <span className="font-semibold text-xs text-slate-900 dark:text-white">Reverse Shell Forge</span>
                     <span className="text-[10px] text-slate-500 dark:text-cyber-muted">Generate dynamic one-liners</span>
@@ -900,7 +900,7 @@ export const Header: React.FC = () => {
           </span>
 
           {/* LHOST */}
-          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${copiedVar === 'lhost' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-cyan'}`}>
+          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-colors ${copiedVar === 'lhost' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-cyan'}`}>
             <span className="text-[10px] text-cyber-muted font-bold flex-shrink-0">L:</span>
             <input
               type="text"
@@ -919,7 +919,7 @@ export const Header: React.FC = () => {
           </div>
 
           {/* LPORT */}
-          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${copiedVar === 'lport' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-cyan'}`}>
+          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-colors ${copiedVar === 'lport' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-cyan'}`}>
             <span className="text-[10px] text-cyber-muted font-bold flex-shrink-0">P:</span>
             <input
               type="text"
@@ -938,7 +938,7 @@ export const Header: React.FC = () => {
           </div>
 
           {/* TARGET */}
-          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-all ${copiedVar === 'target' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-emerald'}`}>
+          <div className={`flex items-center gap-1 bg-cyber-bg px-1.5 py-0.5 rounded border transition-colors ${copiedVar === 'target' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border focus-within:border-cyber-emerald'}`}>
             <span className="text-[10px] text-cyber-emerald font-bold flex-shrink-0">T:</span>
             <input
               type="text"
@@ -963,7 +963,7 @@ export const Header: React.FC = () => {
               navigate('/cheatsheets?tab=revshell');
               if (soundEnabled) playCyberSound('click');
             }}
-            className="flex items-center gap-1 bg-cyber-bg hover:bg-cyan-500/15 text-cyan-700 dark:text-cyber-cyan px-2 py-0.5 rounded border border-cyber-border hover:border-cyber-cyan transition-all text-[11px] font-semibold flex-shrink-0"
+            className="flex items-center gap-1 bg-cyber-bg hover:bg-cyber-cyan/15 text-cyber-cyan px-2 py-0.5 rounded border border-cyber-border hover:border-cyber-cyan transition-colors text-[11px] font-semibold flex-shrink-0"
             title="Launch Reverse Shell Forge with active LHOST/LPORT"
             aria-label="Reverse Shell Forge"
           >

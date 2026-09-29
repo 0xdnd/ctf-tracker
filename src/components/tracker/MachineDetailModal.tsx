@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,7 +41,7 @@ import {
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
-import { PipelineStatus, Difficulty } from '../../types';
+import { PipelineStatus, Difficulty, Machine } from '../../types';
 import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard, sanitizeExternalUrl, interpolateCommand } from '../../utils/helpers';
 import { ChecklistWorkspace } from '../checklist/ChecklistWorkspace';
 import { PlatformBadge } from '../common/PlatformBadge';
@@ -131,7 +131,12 @@ export const MachineDetailModal: React.FC = () => {
   const [isModalDragOver, setIsModalDragOver] = useState(false);
   const [modalScanToast, setModalScanToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
-  const machine = machines.find((m) => m.id === selectedMachineId);
+  const currentMachine = machines.find((m) => m.id === selectedMachineId);
+  const lastMachineRef = useRef<Machine | undefined>(currentMachine);
+  if (currentMachine) {
+    lastMachineRef.current = currentMachine;
+  }
+  const machine = currentMachine || lastMachineRef.current;
   const isActiveTarget = Boolean(machine && activeTargetId === machine.id);
 
   const handleModalFileDrop = (files: FileList | null) => {
@@ -174,7 +179,7 @@ export const MachineDetailModal: React.FC = () => {
 
   const checklistCompletedCount = useMemo(() => {
     if (!machine?.checklist?.itemsState) return 0;
-    return Object.values(machine.checklist.itemsState).filter((s) => s.status === 'done').length;
+    return Object.values(machine.checklist.itemsState).filter((s: any) => s.status === 'done').length;
   }, [machine?.checklist?.itemsState]);
 
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
@@ -196,7 +201,7 @@ export const MachineDetailModal: React.FC = () => {
     }
   }, [selectedMachineId]);
 
-  if (!selectedMachineId || !machine) return null;
+  if (!machine) return null;
 
   const handleCopy = async (text: string, type: 'user' | 'root') => {
     if (!text) return;
@@ -286,16 +291,20 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
   ];
 
   const modalContent = (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md font-mono overflow-y-auto"
       onClick={() => setSelectedMachineId(null)}
     >
       <motion.div 
         ref={modalRef}
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        initial={{ opacity: 0, scale: 0.98, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 10 }}
-        transition={{ duration: 0.15 }}
+        exit={{ opacity: 0, scale: 0.98, y: 8 }}
+        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
         role="dialog"
         aria-modal="true"
         aria-label={`Machine details for ${machine.name}`}
@@ -312,7 +321,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <CategoryBadge machine={machine} size="sm" />
               <DifficultyBadge difficulty={machine.difficulty} size="sm" />
               {machine.isActive && (
-                <span className="text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 flex items-center gap-1">
+                <span className="text-[11px] px-2 py-0.5 rounded-md font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 flex items-center gap-1">
                   <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   <span>ACTIVE LAB</span>
                 </span>
@@ -324,7 +333,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 <button
                   type="button"
                   onClick={() => setAssignIpMachineId(machine.id)}
-                  className="px-2 py-0.5 rounded bg-amber-100 dark:bg-cyber-amber/15 border border-amber-300 dark:border-cyber-amber/40 text-amber-900 dark:text-cyber-amber hover:bg-amber-200 dark:hover:bg-cyber-amber hover:text-black font-bold text-[10px] transition-all flex items-center gap-1 shadow-sm"
+                  className="px-2.5 py-1 rounded-md bg-amber-100 dark:bg-cyber-amber/15 border border-amber-300 dark:border-cyber-amber/40 text-amber-900 dark:text-cyber-amber hover:bg-amber-200 dark:hover:bg-cyber-amber hover:text-black font-bold text-[10px] transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1 shadow-xs active:scale-[0.98]"
                   title="Target has placeholder IP. Click to assign live spawned IP"
                 >
                   <Crosshair className="w-3 h-3" />
@@ -342,7 +351,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </a>
               )}
               {machine.isActive ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40">
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40">
                   <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   <span>ACTIVE LAB · WRITEUPS PROHIBITED (HTB ToS)</span>
                 </span>
@@ -367,7 +376,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     deleteMachine(machine.id);
                   }
                 }}
-                className="p-1.5 rounded bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-red-600 dark:hover:text-cyber-crimson border border-slate-200 dark:border-cyber-border transition-colors"
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-red-600 dark:hover:text-cyber-crimson border border-slate-200 dark:border-cyber-border transition-colors active:scale-[0.98]"
                 title="Delete Custom Machine"
               >
                 <Trash2 className="w-4 h-4" />
@@ -377,10 +386,10 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             {/* Direct Pentest Pre-Report Button */}
             <button
               onClick={() => setReportMachineId(machine.id)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-200 dark:hover:bg-purple-900/60 hover:text-purple-950 dark:hover:text-white font-semibold text-xs transition-all shadow-sm group"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-200 dark:hover:bg-purple-900/60 hover:text-purple-950 dark:hover:text-white font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-xs active:scale-[0.98]"
               title="Open Executive Pentest Pre-Report"
             >
-              <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+              <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
               <span className="hidden sm:inline">Pre-Report</span>
             </button>
 
@@ -389,7 +398,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 setSelectedMachineId(machine.id);
                 setReconAutomationModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-cyan-100 dark:bg-cyber-cyan/15 text-cyan-900 dark:text-cyber-cyan border border-cyan-300 dark:border-cyber-cyan/40 hover:bg-cyan-400 hover:text-black dark:hover:bg-cyber-cyan dark:hover:text-black font-semibold text-xs transition-all shadow-glow-cyan/20"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/15 text-cyan-900 dark:text-cyber-cyan border border-cyan-300 dark:border-cyber-cyan/40 hover:bg-cyan-400 hover:text-black dark:hover:bg-cyber-cyan dark:hover:text-black font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-xs active:scale-[0.98]"
               title="Open Multi-Format Scan Importer & Payload Crafter for this target"
             >
               <Zap className="w-3.5 h-3.5" />
@@ -405,14 +414,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 navigate(`/target/${machine.id}`);
                 setSelectedMachineId(null);
               }}
-              className="p-1.5 rounded bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-cyan-700 dark:hover:text-cyber-cyan border border-slate-200 dark:border-cyber-border hover:border-cyan-500 dark:hover:border-cyber-cyan transition-colors"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-cyan-700 dark:hover:text-cyber-cyan border border-slate-200 dark:border-cyber-border hover:border-cyan-500 dark:hover:border-cyber-cyan transition-colors active:scale-[0.98]"
               title="Open Dedicated Full Page Mission Workspace"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setSelectedMachineId(null)}
-              className="p-1.5 rounded bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-cyber-border transition-colors"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-cyber-border transition-colors active:scale-[0.98]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -423,7 +432,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
         <div className="flex-shrink-0 flex items-center border-b border-slate-200 dark:border-cyber-border bg-slate-100/90 dark:bg-cyber-bg/70 px-4 overflow-x-auto">
           <button
             onClick={() => setActiveModalTab('overview')}
-            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'overview'
                 ? 'border-emerald-600 dark:border-cyber-emerald text-emerald-900 dark:text-cyber-emerald bg-emerald-50 dark:bg-cyber-emerald/5'
                 : 'border-transparent text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -434,7 +443,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           </button>
           <button
             onClick={() => setActiveModalTab('commands')}
-            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'commands'
                 ? 'border-amber-600 dark:border-cyber-amber text-amber-900 dark:text-cyber-amber bg-amber-50 dark:bg-cyber-amber/10'
                 : 'border-transparent text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -445,7 +454,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           </button>
           <button
             onClick={() => setActiveModalTab('checklist')}
-            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'checklist'
                 ? 'border-cyan-600 dark:border-cyber-cyan text-cyan-900 dark:text-cyber-cyan bg-cyan-50 dark:bg-cyber-cyan/5'
                 : 'border-transparent text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -461,7 +470,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           </button>
           <button
             onClick={() => setActiveModalTab('report')}
-            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'report'
                 ? 'border-purple-600 dark:border-purple-400 text-purple-900 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/20'
                 : 'border-transparent text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -473,7 +482,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {!machine.isActive && Boolean(machine.officialSynopsis || machine.officialWalkthrough || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf) && (
             <button
               onClick={() => setActiveModalTab('walkthrough')}
-              className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 py-2.5 px-4 font-bold text-xs border-b-2 whitespace-nowrap transition-colors ${
                 activeModalTab === 'walkthrough'
                   ? 'border-emerald-600 dark:border-cyber-emerald text-emerald-900 dark:text-cyber-emerald bg-emerald-50 dark:bg-cyber-emerald/10'
                   : 'border-transparent text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -638,15 +647,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             ) : (
             <div className="space-y-6">
               {/* Header banner */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-50/90 dark:bg-cyber-bg/90 border border-emerald-400/50 dark:border-cyber-emerald/40 shadow-glow-emerald/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border">
                 <div>
-                  <div className="text-[10px] text-emerald-800 dark:text-cyber-emerald font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-cyber-emerald" /> OFFICIAL HACK THE BOX INTELLIGENCE BRIEFING
+                  <div className="text-[10px] text-emerald-800 dark:text-cyber-emerald font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" /> OFFICIAL HACK THE BOX INTELLIGENCE BRIEFING
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span>{machine.name}</span>
                     <span className="text-slate-500 dark:text-cyber-muted font-normal text-xs font-mono">({machine.ip})</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-cyber-emerald/20 text-emerald-900 dark:text-cyber-emerald font-bold border border-emerald-300 dark:border-cyber-emerald/40">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/20 text-emerald-900 dark:text-cyber-emerald font-bold border border-emerald-300 dark:border-cyber-emerald/40 font-mono">
                       OFFICIAL HTB
                     </span>
                   </h3>
@@ -679,7 +688,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   )}
                   <button
                     onClick={handleOpenInWriteup}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/20 border border-emerald-300 dark:border-cyber-emerald/50 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-bold text-xs transition-all shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/20 border border-emerald-300 dark:border-cyber-emerald/50 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-sm"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>Writeup Studio</span>
@@ -778,7 +787,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               setIsModalDragOver(false);
               handleModalFileDrop(e.dataTransfer.files);
             }}
-            className={`p-3.5 rounded-xl border transition-all relative overflow-hidden ${
+            className={`p-3.5 rounded-xl border transition-colors relative overflow-hidden ${
               isModalDragOver
                 ? 'border-2 border-dashed border-cyber-cyan bg-cyan-950/30'
                 : 'border-slate-200 dark:border-cyber-border bg-slate-50/70 dark:bg-cyber-bg/60'
@@ -859,7 +868,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   <button
                     key={stage.id}
                     onClick={() => handleStatusChange(stage.id)}
-                    className={`p-2 rounded-lg border text-center font-semibold transition-all ${
+                    className={`p-2 rounded-lg border text-center font-semibold transition-colors ${
                       isSelected
                         ? `bg-white dark:bg-cyber-bg border-2 ${stage.color} shadow-md`
                         : 'bg-slate-50 dark:bg-cyber-bg/40 border-slate-200 dark:border-cyber-border/80 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border'
@@ -892,7 +901,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     startTimer();
                     if (soundEnabled) playCyberSound('timer');
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-colors"
                 >
                   <Crosshair className="w-3.5 h-3.5" /> Set Active Target
                 </button>
@@ -901,14 +910,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   {isTimerRunning ? (
                     <button
                       onClick={pauseTimer}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-amber-100 dark:bg-cyber-amber/10 border border-amber-300 dark:border-cyber-amber/40 text-amber-900 dark:text-cyber-amber hover:bg-amber-500 hover:text-white dark:hover:bg-cyber-amber dark:hover:text-black font-semibold transition-all"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-amber-100 dark:bg-cyber-amber/10 border border-amber-300 dark:border-cyber-amber/40 text-amber-900 dark:text-cyber-amber hover:bg-amber-500 hover:text-white dark:hover:bg-cyber-amber dark:hover:text-black font-semibold transition-colors"
                     >
                       <Pause className="w-3.5 h-3.5" /> Pause
                     </button>
                   ) : (
                     <button
                       onClick={startTimer}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-all"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-colors"
                     >
                       <Play className="w-3.5 h-3.5" /> Resume
                     </button>
@@ -980,13 +989,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                       });
                     }}
                     placeholder="Enter user flag (e.g. 7a3f...)"
-                    className="w-full bg-white dark:bg-cyber-card px-2.5 py-1.5 rounded border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted text-xs focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan pr-16 font-mono shadow-sm"
+                    className="w-full bg-white dark:bg-cyber-card px-3 py-2 rounded-lg border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted text-xs focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan pr-16 font-mono shadow-xs"
                   />
                   <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setShowUserFlag(!showUserFlag)}
-                      className="p-1 rounded text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                      className="p-1 rounded-md text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-transform"
                       title={showUserFlag ? 'Hide Flag' : 'Show Flag'}
                     >
                       {showUserFlag ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -994,9 +1003,9 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     <button
                       type="button"
                       onClick={() => handleCopy(machine.userFlag || '', 'user')}
-                      className={`p-1 rounded transition-all flex items-center gap-1 ${
+                      className={`p-1 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center gap-1 ${
                         copiedUser
-                          ? 'bg-cyber-emerald text-black font-extrabold shadow-glow-emerald px-1.5'
+                          ? 'bg-cyber-emerald text-black font-extrabold px-1.5'
                           : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                       }`}
                       title="Copy User Flag"
@@ -1042,13 +1051,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                       });
                     }}
                     placeholder="Enter root flag (e.g. 9b1c...)"
-                    className="w-full bg-white dark:bg-cyber-card px-2.5 py-1.5 rounded border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald pr-16 font-mono shadow-sm"
+                    className="w-full bg-white dark:bg-cyber-card px-3 py-2 rounded-lg border border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald pr-16 font-mono shadow-xs"
                   />
                   <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setShowRootFlag(!showRootFlag)}
-                      className="p-1 rounded text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                      className="p-1 rounded-md text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-transform"
                       title={showRootFlag ? 'Hide Flag' : 'Show Flag'}
                     >
                       {showRootFlag ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -1056,9 +1065,9 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     <button
                       type="button"
                       onClick={() => handleCopy(machine.rootFlag || '', 'root')}
-                      className={`p-1 rounded transition-all flex items-center gap-1 ${
+                      className={`p-1 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center gap-1 ${
                         copiedRoot
-                          ? 'bg-cyber-emerald text-black font-extrabold shadow-glow-emerald px-1.5'
+                          ? 'bg-cyber-emerald text-black font-extrabold px-1.5'
                           : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                       }`}
                       title="Copy Root Flag"
@@ -1142,7 +1151,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               </div>
               <div
                 onClick={() => setShowHint(!showHint)}
-                className={`p-2 rounded border border-slate-200 dark:border-cyber-border text-xs cursor-pointer select-none transition-all ${
+                className={`p-2 rounded border border-slate-200 dark:border-cyber-border text-xs cursor-pointer select-none transition-colors ${
                   showHint ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white' : 'blur-sm text-transparent bg-slate-200/60 dark:bg-cyber-card/60'
                 }`}
                 title="Click to toggle hint spoiler"
@@ -1223,7 +1232,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                           setSelectedMachineId(null);
                           if (soundEnabled) playCyberSound('click');
                         }}
-                        className={`px-2.5 py-1 rounded text-xs font-mono font-bold border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-xs ${catDef?.badgeColor || 'bg-white dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white'}`}
+                        className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold border transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer flex items-center gap-1.5 shadow-xs ${catDef?.badgeColor || 'bg-white dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-900 dark:text-white'}`}
                         title={`Click to filter CTF Tracker targets with ${catDef?.label || catId}`}
                       >
                         <span>{catDef?.label || catId}</span>
@@ -1245,7 +1254,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 {machine.tags.map((t) => (
                   <span
                     key={t}
-                    className="px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-cyan-900 dark:text-cyber-cyan text-[11px] flex items-center gap-1"
+                    className="px-2 py-0.5 rounded-md bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-cyan-900 dark:text-cyber-cyan text-[11px] flex items-center gap-1"
                   >
                   {t}
                   <button
@@ -1272,12 +1281,12 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   }
                 }}
                 placeholder="Add tag (e.g. SSRF, Kerberoast)..."
-                className="flex-1 bg-white dark:bg-cyber-bg px-2.5 py-1.5 rounded border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyan-600 dark:focus:border-cyber-cyan placeholder-slate-400 dark:placeholder-cyber-muted"
+                className="flex-1 bg-white dark:bg-cyber-bg px-3 py-1.5 rounded-lg border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyan-600 dark:focus:border-cyber-cyan placeholder-slate-400 dark:placeholder-cyber-muted shadow-xs"
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-cyber-card dark:hover:bg-cyber-card/80 border border-slate-300 dark:border-cyber-border hover:border-cyan-600 dark:hover:border-cyber-cyan text-slate-900 dark:text-white text-xs font-medium"
+                className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-cyber-card dark:hover:bg-cyber-card/80 border border-slate-300 dark:border-cyber-border hover:border-cyan-600 dark:hover:border-cyber-cyan text-slate-900 dark:text-white text-xs font-medium active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] shadow-xs"
               >
                 Add
               </button>
@@ -1307,7 +1316,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   return (
                     <div
                       key={note.id}
-                      className="p-2.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-purple-400 dark:hover:border-purple-500/50 transition-all space-y-1.5 shadow-xs"
+                      className="p-2.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-purple-400 dark:hover:border-purple-500/50 transition-[box-shadow,background-color,border-color,color] space-y-1.5 shadow-xs"
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[210px]" title={note.title}>
@@ -1417,7 +1426,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           <div className="flex items-center gap-2">
             <button
               onClick={() => setReportMachineId(machine.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white font-bold text-xs transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
               title="Open Printable Pentest Report PDF"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -1425,13 +1434,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             </button>
             <button
               onClick={handleOpenInWriteup}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/40 text-cyan-900 dark:text-cyber-cyan hover:bg-cyan-500 hover:text-white dark:hover:bg-cyber-cyan dark:hover:text-black font-semibold transition-all shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/40 text-cyan-900 dark:text-cyber-cyan hover:bg-cyan-500 hover:text-white dark:hover:bg-cyber-cyan dark:hover:text-black font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
             >
               <FileText className="w-3.5 h-3.5" /> Writeup Studio
             </button>
             <button
               onClick={() => setSelectedMachineId(null)}
-              className="px-4 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white hover:border-emerald-500 transition-colors font-medium shadow-xs"
+              className="px-4 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white hover:border-emerald-500 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] font-medium shadow-xs"
             >
               Done
             </button>
@@ -1439,7 +1448,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
         </div>
 
         </motion.div>
-      </div>
+      </motion.div>
   );
 
   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;

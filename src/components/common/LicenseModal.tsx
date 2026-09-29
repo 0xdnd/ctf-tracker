@@ -102,43 +102,42 @@ export const LicenseModal: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   };
 
-  if (!licenseModalOpen) return null;
-
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
-        {/* Dark Cyber Backdrop */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
-          onClick={() => setLicenseModalOpen(false)}
-        />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
+      {/* Dark Cyber Backdrop */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
+        className="fixed inset-0 bg-black/85 backdrop-blur-md"
+        onClick={() => setLicenseModalOpen(false)}
+      />
 
-        {/* Modal Container */}
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 15 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 15 }}
-          className="relative w-full max-w-3xl my-auto bg-[#0d121f] border border-cyber-amber/50 rounded-2xl shadow-[0_0_50px_rgba(245,158,11,0.25)] text-gray-200 overflow-hidden z-10 flex flex-col max-h-[90vh] font-mono text-xs"
-        >
+      {/* Modal Container */}
+      <motion.div
+        initial={{ scale: 0.98, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.98, opacity: 0, y: 8 }}
+        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+        className="relative w-full max-w-3xl my-auto bg-cyber-card border border-cyber-border rounded-2xl shadow-xl text-cyber-text overflow-hidden z-10 flex flex-col max-h-[90vh] font-mono text-xs"
+      >
           {/* Top Tactical Terminal Header */}
-          <div className="px-5 py-3.5 bg-[#080c14] border-b border-cyber-border/80 flex items-center justify-between select-none">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyber-amber animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+          <div className="px-4 py-3 bg-cyber-bg border-b border-cyber-border flex items-center justify-between select-none">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-cyber-amber animate-pulse" />
               <Scale className="w-4 h-4 text-cyber-amber" />
               <span className="font-bold text-cyber-amber tracking-wider uppercase">
                 ZEROBOX // LEGAL & INTELLECTUAL PROPERTY COVENANT
               </span>
-              <span className="px-2 py-0.5 rounded text-[9px] font-black bg-cyber-amber/20 text-cyber-amber border border-cyber-amber/40">
+              <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-cyber-amber/20 text-cyber-amber border border-cyber-amber/40">
                 ZNSL-1.0
               </span>
             </div>
 
             <button
               onClick={() => setLicenseModalOpen(false)}
-              className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card transition-all"
+              className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               title="Close License (ESC)"
             >
               <X className="w-4 h-4" />
@@ -170,7 +169,7 @@ export const LicenseModal: React.FC = () => {
 
                 <button
                   onClick={handleOpenCreatorDossier}
-                  className="px-3 py-2 rounded-xl bg-cyber-emerald/15 hover:bg-cyber-emerald/25 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:text-white transition-all font-bold flex items-center gap-2 flex-shrink-0"
+                  className="px-3 py-2 rounded-xl bg-cyber-emerald/15 hover:bg-cyber-emerald/25 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:text-white transition-colors font-bold flex items-center gap-2 flex-shrink-0"
                   title="View Author Dossier & Verified Links"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
@@ -244,7 +243,7 @@ export const LicenseModal: React.FC = () => {
 
                 <button
                   onClick={handleCopyLicense}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-card border border-cyber-border hover:border-cyber-amber text-cyber-muted hover:text-white transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-card border border-cyber-border hover:border-cyber-amber text-cyber-muted hover:text-white transition-colors"
                   title="Copy complete license text to clipboard"
                 >
                   {copied ? (
@@ -326,7 +325,7 @@ export const LicenseModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyLicense}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-card hover:bg-cyber-card/80 text-gray-200 border border-cyber-border transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-card hover:bg-cyber-card/80 text-gray-200 border border-cyber-border active:scale-[0.98] transition-[transform,background-color,border-color,color] flex items-center gap-1.5"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy License'}</span>
@@ -334,7 +333,7 @@ export const LicenseModal: React.FC = () => {
 
               <button
                 onClick={() => setLicenseModalOpen(false)}
-                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyber-amber hover:bg-cyber-amber/90 text-black shadow-[0_0_12px_rgba(245,158,11,0.3)] transition-all"
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyber-amber hover:bg-cyber-amber/90 text-black active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               >
                 Understood & Agree
               </button>
@@ -342,6 +341,5 @@ export const LicenseModal: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
   );
 };

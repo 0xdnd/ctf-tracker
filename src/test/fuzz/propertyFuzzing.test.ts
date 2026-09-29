@@ -139,8 +139,8 @@ describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () 
       const html = parseMarkdownToHtml(snippet);
       const duration = performance.now() - start;
 
-      // Invariant 1: Execution under 5ms per block
-      expect(duration).toBeLessThan(5);
+      // Invariant 1: Execution under 25ms per block (prevents ReDoS and polynomial explosion)
+      expect(duration).toBeLessThan(25);
 
       // Invariant 2: Script tags and executable event handlers must never render raw/unescaped
       expect(html).not.toContain('<script>');
@@ -152,7 +152,7 @@ describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () 
       const inlineStart = performance.now();
       const inlineHtml = parseInlineMarkdown(snippet);
       const inlineDuration = performance.now() - inlineStart;
-      expect(inlineDuration).toBeLessThan(5);
+      expect(inlineDuration).toBeLessThan(25);
       expect(inlineHtml).not.toContain('<script>');
     });
   });

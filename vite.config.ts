@@ -183,8 +183,12 @@ export default defineConfig({
     port: 3000,
     open: false,
     watch: {
-      ignored: ['**/dist/**', '**/docs/**', '**/assets/**', '**/scratch/**', '**/release/**', '**/*.tmp**'],
+      ignored: ['**/dist/**', '**/docs/**', '**/assets/**', '**/scratch/**', '**/release/**', '**/*.tmp**', '**/*.zip', '**/.kilo/**', '**/*.log'],
     },
+  },
+  preview: {
+    host: true,
+    port: 3000,
   },
   optimizeDeps: {
     entries: ['index.html', 'src/**/*.{ts,tsx}'],

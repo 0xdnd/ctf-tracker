@@ -112,30 +112,34 @@ export const QuickAssignIpModal: React.FC = () => {
   };
 
   const content = (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm font-mono overflow-y-auto"
       onClick={handleClose}
       onKeyDown={handleKeyDown}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        initial={{ opacity: 0, scale: 0.98, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.15 }}
+        exit={{ opacity: 0, scale: 0.98, y: 8 }}
+        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
         onClick={(e) => e.stopPropagation()}
         data-testid="quick-assign-ip-modal"
-        className="w-full max-w-lg rounded-2xl border border-cyber-cyan/50 bg-cyber-card/95 shadow-2xl overflow-hidden shadow-glow-cyan/20 relative"
+        className="w-full max-w-lg rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden relative"
       >
         {/* Header Strip */}
-        <div className="flex items-center justify-between border-b border-cyber-border p-4 bg-cyber-bg/90">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/40 flex items-center justify-center text-cyber-cyan">
+        <div className="flex items-center justify-between border-b border-cyber-border p-4 bg-cyber-bg">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-cyan shadow-xs">
               <Crosshair className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
                 <span>ASSIGN SPAWNED TARGET IP</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyber-cyan/20 text-cyber-cyan font-semibold border border-cyber-cyan/30">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyber-bg text-cyber-cyan font-semibold border border-cyber-border">
                   LIVE INSTANCE
                 </span>
               </h3>
@@ -147,7 +151,7 @@ export const QuickAssignIpModal: React.FC = () => {
 
           <button
             onClick={handleClose}
-            className="p-1 rounded text-cyber-muted hover:text-white transition-colors"
+            className="p-1.5 rounded-md text-cyber-muted hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Close (Esc)"
           >
             <X className="w-4 h-4" />
@@ -265,11 +269,11 @@ export const QuickAssignIpModal: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-cyber-border p-3.5 sm:p-4 bg-cyber-bg/95 flex items-center justify-between">
+        <div className="border-t border-cyber-border p-3 sm:p-3.5 bg-cyber-bg flex items-center justify-between">
           <button
             type="button"
             onClick={handleClose}
-            className="px-3 py-1.5 rounded-lg border border-cyber-border text-cyber-muted hover:text-white text-xs transition-colors"
+            className="px-3.5 py-1.5 rounded-lg border border-cyber-border text-cyber-muted hover:text-white text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
           >
             Keep {machine.ip}
           </button>
@@ -278,7 +282,7 @@ export const QuickAssignIpModal: React.FC = () => {
             <button
               type="button"
               onClick={handleConfirm}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-cyber-emerald text-black font-extrabold text-xs hover:bg-cyber-emerald/90 transition-all shadow-glow-emerald"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyber-emerald text-black font-extrabold text-xs hover:bg-cyber-emerald/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
             >
               <span>Save & Engage Target</span>
               <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
@@ -286,7 +290,7 @@ export const QuickAssignIpModal: React.FC = () => {
           </div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 
   return typeof document !== 'undefined' ? createPortal(content, document.body) : content;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -28,12 +28,12 @@ export interface ThemeContextValue {
 const STORAGE_KEY = 'zerobox-theme-mode';
 
 export function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'dark';
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function getPrefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
@@ -53,21 +53,21 @@ export function extractCoordinates(
   }
 
   // MouseEvent with clientX/clientY
-  if ('clientX' in event && typeof event.clientX === 'number' && event.clientX > 0) {
+  if ('clientX' in event && typeof event.clientX === 'number' && event.clientX >= 0) {
     return { x: event.clientX, y: event.clientY };
   }
 
   // KeyboardEvent or element target - fall back to element center
-  if ('currentTarget' in event && event.currentTarget instanceof HTMLElement) {
-    const rect = event.currentTarget.getBoundingClientRect();
+  if ('currentTarget' in event && event.currentTarget && typeof (event.currentTarget as any).getBoundingClientRect === 'function') {
+    const rect = (event.currentTarget as any).getBoundingClientRect();
     return {
       x: Math.round(rect.left + rect.width / 2),
       y: Math.round(rect.top + rect.height / 2),
     };
   }
 
-  if ('target' in event && event.target instanceof HTMLElement) {
-    const rect = event.target.getBoundingClientRect();
+  if ('target' in event && event.target && typeof (event.target as any).getBoundingClientRect === 'function') {
+    const rect = (event.target as any).getBoundingClientRect();
     return {
       x: Math.round(rect.left + rect.width / 2),
       y: Math.round(rect.top + rect.height / 2),
@@ -80,12 +80,21 @@ export function extractCoordinates(
   };
 }
 
+let themeTransitionTimeout: ReturnType<typeof setTimeout> | number | null = null;
+
 export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
 
+  if (themeTransitionTimeout) {
+    clearTimeout(themeTransitionTimeout as any);
+    themeTransitionTimeout = null;
+  }
+
   if (animate) {
     root.classList.add('theme-transition');
+  } else {
+    root.classList.remove('theme-transition');
   }
 
   if (effective === 'dark') {
@@ -101,8 +110,9 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   }
 
   if (animate) {
-    window.setTimeout(() => {
+    themeTransitionTimeout = window.setTimeout(() => {
       root.classList.remove('theme-transition');
+      themeTransitionTimeout = null;
     }, 200);
   }
 }
@@ -134,7 +144,7 @@ export function useThemeEngine(): ThemeContextValue {
 
   // Listen for system theme preference changes
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       const newSys = e.matches ? 'dark' : 'light';
@@ -150,7 +160,7 @@ export function useThemeEngine(): ThemeContextValue {
 
   // Listen for reduced motion preference changes
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
@@ -160,9 +170,16 @@ export function useThemeEngine(): ThemeContextValue {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  const currentEffectiveThemeRef = useRef<'light' | 'dark'>(effectiveTheme);
+  useEffect(() => {
+    currentEffectiveThemeRef.current = effectiveTheme;
+  }, [effectiveTheme]);
+
   const setTheme = useCallback((mode: ThemeMode, eventOrCoords?: React.MouseEvent | React.KeyboardEvent | RippleCoordinates) => {
     const eff = mode === 'system' ? getSystemTheme() : mode;
-    const currentEff = theme === 'system' ? systemTheme : theme;
+    const currentEff = typeof document !== 'undefined'
+      ? (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+      : currentEffectiveThemeRef.current;
     
     if (eff === currentEff) {
         setThemeState(mode);
@@ -170,8 +187,9 @@ export function useThemeEngine(): ThemeContextValue {
         return;
     }
 
-    const updateDOMAndState = () => {
-      applyThemeToDOM(eff, false);
+    const updateDOMAndState = (animate = false) => {
+      applyThemeToDOM(eff, animate);
+      currentEffectiveThemeRef.current = eff;
       setThemeState(mode);
       try { localStorage.setItem(STORAGE_KEY, mode); } catch {}
     };
@@ -181,43 +199,51 @@ export function useThemeEngine(): ThemeContextValue {
       document.documentElement.classList.remove('theme-transition');
 
       const transition = (document as any).startViewTransition(() => {
-        updateDOMAndState();
+        updateDOMAndState(false);
       });
 
-      transition.ready.then(() => {
-        const radius = Math.hypot(
-          Math.max(coords.x, window.innerWidth - coords.x),
-          Math.max(coords.y, window.innerHeight - coords.y)
-        );
+      if (transition && transition.ready) {
+        transition.ready
+          .then(() => {
+            const radius = Math.hypot(
+              Math.max(coords.x, window.innerWidth - coords.x),
+              Math.max(coords.y, window.innerHeight - coords.y)
+            );
 
-        document.documentElement.animate(
-          {
-            clipPath: [
-              `circle(0px at ${coords.x}px ${coords.y}px)`,
-              `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
-            ],
-          },
-          {
-            duration: 350,
-            easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
-            pseudoElement: '::view-transition-new(root)',
-          }
-        );
-      });
+            if (typeof document.documentElement.animate === 'function') {
+              document.documentElement.animate(
+                {
+                  clipPath: [
+                    `circle(0px at ${coords.x}px ${coords.y}px)`,
+                    `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
+                  ],
+                },
+                {
+                  duration: 350,
+                  easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+                  pseudoElement: '::view-transition-new(root)',
+                }
+              );
+            }
+          })
+          .catch(() => {});
+      }
     } else {
-      applyThemeToDOM(eff, !getPrefersReducedMotion());
-      updateDOMAndState();
+      updateDOMAndState(!getPrefersReducedMotion());
     }
   }, [theme, systemTheme]);
 
   const toggleTheme = useCallback(
     (event?: React.MouseEvent | React.KeyboardEvent | RippleCoordinates) => {
-      const nextIsDark = !isDark;
+      const currentEff = typeof document !== 'undefined'
+        ? (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+        : currentEffectiveThemeRef.current;
+      const nextIsDark = currentEff !== 'dark';
       const nextMode: ThemeMode = nextIsDark ? 'dark' : 'light';
 
-      const updateDOMAndState = () => {
-        // Update DOM classes immediately without the CSS fade transition
-        applyThemeToDOM(nextMode, false);
+      const updateDOMAndState = (animate = false) => {
+        applyThemeToDOM(nextMode, animate);
+        currentEffectiveThemeRef.current = nextMode;
         setThemeState(nextMode);
         try {
           localStorage.setItem(STORAGE_KEY, nextMode);
@@ -232,33 +258,38 @@ export function useThemeEngine(): ThemeContextValue {
         document.documentElement.classList.remove('theme-transition');
 
         const transition = (document as any).startViewTransition(() => {
-          updateDOMAndState();
+          updateDOMAndState(false);
         });
 
-        transition.ready.then(() => {
-          const radius = Math.hypot(
-            Math.max(coords.x, window.innerWidth - coords.x),
-            Math.max(coords.y, window.innerHeight - coords.y)
-          );
+        if (transition && transition.ready) {
+          transition.ready
+            .then(() => {
+              const radius = Math.hypot(
+                Math.max(coords.x, window.innerWidth - coords.x),
+                Math.max(coords.y, window.innerHeight - coords.y)
+              );
 
-          document.documentElement.animate(
-            {
-              clipPath: [
-                `circle(0px at ${coords.x}px ${coords.y}px)`,
-                `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
-              ],
-            },
-            {
-              duration: 350,
-              easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
-              pseudoElement: '::view-transition-new(root)',
-            }
-          );
-        });
+              if (typeof document.documentElement.animate === 'function') {
+                document.documentElement.animate(
+                  {
+                    clipPath: [
+                      `circle(0px at ${coords.x}px ${coords.y}px)`,
+                      `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
+                    ],
+                  },
+                  {
+                    duration: 350,
+                    easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+                    pseudoElement: '::view-transition-new(root)',
+                  }
+                );
+              }
+            })
+            .catch(() => {});
+        }
       } else {
         // Fallback for older browsers
-        applyThemeToDOM(nextMode, !prefersReducedMotion);
-        updateDOMAndState();
+        updateDOMAndState(!prefersReducedMotion);
       }
     },
     [isDark, prefersReducedMotion]

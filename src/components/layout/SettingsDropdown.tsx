@@ -15,9 +15,11 @@ import {
   Github, 
   Award, 
   ShieldCheck, 
-  SlidersHorizontal 
+  SlidersHorizontal,
+  Users
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { CREATOR_PROFILE_LINKS, playCyberSound } from '../../utils/helpers';
 import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
@@ -103,10 +105,10 @@ export const SettingsDropdown: React.FC = () => {
           setIsOpen(!isOpen);
           if (soundEnabled) playCyberSound('click');
         }}
-        className={`p-1.5 rounded-lg border transition-all flex items-center justify-center group ${
+        className={`p-1.5 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center justify-center group ${
           isOpen
-            ? 'bg-zinc-800 text-cyan-400 border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-            : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 border-zinc-800/80 hover:border-zinc-700'
+            ? 'bg-cyber-card text-cyber-cyan border-cyber-cyan'
+            : 'bg-cyber-card text-cyber-muted hover:text-cyber-text border-cyber-border hover:border-cyber-borderGlow'
         }`}
         title="Settings & Workspace Utilities"
         aria-label="Settings and options"
@@ -142,7 +144,7 @@ export const SettingsDropdown: React.FC = () => {
               setIsOpen(false);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="w-full px-2 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 flex items-center justify-between text-left text-cyan-300 font-semibold transition-all group"
+            className="w-full px-2 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500/50 flex items-center justify-between text-left text-cyan-300 font-semibold transition-colors group"
           >
             <span className="flex items-center gap-2">
               <Settings className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-45 transition-transform duration-300" />
@@ -277,6 +279,22 @@ export const SettingsDropdown: React.FC = () => {
             <span className="text-[10px] text-zinc-500 font-mono">?</span>
           </button>
 
+          {/* Switch Operator */}
+          <button
+            onClick={() => {
+              useAuthStore.getState().setOperatorProfileModalOpen(true);
+              setIsOpen(false);
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className="w-full px-2 py-1.5 rounded-lg hover:bg-zinc-900 flex items-center justify-between text-left text-zinc-300 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Switch Operator / Log In</span>
+            </span>
+            <span className="text-[10px] text-zinc-500 font-mono">Alt+O</span>
+          </button>
+
           {/* Operator Dossier */}
           <button
             onClick={() => {
@@ -287,7 +305,7 @@ export const SettingsDropdown: React.FC = () => {
             className="w-full px-2 py-1.5 rounded-lg hover:bg-zinc-900 flex items-center gap-2 text-left text-zinc-300 transition-colors"
           >
             <Award className="w-3.5 h-3.5 text-purple-400" />
-            <span>Operator Profile & Stats</span>
+            <span>Creator Dossier (Daniel Dayan)</span>
           </button>
 
           {/* License */}

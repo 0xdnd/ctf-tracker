@@ -277,7 +277,7 @@ date: "${today}"
 author: "ZeroBox Operator"
 ---
 
-# ${m.name} — Writeup & Penetration Testing Report
+# ${m.name} - Writeup & Penetration Testing Report
 **Target IP:** \`${m.ip}\` | **OS:** ${m.os} | **Platform:** ${m.platform} | **Difficulty:** ${m.difficulty}
 
 ---
@@ -505,7 +505,7 @@ cat /root/root.txt
 
           <button
             onClick={handleCopyMarkdown}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-slate-900 dark:text-white text-xs font-semibold transition-all"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-slate-900 dark:text-white text-xs font-semibold transition-colors"
           >
             {copied ? (
               <>
@@ -522,7 +522,7 @@ cat /root/root.txt
 
           <button
             onClick={() => setCptsDrawerOpen(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-[box-shadow,background-color,border-color,color] shadow-sm ${
               cptsDrawerOpen
                 ? 'bg-purple-500 text-black border-purple-400 shadow-purple-500/30'
                 : 'bg-purple-950/30 border-purple-500/40 text-purple-300 hover:bg-purple-900/40 hover:text-white'
@@ -535,7 +535,7 @@ cat /root/root.txt
 
           <button
             onClick={() => setReportModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-cyan/40 hover:border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 text-xs font-bold transition-all shadow-glow-cyan/20"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 text-xs font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Generate print-ready Executive Penetration Testing Report"
           >
             <Printer className="w-3.5 h-3.5" />
@@ -552,7 +552,7 @@ cat /root/root.txt
                 updateMachine(selectedMachine.id, { writeupMarkdown: updated });
                 if (soundEnabled) playCyberSound('engage');
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald/15 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald/15 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-sm"
               title="Append official Hack The Box Walkthrough & Intelligence to this writeup"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -562,7 +562,7 @@ cat /root/root.txt
 
           <button
             onClick={handleDownloadMarkdown}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-emerald text-cyber-emerald font-bold text-xs hover:bg-cyber-emerald/10 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-emerald text-cyber-emerald font-bold text-xs hover:bg-cyber-emerald/10 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Export raw Markdown (.md) formatted for Obsidian or GitBook"
           >
             <Download className="w-3.5 h-3.5" />
@@ -571,7 +571,7 @@ cat /root/root.txt
 
           <button
             onClick={handleDownloadHtml}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald text-black font-bold text-xs hover:bg-cyber-emerald/90 transition-all shadow-glow-emerald"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald text-black font-bold text-xs hover:bg-cyber-emerald/90 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Export self-contained, air-gapped HTML writeup report with 1-click Print to PDF"
           >
             <Globe className="w-3.5 h-3.5" />
@@ -628,7 +628,7 @@ cat /root/root.txt
               matchingNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="p-3 rounded-lg bg-cyber-bg border border-cyber-border hover:border-purple-500/50 transition-all space-y-2 flex flex-col justify-between"
+                  className="p-3 rounded-lg bg-cyber-bg border border-cyber-border hover:border-purple-500/50 transition-colors space-y-2 flex flex-col justify-between"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-1">
@@ -657,7 +657,7 @@ cat /root/root.txt
                     <button
                       type="button"
                       onClick={() => handleInsertNote(note)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/20 hover:bg-purple-500 hover:text-black border border-purple-500/40 text-purple-300 text-[10px] font-bold transition-all"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/20 hover:bg-purple-500 hover:text-black border border-purple-500/40 text-purple-300 text-[10px] font-bold transition-colors"
                       title="Insert this note and commands into active writeup"
                     >
                       <Plus className="w-3 h-3" />

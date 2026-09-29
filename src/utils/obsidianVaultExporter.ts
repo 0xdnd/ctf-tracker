@@ -100,7 +100,7 @@ tags:
   MASTER_METHODOLOGY_FRAMEWORK.forEach((phase) => {
     const cleanTitle = phase.title.replace(/^Phase\s*\d+:\s*/i, '').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
     const phaseFileName = `Phase ${String(phase.phaseNumber).padStart(2, '0')} - ${cleanTitle}`;
-    indexContent += `- [[${phaseFileName}|${phase.title}]] — *${phase.subtitle}*
+    indexContent += `- [[${phaseFileName}|${phase.title}]] - *${phase.subtitle}*
 `;
   });
 

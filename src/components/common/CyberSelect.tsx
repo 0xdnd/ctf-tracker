@@ -33,6 +33,7 @@ export interface CyberSelectProps<T extends string = string> {
   position?: 'bottom' | 'top' | 'auto';
   soundEnabled?: boolean;
   'aria-label'?: string;
+  ariaLabel?: string;
 }
 
 export function CyberSelect<T extends string = string>({
@@ -52,18 +53,41 @@ export function CyberSelect<T extends string = string>({
   triggerClassName = '',
   menuClassName = '',
   align = 'left',
+  position = 'auto',
   soundEnabled = true,
-  'aria-label': ariaLabel,
+  'aria-label': explicitAriaLabel,
+  ariaLabel: camelAriaLabel,
 }: CyberSelectProps<T>) {
+  const ariaLabel = explicitAriaLabel || camelAriaLabel;
   const generatedId = useId();
   const id = explicitId || generatedId;
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const optionsListRef = useRef<HTMLDivElement>(null);
+
+  // Smart upward/downward auto-positioning based on viewport bounding rect
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      if (position === 'top') {
+        setOpenUpward(true);
+      } else if (position === 'bottom') {
+        setOpenUpward(false);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < 250 && rect.top > spaceBelow) {
+          setOpenUpward(true);
+        } else {
+          setOpenUpward(false);
+        }
+      }
+    }
+  }, [isOpen, position]);
 
   // Determine if search should be enabled (auto-enable if options > 8 and not explicitly disabled)
   const isSearchable = searchable ?? options.length > 8;
@@ -113,16 +137,16 @@ export function CyberSelect<T extends string = string>({
     }
   }, [isOpen, isSearchable]);
 
-  // Reset search and highlight on close
+  // Reset search and highlight on close or open
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery('');
       setHighlightedIndex(-1);
     } else {
-      const currentIndex = filteredOptions.findIndex((opt) => opt.value === value);
+      const currentIndex = options.findIndex((opt) => opt.value === value);
       setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
     }
-  }, [isOpen, filteredOptions, value]);
+  }, [isOpen, value]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -173,7 +197,7 @@ export function CyberSelect<T extends string = string>({
 
   // Size styling
   const sizeClasses = {
-    xs: 'px-2 py-0.5 text-[11px] gap-1.5 rounded',
+    xs: 'px-2.5 py-1 text-[11px] gap-1.5 rounded-lg',
     sm: 'px-2.5 py-1 text-xs gap-2 rounded-lg',
     md: 'px-3 py-2 text-xs gap-2.5 rounded-lg',
   }[size];
@@ -197,7 +221,7 @@ export function CyberSelect<T extends string = string>({
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block text-left font-mono ${className}`}
+      className={`relative inline-block text-left font-mono ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={handleKeyDown}
     >
       {/* Hidden input for HTML form submission compatibility */}
@@ -214,71 +238,82 @@ export function CyberSelect<T extends string = string>({
       )}
 
       {/* Main Trigger Button */}
-      <button
-        type="button"
-        id={id}
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-label={ariaLabel || label || placeholder}
-        onClick={() => {
-          if (!disabled) {
-            setIsOpen(!isOpen);
-            if (soundEnabled) playCyberSound('click');
-          }
-        }}
-        className={`w-full flex items-center justify-between border font-semibold transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-cyber-cyan/40 select-none ${sizeClasses} ${variantClasses} ${
-          isOpen ? 'border-cyber-cyan shadow-glow-cyan/20 ring-1 ring-cyber-cyan/30' : ''
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
-      >
-        <span className="flex items-center gap-2 truncate">
-          {/* Option Color Indicator Dot */}
-          {selectedOption?.color && (
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: selectedOption.color }}
+      {(() => {
+        const visibleLabel = selectedOption ? selectedOption.label : placeholder;
+        const computedAriaLabel = ariaLabel
+          ? (visibleLabel && !ariaLabel.toLowerCase().includes(visibleLabel.toLowerCase())
+              ? `${visibleLabel} - ${ariaLabel}`
+              : ariaLabel)
+          : (label ? `${label}: ${visibleLabel}` : visibleLabel);
+
+        return (
+          <button
+            type="button"
+            id={id}
+            disabled={disabled}
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+            aria-label={computedAriaLabel}
+            onClick={() => {
+              if (!disabled) {
+                setIsOpen(!isOpen);
+                if (soundEnabled) playCyberSound('click');
+              }
+            }}
+            className={`w-full flex items-center justify-between border font-semibold transition-[box-shadow,background-color,border-color,color] duration-150 focus:outline-none focus:ring-1 focus:ring-cyber-cyan/40 select-none ${sizeClasses} ${variantClasses} ${
+              isOpen ? 'border-cyber-cyan shadow-glow-cyan/20 ring-1 ring-cyber-cyan/30' : ''
+            } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
+          >
+            <span className="flex items-center gap-2 truncate">
+              {/* Option Color Indicator Dot */}
+              {selectedOption?.color && (
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: selectedOption.color }}
+                />
+              )}
+
+              {/* Option Icon */}
+              {selectedOption?.icon && (
+                <span className="flex-shrink-0 flex items-center">{selectedOption.icon}</span>
+              )}
+
+              {/* Label Text */}
+              <span className="truncate">
+                {selectedOption ? selectedOption.label : <span className="text-cyber-muted">{placeholder}</span>}
+              </span>
+            </span>
+
+            {/* Chevron Indicator */}
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-cyber-muted flex-shrink-0 transition-transform duration-200 ml-1.5 ${
+                isOpen ? 'rotate-180 text-cyber-cyan' : ''
+              }`}
             />
-          )}
-
-          {/* Option Icon */}
-          {selectedOption?.icon && (
-            <span className="flex-shrink-0 flex items-center">{selectedOption.icon}</span>
-          )}
-
-          {/* Label Text */}
-          <span className="truncate">
-            {selectedOption ? selectedOption.label : <span className="text-cyber-muted">{placeholder}</span>}
-          </span>
-        </span>
-
-        {/* Chevron Indicator */}
-        <ChevronDown
-          className={`w-3.5 h-3.5 text-cyber-muted flex-shrink-0 transition-transform duration-200 ml-1.5 ${
-            isOpen ? 'rotate-180 text-cyber-cyan' : ''
-          }`}
-        />
-      </button>
+          </button>
+        );
+      })()}
 
       {/* Dropdown Floating Popover */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            initial={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            exit={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             transition={{ duration: 0.12, ease: 'easeOut' }}
             role="listbox"
             id={`${id}-listbox`}
             aria-label={ariaLabel || label || placeholder}
-            className={`absolute z-50 mt-1 min-w-[170px] w-max max-w-xs rounded-xl border border-cyber-border bg-cyber-card/95 backdrop-blur-md shadow-2xl p-1 text-xs text-cyber-text ${
+            className={`absolute z-[100] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'} min-w-[180px] w-max max-w-xs rounded-xl border border-cyber-border bg-cyber-card shadow-2xl p-1.5 text-xs text-cyber-text ${
               align === 'right' ? 'right-0' : 'left-0'
             } ${menuClassName}`}
           >
             {/* Search Filter Header (when searchable or > 8 options) */}
             {isSearchable && (
-              <div className="px-1.5 pt-1 pb-1.5 border-b border-cyber-border/70 mb-1">
+              <div className="px-1.5 pt-1 pb-1.5 border-b border-slate-200/80 dark:border-cyber-border/70 mb-1">
                 <div className="relative flex items-center">
-                  <Search className="w-3 h-3 text-cyber-muted absolute left-2 pointer-events-none" />
+                  <Search className="w-3 h-3 text-slate-400 dark:text-cyber-muted absolute left-2 pointer-events-none" />
                   <input
                     ref={searchInputRef}
                     id={`${id || 'cyber-select'}-search-input`}
@@ -288,7 +323,7 @@ export function CyberSelect<T extends string = string>({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={searchPlaceholder}
-                    className="w-full bg-cyber-bg pl-7 pr-6 py-1 rounded-md border border-cyber-border/80 text-[11px] text-cyber-text placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan"
+                    className="w-full bg-slate-50 dark:bg-cyber-bg pl-7 pr-6 py-1 rounded-md border border-slate-200 dark:border-cyber-border/80 text-[11px] text-slate-900 dark:text-cyber-text placeholder-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
                     onClick={(e) => e.stopPropagation()}
                   />
                   {searchQuery && (
@@ -299,7 +334,7 @@ export function CyberSelect<T extends string = string>({
                         setSearchQuery('');
                         searchInputRef.current?.focus();
                       }}
-                      className="absolute right-1.5 text-cyber-muted hover:text-cyber-text p-0.5"
+                      className="absolute right-1.5 text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-cyber-text p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -314,7 +349,7 @@ export function CyberSelect<T extends string = string>({
               className="max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin pr-0.5"
             >
               {filteredOptions.length === 0 ? (
-                <div className="py-3 px-2 text-center text-cyber-muted text-[11px]">
+                <div className="py-3 px-2 text-center text-slate-400 dark:text-cyber-muted text-[11px]">
                   No matching options found
                 </div>
               ) : (
@@ -331,12 +366,12 @@ export function CyberSelect<T extends string = string>({
                       disabled={opt.disabled}
                       onClick={() => handleSelect(opt.value)}
                       onMouseEnter={() => setHighlightedIndex(idx)}
-                      className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-left transition-colors duration-100 ${
+                      className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-left transition-[transform,background-color,border-color,color] duration-100 active:scale-[0.98] ${
                         isSelected
-                          ? 'bg-cyber-cyan/15 text-cyber-cyan font-bold border border-cyber-cyan/30'
+                          ? 'bg-cyber-cyan/15 text-slate-900 dark:text-white font-bold border border-cyber-cyan/40 shadow-sm'
                           : isHighlighted
-                          ? 'bg-cyber-bg text-cyber-text'
-                          : 'text-cyber-muted hover:bg-cyber-bg hover:text-cyber-text'
+                          ? 'bg-slate-100 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text'
+                          : 'text-slate-600 dark:text-cyber-muted hover:bg-slate-100 dark:hover:bg-cyber-bg hover:text-slate-900 dark:hover:text-cyber-text'
                       } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center gap-2 truncate pr-2">
@@ -356,7 +391,7 @@ export function CyberSelect<T extends string = string>({
                         <div className="truncate">
                           <div className="truncate">{opt.label}</div>
                           {opt.description && (
-                            <div className="text-[10px] text-cyber-muted font-normal truncate">
+                            <div className="text-[10px] text-slate-400 dark:text-cyber-muted font-normal truncate">
                               {opt.description}
                             </div>
                           )}
@@ -365,7 +400,7 @@ export function CyberSelect<T extends string = string>({
 
                       <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
                         {opt.badge && <span>{opt.badge}</span>}
-                        {isSelected && <Check className="w-3.5 h-3.5 text-cyber-cyan" />}
+                        {isSelected && <Check className="w-4 h-4 text-cyber-cyan flex-shrink-0" />}
                       </div>
                     </button>
                   );
@@ -395,6 +430,7 @@ export interface CyberMultiSelectProps<T extends string = string> {
   triggerClassName?: string;
   menuClassName?: string;
   align?: 'left' | 'right';
+  position?: 'bottom' | 'top' | 'auto';
   soundEnabled?: boolean;
   'aria-label'?: string;
 }
@@ -415,16 +451,37 @@ export function CyberMultiSelect<T extends string = string>({
   triggerClassName = '',
   menuClassName = '',
   align = 'left',
+  position = 'auto',
   soundEnabled = true,
   'aria-label': ariaLabel,
 }: CyberMultiSelectProps<T>) {
   const generatedId = useId();
   const id = explicitId || generatedId;
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Smart upward/downward auto-positioning based on viewport bounding rect
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      if (position === 'top') {
+        setOpenUpward(true);
+      } else if (position === 'bottom') {
+        setOpenUpward(false);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < 250 && rect.top > spaceBelow) {
+          setOpenUpward(true);
+        } else {
+          setOpenUpward(false);
+        }
+      }
+    }
+  }, [isOpen, position]);
 
   const filteredOptions = useMemo(() => {
     if (!searchQuery.trim()) return options;
@@ -493,7 +550,7 @@ export function CyberMultiSelect<T extends string = string>({
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block text-left font-mono ${className}`}
+      className={`relative inline-block text-left font-mono ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -522,7 +579,7 @@ export function CyberMultiSelect<T extends string = string>({
             if (soundEnabled) playCyberSound('click');
           }
         }}
-        className={`w-full flex items-center justify-between border font-semibold transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-cyber-cyan/40 select-none ${sizeClasses} ${variantClasses} ${
+        className={`w-full flex items-center justify-between border font-semibold transition-[box-shadow,background-color,border-color,color] duration-150 focus:outline-none focus:ring-1 focus:ring-cyber-cyan/40 select-none ${sizeClasses} ${variantClasses} ${
           isOpen ? 'border-cyber-cyan shadow-glow-cyan/20 ring-1 ring-cyber-cyan/30' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
       >
@@ -555,20 +612,20 @@ export function CyberMultiSelect<T extends string = string>({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            initial={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            exit={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             transition={{ duration: 0.12, ease: 'easeOut' }}
             role="listbox"
             id={`${id}-listbox`}
             aria-label={ariaLabel || label || placeholder}
-            className={`absolute z-50 mt-1 min-w-[200px] w-max max-w-xs rounded-xl border border-cyber-border bg-cyber-card/95 backdrop-blur-md shadow-2xl p-1.5 text-xs text-cyber-text ${
+            className={`absolute z-[100] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'} min-w-[200px] w-max max-w-xs rounded-xl border border-cyber-border bg-cyber-card shadow-xl p-1 text-xs text-cyber-text ${
               align === 'right' ? 'right-0' : 'left-0'
             } ${menuClassName}`}
           >
-            <div className="px-1 pt-0.5 pb-1.5 border-b border-cyber-border/70 mb-1 space-y-1.5">
+            <div className="px-1 pt-0.5 pb-1.5 border-b border-slate-200/80 dark:border-cyber-border/70 mb-1 space-y-1.5">
               <div className="relative flex items-center">
-                <Search className="w-3 h-3 text-cyber-muted absolute left-2 pointer-events-none" />
+                <Search className="w-3 h-3 text-slate-400 dark:text-cyber-muted absolute left-2 pointer-events-none" />
                 <input
                   ref={searchInputRef}
                   id={`${id || 'cyber-multiselect'}-search-input`}

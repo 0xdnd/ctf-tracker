@@ -245,7 +245,7 @@ export const BackupModal: React.FC = () => {
           </div>
           <button
             onClick={() => setBackupModalOpen(false)}
-            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-cyber-border transition-all"
+            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-cyber-border transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -258,7 +258,7 @@ export const BackupModal: React.FC = () => {
               setActiveTab('backup');
               if (soundEnabled) playCyberSound('click');
             }}
-            className={`px-3 py-2 rounded-t-lg font-bold transition-all flex items-center gap-1.5 border-t border-x ${
+            className={`px-3 py-2 rounded-t-lg font-bold transition-colors flex items-center gap-1.5 border-t border-x ${
               activeTab === 'backup'
                 ? 'bg-cyber-card text-slate-900 dark:text-white border-cyber-purple border-b-transparent shadow-sm'
                 : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white border-transparent'
@@ -273,7 +273,7 @@ export const BackupModal: React.FC = () => {
               setActiveTab('bulk_pwn');
               if (soundEnabled) playCyberSound('click');
             }}
-            className={`px-3 py-2 rounded-t-lg font-bold transition-all flex items-center gap-1.5 border-t border-x ${
+            className={`px-3 py-2 rounded-t-lg font-bold transition-colors flex items-center gap-1.5 border-t border-x ${
               activeTab === 'bulk_pwn'
                 ? 'bg-cyber-card text-slate-900 dark:text-white border-cyber-emerald border-b-transparent shadow-sm'
                 : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white border-transparent'
@@ -320,13 +320,13 @@ export const BackupModal: React.FC = () => {
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={handleDownloadBackup}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-purple text-slate-900 dark:text-slate-900 dark:text-slate-900 dark:text-white font-bold hover:bg-cyber-purple/90 transition-all shadow-glow-purple"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-purple text-slate-900 dark:text-slate-900 dark:text-slate-900 dark:text-white font-bold hover:bg-cyber-purple/90 transition-[box-shadow,background-color,border-color,color] shadow-glow-purple"
                   >
                     <Download className="w-3.5 h-3.5" /> Download JSON File
                   </button>
                   <button
                     onClick={handleCopyBackup}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-purple transition-all"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-purple transition-colors"
                   >
                     {copied ? (
                       <>
@@ -363,7 +363,7 @@ export const BackupModal: React.FC = () => {
                   <button
                     disabled={isExportingVault}
                     onClick={handleExportObsidianVault}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-cyber-cyan text-white dark:text-black font-bold hover:bg-cyan-600 dark:hover:bg-cyan-300 transition-all shadow-glow-cyan disabled:opacity-50"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-cyber-cyan text-slate-950 dark:text-black font-bold hover:brightness-110 active:brightness-95 transition-[box-shadow,background-color,border-color,color] shadow-glow-cyan disabled:opacity-50"
                   >
                     {isExportingVault ? (
                       <>
@@ -390,7 +390,7 @@ export const BackupModal: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-slate-700 dark:text-white hover:border-cyber-cyan cursor-pointer transition-all">
+                  <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-slate-700 dark:text-white hover:border-cyber-cyan cursor-pointer transition-colors">
                     <Upload className="w-3.5 h-3.5 text-cyber-cyan" />
                     <span>Upload JSON File</span>
                     <input
@@ -433,7 +433,7 @@ export const BackupModal: React.FC = () => {
                 <button
                   disabled={!importText.trim()}
                   onClick={handleExecuteImport}
-                  className="px-3.5 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 text-cyan-700 dark:text-cyber-cyan border border-cyan-200 dark:border-cyber-cyan/40 hover:bg-cyan-100 dark:hover:bg-cyber-cyan dark:hover:text-black hover:text-cyan-900 font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3.5 py-1.5 rounded-lg bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/40 hover:bg-cyber-cyan hover:text-black font-bold transition-[opacity,background-color,border-color,color] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Import & Apply
                 </button>
@@ -475,7 +475,7 @@ export const BackupModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleResetSolvesToZero}
-                      className="w-full py-1.5 px-3 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 hover:bg-cyan-100 dark:hover:bg-cyber-cyan dark:hover:text-black border border-cyan-200 dark:border-cyber-cyan/40 text-cyan-700 dark:text-cyber-cyan text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-1.5 px-3 rounded-lg bg-cyber-cyan/15 hover:bg-cyber-cyan hover:text-black border border-cyber-cyan/40 text-cyber-cyan text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Reset Solves to 0%</span>
@@ -495,7 +495,7 @@ export const BackupModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleRestoreDanielSolves}
-                      className="w-full py-1.5 px-3 rounded-lg bg-amber-50 dark:bg-cyber-amber/15 hover:bg-amber-100 dark:hover:bg-cyber-amber dark:hover:text-black border border-amber-200 dark:border-cyber-amber/40 text-amber-700 dark:text-cyber-amber text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-1.5 px-3 rounded-lg bg-amber-50 dark:bg-cyber-amber/15 hover:bg-amber-100 dark:hover:bg-cyber-amber dark:hover:text-black border border-amber-200 dark:border-cyber-amber/40 text-amber-700 dark:text-cyber-amber text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Restore Daniel Dayan (63 Solves)</span>
@@ -515,7 +515,7 @@ export const BackupModal: React.FC = () => {
                 </p>
                 <button
                   onClick={handleResetProgress}
-                  className="px-3 py-1.5 rounded-lg bg-cyber-crimson/20 border border-cyber-crimson/50 text-cyber-crimson hover:bg-cyber-crimson hover:text-slate-900 dark:hover:text-slate-900 dark:text-slate-900 dark:text-slate-900 dark:text-white font-bold transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-lg bg-cyber-crimson/20 border border-cyber-crimson/50 text-cyber-crimson hover:bg-cyber-crimson hover:text-slate-900 dark:hover:text-slate-900 dark:text-slate-900 dark:text-slate-900 dark:text-white font-bold transition-colors flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset All Progress</span>
@@ -533,7 +533,7 @@ export const BackupModal: React.FC = () => {
                   </div>
                   <button
                     onClick={handleSamplePwns}
-                    className="px-2 py-1 rounded bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-[10px] text-cyber-cyan transition-all"
+                    className="px-2 py-1 rounded bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-[10px] text-cyber-cyan transition-colors"
                   >
                     Load Sample Preset
                   </button>
@@ -595,7 +595,7 @@ export const BackupModal: React.FC = () => {
                             <button
                               type="button"
                               onClick={handleCopyHtbSnippet}
-                              className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border hover:border-cyber-emerald text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] flex items-center gap-1 transition-all"
+                              className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border hover:border-cyber-emerald text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] flex items-center gap-1 transition-colors"
                             >
                               {copiedSnippet === 'htb' ? <Check className="w-3 h-3 text-cyber-emerald" /> : <Copy className="w-3 h-3" />}
                               <span>{copiedSnippet === 'htb' ? 'Copied!' : 'Copy Script'}</span>
@@ -613,7 +613,7 @@ export const BackupModal: React.FC = () => {
                             <button
                               type="button"
                               onClick={handleCopyThmSnippet}
-                              className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border hover:border-cyber-crimson text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] flex items-center gap-1 transition-all"
+                              className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border hover:border-cyber-crimson text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] flex items-center gap-1 transition-colors"
                             >
                               {copiedSnippet === 'thm' ? <Check className="w-3 h-3 text-cyber-emerald" /> : <Copy className="w-3 h-3" />}
                               <span>{copiedSnippet === 'thm' ? 'Copied!' : 'Copy Script'}</span>
@@ -695,9 +695,9 @@ export const BackupModal: React.FC = () => {
                     <div className="text-base font-bold text-cyber-emerald">{parseResult.allMatches.length}</div>
                     <div className="text-[10px] text-emerald-400 uppercase">Matched</div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-cyan-950/30 border border-cyan-800/40 text-center">
+                  <div className="p-2.5 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/30 text-center">
                     <div className="text-base font-bold text-cyber-cyan">{parseResult.newSolves.length}</div>
-                    <div className="text-[10px] text-cyan-400 uppercase">New Solves</div>
+                    <div className="text-[10px] text-cyber-cyan uppercase font-bold">New Solves</div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-cyber-bg border border-cyber-border text-center">
                     <div className="text-base font-bold text-cyber-muted">{parseResult.unmatched.length}</div>
@@ -762,7 +762,7 @@ export const BackupModal: React.FC = () => {
                 <button
                   onClick={handleApplyBulkSolves}
                   disabled={parseResult.newSolves.length === 0 || bulkApplied}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-cyber-emerald hover:bg-cyber-emerald/90 text-black shadow-glow-emerald disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-cyber-emerald hover:bg-cyber-emerald/90 text-black shadow-glow-emerald disabled:opacity-40 disabled:cursor-not-allowed transition-[box-shadow,background-color,border-color,color]"
                 >
                   {bulkApplied ? (
                     <>

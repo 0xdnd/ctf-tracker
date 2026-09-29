@@ -34,7 +34,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white">
-          <div className="w-full max-w-xl p-5 rounded-xl border border-cyber-amber/50 bg-white dark:bg-cyber-card shadow-xl space-y-3">
+          <div className="w-full max-w-xl p-5 rounded-2xl border border-cyber-amber/50 bg-white dark:bg-cyber-card shadow-xl space-y-3">
             <div className="flex items-center gap-3 border-b border-slate-200 dark:border-cyber-border pb-3">
               <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 animate-pulse" />
               <div>
@@ -47,7 +47,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
               </div>
             </div>
 
-            <div className="p-2.5 rounded bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-xs text-amber-700 dark:text-amber-400 font-mono overflow-x-auto">
+            <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-xs text-amber-700 dark:text-amber-400 font-mono overflow-x-auto">
               {this.state.error?.message || 'Failed to initialize module'}
             </div>
 
@@ -55,7 +55,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
               <button
                 type="button"
                 onClick={this.handleRetry}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-cyber-emerald dark:hover:bg-cyber-emerald/80 text-white dark:text-slate-950 font-bold text-xs transition-all shadow-sm active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-cyber-emerald dark:hover:bg-cyber-emerald/80 text-white dark:text-slate-950 font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-sm active:scale-[0.98]"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Retry Module</span>

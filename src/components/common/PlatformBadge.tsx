@@ -57,14 +57,14 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
   }[size];
 
   const themeClasses = isHTB
-    ? 'border-emerald-300 dark:border-cyber-emerald/50 bg-emerald-100 dark:bg-cyber-emerald/10 text-emerald-900 dark:text-cyber-emerald shadow-sm hover:border-emerald-500 dark:hover:border-cyber-emerald hover:shadow-md'
+    ? 'border-emerald-300 dark:border-emerald-500/40 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-400'
     : isTHM
-    ? 'border-red-300 dark:border-cyber-crimson/50 bg-red-100 dark:bg-cyber-crimson/10 text-red-900 dark:text-cyber-crimson shadow-sm hover:border-red-500 dark:hover:border-cyber-crimson hover:shadow-md'
-    : 'border-slate-300 dark:border-cyber-border bg-slate-100 dark:bg-cyber-card text-slate-800 dark:text-cyber-muted';
+    ? 'border-red-300 dark:border-red-500/40 bg-red-100 dark:bg-red-500/10 text-red-900 dark:text-red-400'
+    : 'border-slate-300 dark:border-[#27272a] bg-slate-100 dark:bg-[#18181b] text-slate-800 dark:text-zinc-400';
 
   return (
     <span
-      className={`inline-flex items-center rounded-md border font-mono font-bold tracking-wider uppercase transition-[transform,colors,box-shadow,border-color] duration-150 hover:scale-105 active:scale-95 select-none cursor-default ${sizeClasses} ${themeClasses} ${className}`}
+      className={`inline-flex items-center rounded-md border font-mono font-bold tracking-wider uppercase transition-colors select-none cursor-default ${sizeClasses} ${themeClasses} ${className}`}
     >
       <PlatformIcon platform={platform} className={`${iconSizeClasses} flex-shrink-0`} />
       {showLabel && <span>{platform}</span>}

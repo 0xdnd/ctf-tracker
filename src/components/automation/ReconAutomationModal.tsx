@@ -313,33 +313,35 @@ export const ReconAutomationModal: React.FC = () => {
     setTimeout(() => setCopiedPayloadKey(null), 2000);
   };
 
-  if (!reconAutomationModalOpen) return null;
-
   return (
-    <div 
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md font-mono"
       onClick={() => setReconAutomationModalOpen(false)}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        initial={{ opacity: 0, scale: 0.98, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.18 }}
-        className="w-full sm:max-w-5xl h-full sm:h-[92vh] max-h-none sm:max-h-[860px] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-cyber-cyan/40 bg-cyber-card shadow-2xl overflow-hidden relative z-10"
+        exit={{ opacity: 0, scale: 0.98, y: 8 }}
+        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+        className="w-full sm:max-w-5xl h-full sm:h-[92vh] max-h-none sm:max-h-[860px] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden relative z-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-cyber-border bg-cyber-bg/95 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/40 flex items-center justify-center text-cyber-cyan shadow-[0_0_12px_rgba(6,182,212,0.3)]">
-              <Zap className="w-5 h-5 animate-pulse" />
+        <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-cyber-border bg-cyber-bg">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-cyan">
+              <Zap className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-wide">
+                <h2 className="text-sm font-bold text-white tracking-wide">
                   ZEROBOX TACTICAL AUTOMATION HUB
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan font-bold">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-cyan font-bold">
                   MULTI-FORMAT SCAN & PAYLOAD CRAFTER
                 </span>
               </div>
@@ -351,7 +353,7 @@ export const ReconAutomationModal: React.FC = () => {
 
           <button
             onClick={() => setReconAutomationModalOpen(false)}
-            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-white hover:border-cyber-borderGlow transition-colors"
+            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-white hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -405,7 +407,7 @@ export const ReconAutomationModal: React.FC = () => {
             </div>
             <button
               onClick={() => setTargetMachineId(autoMatchedTarget.id)}
-              className="px-2.5 py-1 rounded bg-cyber-cyan text-black font-bold text-xs hover:bg-cyan-300 transition-colors shadow-sm flex items-center gap-1"
+              className="px-2.5 py-1 rounded-lg bg-cyber-cyan text-black font-bold text-xs hover:brightness-110 active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] shadow-sm flex items-center gap-1"
             >
               <span>Switch to {autoMatchedTarget.name}</span>
               <ArrowRight className="w-3 h-3" />
@@ -417,7 +419,7 @@ export const ReconAutomationModal: React.FC = () => {
         <div className="flex-shrink-0 flex items-center border-b border-cyber-border bg-cyber-card px-4 pt-2 gap-2 text-xs">
           <button
             onClick={() => setActiveTab('parser')}
-            className={`px-3 py-2 border-b-2 font-bold transition-all flex items-center gap-2 ${
+            className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
               activeTab === 'parser'
                 ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/5'
                 : 'border-transparent text-cyber-muted hover:text-white'
@@ -434,7 +436,7 @@ export const ReconAutomationModal: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('payloads')}
-            className={`px-3 py-2 border-b-2 font-bold transition-all flex items-center gap-2 ${
+            className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
               activeTab === 'payloads'
                 ? 'border-cyber-emerald text-cyber-emerald bg-cyber-emerald/5'
                 : 'border-transparent text-cyber-muted hover:text-white'
@@ -449,7 +451,7 @@ export const ReconAutomationModal: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('rules')}
-            className={`px-3 py-2 border-b-2 font-bold transition-all flex items-center gap-2 ${
+            className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
               activeTab === 'rules'
                 ? 'border-purple-400 text-purple-400 bg-purple-950/20'
                 : 'border-transparent text-cyber-muted hover:text-white'
@@ -471,25 +473,25 @@ export const ReconAutomationModal: React.FC = () => {
                   <span className="text-[10px] font-bold text-cyber-muted uppercase">LOAD SAMPLES:</span>
                   <button
                     onClick={() => setScanText(SAMPLE_LINUX_SCAN)}
-                    className="px-2.5 py-1 rounded bg-cyber-bg border border-cyber-border text-cyber-cyan hover:border-cyber-cyan text-[11px] transition-colors flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-cyber-cyan hover:border-cyber-cyan active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Linux Lame
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_WINDOWS_AD_SCAN)}
-                    className="px-2.5 py-1 rounded bg-cyber-bg border border-cyber-border text-blue-400 hover:border-blue-400 text-[11px] transition-colors flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-blue-400 hover:border-blue-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Windows AD
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_NMAP_XML)}
-                    className="px-2.5 py-1 rounded bg-cyber-bg border border-cyber-border text-emerald-400 hover:border-emerald-400 text-[11px] transition-colors flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-emerald-400 hover:border-emerald-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <FileCode className="w-3 h-3" /> Nmap XML
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_RUSTSCAN)}
-                    className="px-2.5 py-1 rounded bg-cyber-bg border border-cyber-border text-orange-400 hover:border-orange-400 text-[11px] transition-colors flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-orange-400 hover:border-orange-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Rustscan
                   </button>
@@ -508,7 +510,7 @@ export const ReconAutomationModal: React.FC = () => {
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-2.5 py-1 rounded bg-cyber-bg border border-cyber-border text-white hover:border-cyber-cyan text-[11px] flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-white hover:border-cyber-cyan active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
                   >
                     <Upload className="w-3 h-3 text-cyber-cyan" /> Upload Scan
                   </button>
@@ -516,7 +518,7 @@ export const ReconAutomationModal: React.FC = () => {
                   {scanText && (
                     <button
                       onClick={() => setScanText('')}
-                      className="text-cyber-muted hover:text-cyber-crimson text-[11px] flex items-center gap-1 transition-colors ml-1"
+                      className="text-cyber-muted hover:text-cyber-crimson active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color] ml-1"
                     >
                       <RotateCcw className="w-3 h-3" /> Clear
                     </button>
@@ -529,7 +531,7 @@ export const ReconAutomationModal: React.FC = () => {
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`relative rounded-xl transition-all ${
+                className={`relative rounded-xl transition-colors ${
                   isDragging 
                     ? 'ring-2 ring-cyber-cyan bg-cyber-cyan/10' 
                     : ''
@@ -543,7 +545,7 @@ export const ReconAutomationModal: React.FC = () => {
                   onChange={(e) => setScanText(e.target.value)}
                   placeholder="Paste or drag-and-drop raw scan logs here... Supports Nmap XML, Standard Nmap (.nmap), Grepable (.gnmap), Rustscan, and raw port lists."
                   rows={6}
-                  className="w-full bg-cyber-bg px-3.5 py-2.5 rounded-xl border border-cyber-border text-cyber-emerald font-mono text-xs focus:outline-none focus:border-cyber-cyan transition-all shadow-inner leading-relaxed"
+                  className="w-full bg-cyber-bg px-3.5 py-2.5 rounded-xl border border-cyber-border text-cyber-emerald font-mono text-xs focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-inner leading-relaxed"
                 />
 
                 {isDragging && (
@@ -568,7 +570,7 @@ export const ReconAutomationModal: React.FC = () => {
                         ? 'bg-orange-950/60 border border-orange-500/60 text-orange-400'
                         : parsedResults.format === 'gnmap'
                         ? 'bg-purple-950/60 border border-purple-500/60 text-purple-400'
-                        : 'bg-cyan-950/60 border border-cyan-500/60 text-cyan-400'
+                        : 'bg-cyber-cyan/15 border border-cyber-cyan/50 text-cyber-cyan'
                     }`}>
                       {parsedResults.format}
                     </span>
@@ -639,12 +641,12 @@ export const ReconAutomationModal: React.FC = () => {
                       disabled={isTargetFrozen || parsedResults.ports.length === 0}
                       onClick={handleApplyToMachine}
                       title={isTargetFrozen ? "Target is marked completed. Select an in-progress target." : undefined}
-                      className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
+                      className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm ${
                         isTargetFrozen
                           ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed opacity-60'
                           : appliedSuccess
-                          ? 'bg-cyber-emerald text-black shadow-glow-emerald'
-                          : 'bg-cyber-cyan text-black hover:bg-cyan-300 shadow-glow-cyan'
+                          ? 'bg-cyber-emerald text-black shadow-glow-emerald active:scale-[0.98]'
+                          : 'bg-cyber-cyan text-black hover:brightness-110 active:brightness-95 active:scale-[0.98] shadow-glow-cyan'
                       }`}
                     >
                       {isTargetFrozen ? (
@@ -749,7 +751,7 @@ export const ReconAutomationModal: React.FC = () => {
 
                   <div className="flex items-center gap-2">
                     <span className="text-slate-500 dark:text-cyber-muted text-[10px] uppercase font-bold">TARGET IP:</span>
-                    <span className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-cyan-700 dark:text-cyber-cyan font-mono font-bold text-xs">
+                    <span className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-cyber-cyan font-mono font-bold text-xs">
                       {payloadTargetIp}
                     </span>
                   </div>
@@ -783,7 +785,7 @@ export const ReconAutomationModal: React.FC = () => {
                           if (soundEnabled) playCyberSound('click');
                         }}
                         title={enc.description}
-                        className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-[transform,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.98] ${
                           isSelected
                             ? 'bg-cyber-emerald text-black shadow-glow-emerald/30 border border-cyber-emerald'
                             : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-borderGlow'
@@ -804,7 +806,7 @@ export const ReconAutomationModal: React.FC = () => {
                     <button
                       key={cat}
                       onClick={() => setPayloadCategory(cat)}
-                      className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+                      className={`px-3 py-1 rounded-md text-xs font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                         payloadCategory === cat
                           ? 'bg-cyber-cyan/15 border border-cyber-cyan text-cyber-cyan shadow-sm'
                           : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white'
@@ -867,7 +869,7 @@ export const ReconAutomationModal: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => copyPayload(rawCmd, item.id + '-raw')}
-                            className="px-2.5 py-1 rounded bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-cyan text-[11px] flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-cyan active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
                           >
                             {copiedPayloadKey === item.id + '-raw' ? (
                               <>
@@ -884,7 +886,7 @@ export const ReconAutomationModal: React.FC = () => {
 
                           <button
                             onClick={() => copyPayload(encodedCmd, item.id + '-enc')}
-                            className={`px-3 py-1 rounded text-[11px] flex items-center gap-1.5 transition-all font-bold ${
+                            className={`px-3 py-1 rounded-md text-[11px] flex items-center gap-1.5 transition-[transform,background-color,border-color,color] font-bold active:scale-[0.98] ${
                               copiedPayloadKey === item.id + '-enc'
                                 ? 'bg-cyber-emerald text-black shadow-glow-emerald'
                                 : 'bg-cyber-cyan/15 border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan hover:text-black shadow-sm'
@@ -1008,17 +1010,17 @@ export const ReconAutomationModal: React.FC = () => {
         {/* Modal Footer */}
         <div className="flex-shrink-0 p-3 px-4 border-t border-cyber-border bg-cyber-bg flex items-center justify-between text-xs">
           <span className="text-[11px] text-cyber-muted">
-            Press <kbd className="px-1.5 py-0.5 rounded bg-cyber-card border border-cyber-border text-white">ESC</kbd> to close
+            Press <kbd className="px-1.5 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-white">ESC</kbd> to close
           </span>
 
           <button
             onClick={() => setReconAutomationModalOpen(false)}
-            className="px-4 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-borderGlow transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             Close
           </button>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };

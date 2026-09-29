@@ -23,9 +23,12 @@ import {
   Save,
   Coffee,
   Scale,
-  Settings
+  Settings,
+  User,
+  BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../../store/useAuthStore';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
@@ -85,6 +88,10 @@ export const MobileNav: React.FC = () => {
   const [copiedVar, setCopiedVar] = React.useState<'lhost' | 'lport' | null>(null);
   const [justSavedMobile, setJustSavedMobile] = React.useState(false);
 
+  const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
+
   const { totalMachines, rootedMachines } = React.useMemo(() => {
     let rooted = 0;
     for (let i = 0; i < machines.length; i++) {
@@ -124,7 +131,7 @@ export const MobileNav: React.FC = () => {
           {/* Targets */}
           <button
             onClick={() => handleNavClick('/tracker', 'tracker')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-all relative ${
+            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors relative ${
               location.pathname === '/tracker' || location.pathname === '/' || location.pathname.startsWith('/target')
                 ? 'text-cyber-emerald font-bold'
                 : 'text-cyber-muted hover:text-white'
@@ -142,7 +149,7 @@ export const MobileNav: React.FC = () => {
           {/* Methodology */}
           <button
             onClick={() => handleNavClick('/methodology', 'methodology')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-all ${
+            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
               location.pathname.startsWith('/methodology')
                 ? 'text-cyber-cyan font-bold'
                 : 'text-cyber-muted hover:text-white'
@@ -161,8 +168,8 @@ export const MobileNav: React.FC = () => {
             }}
             className="flex flex-col items-center justify-center p-1 -mt-3.5"
           >
-            <div className="w-10 h-10 rounded-full bg-cyber-bg border-2 border-cyber-emerald shadow-[0_0_15px_rgba(16,185,129,0.5)] flex items-center justify-center text-cyber-emerald">
-              <Zap className="w-5 h-5 animate-pulse" />
+            <div className="w-9 h-9 rounded-full bg-cyber-bg border-2 border-cyber-emerald flex items-center justify-center text-cyber-emerald">
+              <Zap className="w-4 h-4" />
             </div>
             <span className="text-[9px] mt-0.5 text-cyber-emerald font-bold tracking-tight">Auto</span>
           </motion.button>
@@ -170,7 +177,7 @@ export const MobileNav: React.FC = () => {
           {/* Cheatsheets */}
           <button
             onClick={() => handleNavClick('/cheatsheets', 'cheatsheet')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-all ${
+            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
               location.pathname.startsWith('/cheatsheets')
                 ? 'text-purple-400 font-bold'
                 : 'text-cyber-muted hover:text-white'
@@ -180,17 +187,27 @@ export const MobileNav: React.FC = () => {
             <span className="text-[10px] mt-0.5 tracking-tight">Cheats</span>
           </button>
 
-          {/* Writeup Studio */}
+          {/* Notes Workspace */}
           <button
-            onClick={() => handleNavClick('/writeup', 'writeup')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-all ${
-              location.pathname.startsWith('/writeup')
-                ? 'text-cyber-amber font-bold'
+            onClick={() => {
+              toggleNotesWorkspace();
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors relative cursor-pointer ${
+              isNotesOpen
+                ? 'text-cyan-500 font-bold'
                 : 'text-cyber-muted hover:text-white'
             }`}
           >
-            <FileText className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5 tracking-tight">Writeup</span>
+            <div className="relative">
+              <BookOpen className="w-4 h-4" />
+              {openNotesCount > 0 && (
+                <span className="absolute -top-1 -right-2 text-[8px] px-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-bold">
+                  {openNotesCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] mt-0.5 tracking-tight">Notes</span>
           </button>
 
           {/* Mobile Drawer Menu Toggle */}
@@ -199,7 +216,7 @@ export const MobileNav: React.FC = () => {
               setMobileMenuOpen(!mobileMenuOpen);
               if (soundEnabled) playCyberSound('toggle');
             }}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-all ${
+            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
               mobileMenuOpen ? 'text-cyber-cyan' : 'text-cyber-muted hover:text-white'
             }`}
           >
@@ -236,7 +253,7 @@ export const MobileNav: React.FC = () => {
                   <CyberLogo size="md" />
                   <div>
                     <div className="font-bold text-white text-xs tracking-wider">
-                      ZEROBOX // MOBILE
+                      ZERO<span className="cyber-box-glow">BOX</span> // MOBILE
                     </div>
                     <div className="text-[10px] text-cyber-muted">Tactical CTF & Lab Suite</div>
                   </div>
@@ -256,23 +273,36 @@ export const MobileNav: React.FC = () => {
                 <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="text-[10px] uppercase font-bold text-cyber-muted">
-                      ACCOUNT: <span className="text-white font-bold">{user ? user.name : 'Google Guest'}</span>
+                      OPERATOR: <span className="text-white font-bold">{user ? user.name : 'Local Operator'}</span>
                     </div>
                     <div className="text-[10px] text-cyber-emerald font-bold">
                       {rootedMachines} / {totalMachines} Pwned
                     </div>
                   </div>
-                  <button
-                    onClick={handleMobileQuickSave}
-                    className={`w-full py-2 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 ${
-                      justSavedMobile
-                        ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
-                        : 'bg-cyber-emerald/15 border border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black'
-                    }`}
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>{justSavedMobile ? '✓ ALL DATA SAVED!' : '1-CLICK SAVE DATA'}</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleMobileQuickSave}
+                      className={`py-2 px-2 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5 ${
+                        justSavedMobile
+                          ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
+                          : 'bg-cyber-emerald/15 border border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black'
+                      }`}
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{justSavedMobile ? '✓ SAVED' : 'SAVE DATA'}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        useAuthStore.getState().setOperatorProfileModalOpen(true);
+                        if (soundEnabled) playCyberSound('click');
+                      }}
+                      className="py-2 px-2 rounded-lg font-bold text-xs bg-cyan-500/15 border border-cyan-500/40 text-cyber-cyan hover:bg-cyan-500 hover:text-black transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      <span>PROFILES</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* 1. Mobile Payload Variables Hub */}
@@ -283,7 +313,7 @@ export const MobileNav: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <span className="text-[10px] text-cyber-muted">LHOST (tun0):</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-cyber-card px-2 py-1 rounded border transition-all ${
+                      <div className={`flex items-center gap-1 mt-0.5 bg-cyber-card px-2 py-1 rounded border transition-colors ${
                         copiedVar === 'lhost' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border'
                       }`}>
                         <input
@@ -297,7 +327,7 @@ export const MobileNav: React.FC = () => {
                         />
                         <button
                           onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
-                          className={`p-1 rounded transition-all flex items-center gap-0.5 ${
+                          className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
                             copiedVar === 'lhost'
                               ? 'bg-cyber-emerald text-black font-bold shadow-glow-emerald px-1.5'
                               : 'text-cyber-muted hover:text-cyber-cyan'
@@ -318,7 +348,7 @@ export const MobileNav: React.FC = () => {
 
                     <div>
                       <span className="text-[10px] text-cyber-muted">LPORT:</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-cyber-card px-2 py-1 rounded border transition-all ${
+                      <div className={`flex items-center gap-1 mt-0.5 bg-cyber-card px-2 py-1 rounded border transition-colors ${
                         copiedVar === 'lport' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border'
                       }`}>
                         <input
@@ -332,7 +362,7 @@ export const MobileNav: React.FC = () => {
                         />
                         <button
                           onClick={() => handleCopyVar(globalVars.lport, 'lport')}
-                          className={`p-1 rounded transition-all flex items-center gap-0.5 ${
+                          className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
                             copiedVar === 'lport'
                               ? 'bg-cyber-emerald text-black font-bold shadow-glow-emerald px-1.5'
                               : 'text-cyber-muted hover:text-cyber-cyan'
@@ -358,6 +388,36 @@ export const MobileNav: React.FC = () => {
                   <div className="text-[10px] uppercase font-bold text-cyber-muted px-1 mb-1">
                     TACTICAL MODULES
                   </div>
+
+                  <button
+                    onClick={() => handleNavClick('/vault', 'vault')}
+                    className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
+                      location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')
+                        ? 'bg-amber-500/10 border-amber-500 text-amber-500 font-bold'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4 text-amber-500" />
+                      <span>Evidence & Loot Vault</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => handleNavClick('/writeup', 'writeup')}
+                    className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
+                      location.pathname.startsWith('/writeup')
+                        ? 'bg-cyber-amber/10 border-cyber-amber text-cyber-amber font-bold'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-cyber-amber" />
+                      <span>Writeup Studio</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
 
                   <button
                     onClick={() => handleNavClick('/exam', 'exam')}
@@ -448,13 +508,13 @@ export const MobileNav: React.FC = () => {
                     <ThemeToggle size="sm" showLabel />
                   </div>
 
-                  {/* Theme Presets (Minimalist Black & Blue, OLED, Slate, Light) */}
+                  {/* Theme Presets (Obsidian, Clean Monolith, Hack The Box) */}
                   <div className="p-3 rounded-lg border border-cyber-border bg-cyber-bg flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <span>Minimalist Theme</span>
+                        <span>Theme Preset</span>
                       </div>
-                      <div className="text-[10px] text-cyber-muted">Black & Blue, OLED, Slate, Light</div>
+                      <div className="text-[10px] text-cyber-muted">Obsidian, Clean Monolith, Hack The Box</div>
                     </div>
                     <ThemePresetDropdown />
                   </div>
@@ -465,7 +525,7 @@ export const MobileNav: React.FC = () => {
                       setSettingsModalOpen(true);
                       if (soundEnabled) playCyberSound('click');
                     }}
-                    className="w-full p-2.5 rounded-lg border border-cyber-border bg-cyber-bg hover:border-cyber-cyan/50 text-slate-700 dark:text-cyber-text hover:text-cyber-cyan flex items-center justify-between text-xs font-mono transition-all"
+                    className="w-full p-2.5 rounded-lg border border-cyber-border bg-cyber-bg hover:border-cyber-cyan/50 text-slate-700 dark:text-cyber-text hover:text-cyber-cyan flex items-center justify-between text-xs font-mono transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       <Settings className="w-4 h-4 text-cyber-cyan" />
@@ -515,7 +575,7 @@ export const MobileNav: React.FC = () => {
                       href={CREATOR_PROFILE_LINKS.coffee}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-[#FFDD00]/15 hover:bg-[#FFDD00]/25 border border-[#FFDD00]/40 text-[#FFDD00] hover:text-white flex items-center justify-center gap-1.5 font-bold text-[11px] transition-all"
+                      className="p-2 rounded-lg bg-[#FFDD00]/15 hover:bg-[#FFDD00]/25 border border-[#FFDD00]/40 text-[#FFDD00] hover:text-white flex items-center justify-center gap-1.5 font-bold text-[11px] transition-colors"
                     >
                       <Coffee className="w-3.5 h-3.5" />
                       <span>Buy a Coffee</span>
@@ -525,7 +585,7 @@ export const MobileNav: React.FC = () => {
                         setMobileMenuOpen(false);
                         setLicenseModalOpen(true);
                       }}
-                      className="p-2 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1 text-[11px] font-bold transition-all"
+                      className="p-2 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1 text-[11px] font-bold transition-colors"
                     >
                       <Scale className="w-3.5 h-3.5 text-cyber-amber" />
                       <span>License</span>

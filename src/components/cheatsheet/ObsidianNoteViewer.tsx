@@ -1,46 +1,44 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   X, 
   Copy, 
   Check, 
-  ChevronDown, 
-  ChevronRight, 
-  FileText, 
   Terminal, 
-  AlertTriangle, 
-  Lightbulb, 
-  Flame, 
-  ShieldAlert, 
-  Quote, 
-  HelpCircle, 
-  Info, 
-  CheckCircle2, 
   BookOpen, 
-  Link as LinkIcon, 
-  Clock, 
-  ArrowRight,
-  Code2,
-  FileCode,
+  Plus, 
+  Search, 
+  Layers, 
+  ExternalLink, 
+  PanelRight, 
+  Maximize2,
+  Minimize2,
+  Columns,
+  Rows,
+  Pin,
   Trash2,
-  List
+  MoveRight,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { 
   CptsNoteEntry, 
-  parseObsidianNote, 
-  resolveWikilink, 
-  getBacklinksForNote,
-  ObsidianCallout 
+  getAllCptsNotes,
+  getNoteById 
 } from '../../utils/obsidianManualUtils';
-import { interpolateCommand, playCyberSound } from '../../utils/helpers';
-import { sanitizeHtml, sanitizeSvg } from '../../utils/securityUtils';
+import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { GlobalVariables } from '../../types';
+import { OpenNoteOptions, SplitOrientation } from '../../types/workspace';
 import { ShareLinkButton } from '../common/ShareLinkButton';
+import { ObsidianTabContent } from './ObsidianTabContent';
+import { handleWorkspaceLinkClick, scrollToHeadingAnchor } from '../../utils/workspaceLinkInterceptor';
+import { useNotesWorkspaceStore, ObsidianViewMode } from '../../store/useNotesWorkspaceStore';
 
-export type ObsidianViewMode = 'reading' | 'raw';
+export type { ObsidianViewMode };
 export type ObsidianNoteLanguage = 'en' | 'he';
+export type ObsidianDisplayMode = 'modal' | 'docked' | 'popout';
 
-interface ObsidianNoteViewerProps {
+export interface ObsidianNoteViewerProps {
   note: CptsNoteEntry;
   globalVars: GlobalVariables;
   soundEnabled: boolean;
@@ -48,6 +46,25 @@ interface ObsidianNoteViewerProps {
   onNavigateToNote: (noteId: string) => void;
   onDeleteNote?: (noteId: string, noteTitle?: string) => void;
   defaultLanguage?: ObsidianNoteLanguage;
+  openNotes?: CptsNoteEntry[];
+  onSelectNote?: (noteId: string) => void;
+  onCloseTab?: (noteId: string) => void;
+  onNewTab?: (note: CptsNoteEntry) => void;
+  onCloseAllTabs?: () => void;
+  allAvailableNotes?: CptsNoteEntry[];
+  displayMode?: ObsidianDisplayMode;
+  onToggleDisplayMode?: () => void;
+  onPopoutWindow?: () => void;
+  isMaximized?: boolean;
+  onToggleMaximize?: () => void;
+  // Multi-Pane Split Workspace Props
+  isSplitView?: boolean;
+  splitOrientation?: SplitOrientation;
+  onToggleSplit?: (orientation?: SplitOrientation) => void;
+  onMoveTabToOtherPane?: (tabId: string) => void;
+  paneId?: string;
+  isPaneActive?: boolean;
+  onFocusPane?: () => void;
 }
 
 export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
@@ -58,31 +75,198 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   onNavigateToNote,
   onDeleteNote,
   defaultLanguage = 'en',
+  openNotes,
+  onSelectNote,
+  onCloseTab,
+  onNewTab,
+  onCloseAllTabs,
+  allAvailableNotes,
+  displayMode = 'modal',
+  onToggleDisplayMode,
+  onPopoutWindow,
+  isMaximized = false,
+  onToggleMaximize,
+  isSplitView = false,
+  splitOrientation = 'horizontal',
+  onToggleSplit,
+  onMoveTabToOtherPane,
+  paneId,
+  isPaneActive = true,
+  onFocusPane,
 }) => {
   const [viewMode, setViewMode] = useState<ObsidianViewMode>('reading');
   const [langMode, setLangMode] = useState<ObsidianNoteLanguage>(defaultLanguage);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [openCallouts, setOpenCallouts] = useState<Record<number, boolean>>({});
-  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
 
-  // Parse note markdown on the fly
-  const parsed = useMemo(() => {
-    return parseObsidianNote(note.rawMarkdown || '');
-  }, [note.rawMarkdown]);
+  // Reader Font Size scaling ('sm' | 'base' | 'lg' | 'xl')
+  const storeFontSize = useNotesWorkspaceStore((state) => state.fontSize);
+  const setStoreFontSize = useNotesWorkspaceStore((state) => state.setFontSize);
 
-  // Backlinks
-  const backlinks = useMemo(() => {
-    return getBacklinksForNote(note.id);
+  const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_note_font_size');
+      if (saved === 'sm' || saved === 'base' || saved === 'lg' || saved === 'xl') return saved;
+    } catch {}
+    return storeFontSize || 'base';
+  });
+
+  const handleIncreaseFontSize = useCallback(() => {
+    const next = fontSize === 'sm' ? 'base' : fontSize === 'base' ? 'lg' : 'xl';
+    try { localStorage.setItem('zerobox_note_font_size', next); } catch {}
+    setFontSize(next);
+    setStoreFontSize(next);
+  }, [fontSize, setStoreFontSize]);
+
+  const handleDecreaseFontSize = useCallback(() => {
+    const next = fontSize === 'xl' ? 'lg' : fontSize === 'lg' ? 'base' : 'sm';
+    try { localStorage.setItem('zerobox_note_font_size', next); } catch {}
+    setFontSize(next);
+    setStoreFontSize(next);
+  }, [fontSize, setStoreFontSize]);
+
+  // Maximize / Focus Mode state fallback if not managed by parent
+  const [internalMaximized, setInternalMaximized] = useState(false);
+  const effectiveMaximized = onToggleMaximize ? isMaximized : internalMaximized;
+
+  const handleToggleMaximize = useCallback(() => {
+    if (onToggleMaximize) {
+      onToggleMaximize();
+    } else {
+      setInternalMaximized((prev) => !prev);
+    }
+    if (soundEnabled) playCyberSound('click');
+  }, [onToggleMaximize, soundEnabled]);
+
+  // Tab Strip horizontal scrolling buttons
+  const handleScrollTabsLeft = useCallback(() => {
+    if (tabStripScrollRef.current) {
+      tabStripScrollRef.current.scrollBy({ left: -180, behavior: 'smooth' });
+    }
+  }, []);
+
+  const handleScrollTabsRight = useCallback(() => {
+    if (tabStripScrollRef.current) {
+      tabStripScrollRef.current.scrollBy({ left: 180, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Tab Pinning state
+  const [pinnedTabIds, setPinnedTabIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_pinned_tabs_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const togglePinTab = useCallback((tabId: string) => {
+    setPinnedTabIds((prev) => {
+      const next = prev.includes(tabId) ? prev.filter((id) => id !== tabId) : [...prev, tabId];
+      try {
+        localStorage.setItem('zerobox_pinned_tabs_v1', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    if (soundEnabled) playCyberSound('click');
+  }, [soundEnabled]);
+
+  // Multi-tab quick picker state
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const pickerInputRef = useRef<HTMLInputElement>(null);
+
+  // Vertical Quick-Tabs Drawer state
+  const [isTabsDrawerOpen, setIsTabsDrawerOpen] = useState(false);
+  const tabsDrawerRef = useRef<HTMLDivElement>(null);
+
+  // Tab strip scroll and active tab element ref for auto-scrolling
+  const tabStripScrollRef = useRef<HTMLDivElement>(null);
+  const activeTabElementRef = useRef<HTMLDivElement | null>(null);
+
+  // Root container ref for link interception & heading anchor scrolling
+  const workspaceContainerRef = useRef<HTMLDivElement>(null);
+
+  // Safe open notes array (strictly honoring authoritative openNotes)
+  const safeOpenNotes = useMemo(() => {
+    if (openNotes && openNotes.length > 0) {
+      return openNotes;
+    }
+    return [note];
+  }, [openNotes, note]);
+
+  // Order tabs so pinned tabs appear first on the left
+  const orderedTabs = useMemo(() => {
+    return [...safeOpenNotes].sort((a, b) => {
+      const aPinned = pinnedTabIds.includes(a.id);
+      const bPinned = pinnedTabIds.includes(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      return 0;
+    });
+  }, [safeOpenNotes, pinnedTabIds]);
+
+  // Auto-scroll active tab into view whenever note changes
+  useEffect(() => {
+    if (activeTabElementRef.current && typeof activeTabElementRef.current.scrollIntoView === 'function') {
+      activeTabElementRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
   }, [note.id]);
 
-  // Filter callouts to match active language only
-  const visibleCallouts = useMemo(() => {
-    if (!parsed.callouts || parsed.callouts.length === 0) return [];
-    return parsed.callouts.filter((c) => {
-      const hasHeb = /[\u0590-\u05FF]/.test(c.title + ' ' + c.content);
-      return langMode === 'he' ? hasHeb : !hasHeb;
-    });
-  }, [parsed.callouts, langMode]);
+  // Click-outside listener for quick note picker
+  useEffect(() => {
+    if (!isPickerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setIsPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPickerOpen]);
+
+  // Click-outside listener for vertical quick-tabs drawer
+  useEffect(() => {
+    if (!isTabsDrawerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tabsDrawerRef.current && !tabsDrawerRef.current.contains(e.target as Node)) {
+        setIsTabsDrawerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isTabsDrawerOpen]);
+
+  // Auto-focus picker search input when opened
+  useEffect(() => {
+    if (isPickerOpen) {
+      setTimeout(() => pickerInputRef.current?.focus(), 50);
+    } else {
+      setPickerSearch('');
+    }
+  }, [isPickerOpen]);
+
+  // Filtered notes for quick picker
+  const filteredPickerNotes = useMemo(() => {
+    const list = allAvailableNotes || [];
+    if (!pickerSearch.trim()) {
+      return list.slice(0, 15);
+    }
+    const q = pickerSearch.toLowerCase().trim();
+    return list.filter((n) => {
+      const matchTitle = (n.titleEn || n.title || '').toLowerCase().includes(q);
+      const matchHe = (n.titleHe || '').toLowerCase().includes(q);
+      const matchCat = (n.category || '').toLowerCase().includes(q);
+      const matchSub = (n.subCategory || '').toLowerCase().includes(q);
+      const matchTag = n.tags && n.tags.some((t) => t.toLowerCase().includes(q));
+      return matchTitle || matchHe || matchCat || matchSub || matchTag;
+    }).slice(0, 20);
+  }, [allAvailableNotes, pickerSearch]);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -91,1047 +275,1029 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     modalRef.current?.focus();
   }, [note.id]);
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
+  const handleCloseSpecificTab = useCallback((tabId: string) => {
+    if (pinnedTabIds.includes(tabId)) {
+      // Pinned tabs require explicit unpinning before closing
+      return;
+    }
+    if (safeOpenNotes.length <= 1) {
+      if (onCloseTab) {
+        onCloseTab(tabId);
+      }
+      onClose();
+    } else {
+      if (onCloseTab) {
+        onCloseTab(tabId);
+      } else {
         onClose();
       }
-    };
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [onClose]);
-
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    if (soundEnabled) playCyberSound('copy');
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleCopyAllCommands = () => {
-    if (!note.commands || note.commands.length === 0) return;
-    const interpolated = note.commands.map((cmd) => interpolateCommand(cmd, globalVars)).join('\n\n');
-    handleCopy(interpolated, 'all-cmds-' + note.id);
-  };
-
-  const handleCopyRawMarkdown = () => {
-    if (!note.rawMarkdown) return;
-    handleCopy(note.rawMarkdown, 'raw-md-' + note.id);
-  };
-
-  const toggleCallout = (index: number, defaultClosed: boolean = false) => {
-    setOpenCallouts((prev) => {
-      const current = prev[index] !== undefined ? prev[index] : !defaultClosed;
-      return { ...prev, [index]: !current };
-    });
-  };
-
-  // Helper to parse Obsidian inline formatting: ==highlight==, **bold**, *italic*, `code`, ~~strike~~
-  const parseInlineMarkdownText = (rawText: string, keyPrefix: string): React.ReactNode[] => {
-    if (!rawText) return [];
-    if (!/[=*`~]/.test(rawText)) return [rawText];
-    const tokenRegex = /(==[^=\n]+==|\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|~~[^~\n]+~~)/g;
-    const tokens: React.ReactNode[] = [];
-    let lastIdx = 0;
-    let tMatch;
-
-    while ((tMatch = tokenRegex.exec(rawText)) !== null) {
-      if (tMatch.index > lastIdx) {
-        tokens.push(rawText.substring(lastIdx, tMatch.index));
-      }
-      const token = tMatch[1];
-      const tKey = `${keyPrefix}-${tMatch.index}`;
-
-      if (token.startsWith('==') && token.endsWith('==') && token.length > 4) {
-        tokens.push(
-          <mark key={tKey} className="bg-amber-200/90 dark:bg-amber-400/25 text-amber-950 dark:text-amber-200 px-1 py-0.5 rounded font-medium">
-            {token.slice(2, -2)}
-          </mark>
-        );
-      } else if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
-        tokens.push(
-          <strong key={tKey} className="font-bold text-slate-900 dark:text-white">
-            {token.slice(2, -2)}
-          </strong>
-        );
-      } else if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
-        tokens.push(
-          <em key={tKey} className="italic">
-            {token.slice(1, -1)}
-          </em>
-        );
-      } else if (token.startsWith('`') && token.endsWith('`') && token.length > 2) {
-        tokens.push(
-          <code key={tKey} className="px-1.5 py-0.5 rounded font-mono text-[11px] bg-purple-100/70 dark:bg-black/60 border border-purple-200 dark:border-purple-900/40 text-purple-950 dark:text-cyan-300">
-            {token.slice(1, -1)}
-          </code>
-        );
-      } else if (token.startsWith('~~') && token.endsWith('~~') && token.length > 4) {
-        tokens.push(
-          <span key={tKey} className="line-through text-slate-400 dark:text-gray-500">
-            {token.slice(2, -2)}
-          </span>
-        );
-      } else {
-        tokens.push(token);
-      }
-
-      lastIdx = tMatch.index + token.length;
     }
+  }, [safeOpenNotes.length, onCloseTab, onClose, pinnedTabIds]);
 
-    if (lastIdx < rawText.length) {
-      tokens.push(rawText.substring(lastIdx));
-    }
+  // Keyboard navigation & tab cycling
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Guard against firing shortcuts when operator is typing in input or textarea
+      const target = e.target as HTMLElement | null;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
 
-    return tokens;
-  };
-
-  const renderWithWikilinks = (text: string): React.ReactNode => {
-    if (!text) return null;
-    if (!text.includes('[[')) {
-      return parseInlineMarkdownText(text, 'plain');
-    }
-    const parts: React.ReactNode[] = [];
-    const linkRegex = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g;
-    let lastIndex = 0;
-    let match;
-
-    while ((match = linkRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        const preText = text.substring(lastIndex, match.index);
-        parts.push(...parseInlineMarkdownText(preText, `pre-${match.index}`));
-      }
-
-      const target = match[1].trim();
-      const alias = match[2]?.trim() || target;
-      const resolved = resolveWikilink(target);
-
-      if (resolved.exists && resolved.targetNoteId) {
-        const targetId = resolved.targetNoteId;
-        parts.push(
-          <button
-            key={'wl-' + match.index}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (soundEnabled) playCyberSound('click');
-              onNavigateToNote(targetId);
-            }}
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded text-[11px] font-mono font-bold bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/80 hover:text-purple-950 dark:hover:text-white hover:border-purple-400 hover:shadow-sm transition-all cursor-pointer"
-            title={'Jump to note: ' + target}
-          >
-            <LinkIcon className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
-            <span>[[{alias}]]</span>
-          </button>
-        );
-      } else {
-        parts.push(
-          <span
-            key={'wl-unres-' + match.index}
-            className="inline-flex items-center gap-0.5 px-1 py-0.2 mx-0.5 rounded text-[10px] font-mono text-slate-500 dark:text-cyber-muted bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10"
-            title={'Vault reference (not indexed): ' + target}
-          >
-            [[{alias}]]
-          </span>
-        );
-      }
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      const remainingText = text.substring(lastIndex);
-      parts.push(...parseInlineMarkdownText(remainingText, `post-${lastIndex}`));
-    }
-
-    return parts;
-  };
-
-  const renderCallout = (callout: ObsidianCallout, index: number) => {
-    const isDefaultClosed = Boolean(callout.isFoldedByDefault);
-    const isOpen = openCallouts[index] !== undefined ? openCallouts[index] : !isDefaultClosed;
-
-    const typeConfig: Record<
-      ObsidianCallout['type'],
-      { border: string; bg: string; text: string; headerBg: string; icon: React.ReactNode }
-    > = {
-      abstract: {
-        border: 'border-purple-300 dark:border-purple-500/50',
-        bg: 'bg-purple-50 dark:bg-purple-950/20',
-        headerBg: 'bg-purple-100 dark:bg-purple-950/40',
-        text: 'text-purple-900 dark:text-purple-300',
-        icon: <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />,
-      },
-      tip: {
-        border: 'border-emerald-300 dark:border-emerald-500/50',
-        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-        headerBg: 'bg-emerald-100 dark:bg-emerald-950/40',
-        text: 'text-emerald-900 dark:text-emerald-300',
-        icon: <Lightbulb className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
-      },
-      warning: {
-        border: 'border-amber-300 dark:border-amber-500/50',
-        bg: 'bg-amber-50 dark:bg-amber-950/20',
-        headerBg: 'bg-amber-100 dark:bg-amber-950/40',
-        text: 'text-amber-900 dark:text-amber-300',
-        icon: <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
-      },
-      danger: {
-        border: 'border-rose-300 dark:border-rose-500/50',
-        bg: 'bg-rose-50 dark:bg-rose-950/20',
-        headerBg: 'bg-rose-100 dark:bg-rose-950/40',
-        text: 'text-rose-900 dark:text-rose-300',
-        icon: <Flame className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
-      },
-      example: {
-        border: 'border-blue-300 dark:border-blue-500/50',
-        bg: 'bg-blue-50 dark:bg-blue-950/20',
-        headerBg: 'bg-blue-100 dark:bg-blue-950/40',
-        text: 'text-blue-900 dark:text-blue-300',
-        icon: <Terminal className="w-4 h-4 text-blue-600 dark:text-blue-400" />,
-      },
-      important: {
-        border: 'border-fuchsia-300 dark:border-fuchsia-500/50',
-        bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/20',
-        headerBg: 'bg-fuchsia-100 dark:bg-fuchsia-950/40',
-        text: 'text-fuchsia-900 dark:text-fuchsia-300',
-        icon: <ShieldAlert className="w-4 h-4 text-fuchsia-600 dark:text-fuchsia-400" />,
-      },
-      cite: {
-        border: 'border-slate-300 dark:border-slate-500/50',
-        bg: 'bg-slate-100 dark:bg-slate-900/30',
-        headerBg: 'bg-slate-200 dark:bg-slate-900/50',
-        text: 'text-slate-800 dark:text-slate-300',
-        icon: <Quote className="w-4 h-4 text-slate-600 dark:text-slate-400" />,
-      },
-      success: {
-        border: 'border-green-300 dark:border-green-500/50',
-        bg: 'bg-green-50 dark:bg-green-950/20',
-        headerBg: 'bg-green-100 dark:bg-green-950/40',
-        text: 'text-green-900 dark:text-green-300',
-        icon: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />,
-      },
-      info: {
-        border: 'border-cyan-300 dark:border-cyan-500/50',
-        bg: 'bg-cyan-50 dark:bg-cyan-950/20',
-        headerBg: 'bg-cyan-100 dark:bg-cyan-950/40',
-        text: 'text-cyan-900 dark:text-cyan-300',
-        icon: <Info className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />,
-      },
-      question: {
-        border: 'border-violet-300 dark:border-violet-500/50',
-        bg: 'bg-violet-50 dark:bg-violet-950/20',
-        headerBg: 'bg-violet-100 dark:bg-violet-950/40',
-        text: 'text-violet-900 dark:text-violet-300',
-        icon: <HelpCircle className="w-4 h-4 text-violet-600 dark:text-violet-400" />,
-      },
-      note: {
-        border: 'border-purple-300 dark:border-purple-500/40',
-        bg: 'bg-purple-50 dark:bg-purple-950/20',
-        headerBg: 'bg-purple-100 dark:bg-purple-950/40',
-        text: 'text-purple-900 dark:text-purple-300',
-        icon: <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400" />,
-      },
-    };
-
-    const config = typeConfig[callout.type] || typeConfig.note;
-    const isRtl = /[\u0590-\u05FF]/.test(callout.title) || /[\u0590-\u05FF]/.test(callout.content);
-
-    return (
-      <div
-        key={'callout-' + index}
-        className={'rounded-lg border ' + config.border + ' ' + config.bg + ' overflow-hidden shadow-sm my-3'}
-        dir={isRtl ? 'rtl' : 'ltr'}
-      >
-        <button
-          type="button"
-          onClick={() => toggleCallout(index, isDefaultClosed)}
-          className={'w-full p-2.5 px-3 flex items-center justify-between gap-2 text-xs font-bold ' + config.headerBg + ' ' + config.text + ' hover:brightness-110 transition-all cursor-pointer'}
-        >
-          <div className="flex items-center gap-2">
-            {config.icon}
-            <span>{callout.title}</span>
-          </div>
-          {callout.isFoldable && (
-            <span className="text-cyber-muted text-[10px] font-mono flex items-center gap-1">
-              {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            </span>
-          )}
-        </button>
-
-        {isOpen && (
-          <div className={'p-3 text-xs leading-relaxed text-slate-800 dark:text-gray-200 ' + (isRtl ? 'text-right' : 'text-left') + ' whitespace-pre-wrap font-sans'}>
-            {renderWithWikilinks(callout.content)}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderMarkdownBody = (markdown: string, defaultRtl: boolean = false) => {
-    if (!markdown) return null;
-    const lines = markdown.split('\n');
-    const elements: React.ReactNode[] = [];
-    let inCodeBlock = false;
-    let codeLang = '';
-    let codeLines: string[] = [];
-    let inTable = false;
-    let tableLines: string[] = [];
-
-    const flushCodeBlock = (key: number) => {
-      const code = codeLines.join('\n');
-      const interpolated = interpolateCommand(code, globalVars);
-      const codeId = 'code-block-' + key;
-      const isCopied = copiedId === codeId;
-
-      elements.push(
-        <div key={'code-' + key} className="relative my-3 rounded-lg border border-purple-900/40 bg-slate-950 overflow-hidden shadow-md group">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-purple-900/40 text-[10px] font-mono text-purple-300">
-            <span className="flex items-center gap-1.5 uppercase font-bold text-cyan-400">
-              <Code2 className="w-3 h-3" />
-              {codeLang || 'COMMAND / SCRIPT'}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleCopy(interpolated, codeId)}
-              className={'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ' + (
-                isCopied
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                  : 'bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-purple-400'
-              )}
-            >
-              {isCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-              <span>{isCopied ? 'Copied' : 'Copy'}</span>
-            </button>
-          </div>
-          <pre className="p-3 text-xs font-mono text-cyan-300 overflow-x-auto whitespace-pre-wrap select-all selection:bg-purple-600 selection:text-white" dir="ltr">
-            {interpolated}
-          </pre>
-        </div>
-      );
-      codeLines = [];
-      inCodeBlock = false;
-    };
-
-    const flushTable = (key: number) => {
-      if (tableLines.length < 2) {
-        tableLines = [];
-        inTable = false;
+      // 1. Close modal or picker or drawer on Escape key
+      if (e.key === 'Escape') {
+        if (isPickerOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsPickerOpen(false);
+          return;
+        }
+        if (isTabsDrawerOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsTabsDrawerOpen(false);
+          return;
+        }
+        e.preventDefault();
+        onClose();
         return;
       }
-      const headerLine = tableLines[0];
-      const dataLines = tableLines.slice(2);
 
-      const parseRow = (line: string) => {
-        return line
-          .split('|')
-          .slice(1, -1)
-          .map((c) => c.trim());
-      };
+      if (isInput) return;
 
-      const headers = parseRow(headerLine);
-      const rows = dataLines.map(parseRow);
+      // 2. Toggle dock / modal viewing mode: Alt+M
+      if (e.altKey && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onToggleDisplayMode) {
+          if (soundEnabled) playCyberSound('click');
+          onToggleDisplayMode();
+        }
+        return;
+      }
 
-      elements.push(
-        <div key={'table-' + key} className="my-3 overflow-x-auto rounded-lg border border-cyber-border bg-cyber-card/60">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-purple-100 dark:bg-purple-950/40 border-b border-purple-200 dark:border-purple-900/40 text-[11px] font-mono text-purple-900 dark:text-purple-300 uppercase">
-              <tr>
-                {headers.map((h, hIdx) => (
-                  <th key={hIdx} className="py-2 px-3 font-bold">
-                    {renderWithWikilinks(h)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-purple-900/20 font-sans">
-              {rows.map((r, rIdx) => (
-                <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-cyber-card/40' : 'bg-cyber-bg/30'}>
-                  {r.map((cell, cIdx) => (
-                    <td key={cIdx} className="py-2 px-3 text-slate-800 dark:text-gray-200">
-                      {cell.startsWith('`') && cell.endsWith('`') ? (
-                        <code className="text-cyber-cyan font-mono bg-cyber-code px-1.5 py-0.5 rounded border border-cyber-border text-[11px]">
-                          {cell.slice(1, -1)}
-                        </code>
-                      ) : (
-                        renderWithWikilinks(cell)
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-      tableLines = [];
-      inTable = false;
+      // 2b. Toggle Maximize / Zen focus mode: Alt+F
+      if (e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleToggleMaximize();
+        return;
+      }
+
+      // 3. Close active tab: Alt+W or Ctrl+Shift+W (or Ctrl+W / Cmd+W)
+      if (
+        (e.altKey && e.key.toLowerCase() === 'w') ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'w') ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCloseSpecificTab(note.id);
+        return;
+      }
+
+      // 3. Tab cycling: Alt+ArrowRight / Alt+] (next) and Alt+ArrowLeft / Alt+[ (previous)
+      if (
+        (e.altKey && (e.key === 'ArrowRight' || e.key === ']')) ||
+        (e.ctrlKey && !e.shiftKey && e.key === 'Tab')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentIndex = safeOpenNotes.findIndex((n) => n.id === note.id);
+        if (currentIndex !== -1 && safeOpenNotes.length > 1) {
+          const nextIndex = (currentIndex + 1) % safeOpenNotes.length;
+          onSelectNote?.(safeOpenNotes[nextIndex].id);
+        }
+        return;
+      }
+
+      if (
+        (e.altKey && (e.key === 'ArrowLeft' || e.key === '[')) ||
+        (e.ctrlKey && e.shiftKey && e.key === 'Tab')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentIndex = safeOpenNotes.findIndex((n) => n.id === note.id);
+        if (currentIndex !== -1 && safeOpenNotes.length > 1) {
+          const prevIndex = (currentIndex - 1 + safeOpenNotes.length) % safeOpenNotes.length;
+          onSelectNote?.(safeOpenNotes[prevIndex].id);
+        }
+        return;
+      }
+
+      // 4. Direct tab jump: Alt+1..9
+      if (e.altKey && /^[1-9]$/.test(e.key)) {
+        const tabNumber = parseInt(e.key, 10);
+        if (tabNumber <= safeOpenNotes.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          onSelectNote?.(safeOpenNotes[tabNumber - 1].id);
+          return;
+        }
+      }
+
+      // 5. Open new tab picker: Alt+T or Ctrl+T
+      if (
+        (e.altKey && e.key.toLowerCase() === 't') ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsPickerOpen((prev) => !prev);
+        return;
+      }
+
+      // 6. Toggle Maximize / Full-Width Focus Mode: Alt+F
+      if (e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleToggleMaximize();
+        return;
+      }
     };
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [note.id, safeOpenNotes, onSelectNote, onClose, isPickerOpen, isTabsDrawerOpen, handleCloseSpecificTab, handleToggleMaximize]);
 
-      if (line.startsWith('```')) {
-        if (inCodeBlock) {
-          flushCodeBlock(i);
-        } else {
-          if (inTable) flushTable(i);
-          inCodeBlock = true;
-          codeLang = line.replace('```', '').trim();
-        }
-        continue;
-      }
+  // Universal Link Interception Capture Handler
+  const handleContainerLinkClick = useCallback((e: React.MouseEvent) => {
+    handleWorkspaceLinkClick(e, {
+      containerElement: workspaceContainerRef.current,
+      onOpenNote: (targetNoteId, options) => {
+        const pool = allAvailableNotes || getAllCptsNotes();
+        const found = getNoteById(targetNoteId, pool);
+        if (!found) return;
 
-      if (inCodeBlock) {
-        codeLines.push(line);
-        continue;
-      }
-
-      if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
-        inTable = true;
-        tableLines.push(line);
-        continue;
-      } else if (inTable) {
-        flushTable(i);
-      }
-
-      const checkMatch = line.match(/^-\s*\[([ xX])\]\s*(.+)$/);
-      if (checkMatch) {
-        const isChecked = checkedItems[i] !== undefined ? checkedItems[i] : checkMatch[1].toLowerCase() === 'x';
-        const checkText = checkMatch[2];
-        const isRtlCheck = /[\u0590-\u05FF]/.test(checkText);
-
-        elements.push(
-          <div
-            key={'chk-' + i}
-            className="flex items-start gap-2.5 my-1.5 text-xs text-slate-800 dark:text-gray-200 font-sans cursor-pointer group"
-            dir={isRtlCheck ? 'rtl' : 'ltr'}
-            onClick={() => setCheckedItems((prev) => ({ ...prev, [i]: !isChecked }))}
-          >
-            <div
-              className={'w-4 h-4 rounded border flex items-center justify-center mt-0.5 flex-shrink-0 transition-colors ' + (
-                isChecked
-                  ? 'bg-purple-600 border-purple-500 text-white'
-                  : 'border-cyber-border bg-cyber-bg group-hover:border-purple-400'
-              )}
-            >
-              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-            <span className={isChecked ? 'line-through text-cyber-muted' : ''}>
-              {renderWithWikilinks(checkText)}
-            </span>
-          </div>
-        );
-        continue;
-      }
-
-      if (line.startsWith('# ')) {
-        const titleText = line.replace('# ', '').trim();
-        const isRtlH = /[\u0590-\u05FF]/.test(titleText);
-        const headingId = 'section-' + (titleText.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]+/g, '-').replace(/^-+|-+$/g, '') || i);
-        elements.push(
-          <h1 key={'h1-' + i} id={headingId} dir={isRtlH ? 'rtl' : 'ltr'} className="text-lg font-bold text-slate-900 dark:text-white mt-4 mb-2 pb-1 border-b border-purple-200 dark:border-purple-900/40 scroll-mt-4">
-            {renderWithWikilinks(titleText)}
-          </h1>
-        );
-        continue;
-      }
-      if (line.startsWith('## ')) {
-        const titleText = line.replace('## ', '').trim();
-        const isRtlH = /[\u0590-\u05FF]/.test(titleText);
-        const headingId = 'section-' + (titleText.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]+/g, '-').replace(/^-+|-+$/g, '') || i);
-        elements.push(
-          <h2 key={'h2-' + i} id={headingId} dir={isRtlH ? 'rtl' : 'ltr'} className="text-sm font-bold text-purple-900 dark:text-purple-300 mt-4 mb-1.5 flex items-center gap-1.5 scroll-mt-4">
-            <span className="text-purple-500 dark:text-purple-400">§</span>
-            <span>{renderWithWikilinks(titleText)}</span>
-          </h2>
-        );
-        continue;
-      }
-      if (line.startsWith('### ')) {
-        const titleText = line.replace('### ', '').trim();
-        const isRtlH = /[\u0590-\u05FF]/.test(titleText);
-        const headingId = 'section-' + (titleText.toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]+/g, '-').replace(/^-+|-+$/g, '') || i);
-        elements.push(
-          <h3 key={'h3-' + i} id={headingId} dir={isRtlH ? 'rtl' : 'ltr'} className="text-xs font-bold text-cyan-700 dark:text-cyber-cyan mt-3 mb-1 scroll-mt-4">
-            {renderWithWikilinks(titleText)}
-          </h3>
-        );
-        continue;
-      }
-
-      // Obsidian Callout: > [!type][+-]? title
-      if (line.startsWith('> [!')) {
-        const headerMatch = line.match(/^>\s*\[!([a-zA-Z_-]+)\]([+-])?\s*(.*)$/);
-        if (headerMatch) {
-          const rawType = headerMatch[1].toLowerCase();
-          const foldChar = headerMatch[2];
-          const calloutTitle = headerMatch[3].trim();
-
-          let type: ObsidianCallout['type'] = 'note';
-          if (rawType === 'abstract' || rawType === 'summary' || rawType === 'tldr') type = 'abstract';
-          else if (rawType === 'tip' || rawType === 'hint') type = 'tip';
-          else if (rawType === 'warning' || rawType === 'caution' || rawType === 'attention') type = 'warning';
-          else if (rawType === 'danger' || rawType === 'bug' || rawType === 'failure' || rawType === 'error') type = 'danger';
-          else if (rawType === 'example' || rawType === 'meta') type = 'example';
-          else if (rawType === 'important') type = 'important';
-          else if (rawType === 'cite' || rawType === 'quote') type = 'cite';
-          else if (rawType === 'success' || rawType === 'check' || rawType === 'done') type = 'success';
-          else if (rawType === 'info') type = 'info';
-          else if (rawType === 'question' || rawType === 'help' || rawType === 'faq') type = 'question';
-
-          const bodyLines: string[] = [];
-          let j = i + 1;
-          while (j < lines.length && (lines[j].startsWith('>') || lines[j].trim() === '')) {
-            if (lines[j].startsWith('> [!')) break;
-            if (lines[j].trim() === '') {
-              if (j + 1 < lines.length && lines[j + 1].startsWith('>')) {
-                bodyLines.push('');
-                j++;
-                continue;
-              } else {
-                break;
-              }
-            }
-            bodyLines.push(lines[j].replace(/^>\s?/, ''));
-            j++;
+        if (options?.background) {
+          // Open in background tab without shifting active focus
+          if (onNewTab && !safeOpenNotes.some((n) => n.id === found.id)) {
+            onNewTab(found);
+            if (onSelectNote) onSelectNote(note.id); // keep active tab focused
           }
-          i = j - 1;
-
-          const calloutObj: ObsidianCallout = {
-            type,
-            title: calloutTitle || type.toUpperCase(),
-            content: bodyLines.join('\n').trim(),
-            isFoldable: foldChar === '+' || foldChar === '-',
-            isFoldedByDefault: foldChar === '-',
-          };
-
-          elements.push(renderCallout(calloutObj, i));
-          continue;
+        } else {
+          // Open and switch focus
+          if (safeOpenNotes.some((n) => n.id === found.id)) {
+            onSelectNote?.(found.id);
+          } else if (onNewTab) {
+            onNewTab(found);
+          } else {
+            onNavigateToNote(found.id);
+          }
         }
-      }
 
-      // Regular blockquote: > some quote text
-      if (line.startsWith('>')) {
-        const bqLines: string[] = [line.replace(/^>\s?/, '')];
-        let j = i + 1;
-        while (j < lines.length && lines[j].startsWith('>') && !lines[j].startsWith('> [!')) {
-          bqLines.push(lines[j].replace(/^>\s?/, ''));
-          j++;
+        // If an anchor was requested, scroll to it after rendering
+        if (options?.anchor && workspaceContainerRef.current) {
+          setTimeout(() => {
+            if (workspaceContainerRef.current && options.anchor) {
+              scrollToHeadingAnchor(workspaceContainerRef.current, options.anchor);
+            }
+          }, 100);
         }
-        i = j - 1;
-        const bqText = bqLines.join('\n');
-        const isRtlBq = /[\u0590-\u05FF]/.test(bqText);
+      },
+      notesPool: allAvailableNotes || getAllCptsNotes(),
+      currentNoteId: note.id,
+    });
+  }, [allAvailableNotes, safeOpenNotes, onNewTab, onSelectNote, onNavigateToNote, note.id]);
 
-        elements.push(
-          <blockquote
-            key={'bq-' + i}
-            dir={isRtlBq ? 'rtl' : 'ltr'}
-            className="my-3 pl-3.5 pr-2 py-2 border-l-3 border-purple-500 bg-purple-50/70 dark:bg-purple-950/20 rounded-r-lg text-xs text-slate-800 dark:text-gray-200 italic font-sans shadow-xs"
-          >
-            {renderWithWikilinks(bqText)}
-          </blockquote>
-        );
-        continue;
-      }
-
-      if (line.trim() === '---' || line.trim() === '***') {
-        elements.push(<hr key={'hr-' + i} className="my-4 border-purple-900/30" />);
-        continue;
-      }
-
-      if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-        const bulletText = line.trim().slice(2);
-        const isRtlB = /[\u0590-\u05FF]/.test(bulletText);
-        elements.push(
-          <div key={'b-' + i} dir={isRtlB ? 'rtl' : 'ltr'} className="flex items-start gap-2 my-1 text-xs text-slate-700 dark:text-gray-300 font-sans">
-            <span className="text-purple-400 mt-1">•</span>
-            <div className="flex-1">{renderWithWikilinks(bulletText)}</div>
-          </div>
-        );
-        continue;
-      }
-
-      // Sanitized SVG diagram support (e.g. Mermaid or architectural SVG diagrams embedded in Obsidian note)
-      if (line.trim().startsWith('<svg') && line.trim().endsWith('</svg>')) {
-        const cleanSvg = sanitizeSvg(line.trim());
-        if (cleanSvg) {
-          elements.push(
-            <div
-              key={'svg-' + i}
-              className="my-3 overflow-x-auto rounded-lg border border-purple-900/30 p-2 bg-slate-950/60"
-              dangerouslySetInnerHTML={{ __html: cleanSvg }}
-            />
-          );
-          continue;
-        }
-      }
-
-      // Sanitized HTML block support
-      if (line.trim().startsWith('<') && line.trim().endsWith('>') && !line.trim().startsWith('<!--')) {
-        const cleanHtml = sanitizeHtml(line.trim());
-        if (cleanHtml) {
-          elements.push(
-            <div
-              key={'html-' + i}
-              className="my-2"
-              dangerouslySetInnerHTML={{ __html: cleanHtml }}
-            />
-          );
-          continue;
-        }
-      }
-
-      if (line.trim()) {
-        const isRtlP = /[\u0590-\u05FF]/.test(line);
-        elements.push(
-          <p key={'p-' + i} dir={isRtlP ? 'rtl' : 'ltr'} className={'my-1.5 text-xs text-slate-700 dark:text-gray-300 leading-relaxed font-sans ' + (isRtlP ? 'text-right' : 'text-left')}>
-            {renderWithWikilinks(line)}
-          </p>
-        );
-      }
+  const handleContainerAuxClick = useCallback((e: React.MouseEvent) => {
+    if (e.button === 1) { // Middle click
+      handleContainerLinkClick(e);
     }
+  }, [handleContainerLinkClick]);
 
-    if (inCodeBlock) flushCodeBlock(lines.length);
-    if (inTable) flushTable(lines.length);
+  const handleCopyAllCommands = useCallback(() => {
+    if (!note.commands || note.commands.length === 0) return;
+    const all = note.commands.map((cmd) => interpolateCommand(cmd, globalVars)).join('\n\n');
+    safeCopyToClipboard(all);
+    setCopiedId('all-cmds-' + note.id);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedId(null), 2000);
+  }, [note.commands, note.id, globalVars, soundEnabled]);
 
-    return elements;
-  };
+  const handleCopyRawMarkdown = useCallback(() => {
+    const raw = note.rawMarkdown || (note as any).content || '';
+    safeCopyToClipboard(raw);
+    setCopiedId('raw-md-' + note.id);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedId(null), 2000);
+  }, [note.rawMarkdown, (note as any).content, note.id, soundEnabled]);
 
-  const modalContent = (
+  const innerCardContent = (
     <div
-      ref={modalRef}
-      tabIndex={-1}
-      onClick={onClose}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-fadeIn outline-none"
+      onClick={onFocusPane}
+      className={`h-full w-full flex flex-col bg-cyber-card border rounded-2xl overflow-hidden shadow-2xl transition-[box-shadow,background-color,border-color,color] ${
+        isPaneActive ? 'border-purple-500/50 shadow-purple-950/40 ring-1 ring-purple-500/30' : 'border-purple-900/30 opacity-95'
+      }`}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Field manual note: ${note.titleEn || note.title}`}
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-6xl max-h-[92vh] flex flex-col rounded-2xl border border-purple-500/40 bg-cyber-card shadow-2xl shadow-purple-950/50 overflow-hidden"
+      {/* Multi-Tab Workspace Strip (Obsidian / VS Code style) */}
+      <div 
+        dir="ltr"
+        className="flex items-center justify-between px-3 h-10 min-h-[40px] bg-slate-900/95 dark:bg-black/90 border-b border-purple-900/50 select-none flex-shrink-0 overflow-hidden"
       >
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-cyber-bg/90 border-b border-purple-900/40">
-          <div className="flex items-center gap-2 text-xs font-mono truncate max-w-xl">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 font-bold">
-              <BookOpen className="w-3.5 h-3.5 text-purple-400" />
-              <span>OFFENSIVE FIELD MANUAL</span>
-            </div>
-            <span className="text-cyber-muted">/</span>
-            <span className="text-cyber-muted truncate">{note.category}</span>
-            {note.subCategory && (
-              <>
-                <span className="text-cyber-muted">/</span>
-                <span className="text-purple-300 truncate">{note.subCategory}</span>
-              </>
-            )}
-            <span className="text-cyber-muted">/</span>
-            <span className="text-slate-900 dark:text-white font-bold truncate">{note.titleEn || note.title}</span>
-          </div>
+        {/* Left scroll chevron */}
+        <button
+          type="button"
+          onClick={handleScrollTabsLeft}
+          className="p-1 rounded hover:bg-purple-900/40 text-cyber-muted hover:text-white transition-colors flex-shrink-0"
+          title="Scroll tabs left"
+          aria-label="Scroll tabs left"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-black/50 border border-slate-300 dark:border-purple-900/40 text-[11px] font-mono">
-              <button
-                type="button"
-                onClick={() => setViewMode('reading')}
-                className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
-                  viewMode === 'reading'
-                    ? 'bg-purple-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                )}
-                title="Obsidian rich formatted reading mode"
-              >
-                Reading
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('raw')}
-                className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
-                  viewMode === 'raw'
-                    ? 'bg-purple-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                )}
-                title="View raw Obsidian markdown"
-              >
-                Raw MD
-              </button>
-            </div>
+        <div
+          ref={tabStripScrollRef}
+          data-testid="tab-strip-scroll-container"
+          dir="ltr"
+          className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar py-1 h-full"
+          onWheel={(e) => {
+            if (e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY;
+            }
+          }}
+        >
+          {orderedTabs.map((tab) => {
+            const isActive = tab.id === note.id;
+            const isPinned = pinnedTabIds.includes(tab.id);
 
-            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-black/50 border border-slate-300 dark:border-purple-900/40 text-[11px] font-mono">
-              <button
-                type="button"
-                data-testid="modal-lang-en"
-                onClick={() => setLangMode('en')}
-                className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
-                  langMode === 'en'
-                    ? 'bg-purple-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                )}
-                title="English technical playbook only"
-              >
-                🇬🇧 EN
-              </button>
-              <button
-                type="button"
-                data-testid="modal-lang-he"
-                onClick={() => setLangMode('he')}
-                className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
-                  langMode === 'he'
-                    ? 'bg-purple-600 text-white font-bold shadow-sm'
-                    : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-                )}
-                title="רשימות אישיות בעברית בלבד"
-              >
-                🇮🇱 עב
-              </button>
-            </div>
-
-            {note.commands && note.commands.length > 0 && (
-              <button
-                type="button"
-                onClick={handleCopyAllCommands}
-                className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 text-xs font-semibold transition-all cursor-pointer"
-                title="Copy all commands in note"
-              >
-                {copiedId === 'all-cmds-' + note.id ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-cyber-emerald" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Terminal className="w-3.5 h-3.5" />
-                    <span>Cmds ({note.commands.length})</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            <ShareLinkButton
-              path={`/cheatsheets?note=${note.id}`}
-              title={note.titleEn || note.title}
-              label="Share"
-              className="px-2.5 py-1"
-            />
-
-            <button
-              type="button"
-              onClick={handleCopyRawMarkdown}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-black/60 border border-cyber-border text-cyber-muted hover:text-white hover:border-purple-400 text-xs font-semibold transition-all cursor-pointer"
-              title="Copy raw markdown to paste into your Obsidian vault"
-            >
-              {copiedId === 'raw-md-' + note.id ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-cyber-emerald" />
-                  <span>MD Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Copy MD</span>
-                </>
-              )}
-            </button>
-
-            {onDeleteNote && (
-              <button
-                type="button"
+            return (
+              <div
+                key={tab.id}
+                ref={isActive ? activeTabElementRef : undefined}
+                role="tab"
+                aria-selected={isActive}
+                data-testid={`note-tab-${tab.id}`}
+                dir="ltr"
                 onClick={() => {
-                  const title = note.titleEn || note.title;
-                  if (window.confirm(`Delete field note "${title}" from your vault?`)) {
-                    onDeleteNote(note.id, title);
-                    onClose();
+                  if (soundEnabled && !isActive) playCyberSound('click');
+                  onSelectNote?.(tab.id);
+                }}
+                onAuxClick={(e) => {
+                  if (e.button === 1 && !isPinned) {
+                    e.preventDefault();
+                    if (soundEnabled) playCyberSound('click');
+                    handleCloseSpecificTab(tab.id);
                   }
                 }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded bg-rose-100 dark:bg-rose-950/40 hover:bg-rose-200 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800/60 hover:border-rose-500 text-rose-800 dark:text-rose-300 hover:text-rose-950 dark:hover:text-white text-xs font-semibold transition-all cursor-pointer shadow-sm"
-                title="Delete this field note"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  togglePinTab(tab.id);
+                }}
+                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 h-8 rounded-lg text-xs font-mono border cursor-pointer transition-colors max-w-[200px] sm:max-w-[240px] flex-shrink-0 ${
+                  isActive
+                    ? 'bg-purple-950/70 border-cyan-400/80 text-white font-bold shadow-md shadow-purple-950/60 ring-1 ring-cyan-400/60 before:absolute before:top-0 before:left-2 before:right-2 before:h-[2px] before:bg-gradient-to-r before:from-purple-400 before:via-cyan-400 before:to-purple-400 before:rounded-full'
+                    : 'bg-black/40 border-purple-900/40 text-cyber-muted hover:text-slate-200 hover:bg-purple-950/20 hover:border-purple-800/40'
+                }`}
+                title={`${tab.titleEn || tab.title} (${tab.category})${isPinned ? ' [Pinned]' : ''}`}
               >
-                <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-                <span className="hidden sm:inline">Delete</span>
-              </button>
-            )}
+                {/* Pin indicator */}
+                {isPinned ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePinTab(tab.id);
+                    }}
+                    className="text-cyan-400 hover:text-rose-400 transition-colors flex-shrink-0 p-0.5"
+                    title="Unpin tab"
+                  >
+                    <Pin className="w-3.5 h-3.5 fill-cyan-400/80 rotate-45" />
+                  </button>
+                ) : (
+                  <span className="flex-shrink-0 text-purple-400 text-xs">
+                    {tab.stage ? '🎯' : '📝'}
+                  </span>
+                )}
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-rose-500/50 hover:bg-rose-950/30 transition-all cursor-pointer"
-              title="Close note (Esc)"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+                <span className="truncate flex-1 text-left">
+                  {tab.titleEn || tab.title}
+                </span>
+
+                {/* Close Button (Hidden on Pinned Tabs) */}
+                {!isPinned && (
+                  <button
+                    type="button"
+                    data-testid={`close-tab-${tab.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (soundEnabled) playCyberSound('click');
+                      handleCloseSpecificTab(tab.id);
+                    }}
+                    className="p-0.5 rounded opacity-60 group-hover:opacity-100 hover:bg-rose-500/20 hover:text-rose-300 text-cyber-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
+                    title="Close tab (Alt+W)"
+                    aria-label={`Close tab ${tab.titleEn || tab.title}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          <div className="p-4 sm:p-5 rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50/50 dark:bg-black/40 space-y-3 shadow-inner">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <h1
-                  className={`text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2 ${
-                    langMode === 'he' ? 'font-sans text-right' : 'font-mono text-left'
-                  }`}
-                  dir={langMode === 'he' ? 'rtl' : 'ltr'}
-                >
-                  <span className="text-purple-400 flex-shrink-0">🛡️</span>
-                  <span>{langMode === 'he' ? (note.titleHe || note.title) : (note.titleEn || note.title)}</span>
-                </h1>
+        {/* Right scroll chevron */}
+        <button
+          type="button"
+          onClick={handleScrollTabsRight}
+          className="p-1 rounded hover:bg-purple-900/40 text-cyber-muted hover:text-white transition-colors flex-shrink-0"
+          title="Scroll tabs right"
+          aria-label="Scroll tabs right"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Pinned New Tab (+) Button - Permanently visible outside scroll container */}
+        <div className="relative flex-shrink-0 pl-1">
+          <button
+            type="button"
+            data-testid="new-tab-button"
+            onClick={() => setIsPickerOpen((prev) => !prev)}
+            className="h-8 px-2.5 rounded-lg bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/40 text-purple-300 hover:text-white transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 text-xs font-mono cursor-pointer flex-shrink-0 shadow-sm"
+            title="Open new tab (Ctrl+T / Alt+T)"
+            aria-label="Open note in new tab"
+          >
+            <Plus className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden md:inline text-[11px] font-bold">New Tab</span>
+          </button>
+
+          {/* Quick Note Picker Popover */}
+          {isPickerOpen && (
+            <div
+              ref={pickerRef}
+              data-testid="quick-note-picker"
+              className="absolute right-0 sm:left-0 top-full mt-1.5 w-72 sm:w-96 max-h-80 bg-cyber-card border border-purple-500/50 rounded-xl shadow-2xl shadow-purple-950/90 z-[100] overflow-hidden flex flex-col p-2 space-y-2 backdrop-blur-xl animate-fadeIn"
+            >
+              <div className="flex items-center justify-between px-2 pt-1 border-b border-purple-900/40 pb-1.5">
+                <span className="text-[11px] font-mono font-bold text-purple-300 flex items-center gap-1.5">
+                  <BookOpen className="w-3 h-3 text-purple-400" />
+                  FIELD MANUAL QUICK PICKER
+                </span>
+                <span className="text-[10px] font-mono text-cyber-muted">
+                  Esc to close
+                </span>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {note.stage && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30">
-                    Stage: {note.stage}
-                  </span>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-cyber-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  ref={pickerInputRef}
+                  type="text"
+                  data-testid="picker-search-input"
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      setIsPickerOpen(false);
+                    } else if (e.key === 'Enter' && filteredPickerNotes.length > 0) {
+                      const first = filteredPickerNotes[0];
+                      if (onNewTab) {
+                        onNewTab(first);
+                      } else if (onSelectNote) {
+                        onSelectNote(first.id);
+                      }
+                      setIsPickerOpen(false);
+                    }
+                  }}
+                  placeholder="Search manual notes (e.g. nmap, privesc, ad)..."
+                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-black/60 border border-purple-900/50 focus:border-purple-400 focus:outline-none text-xs font-mono text-slate-200 placeholder:text-cyber-muted/60"
+                />
+              </div>
+
+              <div className="overflow-y-auto max-h-56 space-y-1 pr-1 scrollbar-thin">
+                {filteredPickerNotes.length === 0 ? (
+                  <div className="py-4 text-center text-xs font-mono text-cyber-muted">
+                    No field notes match "{pickerSearch}"
+                  </div>
+                ) : (
+                  filteredPickerNotes.map((n) => {
+                    const isOpen = safeOpenNotes.some((openTab) => openTab.id === n.id);
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        data-testid={`picker-note-${n.id}`}
+                        onClick={() => {
+                          if (isOpen && onSelectNote) {
+                            onSelectNote(n.id);
+                          } else if (onNewTab) {
+                            onNewTab(n);
+                          } else {
+                            onNavigateToNote(n.id);
+                          }
+                          setIsPickerOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs font-mono hover:bg-purple-950/60 hover:text-white transition-colors border border-transparent hover:border-purple-500/30 cursor-pointer"
+                      >
+                        <div className="truncate flex-1">
+                          <div className="font-semibold text-slate-200 truncate">
+                            {n.titleEn || n.title}
+                          </div>
+                          <div className="text-[10px] text-cyber-muted truncate">
+                            {n.category} {n.subCategory ? `› ${n.subCategory}` : ''}
+                          </div>
+                        </div>
+                        {isOpen ? (
+                          <span className="text-[10px] font-bold text-cyber-cyan bg-cyan-950/40 border border-cyan-800/40 px-1.5 py-0.5 rounded flex-shrink-0">
+                            Open
+                          </span>
+                        ) : (
+                          <Plus className="w-3.5 h-3.5 text-purple-400 opacity-60 hover:opacity-100 flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
                 )}
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30">
-                  {note.difficulty || 'Core'}
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-muted">
-                  {note.noteType || 'Master Note'}
-                </span>
-                {note.dateModified && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono text-cyber-muted bg-black/40 border border-white/5 flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5" />
-                    {note.dateModified}
-                  </span>
-                )}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-purple-900/20 flex-wrap">
-              <div className="flex items-center gap-1 flex-wrap">
-                {note.tags &&
-                  note.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/40 text-purple-900 dark:text-purple-300 font-mono"
-                    >
-                      #{t}
-                    </span>
-                  ))}
-              </div>
-
-              {note.tools && note.tools.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-mono text-cyber-muted">Tools:</span>
-                  {note.tools.map((tool) => (
-                    <span
-                      key={tool}
-                      className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 font-mono font-bold"
-                    >
-                      {tool}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {viewMode === 'raw' && (
-            <div className="rounded-xl border border-purple-900/40 bg-cyber-code overflow-hidden shadow-md">
-              <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-purple-900/40 text-xs font-mono text-purple-300">
-                <span className="flex items-center gap-2">
-                  <FileCode className="w-3.5 h-3.5 text-cyber-cyan" />
-                  <span>RAW OBSIDIAN MARKDOWN ({(note.rawMarkdown || '').length} chars)</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyRawMarkdown}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600 text-white font-bold text-xs hover:bg-purple-500 transition-colors cursor-pointer"
-                >
-                  <Copy className="w-3 h-3" />
-                  <span>Copy Markdown</span>
-                </button>
-              </div>
-              <pre className="p-4 text-xs font-mono text-gray-300 overflow-x-auto whitespace-pre-wrap select-all selection:bg-purple-600 selection:text-white">
-                {note.rawMarkdown}
-              </pre>
             </div>
           )}
+        </div>
 
-          {viewMode === 'reading' && (
-            <div className="space-y-6">
-              {/* Obsidian Outline / Table of Contents Chips */}
-              {parsed.tableOfContents && parsed.tableOfContents.length > 1 && (
-                <div className="flex items-center gap-1.5 p-2 px-3 rounded-xl bg-purple-50/80 dark:bg-black/30 border border-purple-200 dark:border-purple-900/30 overflow-x-auto scrollbar-thin text-xs shadow-xs">
-                  <div className="flex items-center gap-1 text-[11px] font-mono text-purple-900 dark:text-purple-300 font-bold pr-1 border-r border-purple-200 dark:border-purple-800/40 flex-shrink-0">
-                    <List className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    <span>OUTLINE:</span>
-                  </div>
-                  {parsed.tableOfContents.map((toc, tIdx) => (
+        {/* Right tab strip controls */}
+        <div 
+          dir="ltr"
+          className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 text-[10px] font-mono text-cyber-muted flex-shrink-0"
+        >
+          {/* Quick-Tabs Drawer / Popover Toggle */}
+          <div className="relative" ref={tabsDrawerRef}>
+            <button
+              type="button"
+              data-testid="toggle-tabs-drawer"
+              onClick={() => setIsTabsDrawerOpen((prev) => !prev)}
+              className={`h-7 px-2.5 rounded-lg border text-xs font-mono font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isTabsDrawerOpen
+                  ? 'bg-purple-900/80 border-cyan-400 text-white shadow-md shadow-purple-950/50'
+                  : 'bg-purple-950/50 hover:bg-purple-900/60 border-purple-900/50 hover:border-purple-400 text-purple-300 hover:text-white'
+              }`}
+              title="View and navigate all open tabs vertically"
+              aria-label={`Open tabs list (${safeOpenNotes.length})`}
+            >
+              <Layers className="w-3 h-3 text-cyan-400" />
+              <span>{safeOpenNotes.length} {safeOpenNotes.length === 1 ? 'TAB' : 'TABS'}</span>
+            </button>
+
+            {/* Vertical Quick-Tabs Popover */}
+            {isTabsDrawerOpen && (
+              <div
+                data-testid="tabs-drawer-popover"
+                className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 max-h-80 bg-cyber-card border border-purple-500/50 rounded-xl shadow-2xl shadow-purple-950/90 z-[110] overflow-hidden flex flex-col p-2 space-y-2 backdrop-blur-xl animate-fadeIn"
+              >
+                <div className="flex items-center justify-between px-2 pt-1 border-b border-purple-900/40 pb-1.5">
+                  <span className="text-[11px] font-mono font-bold text-purple-300 flex items-center gap-1.5">
+                    <Layers className="w-3 h-3 text-cyan-400" />
+                    ACTIVE NOTE TABS ({safeOpenNotes.length})
+                  </span>
+                  {safeOpenNotes.length > 1 && onCloseAllTabs && (
                     <button
-                      key={tIdx}
                       type="button"
                       onClick={() => {
-                        const el = document.getElementById('section-' + toc.id);
-                        if (el) {
-                          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          if (soundEnabled) playCyberSound('click');
-                        }
+                        onCloseAllTabs();
+                        setIsTabsDrawerOpen(false);
                       }}
-                      className="px-2 py-0.5 rounded text-[10.5px] font-medium bg-white dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/40 text-purple-900 dark:text-purple-200 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 transition-all cursor-pointer flex-shrink-0"
-                      title={`Jump to section: ${toc.text}`}
+                      className="text-[10px] text-rose-400 hover:text-rose-200 transition-colors cursor-pointer"
                     >
-                      {toc.level > 1 ? '↳ ' : ''}{toc.text}
+                      Close All
                     </button>
-                  ))}
+                  )}
                 </div>
-              )}
-
-              {langMode === 'he' ? (
-                <div className="p-4 sm:p-5 rounded-xl border border-purple-500/40 bg-purple-950/20 space-y-3" dir="rtl">
-                  <div className="flex items-center justify-between pb-2 border-b border-purple-900/40" dir="ltr">
-                    <span className="text-[10px] font-mono text-purple-400">DANIEL DAYAN PERSONAL FIELD CARD</span>
-                    <h3 className="text-xs font-bold text-purple-300 font-sans">
-                      כרטיס עבודה עברי מקיף — שלב אחר שלב
-                    </h3>
-                  </div>
-                  <div className="text-gray-200 text-xs leading-relaxed font-sans">
-                    {parsed.hebrewSection ? (
-                      renderMarkdownBody(parsed.hebrewSection, true)
-                    ) : (
-                      <div className="space-y-4 text-right">
-                        <p className="text-purple-200 font-medium text-sm leading-relaxed">
-                          {note.heSummary || note.summary}
-                        </p>
-                        {note.commands && note.commands.length > 0 && (
-                          <div className="pt-2">
-                            <span className="text-[10px] font-mono text-purple-400">פקודות תקיפה מבצעיות:</span>
-                            <div className="space-y-2 mt-2" dir="ltr">
-                              {note.commands.map((cmd, idx) => (
-                                <div key={idx} className="p-2.5 rounded-lg bg-black/60 border border-purple-900/50 font-mono text-xs text-cyber-cyan select-all">
-                                  {interpolateCommand(cmd, globalVars)}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                <div className="overflow-y-auto max-h-56 space-y-1 pr-1 scrollbar-thin">
+                  {safeOpenNotes.map((tab) => {
+                    const isActive = tab.id === note.id;
+                    const isPinned = pinnedTabIds.includes(tab.id);
+                    return (
+                      <div
+                        key={tab.id}
+                        className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border transition-colors ${
+                          isActive
+                            ? 'bg-purple-950/80 border-cyan-400 text-white font-bold'
+                            : 'bg-black/30 border-purple-900/30 text-cyber-muted hover:text-slate-200 hover:bg-purple-950/30'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          data-testid={`drawer-tab-item-${tab.id}`}
+                          onClick={() => {
+                            onSelectNote?.(tab.id);
+                            setIsTabsDrawerOpen(false);
+                          }}
+                          className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
+                        >
+                          <span className="text-purple-400 text-xs flex-shrink-0">
+                            {tab.stage ? '🎯' : '📝'}
+                          </span>
+                          <span className="truncate text-xs">
+                            {tab.titleEn || tab.title}
+                          </span>
+                        </button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => togglePinTab(tab.id)}
+                            className={`p-1 rounded hover:bg-white/10 ${
+                              isPinned ? 'text-cyan-400' : 'text-cyber-muted'
+                            }`}
+                            title={isPinned ? 'Unpin tab' : 'Pin tab'}
+                          >
+                            <Pin className={`w-3 h-3 ${isPinned ? 'fill-cyan-400 rotate-45' : ''}`} />
+                          </button>
+                          {!isPinned && (
+                            <button
+                              type="button"
+                              data-testid={`drawer-close-tab-${tab.id}`}
+                              onClick={() => {
+                                if (onCloseTab) {
+                                  onCloseTab(tab.id);
+                                } else {
+                                  handleCloseSpecificTab(tab.id);
+                                }
+                              }}
+                              className="p-1 rounded text-cyber-muted hover:text-rose-400 hover:bg-rose-950/50"
+                              title="Close tab"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="p-4 sm:p-5 rounded-xl border border-cyber-border bg-cyber-bg/40 space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-purple-900/30">
-                    <h3 className="text-xs font-bold text-cyber-cyan font-mono flex items-center gap-2">
-                      <Terminal className="w-4 h-4 text-purple-400" />
-                      <span>OFFENSIVE EXECUTION & TACTICAL PLAYBOOK</span>
-                    </h3>
-                    <span className="text-[10px] font-mono text-cyber-muted">Battle-Tested Commands</span>
-                  </div>
-                  <div className="text-gray-300 text-xs leading-relaxed">
-                    {renderMarkdownBody(parsed.englishSection, false)}
-                  </div>
-                </div>
+              </div>
+            )}
+          </div>
+
+          <span className="hidden xl:inline text-cyber-muted/70">
+            Alt+1..9 switch • Alt+W close
+          </span>
+          {safeOpenNotes.length > 1 && onCloseAllTabs && (
+            <button
+              type="button"
+              data-testid="close-all-tabs-button"
+              onClick={onCloseAllTabs}
+              className="hidden sm:inline px-1.5 py-0.5 rounded hover:bg-rose-950/50 hover:text-rose-300 border border-transparent hover:border-rose-900/50 transition-colors cursor-pointer"
+              title="Close all tabs"
+            >
+              Close All
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Top Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-cyber-bg/95 border-b border-purple-900/40 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono truncate max-w-sm sm:max-w-md lg:max-w-xl min-w-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 font-bold flex-shrink-0">
+            <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden sm:inline">OFFENSIVE FIELD MANUAL</span>
+            <span className="sm:hidden">MANUAL</span>
+          </div>
+          <span className="text-cyber-muted flex-shrink-0">/</span>
+          <span className="text-cyber-muted truncate">{note.category}</span>
+          {note.subCategory && (
+            <>
+              <span className="text-cyber-muted flex-shrink-0">/</span>
+              <span className="text-purple-300 truncate hidden md:inline">{note.subCategory}</span>
+            </>
+          )}
+          <span className="text-cyber-muted flex-shrink-0">/</span>
+          <span className="text-slate-900 dark:text-white font-bold truncate">{note.titleEn || note.title}</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Reading / Split / Raw Toggle */}
+          <div className="hidden sm:flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-black/50 border border-slate-300 dark:border-purple-900/40 text-[11px] font-mono">
+            <button
+              type="button"
+              onClick={() => setViewMode('reading')}
+              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+                viewMode === 'reading'
+                  ? 'bg-purple-600 text-white font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
               )}
+              title="Obsidian rich formatted reading mode"
+            >
+              Reading
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('split')}
+              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+                viewMode === 'split'
+                  ? 'bg-purple-600 text-white font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              )}
+              title="Split side-by-side editor and live preview"
+            >
+              Split
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('raw')}
+              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+                viewMode === 'raw'
+                  ? 'bg-purple-600 text-white font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              )}
+              title="View raw Obsidian markdown"
+            >
+              Raw MD
+            </button>
+          </div>
+
+          {/* Language Toggle */}
+          <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-black/50 border border-slate-300 dark:border-purple-900/40 text-[11px] font-mono">
+            <button
+              type="button"
+              data-testid="modal-lang-en"
+              onClick={() => setLangMode('en')}
+              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+                langMode === 'en'
+                  ? 'bg-purple-600 text-white font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              )}
+              title="English technical playbook only"
+            >
+              🇬🇧 EN
+            </button>
+            <button
+              type="button"
+              data-testid="modal-lang-he"
+              onClick={() => setLangMode('he')}
+              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+                langMode === 'he'
+                  ? 'bg-purple-600 text-white font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              )}
+              title="רשימות אישיות בעברית בלבד"
+            >
+              🇮🇱 עב
+            </button>
+          </div>
+
+          {/* Reader Font Size Scaling (A- / A+) */}
+          <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-black/50 border border-slate-300 dark:border-purple-900/40 text-[11px] font-mono">
+            <button
+              type="button"
+              data-testid="decrease-font-size-button"
+              onClick={handleDecreaseFontSize}
+              disabled={fontSize === 'sm'}
+              className="px-2 py-1 rounded text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:hover:text-cyber-muted transition-colors cursor-pointer"
+              title="Decrease note font size"
+              aria-label="Decrease note font size"
+            >
+              A-
+            </button>
+            <span 
+              data-testid="font-size-indicator"
+              className="px-1.5 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase"
+            >
+              {fontSize}
+            </span>
+            <button
+              type="button"
+              data-testid="increase-font-size-button"
+              onClick={handleIncreaseFontSize}
+              disabled={fontSize === 'xl'}
+              className="px-2 py-1 rounded text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:hover:text-cyber-muted transition-colors cursor-pointer"
+              title="Increase note font size"
+              aria-label="Increase note font size"
+            >
+              A+
+            </button>
+          </div>
+
+          {/* Copy Commands */}
+          {note.commands && note.commands.length > 0 && (
+            <button
+              type="button"
+              onClick={handleCopyAllCommands}
+              className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 text-xs font-semibold transition-colors cursor-pointer"
+              title="Copy all commands in note"
+            >
+              {copiedId === 'all-cmds-' + note.id ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-cyber-emerald" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>Cmds ({note.commands.length})</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <ShareLinkButton
+            path={`/cheatsheets?note=${note.id}`}
+            title={note.titleEn || note.title}
+            label="Share"
+            className="px-2.5 py-1"
+          />
+
+          <button
+            type="button"
+            onClick={handleCopyRawMarkdown}
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-black/60 border border-cyber-border text-cyber-muted hover:text-white hover:border-purple-400 text-xs font-semibold transition-colors cursor-pointer"
+            title="Copy raw markdown to paste into your Obsidian vault"
+          >
+            {copiedId === 'raw-md-' + note.id ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-cyber-emerald" />
+                <span>MD Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Copy MD</span>
+              </>
+            )}
+          </button>
+
+          {/* Multi-Pane Split View Actions */}
+          {onToggleSplit && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                data-testid="toggle-split-horizontal"
+                onClick={() => {
+                  if (soundEnabled) playCyberSound('click');
+                  onToggleSplit('horizontal');
+                }}
+                className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-colors cursor-pointer ${
+                  isSplitView && splitOrientation === 'horizontal'
+                    ? 'bg-cyan-950/80 border-cyan-400 text-cyan-300 shadow-sm'
+                    : 'bg-black/60 border-cyber-border text-cyber-muted hover:text-cyan-300 hover:border-cyan-500/50'
+                }`}
+                title={isSplitView ? "Close Split View" : "Split Workspace Horizontally"}
+                aria-label="Split Workspace Horizontally"
+              >
+                <Columns className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden 2xl:inline">{isSplitView && splitOrientation === 'horizontal' ? 'Close Split' : 'Split H'}</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="toggle-split-vertical"
+                onClick={() => {
+                  if (soundEnabled) playCyberSound('click');
+                  onToggleSplit('vertical');
+                }}
+                className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-colors cursor-pointer ${
+                  isSplitView && splitOrientation === 'vertical'
+                    ? 'bg-cyan-950/80 border-cyan-400 text-cyan-300 shadow-sm'
+                    : 'bg-black/60 border-cyber-border text-cyber-muted hover:text-cyan-300 hover:border-cyan-500/50'
+                }`}
+                title={isSplitView ? "Close Split View" : "Split Workspace Vertically"}
+                aria-label="Split Workspace Vertically"
+              >
+                <Rows className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden 2xl:inline">{isSplitView && splitOrientation === 'vertical' ? 'Close Split' : 'Split V'}</span>
+              </button>
             </div>
           )}
 
-          {/* Obsidian Graph Links & Backlinks */}
-          <div className="p-4 rounded-xl border border-purple-900/40 bg-black/40 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-purple-900/30">
-              <h4 className="text-xs font-bold text-purple-300 font-mono flex items-center gap-2">
-                <LinkIcon className="w-3.5 h-3.5 text-purple-400" />
-                <span>OBSIDIAN GRAPH CONNECTIONS & BACKLINKS</span>
-              </h4>
-              <span className="text-[10px] font-mono text-cyber-muted">
-                {parsed.outgoingWikilinks.length} Outgoing · {backlinks.length} Backlinks
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono font-bold text-cyber-muted uppercase tracking-wider">
-                  Outgoing References ({parsed.outgoingWikilinks.length}):
-                </span>
-                {parsed.outgoingWikilinks.length === 0 ? (
-                  <p className="text-[11px] text-cyber-muted italic">No internal links in this note.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {parsed.outgoingWikilinks.map((target, idx) => {
-                      const resolved = resolveWikilink(target);
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            if (resolved.exists && resolved.targetNoteId) {
-                              if (soundEnabled) playCyberSound('click');
-                              onNavigateToNote(resolved.targetNoteId);
-                            }
-                          }}
-                          className={'inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-all ' + (
-                            resolved.exists
-                              ? 'bg-purple-950/60 border border-purple-500/40 text-purple-300 hover:bg-purple-900/80 hover:text-white cursor-pointer'
-                              : 'bg-white/5 border border-white/10 text-cyber-muted opacity-60 cursor-default'
-                          )}
-                        >
-                          <LinkIcon className="w-2.5 h-2.5" />
-                          <span>[[' + target + ']]</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono font-bold text-cyber-muted uppercase tracking-wider">
-                  Referenced By Other Notes ({backlinks.length}):
-                </span>
-                {backlinks.length === 0 ? (
-                  <p className="text-[11px] text-cyber-muted italic">No incoming backlinks to this note.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {backlinks.map((bNote) => (
-                      <button
-                        key={bNote.id}
-                        type="button"
-                        onClick={() => {
-                          if (soundEnabled) playCyberSound('click');
-                          onNavigateToNote(bNote.id);
-                        }}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono bg-purple-950/60 border border-purple-500/40 text-purple-300 hover:bg-purple-900/80 hover:text-white transition-all cursor-pointer"
-                        title={bNote.titleEn}
-                      >
-                        <ArrowRight className="w-2.5 h-2.5 text-purple-400" />
-                        <span className="truncate max-w-[200px]">{bNote.titleEn}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2 bg-cyber-bg/95 border-t border-purple-900/40 text-[11px] font-mono text-cyber-muted">
-          <div className="flex items-center gap-3">
-            <span>ID: {note.id}</span>
-            <span className="hidden sm:inline">&middot;</span>
-            <span className="hidden sm:inline">Category: {note.category}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span>ESC to close</span>
+          {/* Move tab to other pane if split view is active */}
+          {isSplitView && onMoveTabToOtherPane && safeOpenNotes.length > 1 && (
             <button
               type="button"
-              onClick={onClose}
-              className="text-purple-400 hover:text-white font-bold transition-colors cursor-pointer"
+              data-testid="move-tab-other-pane"
+              onClick={() => {
+                if (soundEnabled) playCyberSound('click');
+                onMoveTabToOtherPane(note.id);
+              }}
+              className="flex items-center gap-1 px-2 py-1 rounded bg-black/60 border border-purple-500/40 text-purple-300 hover:text-white hover:border-purple-400 text-xs font-semibold transition-colors cursor-pointer"
+              title="Move active tab to other pane"
+              aria-label="Move tab to other pane"
             >
-              Close
+              <MoveRight className="w-3.5 h-3.5 text-purple-400" />
+              <span className="hidden 2xl:inline">Move Pane</span>
             </button>
-          </div>
+          )}
+
+          {/* Global Workspace Dock (Pin across all pages) */}
+          <button
+            type="button"
+            data-testid="pin-to-global-workspace"
+            onClick={() => {
+              useNotesWorkspaceStore.getState().openNote(note.id);
+              useNotesWorkspaceStore.getState().setIsOpen(true);
+              useNotesWorkspaceStore.getState().setIsPinned(true);
+              if (soundEnabled) playCyberSound('click');
+              onClose();
+            }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyan-100 dark:bg-cyan-950/60 border border-cyan-300 dark:border-cyan-500/40 text-cyan-900 dark:text-cyber-cyan hover:text-cyan-950 dark:hover:text-white hover:bg-cyan-200 dark:hover:bg-cyan-900/80 text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+            title="Dock to all pages (Stays open while navigating between pages)"
+            aria-label="Dock to all pages"
+          >
+            <Pin className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
+            <span className="hidden xl:inline">Pin to All Pages</span>
+          </button>
+
+          {/* Display Mode Toggle: Dock to Side / Floating Modal */}
+          {onToggleDisplayMode && (
+            <button
+              type="button"
+              data-testid="toggle-dock-mode"
+              onClick={() => {
+                if (soundEnabled) playCyberSound('click');
+                onToggleDisplayMode();
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+              title={displayMode === 'docked' ? "Float in Modal (Alt+M)" : "Dock Side-by-Side in Page (Alt+M)"}
+              aria-label={displayMode === 'docked' ? "Float in Modal" : "Dock Side-by-Side in Page"}
+            >
+              {displayMode === 'docked' ? (
+                <>
+                  <Maximize2 className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="hidden xl:inline">Modal</span>
+                </>
+              ) : (
+                <>
+                  <PanelRight className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="hidden xl:inline">Dock</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Maximize / Restore Focus Mode (Alt+F) */}
+          <button
+            type="button"
+            data-testid="toggle-maximize-button"
+            onClick={handleToggleMaximize}
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/40 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white hover:bg-purple-200 dark:hover:bg-purple-900/80 text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+            title={effectiveMaximized ? "Restore view (Alt+F)" : "Maximize full-width workspace (Alt+F)"}
+            aria-label={effectiveMaximized ? "Restore view" : "Maximize workspace"}
+          >
+            {effectiveMaximized ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-purple-400" />
+                <span className="hidden xl:inline">Restore</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 text-purple-400" />
+                <span className="hidden xl:inline">Maximize</span>
+              </>
+            )}
+          </button>
+
+          {/* Standalone Pop-Out Window Button */}
+          <button
+            type="button"
+            data-testid="popout-window-button"
+            onClick={() => {
+              if (soundEnabled) playCyberSound('click');
+              if (onPopoutWindow) {
+                onPopoutWindow();
+              } else {
+                const popoutUrl = `${window.location.origin}${window.location.pathname}#/field-manual?note=${note.id}&popout=true`;
+                window.open(popoutUrl, `ZeroBoxFieldManual_${note.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
+              }
+            }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-black/60 border border-cyber-border text-cyber-muted hover:text-cyan-300 hover:border-cyan-500/50 text-xs font-semibold transition-colors cursor-pointer"
+            title="Pop out note into standalone window"
+            aria-label="Open in standalone window"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden xl:inline">Pop Out</span>
+          </button>
+
+          {onDeleteNote && (
+            <button
+              type="button"
+              onClick={() => {
+                const title = note.titleEn || note.title;
+                if (window.confirm(`Delete custom note "${title}"? This action cannot be undone.`)) {
+                  onDeleteNote(note.id, title);
+                }
+              }}
+              className="p-1.5 rounded hover:bg-rose-950/50 text-cyber-muted hover:text-rose-400 border border-transparent hover:border-rose-900/50 transition-colors cursor-pointer"
+              title="Delete custom note"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-purple-900/30 text-cyber-muted hover:text-white transition-colors cursor-pointer"
+            title="Close viewer (Escape)"
+            aria-label="Close viewer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
+      </div>
+
+      {/* DOM Keep-Alive Tab Workspace Container with Universal Event Delegation */}
+      <div
+        ref={workspaceContainerRef}
+        data-testid="workspace-keepalive-container"
+        onClickCapture={handleContainerLinkClick}
+        onAuxClickCapture={handleContainerAuxClick}
+        className="flex-1 min-h-0 relative overflow-hidden flex flex-col bg-cyber-bg/50"
+      >
+        {safeOpenNotes.map((tabNote) => {
+          const isActive = tabNote.id === note.id;
+          return (
+            <div
+              key={tabNote.id}
+              data-testid={`tab-content-${tabNote.id}`}
+              data-tab-note-id={tabNote.id}
+              className={isActive ? 'h-full w-full flex-1 min-h-0 overflow-y-auto' : 'hidden'}
+              style={{ display: isActive ? undefined : 'none' }}
+            >
+              <ObsidianTabContent
+                note={tabNote}
+                isActive={isActive}
+                globalVars={globalVars}
+                soundEnabled={soundEnabled}
+                onNavigateToNote={onNavigateToNote}
+                onOpenNote={(targetNoteId, options) => {
+                  const pool = allAvailableNotes || getAllCptsNotes();
+                  const found = getNoteById(targetNoteId, pool);
+                  if (!found) return;
+
+                  if (options?.background) {
+                    if (onNewTab && !safeOpenNotes.some((n) => n.id === found.id)) {
+                      onNewTab(found);
+                      if (onSelectNote) onSelectNote(note.id);
+                    }
+                  } else {
+                    if (safeOpenNotes.some((n) => n.id === found.id)) {
+                      onSelectNote?.(found.id);
+                    } else if (onNewTab) {
+                      onNewTab(found);
+                    } else {
+                      onNavigateToNote(found.id);
+                    }
+                  }
+
+                  if (options?.anchor && workspaceContainerRef.current) {
+                    setTimeout(() => {
+                      if (workspaceContainerRef.current && options.anchor) {
+                        scrollToHeadingAnchor(workspaceContainerRef.current, options.anchor);
+                      }
+                    }, 100);
+                  }
+                }}
+                defaultLanguage={langMode}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                fontSize={fontSize}
+                isMaximized={effectiveMaximized}
+                onOpenNotePicker={(query) => {
+                  if (query) setPickerSearch(query);
+                  setIsPickerOpen(true);
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
+  // In docked or popout mode, render directly in container without overlay backdrop
+  if (displayMode === 'docked' || displayMode === 'popout') {
+    return (
+      <div 
+        ref={modalRef}
+        tabIndex={-1}
+        role="region"
+        aria-label="Field manual note viewer workspace"
+        data-testid="obsidian-note-viewer-docked"
+        className="w-full h-full flex flex-col outline-none select-none"
+      >
+        {innerCardContent}
+      </div>
+    );
+  }
+
+  // Modal mode: render via React Portal into document.body as focused overlay
+  return createPortal(
+    <div
+      ref={modalRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      data-testid="obsidian-note-viewer-modal"
+      aria-label={`Field Manual: ${note.titleEn || note.title}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center ${
+        effectiveMaximized ? 'p-0 bg-black/95' : 'p-2 sm:p-4 bg-black/85'
+      } backdrop-blur-md animate-fadeIn outline-none`}
+    >
+      <div 
+        className={`w-full ${
+          effectiveMaximized
+            ? 'max-w-none max-h-none h-full rounded-none'
+            : 'w-[96vw] max-w-[1440px] max-h-[95vh] h-[95vh]'
+        } flex flex-col outline-none transition-colors duration-200`}
+      >
+        {innerCardContent}
+      </div>
+    </div>,
+    document.body
+  );
 };

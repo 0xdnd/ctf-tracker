@@ -32,16 +32,16 @@ export const BackToTopButton: React.FC = React.memo(() => {
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
-          whileHover={{ scale: 1.08, y: -2 }}
-          whileTap={{ scale: 0.92 }}
+          whileHover={{ scale: 1.03, y: -1 }}
+          whileTap={{ scale: 0.98 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           onClick={handleClick}
-          className="fixed bottom-20 right-4 md:bottom-4 md:right-6 z-40 flex items-center gap-2 px-3 py-2 rounded-xl bg-cyber-card/90 hover:bg-cyber-card border border-cyber-cyan/50 hover:border-cyber-cyan text-cyber-cyan hover:text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-md font-mono text-xs transition-[colors,box-shadow,border-color] group"
+          className="fixed bottom-20 right-4 md:bottom-16 md:right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-cyber-cyan shadow-md font-mono text-xs transition-colors group"
           title="Scroll Back to Top"
         >
           <div className="relative">
             <ArrowUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-cyber-cyan rounded-full blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-cyber-cyan rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <div className="flex flex-col text-left">
             <span className="font-bold tracking-wider text-[10px] leading-tight">TOP</span>

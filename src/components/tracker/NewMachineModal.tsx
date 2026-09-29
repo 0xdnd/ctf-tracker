@@ -17,8 +17,9 @@ const PLATFORM_OPTIONS: CyberSelectOption<Platform>[] = [
 const OS_OPTIONS: CyberSelectOption<OperatingSystem>[] = [
   { value: 'Linux', label: 'Linux', icon: <OsIcon os="Linux" /> },
   { value: 'Windows', label: 'Windows', icon: <OsIcon os="Windows" /> },
-  { value: 'Android', label: 'Android', icon: <OsIcon os="Android" /> },
   { value: 'BSD', label: 'BSD', icon: <OsIcon os="BSD" /> },
+  { value: 'Android', label: 'Android', icon: <OsIcon os="Android" /> },
+  { value: 'macOS', label: 'macOS', icon: <OsIcon os="macOS" /> },
   { value: 'Other', label: 'Other', icon: <OsIcon os="Other" /> },
 ];
 
@@ -103,7 +104,7 @@ export const NewMachineModal: React.FC = () => {
       onClick={() => setNewMachineModalOpen(false)}
     >
       <div 
-        className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden my-auto"
+        className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-shrink-0 flex items-center justify-between border-b border-cyber-border p-4 bg-cyber-bg/95">
@@ -113,7 +114,7 @@ export const NewMachineModal: React.FC = () => {
           </div>
           <button
             onClick={() => setNewMachineModalOpen(false)}
-            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-white border border-cyber-border"
+            className="p-1.5 rounded-lg bg-cyber-bg text-cyber-muted hover:text-white border border-cyber-border transition-[transform,background-color,border-color,color] active:scale-[0.98]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -223,7 +224,7 @@ export const NewMachineModal: React.FC = () => {
           </div>
 
           {/* Active Lab ToS Safeguard Control */}
-          <div className={`p-3 rounded-lg border transition-all ${
+          <div className={`p-3 rounded-lg border transition-colors ${
             effectiveIsActive 
               ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-300' 
               : 'border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50'
@@ -237,7 +238,7 @@ export const NewMachineModal: React.FC = () => {
                   </span>
                   <span className="text-[10px] text-slate-500 dark:text-cyber-muted">
                     {isKnownActive 
-                      ? 'Known in-season HTB machine detected — ToS safeguards automatically engaged.'
+                      ? 'Known in-season HTB machine detected. ToS safeguards automatically engaged.'
                       : 'Mark if target is in-season / active to enforce spoiler & writeup locks.'}
                   </span>
                 </div>
@@ -301,13 +302,13 @@ export const NewMachineModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setNewMachineModalOpen(false)}
-              className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white"
+              className="px-3.5 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyber-emerald text-black font-bold hover:bg-cyber-emerald/90 transition-all shadow-glow-emerald"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyber-emerald text-black font-bold text-xs hover:bg-cyber-emerald/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
             >
               <Plus className="w-4 h-4" /> Deploy Machine
             </button>

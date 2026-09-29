@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Palette, ChevronDown, Check, Zap, Terminal, Shield, Moon, Sun } from 'lucide-react';
-import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
+import { Palette, ChevronDown, Check, Zap, Terminal, Moon, Sun } from 'lucide-react';
+import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
 
@@ -18,34 +18,34 @@ interface ThemeOption {
 
 const THEME_OPTIONS: ThemeOption[] = [
   {
-    id: 'zerobox',
-    name: 'Neon Cyber',
-    tagline: 'Electric Cyan & Emerald (#00F0FF)',
-    darkDot: 'bg-[#00F0FF]',
-    lightDot: 'bg-[#008B99]',
-    darkHex: '#00F0FF',
-    lightHex: '#008B99',
+    id: 'obsidian',
+    name: 'Obsidian Dark / Zinc',
+    tagline: 'Cold Zinc Dark & Clean Zinc Slate (#0ea5e9)',
+    darkDot: 'bg-[#0ea5e9]',
+    lightDot: 'bg-[#0284c7]',
+    darkHex: '#0ea5e9',
+    lightHex: '#0284c7',
     icon: Zap,
+  },
+  {
+    id: 'monolith',
+    name: 'Clean Monolith',
+    tagline: 'Architectural Off-White & Crisp Graphite (#fafafa)',
+    darkDot: 'bg-[#38bdf8]',
+    lightDot: 'bg-[#0284c7]',
+    darkHex: '#38bdf8',
+    lightHex: '#0284c7',
+    icon: Sun,
   },
   {
     id: 'htb',
     name: 'Hack The Box',
-    tagline: 'Authentic Lime Green & Slate (#9FEF00)',
-    darkDot: 'bg-[#9FEF00]',
-    lightDot: 'bg-[#15803D]',
-    darkHex: '#9FEF00',
-    lightHex: '#15803D',
+    tagline: 'OLED Pitch Black (#000000) & Official HTB Lime (#9fef00)',
+    darkDot: 'bg-[#9fef00]',
+    lightDot: 'bg-[#15803d]',
+    darkHex: '#9fef00',
+    lightHex: '#15803d',
     icon: Terminal,
-  },
-  {
-    id: 'oled',
-    name: 'OLED Pure Black',
-    tagline: 'Pitch Black & Ice Blue (#000000)',
-    darkDot: 'bg-[#38BDF8]',
-    lightDot: 'bg-[#52525B]',
-    darkHex: '#000000',
-    lightHex: '#52525B',
-    icon: Moon,
   },
 ];
 
@@ -58,7 +58,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   
-  const themePreset = useCtfStore((s) => s.themePreset || 'zerobox');
+  const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
   const setThemePreset = useCtfStore((s) => s.setThemePreset);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const { isDark, setTheme } = useTheme();
@@ -69,26 +69,35 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
   }, [location.pathname]);
 
   // Normalize legacy aliases
-  const activePresetId = themePreset === 'neon' ? 'zerobox' : themePreset === 'slate' ? 'midnight-blue' : themePreset;
+  const activePresetId: ThemePreset = normalizeThemePreset(themePreset);
+
   const activeTheme = THEME_OPTIONS.find((t) => t.id === activePresetId) || THEME_OPTIONS[0];
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or Escape key
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
     if (isOpen) {
       document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
   const handleSelect = (preset: ThemePreset) => {
     setThemePreset(preset);
+    setIsOpen(false);
     if (soundEnabled) playCyberSound('click');
   };
 
@@ -106,17 +115,17 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
           setIsOpen(!isOpen);
           if (soundEnabled) playCyberSound('toggle');
         }}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-md border font-mono text-xs transition-all shadow-sm active:scale-95 ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-mono text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
           isOpen
-            ? 'bg-cyber-card border-cyber-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-            : 'bg-slate-100 dark:bg-cyber-card border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-text hover:border-cyber-cyan'
+            ? 'bg-cyber-card border-cyber-cyan text-cyber-text'
+            : 'bg-cyber-card border-cyber-border text-cyber-text hover:border-cyber-borderGlow'
         }`}
         title={`Active Theme: ${activeTheme.name} (${isDark ? 'Dark Mode' : 'Light Mode'})`}
         aria-label={activeTheme.name}
         aria-expanded={isOpen}
       >
         <span 
-          className="w-2 h-2 rounded-full flex-shrink-0 shadow-[0_0_6px_currentColor]"
+          className="w-2 h-2 rounded-full flex-shrink-0"
           style={{ backgroundColor: isDark ? activeTheme.darkHex : activeTheme.lightHex }}
         />
         <Palette className="w-3.5 h-3.5 text-cyber-muted" />
@@ -129,12 +138,12 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 p-2 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border shadow-2xl z-50 text-xs space-y-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full mt-1.5 w-72 p-2.5 rounded-xl bg-cyber-card border border-cyber-border shadow-2xl z-50 text-xs space-y-2 animate-in fade-in duration-100">
           
           {/* Header */}
           <div className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase px-2 py-0.5 font-bold border-b border-slate-100 dark:border-cyber-border/60 flex items-center justify-between">
             <span>THEME PRESETS</span>
-            <span className="text-cyber-cyan font-mono text-[9px] font-bold">4 THEMES</span>
+            <span className="text-cyber-cyan font-mono text-[9px] font-bold">{THEME_OPTIONS.length} THEMES</span>
           </div>
 
           {/* Theme List */}
@@ -148,10 +157,10 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
                   key={opt.id}
                   type="button"
                   onClick={() => handleSelect(opt.id)}
-                  className={`w-full px-2.5 py-2 rounded-lg flex items-center justify-between text-left transition-all ${
+                  className={`w-full px-3 py-2 rounded-lg flex items-center justify-between text-left transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-100 dark:bg-cyber-bg border border-cyber-cyan/60 text-slate-900 dark:text-white shadow-sm'
-                      : 'hover:bg-slate-50 dark:hover:bg-cyber-bg/60 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-transparent'
+                      ? 'bg-cyber-bg border border-cyber-cyan text-cyber-text'
+                      : 'hover:bg-cyber-cardHover text-cyber-muted hover:text-cyber-text border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -197,9 +206,9 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
               <button
                 type="button"
                 onClick={(e) => handleModeChange('dark', e)}
-                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold text-xs transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
                   isDark
-                    ? 'bg-zinc-900 text-cyan-400 border border-cyan-500/40 shadow-sm'
+                    ? 'bg-zinc-900 text-cyber-cyan border border-cyber-cyan/40 shadow-sm'
                     : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
                 }`}
               >
@@ -210,9 +219,9 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
               <button
                 type="button"
                 onClick={(e) => handleModeChange('light', e)}
-                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold text-xs transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
                   !isDark
-                    ? 'bg-white text-blue-600 border border-blue-400/50 shadow-sm'
+                    ? 'bg-white text-cyber-cyan border border-cyber-cyan/50 shadow-sm'
                     : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
                 }`}
               >
@@ -231,7 +240,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
                 window.location.hash = '#/theme';
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="w-full py-1.5 px-2 rounded-lg bg-slate-50 dark:bg-cyber-bg hover:bg-cyan-50 dark:hover:bg-cyber-cyan/10 border border-slate-200 dark:border-cyber-border hover:border-cyan-400 dark:hover:border-cyber-cyan/40 text-slate-700 dark:text-cyber-text hover:text-cyan-700 dark:hover:text-cyber-cyan font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-sm group"
+              className="w-full py-1.5 px-2 rounded-lg bg-slate-50 dark:bg-cyber-bg hover:bg-cyber-cyan/10 border border-slate-200 dark:border-cyber-border hover:border-cyber-cyan/40 text-slate-700 dark:text-cyber-text hover:text-cyber-cyan font-bold text-[11px] flex items-center justify-center gap-1.5 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer shadow-sm group"
             >
               <Palette className="w-3.5 h-3.5 text-cyber-cyan group-hover:rotate-12 transition-transform" />
               <span>Full Color & Theme Matrix</span>

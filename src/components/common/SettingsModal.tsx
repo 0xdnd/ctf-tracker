@@ -7,7 +7,6 @@ import {
   Palette, 
   Sliders, 
   Terminal, 
-  Shield, 
   Flame, 
   Sun, 
   Moon, 
@@ -23,7 +22,7 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
-import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
+import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
@@ -42,48 +41,37 @@ interface ThemeCardInfo {
 
 const THEME_PRESETS: ThemeCardInfo[] = [
   {
-    id: 'zerobox',
-    name: 'Neon Cyber',
-    tagline: 'Electric Cyan & Emerald (#00F0FF / #008B99)',
-    badge: 'CYBER',
-    darkAccentHex: '#00F0FF',
-    lightAccentHex: '#008B99',
-    darkCardHex: '#0D1527',
-    lightCardHex: '#FFFFFF',
+    id: 'obsidian',
+    name: 'Obsidian Dark / Zinc',
+    tagline: 'Cold Zinc Dark & Clean Zinc Slate (#0ea5e9)',
+    badge: 'ZINC DARK',
+    darkAccentHex: '#0ea5e9',
+    lightAccentHex: '#0284c7',
+    darkCardHex: '#121215',
+    lightCardHex: '#ffffff',
     icon: Zap,
+  },
+  {
+    id: 'monolith',
+    name: 'Clean Monolith',
+    tagline: 'Architectural Off-White & Crisp Graphite (#fafafa)',
+    badge: 'MONOLITH',
+    darkAccentHex: '#38bdf8',
+    lightAccentHex: '#0284c7',
+    darkCardHex: '#27272a',
+    lightCardHex: '#ffffff',
+    icon: Sun,
   },
   {
     id: 'htb',
     name: 'Hack The Box',
-    tagline: 'Authentic HTB Lime Green & Slate (#9FEF00 / #15803D)',
-    badge: 'HTB',
-    darkAccentHex: '#9FEF00',
-    lightAccentHex: '#15803D',
-    darkCardHex: '#1A2332',
-    lightCardHex: '#FFFFFF',
+    tagline: 'OLED Pitch Black (#000000) & Official HTB Lime (#9fef00)',
+    badge: 'HTB OLED',
+    darkAccentHex: '#9fef00',
+    lightAccentHex: '#15803d',
+    darkCardHex: '#0b1015',
+    lightCardHex: '#ffffff',
     icon: Terminal,
-  },
-  {
-    id: 'midnight-blue',
-    name: 'Midnight Blue',
-    tagline: 'Deep Navy & Electric Sky Blue (#38BDF8 / #0284C7)',
-    badge: 'NAVY',
-    darkAccentHex: '#38BDF8',
-    lightAccentHex: '#0284C7',
-    darkCardHex: '#0A1122',
-    lightCardHex: '#FFFFFF',
-    icon: Shield,
-  },
-  {
-    id: 'oled',
-    name: 'OLED Pure Black',
-    tagline: '100% Pitch Black & Ice Blue (#000000 / #18181B)',
-    badge: 'OLED',
-    darkAccentHex: '#38BDF8',
-    lightAccentHex: '#18181B',
-    darkCardHex: '#090C12',
-    lightCardHex: '#FAFAFA',
-    icon: Moon,
   },
 ];
 
@@ -129,10 +117,7 @@ export const SettingsModal: React.FC = () => {
   const { isDark, setTheme } = useTheme();
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
-  const normalizedActivePreset = 
-    themePreset === 'neon' ? 'zerobox' : 
-    themePreset === 'slate' ? 'zerobox' : 
-    themePreset || 'zerobox';
+  const normalizedActivePreset: ThemePreset = normalizeThemePreset(themePreset);
 
   const modalRef = useFocusTrap<HTMLDivElement>({
     isActive: settingsModalOpen,
@@ -152,22 +137,27 @@ export const SettingsModal: React.FC = () => {
     setTimeout(() => setCopiedToken(null), 1500);
   };
 
-  if (!settingsModalOpen) return null;
-
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 font-mono">
-        <motion.div
-          ref={modalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Settings configuration modal"
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="relative w-full max-w-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        >
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm font-mono"
+      onClick={() => setSettingsModalOpen(false)}
+    >
+      <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings configuration modal"
+        initial={{ scale: 0.98, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.98, opacity: 0, y: 8 }}
+        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+        className="relative w-full max-w-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Header Bar */}
           <div className="px-6 py-4 border-b border-slate-200 dark:border-cyber-border flex items-center justify-between bg-slate-50 dark:bg-cyber-bg/50">
             <div className="flex items-center gap-2.5">
@@ -209,11 +199,11 @@ export const SettingsModal: React.FC = () => {
                   <span>Tactical Theme Presets</span>
                 </span>
                 <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-bold">
-                  4 CANONICAL THEMES
+                  3 CANONICAL THEMES
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {THEME_PRESETS.map((preset) => {
                   const Icon = preset.icon;
                   const isSelected = normalizedActivePreset === preset.id;
@@ -227,7 +217,7 @@ export const SettingsModal: React.FC = () => {
                         setThemePreset(preset.id);
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between group ${
+                      className={`p-3 rounded-xl border text-left transition-colors flex flex-col justify-between group ${
                         isSelected
                           ? 'bg-slate-100 dark:bg-cyber-bg border-cyber-cyan shadow-sm ring-1 ring-cyber-cyan/30'
                           : 'bg-white dark:bg-cyber-bg/40 border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-slate-600'
@@ -301,7 +291,7 @@ export const SettingsModal: React.FC = () => {
                       key={token.varName}
                       type="button"
                       onClick={() => handleCopyToken(token.varName)}
-                      className="p-2 rounded-lg border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50 hover:border-cyber-cyan transition-all text-left flex items-center gap-2 group"
+                      className="p-2 rounded-lg border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50 hover:border-cyber-cyan transition-colors text-left flex items-center gap-2 group"
                       title={`Click to copy ${token.varName} (${tokenColor})`}
                     >
                       <span 
@@ -344,7 +334,7 @@ export const SettingsModal: React.FC = () => {
                     window.location.hash = '#/theme';
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 hover:bg-cyan-100 dark:hover:bg-cyber-cyan/25 border border-cyan-400 dark:border-cyber-cyan/40 text-cyan-800 dark:text-cyber-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm group whitespace-nowrap"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 hover:bg-cyan-100 dark:hover:bg-cyber-cyan/25 border border-cyan-400 dark:border-cyber-cyan/40 text-cyan-800 dark:text-cyber-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"
                 >
                   <span>Open Full Studio</span>
                   <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -375,7 +365,7 @@ export const SettingsModal: React.FC = () => {
                         setTheme('dark');
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-[box-shadow,background-color,border-color,color] ${
                         isDark 
                           ? 'bg-blue-600 text-white shadow-sm' 
                           : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -390,7 +380,7 @@ export const SettingsModal: React.FC = () => {
                         setTheme('light');
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-[box-shadow,background-color,border-color,color] ${
                         !isDark 
                           ? 'bg-blue-600 text-white shadow-sm' 
                           : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -412,7 +402,7 @@ export const SettingsModal: React.FC = () => {
                   </div>
                   <button
                     onClick={() => toggleSound()}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-bold transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-bold transition-colors ${
                       soundEnabled
                         ? 'border-cyber-emerald bg-cyber-emerald/15 text-cyber-emerald'
                         : 'border-slate-300 dark:border-cyber-border bg-white dark:bg-cyber-card text-slate-400'
@@ -443,7 +433,7 @@ export const SettingsModal: React.FC = () => {
                         setUiScale(scale);
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`py-1.5 rounded-lg border text-center font-bold text-[10px] uppercase transition-all ${
+                      className={`py-1.5 rounded-lg border text-center font-bold text-[10px] uppercase transition-colors ${
                         uiScale === scale
                           ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan shadow-sm'
                           : 'bg-white dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:border-slate-400'
@@ -503,7 +493,7 @@ export const SettingsModal: React.FC = () => {
                   setBackupModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-card transition-all flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
               >
                 <Database className="w-3.5 h-3.5 text-purple-500" />
                 <span className="hidden sm:inline">Backup Database</span>
@@ -516,7 +506,7 @@ export const SettingsModal: React.FC = () => {
                   useCtfStore.getState().setLicenseModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-card transition-all flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                 <span className="hidden sm:inline">License</span>
@@ -529,13 +519,12 @@ export const SettingsModal: React.FC = () => {
                 setSettingsModalOpen(false);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyber-cyan hover:bg-cyan-400 text-black shadow-sm transition-all"
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyber-cyan hover:bg-cyan-400 text-black shadow-sm transition-[box-shadow,background-color,border-color,color]"
             >
               Done
             </button>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+    </motion.div>
   );
 };

@@ -360,10 +360,10 @@ export const NotesImportModal: React.FC = () => {
 
         {/* Modal Window */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          initial={{ opacity: 0, scale: 0.98, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative w-full max-w-2xl bg-cyber-card border border-cyber-cyan/40 rounded-xl shadow-[0_0_50px_rgba(0,240,255,0.15)] overflow-hidden flex flex-col max-h-[90vh]"
+          exit={{ opacity: 0, scale: 0.98, y: 10 }}
+          className="relative w-full max-w-2xl bg-cyber-card border border-cyber-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-cyber-cyan/20 bg-cyber-cyan/5 flex items-center justify-between">
@@ -488,7 +488,7 @@ export const NotesImportModal: React.FC = () => {
                 {/* Progress Bar */}
                 <div className="w-full h-2 bg-black/50 rounded-full overflow-hidden border border-cyber-cyan/20">
                   <div
-                    className="h-full bg-gradient-to-r from-cyber-cyan to-cyber-emerald transition-all duration-150"
+                    className="h-full bg-gradient-to-r from-cyber-cyan to-cyber-emerald transition-colors duration-150"
                     style={{
                       width: zipProgress.total > 0 ? `${(zipProgress.current / zipProgress.total) * 100}%` : '20%',
                     }}
@@ -528,10 +528,10 @@ export const NotesImportModal: React.FC = () => {
                     setIsDragging(false);
                   }}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                  className={`border-2 border-dashed rounded-xl p-5 text-center transition-colors ${
                     isDragging
-                      ? 'border-cyber-emerald bg-cyber-emerald/10 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
-                      : 'border-cyber-cyan/30 hover:border-cyber-cyan/70 bg-cyber-card/30 hover:bg-cyber-card/60'
+                      ? 'border-cyber-emerald bg-cyber-emerald/10'
+                      : 'border-cyber-border hover:border-cyber-borderGlow bg-cyber-bg/40 hover:bg-cyber-bg/70'
                   } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="max-w-md mx-auto space-y-3">
@@ -559,7 +559,7 @@ export const NotesImportModal: React.FC = () => {
                         type="button"
                         onClick={() => !isProcessing && folderInputRef.current?.click()}
                         disabled={isProcessing}
-                        className="py-2.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-mono font-bold text-xs transition-all shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                        className="py-2.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-mono font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <FolderOpen size={16} />
                         <span>Select Folder / Dir</span>
@@ -569,7 +569,7 @@ export const NotesImportModal: React.FC = () => {
                         type="button"
                         onClick={() => !isProcessing && fileInputRef.current?.click()}
                         disabled={isProcessing}
-                        className="py-2.5 px-3 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-cyan/50 text-cyber-cyan hover:text-white font-mono font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        className="py-2.5 px-3 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-cyan/50 text-cyber-cyan hover:text-white font-mono font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <Archive size={16} />
                         <span>Select .ZIP / .JSON</span>
@@ -582,7 +582,7 @@ export const NotesImportModal: React.FC = () => {
                         type="button"
                         onClick={handleAutoLoadDesktopVault}
                         disabled={isProcessing}
-                        className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-purple-700 via-indigo-600 to-cyan-600 hover:from-purple-600 hover:to-cyan-500 text-white font-mono font-bold text-xs transition-all shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer border border-purple-400/40"
+                        className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-purple-700 via-indigo-600 to-cyan-600 hover:from-purple-600 hover:to-cyan-500 text-white font-mono font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer border border-purple-400/40"
                       >
                         <Sparkles size={16} className="text-yellow-300 animate-pulse" />
                         <span>⚡ 1-Click Load Desktop CPTS Field Manual (404 Notes)</span>
@@ -655,7 +655,7 @@ export const NotesImportModal: React.FC = () => {
                   <button
                     onClick={handlePasteImport}
                     disabled={isProcessing || !pastedJson.trim()}
-                    className="px-4 py-2 bg-cyber-cyan/20 hover:bg-cyber-cyan/30 text-cyber-cyan border border-cyber-cyan/50 rounded-lg text-xs font-mono font-bold transition-all disabled:opacity-40 flex items-center gap-2"
+                    className="px-4 py-2 bg-cyber-cyan/20 hover:bg-cyber-cyan/30 text-cyber-cyan border border-cyber-cyan/50 rounded-lg text-xs font-mono font-bold transition-[opacity,background-color,border-color,color] disabled:opacity-40 flex items-center gap-2"
                   >
                     {isProcessing ? (
                       <RefreshCw size={14} className="animate-spin" />
@@ -681,7 +681,7 @@ export const NotesImportModal: React.FC = () => {
                   <button
                     onClick={handleExportBackup}
                     disabled={userNotes.length === 0}
-                    className="px-4 py-2 bg-cyber-cyan/20 hover:bg-cyber-cyan/30 text-cyber-cyan border border-cyber-cyan/50 rounded-lg text-xs font-mono font-bold transition-all disabled:opacity-40 flex items-center gap-2"
+                    className="px-4 py-2 bg-cyber-cyan/20 hover:bg-cyber-cyan/30 text-cyber-cyan border border-cyber-cyan/50 rounded-lg text-xs font-mono font-bold transition-[opacity,background-color,border-color,color] disabled:opacity-40 flex items-center gap-2"
                   >
                     <Download size={14} />
                     <span>Download Vault Backup (.json)</span>
@@ -698,7 +698,7 @@ export const NotesImportModal: React.FC = () => {
             </span>
             <button
               onClick={handleClose}
-              className="px-4 py-1.5 bg-cyber-card hover:bg-cyber-card/80 text-white rounded text-xs font-mono transition-colors"
+              className="px-4 py-1.5 bg-cyber-card hover:bg-cyber-card/80 text-white rounded-lg text-xs font-mono transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             >
               Close
             </button>

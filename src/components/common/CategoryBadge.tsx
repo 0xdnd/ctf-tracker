@@ -97,8 +97,8 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
 
   const sizeClass =
     size === 'xs'
-      ? 'text-[9px] px-1.5 py-0.2 rounded'
-      : 'text-[10px] px-2 py-0.5 rounded-md';
+      ? 'text-[9px] px-2 py-0.5 rounded-md'
+      : 'text-[10px] px-2.5 py-0.5 rounded-md';
 
   return (
     <span

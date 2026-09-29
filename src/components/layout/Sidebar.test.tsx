@@ -38,4 +38,15 @@ describe('Sidebar component', () => {
     expect(aside?.className).toContain('w-16');
     expect(screen.getByRole('button', { name: /Expand Sidebar/i })).toBeInTheDocument();
   });
+
+  it('renders Evidence & Loot Vault navigation link', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Evidence & Loot Vault')).toBeInTheDocument();
+  });
 });
+

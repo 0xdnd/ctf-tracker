@@ -57,33 +57,35 @@ export const KeyboardShortcutsModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [shortcutsModalOpen, setShortcutsModalOpen]);
 
-  if (!shortcutsModalOpen) return null;
-
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md font-mono"
       onClick={() => setShortcutsModalOpen(false)}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        initial={{ opacity: 0, scale: 0.98, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.18 }}
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-cyber-cyan/40 bg-cyber-card shadow-2xl overflow-hidden relative z-10"
+        exit={{ opacity: 0, scale: 0.98, y: 8 }}
+        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden relative z-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-cyber-border bg-cyber-bg/95 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/40 flex items-center justify-center text-cyber-cyan shadow-[0_0_12px_rgba(6,182,212,0.3)]">
-              <Keyboard className="w-5 h-5" />
+        <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-cyber-border bg-cyber-bg">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-cyan">
+              <Keyboard className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-wide">
+                <h2 className="text-sm font-bold text-white tracking-wide">
                   TACTICAL HOTKEYS // SHORTCUTS
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan font-bold">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-cyan font-bold">
                   PRO OPERATOR
                 </span>
               </div>
@@ -95,7 +97,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
 
           <button
             onClick={() => setShortcutsModalOpen(false)}
-            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-white hover:border-cyber-borderGlow transition-colors"
+            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-white hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -120,7 +122,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
                     {s.keys.map((k, i) => (
                       <kbd
                         key={i}
-                        className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-white text-[11px] font-bold shadow-inner"
+                        className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-white text-[11px] font-bold shadow-inner"
                       >
                         {k}
                       </kbd>
@@ -148,7 +150,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
                     {s.keys.map((k, i) => (
                       <kbd
                         key={i}
-                        className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-cyber-emerald text-[11px] font-bold shadow-inner"
+                        className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-emerald text-[11px] font-bold shadow-inner"
                       >
                         {k}
                       </kbd>
@@ -176,7 +178,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
                     {s.keys.map((k, i) => (
                       <kbd
                         key={i}
-                        className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-purple-300 text-[11px] font-bold shadow-inner"
+                        className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-purple-300 text-[11px] font-bold shadow-inner"
                       >
                         {k}
                       </kbd>
@@ -191,16 +193,16 @@ export const KeyboardShortcutsModal: React.FC = () => {
         {/* Footer */}
         <div className="flex-shrink-0 p-3 px-4 border-t border-cyber-border bg-cyber-bg flex items-center justify-between text-xs">
           <span className="text-[11px] text-cyber-muted">
-            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-cyber-card border border-cyber-border text-white">?</kbd> anywhere to open this sheet
+            Tip: Press <kbd className="px-1.5 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-white">?</kbd> anywhere to open this sheet
           </span>
           <button
             onClick={() => setShortcutsModalOpen(false)}
-            className="px-4 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-cyan transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             Close
           </button>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };

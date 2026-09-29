@@ -130,7 +130,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-white border border-cyber-border transition-all"
+            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-white border border-cyber-border transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -364,7 +364,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold transition-all shadow-md shadow-purple-600/30 flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold transition-[box-shadow,background-color,border-color,color] shadow-md shadow-purple-600/30 flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Save Field Note</span>

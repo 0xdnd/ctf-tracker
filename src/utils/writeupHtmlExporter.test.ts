@@ -127,7 +127,7 @@ Target Devel was compromised via Anonymous FTP write permissions leading to IIS 
       expect(fullHtml).not.toContain('cdn.jsdelivr.net');
 
       // Machine metadata validation
-      expect(fullHtml).toContain('<title>Devel — Penetration Testing Writeup</title>');
+      expect(fullHtml).toContain('<title>Devel - Penetration Testing Writeup</title>');
       expect(fullHtml).toContain('Devel');
       expect(fullHtml).toContain('10.10.10.5');
       expect(fullHtml).toContain('user{mock_user_flag}');

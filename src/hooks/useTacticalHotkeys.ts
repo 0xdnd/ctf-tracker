@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCtfStore } from '../store/useCtfStore';
+import { useExamStore } from '../store/examStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../utils/helpers';
 import { generateObsidianVaultZip } from '../utils/obsidianVaultExporter';
@@ -106,6 +108,10 @@ export function useTacticalHotkeys() {
           setSnippetsDrawerOpen(false);
           return;
         }
+        if (useExamStore.getState().isQuickDrawerOpen) {
+          useExamStore.getState().setQuickDrawerOpen(false);
+          return;
+        }
         if (revShellModalOpen) {
           setRevShellModalOpen(false);
           return;
@@ -131,7 +137,7 @@ export function useTacticalHotkeys() {
       }
 
       // Key repeat bounce protection for modal and drawer triggers
-      if (e.repeat && (e.ctrlKey || e.altKey || e.metaKey || ['?', '/', '1', '2', '3', '4', 't', 'T', 'v', 'V', 'u', 'U', 'r', 'R', ' '].includes(e.key))) {
+      if (e.repeat && (e.ctrlKey || e.altKey || e.metaKey || ['?', '/', '1', '2', '3', '4', 't', 'T', 'v', 'V', 'u', 'U', 'r', 'R', 'e', 'E', ' '].includes(e.key))) {
         return;
       }
 
@@ -149,6 +155,15 @@ export function useTacticalHotkeys() {
         e.preventDefault();
         e.stopPropagation();
         setSnippetsDrawerOpen(!snippetsDrawerOpen);
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
+      // Alt+E: Toggle Exam Mission Quick Action Drawer
+      if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        e.stopPropagation();
+        useExamStore.getState().toggleQuickDrawer();
         if (soundEnabled) playCyberSound('toggle');
         return;
       }
@@ -244,6 +259,17 @@ export function useTacticalHotkeys() {
         }
       }
 
+      // 4.5. Open Rapid Reverse Shell Crafter: Alt+R, Alt+P, or Ctrl+Shift+R
+      if (
+        (e.altKey && (e.key === 'r' || e.key === 'R' || e.key === 'p' || e.key === 'P')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'r' || e.key === 'R'))
+      ) {
+        e.preventDefault();
+        setRevShellModalOpen(true);
+        if (soundEnabled) playCyberSound('click');
+        return;
+      }
+
       // 5. Open Scan & Payload Crafter: 'p'
       if (e.key === 'p' || e.key === 'P') {
         if (!e.ctrlKey && !e.altKey && !e.metaKey) {
@@ -325,6 +351,14 @@ export function useTacticalHotkeys() {
           setActiveTarget(machines[prevIndex].id);
           if (soundEnabled) playCyberSound('click');
         }
+        return;
+      }
+
+      // 10.5 Operator Profile Switcher: Alt+O or Ctrl+Shift+O
+      if ((e.altKey && (e.key === 'o' || e.key === 'O')) || (e.ctrlKey && e.shiftKey && (e.key === 'o' || e.key === 'O'))) {
+        e.preventDefault();
+        useAuthStore.getState().setOperatorProfileModalOpen(true);
+        if (soundEnabled) playCyberSound('engage');
         return;
       }
 

@@ -334,19 +334,19 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
   return (
     <div className="space-y-4 font-mono text-xs">
       {/* Top Banner: Target Telemetry & Injected Variables */}
-      <div className="p-3 rounded-xl bg-[#090e1c] border border-cyber-border flex flex-wrap items-center justify-between gap-3 text-xs shadow-sm">
+      <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`w-2 h-2 rounded-full ${isIpConfigured ? 'bg-cyber-emerald shadow-glow-emerald animate-pulse' : 'bg-amber-500 shadow-glow-amber'}`} />
+          <span className={`w-2 h-2 rounded-full ${isIpConfigured ? 'bg-cyber-emerald' : 'bg-cyber-amber'}`} />
           <span className="text-cyber-muted font-bold">TARGET:</span>
-          <strong className="text-white">{machine.name}</strong>
+          <strong className="text-slate-900 dark:text-white">{machine.name}</strong>
           <span className="text-cyber-border">|</span>
           <span className="text-cyber-muted font-bold">INJECTED IP:</span>
           {isIpConfigured ? (
-            <code className="px-1.5 py-0.5 rounded bg-cyber-card border border-cyber-emerald/40 text-cyber-emerald font-bold">
+            <code className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-emerald/40 text-cyber-emerald font-bold">
               {targetIp}
             </code>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
               <span>⚠️ UNCONFIGURED (SET IP ABOVE)</span>
             </span>
           )}
@@ -370,10 +370,10 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
                 setActiveCategory(cat.id);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] border shadow-xs ${
                 activeCategory === cat.id
-                  ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan shadow-glow-cyan/20 font-bold'
-                  : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-white'
+                  ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan font-bold'
+                  : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white'
               }`}
             >
               <span>{cat.label}</span>
@@ -409,21 +409,21 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
             return (
               <div 
                 key={cmd.id}
-                className="p-3 rounded-xl bg-cyber-card/80 border border-cyber-border hover:border-cyber-cyan/50 transition-all space-y-2 group"
+                className="p-3 rounded-xl bg-cyber-card/80 border border-cyber-border hover:border-cyber-cyan/50 transition-colors space-y-2 group"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-white font-bold text-xs">{cmd.title}</span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] bg-cyber-bg text-cyber-cyan border border-cyber-border font-mono">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] bg-cyber-bg text-cyber-cyan border border-cyber-border font-mono">
                       {cmd.relevance}
                     </span>
                   </div>
 
                   <button
                     onClick={() => handleCopyCommand(cmd)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                       isCopied
-                        ? 'bg-cyber-emerald text-black shadow-glow-emerald'
+                        ? 'bg-cyber-emerald text-black font-extrabold'
                         : 'bg-cyber-bg hover:bg-cyber-cyan hover:text-black text-cyber-muted hover:text-white border border-cyber-border'
                     }`}
                     title="1-Click Copy Command to Clipboard"

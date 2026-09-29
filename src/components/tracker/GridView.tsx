@@ -111,15 +111,15 @@ const GridCard = React.memo<GridCardProps>(({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`group cyber-card-contain rounded-xl border p-4 bg-cyber-card hover:bg-cyber-cardHover cursor-pointer shadow-md flex flex-col justify-between relative overflow-hidden transition-[transform,box-shadow,border-color,background-color] duration-150 ease-out hover:-translate-y-1 hover:shadow-lg active:scale-[0.99] hover:will-change-transform ${
+      className={`group cyber-card-contain rounded-xl border p-3.5 bg-surface-card cursor-pointer shadow-xs flex flex-col justify-between relative overflow-hidden transition-[box-shadow,background-color,border-color,color] duration-150 ${
         isActiveTarget
-          ? 'border-cyber-emerald shadow-glow-emerald/30 ring-1 ring-cyber-emerald/40'
-          : 'border-cyber-border hover:border-cyber-cyan/50 hover:shadow-glow-cyan/20'
+          ? 'border-cyber-emerald ring-1 ring-cyber-emerald/40'
+          : 'border-subtle hover:border-zinc-700/80'
       }`}
     >
       {/* Drag Over Visual HUD Overlay */}
       {isDragOver && (
-        <div className="absolute inset-0 z-30 bg-slate-950/90 border-2 border-dashed border-cyber-cyan rounded-xl flex flex-col items-center justify-center p-4 text-center backdrop-blur-sm animate-pulse pointer-events-none">
+        <div className="absolute inset-0 z-30 bg-cyber-card/95 border-2 border-dashed border-cyber-cyan rounded-xl flex flex-col items-center justify-center p-4 text-center font-mono animate-pulse pointer-events-none">
           <Upload className="w-8 h-8 text-cyber-cyan mb-2 animate-bounce" />
           <span className="text-xs font-bold text-cyber-cyan uppercase tracking-wider font-mono">
             DROP SCAN FILE TO INGEST
@@ -137,10 +137,10 @@ const GridCard = React.memo<GridCardProps>(({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className={`absolute top-2 inset-x-2 z-20 px-2.5 py-1.5 rounded text-[11px] font-mono font-bold flex items-center justify-between shadow-lg ${
+            className={`absolute top-2 inset-x-2 z-20 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold flex items-center justify-between shadow-md ${
               scanToast.isError
                 ? 'bg-rose-950/95 border border-rose-500 text-rose-300'
-                : 'bg-cyber-card/95 border border-cyber-emerald text-cyber-emerald'
+                : 'bg-zinc-900 border border-emerald-500 text-emerald-400'
             }`}
           >
             <span className="flex items-center gap-1.5 truncate">
@@ -150,9 +150,6 @@ const GridCard = React.memo<GridCardProps>(({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Ambient edge glow on hover */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyber-cyan/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       <div>
         {/* Header: Platform, OS, Difficulty */}
@@ -168,17 +165,17 @@ const GridCard = React.memo<GridCardProps>(({
 
         {/* Machine Name & IP */}
         <div className="mb-3">
-          <div className="text-base font-bold text-slate-900 dark:text-white group-hover:text-cyber-cyan transition-colors flex items-center justify-between">
+          <div className="text-base font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan transition-colors flex items-center justify-between">
             <span className="tracking-wide flex items-center gap-1.5">
               <span>{m.name}</span>
               {m.isActive && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40">
+                <span className="text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40">
                   ACTIVE
                 </span>
               )}
             </span>
             {isActiveTarget && (
-              <span className="text-[10px] text-cyber-emerald flex items-center gap-1 font-semibold">
+              <span className="text-[10px] text-emerald-500 flex items-center gap-1 font-semibold">
                 <Crosshair className="w-3 h-3 animate-spin-slow" /> ENGAGED
               </span>
             )}
@@ -192,7 +189,7 @@ const GridCard = React.memo<GridCardProps>(({
             {m.certifications.map((c) => (
               <span
                 key={c}
-                className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-purple/10 border border-cyber-purple/30 text-cyber-purple font-bold"
+                className="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-100 border border-purple-300 text-purple-900 dark:bg-purple-950/30 dark:border-purple-800/40 dark:text-purple-300 font-bold font-mono"
               >
                 {c}
               </span>
@@ -201,20 +198,20 @@ const GridCard = React.memo<GridCardProps>(({
         )}
 
         {/* Status and Time Pill */}
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-cyber-bg border border-cyber-border/70 text-xs mb-3">
+        <div className="flex items-center justify-between gap-2 p-1.5 px-2.5 rounded-lg bg-cyber-bg border border-cyber-border text-xs mb-2.5">
           <div>
-            <span className="text-[10px] text-cyber-muted uppercase block">Status</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase block font-semibold">Status</span>
             <span className={`font-bold uppercase text-[11px] ${
-              m.status === 'root' || m.status === 'completed' ? 'text-cyber-emerald' :
-              m.status === 'foothold' ? 'text-cyber-amber' :
-              m.status === 'recon' ? 'text-cyber-cyan' : 'text-cyber-muted'
+              m.status === 'root' || m.status === 'completed' ? 'text-emerald-500 dark:text-emerald-400' :
+              m.status === 'foothold' ? 'text-amber-600 dark:text-amber-400' :
+              m.status === 'recon' ? 'text-cyan-600 dark:text-cyan-400' : 'text-zinc-500'
             }`}>
               {m.status}
             </span>
           </div>
 
           <div className="text-right">
-            <span className="text-[10px] text-cyber-muted uppercase block">Tracked</span>
+            <span className="text-[10px] text-cyber-muted uppercase block font-semibold">Tracked</span>
             <span className="text-slate-900 dark:text-white font-mono flex items-center gap-1">
               <Clock className="w-3 h-3 text-cyber-muted" />
               {formatDurationHuman(m.timeSpentSeconds)}
@@ -224,8 +221,8 @@ const GridCard = React.memo<GridCardProps>(({
 
         {/* Hint Spoiler Peek / Active ToS Guard */}
         {m.isActive ? (
-          <div className="mb-3 px-2.5 py-1.5 rounded border border-amber-500/30 bg-amber-950/20 text-amber-300 text-[10px] font-mono flex items-center gap-1.5">
-            <Lock className="w-3 h-3 text-amber-400 flex-shrink-0" />
+          <div className="mb-3 px-2.5 py-1.5 rounded-lg border border-amber-500/30 dark:bg-amber-950/20 bg-amber-50 dark:text-amber-300 text-amber-900 text-[10px] font-mono flex items-center gap-1.5">
+            <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
             <span>Active Lab · Writeups Prohibited (HTB ToS)</span>
           </div>
         ) : m.hint ? (
@@ -235,7 +232,9 @@ const GridCard = React.memo<GridCardProps>(({
               <button
                 type="button"
                 onClick={(e) => onToggleHint(e, m.id)}
-                className="text-[10px] text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white flex items-center gap-1 transition-colors"
+                className="text-[10px] text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                title={isHintRevealed ? 'Hide Intel Hint' : 'Peek Intel Hint'}
+                aria-label={isHintRevealed ? `Hide intel hint for ${m.name}` : `Peek intel hint for ${m.name}`}
               >
                 {isHintRevealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 {isHintRevealed ? 'Hide' : 'Peek'}
@@ -244,10 +243,10 @@ const GridCard = React.memo<GridCardProps>(({
             <AnimatePresence initial={false}>
               <motion.div 
                 layout
-                className={`rounded border text-[11px] font-mono leading-relaxed transition-all duration-200 ${
+                className={`rounded-lg border text-[11px] font-mono leading-relaxed transition-colors duration-200 ${
                   isHintRevealed
-                    ? 'p-2 bg-amber-50 border-amber-200 text-slate-800 dark:bg-cyber-amber/10 dark:border-cyber-amber/40 dark:text-cyber-text max-h-48 overflow-y-auto'
-                    : 'p-1.5 px-2 bg-cyber-bg/60 border-cyber-border/60 text-slate-600 dark:text-cyber-muted/60 select-none flex items-center justify-center cursor-pointer hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-cyber-amber'
+                    ? 'p-2.5 bg-amber-50 border-amber-200 text-slate-800 dark:bg-cyber-amber/10 dark:border-cyber-amber/40 dark:text-cyber-text max-h-48 overflow-y-auto'
+                    : 'p-2 px-2.5 bg-cyber-bg/60 border-cyber-border/60 text-slate-600 dark:text-slate-300 select-none flex items-center justify-center cursor-pointer hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-cyber-amber'
                 }`}
                 onClick={(e) => {
                   if (!isHintRevealed) onToggleHint(e, m.id);
@@ -275,13 +274,13 @@ const GridCard = React.memo<GridCardProps>(({
             {m.openPorts.slice(0, 5).map((port) => (
               <span
                 key={port}
-                className="text-[9px] px-1 py-0.2 rounded font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-cyber-cyan/30 text-slate-800 dark:text-cyber-cyan"
+                className="text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold bg-slate-100 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-cyber-muted"
               >
                 {port}
               </span>
             ))}
             {m.openPorts.length > 5 && (
-              <span className="text-[9px] text-cyber-muted font-mono">+{m.openPorts.length - 5}</span>
+              <span className="text-[9px] dark:text-zinc-400 text-zinc-600 font-mono">+{m.openPorts.length - 5}</span>
             )}
           </div>
         )}
@@ -290,41 +289,43 @@ const GridCard = React.memo<GridCardProps>(({
         {m.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {m.tags.slice(0, 3).map((t) => (
-              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-50 border border-cyan-200 text-cyan-900 dark:bg-cyber-bg dark:border-cyber-border dark:text-cyber-cyan font-mono">
+              <span key={t} className="text-[9px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800/60 border border-slate-300 dark:border-zinc-700/60 text-slate-700 dark:text-zinc-300 font-mono font-medium">
                 {t}
               </span>
             ))}
             {m.tags.length > 3 && (
-              <span className="text-[9px] text-cyber-muted self-center">+{m.tags.length - 3}</span>
+              <span className="text-[9px] dark:text-zinc-400 text-zinc-600 self-center">+{m.tags.length - 3}</span>
             )}
           </div>
         )}
       </div>
 
       {/* Card Footer Actions */}
-      <div className="pt-2.5 border-t border-cyber-border/70 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+      <div className="pt-2.5 border-t border-slate-200 dark:border-cyber-border flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onToggleUserFlag(m.id)}
-            className={`px-2 py-1 rounded text-xs border font-bold flex items-center gap-1 transition-[transform,colors] duration-150 hover:scale-105 active:scale-95 ${
+            className={`px-2.5 py-1 rounded-lg text-xs border font-bold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer ${
               hasUser
-                ? 'bg-cyan-100 border-cyan-400 text-cyan-900 dark:bg-cyber-cyan/10 dark:border-cyber-cyan/50 dark:text-cyber-cyan dark:shadow-glow-cyan/20'
+                ? 'bg-cyan-100 border-cyan-400 text-cyan-900 dark:bg-cyber-cyan/15 dark:border-cyber-cyan/40 dark:text-cyber-cyan shadow-xs'
                 : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-950 dark:bg-cyber-bg dark:border-cyber-border dark:text-cyber-muted dark:hover:text-white'
             }`}
             title="Toggle User Flag"
+            aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
           >
             <Flag className="w-3 h-3" /> User
           </button>
           <button
             type="button"
             onClick={() => onToggleRootFlag(m.id, hasRoot)}
-            className={`px-2 py-1 rounded text-xs border font-bold flex items-center gap-1 transition-[transform,colors] duration-150 hover:scale-105 active:scale-95 ${
+            className={`px-2.5 py-1 rounded-lg text-xs border font-bold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer ${
               hasRoot
-                ? 'bg-emerald-100 border-emerald-400 text-emerald-900 dark:bg-cyber-emerald/10 dark:border-cyber-emerald/50 dark:text-cyber-emerald dark:shadow-glow-emerald/20'
+                ? 'bg-emerald-100 border-emerald-400 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-500/40 dark:text-emerald-300 shadow-xs'
                 : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-950 dark:bg-cyber-bg dark:border-cyber-border dark:text-cyber-muted dark:hover:text-white'
             }`}
             title="Toggle Root Flag"
+            aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
           >
             <Flag className="w-3 h-3" /> Root
           </button>
@@ -334,12 +335,13 @@ const GridCard = React.memo<GridCardProps>(({
           <button
             type="button"
             onClick={() => onEngageTarget(m.id)}
-            className={`p-1.5 rounded border transition-[transform,colors,box-shadow] duration-150 hover:scale-110 active:scale-95 ${
+            className={`p-1.5 rounded-md border transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer ${
               isActiveTarget
-                ? 'bg-emerald-100 text-emerald-900 border-emerald-400 dark:bg-cyber-emerald/20 dark:text-cyber-emerald dark:border-cyber-emerald shadow-glow-emerald/30'
-                : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-emerald'
+                ? 'bg-emerald-100 text-emerald-900 border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500 shadow-xs'
+                : 'bg-white dark:bg-cyber-bg border-slate-200 dark:border-cyber-border dark:text-zinc-400 text-zinc-600 hover:text-slate-900 dark:hover:text-white hover:border-emerald-500'
             }`}
             title="Engage Active Target"
+            aria-label={isActiveTarget ? `Currently engaged target: ${m.name}` : `Engage target ${m.name} and start timer`}
           >
             <Crosshair className="w-3.5 h-3.5" />
           </button>
@@ -347,8 +349,9 @@ const GridCard = React.memo<GridCardProps>(({
           <button
             type="button"
             onClick={() => onSelectMachine(m.id)}
-            className="p-1.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyan-700 dark:hover:text-cyber-cyan hover:border-cyber-cyan transition-[transform,colors] duration-150 hover:scale-110 active:scale-95"
+            className="p-1.5 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border dark:text-zinc-400 text-zinc-600 hover:text-slate-900 dark:hover:text-white hover:border-cyber-cyan transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer"
             title="Attack Methodology Checklist"
+            aria-label={`Open attack methodology checklist for ${m.name}`}
           >
             <ListChecks className="w-3.5 h-3.5" />
           </button>
@@ -357,7 +360,7 @@ const GridCard = React.memo<GridCardProps>(({
             path={`/target/${m.id}`}
             title={m.name}
             iconOnly
-            className="p-1.5"
+            className="p-1.5 rounded-md"
           />
 
           <button
@@ -366,8 +369,9 @@ const GridCard = React.memo<GridCardProps>(({
               e.stopPropagation();
               onOpenDetail(m.id);
             }}
-            className="p-1.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyan-700 dark:hover:text-cyber-cyan hover:border-cyber-cyan transition-[transform,colors] duration-150 hover:scale-110 active:scale-95"
+            className="p-1.5 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border dark:text-zinc-400 text-zinc-600 hover:text-slate-900 dark:hover:text-white hover:border-cyber-cyan transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer"
             title="Open Dedicated Full-Page Mission"
+            aria-label={`Open dedicated mission dossier for ${m.name}`}
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
@@ -378,8 +382,9 @@ const GridCard = React.memo<GridCardProps>(({
               e.stopPropagation();
               onOpenReport(m.id);
             }}
-            className="p-1.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-purple-800 dark:hover:text-purple-300 hover:border-purple-600 transition-[transform,colors] duration-150 hover:scale-110 active:scale-95"
+            className="p-1.5 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border dark:text-zinc-400 text-zinc-600 hover:text-purple-800 dark:hover:text-purple-300 hover:border-purple-600 transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer"
             title="Open Executive Pentest Pre-Report"
+            aria-label={`Open executive pentest pre-report for ${m.name}`}
           >
             <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
           </button>
@@ -390,8 +395,9 @@ const GridCard = React.memo<GridCardProps>(({
               e.stopPropagation();
               onOpenWriteup(m.id);
             }}
-            className="p-1.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyan-700 dark:hover:text-cyber-cyan hover:border-cyber-cyan transition-[transform,colors] duration-150 hover:scale-110 active:scale-95"
+            className="p-1.5 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border dark:text-zinc-400 text-zinc-600 hover:text-slate-900 dark:hover:text-white hover:border-cyber-cyan transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer"
             title="Open Writeup"
+            aria-label={`Open writeup studio for ${m.name}`}
           >
             <FileText className="w-3.5 h-3.5" />
           </button>
@@ -401,8 +407,9 @@ const GridCard = React.memo<GridCardProps>(({
               href={sanitizeExternalUrl(m.roomUrl)}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,colors] duration-150 hover:scale-110 active:scale-95"
+              className="p-1.5 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border dark:text-zinc-400 text-zinc-600 hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.98] cursor-pointer"
               title="Open Room Link"
+              aria-label={`Open external room link for ${m.name}`}
             >
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
@@ -514,13 +521,10 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
           <button
             type="button"
             onClick={() => setVisibleCount((prev) => prev + 32)}
-            className="px-6 py-2.5 rounded-lg bg-cyber-card border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-bold text-xs transition-[transform,colors,box-shadow] duration-150 hover:scale-105 active:scale-95 shadow-glow-cyan/20"
+            className="px-6 py-2.5 rounded-xl bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-cyber-text hover:border-cyber-cyan hover:text-cyber-cyan font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-none"
           >
-            LOAD MORE TARGETS (+32) — Showing {visibleCount} of {filteredMachines.length}
+            LOAD MORE TARGETS (+32) - Showing {visibleCount} of {filteredMachines.length}
           </button>
-          <span className="text-[10px] text-cyber-muted mt-2">
-            120 FPS hardware-accelerated grid enabled
-          </span>
         </div>
       )}
     </div>

@@ -1,11 +1,24 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Machine, PipelineStatus, CheatsheetCommand, GlobalVariables, ActivitySession, ViewMode, Platform, Difficulty, OperatingSystem } from '../types';
+import { 
+  Machine, 
+  PipelineStatus, 
+  CheatsheetCommand, 
+  GlobalVariables, 
+  ActivitySession, 
+  ViewMode, 
+  Platform, 
+  Difficulty, 
+  OperatingSystem,
+  AttackGraphEdge,
+  AttackNodePosition,
+  AttackGraphPersistedState
+} from '../types';
 import { STARTER_MACHINES } from '../data/starterMachines';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
 let cachedCatalog: Machine[] | null = null;
-import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
+import { CPTS_NOTES, getAllCptsNotes, type CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
 import { 
   extractDeepWriteups, 
@@ -61,40 +74,42 @@ export const ZEROBOX_BRAND: BrandTheme = {
   id: 'zerobox',
   namePrefix: 'ZERO',
   nameSuffix: 'BOX',
-  suffixColor: 'text-cyber-cyan',
+  suffixColor: 'cyber-box-glow',
   tagline: 'Tactical Cyber Operations Suite',
   badge: 'v2.0',
 };
 
 export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];
 
-export type ThemePreset = 'neon' | 'zerobox' | 'htb' | 'midnight-blue' | 'slate' | 'oled' | 'light';
+export type CoreThemePreset = 'obsidian' | 'monolith' | 'htb';
+export type LegacyThemePreset = 'industrial' | 'neon' | 'zerobox' | 'oled' | 'light';
+export type ThemePreset = 'obsidian' | 'monolith' | 'htb';
+
+
+export function normalizeThemePreset(preset: string | null | undefined): ThemePreset {
+  if (!preset) return 'obsidian';
+  const p = String(preset).toLowerCase().trim();
+  if (p === 'monolith' || p === 'light' || p === 'clean-monolith' || p === 'clean monolith') return 'monolith';
+  if (p === 'htb' || p === 'hackthebox' || p === 'hack-the-box' || p === 'htb-oled' || p === 'hack the box') return 'htb';
+  // Legacy aliases ('oled', 'industrial', 'zerobox', 'neon', 'midnight-blue', 'slate', etc.) map to 'obsidian'
+  return 'obsidian';
+}
+
 export type UiScale = 'auto' | 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
 
-export function applyThemePreset(preset: ThemePreset) {
+export function applyThemePreset(preset: ThemePreset | string) {
+  const normalizedPreset: ThemePreset = normalizeThemePreset(preset);
   if (typeof document !== 'undefined') {
-    document.documentElement.setAttribute('data-theme', preset);
-    if (preset === 'light') {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-      document.documentElement.setAttribute('data-mode', 'light');
-    } else {
-      document.documentElement.classList.remove('light');
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-mode', 'dark');
-    }
+    document.documentElement.setAttribute('data-theme', normalizedPreset);
 
     // Synchronize browser tab favicon with active theme preset
     try {
       const faviconMap: Record<string, string> = {
+        obsidian: './logo-zerobox.png',
+        monolith: './logo-zerobox.png',
         htb: './logo-htb.png',
-        zerobox: './logo-zerobox.png',
-        neon: './logo-zerobox.png',
-        'midnight-blue': './logo-midnight.png',
-        slate: './logo-midnight.png',
-        oled: './logo-oled.png',
       };
-      const iconPath = faviconMap[preset] || './logo-zerobox.png';
+      const iconPath = faviconMap[normalizedPreset] || './logo-zerobox.png';
       const favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
       favicons.forEach(el => {
         el.href = iconPath;
@@ -105,7 +120,7 @@ export function applyThemePreset(preset: ThemePreset) {
   }
 }
 
-export type ActiveTab = 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme';
+export type ActiveTab = 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme' | 'vault';
 
 interface CtfStoreState {
   machines: Machine[];
@@ -129,7 +144,7 @@ interface CtfStoreState {
   mobileMenuOpen: boolean;
   crtOverlay: boolean;
   soundEnabled: boolean;
-  themePreset: ThemePreset;
+  themePreset: ThemePreset | string;
   uiScale: UiScale;
   focusMode: boolean;
   snippetsDrawerOpen: boolean;
@@ -187,7 +202,7 @@ interface CtfStoreState {
   setAssignIpMachineId: (id: string | null) => void;
   toggleCrtOverlay: () => void;
   toggleSound: () => void;
-  setThemePreset: (preset: ThemePreset) => void;
+  setThemePreset: (preset: ThemePreset | string) => void;
   setUiScale: (scale: UiScale) => void;
   cycleUiScale: () => void;
   zoomIn: () => void;
@@ -231,6 +246,7 @@ interface CtfStoreState {
   deletedNoteIds: string[];
   userSolvesReset: boolean;
   addCustomNote: (note: Partial<CptsNoteEntry> & { title: string }) => void;
+  updateNoteContent: (noteId: string, rawMarkdown: string) => void;
   deleteNote: (noteId: string) => void;
   restoreDeletedNotes: () => void;
   resetSolvesToZero: () => void;
@@ -245,11 +261,22 @@ interface CtfStoreState {
   currentProfileId: string;
   isEphemeralStorage: boolean;
   setIsEphemeralStorage: (val: boolean) => void;
-  loadProfileData: (profileId: string) => void;
+  loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => void;
   saveProfileData: (profileId?: string) => void;
   exportBackup: (options?: { redactSecrets?: boolean }) => string;
   importBackup: (jsonStr: string) => boolean;
   resetAllProgress: () => void;
+
+  // Attack Graph & Pivot Topology State & Actions
+  graphNodePositions: Record<string, AttackNodePosition>;
+  graphEdges: AttackGraphEdge[];
+  setGraphNodePosition: (id: string, pos: AttackNodePosition) => void;
+  batchSetGraphNodePositions: (positions: Record<string, AttackNodePosition>) => void;
+  resetGraphLayout: () => void;
+  addGraphEdge: (edge: Omit<AttackGraphEdge, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => AttackGraphEdge;
+  updateGraphEdge: (id: string, updates: Partial<AttackGraphEdge>) => void;
+  deleteGraphEdge: (id: string) => void;
+  clearGraphEdges: () => void;
 }
 
 const DEFAULT_GLOBAL_VARS: GlobalVariables = {
@@ -285,7 +312,20 @@ const DEFAULT_FILTERS: FilterState = {
   hideEmptyLanes: false,
 };
 
-export const getProfileStorageKey = (profileId: string) => `specter_ctf_profile_${profileId || 'guest'}`;
+export const getProfileStorageKey = (profileId: string) => {
+  const id = profileId || 'guest';
+  const modernKey = `zerobox_operator_profile_${id}`;
+  if (typeof window !== 'undefined') {
+    const modernExists = safeLocalStorage.getItem(modernKey);
+    if (modernExists) return modernKey;
+    const legacyKey = `specter_ctf_profile_${id}`;
+    const legacyExists = safeLocalStorage.getItem(legacyKey);
+    if (legacyExists) return legacyKey;
+  }
+  return modernKey;
+};
+
+export const getWriteProfileStorageKey = (profileId: string) => `zerobox_operator_profile_${profileId || 'guest'}`;
 
 export const SYNC_CHANNEL_NAME = 'zerobox_cross_tab_sync';
 export const syncChannel: BroadcastChannel | null =
@@ -294,7 +334,7 @@ export const syncChannel: BroadcastChannel | null =
     : null;
 
 export const broadcastCrossTabMessage = (
-  type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED',
+  type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED',
   payload?: any
 ) => {
   try {
@@ -350,6 +390,73 @@ export const safeLocalStorage = {
   }
 };
 
+export const ATTACK_GRAPH_STORAGE_KEY = 'zerobox-attack-graph-state';
+
+export const getAttackGraphStorageKey = (profileId: string = 'guest'): string => {
+  const id = profileId || 'guest';
+  if (id === 'guest') {
+    return ATTACK_GRAPH_STORAGE_KEY;
+  }
+  const specificKey = `zerobox_graph_state_${id}`;
+  if (typeof window !== 'undefined') {
+    const modernExists = safeLocalStorage.getItem(specificKey);
+    if (modernExists) return specificKey;
+    const legacyExists = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
+    if (legacyExists) return ATTACK_GRAPH_STORAGE_KEY;
+  }
+  return specificKey;
+};
+
+export function loadInitialAttackGraphState(profileId: string = 'guest'): AttackGraphPersistedState {
+  if (typeof window === 'undefined') {
+    return { graphNodePositions: {}, graphEdges: [] };
+  }
+  try {
+    const key = getAttackGraphStorageKey(profileId);
+    const raw = safeLocalStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const positions = parsed.graphNodePositions !== undefined ? parsed.graphNodePositions : (parsed.nodePositions || {});
+      const edges = Array.isArray(parsed.graphEdges)
+        ? parsed.graphEdges
+        : Array.isArray(parsed.edges)
+        ? parsed.edges
+        : [];
+      return {
+        graphNodePositions: positions,
+        graphEdges: edges,
+      };
+    }
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to parse attack graph state from storage:', err);
+  }
+  return { graphNodePositions: {}, graphEdges: [] };
+}
+
+export function saveAttackGraphState(
+  positions: Record<string, AttackNodePosition>,
+  edges: AttackGraphEdge[],
+  profileId: string = 'guest'
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload = {
+      graphNodePositions: positions,
+      graphEdges: edges,
+      nodePositions: positions,
+      edges,
+    };
+    const serialized = JSON.stringify(payload);
+    const id = profileId || 'guest';
+    if (id !== 'guest') {
+      safeLocalStorage.setItem(`zerobox_graph_state_${id}`, serialized);
+    }
+    safeLocalStorage.setItem(ATTACK_GRAPH_STORAGE_KEY, serialized);
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to save attack graph state to storage:', err);
+  }
+}
+
 export const getInitialProfileId = (): string => {
   if (typeof window !== 'undefined') {
     try {
@@ -365,21 +472,73 @@ export const getInitialProfileId = (): string => {
   return 'guest';
 };
 
+export const CUSTOM_MACHINES_STORAGE_KEY = 'zerobox_custom_machines_v1';
+
+export const getCustomMachinesStorageKey = (profileId: string = 'guest'): string => {
+  return `${CUSTOM_MACHINES_STORAGE_KEY}_${profileId}`;
+};
+
+export const loadCustomMachinesFromStorage = (profileId: string = 'guest'): Machine[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const specificKey = getCustomMachinesStorageKey(profileId);
+    const rawSpecific = safeLocalStorage.getItem(specificKey);
+    if (rawSpecific) {
+      const parsed = JSON.parse(rawSpecific);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    // Global fallback
+    const rawGlobal = safeLocalStorage.getItem(CUSTOM_MACHINES_STORAGE_KEY);
+    if (rawGlobal) {
+      const parsed = JSON.parse(rawGlobal);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to load custom machines from storage:', err);
+  }
+  return [];
+};
+
+export const saveCustomMachinesToStorage = (machines: Machine[], profileId: string = 'guest'): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const customOnly = machines.filter(
+      (m) => m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))
+    );
+    const serialized = JSON.stringify(customOnly);
+    safeLocalStorage.setItem(getCustomMachinesStorageKey(profileId), serialized);
+    safeLocalStorage.setItem(CUSTOM_MACHINES_STORAGE_KEY, serialized);
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to save custom machines to storage:', err);
+  }
+};
+
 export const loadInitialProfileData = (profileId: string) => {
   if (typeof window !== 'undefined') {
     try {
       const raw = safeLocalStorage.getItem(getProfileStorageKey(profileId));
-      if (raw) {
-        return JSON.parse(raw);
-      }
-      const legacy = safeLocalStorage.getItem('specter_ctf_store_v2');
-      if (legacy) {
-        const parsed = JSON.parse(legacy);
-        const state = parsed.state || parsed;
-        if (state.machines) {
-          return state;
+      let state = raw ? JSON.parse(raw) : null;
+      if (!state) {
+        const legacy = safeLocalStorage.getItem('specter_ctf_store_v2');
+        if (legacy) {
+          const parsed = JSON.parse(legacy);
+          state = parsed.state || parsed;
         }
       }
+
+      // Re-integrate any isolated custom machines in case of partial reset or fresh profile
+      const storedCustom = loadCustomMachinesFromStorage(profileId);
+      if (storedCustom.length > 0) {
+        if (!state) {
+          state = { machines: storedCustom };
+        } else {
+          const existingIds = new Set((state.machines || []).map((m: Machine) => m.id));
+          const missingCustom = storedCustom.filter((m) => !existingIds.has(m.id));
+          state.machines = [...missingCustom, ...(state.machines || [])];
+        }
+      }
+
+      return state;
     } catch {}
   }
   return null;
@@ -418,8 +577,8 @@ export const CATALOG_MACHINE_ALIASES: Record<string, string> = {
 export const toLeanMachines = (machines: Machine[]): Machine[] => {
   return machines.map((m) => {
     // Preserve custom user-added machines completely (including user-entered hints, walkthroughs, etc.)
-    if (m.isCustom || (m.id && m.id.startsWith('custom-'))) {
-      return m;
+    if (m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))) {
+      return { ...m, isCustom: true };
     }
     // For static catalog machines, strip heavy static content that is deterministically rehydrated by mergeMachinesWithCatalog
     const { officialWalkthrough, officialSynopsis, officialPdf, ...userFields } = m;
@@ -620,6 +779,7 @@ export const mergeMachinesWithCatalog = (
         }
       } else if (
         m.isCustom ||
+        m.platform === 'Custom' ||
         (m.id && m.id.startsWith('custom-')) ||
         Boolean(m.userFlag?.trim()) ||
         Boolean(m.rootFlag?.trim()) ||
@@ -653,15 +813,28 @@ export const mergeMachinesWithCatalog = (
     }
   });
 
-  return Array.from(map.values());
+  // Priority ordering: User-added custom machines are anchored at the very TOP (index 0) of the collection
+  const customEntries: Machine[] = [];
+  const catalogEntries: Machine[] = [];
+
+  for (const m of map.values()) {
+    if (m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))) {
+      customEntries.push(m);
+    } else {
+      catalogEntries.push(m);
+    }
+  }
+
+  return [...customEntries, ...catalogEntries];
 };
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
+const initialAttackGraphData = loadInitialAttackGraphState();
 
 export const useCtfStore = create<CtfStoreState>()(
   persist(
-    (set, get) => ({
+    (set, get): CtfStoreState => ({
       machines: mergeMachinesWithCatalog(initialProfileData?.machines, Boolean(initialProfileData?.userSolvesReset)),
       activeTargetId: initialProfileData?.activeTargetId || null,
       globalVars: initialProfileData?.globalVars || DEFAULT_GLOBAL_VARS,
@@ -671,6 +844,10 @@ export const useCtfStore = create<CtfStoreState>()(
       customNotes: initialProfileData?.customNotes || [],
       deletedNoteIds: initialProfileData?.deletedNoteIds || [],
       userSolvesReset: Boolean(initialProfileData?.userSolvesReset),
+
+      // Attack Graph & Pivot Topology State
+      graphNodePositions: initialAttackGraphData.graphNodePositions,
+      graphEdges: initialAttackGraphData.graphEdges,
 
       appBrand: 'zerobox',
       activeTab: 'tracker',
@@ -694,7 +871,7 @@ export const useCtfStore = create<CtfStoreState>()(
       assignIpMachineId: null,
       crtOverlay: false,
       soundEnabled: true,
-      themePreset: 'zerobox',
+      themePreset: 'obsidian' as ThemePreset,
       uiScale: 'auto',
       focusMode: false,
       snippetsDrawerOpen: false,
@@ -847,9 +1024,10 @@ export const useCtfStore = create<CtfStoreState>()(
       setAssignIpMachineId: (id) => set({ assignIpMachineId: id }),
       toggleCrtOverlay: () => set((s) => ({ crtOverlay: !s.crtOverlay })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
-      setThemePreset: (preset: ThemePreset) => {
-        applyThemePreset(preset);
-        set({ themePreset: preset });
+      setThemePreset: (preset: ThemePreset | string) => {
+        const normalized = normalizeThemePreset(preset);
+        applyThemePreset(normalized);
+        set({ themePreset: normalized });
       },
       setUiScale: (scale) => set({ uiScale: scale }),
       zoomIn: () => set((s) => {
@@ -1021,8 +1199,12 @@ export const useCtfStore = create<CtfStoreState>()(
               ? { ...state.globalVars, targetIp: updates.ip! }
               : state.globalVars,
             isTimerRunning: shouldStopTimer ? false : state.isTimerRunning,
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
         });
+        const profileId = get().currentProfileId || 'guest';
+        get().saveProfileData(profileId);
+        saveCustomMachinesToStorage(get().machines, profileId);
       },
 
       addCustomMachine: (data) => {
@@ -1049,7 +1231,12 @@ export const useCtfStore = create<CtfStoreState>()(
         };
         set((state) => ({
           machines: [newMachine, ...state.machines],
+          unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
         }));
+        const profileId = get().currentProfileId || 'guest';
+        get().saveProfileData(profileId);
+        saveCustomMachinesToStorage(get().machines, profileId);
+        broadcastCrossTabMessage('MACHINE_ADDED', { machine: newMachine, profileId });
       },
 
       deleteMachine: (id) => {
@@ -1060,7 +1247,10 @@ export const useCtfStore = create<CtfStoreState>()(
           machines: state.machines.filter((m) => m.id !== id),
           activeTargetId: state.activeTargetId === id ? null : state.activeTargetId,
           selectedMachineId: state.selectedMachineId === id ? null : state.selectedMachineId,
+          unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
         }));
+        get().saveProfileData(profileId);
+        saveCustomMachinesToStorage(get().machines, profileId);
       },
 
       toggleUserFlag: (id, flagValue) => {
@@ -1386,6 +1576,84 @@ export const useCtfStore = create<CtfStoreState>()(
       }),
       resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
+      // Attack Graph & Pivot Topology Actions
+      setGraphNodePosition: (id: string, pos: AttackNodePosition) => {
+        set((state) => {
+          const nextPositions = {
+            ...state.graphNodePositions,
+            [id]: pos,
+          };
+          saveAttackGraphState(nextPositions, state.graphEdges, state.currentProfileId);
+          return { graphNodePositions: nextPositions };
+        });
+      },
+
+      batchSetGraphNodePositions: (positions: Record<string, AttackNodePosition>) => {
+        set((state) => {
+          const nextPositions = {
+            ...state.graphNodePositions,
+            ...positions,
+          };
+          saveAttackGraphState(nextPositions, state.graphEdges, state.currentProfileId);
+          return { graphNodePositions: nextPositions };
+        });
+      },
+
+      resetGraphLayout: () => {
+        set((state) => {
+          const nextPositions: Record<string, AttackNodePosition> = {};
+          saveAttackGraphState(nextPositions, state.graphEdges, state.currentProfileId);
+          return { graphNodePositions: nextPositions };
+        });
+      },
+
+      addGraphEdge: (edge: Omit<AttackGraphEdge, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => {
+        const newEdge: AttackGraphEdge = {
+          id: edge.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `edge_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`),
+          sourceId: edge.sourceId,
+          targetId: edge.targetId,
+          type: edge.type,
+          status: edge.status || 'potential',
+          label: edge.label,
+          port: edge.port,
+          protocol: edge.protocol,
+          notes: edge.notes,
+          createdAt: edge.createdAt || new Date().toISOString(),
+        };
+        set((state) => {
+          const nextEdges = [...state.graphEdges, newEdge];
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+        return newEdge;
+      },
+
+      updateGraphEdge: (id: string, updates: Partial<AttackGraphEdge>) => {
+        set((state) => {
+          const nextEdges = state.graphEdges.map((e) =>
+            e.id === id ? { ...e, ...updates } : e
+          );
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+      },
+
+      deleteGraphEdge: (id: string) => {
+        set((state) => {
+          const nextEdges = state.graphEdges.filter((e) => e.id !== id);
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+      },
+
+      clearGraphEdges: () => {
+        set((state) => {
+          const nextEdges: AttackGraphEdge[] = [];
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+      },
+
       addCustomNote: (note) => {
         const id = 'custom-note-' + Date.now();
         const fullNote: CptsNoteEntry = {
@@ -1409,6 +1677,71 @@ export const useCtfStore = create<CtfStoreState>()(
         set((state) => ({
           customNotes: [fullNote, ...state.customNotes],
         }));
+      },
+
+      updateNoteContent: (noteId: string, rawMarkdown: string) => {
+        const state = get();
+        const now = new Date().toISOString();
+
+        // 1. In-place update if note exists in customNotes (custom or already promoted)
+        const customNote = state.customNotes.find((n) => n.id === noteId);
+        if (customNote) {
+          const updatedCustom = state.customNotes.map((n) =>
+            n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
+          );
+          set({ customNotes: updatedCustom });
+          flushProfileSave();
+          return;
+        }
+
+        // 2. In-place update if note exists in userNotes (imported private vault)
+        const userNotes = state.userNotes || [];
+        const isUserNote = userNotes.some((n) => n.id === noteId);
+        if (isUserNote) {
+          const updatedUserNotes = userNotes.map((n) =>
+            n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
+          );
+          set({ userNotes: updatedUserNotes });
+          saveVaultToIndexedDb({
+            notes: updatedUserNotes,
+            wikilinkMap: state.userWikilinkMap || {},
+          }).catch((err) =>
+            console.warn('[ZeroBox] Could not persist note update to IndexedDB', err)
+          );
+          return;
+        }
+
+        // 3. Promote catalog note from CPTS_NOTES into customNotes
+        const catalogNote = CPTS_NOTES.find((n) => n.id === noteId);
+        if (catalogNote) {
+          const promotedNote: CptsNoteEntry = {
+            ...catalogNote,
+            rawMarkdown,
+            dateModified: now,
+          };
+          set((s) => ({
+            customNotes: [promotedNote, ...s.customNotes.filter((n) => n.id !== noteId)],
+          }));
+          flushProfileSave();
+          return;
+        }
+
+        // 4. Fallback lookup via getAllCptsNotes() in case note was hydrated dynamically
+        const fallbackNote = getAllCptsNotes().find((n) => n.id === noteId);
+        if (fallbackNote) {
+          const promotedNote: CptsNoteEntry = {
+            ...fallbackNote,
+            rawMarkdown,
+            dateModified: now,
+          };
+          set((s) => ({
+            customNotes: [promotedNote, ...s.customNotes.filter((n) => n.id !== noteId)],
+          }));
+          flushProfileSave();
+          return;
+        }
+
+        console.warn(`[ZeroBox] Note with id "${noteId}" not found for update.`);
       },
 
       deleteNote: (noteId) => {
@@ -1482,12 +1815,17 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         }
         const targetId = get().currentProfileId || 'guest';
+        const customMachines = get().machines.filter(
+          (m) => m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))
+        );
+        const merged = mergeMachinesWithCatalog(customMachines, false, catalog);
         set(() => ({
-          machines: catalog,
+          machines: merged,
           userSolvesReset: false,
           isCatalogLoaded: true,
         }));
         get().saveProfileData(targetId);
+        saveCustomMachinesToStorage(customMachines, targetId);
       },
 
       exportBackup: (options?: { redactSecrets?: boolean }) => {
@@ -1546,15 +1884,20 @@ export const useCtfStore = create<CtfStoreState>()(
           userWikilinkMap: state.userWikilinkMap || {},
           deletedNoteIds: state.deletedNoteIds,
           userSolvesReset: state.userSolvesReset,
+          themePreset: state.themePreset,
         };
         return JSON.stringify(exportData, null, 2);
       },
 
       importBackup: (jsonStr) => {
         try {
-          const data = JSON.parse(jsonStr);
-          if (!data || typeof data !== 'object') return false;
+          const raw = JSON.parse(jsonStr);
+          if (!raw || typeof raw !== 'object') return false;
 
+          const validation = validateWorkspacePayload(raw);
+          if (!validation.success || !validation.data) return false;
+
+          const data = validation.data;
           const rawMachines = Array.isArray(data.machines) ? data.machines : null;
           if (rawMachines) {
             const userSolvesReset = Boolean(data.userSolvesReset);
@@ -1567,9 +1910,15 @@ export const useCtfStore = create<CtfStoreState>()(
               })),
               userSolvesReset
             );
+            const rawPreset = data.themePreset;
+            const nextThemePreset = rawPreset ? normalizeThemePreset(rawPreset) : undefined;
+            if (nextThemePreset) {
+              applyThemePreset(nextThemePreset);
+            }
             set((state) => ({
               machines: normalizedMachines,
-              globalVars: data.globalVars || state.globalVars,
+              ...(nextThemePreset ? { themePreset: nextThemePreset } : {}),
+              globalVars: (data.globalVars as GlobalVariables) || state.globalVars,
               cheatsheets: Array.isArray(data.cheatsheets) ? data.cheatsheets : state.cheatsheets,
               activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : state.activitySessions,
               customNotes: Array.isArray(data.customNotes) ? data.customNotes : state.customNotes,
@@ -1587,7 +1936,7 @@ export const useCtfStore = create<CtfStoreState>()(
         }
       },
 
-      loadProfileData: (profileId: string) => {
+      loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => {
         const gen = ++profileLoadGeneration;
         const currentId = get().currentProfileId || 'guest';
         get().saveProfileData(currentId);
@@ -1598,6 +1947,7 @@ export const useCtfStore = create<CtfStoreState>()(
           try {
             const data = JSON.parse(raw);
             const userSolvesReset = Boolean(data.userSolvesReset);
+            const graphState = loadInitialAttackGraphState(profileId);
             set({
               currentProfileId: profileId,
               userSolvesReset,
@@ -1608,6 +1958,8 @@ export const useCtfStore = create<CtfStoreState>()(
               activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : [],
               customNotes: Array.isArray(data.customNotes) ? data.customNotes : [],
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : [],
+              graphNodePositions: graphState.graphNodePositions,
+              graphEdges: graphState.graphEdges,
             });
 
             // Asynchronously enrich with deep writeups from IndexedDB
@@ -1628,7 +1980,8 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         }
 
-        if (currentId === 'guest' && profileId !== 'guest') {
+        // New profile not yet saved in storage:
+        if (options?.cloneFromCurrent) {
           const payload = {
             machines: get().machines,
             activeTargetId: get().activeTargetId,
@@ -1639,21 +1992,51 @@ export const useCtfStore = create<CtfStoreState>()(
             deletedNoteIds: get().deletedNoteIds,
             userSolvesReset: get().userSolvesReset,
           };
-          safeLocalStorage.setItem(targetKey, JSON.stringify(payload));
+          const writeKey = getWriteProfileStorageKey(profileId);
+          safeLocalStorage.setItem(writeKey, JSON.stringify(payload));
+          saveAttackGraphState(get().graphNodePositions, get().graphEdges, profileId);
           set({ currentProfileId: profileId });
           return;
         }
 
+        const isDanielOrGuest = profileId === 'usr_daniel' || profileId === 'guest';
+        const startFresh = options?.startFresh ?? (!isDanielOrGuest);
+
+        if (!startFresh && isDanielOrGuest) {
+          const graphState = loadInitialAttackGraphState(profileId);
+          set({
+            currentProfileId: profileId,
+            machines: mergeMachinesWithCatalog([], false),
+            activeTargetId: null,
+            globalVars: DEFAULT_GLOBAL_VARS,
+            cheatsheets: INITIAL_CHEATSHEET,
+            activitySessions: [],
+            customNotes: [],
+            deletedNoteIds: [],
+            userSolvesReset: false,
+            graphNodePositions: graphState.graphNodePositions,
+            graphEdges: graphState.graphEdges,
+          });
+          get().saveProfileData(profileId);
+          return;
+        }
+
+        // Fresh slate for new operator: all 929 catalog targets ready to be pwned with 0 solves (zero custom machine leak)
+        const freshMachines = mergeMachinesWithCatalog([], true);
+        const graphState = loadInitialAttackGraphState(profileId);
+
         set({
           currentProfileId: profileId,
-          machines: mergeMachinesWithCatalog([], false),
+          machines: freshMachines,
           activeTargetId: null,
           globalVars: DEFAULT_GLOBAL_VARS,
           cheatsheets: INITIAL_CHEATSHEET,
           activitySessions: [],
           customNotes: [],
           deletedNoteIds: [],
-          userSolvesReset: false,
+          userSolvesReset: true,
+          graphNodePositions: graphState.graphNodePositions,
+          graphEdges: graphState.graphEdges,
         });
         get().saveProfileData(profileId);
       },
@@ -1661,7 +2044,7 @@ export const useCtfStore = create<CtfStoreState>()(
       saveProfileData: (profileId?: string) => {
         const state = get();
         const targetId = profileId || state.currentProfileId || 'guest';
-        const targetKey = getProfileStorageKey(targetId);
+        const targetKey = getWriteProfileStorageKey(targetId);
         let persistedMachines = state.machines;
         if (state.activeTargetId && state.activeTimerSeconds > 0) {
           persistedMachines = state.machines.map((m) =>
@@ -1689,7 +2072,9 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset: state.userSolvesReset,
         };
         try {
-          safeLocalStorage.setItem(targetKey, JSON.stringify(payload));
+          const serialized = JSON.stringify(payload);
+          safeLocalStorage.setItem(targetKey, serialized);
+          safeLocalStorage.setItem(`specter_ctf_profile_${targetId}`, serialized);
         } catch (e: any) {
           // Quota guard: prune writeups from localStorage if quota exceeded (safely stored in IndexedDB)
           if (e?.name === 'QuotaExceededError' || e?.code === 22 || (typeof e?.message === 'string' && e.message.toLowerCase().includes('quota'))) {
@@ -1699,7 +2084,9 @@ export const useCtfStore = create<CtfStoreState>()(
                 ...payload,
                 machines: stripDeepFieldsFromMachines(payload.machines),
               };
-              safeLocalStorage.setItem(targetKey, JSON.stringify(leanPayload));
+              const serializedLean = JSON.stringify(leanPayload);
+              safeLocalStorage.setItem(targetKey, serializedLean);
+              safeLocalStorage.setItem(`specter_ctf_profile_${targetId}`, serializedLean);
             } catch (innerErr) {
               console.error('Failed to save even stripped profile data:', innerErr);
             }
@@ -1724,6 +2111,7 @@ export const useCtfStore = create<CtfStoreState>()(
         // Explicitly clear IndexedDB deep storage and vault notes to prevent orphaned data accumulation
         await clearDeepProfileData(targetId);
         await clearVaultFromIndexedDb();
+        safeLocalStorage.removeItem(ATTACK_GRAPH_STORAGE_KEY);
         set(() => ({
           machines: mergeMachinesWithCatalog([], true, catalog),
           activeTargetId: null,
@@ -1736,6 +2124,8 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset: true,
           isCatalogLoaded: true,
           unexportedChangesCount: 0,
+          graphNodePositions: {},
+          graphEdges: [],
         }));
         get().saveProfileData(targetId);
         broadcastCrossTabMessage('STATE_UPDATED', { profileId: targetId });
@@ -1785,22 +2175,43 @@ export const useCtfStore = create<CtfStoreState>()(
           persisted.uiScale = 'auto';
         }
         const userSolvesReset = Boolean(persisted.userSolvesReset);
+        const rawPreset = (persisted.themePreset as string) || 'obsidian';
+        const themePreset: ThemePreset = normalizeThemePreset(rawPreset);
+        applyThemePreset(themePreset);
+
+        // Fail-safe: Ensure isolated custom machines are never lost during version migration
+        const storedMachines: Machine[] = Array.isArray(persisted.machines) ? persisted.machines : [];
+        const isolatedCustom = loadCustomMachinesFromStorage(persisted.currentProfileId || 'guest');
+        const existingIds = new Set(storedMachines.map((m) => m.id));
+        const missingCustom = isolatedCustom.filter((c) => !existingIds.has(c.id));
+        const combinedMachines = [...missingCustom, ...storedMachines];
+
         return {
           ...persisted,
           appBrand: 'zerobox',
+          themePreset,
           uiScale: (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : persisted.uiScale,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
-          machines: mergeMachinesWithCatalog(persisted.machines, userSolvesReset),
+          machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
         };
       },
       merge: (persistedState: any, currentState: CtfStoreState) => {
         const persisted = (persistedState as Partial<CtfStoreState>) || {};
         const userSolvesReset = Boolean(persisted.userSolvesReset);
-        const themePreset = (persisted.themePreset as ThemePreset) || 'zerobox';
+        const rawPreset = (persisted.themePreset as string) || 'obsidian';
+        const themePreset: ThemePreset = normalizeThemePreset(rawPreset);
         applyThemePreset(themePreset);
         const resolvedUiScale: UiScale = (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : (persisted.uiScale as UiScale);
+
+        // Fail-safe: Ensure isolated custom machines are never lost during store rehydration
+        const storedMachines: Machine[] = Array.isArray(persisted.machines) ? persisted.machines : [];
+        const isolatedCustom = loadCustomMachinesFromStorage(persisted.currentProfileId || 'guest');
+        const existingIds = new Set(storedMachines.map((m) => m.id));
+        const missingCustom = isolatedCustom.filter((c) => !existingIds.has(c.id));
+        const combinedMachines = [...missingCustom, ...storedMachines];
+
         return {
           ...currentState,
           ...persisted,
@@ -1810,7 +2221,7 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
-          machines: mergeMachinesWithCatalog(persisted.machines, userSolvesReset),
+          machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
         };
       },
       onRehydrateStorage: () => (state) => {
@@ -1854,7 +2265,7 @@ let lastSavedUserSolvesReset = useCtfStore.getState().userSolvesReset;
 let saveDebounceTimer: any = null;
 let maxWaitTimer: any = null;
 
-const flushProfileSave = () => {
+export function flushProfileSave() {
   if (saveDebounceTimer) {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = null;
@@ -1867,7 +2278,7 @@ const flushProfileSave = () => {
   const state = useCtfStore.getState();
   if (!state.currentProfileId) return;
 
-  const targetKey = getProfileStorageKey(state.currentProfileId);
+  const targetKey = getWriteProfileStorageKey(state.currentProfileId);
   let persistedMachines = state.machines;
   if (state.activeTargetId && state.activeTimerSeconds > 0) {
     persistedMachines = state.machines.map((m) =>
@@ -1899,7 +2310,9 @@ const flushProfileSave = () => {
     userSolvesReset: state.userSolvesReset,
   };
   try {
-    safeLocalStorage.setItem(targetKey, JSON.stringify(payload));
+    const serialized = JSON.stringify(payload);
+    safeLocalStorage.setItem(targetKey, serialized);
+    safeLocalStorage.setItem(`specter_ctf_profile_${state.currentProfileId}`, serialized);
     lastSavedMachines = state.machines;
     lastSavedTargetId = state.activeTargetId;
     lastSavedGlobalVars = state.globalVars;
@@ -1922,7 +2335,7 @@ const flushProfileSave = () => {
       } catch {}
     }
   }
-};
+}
 
 useCtfStore.subscribe((state) => {
   if (typeof window === 'undefined' || !state.currentProfileId) return;
@@ -1988,6 +2401,24 @@ if (typeof window !== 'undefined') {
         console.warn('[ZeroBox] Failed to synchronize cross-tab storage event', err);
       }
     }
+
+    if (event.key === ATTACK_GRAPH_STORAGE_KEY) {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        const positions = parsed.graphNodePositions || parsed.nodePositions || {};
+        const edges = Array.isArray(parsed.graphEdges)
+          ? parsed.graphEdges
+          : Array.isArray(parsed.edges)
+          ? parsed.edges
+          : [];
+        useCtfStore.setState({
+          graphNodePositions: positions,
+          graphEdges: edges,
+        });
+      } catch (err) {
+        console.warn('[ZeroBox] Failed to synchronize cross-tab attack graph storage', err);
+      }
+    }
   });
 
   // Cross-tab BroadcastChannel listener for deep storage updates
@@ -2006,6 +2437,13 @@ if (typeof window !== 'undefined') {
         } catch (err) {
           console.warn('[ZeroBox] Could not sync writeups from BroadcastChannel:', err);
         }
+      }
+    } else if (type === 'MACHINE_ADDED' && payload?.machine) {
+      if (!payload?.profileId || payload.profileId === currentProfileId) {
+        useCtfStore.setState((s) => {
+          if (s.machines.some((m) => m.id === payload.machine.id)) return s;
+          return { machines: [payload.machine, ...s.machines] };
+        });
       }
     } else if (type === 'MACHINE_DELETED' && payload?.id) {
       if (!payload?.profileId || payload.profileId === currentProfileId) {

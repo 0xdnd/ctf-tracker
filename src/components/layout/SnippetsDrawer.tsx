@@ -163,7 +163,7 @@ export const SnippetsDrawer: React.FC = () => {
           <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-800/80 overflow-x-auto text-xs scrollbar-none">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
                 selectedCategory === 'all'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
@@ -173,7 +173,7 @@ export const SnippetsDrawer: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedCategory('starred')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap flex items-center gap-1 ${
                 selectedCategory === 'starred'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
@@ -186,7 +186,7 @@ export const SnippetsDrawer: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
                   selectedCategory === cat.id
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
@@ -206,7 +206,7 @@ export const SnippetsDrawer: React.FC = () => {
               return (
                 <div
                   key={cmd.id}
-                  className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 transition-all space-y-2 group"
+                  className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 transition-colors space-y-2 group"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
@@ -229,7 +229,7 @@ export const SnippetsDrawer: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleCopy(cmd.id, interpolated)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 border ${
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors flex items-center gap-1 border ${
                           isCopied
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-zinc-700'

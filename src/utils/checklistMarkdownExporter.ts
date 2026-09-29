@@ -63,7 +63,7 @@ date_exported: "${today}"
 
     const phasePct = phaseTotal > 0 ? Math.round((phaseDone / phaseTotal) * 100) : 0;
 
-    md += `\n## ${phase.title} — \`${phasePct}%\`\n`;
+    md += `\n## ${phase.title} - \`${phasePct}%\`\n`;
     md += `_${phase.description}_\n\n`;
 
     phase.subcategories.forEach((subcat) => {

@@ -14,6 +14,7 @@ export interface WorkspaceExportPayload {
   userWikilinkMap?: Record<string, string>;
   deletedNoteIds?: string[];
   userSolvesReset?: boolean;
+  themePreset?: string;
 }
 
 export interface WorkspaceImportResult {
@@ -119,6 +120,7 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
     userWikilinkMap: root.userWikilinkMap && typeof root.userWikilinkMap === 'object' ? sanitizeObjectKeys(root.userWikilinkMap) : undefined,
     deletedNoteIds: Array.isArray(root.deletedNoteIds) ? root.deletedNoteIds : undefined,
     userSolvesReset: Boolean(root.userSolvesReset),
+    themePreset: typeof root.themePreset === 'string' ? root.themePreset : undefined,
   };
 
   return {
@@ -141,6 +143,7 @@ export function exportWorkspaceToJson(state: {
   userWikilinkMap?: Record<string, string>;
   deletedNoteIds?: string[];
   userSolvesReset?: boolean;
+  themePreset?: string;
 }): string {
   const payload: WorkspaceExportPayload = {
     version: '2.0.0',
@@ -155,6 +158,7 @@ export function exportWorkspaceToJson(state: {
     userWikilinkMap: state.userWikilinkMap || {},
     deletedNoteIds: state.deletedNoteIds || [],
     userSolvesReset: state.userSolvesReset || false,
+    themePreset: state.themePreset || 'obsidian',
   };
 
   return JSON.stringify(payload, null, 2);

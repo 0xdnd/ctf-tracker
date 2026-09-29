@@ -56,12 +56,20 @@ export function interpolateCommand(template: string, vars: GlobalVariables): str
   return result;
 }
 
+let sharedCyberAudioCtx: AudioContext | null = null;
+
 export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'copy' | 'flag' | 'export' | 'shuffle' | 'engage') {
   if (typeof window === 'undefined') return;
   try {
-    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!sharedCyberAudioCtx || sharedCyberAudioCtx.state === 'closed') {
+      sharedCyberAudioCtx = new AudioContextClass();
+    }
+    if (sharedCyberAudioCtx.state === 'suspended') {
+      sharedCyberAudioCtx.resume().catch(() => {});
+    }
+    const ctx = sharedCyberAudioCtx;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -173,8 +181,7 @@ export async function safeCopyToClipboard(text: string): Promise<boolean> {
       el.style.left = '-9999px';
       document.body.appendChild(el);
       el.focus();
-      el.select();
-      const success = document.execCommand('copy');
+      const success = typeof document.execCommand === 'function' ? document.execCommand('copy') : false;
       document.body.removeChild(el);
       return success;
     }

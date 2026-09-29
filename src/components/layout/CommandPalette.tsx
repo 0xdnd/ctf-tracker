@@ -19,9 +19,11 @@ import {
   Award,
   Radio,
   Keyboard,
-  Settings
+  Settings,
+  Users
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 
@@ -135,8 +137,19 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-switch-operator',
+        label: 'Switch Operator / Log In Profile (Alt+O)',
+        icon: Users,
+        colorClass: 'text-cyber-emerald',
+        bgHoverClass: 'hover:bg-cyber-emerald/15 hover:border-cyber-emerald/50',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          useAuthStore.getState().setOperatorProfileModalOpen(true);
+        },
+      },
+      {
         id: 'action-dossier',
-        label: 'View Operator Dossier (Daniel Dayan)',
+        label: 'View Creator Dossier (Daniel Dayan)',
         icon: Terminal,
         colorClass: 'text-cyber-cyan',
         bgHoverClass: 'hover:bg-cyber-cyan/15 hover:border-cyber-cyan/50',
@@ -214,7 +227,7 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'theme-htb',
-        label: 'Switch Theme: Hack The Box (HTB Vibe - #9FEF00 Lime Green)',
+        label: 'Switch Theme: Hack The Box (Tactical Navy Slate & Lime)',
         icon: Terminal,
         colorClass: 'text-[#15803D] dark:text-[#9FEF00]',
         bgHoverClass: 'hover:bg-[#15803D]/10 dark:hover:bg-[#9FEF00]/10 hover:border-[#15803D]/40 dark:hover:border-[#9FEF00]/40',
@@ -224,46 +237,24 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'theme-zerobox',
-        label: 'Switch Theme: Minimalist Black & Blue (Default)',
-        icon: Sliders,
+        id: 'theme-obsidian',
+        label: 'Switch Theme: Obsidian Dark / Zinc (Cold Zinc Slate & Sky)',
+        icon: Zap,
         colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-blue-500/10 hover:border-blue-500/40',
+        bgHoverClass: 'hover:bg-cyan-500/10 hover:border-cyan-500/40',
         execute: () => {
-          setThemePreset('zerobox');
+          setThemePreset('obsidian');
           setCommandPaletteOpen(false);
         },
       },
       {
-        id: 'theme-oled',
-        label: 'Switch Theme: OLED Pure Black (Pitch Black & Ice Blue)',
-        icon: Terminal,
-        colorClass: 'text-sky-400',
-        bgHoverClass: 'hover:bg-sky-400/10 hover:border-sky-400/40',
-        execute: () => {
-          setThemePreset('oled');
-          setCommandPaletteOpen(false);
-        },
-      },
-      {
-        id: 'theme-slate',
-        label: 'Switch Theme: Slate Navy (Dark Slate & Steel Blue)',
-        icon: Palette,
-        colorClass: 'text-blue-400',
-        bgHoverClass: 'hover:bg-blue-400/10 hover:border-blue-400/40',
-        execute: () => {
-          setThemePreset('slate');
-          setCommandPaletteOpen(false);
-        },
-      },
-      {
-        id: 'theme-light',
-        label: 'Switch Theme: Minimalist Light Mode (Crisp White & Precision Blue)',
+        id: 'theme-monolith',
+        label: 'Switch Theme: Clean Monolith (Architectural Off-White & Crisp Graphite)',
         icon: Sun,
-        colorClass: 'text-blue-600',
-        bgHoverClass: 'hover:bg-blue-600/10 hover:border-blue-600/40',
+        colorClass: 'text-sky-600 dark:text-sky-400',
+        bgHoverClass: 'hover:bg-sky-500/10 hover:border-sky-500/40',
         execute: () => {
-          setThemePreset('light');
+          setThemePreset('monolith');
           setCommandPaletteOpen(false);
         },
       },
@@ -290,6 +281,18 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-vault',
+        label: 'Evidence & Loot Vault (Creds, Hashes, Flags & Keys)',
+        icon: Database,
+        colorClass: 'text-amber-500',
+        bgHoverClass: 'hover:bg-amber-500/10 hover:border-amber-500/40',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setActiveTab('vault');
+          navigate('/vault');
+        },
+      },
+      {
         id: 'action-exam',
         label: '24h Exam Simulator (OSCP / CPTS)',
         icon: Radio,
@@ -304,8 +307,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-shortcuts',
         label: 'Keyboard Shortcuts Reference [?]',
         icon: Keyboard,
-        colorClass: 'text-cyan-600 dark:text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyan-500/10 hover:border-cyan-500/40',
+        colorClass: 'text-cyber-cyan',
+        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
         execute: () => {
           setCommandPaletteOpen(false);
           setShortcutsModalOpen(true);
@@ -464,7 +467,7 @@ export const CommandPalette: React.FC = () => {
                       key={action.id}
                       data-palette-index={itemIndex}
                       onClick={() => action.execute()}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-left transition-all group ${
+                      className={`flex items-center gap-2 p-2 rounded-lg text-left transition-colors group ${
                         isSelected 
                           ? 'ring-1 ring-cyber-cyan bg-cyber-cyan/20 border-cyber-cyan/80 shadow-glow-cyan/20' 
                           : `bg-cyber-bg border border-cyber-border ${action.bgHoverClass}`
@@ -507,7 +510,7 @@ export const CommandPalette: React.FC = () => {
                         setActiveTab('tracker');
                         navigate('/tracker');
                       }}
-                      className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all text-left group ${
+                      className={`w-full flex items-center justify-between p-2 rounded-lg border transition-colors text-left group ${
                         isSelected
                           ? 'ring-1 ring-cyber-emerald bg-cyber-emerald/20 border-cyber-emerald/80 shadow-glow-emerald/20'
                           : 'hover:bg-cyber-bg border-transparent hover:border-cyber-border/80'
@@ -566,7 +569,7 @@ export const CommandPalette: React.FC = () => {
                         setCommandPaletteOpen(false);
                         navigate('/cheatsheets');
                       }}
-                      className={`w-full p-2 rounded-lg border transition-all text-left group ${
+                      className={`w-full p-2 rounded-lg border transition-colors text-left group ${
                         isSelected
                           ? 'ring-1 ring-cyber-cyan bg-cyber-cyan/20 border-cyber-cyan/80 shadow-glow-cyan/20'
                           : 'hover:bg-cyber-bg border-transparent hover:border-cyber-border/80'

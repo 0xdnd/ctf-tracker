@@ -233,7 +233,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
             LHOST:
           </span>
-          <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 px-2 shadow-inner focus-within:border-cyan-500 dark:focus-within:border-cyber-cyan focus-within:ring-1 focus-within:ring-cyan-500/30 transition-all">
+          <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 px-2 shadow-inner focus-within:border-cyan-500 dark:focus-within:border-cyber-cyan focus-within:ring-1 focus-within:ring-cyan-500/30 transition-colors">
             <input
               type="text"
               id="revshell-lhost-input"
@@ -253,7 +253,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                 setLhost(targetIp);
                 if (soundEnabled) playCyberSound('toggle');
               }}
-              className="h-8 px-2.5 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan transition-all active:scale-95"
+              className="h-8 px-2.5 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Set to Active Target IP"
             >
               TARGET
@@ -265,7 +265,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               setLhost('127.0.0.1');
               if (soundEnabled) playCyberSound('toggle');
             }}
-            className="h-8 px-2 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan transition-all active:scale-95"
+            className="h-8 px-2 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Set to localhost"
           >
             127.0.0.1
@@ -278,11 +278,11 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             LPORT:
           </span>
           {/* Precision Stepper Capsule */}
-          <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 p-0.5 shadow-inner focus-within:border-emerald-500 dark:focus-within:border-cyber-emerald focus-within:ring-1 focus-within:ring-emerald-500/30 transition-all">
+          <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 p-0.5 shadow-inner focus-within:border-emerald-500 dark:focus-within:border-cyber-emerald focus-within:ring-1 focus-within:ring-emerald-500/30 transition-colors">
             <button
               type="button"
               onClick={() => handlePortStep(-1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-95"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Decrease port (-1)"
             >
               <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -300,7 +300,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             <button
               type="button"
               onClick={() => handlePortStep(1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-95"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Increase port (+1)"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -319,9 +319,9 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                     setLport(p);
                     if (soundEnabled) playCyberSound('toggle');
                   }}
-                  className={`h-7 px-2.5 flex items-center justify-center rounded-md text-[11px] font-mono font-bold transition-all active:scale-95 ${
+                  className={`h-7 px-2.5 flex items-center justify-center rounded-md text-[11px] font-mono font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                     isActive
-                      ? 'bg-emerald-600 dark:bg-cyber-emerald text-white dark:text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(0,255,159,0.4)]'
+                      ? 'bg-emerald-600 dark:bg-cyber-emerald text-white dark:text-slate-950'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/80'
                   }`}
                 >
@@ -334,7 +334,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
 
         {/* Shell Binary Selector */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider font-mono">
             SHELL:
           </span>
           <div className="inline-flex items-center gap-1 p-0.5 rounded-lg bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80">
@@ -348,9 +348,9 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                     setShellBinary(bin);
                     if (soundEnabled) playCyberSound('toggle');
                   }}
-                  className={`h-7 px-2 flex items-center rounded-md text-[11px] font-mono transition-all active:scale-95 ${
+                  className={`h-7 px-2.5 flex items-center rounded-md text-[11px] font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                     isActive
-                      ? 'bg-purple-600 dark:bg-cyber-purple text-white dark:text-slate-950 font-bold shadow-[0_0_10px_rgba(168,85,247,0.35)] dark:shadow-[0_0_12px_rgba(176,38,255,0.4)]'
+                      ? 'bg-purple-600 dark:bg-cyber-purple text-white dark:text-slate-950 font-bold'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/80 font-medium'
                   }`}
                 >
@@ -384,7 +384,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                 setPlatformFilter(tab.id);
                 if (soundEnabled) playCyberSound('toggle');
               }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-[box-shadow,background-color,border-color,color] ${
                 platformFilter === tab.id
                   ? 'bg-cyan-500 text-black shadow-glow-cyan/20 font-bold'
                   : 'bg-cyber-card hover:bg-cyber-border border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
@@ -435,7 +435,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                     setSelectedShellId(shell.id);
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className={`px-2 py-1 rounded-md text-xs font-mono transition-all flex items-center gap-1.5 ${
+                  className={`px-2 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5 ${
                     isSelected
                       ? 'bg-emerald-500 dark:bg-cyber-emerald text-black font-bold shadow-sm'
                       : 'bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white'
@@ -445,8 +445,10 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   <span>{shell.name}</span>
                   {shell.isFullScript && (
                     <span
-                      className={`text-[9px] px-1 py-0.2 rounded uppercase ${
-                        isSelected ? 'bg-black/20 text-black' : 'bg-purple-100 dark:bg-cyber-purple/20 text-purple-900 dark:text-cyber-purple'
+                      className={`text-[9px] px-1 py-0.2 rounded uppercase font-semibold ${
+                        isSelected
+                          ? 'bg-black/20 text-black'
+                          : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800/40'
                       }`}
                     >
                       FILE
@@ -522,7 +524,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   }}
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
                     wrapper === w
-                      ? 'bg-cyber-purple text-white font-bold shadow-sm'
+                      ? 'bg-purple-700 dark:bg-purple-800 text-white font-bold shadow-sm'
                       : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title={w === 'none' ? 'Direct execution without shell wrapper' : `Wrap payload in ${w}`}
@@ -547,7 +549,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             {/* 1-Click Copy Payload Button */}
             <button
               onClick={handleCopyPayload}
-              className={`px-3 py-1 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm ${
+              className={`px-3 py-1 rounded-lg font-bold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm ${
                 copiedPayload
                   ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
                   : 'bg-cyber-cyan hover:bg-cyber-cyan/90 text-black shadow-glow-cyan/20'
@@ -610,7 +612,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
           </code>
           <button
             onClick={handleCopyListener}
-            className={`p-1.5 rounded-lg border transition-all ${
+            className={`p-1.5 rounded-lg border transition-colors ${
               copiedListener
                 ? 'bg-cyber-emerald text-black border-cyber-emerald'
                 : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-border text-slate-700 dark:text-white border-slate-300 dark:border-cyber-border'

@@ -15,8 +15,10 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { formatSeconds, formatDurationHuman } from '../../utils/helpers';
 import { Difficulty, Platform } from '../../types';
 import { classifyMachine } from '../../utils/categoryUtils';
+import { useTheme } from '../../hooks/useTheme';
 
 export const AnalyticsView: React.FC = () => {
+  const { isDark } = useTheme();
   const machines = useCtfStore((s) => s.machines);
   const activitySessions = useCtfStore((s) => s.activitySessions);
 
@@ -164,8 +166,7 @@ export const AnalyticsView: React.FC = () => {
           points={points}
           fill="rgba(16, 185, 129, 0.28)"
           stroke="#10B981"
-          strokeWidth="2.5"
-          className="drop-shadow-[0_0_15px_rgba(16,185,129,0.6)]"
+          strokeWidth="2"
         />
 
         {skillDimensions.map((dim, i) => {
@@ -186,16 +187,15 @@ export const AnalyticsView: React.FC = () => {
                 transition={{ delay: 0.4 + i * 0.1 }}
                 cx={x} 
                 cy={y} 
-                r="4.5" 
+                r="4" 
                 fill="#10B981" 
-                className="animate-pulse shadow-glow-emerald" 
               />
               <text
                 x={lx}
                 y={ly}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#94A3B8"
+                fill={isDark ? '#94A3B8' : '#475569'}
                 fontSize="9"
                 fontFamily="monospace"
                 fontWeight="bold"
@@ -331,12 +331,12 @@ export const AnalyticsView: React.FC = () => {
           <div className="grid grid-cols-3 gap-2 pt-4 border-t border-cyber-border/70 text-[10px]">
             {skillDimensions.map((d) => (
               <motion.div 
-                whileHover={{ scale: 1.04 }}
+                whileHover={{ scale: 1.02 }}
                 key={d.name} 
-                className="bg-cyber-bg p-2 rounded border border-cyber-border cursor-pointer transition-colors hover:border-cyber-emerald/50"
+                className="bg-cyber-bg p-2 rounded-md border border-cyber-border cursor-pointer transition-colors hover:border-cyber-emerald/50"
               >
                 <div className="text-cyber-muted truncate">{d.name}</div>
-                <div className="text-slate-900 dark:text-white font-bold text-xs mt-0.5">{d.score}% ({d.rawCount} pwns)</div>
+                <div className="text-slate-900 dark:text-white font-bold text-xs mt-0.5">{d.score}% ({d.rawCount} {d.rawCount === 1 ? 'pwn' : 'pwns'})</div>
               </motion.div>
             ))}
           </div>
@@ -471,7 +471,7 @@ export const AnalyticsView: React.FC = () => {
                 <motion.div
                   whileHover={{ scale: 1.4, y: -2 }}
                   key={d.date}
-                  className={`w-3.5 h-3.5 rounded-sm border ${bg} cursor-pointer transition-shadow`}
+                  className={`w-3.5 h-3.5 rounded-xs border ${bg} cursor-pointer transition-shadow`}
                   title={`${d.date}: ${count} actions recorded`}
                 />
               );
@@ -483,10 +483,10 @@ export const AnalyticsView: React.FC = () => {
           <span>90 Days Ago</span>
           <div className="flex items-center gap-1.5">
             <span>Less</span>
-            <div className="w-2.5 h-2.5 rounded-sm bg-cyber-bg border border-cyber-border" />
-            <div className="w-2.5 h-2.5 rounded-sm bg-cyber-emerald/30" />
-            <div className="w-2.5 h-2.5 rounded-sm bg-cyber-emerald/60" />
-            <div className="w-2.5 h-2.5 rounded-sm bg-cyber-emerald" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-cyber-bg border border-cyber-border" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-cyber-emerald/30" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-cyber-emerald/60" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-cyber-emerald" />
             <span>More</span>
           </div>
           <span>Today</span>
