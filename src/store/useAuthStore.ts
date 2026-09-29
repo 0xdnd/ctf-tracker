@@ -1,21 +1,30 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, AuthState } from '../types/auth';
+import { User, AuthState, OperatorLoginOptions } from '../types/auth';
 import { playCyberSound } from '../utils/helpers';
 import { useCtfStore } from './useCtfStore';
+import { CYBER_AVATAR_PRESETS, getAvatarPresetById } from '../data/avatarPresets';
+import { clearDeepProfileData } from '../utils/indexedDbDeepStorage';
 
 const AUTH_STORAGE_KEY = 'rootvector_auth_session';
 const CLIENT_ID_STORAGE_KEY = 'rootvector_google_client_id';
 
-export const DEFAULT_AVATAR_DATA_URI =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23111827'/%3E%3Ccircle cx='16' cy='12' r='6' fill='%2310B981'/%3E%3Cpath d='M6 28c0-5.5 4.5-10 10-10s10 4.5 10 10' fill='%2310B981'/%3E%3C/svg%3E";
+export const DEFAULT_AVATAR_DATA_URI = CYBER_AVATAR_PRESETS[0].dataUri;
 
-export const DEFAULT_DANIEL_PROFILE: User & { avatarUrl: string } = {
+export const DEFAULT_DANIEL_PROFILE: User = {
   id: 'usr_daniel',
   googleId: '',
   email: 'daniel@operator.lab',
   name: 'Daniel',
-  avatarUrl: DEFAULT_AVATAR_DATA_URI,
+  callsign: '0xdnd',
+  role: 'Lead Penetration Tester',
+  badgeColor: 'emerald',
+  avatarId: 'glitch-skull',
+  avatarUrl: CYBER_AVATAR_PRESETS[0].dataUri,
+  unlockedTrophies: {},
+  totalXp: 0,
+  rankTier: 1,
+  rankTitle: 'NOVICE PROBE',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
@@ -40,6 +49,11 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       guestDataMigrated: false,
       googleClientId: getInitialGoogleClientId(),
+      operatorProfileModalOpen: false,
+
+      setOperatorProfileModalOpen: (open: boolean) => {
+        set({ operatorProfileModalOpen: open });
+      },
 
       setGoogleClientId: (clientId: string) => {
         if (typeof window !== 'undefined') {
@@ -48,28 +62,54 @@ export const useAuthStore = create<AuthState>()(
         set({ googleClientId: clientId });
       },
 
-      // Simple Operator Profile Login (1-Click Seamless Login)
-      loginAsOperator: async (name: string, email?: string, avatarUrl?: string) => {
+      // Simple Operator Profile Login (1-Click Seamless Login based on Callsign + Avatar)
+      loginAsOperator: async (options: OperatorLoginOptions | string, emailArg?: string, avatarUrlArg?: string) => {
         set({ isLoading: true });
         try {
-          const cleanName = name.trim() || 'Daniel';
-          const profileId = `usr_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+          const opts: OperatorLoginOptions = typeof options === 'string'
+            ? { name: options, email: emailArg, avatarUrl: avatarUrlArg }
+            : options;
+
+          const cleanName = (opts.name || 'Daniel').trim();
+          const cleanCallsign = (opts.callsign || cleanName).trim();
+          const profileId = `usr_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'op'}`;
           const existing = get().profiles.find(
             (p) => p.id === profileId || p.name.toLowerCase() === cleanName.toLowerCase()
           );
 
-          const user: User = existing || {
+          const resolvedAvatar = opts.avatarId 
+            ? getAvatarPresetById(opts.avatarId) 
+            : (existing?.avatarId ? getAvatarPresetById(existing.avatarId) : CYBER_AVATAR_PRESETS[0]);
+
+          const user: User = existing ? {
+            ...existing,
+            name: cleanName,
+            callsign: cleanCallsign,
+            role: opts.role || existing.role || 'Tactical Operator',
+            badgeColor: (opts.badgeColor as any) || existing.badgeColor || 'emerald',
+            avatarId: opts.avatarId || existing.avatarId || 'glitch-skull',
+            avatarUrl: opts.avatarUrl || resolvedAvatar.dataUri,
+            updatedAt: new Date().toISOString(),
+          } : {
             id: profileId,
             googleId: '',
-            email: email?.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '')}@operator.lab`,
+            email: opts.email?.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '')}@operator.lab`,
             name: cleanName,
-            avatarUrl: avatarUrl || DEFAULT_AVATAR_DATA_URI,
+            callsign: cleanCallsign,
+            role: opts.role || 'Tactical Operator',
+            badgeColor: (opts.badgeColor as any) || 'emerald',
+            avatarId: opts.avatarId || 'glitch-skull',
+            avatarUrl: opts.avatarUrl || resolvedAvatar.dataUri,
+            unlockedTrophies: {},
+            totalXp: 0,
+            rankTier: 1,
+            rankTitle: 'NOVICE PROBE',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
 
           const updatedProfiles = get().profiles.some((p) => p.id === user.id)
-            ? get().profiles.map((p) => (p.id === user.id ? user : p))
+            ? get().profiles.map((p) => (p.id === user.id ? { ...p, ...user } : p))
             : [...get().profiles, user];
 
           set({
@@ -78,10 +118,14 @@ export const useAuthStore = create<AuthState>()(
             token: `operator_token_${Date.now()}`,
             isAuthenticated: true,
             isLoading: false,
+            operatorProfileModalOpen: false,
           });
 
           // Switch active CTF workspace to this profile's isolated data
-          useCtfStore.getState().loadProfileData(user.id);
+          useCtfStore.getState().loadProfileData(user.id, {
+            startFresh: opts.startFresh,
+            cloneFromCurrent: opts.cloneFromCurrent,
+          });
           playCyberSound('root');
         } catch (err) {
           console.error('Operator login error:', err);
@@ -97,7 +141,12 @@ export const useAuthStore = create<AuthState>()(
         const current = get().user;
         if (!current) return;
 
-        const updated: User = { ...current, name: cleanName, updatedAt: new Date().toISOString() };
+        const updated: User = { 
+          ...current, 
+          name: cleanName, 
+          callsign: current.callsign === current.name ? cleanName : current.callsign,
+          updatedAt: new Date().toISOString() 
+        };
         const updatedProfiles = get().profiles.map((p) => (p.id === current.id ? updated : p));
         set({ user: updated, profiles: updatedProfiles });
         playCyberSound('click');
@@ -107,22 +156,30 @@ export const useAuthStore = create<AuthState>()(
       switchProfile: (profileId: string) => {
         const found = get().profiles.find((p) => p.id === profileId);
         if (found) {
-          set({ user: found, isAuthenticated: true });
+          set({ user: found, isAuthenticated: true, operatorProfileModalOpen: false });
           useCtfStore.getState().loadProfileData(found.id);
           playCyberSound('click');
         }
       },
 
       // Create new Profile
-      createProfile: (name: string, email?: string, avatarUrl?: string) => {
-        get().loginAsOperator(name, email, avatarUrl);
+      createProfile: (options: OperatorLoginOptions | string) => {
+        get().loginAsOperator(options);
       },
 
-      // Delete Profile
+      // Delete Profile with full multi-namespace atomic cleanup
       deleteProfile: (profileId: string) => {
         const remaining = get().profiles.filter((p) => p.id !== profileId);
         if (typeof window !== 'undefined') {
+          // Atomic multi-namespace purge
+          localStorage.removeItem(`zerobox_operator_profile_${profileId}`);
           localStorage.removeItem(`specter_ctf_profile_${profileId}`);
+          localStorage.removeItem(`zerobox_custom_machines_v1_${profileId}`);
+          localStorage.removeItem(`zerobox_graph_state_${profileId}`);
+          localStorage.removeItem(`zerobox_vault_custom_loot_v1_${profileId}`);
+          clearDeepProfileData(profileId).catch((err) => {
+            console.warn('[ZeroBox] Failed to clear IndexedDB deep storage for profile', profileId, err);
+          });
         }
 
         if (get().user?.id === profileId) {
@@ -158,7 +215,15 @@ export const useAuthStore = create<AuthState>()(
             googleId: decoded.sub,
             email: decoded.email,
             name: decoded.name || decoded.email.split('@')[0],
-            avatarUrl: decoded.picture,
+            callsign: (decoded.name || decoded.email.split('@')[0]).replace(/\s+/g, '-'),
+            role: 'Google Verified Operator',
+            badgeColor: 'cyan',
+            avatarId: 'terminal-sentinel',
+            avatarUrl: decoded.picture || CYBER_AVATAR_PRESETS[3].dataUri,
+            unlockedTrophies: {},
+            totalXp: 0,
+            rankTier: 1,
+            rankTitle: 'NOVICE PROBE',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -173,6 +238,7 @@ export const useAuthStore = create<AuthState>()(
             token: credential,
             isAuthenticated: true,
             isLoading: false,
+            operatorProfileModalOpen: false,
           });
 
           useCtfStore.getState().loadProfileData(user.id);
@@ -192,7 +258,15 @@ export const useAuthStore = create<AuthState>()(
             googleId: userInfo.sub,
             email: userInfo.email,
             name: userInfo.name || userInfo.email.split('@')[0],
-            avatarUrl: userInfo.picture,
+            callsign: (userInfo.name || userInfo.email.split('@')[0]).replace(/\s+/g, '-'),
+            role: 'Google Verified Operator',
+            badgeColor: 'cyan',
+            avatarId: 'terminal-sentinel',
+            avatarUrl: userInfo.picture || CYBER_AVATAR_PRESETS[3].dataUri,
+            unlockedTrophies: {},
+            totalXp: 0,
+            rankTier: 1,
+            rankTitle: 'NOVICE PROBE',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -207,6 +281,7 @@ export const useAuthStore = create<AuthState>()(
             token,
             isAuthenticated: true,
             isLoading: false,
+            operatorProfileModalOpen: false,
           });
 
           useCtfStore.getState().loadProfileData(user.id);
@@ -223,15 +298,62 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           isAuthenticated: false,
           token: null,
+          operatorProfileModalOpen: false,
         });
 
         useCtfStore.getState().loadProfileData('guest');
         playCyberSound('click');
       },
 
-      // Migrate guest localStorage progress
-      migrateGuestData: async () => {
-        return { success: true, count: 0 };
+      // Migrate guest localStorage progress non-destructively
+      migrateGuestData: async (targetProfileId?: string) => {
+        if (typeof window === 'undefined') return { success: false, count: 0 };
+        const destId = targetProfileId || get().user?.id || 'usr_daniel';
+        try {
+          // Search for guest data in modern or legacy keys
+          const guestKeys = [
+            'zerobox_operator_profile_guest',
+            'specter_ctf_profile_guest',
+            'specter_ctf_store_v2',
+          ];
+          let guestDataStr: string | null = null;
+          for (const k of guestKeys) {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              guestDataStr = raw;
+              break;
+            }
+          }
+          if (!guestDataStr) return { success: true, count: 0 };
+
+          const parsed = JSON.parse(guestDataStr);
+          const payload = parsed.state || parsed;
+          const targetKey = `zerobox_operator_profile_${destId}`;
+          localStorage.setItem(targetKey, JSON.stringify(payload));
+          useCtfStore.getState().loadProfileData(destId);
+          set({ guestDataMigrated: true });
+          const count = Array.isArray(payload.machines) ? payload.machines.length : 0;
+          return { success: true, count };
+        } catch (err) {
+          console.error('[ZeroBox] Failed to migrate guest data:', err);
+          return { success: false, count: 0 };
+        }
+      },
+
+      // Update operator trophies & XP
+      updateUserTrophies: (trophies: Record<string, string>, xp?: number, rankTier?: number, rankTitle?: string) => {
+        const current = get().user;
+        if (!current) return;
+        const updated: User = {
+          ...current,
+          unlockedTrophies: { ...(current.unlockedTrophies || {}), ...trophies },
+          totalXp: xp !== undefined ? xp : current.totalXp,
+          rankTier: rankTier !== undefined ? rankTier : current.rankTier,
+          rankTitle: rankTitle !== undefined ? rankTitle : current.rankTitle,
+          updatedAt: new Date().toISOString(),
+        };
+        const updatedProfiles = get().profiles.map((p) => (p.id === current.id ? updated : p));
+        set({ user: updated, profiles: updatedProfiles });
       },
 
       // Verify session on app mount

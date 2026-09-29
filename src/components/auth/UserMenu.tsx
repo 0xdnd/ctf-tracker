@@ -16,8 +16,12 @@ import {
   Coffee,
   HardDrive,
   User,
-  Settings
+  Settings,
+  Trophy,
+  Award
 } from 'lucide-react';
+import { getAvatarSvgDataUri } from '../../data/avatarPresets';
+import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
 
 export const UserMenu: React.FC = () => {
   const { 
@@ -72,7 +76,14 @@ export const UserMenu: React.FC = () => {
     };
   }, [dropdownOpen]);
 
-  const activeName = user?.name || 'Local Operator';
+  const gamification = React.useMemo(() => {
+    return evaluateOperatorGamification({
+      machines,
+      unlockedTrophies: user?.unlockedTrophies,
+    });
+  }, [machines, user?.unlockedTrophies]);
+
+  const activeName = user?.callsign || user?.name || 'Local Operator';
   const rootedCount = machines.filter((m) => m.status === 'root' || m.status === 'completed').length;
   const totalCount = machines.length;
 
@@ -144,7 +155,7 @@ export const UserMenu: React.FC = () => {
         {/* Instant 1-Click Quick Save Button */}
         <button
           onClick={handleQuickSave}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition-all ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition-[box-shadow,background-color,border-color,color] ${
             justSaved
               ? 'bg-cyber-emerald text-black shadow-glow-emerald/40'
               : 'bg-cyber-bg border border-cyber-border text-cyber-emerald hover:border-cyber-emerald/60 hover:bg-cyber-emerald/10'
@@ -167,30 +178,38 @@ export const UserMenu: React.FC = () => {
         {/* Profile / Local Operator Dropdown Trigger */}
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-cyber-bg transition-colors group"
-          title={isAuthenticated && user ? `Operator: ${user.name} (${user.email})` : 'Local Mode: Offline & Zero Cloud Egress'}
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-cyber-bg transition-colors group cursor-pointer"
+          title={isAuthenticated && user ? `Operator: ${activeName} (${user.role || 'Tactical Operator'})` : 'Local Mode: Offline & Zero Cloud Egress'}
         >
-          {isAuthenticated && user?.avatarUrl ? (
+          {user?.avatarId ? (
+            <img
+              src={getAvatarSvgDataUri(user.avatarId)}
+              alt={activeName}
+              className="w-5 h-5 rounded-md object-contain border border-cyber-emerald/60 p-0.5 bg-slate-900 flex-shrink-0"
+            />
+          ) : isAuthenticated && user?.avatarUrl ? (
             <img
               src={user.avatarUrl}
               alt={activeName}
-              className="w-5 h-5 rounded-full border border-cyber-emerald/60 object-cover"
+              className="w-5 h-5 rounded-full border border-cyber-emerald/60 object-cover flex-shrink-0"
             />
           ) : isAuthenticated && user ? (
-            <div className="w-5 h-5 rounded-full bg-cyber-emerald/20 border border-cyber-emerald flex items-center justify-center text-[9px] font-bold text-cyber-emerald">
+            <div className="w-5 h-5 rounded-full bg-cyber-emerald/20 border border-cyber-emerald flex items-center justify-center text-[9px] font-bold text-cyber-emerald flex-shrink-0">
               {activeName.charAt(0).toUpperCase()}
             </div>
           ) : (
-            <div className="w-5 h-5 rounded-full bg-cyber-cyan/15 border border-cyber-cyan/50 flex items-center justify-center text-cyber-cyan">
+            <div className="w-5 h-5 rounded-full bg-cyber-cyan/15 border border-cyber-cyan/50 flex items-center justify-center text-cyber-cyan flex-shrink-0">
               <User className="w-3 h-3" />
             </div>
           )}
 
           <span className="font-bold text-slate-900 dark:text-white text-xs max-w-[80px] sm:max-w-[110px] truncate group-hover:text-cyber-cyan transition-colors">
-            {isAuthenticated && user ? activeName : 'Local Operator'}
+            {activeName}
           </span>
 
-          <span className={`w-1.5 h-1.5 rounded-full ${isAuthenticated ? 'bg-cyber-emerald' : 'bg-cyber-cyan'} animate-pulse`} />
+          <span className={`px-1 py-0.2 rounded text-[9px] font-bold font-mono ${gamification.currentRank.badgeColor} bg-black/40 border border-current`}>
+            [{gamification.currentRank.tier}]
+          </span>
 
           <ChevronDown className="w-3 h-3 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-white transition-transform" />
         </button>
@@ -205,41 +224,45 @@ export const UserMenu: React.FC = () => {
           {/* User Status Header */}
           <div className="flex items-center justify-between pb-2.5 border-b border-cyber-border/70">
             <div className="flex items-center gap-2.5 min-w-0">
-              {isAuthenticated && user?.avatarUrl ? (
+              {user?.avatarId ? (
+                <img
+                  src={getAvatarSvgDataUri(user.avatarId)}
+                  alt={activeName}
+                  className="w-10 h-10 rounded-xl border border-cyber-border bg-slate-900 p-1 object-contain shadow-sm flex-shrink-0"
+                />
+              ) : isAuthenticated && user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={activeName}
-                  className="w-10 h-10 rounded-full border-2 border-cyber-emerald shadow-[0_0_8px_rgba(16,185,129,0.3)] object-cover"
+                  className="w-10 h-10 rounded-xl border border-cyber-border object-cover flex-shrink-0"
                 />
               ) : isAuthenticated && user ? (
-                <div className="w-10 h-10 rounded-full bg-cyber-bg border-2 border-cyber-emerald flex items-center justify-center text-sm font-bold text-cyber-emerald">
+                <div className="w-10 h-10 rounded-xl bg-cyber-bg border border-cyber-border flex items-center justify-center text-sm font-bold text-cyber-emerald font-mono flex-shrink-0">
                   {activeName.charAt(0).toUpperCase()}
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-cyber-cyan/15 border-2 border-cyber-cyan/60 flex items-center justify-center text-cyber-cyan">
+                <div className="w-10 h-10 rounded-xl bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-cyan flex-shrink-0">
                   <HardDrive className="w-5 h-5" />
                 </div>
               )}
 
               <div className="min-w-0 flex-1">
-                <div className="font-bold text-slate-900 dark:text-white text-sm truncate">
-                  {isAuthenticated && user ? activeName : 'LOCAL OPERATOR (PRIVATE)'}
+                <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1.5">
+                  <span>{activeName}</span>
                 </div>
-                <div className="text-[10px] text-cyber-muted truncate">
-                  {isAuthenticated && user?.email ? user.email : 'Local Storage · Zero Egress'}
+                <div className="text-[10px] text-cyber-muted truncate flex items-center gap-1">
+                  <span className={`font-mono font-bold ${gamification.currentRank.badgeColor}`}>
+                    [{gamification.currentRank.tier}] {gamification.currentRank.title}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1 mt-0.5">
-                  {isAuthenticated ? (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-cyber-emerald bg-cyber-emerald/10 border border-cyber-emerald/30 px-1.5 py-0.2 rounded">
-                      <ShieldCheck className="w-2.5 h-2.5" />
-                      OPERATOR ACTIVE
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-cyber-cyan bg-cyber-cyan/10 border border-cyber-cyan/30 px-1.5 py-0.2 rounded">
-                      <HardDrive className="w-2.5 h-2.5" />
-                      LOCAL / OFFLINE MODE
-                    </span>
-                  )}
+                <div className="flex items-center gap-1.5 mt-1 font-mono text-[10px]">
+                  <span className="text-cyan-400 font-bold">
+                    {gamification.totalXp.toLocaleString()} XP
+                  </span>
+                  <span className="text-cyber-muted">•</span>
+                  <span className="text-purple-400 font-bold">
+                    {gamification.unlockedCount}/16 🏆
+                  </span>
                 </div>
               </div>
             </div>
@@ -250,10 +273,35 @@ export const UserMenu: React.FC = () => {
             </div>
           </div>
 
+          {/* Quick Trophy Case & Rank Progress Pill */}
+          <div 
+            onClick={() => {
+              setDropdownOpen(false);
+              useAuthStore.getState().setOperatorProfileModalOpen(true);
+            }}
+            className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-cyan-500/60 cursor-pointer transition-colors group"
+          >
+            <div className="flex items-center justify-between text-xs font-mono mb-1">
+              <span className="text-slate-400 group-hover:text-cyan-400 flex items-center gap-1 font-bold">
+                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                <span>Trophy Case & Ranks</span>
+              </span>
+              <span className="text-cyan-400 font-bold">
+                {gamification.nextRank ? `${gamification.rankProgressPct}%` : 'MAX'}
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-colors duration-300"
+                style={{ width: `${gamification.rankProgressPct}%` }}
+              />
+            </div>
+          </div>
+
           {/* 1-Click Large Save Button */}
           <button
             onClick={handleQuickSave}
-            className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md ${
+            className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-2 shadow-md ${
               justSaved
                 ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
                 : 'bg-cyber-emerald hover:bg-cyber-emerald/90 text-black shadow-glow-emerald/20'
@@ -318,7 +366,7 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.portfolio}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-cyber-emerald/20 hover:bg-cyber-emerald/30 text-cyber-emerald hover:text-white border border-cyber-emerald/50 transition-all text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-cyber-emerald/20 hover:bg-cyber-emerald/30 text-cyber-emerald hover:text-white border border-cyber-emerald/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
                 title="Daniel Dayan's Official Portfolio"
               >
                 <Globe className="w-3 h-3 flex-shrink-0" />
@@ -328,7 +376,7 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/30 text-[#0077B5] hover:text-white border border-[#0077B5]/50 transition-all text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/30 text-[#0077B5] hover:text-white border border-[#0077B5]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
                 title="Daniel Dayan LinkedIn Profile"
               >
                 <svg className="w-3 h-3 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.7a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z"/></svg>
@@ -338,7 +386,7 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.coffee}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#FFDD00]/20 hover:bg-[#FFDD00]/30 text-[#FFDD00] hover:text-white border border-[#FFDD00]/50 transition-all text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#FFDD00]/20 hover:bg-[#FFDD00]/30 text-[#FFDD00] hover:text-white border border-[#FFDD00]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
                 title="Buy Daniel Dayan a Coffee (buymeacoffee.com/0xdnd)"
               >
                 <Coffee className="w-3 h-3 flex-shrink-0" />
@@ -357,10 +405,10 @@ export const UserMenu: React.FC = () => {
               <button
                 onClick={() => {
                   setDropdownOpen(false);
-                  setOperatorModalOpen(true);
+                  useAuthStore.getState().setOperatorProfileModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-cyber-bg hover:bg-cyber-card border border-cyber-border font-bold text-xs transition-all shadow-md group text-slate-900 dark:text-white"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-cyber-bg hover:bg-cyber-card border border-cyber-border font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md group text-slate-900 dark:text-white"
                 title="Switch or create local operator profiles"
               >
                 <User className="w-3.5 h-3.5 text-cyber-emerald" />
@@ -374,7 +422,7 @@ export const UserMenu: React.FC = () => {
                   logout();
                   setDropdownOpen(false);
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-cyber-crimson/15 hover:bg-cyber-crimson border border-cyber-crimson/30 hover:border-cyber-crimson text-cyber-crimson hover:text-white font-bold text-xs transition-all flex items-center justify-center gap-2"
+                className="w-full py-2 px-3 rounded-xl bg-cyber-crimson/15 hover:bg-cyber-crimson border border-cyber-crimson/30 hover:border-cyber-crimson text-cyber-crimson hover:text-white font-bold text-xs transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>SIGN OUT TO GUEST</span>

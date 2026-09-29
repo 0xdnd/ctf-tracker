@@ -76,7 +76,7 @@ describe('Tier 4 E2E: Air-Gapped Zero-Egress Posture & Network Isolation Invaria
       // 1. Verified in-memory constants
       expect(DEFAULT_AVATAR_DATA_URI).toBeDefined();
       expect(DEFAULT_AVATAR_DATA_URI.startsWith('data:image/svg+xml')).toBe(true);
-      expect(DEFAULT_DANIEL_PROFILE.avatarUrl.startsWith('data:image/svg+xml')).toBe(true);
+      expect(DEFAULT_DANIEL_PROFILE.avatarUrl!.startsWith('data:image/svg+xml')).toBe(true);
 
       // 2. Verified on disk source
       const authStorePath = path.join(projectRoot, 'src/store/useAuthStore.ts');

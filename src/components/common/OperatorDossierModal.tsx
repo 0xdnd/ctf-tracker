@@ -54,19 +54,19 @@ export const OperatorDossierModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
-      {/* Dark Cyber Backdrop */}
+      {/* Dark Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-black/85 transition-opacity animate-in fade-in"
         onClick={() => setOperatorModalOpen(false)}
       />
 
       {/* Modal Dossier Card */}
-      <div className="relative w-full max-w-3xl my-auto bg-[#0d121f] border border-cyber-emerald/50 rounded-2xl shadow-[0_0_50px_rgba(16,185,129,0.25)] text-gray-200 overflow-hidden z-10 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-3xl my-auto bg-cyber-card border border-cyber-border rounded-2xl text-cyber-text overflow-hidden z-10 flex flex-col max-h-[90vh] shadow-2xl">
         
         {/* Top Tactical Terminal Header */}
-        <div className="px-5 py-3.5 bg-[#080c14] border-b border-cyber-border/80 flex items-center justify-between select-none">
+        <div className="px-4 py-3 bg-cyber-bg border-b border-cyber-border flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyber-emerald animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+            <span className="w-2 h-2 rounded-full bg-cyber-emerald animate-pulse" />
             <span className="font-mono text-xs font-bold text-cyber-emerald tracking-wider uppercase">
               OPERATOR IDENTIFICATION DOSSIER // LEVEL 5 CLASSIFIED
             </span>
@@ -74,7 +74,7 @@ export const OperatorDossierModal: React.FC = () => {
 
           <button
             onClick={() => setOperatorModalOpen(false)}
-            className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card transition-all"
+            className="p-1.5 rounded-lg text-cyber-muted hover:text-cyber-text hover:bg-cyber-cardHover transition-colors cursor-pointer"
             title="Close Dossier (ESC)"
           >
             <X className="w-4 h-4" />
@@ -82,45 +82,43 @@ export const OperatorDossierModal: React.FC = () => {
         </div>
 
         {/* Scrollable Dossier Content */}
-        <div className="overflow-y-auto p-5 sm:p-6 space-y-6 font-mono text-xs scrollbar-thin">
+        <div className="overflow-y-auto p-4 sm:p-5 space-y-4 font-mono text-xs scrollbar-thin">
           
           {/* Hero Profile Banner */}
-          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-cyber-card/90 via-cyber-bg to-[#0d1527] border border-cyber-emerald/40 relative overflow-hidden shadow-lg">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-cyber-emerald/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left">
-              {/* Holographic Avatar with Pulse */}
+          <div className="p-4 sm:p-5 rounded-xl bg-cyber-bg border border-cyber-border relative overflow-hidden">
+            <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-3.5 sm:gap-4 text-center sm:text-left">
+              {/* Tactical Avatar */}
               <div className="relative flex-shrink-0">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-cyber-emerald/30 via-cyber-card to-cyber-cyan/30 border-2 border-cyber-emerald flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.35)]">
-                  <span className="font-mono font-black text-2xl sm:text-3xl text-cyber-emerald tracking-tighter">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-cyber-card border border-cyber-emerald flex items-center justify-center shadow-sm">
+                  <span className="font-mono font-black text-xl text-cyber-emerald tracking-tight">
                     DD
                   </span>
                 </div>
-                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-md bg-cyber-emerald text-black font-extrabold text-[9px] uppercase tracking-wider shadow">
+                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md bg-cyber-emerald text-black font-mono font-bold text-[8px] uppercase tracking-wider shadow-xs">
                   ONLINE
                 </span>
               </div>
 
               {/* Operator Identity Info */}
-              <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide">
+                  <h2 className="text-lg sm:text-xl font-black text-cyber-text tracking-wide">
                     Daniel Dayan
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald/40 flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-cyber-emerald/10 text-cyber-emerald border border-cyber-emerald/30 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     CREATOR & ARCHITECT
                   </span>
                 </div>
 
-                <div className="text-xs text-cyber-cyan font-semibold flex items-center justify-center sm:justify-start gap-2">
+                <div className="text-xs text-cyber-cyan font-semibold flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
                   <Terminal className="w-3.5 h-3.5" />
-                  <span>Callsign: <strong className="text-white">0xdnd</strong> (Specter)</span>
+                  <span>Callsign: <strong className="text-cyber-text">0xdnd</strong> (Specter)</span>
                   <span className="text-cyber-muted">•</span>
                   <span>Cybersecurity Researcher & Penetration Tester</span>
                 </div>
 
-                <p className="text-xs text-gray-300 leading-relaxed pt-1">
+                <p className="text-xs text-cyber-muted leading-relaxed pt-0.5">
                   Creator and lead developer of <strong>ZeroBox // Tactical CTF Suite</strong>. 
                   Passionate about offensive security, penetration testing, exploit engineering, and building high-performance 
                   tactical command-and-control dashboards for security teams and CTF operators.
@@ -130,17 +128,17 @@ export const OperatorDossierModal: React.FC = () => {
           </div>
 
           {/* Primary Featured Portfolio Action Banner */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-cyber-emerald/20 via-cyber-card to-cyber-cyan/20 border border-cyber-emerald/50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+          <div className="p-4 rounded-xl bg-cyber-bg border border-cyber-border flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-center sm:text-left">
-              <div className="w-10 h-10 rounded-xl bg-cyber-emerald/20 border border-cyber-emerald flex items-center justify-center flex-shrink-0 text-cyber-emerald">
-                <Globe className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-cyber-emerald/10 border border-cyber-emerald/30 flex items-center justify-center flex-shrink-0 text-cyber-emerald">
+                <Globe className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-white text-sm flex items-center justify-center sm:justify-start gap-1.5">
+                <div className="font-bold text-cyber-text text-xs flex items-center justify-center sm:justify-start gap-1.5 font-mono">
                   <span>DANIEL DAYAN'S OFFICIAL PORTFOLIO</span>
                   <Sparkles className="w-3.5 h-3.5 text-cyber-emerald" />
                 </div>
-                <div className="text-gray-300 text-[11px]">
+                <div className="text-cyber-muted text-[11px]">
                   Explore Daniel's live cybersecurity projects, professional certifications, and security research.
                 </div>
               </div>
@@ -151,7 +149,7 @@ export const OperatorDossierModal: React.FC = () => {
                 href={links.coffee}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl font-black text-xs bg-[#FFDD00] hover:bg-[#FFDD00]/90 text-black shadow-[0_0_15px_rgba(255,221,0,0.35)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 flex-shrink-0"
+                className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg font-mono font-bold text-xs bg-[#FFDD00] hover:bg-[#FFDD00]/90 text-black transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] flex items-center justify-center gap-1.5 flex-shrink-0 shadow-sm"
               >
                 <Coffee className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>BUY ME A COFFEE</span>
@@ -160,7 +158,7 @@ export const OperatorDossierModal: React.FC = () => {
                 href={links.portfolio}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-black text-xs bg-cyber-emerald hover:bg-cyber-emerald/90 text-black shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 flex-shrink-0"
+                className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg font-mono font-bold text-xs bg-cyber-emerald hover:bg-cyber-emerald/90 text-black transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] flex items-center justify-center gap-1.5 flex-shrink-0 shadow-sm"
               >
                 <span>LAUNCH PORTFOLIO</span>
                 <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -176,7 +174,7 @@ export const OperatorDossierModal: React.FC = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {/* Portfolio */}
-              <div className="p-3 rounded-xl bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border hover:border-cyber-emerald transition-all group flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border hover:border-cyber-emerald transition-colors group flex items-center justify-between">
                 <a
                   href={links.portfolio}
                   target="_blank"
@@ -196,7 +194,7 @@ export const OperatorDossierModal: React.FC = () => {
                 </a>
                 <button
                   onClick={(e) => handleCopyLink(e, links.portfolio, 'portfolio')}
-                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-cyber-emerald/20 text-cyber-muted hover:text-cyber-emerald border border-cyber-border hover:border-cyber-emerald/50 transition-all flex-shrink-0"
+                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-cyber-emerald/20 text-cyber-muted hover:text-cyber-emerald border border-cyber-border hover:border-cyber-emerald/50 transition-colors flex-shrink-0"
                   title="Copy portfolio URL"
                 >
                   {copiedField === 'portfolio' ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -204,7 +202,7 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               {/* LinkedIn */}
-              <div className="p-3 rounded-xl bg-cyber-card hover:bg-[#0077B5]/10 border border-cyber-border hover:border-[#0077B5] transition-all group flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-cyber-card hover:bg-[#0077B5]/10 border border-cyber-border hover:border-[#0077B5] transition-colors group flex items-center justify-between">
                 <a
                   href={links.linkedin}
                   target="_blank"
@@ -224,7 +222,7 @@ export const OperatorDossierModal: React.FC = () => {
                 </a>
                 <button
                   onClick={(e) => handleCopyLink(e, links.linkedin, 'linkedin')}
-                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-[#0077B5]/25 text-cyber-muted hover:text-[#0077B5] border border-cyber-border hover:border-[#0077B5]/50 transition-all flex-shrink-0"
+                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-[#0077B5]/25 text-cyber-muted hover:text-[#0077B5] border border-cyber-border hover:border-[#0077B5]/50 transition-colors flex-shrink-0"
                   title="Copy LinkedIn URL"
                 >
                   {copiedField === 'linkedin' ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -232,7 +230,7 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               {/* GitHub */}
-              <div className="p-3 rounded-xl bg-cyber-card hover:bg-white/5 border border-cyber-border hover:border-white transition-all group flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-cyber-card hover:bg-white/5 border border-cyber-border hover:border-white transition-colors group flex items-center justify-between">
                 <a
                   href={links.github}
                   target="_blank"
@@ -252,7 +250,7 @@ export const OperatorDossierModal: React.FC = () => {
                 </a>
                 <button
                   onClick={(e) => handleCopyLink(e, links.github, 'github')}
-                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-white/20 text-cyber-muted hover:text-white border border-cyber-border hover:border-white/50 transition-all flex-shrink-0"
+                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-white/20 text-cyber-muted hover:text-white border border-cyber-border hover:border-white/50 transition-colors flex-shrink-0"
                   title="Copy GitHub URL"
                 >
                   {copiedField === 'github' ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -260,7 +258,7 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               {/* CTF Writeups */}
-              <div className="p-3 rounded-xl bg-cyber-card hover:bg-cyber-cyan/10 border border-cyber-border hover:border-cyber-cyan transition-all group flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-cyber-card hover:bg-cyber-cyan/10 border border-cyber-border hover:border-cyber-cyan transition-colors group flex items-center justify-between">
                 <a
                   href={links.writeups}
                   target="_blank"
@@ -280,7 +278,7 @@ export const OperatorDossierModal: React.FC = () => {
                 </a>
                 <button
                   onClick={(e) => handleCopyLink(e, links.writeups, 'writeups')}
-                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-cyber-cyan/25 text-cyber-muted hover:text-cyber-cyan border border-cyber-border hover:border-cyber-cyan/50 transition-all flex-shrink-0"
+                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-cyber-cyan/25 text-cyber-muted hover:text-cyber-cyan border border-cyber-border hover:border-cyber-cyan/50 transition-colors flex-shrink-0"
                   title="Copy GitBook writeups URL"
                 >
                   {copiedField === 'writeups' ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -288,18 +286,18 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               {/* Buy Me a Coffee Operator Sponsor Card */}
-              <div className="sm:col-span-2 p-3.5 rounded-xl bg-gradient-to-r from-[#FFDD00]/15 via-cyber-card to-cyber-bg border border-[#FFDD00]/40 hover:border-[#FFDD00] transition-all group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_15px_rgba(255,221,0,0.1)]">
+              <div className="sm:col-span-2 p-3.5 rounded-xl bg-cyber-bg border border-cyber-border hover:border-amber-500/50 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <a
                   href={links.coffee}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 min-w-0 flex-1"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-[#FFDD00]/20 border border-[#FFDD00]/50 flex items-center justify-center text-[#FFDD00] group-hover:scale-110 transition-transform flex-shrink-0">
-                    <Coffee className="w-4.5 h-4.5" />
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 flex-shrink-0">
+                    <Coffee className="w-4 h-4" />
                   </div>
                   <div className="truncate">
-                    <div className="font-bold text-white group-hover:text-[#FFDD00] transition-colors flex items-center gap-1.5 text-xs">
+                    <div className="font-bold text-cyber-text group-hover:text-amber-500 transition-colors flex items-center gap-1.5 text-xs font-mono">
                       <span>Buy Me a Coffee // Sponsor Daniel Dayan</span>
                       <ExternalLink className="w-3 h-3 text-cyber-muted opacity-60" />
                     </div>
@@ -309,7 +307,7 @@ export const OperatorDossierModal: React.FC = () => {
                 <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end flex-shrink-0">
                   <button
                     onClick={(e) => handleCopyLink(e, links.coffee, 'coffee')}
-                    className="p-1.5 rounded-lg bg-cyber-bg hover:bg-[#FFDD00]/25 text-cyber-muted hover:text-[#FFDD00] border border-cyber-border hover:border-[#FFDD00]/50 transition-all flex-shrink-0"
+                    className="p-1.5 rounded-lg bg-cyber-card hover:bg-cyber-cardHover text-cyber-muted hover:text-cyber-text border border-cyber-border transition-colors flex-shrink-0 cursor-pointer"
                     title="Copy Buy Me a Coffee URL"
                   >
                     {copiedField === 'coffee' ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -318,7 +316,7 @@ export const OperatorDossierModal: React.FC = () => {
                     href={links.coffee}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3.5 py-1.5 rounded-lg bg-[#FFDD00] hover:bg-[#FFDD00]/90 text-black font-extrabold text-[11px] shadow-[0_0_10px_rgba(255,221,0,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-lg bg-[#FFDD00] hover:bg-[#FFDD00]/90 text-black font-mono font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] flex items-center gap-1.5 shadow-sm"
                   >
                     <Coffee className="w-3.5 h-3.5" />
                     <span>SPONSOR</span>
@@ -335,53 +333,53 @@ export const OperatorDossierModal: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <div className="p-3 rounded-xl bg-cyber-card/70 border border-cyber-border space-y-1">
-                <div className="text-cyber-emerald font-extrabold text-lg">63 Pwns</div>
-                <div className="text-white font-semibold">45 HTB + 18 THM Solves</div>
+              <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border space-y-0.5">
+                <div className="text-cyber-emerald font-extrabold text-base font-mono">63 Pwns</div>
+                <div className="text-cyber-text font-semibold text-xs">45 HTB + 18 THM Solves</div>
                 <div className="text-[10px] text-cyber-muted">Verified pwned targets in active tracker roster.</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-cyber-card/70 border border-cyber-border space-y-1">
-                <div className="text-cyber-cyan font-extrabold text-lg">8 Phases</div>
-                <div className="text-white font-semibold">Offensive Methodology</div>
+              <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border space-y-0.5">
+                <div className="text-cyber-cyan font-extrabold text-base font-mono">8 Phases</div>
+                <div className="text-cyber-text font-semibold text-xs">Offensive Methodology</div>
                 <div className="text-[10px] text-cyber-muted">End-to-end framework from reconnaissance to exfiltration.</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-cyber-card/70 border border-cyber-border space-y-1">
-                <div className="text-cyber-amber font-extrabold text-lg">0ms Latency</div>
-                <div className="text-white font-semibold">Client-First Engine</div>
-                <div className="text-[10px] text-cyber-muted">Offline-first Zustand state with 1-click cloud sync.</div>
+              <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border space-y-0.5">
+                <div className="text-cyber-amber font-extrabold text-base font-mono">Zero Egress</div>
+                <div className="text-cyber-text font-semibold text-xs">Local-First Engine</div>
+                <div className="text-[10px] text-cyber-muted">Offline-first Zustand state. No data leaves this machine.</div>
               </div>
             </div>
           </div>
 
           {/* Creator Notes / Philosophy */}
-          <div className="p-3.5 rounded-xl bg-cyber-bg border border-cyber-border/80 space-y-1.5">
-            <div className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5">
+          <div className="p-3.5 rounded-xl bg-cyber-bg border border-cyber-border space-y-1">
+            <div className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5 font-mono">
               <Cpu className="w-3 h-3 text-cyber-cyan" /> CREATOR PHILOSOPHY // ZEROBOX
             </div>
-            <p className="text-gray-300 text-[11px] leading-relaxed">
+            <p className="text-cyber-muted text-[11px] leading-relaxed">
               "I built ZeroBox because offensive security operators need a single, lightning-fast workspace that keeps track of target states, automatically injects VPN IP parameters into payload commands, and structures machine lifecycles without friction or tedious note-taking."
             </p>
-            <div className="text-[10px] text-cyber-emerald font-bold text-right">
-              — Daniel Dayan (@0xdnd)
+            <div className="text-[10px] text-cyber-emerald font-bold text-right font-mono">
+              - Daniel Dayan (@0xdnd)
             </div>
           </div>
 
           {/* Legal & Non-Commercial License Protection Covenant */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-cyber-amber/15 via-cyber-card to-cyber-bg border border-cyber-amber/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+          <div className="p-3.5 rounded-xl bg-cyber-bg border border-cyber-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-cyber-amber/20 border border-cyber-amber/50 flex items-center justify-center text-cyber-amber flex-shrink-0 mt-0.5 sm:mt-0">
+              <div className="w-8 h-8 rounded-lg bg-cyber-amber/10 border border-cyber-amber/30 flex items-center justify-center text-cyber-amber flex-shrink-0 mt-0.5 sm:mt-0">
                 <Scale className="w-4 h-4" />
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white text-xs">NON-COMMERCIAL SOURCE-AVAILABLE LICENSE (ZNSL 1.0)</span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-cyber-amber/20 text-cyber-amber border border-cyber-amber/40">
+                  <span className="font-bold text-cyber-text text-xs font-mono">NON-COMMERCIAL SOURCE-AVAILABLE LICENSE (ZNSL 1.0)</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-mono font-bold bg-cyber-amber/10 text-cyber-amber border border-cyber-amber/30">
                     PROTECTED
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-300 leading-relaxed max-w-xl">
+                <p className="text-[11px] text-cyber-muted leading-relaxed max-w-xl">
                   ZeroBox is authored by Daniel Dayan for personal and educational research. Commercial exploitation, reselling, paid course bundling, or public re-hosting is strictly prohibited by law.
                 </p>
               </div>
@@ -393,7 +391,7 @@ export const OperatorDossierModal: React.FC = () => {
                 setLicenseModalOpen(true);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-bold bg-cyber-amber hover:bg-cyber-amber/90 text-black shadow-[0_0_12px_rgba(245,158,11,0.3)] transition-all flex items-center justify-center gap-1.5 flex-shrink-0"
+              className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyber-amber text-black hover:opacity-90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm"
             >
               <Scale className="w-3.5 h-3.5" />
               <span>VIEW LICENSE</span>
@@ -415,7 +413,7 @@ export const OperatorDossierModal: React.FC = () => {
                 setLicenseModalOpen(true);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-amber/15 hover:bg-cyber-amber/25 text-cyber-amber border border-cyber-amber/40 transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-amber/15 hover:bg-cyber-amber/25 text-cyber-amber border border-cyber-amber/40 transition-colors flex items-center gap-1.5"
             >
               <Scale className="w-3.5 h-3.5" />
               <span>License (ZNSL 1.0)</span>
@@ -425,7 +423,7 @@ export const OperatorDossierModal: React.FC = () => {
               href={links.portfolio}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-emerald/15 hover:bg-cyber-emerald/25 text-cyber-emerald border border-cyber-emerald/40 transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-emerald/15 hover:bg-cyber-emerald/25 text-cyber-emerald border border-cyber-emerald/40 transition-colors flex items-center gap-1.5"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>0xdnd.github.io</span>
@@ -433,7 +431,7 @@ export const OperatorDossierModal: React.FC = () => {
 
             <button
               onClick={() => setOperatorModalOpen(false)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-card hover:bg-white/10 text-white border border-cyber-border transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-card hover:bg-white/10 text-white border border-cyber-border transition-colors"
             >
               Close
             </button>

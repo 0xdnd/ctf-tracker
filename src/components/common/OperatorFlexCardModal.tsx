@@ -12,9 +12,11 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { PRACTICE_TRACKS } from '../../data/tracksData';
+import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
 
 export const OperatorFlexCardModal: React.FC = () => {
   const {
@@ -31,9 +33,24 @@ export const OperatorFlexCardModal: React.FC = () => {
     }))
   );
 
+  const { user } = useAuthStore();
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
+
+  // Compute operator gamification
+  const gamification = useMemo(() => {
+    return evaluateOperatorGamification({
+      machines,
+      unlockedTrophies: user?.unlockedTrophies,
+    });
+  }, [machines, user?.unlockedTrophies]);
+
+  const callsign = user?.callsign || user?.name || 'Local Operator';
+  const role = user?.role || 'Tactical CTF Operator';
+  const rank = gamification.currentRank;
+  const initials = callsign.slice(0, 2).toUpperCase();
 
   // Compute live operator metrics
   const { totalMachines, rootedMachines, footholdMachines, totalPwned } = useMemo(() => {
@@ -64,7 +81,7 @@ export const OperatorFlexCardModal: React.FC = () => {
   useEffect(() => {
     if (!flexCardModalOpen) return;
     renderCanvas();
-  }, [flexCardModalOpen, totalPwned, htbPwned, thmPwned]);
+  }, [flexCardModalOpen, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
 
   useEffect(() => {
     if (!flexCardModalOpen) return;
@@ -151,34 +168,34 @@ export const OperatorFlexCardModal: React.FC = () => {
 
     ctx.fillStyle = '#10b981';
     ctx.font = 'bold 36px monospace';
-    ctx.fillText('DD', 75, 107);
+    ctx.fillText(initials, 75, 107);
 
     // Operator Title & Callsign
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px monospace';
-    ctx.fillText('Daniel Dayan', 155, 90);
+    ctx.fillText(callsign, 155, 90);
 
     ctx.fillStyle = '#06b6d4';
     ctx.font = 'bold 16px monospace';
-    ctx.fillText('@0xdnd // ZeroBox', 155, 118);
+    ctx.fillText(`[${rank.tier}] ${rank.title} // ${role}`, 155, 118);
 
     // Security Clearance Badge
     ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
     ctx.strokeStyle = '#f59e0b';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.roundRect(W - 380, 60, 320, 36, 8);
+    ctx.roundRect(W - 390, 60, 330, 36, 8);
     ctx.fill();
     ctx.stroke();
 
     ctx.fillStyle = '#f59e0b';
     ctx.font = 'bold 13px monospace';
-    ctx.fillText('★ VERIFIED OPERATOR RECORD ★', W - 355, 84);
+    ctx.fillText(`★ TIER ${rank.tier}: ${rank.title.toUpperCase()} ★`, W - 370, 84);
 
     // Platform Subtitle
     ctx.fillStyle = '#9ca3af';
     ctx.font = '13px monospace';
-    ctx.fillText('ZEROBOX // TACTICAL CYBER OPERATIONS SUITE', 155, 145);
+    ctx.fillText(`ZEROBOX // ${gamification.totalXp.toLocaleString()} XP // ${gamification.unlockedCount} TROPHIES UNLOCKED`, 155, 145);
 
     // 5. Hero Stats Row (Three main cyber boxes)
     // Box 1: Total Pwns
@@ -244,7 +261,7 @@ export const OperatorFlexCardModal: React.FC = () => {
     drawTrackRow(60, 335, 510, 68, '🎯 TJ_Null OSCP 2024 Track', `${oscpPwned}/${oscpTotal} (${oscpPct}%)`, Math.max(12, oscpPct), '#10b981');
     drawTrackRow(595, 335, 545, 68, '🏆 CPTS Trophy Room Track', `${cptsPwned}/${cptsTotal} (${cptsPct}%)`, Math.max(8, cptsPct), '#06b6d4');
 
-    // 7. Tactical Expertise Metrics
+    // 7. Tactical Expertise Metrics / Unlocked Trophies
     const drawSkillBadge = (x: number, y: number, text: string, color: string) => {
       ctx.fillStyle = 'rgba(13, 21, 38, 0.8)';
       ctx.strokeStyle = color;
@@ -259,10 +276,28 @@ export const OperatorFlexCardModal: React.FC = () => {
       ctx.fillText(text, x + 15, y + 24);
     };
 
-    drawSkillBadge(60, 420, '⚡ Active Directory // BloodHound', '#a855f7');
-    drawSkillBadge(325, 420, '🌐 Web Apps // SQLi, RCE, SSRF', '#06b6d4');
-    drawSkillBadge(590, 420, '🐧 Linux PrivEsc // SUID & Kernel', '#ef4444');
-    drawSkillBadge(855, 420, '🪟 Windows PrivEsc // Tokens & DPAPI', '#3b82f6');
+    const topTrophies = gamification.trophies.filter((t) => t.unlocked).slice(0, 4);
+    if (topTrophies.length >= 2) {
+      topTrophies.forEach((t, idx) => {
+        const xPos = 60 + idx * 265;
+        drawSkillBadge(xPos, 420, `🏆 ${t.definition.title}`, '#10b981');
+      });
+      const defaultBadges = [
+        { text: '⚡ Active Directory // BloodHound', color: '#a855f7' },
+        { text: '🌐 Web Apps // SQLi, RCE, SSRF', color: '#06b6d4' },
+        { text: '🐧 Linux PrivEsc // SUID & Kernel', color: '#ef4444' },
+        { text: '🪟 Windows PrivEsc // Tokens & DPAPI', color: '#3b82f6' },
+      ];
+      for (let i = topTrophies.length; i < 4; i++) {
+        const xPos = 60 + i * 265;
+        drawSkillBadge(xPos, 420, defaultBadges[i].text, defaultBadges[i].color);
+      }
+    } else {
+      drawSkillBadge(60, 420, '⚡ Active Directory // BloodHound', '#a855f7');
+      drawSkillBadge(325, 420, '🌐 Web Apps // SQLi, RCE, SSRF', '#06b6d4');
+      drawSkillBadge(590, 420, '🐧 Linux PrivEsc // SUID & Kernel', '#ef4444');
+      drawSkillBadge(855, 420, '🪟 Windows PrivEsc // Tokens & DPAPI', '#3b82f6');
+    }
 
     // 8. Footer Watermark
     ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
@@ -293,7 +328,8 @@ export const OperatorFlexCardModal: React.FC = () => {
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ZeroBox-Operator-Card-0xdnd-${new Date().toISOString().slice(0, 10)}.png`;
+    const cleanSlug = callsign.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    a.download = `ZeroBox-Operator-Card-${cleanSlug}-${new Date().toISOString().slice(0, 10)}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -335,13 +371,13 @@ export const OperatorFlexCardModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono" onClick={() => setFlexCardModalOpen(false)}>
       <div 
-        className="w-full max-w-4xl max-h-[95vh] flex flex-col rounded-2xl border border-cyber-emerald/50 bg-[#0b101c] shadow-[0_0_50px_rgba(16,185,129,0.25)] overflow-hidden"
+        className="w-full max-w-4xl max-h-[95vh] flex flex-col rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-cyber-border/80 px-5 py-3.5 bg-[#080c14]">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyber-emerald animate-pulse shadow-glow-emerald" />
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-cyber-border px-4 py-3 bg-cyber-bg">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyber-emerald" />
             <Award className="w-4 h-4 text-cyber-emerald" />
             <span className="font-bold text-cyber-emerald tracking-wide text-xs uppercase">
               OPERATOR ACHIEVEMENTS // SHARABLE FLEX CARD
@@ -350,7 +386,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
           <button
             onClick={() => setFlexCardModalOpen(false)}
-            className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card transition-all"
+            className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Close (ESC)"
           >
             <X className="w-4 h-4" />
@@ -358,8 +394,8 @@ export const OperatorFlexCardModal: React.FC = () => {
         </div>
 
         {/* Card Canvas Preview */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center space-y-4">
-          <div className="relative w-full max-w-3xl rounded-xl border border-cyber-emerald/40 overflow-hidden shadow-2xl bg-black">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col items-center space-y-3">
+          <div className="relative w-full max-w-3xl rounded-xl border border-cyber-border overflow-hidden shadow-xl bg-black">
             <canvas 
               ref={canvasRef} 
               className="w-full h-auto block"
@@ -373,11 +409,11 @@ export const OperatorFlexCardModal: React.FC = () => {
         </div>
 
         {/* Action Buttons Footer */}
-        <div className="px-5 py-3.5 bg-[#080c14] border-t border-cyber-border/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="px-4 py-3 bg-cyber-bg border-t border-cyber-border flex flex-wrap items-center justify-between gap-2.5 text-xs">
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadPng}
-              className="px-4 py-2 rounded-xl bg-cyber-emerald text-black font-extrabold hover:bg-cyber-emerald/90 transition-all flex items-center gap-2 shadow-glow-emerald"
+              className="px-3.5 py-1.5 rounded-lg bg-cyber-emerald text-black font-extrabold hover:bg-cyber-emerald/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
             >
               <Download className="w-4 h-4 stroke-[2.5]" />
               <span>DOWNLOAD PNG (1200x630)</span>
@@ -385,7 +421,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
             <button
               onClick={handleCopyPng}
-              className="px-3.5 py-2 rounded-xl bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-white hover:text-cyber-cyan transition-all flex items-center gap-2"
+              className="px-3.5 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-white hover:text-cyber-cyan transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
             >
               {copied ? (
                 <>
@@ -404,7 +440,7 @@ export const OperatorFlexCardModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleShareLinkedIn}
-              className="px-3.5 py-2 rounded-xl bg-[#0077B5]/20 hover:bg-[#0077B5]/35 border border-[#0077B5]/50 text-white font-bold transition-all flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/35 border border-[#0077B5]/50 text-white font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
             >
               <Share2 className="w-3.5 h-3.5 text-[#0077B5]" />
               <span>Share on LinkedIn</span>
@@ -412,7 +448,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
             <button
               onClick={handleShareTwitter}
-              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold transition-all flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
