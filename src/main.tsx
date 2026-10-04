@@ -4,18 +4,29 @@ import App from './App';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import './index.css';
 
-// Unregister any stale legacy service worker and flush cache to prevent serving outdated assets
+// Register offline Service Worker only in production builds; clear any stale SW in DEV mode
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      registration.unregister();
-    }
-  });
-  if ('caches' in window) {
-    caches.keys().then((names) => {
-      for (const name of names) {
-        caches.delete(name);
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        reg.unregister().catch(() => {});
       }
+    });
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const key of keys) caches.delete(key);
+      });
+    }
+  } else {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('./sw.js', { scope: './' })
+        .then((reg) => {
+          reg.update().catch(() => {});
+        })
+        .catch((err) => {
+          console.warn('[ZeroBox SW] Service Worker registration failed:', err);
+        });
     });
   }
 }

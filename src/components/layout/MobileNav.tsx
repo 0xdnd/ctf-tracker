@@ -178,7 +178,7 @@ export const MobileNav: React.FC = () => {
           <button
             onClick={() => handleNavClick('/cheatsheets', 'cheatsheet')}
             className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
-              location.pathname.startsWith('/cheatsheets')
+              location.pathname.startsWith('/cheatsheet')
                 ? 'text-purple-400 font-bold'
                 : 'text-cyber-muted hover:text-white'
             }`}

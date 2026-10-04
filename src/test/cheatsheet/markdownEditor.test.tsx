@@ -391,4 +391,37 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
       expect(screen.getByText(/Crucial AD reconnaissance methodology/i)).toBeInTheDocument();
     });
   });
+
+  describe('R5: MarkdownEditor Standalone Dual-Pane Split Preview & DOMPurify Sanitization', () => {
+    it('toggles dual-pane preview and neutralizes malicious script payloads via DOMPurify', () => {
+      render(
+        <MarkdownEditor
+          noteId={sampleNote.id}
+          initialContent={'# Safe Header\n<script>alert("XSS")</script>\n**Tactical Bold**'}
+          onContentChange={vi.fn()}
+          globalVars={mockGlobalVars}
+          soundEnabled={false}
+        />
+      );
+
+      // Initially preview is hidden
+      expect(screen.queryByTestId('markdown-split-preview')).not.toBeInTheDocument();
+
+      // Click Dual-Pane toggle button in toolbar
+      const dualPaneBtn = screen.getByTitle('Toggle Dual-Pane Split Preview');
+      fireEvent.click(dualPaneBtn);
+
+      // Dual-Pane preview container is now displayed
+      const preview = screen.getByTestId('markdown-split-preview');
+      expect(preview).toBeInTheDocument();
+      expect(screen.getByText('MARKDOWN PREVIEW')).toBeInTheDocument();
+      expect(screen.getByText('Safe Header')).toBeInTheDocument();
+      expect(screen.getByText('Tactical Bold')).toBeInTheDocument();
+
+      // Ensure script tag was neutralized and no executable script element exists
+      expect(preview.innerHTML).not.toContain('<script>');
+      expect(preview.querySelector('script')).toBeNull();
+    });
+  });
 });
+

@@ -540,6 +540,17 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         }}
       />
 
+      {/* Subtle 1px machined top-edge highlight inside card */}
+      <line
+        x1={cardX + 4}
+        y1={cardY + 1}
+        x2={cardX + 176}
+        y2={cardY + 1}
+        stroke="rgba(255, 255, 255, 0.07)"
+        strokeWidth="1"
+        className="pointer-events-none"
+      />
+
       {/* Row 1: Header (OS Icon, Machine Name, Status Beacon) */}
       {/* OS Vector Icon */}
       <g transform={`translate(${cardX + 10}, ${cardY + 8})`}>
@@ -575,17 +586,18 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       <text
         x={cardX + 32}
         y={cardY + 20}
-        fill={isSelected ? tokens.accent : isHovered ? tokens.textPrimary : tokens.textPrimary}
-        fontSize="12.5"
-        fontFamily="monospace"
-        fontWeight="bold"
+        fill={isSelected ? tokens.accent : tokens.textPrimary}
+        fontSize="12"
+        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        fontWeight="600"
+        letterSpacing="-0.01em"
         textAnchor="start"
         className="pointer-events-none select-none"
       >
         {displayName}
       </text>
 
-      {/* Status Beacon Halo (Pulsing for Root, Glow for Foothold, Standby for Unsolved) */}
+      {/* Status Beacon (Hardware-grade concentric LED beacon with subtle pulse) */}
       <g transform={`translate(${cardX + 164}, ${cardY + 16})`} className="pointer-events-none">
         {isRooted && (
           <circle
@@ -594,25 +606,25 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
             r="4.5"
             fill="none"
             stroke={statusColor}
-            strokeWidth="1.5"
-            opacity="0.75"
+            strokeWidth="1.2"
+            opacity="0.4"
           >
-            <animate attributeName="r" values="4.5;9;4.5" dur="2.2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.75;0.12;0.75" dur="2.2s" repeatCount="indefinite" />
+            <animate attributeName="r" values="4.5;7.5;4.5" dur="2.4s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.4;0.08;0.4" dur="2.4s" repeatCount="indefinite" />
           </circle>
         )}
         {isFoothold && (
           <circle
             cx="0"
             cy="0"
-            r="6.5"
+            r="5.5"
             fill="none"
             stroke={statusColor}
-            strokeWidth="1"
-            opacity="0.45"
+            strokeWidth="0.8"
+            opacity="0.25"
           />
         )}
-        <circle cx="0" cy="0" r="4.5" fill={statusColor} />
+        <circle cx="0" cy="0" r="3.5" fill={statusColor} />
       </g>
 
       {/* Subtle Row Divider */}
@@ -643,8 +655,9 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         y={cardY + 47.5}
         fill={tokens.accent}
         fontSize="9.5"
-        fontFamily="monospace"
+        fontFamily="'JetBrains Mono', monospace"
         fontWeight="600"
+        style={{ fontVariantNumeric: 'tabular-nums' }}
         textAnchor="middle"
         className="pointer-events-none select-none"
       >
@@ -666,9 +679,10 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         x={cardX + 136}
         y={cardY + 47.5}
         fill={diffColors.text}
-        fontSize="8.5"
-        fontFamily="monospace"
-        fontWeight="bold"
+        fontSize="8"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontWeight="700"
+        letterSpacing="0.04em"
         textAnchor="middle"
         className="pointer-events-none select-none"
       >
@@ -719,8 +733,9 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
                         y="11"
                         fill={pColors.text}
                         fontSize="7.5"
-                        fontFamily="monospace"
+                        fontFamily="'JetBrains Mono', monospace"
                         fontWeight="600"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
                         textAnchor="middle"
                         className="pointer-events-none select-none"
                       >
@@ -1586,7 +1601,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full rounded-2xl border border-cyber-border bg-cyber-card/90 overflow-hidden font-mono shadow-2xl select-none transition-[box-shadow,background-color,border-color,color] duration-300 ${
+      className={`relative w-full rounded-2xl border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen' : 'h-[720px]'
       }`}
       onPointerDown={handleCanvasPointerDown}
@@ -1597,13 +1612,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     >
       {/* Top HUD Legend & Telemetry Capsule */}
       <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 pointer-events-auto">
-        <div className="px-3 py-1.5 rounded-xl bg-cyber-bg border border-cyber-border shadow-xs flex items-center gap-2">
-          <Share2 className="w-3.5 h-3.5 text-cyber-cyan" />
-          <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono">
+        <div className="px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs flex items-center gap-2 machined-edge">
+          <Share2 className="w-3.5 h-3.5 text-accent" />
+          <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-sans">
             BLOODHOUND // CANVAS
           </span>
           <span 
-            className="text-[10px] text-cyber-cyan font-bold font-mono px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border"
+            className="text-[10px] text-accent font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
             title={showAllNodes ? 'Showing all catalog machines in attack topology' : 'Showing initial scoped sample targets (48 nodes)'}
           >
             {visibleNodes.length} / {universeMachines.length} NODES
@@ -1615,10 +1630,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 setShowAllNodes(!showAllNodes);
                 if (soundEnabled) playCyberSound('toggle');
               }}
-              className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
+              className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
                 showAllNodes
-                  ? 'bg-cyber-cyan text-black border-cyber-cyan shadow-xs'
-                  : 'bg-cyber-card text-cyber-cyan border-cyber-border hover:border-cyber-cyan/40'
+                  ? 'bg-accent text-black border-accent shadow-xs'
+                  : 'bg-surface-sunken text-accent border-subtle hover:border-accent/40'
               }`}
               title={showAllNodes ? 'Switch to scoped 48 targets' : 'Render all targets in topology graph'}
               aria-label={showAllNodes ? 'Switch to scoped 48 targets' : 'Show all targets in topology graph'}
@@ -1626,27 +1641,27 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               {showAllNodes ? 'SHOW SCOPED (48)' : 'SHOW ALL'}
             </button>
           )}
-          <span className="text-[10px] text-purple-400 font-bold font-mono px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border">
+          <span className="text-[10px] text-purple-400 font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
             {clusters.length} SUBNETS
           </span>
-          <span className="text-[10px] text-cyber-emerald font-bold font-mono px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border">
+          <span className="text-[10px] text-emerald-500 font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
             {graphEdges.length} VECTORS
           </span>
         </div>
 
         {/* Legend */}
-        <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-cyber-bg border border-cyber-border shadow-xs text-[10px] font-mono">
+        <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs text-[10px] font-sans machined-edge">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyber-emerald" />
-            <span className="text-cyber-emerald font-bold">Root</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-secondary">Root (Compromised)</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyber-amber" />
-            <span className="text-cyber-amber font-bold">Foothold</span>
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-secondary">Foothold (User)</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyber-cyan" />
-            <span className="text-cyber-muted">Scoped</span>
+            <span className="w-2 h-2 rounded-full bg-cyan-500" />
+            <span className="text-secondary">Scoped</span>
           </span>
         </div>
       </div>
@@ -1654,9 +1669,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       {/* Floating Canvas Navigation Toolbar */}
       <div 
         data-testid="canvas-nav-toolbar"
-        className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-cyber-bg border border-cyber-border p-1.5 rounded-xl shadow-md pointer-events-auto"
+        className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-surface-elevated/95 backdrop-blur-sm border border-subtle p-1.5 rounded-xl shadow-md pointer-events-auto machined-edge"
       >
-        <span className="text-[10px] font-bold text-cyber-muted px-2 select-none font-mono">
+        <span className="text-[10px] font-semibold text-muted px-2 select-none font-mono tabular-nums">
           {Math.round(scale * 100)}%
         </span>
 
@@ -1668,10 +1683,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             setConnectingSourceId(null);
             if (soundEnabled) playCyberSound('toggle');
           }}
-          className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center gap-1.5 ${
+          className={`px-2.5 py-1 rounded-md text-xs font-bold font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1.5 cursor-pointer ${
             isConnectingMode
-              ? 'bg-cyber-cyan text-black font-extrabold shadow-xs'
-              : 'hover:bg-cyber-card text-cyber-cyan'
+              ? 'bg-accent text-black font-extrabold shadow-xs'
+              : 'hover:bg-surface-hover text-accent border border-transparent hover:border-subtle'
           }`}
           title={isConnectingMode ? 'Cancel Pivot Link Connection' : 'Add Pivot / Attack Vector Edge (Alt+C)'}
         >
@@ -1685,7 +1700,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         <button
           data-testid="graph-export-canvas"
           onClick={handleExportObsidian}
-          className="p-2 rounded-lg hover:bg-cyber-card text-purple-400 hover:text-purple-300 transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center gap-1"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-purple-400 hover:text-purple-300 transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
           title="Export as Native Obsidian Canvas (.canvas)"
         >
           <Download className="w-4 h-4" />
@@ -1696,21 +1711,21 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         <button
           data-testid="graph-export-svg"
           onClick={handleExportSvg}
-          className="p-2 rounded-lg hover:bg-cyber-card text-cyber-cyan hover:text-cyan-300 transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center gap-1"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-accent hover:text-cyan-300 transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
           title="Export High-Resolution Vector Image (.svg)"
         >
           <Share2 className="w-4 h-4" />
           <span className="text-[10px] font-bold hidden xl:inline">SVG</span>
         </button>
 
-        <div className="w-px h-4 bg-cyber-border mx-0.5" />
+        <div className="w-px h-4 bg-border-subtle mx-0.5" />
 
         <button
           type="button"
           data-testid="graph-zoom-in"
           onClick={handleZoomIn}
           aria-label="Zoom In"
-          className="p-2 rounded-lg hover:bg-cyber-card text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
           title="Zoom In (+)"
         >
           <ZoomIn className="w-4 h-4" />
@@ -1720,7 +1735,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-zoom-out"
           onClick={handleZoomOut}
           aria-label="Zoom Out"
-          className="p-2 rounded-lg hover:bg-cyber-card text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
           title="Zoom Out (-)"
         >
           <ZoomOut className="w-4 h-4" />
@@ -1730,7 +1745,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-reset-view"
           onClick={handleResetView}
           aria-label="Reset View"
-          className="p-2 rounded-lg hover:bg-cyber-card text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
           title="Reset View (1:1)"
         >
           <RotateCcw className="w-4 h-4" />
@@ -1740,7 +1755,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-fit-screen"
           onClick={handleFitToScreen}
           aria-label="Fit to Screen"
-          className="p-2 rounded-lg hover:bg-cyber-card text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
           title="Fit to Screen (Framing)"
         >
           <Focus className="w-4 h-4" />
@@ -1750,7 +1765,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-center-selection"
           onClick={handleCenterSelection}
           aria-label="Center Selection"
-          className="p-2 rounded-lg hover:bg-cyber-card text-cyber-muted hover:text-slate-900 dark:hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
           title="Center Selection / Rig"
         >
           <Crosshair className="w-4 h-4" />
@@ -1760,8 +1775,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-fullscreen-toggle"
           onClick={() => setIsFullscreen(!isFullscreen)}
           aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Attack Topology'}
-          className={`p-2 rounded-lg transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
-            isFullscreen ? 'bg-cyber-cyan text-black font-bold' : 'hover:bg-cyber-card text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+          className={`p-1.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
+            isFullscreen ? 'bg-accent text-black font-bold' : 'hover:bg-surface-hover text-muted hover:text-primary'
           }`}
           title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Attack Topology'}
         >
@@ -1799,24 +1814,24 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         {isMinimapOpen ? (
           <div 
             data-testid="graph-minimap-container"
-            className="w-48 p-2 rounded-xl bg-cyber-bg border border-cyber-border shadow-lg space-y-1.5 font-mono"
+            className="w-48 p-2 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle shadow-lg space-y-1.5 font-sans machined-edge"
           >
-            <div className="flex items-center justify-between text-[9px] font-bold text-cyber-muted px-1">
+            <div className="flex items-center justify-between text-[9px] font-bold text-muted px-1">
               <span className="flex items-center gap-1 uppercase tracking-wider text-slate-900 dark:text-white">
-                <Radio className="w-3 h-3 text-cyber-cyan" />
+                <Radio className="w-3 h-3 text-accent" />
                 TACTICAL RADAR
               </span>
               <button
                 data-testid="graph-minimap-toggle"
                 onClick={() => setIsMinimapOpen(false)}
-                className="p-0.5 rounded hover:bg-cyber-card text-cyber-muted hover:text-white"
+                className="p-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary active:scale-[0.97] cursor-pointer"
                 title="Collapse Minimap"
               >
                 <X className="w-3 h-3" />
               </button>
             </div>
 
-            <div className="w-full h-32 rounded bg-[#040711] border border-cyber-border/70 overflow-hidden relative">
+            <div className="w-full h-32 rounded-lg bg-surface-sunken border border-subtle overflow-hidden relative">
               <svg
                 data-testid="graph-minimap-svg"
                 viewBox="0 0 1600 1200"
@@ -2332,7 +2347,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.16 }}
-            className="absolute bottom-4 right-4 z-30 w-80 p-3.5 rounded-xl bg-cyber-card border border-cyber-border hover:border-cyber-cyan shadow-xl space-y-2.5 pointer-events-auto font-mono"
+            className="absolute bottom-4 right-4 z-30 w-80 p-3.5 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle hover:border-accent shadow-xl space-y-2.5 pointer-events-auto font-sans machined-edge"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1">
@@ -2349,7 +2364,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               <button
                 data-testid="flyout-close-btn"
                 onClick={() => setSelectedNode(null)}
-                className="p-1 rounded-md text-cyber-muted hover:text-slate-900 dark:hover:text-white flex-shrink-0 active:scale-[0.98] transition-transform"
+                className="p-1 rounded-md text-muted hover:text-slate-900 dark:hover:text-white flex-shrink-0 active:scale-[0.97] transition-transform cursor-pointer"
                 title="Dismiss Details"
               >
                 <X className="w-4 h-4" />
@@ -2357,31 +2372,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div className="bg-cyber-bg p-2 rounded-lg border border-cyber-border">
-                <span className="text-cyber-muted uppercase font-bold">OS / System:</span>
+              <div className="bg-surface-sunken p-2 rounded-lg border border-subtle">
+                <span className="text-muted uppercase font-bold">OS / System:</span>
                 <div className="font-bold text-slate-900 dark:text-white mt-0.5 truncate">{selectedNode.os}</div>
               </div>
-              <div className="bg-cyber-bg p-2 rounded-lg border border-cyber-border">
-                <span className="text-cyber-muted uppercase font-bold">Status:</span>
+              <div className="bg-surface-sunken p-2 rounded-lg border border-subtle">
+                <span className="text-muted uppercase font-bold">Status:</span>
                 <div className={`font-bold mt-0.5 uppercase ${
                   selectedNode.status === 'root' || selectedNode.status === 'completed'
-                    ? 'text-cyber-emerald'
+                    ? 'text-emerald-500'
                     : selectedNode.status === 'foothold'
-                    ? 'text-cyber-amber'
-                    : 'text-cyber-cyan'
+                    ? 'text-amber-500'
+                    : 'text-accent'
                 }`}>
                   {selectedNode.status}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 border-t border-cyber-border/70">
+            <div className="flex items-center gap-2 pt-2 border-t border-subtle">
               <button
                 onClick={() => {
                   setActiveTarget(selectedNode.id);
                   if (soundEnabled) playCyberSound('engage');
                 }}
-                className="flex-1 py-1.5 px-3 rounded-lg bg-cyber-emerald/20 border border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-xs"
+                className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-black font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <Crosshair className="w-3.5 h-3.5" />
                 <span>Engage Target</span>
@@ -2395,7 +2410,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   setSelectedNode(null);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="py-1.5 px-2.5 rounded-lg bg-cyber-cyan/15 border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan hover:text-black text-xs font-bold transition-colors flex items-center gap-1"
+                className="py-1.5 px-2.5 rounded-lg bg-accent/15 border border-accent/40 text-accent hover:bg-accent hover:text-black text-xs font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 title="Create pivot / attack vector originating from this machine"
               >
                 <Network className="w-3.5 h-3.5" />
@@ -2407,7 +2422,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   setSelectedMachineId(selectedNode.id);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="py-1.5 px-2.5 rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
+                className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-slate-900 dark:hover:text-white text-xs transition-colors active:scale-[0.97] cursor-pointer"
                 title="Open Inspection Modal"
               >
                 <Maximize2 className="w-3.5 h-3.5" />

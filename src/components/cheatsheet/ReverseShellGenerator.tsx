@@ -20,6 +20,7 @@ import {
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { ALL_SHELL_ITEMS, ShellCategory, ShellItem } from '../../data/revshellsData';
+import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 
 interface ReverseShellGeneratorProps {
   initialCategory?: ShellCategory;
@@ -571,9 +572,9 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
         </div>
 
         {/* Code Content Box - Permanent Dark Terminal for crisp hacker syntax in both themes */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800 font-mono text-xs overflow-x-auto max-h-72 scrollbar-thin">
-          <pre className="text-emerald-400 whitespace-pre-wrap break-all leading-relaxed select-all">
-            {resolvedPayload}
+        <div className="p-3 bg-slate-950 border-t border-slate-800 font-mono text-xs overflow-x-auto max-h-72 scrollbar-thin machined-edge">
+          <pre className="whitespace-pre-wrap break-all leading-relaxed select-all">
+            <SyntaxHighlightedCommand command={resolvedPayload} />
           </pre>
         </div>
       </div>
@@ -607,8 +608,8 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
 
         {/* Listener Command Preview & Copy */}
         <div className="flex items-center gap-2">
-          <code className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-xs select-all">
-            {listenerCommand}
+          <code className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-xs select-all">
+            <SyntaxHighlightedCommand command={listenerCommand} />
           </code>
           <button
             onClick={handleCopyListener}

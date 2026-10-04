@@ -14,7 +14,6 @@ export function useTacticalHotkeys() {
 
   const {
     setViewMode,
-    machines,
     selectedMachineId,
     setSelectedMachineId,
     activeTargetId,
@@ -36,7 +35,6 @@ export function useTacticalHotkeys() {
     setLicenseModalOpen,
     currentProfileId,
     saveProfileData,
-    cheatsheets,
     soundEnabled,
     zoomIn,
     zoomOut,
@@ -50,7 +48,6 @@ export function useTacticalHotkeys() {
   } = useCtfStore(
     useShallow((s) => ({
       setViewMode: s.setViewMode,
-      machines: s.machines,
       selectedMachineId: s.selectedMachineId,
       setSelectedMachineId: s.setSelectedMachineId,
       activeTargetId: s.activeTargetId,
@@ -72,7 +69,6 @@ export function useTacticalHotkeys() {
       setLicenseModalOpen: s.setLicenseModalOpen,
       currentProfileId: s.currentProfileId,
       saveProfileData: s.saveProfileData,
-      cheatsheets: s.cheatsheets,
       soundEnabled: s.soundEnabled,
       zoomIn: s.zoomIn,
       zoomOut: s.zoomOut,
@@ -150,6 +146,16 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // Tactical Command Palette (Ctrl+K / Cmd+K)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentOpen = useCtfStore.getState().commandPaletteOpen;
+        setCommandPaletteOpen(!currentOpen);
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
       // Alt+S or Ctrl+Space: Toggle Snippets Drawer
       if ((e.altKey && (e.key === 's' || e.key === 'S')) || (e.ctrlKey && e.code === 'Space')) {
         e.preventDefault();
@@ -181,7 +187,8 @@ export function useTacticalHotkeys() {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
         e.stopPropagation();
-        const targetId = activeTargetId || selectedMachineId || (machines.length > 0 ? machines[0].id : null);
+        const storeMachines = useCtfStore.getState().machines;
+        const targetId = activeTargetId || selectedMachineId || (storeMachines.length > 0 ? storeMachines[0].id : null);
         if (targetId) {
           setReportMachineId(targetId);
           if (soundEnabled) playCyberSound('click');
@@ -285,7 +292,8 @@ export function useTacticalHotkeys() {
         if (!e.ctrlKey && !e.altKey && !e.metaKey) {
           e.preventDefault();
           try {
-            const zipBlob = await generateObsidianVaultZip(machines, cheatsheets);
+            const currentStore = useCtfStore.getState();
+            const zipBlob = await generateObsidianVaultZip(currentStore.machines, currentStore.cheatsheets);
             const url = URL.createObjectURL(zipBlob);
             const link = document.createElement('a');
             link.href = url;
@@ -334,10 +342,11 @@ export function useTacticalHotkeys() {
       // 10. Target Navigation: 'j' or 'Alt+ArrowDown' (Next Target), 'k' or 'Alt+ArrowUp' (Previous Target)
       if ((e.key === 'j' && !e.ctrlKey && !e.altKey && !e.metaKey) || (e.altKey && e.key === 'ArrowDown')) {
         e.preventDefault();
-        const currentIndex = machines.findIndex((m) => m.id === activeTargetId);
-        const nextIndex = currentIndex < machines.length - 1 ? currentIndex + 1 : 0;
-        if (machines[nextIndex]) {
-          setActiveTarget(machines[nextIndex].id);
+        const currentMachines = useCtfStore.getState().machines;
+        const currentIndex = currentMachines.findIndex((m) => m.id === activeTargetId);
+        const nextIndex = currentIndex < currentMachines.length - 1 ? currentIndex + 1 : 0;
+        if (currentMachines[nextIndex]) {
+          setActiveTarget(currentMachines[nextIndex].id);
           if (soundEnabled) playCyberSound('click');
         }
         return;
@@ -345,10 +354,11 @@ export function useTacticalHotkeys() {
 
       if ((e.key === 'k' && !e.ctrlKey && !e.altKey && !e.metaKey) || (e.altKey && e.key === 'ArrowUp')) {
         e.preventDefault();
-        const currentIndex = machines.findIndex((m) => m.id === activeTargetId);
-        const prevIndex = currentIndex > 0 ? currentIndex - 1 : machines.length - 1;
-        if (machines[prevIndex]) {
-          setActiveTarget(machines[prevIndex].id);
+        const currentMachines = useCtfStore.getState().machines;
+        const currentIndex = currentMachines.findIndex((m) => m.id === activeTargetId);
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentMachines.length - 1;
+        if (currentMachines[prevIndex]) {
+          setActiveTarget(currentMachines[prevIndex].id);
           if (soundEnabled) playCyberSound('click');
         }
         return;
@@ -397,7 +407,6 @@ export function useTacticalHotkeys() {
     navigate,
     location.pathname,
     setViewMode,
-    machines,
     selectedMachineId,
     setSelectedMachineId,
     activeTargetId,
@@ -418,7 +427,6 @@ export function useTacticalHotkeys() {
     setLicenseModalOpen,
     currentProfileId,
     saveProfileData,
-    cheatsheets,
     soundEnabled,
     zoomIn,
     zoomOut,

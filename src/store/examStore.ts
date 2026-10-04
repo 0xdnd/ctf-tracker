@@ -513,7 +513,10 @@ export const useExamStore = create<ExamStore>()(
         let durationSeconds = 900; // 15m bio
         if (type === 'food') durationSeconds = 1800; // 30m meal
         else if (type === 'rest') durationSeconds = 7200; // 2h rest
-        else if (type === 'custom' && customMinutes) durationSeconds = customMinutes * 60;
+        else if (type === 'custom' && customMinutes) {
+          const safeMinutes = Math.min(720, Math.max(1, customMinutes));
+          durationSeconds = safeMinutes * 60;
+        }
 
         const expiresAt = now + durationSeconds * 1000;
 

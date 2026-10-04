@@ -342,12 +342,16 @@ export const OperatorFlexCardModal: React.FC = () => {
     try {
       canvas.toBlob(async (blob) => {
         if (!blob) return;
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        setCopied(true);
-        if (soundEnabled) playCyberSound('copy');
-        setTimeout(() => setCopied(false), 2500);
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          setCopied(true);
+          if (soundEnabled) playCyberSound('copy');
+          setTimeout(() => setCopied(false), 2500);
+        } catch (err) {
+          console.error('Failed to copy image to clipboard:', err);
+        }
       });
     } catch (err) {
       console.error('Failed to copy image to clipboard:', err);

@@ -9,11 +9,12 @@ import {
   Star, 
   ExternalLink,
   Code2,
-  Sparkles
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { interpolateCommand, getUnresolvedTokens, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { CHEATSHEET_CATEGORIES } from '../../data/cheatsheetsData';
 import { useNavigate } from 'react-router-dom';
 
@@ -201,23 +202,35 @@ export const SnippetsDrawer: React.FC = () => {
           <div className="p-3 space-y-2.5 overflow-y-auto flex-1">
             {filteredCommands.map((cmd) => {
               const interpolated = interpolateCommand(cmd.commandTemplate, globalVars);
+              const unresolved = getUnresolvedTokens(cmd.commandTemplate, globalVars);
               const isCopied = copiedId === cmd.id;
 
               return (
                 <div
                   key={cmd.id}
-                  className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 transition-colors space-y-2 group"
+                  className={`p-3 rounded-xl bg-zinc-900/60 border transition-colors space-y-2 group ${
+                    unresolved.length > 0 ? 'border-amber-500/30 hover:border-amber-500/60' : 'border-zinc-800/80 hover:border-zinc-700'
+                  }`}
                 >
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <span className="font-bold text-zinc-100 text-xs">{cmd.title}</span>
                       {cmd.isCustom && (
                         <span className="text-[9px] px-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30">
                           CUSTOM
                         </span>
                       )}
+                      {unresolved.length > 0 && (
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/40 font-mono font-bold flex items-center gap-1"
+                          title={`Unresolved variable: ${unresolved.join(', ')} — check LHOST/Target IP in cockpit header`}
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+                          <span>MISSING: {unresolved.join(', ')}</span>
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => toggleStarCommand(cmd.id)}
                         className={`p-1 rounded hover:bg-zinc-800 transition-colors ${
@@ -232,8 +245,11 @@ export const SnippetsDrawer: React.FC = () => {
                         className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors flex items-center gap-1 border ${
                           isCopied
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60'
+                            : unresolved.length > 0
+                            ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-white border-amber-500/50'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-zinc-700'
                         }`}
+                        title={unresolved.length > 0 ? `Warning: contains unresolved tokens (${unresolved.join(', ')})` : 'Copy command'}
                       >
                         {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         <span>{isCopied ? 'COPIED' : 'COPY'}</span>
@@ -247,7 +263,11 @@ export const SnippetsDrawer: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800/80 text-xs font-mono text-zinc-300 break-all select-all">
+                  <div className={`p-2 rounded-lg text-xs font-mono break-all select-all transition-colors ${
+                    unresolved.length > 0
+                      ? 'bg-amber-950/20 border border-amber-500/40 text-amber-200'
+                      : 'bg-zinc-950 border border-zinc-800/80 text-zinc-300'
+                  }`}>
                     {interpolated}
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
   Terminal, 
@@ -26,6 +27,8 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { generatePivotCommands } from '../../utils/pivotCommandUtils';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { OsBadge } from '../common/OsBadge';
+import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
+import { DRAWER_SLIDE_TRANSITION, DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
 
 export interface GraphEdgeInspectorDrawerProps {
   edge: AttackGraphEdge | null;
@@ -69,20 +72,18 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !edge) return null;
-
-  const meta = ATTACK_EDGE_META[edge.type] || ATTACK_EDGE_META['pivot-ssh'];
-  const srcIp = sourceMachine?.ip || edge.sourceId;
-  const tgtIp = targetMachine?.ip || edge.targetId;
+  const meta = edge ? (ATTACK_EDGE_META[edge.type] || ATTACK_EDGE_META['pivot-ssh']) : ATTACK_EDGE_META['pivot-ssh'];
+  const srcIp = sourceMachine?.ip || edge?.sourceId || '';
+  const tgtIp = targetMachine?.ip || edge?.targetId || '';
 
   // Generate dynamic live commands reactive to active HUD variables
-  const commands = generatePivotCommands(
+  const commands = edge ? generatePivotCommands(
     edge,
     srcIp,
     tgtIp,
     globalVars.lhost,
     globalVars.lport
-  );
+  ) : { listenerCommand: '', clientCommand: '', proxychainsSnippet: '', verificationCommand: '', quickCopyText: '' };
 
   const handleCopy = (text: string, key: string) => {
     if (!text) return;
@@ -95,6 +96,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   };
 
   const handleTypeChange = (newType: AttackEdgeType) => {
+    if (!edge) return;
     const newMeta = ATTACK_EDGE_META[newType];
     onUpdateEdge(edge.id, {
       type: newType,
@@ -105,12 +107,14 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   };
 
   const handleStatusToggle = () => {
+    if (!edge) return;
     const nextStatus: AttackEdgeStatus = edge.status === 'compromised' ? 'potential' : 'compromised';
     onUpdateEdge(edge.id, { status: nextStatus });
     if (soundEnabled) playCyberSound(nextStatus === 'compromised' ? 'root' : 'toggle');
   };
 
   const handlePortBlur = () => {
+    if (!edge) return;
     const num = parseInt(customPort, 10);
     if (!isNaN(num) && num > 0 && num <= 65535) {
       onUpdateEdge(edge.id, { port: num });
@@ -120,10 +124,12 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   };
 
   const handleNotesBlur = () => {
+    if (!edge) return;
     onUpdateEdge(edge.id, { notes: edgeNotes });
   };
 
   const handleDelete = () => {
+    if (!edge) return;
     if (window.confirm('Delete this attack vector / pivot edge?')) {
       onDeleteEdge(edge.id);
       if (soundEnabled) playCyberSound('toggle');
@@ -132,13 +138,20 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   };
 
   return (
-    <div 
-      className="fixed inset-y-0 right-0 z-[120] w-full max-w-md bg-white dark:bg-[#0c1222] border-l border-slate-300 dark:border-cyber-border shadow-2xl flex flex-col font-sans animate-in slide-in-from-right duration-200"
-      role="dialog"
-      aria-label="Attack Vector Inspector"
-    >
+    <AnimatePresence>
+      {isOpen && edge && (
+        <motion.div 
+          key={`edge-drawer-${edge.id}`}
+          variants={DRAWER_RIGHT_VARIANTS}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          className="fixed inset-y-0 right-0 z-[120] w-full max-w-md bg-surface-elevated border-l border-subtle shadow-2xl flex flex-col font-sans machined-edge"
+          role="dialog"
+          aria-label="Attack Vector Inspector"
+        >
       {/* Header */}
-      <div className="p-4 border-b border-slate-200 dark:border-cyber-border/80 flex items-center justify-between bg-slate-50/90 dark:bg-cyber-card/70 backdrop-blur-sm">
+      <div className="p-4 border-b border-slate-200 dark:border-cyber-border/80 flex items-center justify-between bg-slate-50/90 dark:bg-cyber-card/70 backdrop-blur-sm machined-edge">
         <div className="flex items-center gap-2.5">
           <div 
             className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
@@ -170,7 +183,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
 
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors active:scale-[0.97] cursor-pointer"
           title="Close Inspector (Esc)"
         >
           <X className="w-5 h-5" />
@@ -180,7 +193,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
         {/* Topology Route Visualizer */}
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border/70 flex items-center justify-between gap-2">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border/70 flex items-center justify-between gap-2 machined-edge">
           {/* Source Box */}
           <div className="flex-1 min-w-0">
             <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-cyber-muted mb-1 flex items-center gap-1">
@@ -192,14 +205,14 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
             <div className="font-bold text-slate-900 dark:text-white text-xs truncate">
               {sourceMachine?.name || edge.sourceId}
             </div>
-            <div className="font-mono text-[11px] text-slate-500 dark:text-cyber-muted truncate">
+            <div className="font-mono text-[11px] text-slate-500 dark:text-cyber-muted truncate tabular-nums">
               {srcIp}
             </div>
           </div>
 
           <div className="flex flex-col items-center px-1">
             <ArrowRight className="w-4 h-4 text-cyber-cyan animate-pulse" />
-            <span className="text-[9px] font-mono text-cyber-cyan font-bold mt-0.5">
+            <span className="text-[9px] font-mono text-cyber-cyan font-bold mt-0.5 tabular-nums">
               {edge.port ? `:${edge.port}` : meta.defaultPort ? `:${meta.defaultPort}` : ''}
             </span>
           </div>
@@ -212,7 +225,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
             <div className="font-bold text-slate-900 dark:text-white text-xs truncate">
               {targetMachine?.name || edge.targetId}
             </div>
-            <div className="font-mono text-[11px] text-slate-500 dark:text-cyber-muted truncate">
+            <div className="font-mono text-[11px] text-slate-500 dark:text-cyber-muted truncate tabular-nums">
               {tgtIp}
             </div>
           </div>
@@ -248,7 +261,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                 onChange={(e) => setCustomPort(e.target.value)}
                 onBlur={handlePortBlur}
                 placeholder={meta.defaultPort ? String(meta.defaultPort) : '1080'}
-                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono tabular-nums focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
               />
             </div>
 
@@ -259,7 +272,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
               <button
                 type="button"
                 onClick={handleStatusToggle}
-                className={`w-full py-1.5 px-2 rounded-lg font-bold text-xs border transition-colors flex items-center justify-center gap-1.5 ${
+                className={`w-full py-1.5 px-2 rounded-lg font-bold text-xs border transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer ${
                   edge.status === 'compromised'
                     ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-600 dark:text-emerald-400'
                     : 'bg-amber-500/15 border-amber-500/50 text-amber-600 dark:text-amber-400'
@@ -279,98 +292,115 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
               <span>Generated Terminal Commands</span>
             </span>
             <div className="text-[10px] font-mono text-slate-400 dark:text-cyber-muted">
-              LHOST: <strong className="text-cyber-cyan">{globalVars.lhost}</strong>
+              LHOST: <strong className="text-cyber-cyan tabular-nums">{globalVars.lhost}</strong>
             </div>
           </div>
 
           {/* Listener / Server Command */}
           {commands.listenerCommand && (
-            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 machined-edge">
               <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span className="font-bold uppercase tracking-wider text-cyber-cyan">
                   1. Attacker / Pivot Command
                 </span>
                 <button
                   onClick={() => handleCopy(commands.listenerCommand, 'listener')}
-                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyber-cyan hover:text-black text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyber-cyan hover:text-black text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedKey === 'listener' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'listener' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="text-[11px] font-mono text-emerald-400 overflow-x-auto whitespace-pre-wrap select-all">
-                {commands.listenerCommand}
-              </pre>
+              <div className="text-[11px] font-mono text-emerald-400 overflow-x-auto whitespace-pre-wrap select-all">
+                <span className="sr-only">{commands.listenerCommand}</span>
+                <span aria-hidden="true">
+                  <SyntaxHighlightedCommand command={commands.listenerCommand} />
+                </span>
+              </div>
             </div>
           )}
 
           {/* Client / Agent Command */}
           {commands.clientCommand && (
-            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 machined-edge">
               <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span className="font-bold uppercase tracking-wider text-purple-400">
                   2. Remote Target / Client Hook
                 </span>
                 <button
                   onClick={() => handleCopy(commands.clientCommand, 'client')}
-                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-purple-500 hover:text-white text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-purple-500 hover:text-white text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedKey === 'client' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'client' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="text-[11px] font-mono text-purple-300 overflow-x-auto whitespace-pre-wrap select-all">
-                {commands.clientCommand}
-              </pre>
+              <div className="text-[11px] font-mono text-purple-300 overflow-x-auto whitespace-pre-wrap select-all">
+                <span className="sr-only">{commands.clientCommand}</span>
+                <span aria-hidden="true">
+                  {commands.clientCommand.startsWith('#') ? (
+                    <span className="text-slate-400 dark:text-cyber-muted italic">
+                      {commands.clientCommand}
+                    </span>
+                  ) : (
+                    <SyntaxHighlightedCommand command={commands.clientCommand} />
+                  )}
+                </span>
+              </div>
             </div>
           )}
 
           {/* Proxychains Configuration */}
           {commands.proxychainsSnippet && (
-            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                <span className="font-bold uppercase tracking-wider text-amber-400">
+            <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle space-y-1.5 machined-edge">
+              <div className="flex items-center justify-between text-[10px] text-muted">
+                <span className="font-bold uppercase tracking-wider text-amber-400 font-sans">
                   3. Proxychains / Routing Rule
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleCopy(commands.proxychainsSnippet, 'proxy')}
-                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-black text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-surface-elevated hover:bg-surface-hover text-secondary hover:text-primary text-[10px] font-bold border border-subtle transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedKey === 'proxy' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'proxy' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="text-[11px] font-mono text-amber-300 overflow-x-auto whitespace-pre-wrap select-all">
-                {commands.proxychainsSnippet}
-              </pre>
+              <div className="text-[11px] font-mono text-amber-300 overflow-x-auto whitespace-pre-wrap select-all">
+                <span className="sr-only">{commands.proxychainsSnippet}</span>
+                <span aria-hidden="true">
+                  <SyntaxHighlightedCommand command={commands.proxychainsSnippet} />
+                </span>
+              </div>
             </div>
           )}
 
           {/* Verification Command */}
           {commands.verificationCommand && (
-            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                <span className="font-bold uppercase tracking-wider text-blue-400">
+            <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle space-y-1.5 machined-edge">
+              <div className="flex items-center justify-between text-[10px] text-muted">
+                <span className="font-bold uppercase tracking-wider text-blue-400 font-sans">
                   4. Connectivity Verification
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleCopy(commands.verificationCommand, 'verify')}
-                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-blue-500 hover:text-white text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-surface-elevated hover:bg-surface-hover text-secondary hover:text-primary text-[10px] font-bold border border-subtle transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedKey === 'verify' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'verify' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="text-[11px] font-mono text-blue-300 overflow-x-auto whitespace-pre-wrap select-all">
-                {commands.verificationCommand}
-              </pre>
+              <div className="text-[11px] font-mono text-blue-300 overflow-x-auto whitespace-pre-wrap select-all">
+                <SyntaxHighlightedCommand command={commands.verificationCommand} />
+              </div>
             </div>
           )}
         </div>
 
         {/* Operator Notes */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-200 mb-1">
+          <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-200 mb-1 font-sans">
             Pivot Notes & Credentials
           </label>
           <textarea
@@ -379,17 +409,17 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
             onChange={(e) => setEdgeNotes(e.target.value)}
             onBlur={handleNotesBlur}
             placeholder="Add operational notes (e.g. ssh user/pass, pivoting interface, subnet notes)..."
-            className="w-full p-2 rounded-lg bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan resize-none font-mono"
+            className="w-full p-2 rounded-lg bg-surface-card border border-subtle text-primary text-xs focus:outline-none focus:border-accent resize-none font-mono"
           />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="p-3 border-t border-slate-200 dark:border-cyber-border/80 bg-slate-50 dark:bg-cyber-card/60 flex items-center justify-between gap-2">
+      <div className="p-3 border-t border-subtle bg-surface-card/60 flex items-center justify-between gap-2 machined-edge">
         <button
           type="button"
           onClick={handleDelete}
-          className="px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 text-xs font-bold transition-colors flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 text-xs font-bold transition-colors flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Delete Vector</span>
@@ -398,11 +428,13 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-cyber-bg dark:hover:bg-cyber-card text-slate-800 dark:text-white text-xs font-bold transition-colors"
+          className="px-4 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-bold transition-colors active:scale-[0.97] cursor-pointer"
         >
           Done
         </button>
       </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

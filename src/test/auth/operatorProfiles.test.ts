@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore, DEFAULT_DANIEL_PROFILE } from '../../store/useAuthStore';
-import { useCtfStore, safeLocalStorage, getProfileStorageKey } from '../../store/useCtfStore';
+import { useCtfStore, safeLocalStorage, getProfileStorageKey, mergeMachinesWithCatalog } from '../../store/useCtfStore';
+import { DEMO_SOLVED_ROSTER } from '../../data/demoSolvedRoster';
+import { Machine } from '../../types';
 
 describe('Multi-Operator Identity & Profile Workspace Isolation', () => {
   beforeEach(() => {
@@ -16,6 +18,7 @@ describe('Multi-Operator Identity & Profile Workspace Isolation', () => {
     useCtfStore.setState({
       currentProfileId: 'usr_daniel',
       userSolvesReset: false,
+      machines: mergeMachinesWithCatalog(DEMO_SOLVED_ROSTER as Machine[], false),
       activeTargetId: null,
       customNotes: [],
       activitySessions: [],
@@ -139,10 +142,51 @@ describe('Multi-Operator Identity & Profile Workspace Isolation', () => {
 
     useAuthStore.getState().renameProfile('PermanentOperator');
     expect(useAuthStore.getState().user?.name).toBe('PermanentOperator');
+    expect(useAuthStore.getState().user?.callsign).toBe('PermanentOperator');
 
     // Delete the profile
     useAuthStore.getState().deleteProfile('usr_tempoperator');
     // Should fall back to remaining profile (Daniel)
     expect(useAuthStore.getState().user?.name).toBe('Daniel');
+  });
+
+  it('atomically updates profile properties without dual-state drift between user and profiles array', async () => {
+    // 1. Create operator with custom callsign
+    await useAuthStore.getState().loginAsOperator({
+      name: 'CyberSpecter',
+      callsign: 'Specter01',
+      role: 'Red Team Lead',
+      startFresh: true,
+    });
+
+    const initialUser = useAuthStore.getState().user;
+    expect(initialUser?.name).toBe('CyberSpecter');
+    expect(initialUser?.callsign).toBe('Specter01');
+
+    // 2. Atomically update callsign and role via updateProfile
+    useAuthStore.getState().updateProfile('usr_cyberspecter', {
+      callsign: 'SpecterPrime',
+      role: 'Active Directory Specialist',
+    });
+
+    const updatedUser = useAuthStore.getState().user;
+    const updatedInProfiles = useAuthStore.getState().profiles.find((p) => p.id === 'usr_cyberspecter');
+
+    // Both active user session and profiles roster must match
+    expect(updatedUser?.callsign).toBe('SpecterPrime');
+    expect(updatedUser?.role).toBe('Active Directory Specialist');
+    expect(updatedInProfiles?.callsign).toBe('SpecterPrime');
+    expect(updatedInProfiles?.role).toBe('Active Directory Specialist');
+
+    // 3. Atomically update an inactive profile without affecting active user session
+    useAuthStore.getState().updateProfile('usr_daniel', {
+      callsign: '0xdnd_legend',
+    });
+
+    const activeAfter = useAuthStore.getState().user;
+    const danielInProfiles = useAuthStore.getState().profiles.find((p) => p.id === 'usr_daniel');
+
+    expect(activeAfter?.id).toBe('usr_cyberspecter');
+    expect(danielInProfiles?.callsign).toBe('0xdnd_legend');
   });
 });

@@ -33,11 +33,11 @@ import { evaluateOperatorGamification, syncOperatorTrophies } from '../../utils/
 import { TrophyCategory } from '../../types/gamification';
 
 const ROLE_OPTIONS = [
-  { id: 'Tactical CTF Operator', label: '🎯 General CTF Operator', icon: Target },
-  { id: 'Web Exploitation Specialist', label: '🌐 Web Exploit Specialist', icon: Terminal },
-  { id: 'Active Directory / Red Team', label: '🏢 Active Directory / Red Team', icon: Layers },
-  { id: 'Certification Candidate (OSCP/CPTS)', label: '🎓 Cert Candidate (OSCP/CPTS)', icon: Award },
-  { id: 'Reverse Engineer / Binary Ninja', label: '⚡ Reverse Engineer / Pwn', icon: Sparkles },
+  { id: 'Tactical CTF Operator', label: 'General CTF Operator', icon: Target },
+  { id: 'Web Exploitation Specialist', label: 'Web Exploit Specialist', icon: Terminal },
+  { id: 'Active Directory / Red Team', label: 'Active Directory / Red Team', icon: Layers },
+  { id: 'Certification Candidate (OSCP/CPTS)', label: 'Cert Candidate (OSCP/CPTS)', icon: Award },
+  { id: 'Reverse Engineer / Binary Ninja', label: 'Reverse Engineer / Pwn', icon: Sparkles },
 ];
 
 const ACCENT_COLORS = [
@@ -57,6 +57,7 @@ export const OperatorProfileModal: React.FC = () => {
     loginAsOperator,
     switchProfile,
     renameProfile,
+    updateProfile,
     deleteProfile,
     updateUserTrophies,
   } = useAuthStore();
@@ -77,6 +78,8 @@ export const OperatorProfileModal: React.FC = () => {
   const [workspaceMode, setWorkspaceMode] = useState<'fresh' | 'clone'>('fresh');
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [isEditingActiveCallsign, setIsEditingActiveCallsign] = useState(false);
+  const [activeCallsignInput, setActiveCallsignInput] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [trophyCategoryFilter, setTrophyCategoryFilter] = useState<'all' | TrophyCategory>('all');
 
@@ -125,6 +128,15 @@ export const OperatorProfileModal: React.FC = () => {
     }
   }, [activeTab]);
 
+  // Machine status aggregations
+  const currentRooted = useMemo(() => {
+    return machines.filter((m) => m.status === 'root' || m.status === 'completed').length;
+  }, [machines]);
+
+  const currentFootholds = useMemo(() => {
+    return machines.filter((m) => m.status === 'foothold').length;
+  }, [machines]);
+
   // Compute profile statistics
   const profileStatsMap = useMemo(() => {
     const stats: Record<string, { totalPwned: number; rooted: number; footholds: number }> = {};
@@ -156,22 +168,13 @@ export const OperatorProfileModal: React.FC = () => {
     return stats;
   }, [profiles, user, machines]);
 
-  if (!operatorProfileModalOpen) return null;
-
-  const currentRooted = useMemo(() => {
-    return machines.filter((m) => m.status === 'root' || m.status === 'completed').length;
-  }, [machines]);
-  const currentFootholds = useMemo(() => {
-    return machines.filter((m) => m.status === 'foothold').length;
-  }, [machines]);
-
   const currentStats = user 
     ? profileStatsMap[user.id] || { totalPwned: currentRooted + currentFootholds, rooted: currentRooted, footholds: currentFootholds }
     : { totalPwned: currentRooted + currentFootholds, rooted: currentRooted, footholds: currentFootholds };
 
   const handleCreateOrLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = operatorName.trim();
+    const clean = operatorName.trim().slice(0, 24);
     if (!clean) {
       setErrorMsg('Please enter an operator callsign or name');
       return;
@@ -200,18 +203,26 @@ export const OperatorProfileModal: React.FC = () => {
     if (soundEnabled) playCyberSound('engage');
   };
 
+  const handleSaveActiveCallsign = () => {
+    const clean = activeCallsignInput.trim().slice(0, 24);
+    if (clean && user) {
+      updateProfile(user.id, {
+        callsign: clean,
+        name: clean,
+      });
+      if (soundEnabled) playCyberSound('root');
+    }
+    setIsEditingActiveCallsign(false);
+  };
+
   const handleSaveRename = (profileId: string) => {
-    const clean = editingName.trim();
+    const clean = editingName.trim().slice(0, 24);
     if (clean) {
-      if (user?.id === profileId) {
-        renameProfile(clean);
-      } else {
-        const found = profiles.find((p) => p.id === profileId);
-        if (found) {
-          found.name = clean;
-          found.updatedAt = new Date().toISOString();
-        }
-      }
+      updateProfile(profileId, {
+        name: clean,
+        callsign: clean,
+      });
+      if (soundEnabled) playCyberSound('root');
     }
     setEditingProfileId(null);
   };
@@ -226,6 +237,9 @@ export const OperatorProfileModal: React.FC = () => {
       if (soundEnabled) playCyberSound('toggle');
     }
   };
+
+  // Safe early exit placed immediately before JSX render to preserve strict hook execution order
+  if (!operatorProfileModalOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
@@ -293,12 +307,62 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">
-                    {user.callsign || user.name}
-                  </span>
-                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${gamification.currentRank.badgeColor} bg-black/30 border border-current font-mono`}>
-                    [{gamification.currentRank.tier}] {gamification.currentRank.title}
-                  </span>
+                  {isEditingActiveCallsign ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={activeCallsignInput}
+                        maxLength={24}
+                        onChange={(e) => setActiveCallsignInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveActiveCallsign();
+                          if (e.key === 'Escape') {
+                            e.stopPropagation();
+                            setIsEditingActiveCallsign(false);
+                          }
+                        }}
+                        className="px-2 py-0.5 text-xs font-mono font-bold rounded-lg border border-cyan-500 bg-white dark:bg-cyber-bg text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        autoFocus
+                        placeholder="New Callsign"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveActiveCallsign}
+                        className="p-1 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white transition-colors cursor-pointer"
+                        title="Save Callsign (Enter)"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingActiveCallsign(false)}
+                        className="p-1 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                        title="Cancel (Esc)"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                        {user.callsign || user.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingActiveCallsign(true);
+                          setActiveCallsignInput(user.callsign || user.name);
+                        }}
+                        className="p-1 rounded-md text-slate-400 hover:text-cyan-500 dark:hover:text-cyber-cyan hover:bg-slate-200/50 dark:hover:bg-cyber-bg transition-colors cursor-pointer"
+                        title="Quick-Edit Active Callsign"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${gamification.currentRank.badgeColor} bg-black/30 border border-current font-mono`}>
+                        [{gamification.currentRank.tier}] {gamification.currentRank.title}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-cyber-muted flex items-center gap-2">
                   <span>{user.role || 'Tactical Operator'}</span>
@@ -514,21 +578,40 @@ export const OperatorProfileModal: React.FC = () => {
                                 <input
                                   type="text"
                                   value={editingName}
+                                  maxLength={24}
                                   onChange={(e) => setEditingName(e.target.value)}
-                                  className="px-1.5 py-0.5 text-xs rounded border border-cyan-500 bg-white dark:bg-cyber-bg text-slate-900 dark:text-white"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveRename(p.id);
+                                    if (e.key === 'Escape') {
+                                      e.stopPropagation();
+                                      setEditingProfileId(null);
+                                    }
+                                  }}
+                                  className="px-2 py-0.5 text-xs rounded border border-cyan-500 bg-white dark:bg-cyber-bg text-slate-900 dark:text-white font-mono focus:outline-none"
                                   autoFocus
+                                  placeholder="Callsign"
                                 />
                                 <button
+                                  type="button"
                                   onClick={() => handleSaveRename(p.id)}
-                                  className="p-1 rounded bg-cyan-500 text-white hover:bg-cyan-600"
+                                  className="p-1 rounded bg-cyan-500 text-white hover:bg-cyan-600 transition-colors cursor-pointer"
+                                  title="Save Callsign (Enter)"
                                 >
                                   <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingProfileId(null)}
+                                  className="p-1 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                                  title="Cancel (Esc)"
+                                >
+                                  <X className="w-3 h-3" />
                                 </button>
                               </div>
                             ) : (
                               <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
-                                  {p.name}
+                                  {p.callsign || p.name}
                                 </span>
                                 {isActive && (
                                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -664,10 +747,11 @@ export const OperatorProfileModal: React.FC = () => {
                 <input
                   ref={inputRef}
                   type="text"
+                  maxLength={24}
                   value={operatorName}
                   onChange={(e) => setOperatorName(e.target.value)}
                   placeholder="e.g. Sarah, Alex, GhostNinja"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:focus:ring-cyber-cyan transition-[box-shadow,background-color,border-color,color]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:focus:ring-cyber-cyan transition-[box-shadow,background-color,border-color,color]"
                   required
                 />
                 <span className="text-[10px] text-slate-400 dark:text-cyber-muted mt-0.5 block">

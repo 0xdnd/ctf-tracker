@@ -11,9 +11,7 @@ import {
   FileCode, 
   Download, 
   Upload, 
-  Coffee, 
-  Github, 
-  Award, 
+  Terminal,
   ShieldCheck, 
   SlidersHorizontal,
   Users
@@ -21,7 +19,8 @@ import {
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
-import { CREATOR_PROFILE_LINKS, playCyberSound } from '../../utils/helpers';
+import { playCyberSound } from '../../utils/helpers';
+import { toast } from '../../store/useToastStore';
 import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
 
 export const SettingsDropdown: React.FC = () => {
@@ -86,9 +85,9 @@ export const SettingsDropdown: React.FC = () => {
         const res = importWorkspace(content);
         if (res.success) {
           if (soundEnabled) playCyberSound('root');
-          alert(`Workspace restored successfully! ${res.count ?? 0} targets loaded.`);
+          toast.success(`Workspace restored successfully! ${res.count ?? 0} targets loaded.`, 'Workspace Restored');
         } else {
-          alert(`Failed to import workspace: ${res.error}`);
+          toast.error(`Failed to import workspace: ${res.error}`, 'Import Failed');
         }
       }
     };
@@ -105,17 +104,17 @@ export const SettingsDropdown: React.FC = () => {
           setIsOpen(!isOpen);
           if (soundEnabled) playCyberSound('click');
         }}
-        className={`p-1.5 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.98] flex items-center justify-center group ${
+        className={`h-8 w-8 rounded-[6px] border flex items-center justify-center group relative cursor-pointer shadow-xs machined-edge transition-all active:scale-[0.96] ${
           isOpen
-            ? 'bg-cyber-card text-cyber-cyan border-cyber-cyan'
-            : 'bg-cyber-card text-cyber-muted hover:text-cyber-text border-cyber-border hover:border-cyber-borderGlow'
+            ? 'bg-cyber-cyan/15 text-cyber-cyan border-cyber-cyan shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+            : 'bg-slate-100 dark:bg-zinc-900/90 border-slate-300 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:border-slate-400 dark:hover:border-zinc-700'
         }`}
         title="Settings & Workspace Utilities"
         aria-label="Settings and options"
       >
-        <Settings className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-90 text-cyan-400' : 'group-hover:rotate-45'}`} />
-        {unexportedChangesCount > 5 && (
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-zinc-950 animate-pulse" />
+        <Settings className={`w-3.5 h-3.5 stroke-[1.8] transition-transform duration-300 ${isOpen ? 'rotate-90 text-cyan-400' : 'group-hover:rotate-45'}`} />
+        {unexportedChangesCount > 0 && (
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full border border-white dark:border-zinc-950 shadow-[0_0_5px_rgba(251,191,36,0.9)] animate-pulse" />
         )}
       </button>
 
@@ -295,54 +294,43 @@ export const SettingsDropdown: React.FC = () => {
             <span className="text-[10px] text-zinc-500 font-mono">Alt+O</span>
           </button>
 
-          {/* Operator Dossier */}
+          {/* About ZeroBox & Credits */}
           <button
+            type="button"
             onClick={() => {
               setOperatorModalOpen(true);
               setIsOpen(false);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="w-full px-2 py-1.5 rounded-lg hover:bg-zinc-900 flex items-center gap-2 text-left text-zinc-300 transition-colors"
+            className="w-full px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-900 flex items-center justify-between text-left text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
           >
-            <Award className="w-3.5 h-3.5 text-purple-400" />
-            <span>Creator Dossier (Daniel Dayan)</span>
+            <div className="flex items-center gap-2">
+              <Terminal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
+              <span>About ZeroBox & Credits</span>
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">v2.4</span>
           </button>
 
-          {/* License */}
+          {/* Software License */}
           <button
+            type="button"
             onClick={() => {
               setLicenseModalOpen(true);
               setIsOpen(false);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="w-full px-2 py-1.5 rounded-lg hover:bg-zinc-900 flex items-center gap-2 text-left text-zinc-300 transition-colors"
+            className="w-full px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-900 flex items-center gap-2 text-left text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
           >
-            <FileCode className="w-3.5 h-3.5 text-zinc-400" />
+            <FileCode className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400" />
             <span>Software License</span>
           </button>
 
-          <div className="h-px bg-zinc-800/80 my-1" />
+          <div className="h-px bg-slate-200 dark:bg-zinc-800/80 my-1" />
 
-          {/* Social Links */}
-          <div className="flex items-center gap-1.5 pt-0.5">
-            <a
-              href={CREATOR_PROFILE_LINKS.coffee}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 px-2 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Coffee className="w-3 h-3" />
-              <span>Buy Coffee</span>
-            </a>
-            <a
-              href={CREATOR_PROFILE_LINKS.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-              title="GitHub Repository"
-            >
-              <Github className="w-3.5 h-3.5" />
-            </a>
+          {/* Clean App Architecture Footer Badge */}
+          <div className="px-2 py-1 text-[10px] text-slate-400 dark:text-zinc-500 font-mono flex items-center justify-between">
+            <span>OFFLINE ZERO-EGRESS</span>
+            <span className="text-emerald-600 dark:text-cyber-emerald font-semibold">VERIFIED</span>
           </div>
         </div>
       )}

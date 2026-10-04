@@ -59,7 +59,10 @@ export function parseNmapScanOutput(rawText: string): {
       }
     } else {
       // Also look for simple comma or space separated port lists like "22, 80, 443, 445"
-      const numbers = trimmed.match(/\b(2[0-9]|[3-9][0-9]|[1-9][0-9]{2,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])\b/g);
+      const sanitized = trimmed
+        .replace(/\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g, ' ')
+        .replace(/\bCVE-\d{4}-\d{4,7}\b/gi, ' ');
+      const numbers = sanitized.match(/\b(2[0-9]|[3-9][0-9]|[1-9][0-9]{2,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])\b/g);
       if (numbers && numbers.length > 0 && (trimmed.includes(',') || trimmed.includes('ports:') || trimmed.includes('open:'))) {
         for (const numStr of numbers) {
           const p = parseInt(numStr, 10);

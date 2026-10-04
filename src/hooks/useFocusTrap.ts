@@ -15,11 +15,19 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
+// Stack of active traps; only the top-most trap handles keys (nested modals).
+const activeTrapStack: symbol[] = [];
+
 export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
   options: UseFocusTrapOptions
 ) {
   const containerRef = useRef<T | null>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(options.onClose);
+
+  useEffect(() => {
+    onCloseRef.current = options.onClose;
+  });
 
   useEffect(() => {
     if (!options.isActive) return;
@@ -44,12 +52,15 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
     }
 
     // 3. Tab trapping & Escape listener
+    const token = Symbol('focus-trap');
+    activeTrapStack.push(token);
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeTrapStack[activeTrapStack.length - 1] !== token) return;
       if (e.key === 'Escape') {
-        if (options.onClose) {
+        if (onCloseRef.current) {
           e.preventDefault();
           e.stopPropagation();
-          options.onClose();
+          onCloseRef.current();
         }
         return;
       }
@@ -95,6 +106,8 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
+      const idx = activeTrapStack.indexOf(token);
+      if (idx !== -1) activeTrapStack.splice(idx, 1);
       // 4. Restore focus to the triggering element
       if (
         previousActiveElementRef.current &&
@@ -104,7 +117,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
         previousActiveElementRef.current.focus();
       }
     };
-  }, [options.isActive, options.onClose, options.autoFocusFirst]);
+  }, [options.isActive, options.autoFocusFirst]);
 
   return containerRef;
 }

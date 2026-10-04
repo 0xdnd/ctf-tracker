@@ -34,7 +34,12 @@ const iconFiles = [
   'icon-192.jpg',
   'icon-512.jpg',
   'favicon.jpg',
-  'manifest.webmanifest'
+  'manifest.webmanifest',
+  'logo-zerobox.png',
+  'logo-htb.png',
+  'logo-midnight.png',
+  'logo-oled.png',
+  'logo.png'
 ];
 
 const distAssetsDir = path.join(distDir, 'assets');

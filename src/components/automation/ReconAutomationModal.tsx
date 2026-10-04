@@ -742,8 +742,20 @@ export const ReconAutomationModal: React.FC = () => {
                       name="recon-lport"
                       aria-label="Attacker Port LPORT"
                       type="text"
+                      inputMode="numeric"
+                      maxLength={5}
                       value={globalVars.lport}
-                      onChange={(e) => setGlobalVars({ lport: e.target.value })}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '');
+                        if (!digits) {
+                          setGlobalVars({ lport: '' });
+                        } else {
+                          const num = parseInt(digits, 10);
+                          if (num <= 65535) {
+                            setGlobalVars({ lport: String(num) });
+                          }
+                        }
+                      }}
                       placeholder="4444"
                       className="w-16 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-emerald-700 dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
                     />

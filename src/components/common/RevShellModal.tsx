@@ -180,8 +180,20 @@ export const RevShellModal: React.FC = () => {
               id="revshell-lport"
               name="lport"
               type="text"
+              inputMode="numeric"
+              maxLength={5}
               value={globalVars.lport || ''}
-              onChange={(e) => setGlobalVars({ lport: e.target.value })}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '');
+                if (!digits) {
+                  setGlobalVars({ lport: '' });
+                } else {
+                  const num = parseInt(digits, 10);
+                  if (num <= 65535) {
+                    setGlobalVars({ lport: String(num) });
+                  }
+                }
+              }}
               placeholder="4444"
               className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
             />

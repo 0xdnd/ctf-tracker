@@ -22,7 +22,8 @@ import {
   Filter,
   Sparkles,
   Zap,
-  Award
+  Award,
+  GraduationCap
 } from 'lucide-react';
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -714,7 +715,8 @@ export const FilterDrawer: React.FC = () => {
                 }`}
                 title="Filter for unsolved OSCP machines"
               >
-                <span>🎓 OSCP Sprint</span>
+                <GraduationCap className="w-3 h-3" />
+                <span>OSCP Sprint</span>
               </button>
               <button
                 type="button"

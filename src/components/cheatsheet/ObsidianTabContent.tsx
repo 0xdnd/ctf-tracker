@@ -205,10 +205,10 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 onNavigateToNote(targetId);
               }
             }}
-            className="inline-flex items-center gap-1 font-mono font-semibold text-purple-700 dark:text-purple-300 hover:text-cyan-600 dark:hover:text-cyan-300 underline underline-offset-2 decoration-purple-400/50 hover:decoration-cyan-400 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 font-mono font-semibold text-accent rounded-sm underline underline-offset-2 decoration-accent/50 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             title={`Open note: ${res.label}${anchor ? ' #' + anchor : ''}`}
           >
-            <LinkIcon className="w-3 h-3 text-purple-500/70 dark:text-purple-400/70 inline flex-shrink-0" />
+            <LinkIcon className="w-3 h-3 text-accent/70 inline flex-shrink-0" />
             <span>{displayText}</span>
           </a>
         );
@@ -226,10 +226,10 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 onNavigateToNote(targetRaw);
               }
             }}
-            className="inline-flex items-center gap-1 font-mono font-medium text-purple-600 dark:text-purple-400 hover:text-cyan-600 dark:hover:text-cyan-300 underline underline-offset-2 decoration-purple-400/40 hover:decoration-cyan-400 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 font-mono font-medium text-accent rounded-sm underline underline-offset-2 decoration-accent/40 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             title={`Search field manual for: ${targetRaw}`}
           >
-            <Search className="w-2.5 h-2.5 opacity-70 inline flex-shrink-0 text-cyan-400" />
+            <Search className="w-2.5 h-2.5 opacity-70 inline flex-shrink-0 text-accent" />
             <span>{displayText}</span>
           </a>
         );
@@ -251,53 +251,57 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       ? openCallouts[idx] 
       : !callout.isFoldedByDefault;
 
-    let icon = <Info className="w-4 h-4 text-blue-700 dark:text-blue-400" />;
-    let borderColor = 'border-blue-500/40';
-    let bgColor = 'bg-blue-500/10';
-    let titleColor = 'dark:text-blue-300 text-blue-800';
+    let icon = <Info className="w-4 h-4 text-callout-info-fg" />;
+    let variant = 'callout-info';
+    let borderColor = 'border-callout-info-border';
+    let bgColor = 'bg-callout-info-bg';
+    let titleColor = 'text-callout-info-fg';
+
+    const VARIANTS = {
+      info: { variant: 'callout-info', border: 'border-callout-info-border', bg: 'bg-callout-info-bg', fg: 'text-callout-info-fg' },
+      tip: { variant: 'callout-tip', border: 'border-callout-tip-border', bg: 'bg-callout-tip-bg', fg: 'text-callout-tip-fg' },
+      warn: { variant: 'callout-warn', border: 'border-callout-warn-border', bg: 'bg-callout-warn-bg', fg: 'text-callout-warn-fg' },
+      danger: { variant: 'callout-danger', border: 'border-callout-danger-border', bg: 'bg-callout-danger-bg', fg: 'text-callout-danger-fg' },
+      success: { variant: 'callout-success', border: 'border-callout-success-border', bg: 'bg-callout-success-bg', fg: 'text-callout-success-fg' },
+    } as const;
+    const setVariant = (v: keyof typeof VARIANTS) => {
+      variant = VARIANTS[v].variant;
+      borderColor = VARIANTS[v].border;
+      bgColor = VARIANTS[v].bg;
+      titleColor = VARIANTS[v].fg;
+    };
 
     switch (callout.type) {
       case 'tip':
-        icon = <Lightbulb className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />;
-        borderColor = 'border-emerald-500/40';
-        bgColor = 'bg-emerald-500/10';
-        titleColor = 'dark:text-emerald-300 text-emerald-800';
+        icon = <Lightbulb className="w-4 h-4 text-callout-tip-fg" />;
+        setVariant('tip');
         break;
       case 'warning':
-        icon = <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />;
-        borderColor = 'border-amber-500/40';
-        bgColor = 'bg-amber-500/10';
-        titleColor = 'dark:text-amber-300 text-amber-800';
+        icon = <AlertTriangle className="w-4 h-4 text-callout-warn-fg" />;
+        setVariant('warn');
         break;
       case 'danger':
-        icon = <Flame className="w-4 h-4 text-rose-700 dark:text-rose-400" />;
-        borderColor = 'border-rose-500/40';
-        bgColor = 'bg-rose-500/10';
-        titleColor = 'dark:text-rose-300 text-rose-800';
+        icon = <Flame className="w-4 h-4 text-callout-danger-fg" />;
+        setVariant('danger');
         break;
       case 'important':
-        icon = <ShieldAlert className="w-4 h-4 text-purple-700 dark:text-purple-400" />;
-        borderColor = 'border-purple-500/40';
-        bgColor = 'bg-purple-500/10';
-        titleColor = 'dark:text-purple-300 text-purple-800';
+        icon = <ShieldAlert className="w-4 h-4 text-callout-warn-fg" />;
+        setVariant('warn');
         break;
       case 'cite':
-        icon = <Quote className="w-4 h-4 text-slate-700 dark:text-slate-400" />;
-        borderColor = 'border-slate-500/40';
-        bgColor = 'bg-slate-500/10';
-        titleColor = 'dark:text-slate-300 text-slate-800';
+        icon = <Quote className="w-4 h-4 text-secondary" />;
+        variant = 'callout-cite';
+        borderColor = 'border-strong';
+        bgColor = 'bg-surface-sunken';
+        titleColor = 'text-secondary';
         break;
       case 'question':
-        icon = <HelpCircle className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />;
-        borderColor = 'border-cyan-500/40';
-        bgColor = 'bg-cyan-500/10';
-        titleColor = 'dark:text-cyan-300 text-cyan-800';
+        icon = <HelpCircle className="w-4 h-4 text-callout-info-fg" />;
+        setVariant('info');
         break;
       case 'success':
-        icon = <CheckCircle2 className="w-4 h-4 text-teal-700 dark:text-teal-400" />;
-        borderColor = 'border-teal-500/40';
-        bgColor = 'bg-teal-500/10';
-        titleColor = 'dark:text-teal-300 text-teal-800';
+        icon = <CheckCircle2 className="w-4 h-4 text-callout-success-fg" />;
+        setVariant('success');
         break;
     }
 
@@ -306,21 +310,21 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
     return (
       <div
         key={`callout-${idx}`}
-        className={`my-3 rounded-xl border ${borderColor} ${bgColor} overflow-hidden shadow-sm`}
+        className={`my-3 rounded-lg border border-l-2 ${variant} ${borderColor} ${bgColor} overflow-hidden`}
       >
         <div
           onClick={() => callout.isFoldable && toggleCallout(idx)}
           className={`flex items-center justify-between px-3.5 py-2 select-none ${
-            callout.isFoldable ? 'cursor-pointer hover:bg-white/5' : ''
+            callout.isFoldable ? 'cursor-pointer hover:bg-surface-hover' : ''
           }`}
           dir={isRtl ? 'rtl' : 'ltr'}
         >
-          <div className={`flex items-center gap-2 font-mono font-bold ${fontSize === 'xl' || fontSize === 'lg' ? 'text-sm' : 'text-xs'}`}>
+          <div className={`flex items-center gap-2 font-mono font-semibold ${fontSize === 'xl' || fontSize === 'lg' ? 'text-sm' : 'text-xs'}`}>
             {icon}
             <span className={titleColor}>{callout.title}</span>
           </div>
           {callout.isFoldable && (
-            <div className="text-cyber-muted">
+            <div className="text-muted">
               {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </div>
           )}
@@ -328,7 +332,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
 
         {isOpen && (
           <div
-            className={`px-4 py-3 pt-1 ${sizeClasses.callout || sizeClasses.body} font-sans leading-relaxed text-slate-700 dark:text-gray-200 border-t border-white/5`}
+            className={`px-4 py-3 pt-1 ${sizeClasses.callout || sizeClasses.body} font-sans leading-relaxed text-secondary border-t border-subtle`}
             dir={isRtl ? 'rtl' : 'ltr'}
           >
             {renderFormattedMarkdown(callout.content)}
@@ -360,17 +364,17 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       elements.push(
         <div
           key={`code-block-${idx}`}
-          className="my-3 rounded-xl border border-purple-900/40 bg-cyber-code overflow-hidden shadow-md group"
+          className="my-3 rounded-xl border border-accent/40 bg-cyber-code overflow-hidden shadow-md group"
         >
-          <div className="flex items-center justify-between px-3 py-1.5 bg-black/60 border-b border-purple-900/30 text-[11px] font-mono text-cyber-muted">
-            <span className="flex items-center gap-1.5 text-purple-300 font-semibold uppercase">
-              <Terminal className="w-3 h-3 text-cyan-400" />
+          <div className="flex items-center justify-between px-3 py-1.5 bg-surface-sunken border-b border-accent/30 text-[11px] font-mono text-muted">
+            <span className="flex items-center gap-1.5 text-accent font-semibold uppercase">
+              <Terminal className="w-3 h-3 text-accent" />
               <span>{codeLanguage || 'COMMAND / SCRIPT'}</span>
             </span>
             <button
               type="button"
               onClick={() => handleCopyText(`code-${idx}`, interpCode)}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-950/60 hover:bg-purple-900 border border-purple-800/50 text-purple-200 hover:text-white transition-colors cursor-pointer text-[10px]"
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-accent-muted hover:bg-accent-muted border border-accent/50 text-accent hover:text-primary transition-colors cursor-pointer text-[10px]"
               title="Copy interpolated code"
             >
               {isCopied ? (
@@ -386,7 +390,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               )}
             </button>
           </div>
-          <pre className={`p-3.5 ${sizeClasses.code} font-mono dark:text-emerald-300 text-emerald-900 overflow-x-auto select-all selection:bg-purple-700 selection:text-white leading-relaxed`}>
+          <pre className={`p-3.5 ${sizeClasses.code} font-mono text-callout-success-fg overflow-x-auto select-all selection:bg-accent-muted selection:text-primary leading-relaxed`}>
             {interpCode}
           </pre>
         </div>
@@ -405,22 +409,22 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       const headers = headerRow.split('|').filter(c => c.trim()).map(c => c.trim());
 
       elements.push(
-        <div key={`table-${idx}`} className="my-4 overflow-x-auto rounded-xl border border-purple-900/40 bg-black/50 shadow-md">
+        <div key={`table-${idx}`} className="my-4 overflow-x-auto rounded-xl border border-accent/40 bg-surface-sunken shadow-md">
           <table className={`w-full ${sizeClasses.table} text-left font-mono`}>
-            <thead className="bg-purple-950/70 text-purple-200 border-b border-purple-900/50">
+            <thead className="bg-accent-muted text-accent border-b border-accent/50">
               <tr>
                 {headers.map((h, hIdx) => (
-                  <th key={hIdx} className={`px-4 py-2.5 font-bold ${hIdx === 0 ? 'whitespace-nowrap w-12' : ''}`}>{renderWithWikilinks(h)}</th>
+                  <th key={hIdx} className={`px-4 py-2.5 font-semibold ${hIdx === 0 ? 'whitespace-nowrap w-12' : ''}`}>{renderWithWikilinks(h)}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-900/25 dark:text-gray-200 text-gray-900">
+            <tbody className="divide-y divide-subtle text-primary">
               {bodyRows.map((r, rIdx) => {
                 const cells = r.split('|').filter(c => c.trim()).map(c => c.trim());
                 return (
-                  <tr key={rIdx} className="hover:bg-purple-900/25 transition-colors">
+                  <tr key={rIdx} className="hover:bg-accent-muted transition-colors">
                     {cells.map((c, cIdx) => (
-                      <td key={cIdx} className={`px-4 py-2.5 ${cIdx === 0 ? 'whitespace-nowrap font-bold dark:text-cyan-400 text-cyan-800' : ''}`}>
+                      <td key={cIdx} className={`px-4 py-2.5 ${cIdx === 0 ? 'whitespace-nowrap font-semibold text-accent' : ''}`}>
                         {renderWithWikilinks(c)}
                       </td>
                     ))}
@@ -472,7 +476,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           <h1
             key={`h1-${i}`}
             id={`section-${headingSlug}`}
-            className={`${sizeClasses.h1} font-black text-slate-900 dark:text-white tracking-tight mt-6 mb-2 pb-1 border-b border-purple-900/30 scroll-mt-6`}
+            className={`${sizeClasses.h1} font-semibold text-primary tracking-tight mt-6 mb-2 pb-1 border-b border-accent/30 scroll-mt-6`}
           >
             {renderWithWikilinks(titleText)}
           </h1>
@@ -487,9 +491,9 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           <h2
             key={`h2-${i}`}
             id={`section-${headingSlug}`}
-            className={`${sizeClasses.h2} font-bold text-purple-700 dark:text-purple-300 tracking-tight mt-5 mb-2 scroll-mt-6 flex items-center gap-1.5`}
+            className={`${sizeClasses.h2} font-semibold text-accent tracking-tight mt-5 mb-2 scroll-mt-6 flex items-center gap-1.5`}
           >
-            <span className="text-cyan-400">#</span>
+            <span className="text-accent">#</span>
             <span>{renderWithWikilinks(titleText)}</span>
           </h2>
         );
@@ -503,7 +507,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           <h3
             key={`h3-${i}`}
             id={`section-${headingSlug}`}
-            className={`${sizeClasses.h3} font-bold text-cyan-700 dark:text-cyan-300 mt-4 mb-1 scroll-mt-6`}
+            className={`${sizeClasses.h3} font-semibold text-accent mt-4 mb-1 scroll-mt-6`}
           >
             {renderWithWikilinks(titleText)}
           </h3>
@@ -574,16 +578,16 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                   toggleChecklist(i);
                 }
               }}
-              className={`flex items-start gap-2.5 my-1.5 px-2.5 py-1.5 rounded hover:bg-purple-950/30 transition-colors cursor-pointer select-none ${sizeClasses.body} font-sans`}
+              className={`flex items-start gap-2.5 my-1.5 px-2.5 py-1.5 rounded hover:bg-accent-muted transition-colors cursor-pointer select-none ${sizeClasses.body} font-sans`}
             >
               <input
                 type="checkbox"
                 checked={isChecked}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => toggleChecklist(i)}
-                className="mt-1 w-4 h-4 rounded border-purple-500/50 bg-black/60 text-purple-600 focus:ring-purple-400 cursor-pointer flex-shrink-0"
+                className="mt-1 w-4 h-4 rounded border-accent/50 bg-surface-sunken text-accent focus:ring-accent cursor-pointer flex-shrink-0"
               />
-              <span className={isChecked ? 'line-through text-cyber-muted opacity-70' : 'dark:text-slate-200 text-slate-900'}>
+              <span className={isChecked ? 'line-through text-muted opacity-70' : 'text-primary'}>
                 {renderWithWikilinks(itemText)}
               </span>
             </div>
@@ -596,8 +600,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         const bulletText = line.trim().slice(2);
         elements.push(
-          <div key={`bullet-${i}`} className={`flex items-start gap-2 my-1.5 ${sizeClasses.body} text-slate-700 dark:text-gray-300 font-sans`}>
-            <span className="text-purple-400 mt-1">•</span>
+          <div key={`bullet-${i}`} className={`flex items-start gap-2 my-1.5 ${sizeClasses.body} text-secondary font-sans`}>
+            <span className="text-accent mt-1">•</span>
             <div className="flex-1">{renderWithWikilinks(bulletText)}</div>
           </div>
         );
@@ -606,7 +610,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
 
       // Horizontal Rule
       if (['---', '***'].includes(line.trim())) {
-        elements.push(<hr key={`hr-${i}`} className="my-4 border-purple-900/30" />);
+        elements.push(<hr key={`hr-${i}`} className="my-4 border-accent/30" />);
         continue;
       }
 
@@ -617,7 +621,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           elements.push(
             <div
               key={`svg-${i}`}
-              className="my-3 overflow-x-auto rounded-lg border border-purple-900/30 p-2 bg-slate-950/60"
+              className="my-3 overflow-x-auto rounded-lg border border-accent/30 p-2 bg-surface-sunken"
               dangerouslySetInnerHTML={{ __html: cleanSvg }}
             />
           );
@@ -632,7 +636,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           <p
             key={`p-${i}`}
             dir={isRtl ? 'rtl' : 'ltr'}
-            className={`my-2 ${sizeClasses.body} text-slate-700 dark:text-gray-300 leading-relaxed font-sans ${
+            className={`my-2 ${sizeClasses.body} text-secondary leading-relaxed font-sans ${
               isRtl ? 'text-right' : 'text-left'
             }`}
           >
@@ -652,9 +656,9 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
     <div className="space-y-6">
       {/* Table of Contents / Outline Chips */}
       {parsed.tableOfContents && parsed.tableOfContents.length > 1 && (
-        <div className="sticky top-0 z-20 flex items-center gap-1.5 p-2 px-3 rounded-xl bg-slate-100/95 dark:bg-slate-950/90 backdrop-blur-md border border-slate-300 dark:border-purple-900/40 shadow-lg overflow-x-auto scrollbar-thin text-xs my-2">
-          <div className="flex items-center gap-1 text-[11px] font-mono text-purple-700 dark:text-purple-300 font-bold pr-1 border-r border-slate-300 dark:border-purple-800/40 flex-shrink-0">
-            <List className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 p-2 px-3 rounded-xl bg-surface-sunken backdrop-blur-md border border-strong shadow-lg overflow-x-auto scrollbar-thin text-xs my-2">
+          <div className="flex items-center gap-1 text-[11px] font-mono text-accent font-semibold pr-1 border-r border-strong flex-shrink-0">
+            <List className="w-3.5 h-3.5 text-accent" />
             <span>OUTLINE:</span>
           </div>
           {parsed.tableOfContents.map((toc, tIdx) => {
@@ -672,7 +676,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                     if (soundEnabled) playCyberSound('click');
                   }
                 }}
-                className="px-2.5 py-1 rounded bg-slate-200/80 dark:bg-purple-900/30 hover:bg-slate-300 dark:hover:bg-purple-800/50 border border-slate-300 dark:border-purple-800/30 text-slate-800 dark:text-purple-200 hover:text-black dark:hover:text-white text-xs font-mono flex-shrink-0 transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded bg-surface-hover hover:bg-surface-hover border border-strong text-primary hover:text-black text-xs font-mono flex-shrink-0 transition-colors cursor-pointer"
               >
                 {toc.text}
               </button>
@@ -684,11 +688,11 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       {/* Render Parsed Markdown Body */}
       <div className="space-y-3">
         {langMode === 'he' && parsed.hebrewSection ? (
-          <div dir="rtl" className="font-sans leading-relaxed text-slate-800 dark:text-gray-200">
+          <div dir="rtl" className="font-sans leading-relaxed text-primary">
             {renderFormattedMarkdown(parsed.hebrewSection)}
           </div>
         ) : (
-          <div dir="ltr" className="font-sans leading-relaxed text-slate-800 dark:text-gray-200">
+          <div dir="ltr" className="font-sans leading-relaxed text-primary">
             {renderFormattedMarkdown(parsed.englishSection || deferredContent)}
           </div>
         )}
@@ -696,8 +700,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
 
       {/* Obsidian Backlinks Footer */}
       {backlinks.length > 0 && (
-        <div className="mt-8 pt-4 border-t border-purple-900/30">
-          <div className="flex items-center gap-2 mb-3 text-xs font-mono font-bold text-purple-400">
+        <div className="mt-8 pt-4 border-t border-accent/30">
+          <div className="flex items-center gap-2 mb-3 text-xs font-mono font-semibold text-accent">
             <LinkIcon className="w-3.5 h-3.5" />
             <span>OBSIDIAN BACKLINKS ({backlinks.length} REFERENCES)</span>
           </div>
@@ -713,12 +717,12 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                     onNavigateToNote(b.id);
                   }
                 }}
-                className="p-2 rounded-xl bg-purple-950/20 hover:bg-purple-900/40 border border-purple-900/30 hover:border-purple-400 text-left transition-colors cursor-pointer group"
+                className="p-2 rounded-xl bg-accent-muted hover:bg-accent-muted border border-accent/30 hover:border-accent text-left transition-colors cursor-pointer group"
               >
-                <div className="text-xs font-mono font-bold text-purple-300 group-hover:text-cyan-300 truncate">
+                <div className="text-xs font-mono font-semibold text-accent group-hover:text-accent truncate">
                   {b.titleEn || b.title}
                 </div>
-                <div className="text-[10px] font-mono text-cyber-muted truncate">
+                <div className="text-[10px] font-mono text-muted truncate">
                   {b.category} {b.subCategory ? `› ${b.subCategory}` : ''}
                 </div>
               </button>
@@ -736,32 +740,32 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       className={`p-4 sm:p-6 lg:p-8 pb-36 space-y-6 ${isMaximized ? 'max-w-full px-6 sm:px-12' : 'max-w-6xl'} mx-auto w-full select-text transition-colors duration-150`}
     >
       {/* Title & Metadata Banner */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-cyber-card border border-purple-500/20 shadow-md space-y-3">
+      <div className="p-4 sm:p-5 rounded-2xl bg-cyber-card border border-accent/20 shadow-md space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1
-            className={`${sizeClasses.bannerTitle} font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2 ${
+            className={`${sizeClasses.bannerTitle} font-semibold text-primary tracking-tight flex items-center gap-2 ${
               langMode === 'he' ? 'font-sans text-right' : 'font-mono text-left'
             }`}
             dir={langMode === 'he' ? 'rtl' : 'ltr'}
           >
-            <span className="text-purple-400 flex-shrink-0">🛡️</span>
+            <span className="text-accent flex-shrink-0">🛡️</span>
             <span>{langMode === 'he' ? (note.titleHe || note.title) : (note.titleEn || note.title)}</span>
           </h1>
 
           <div className="flex items-center gap-1.5 flex-wrap text-[10px] font-mono">
             {note.stage && (
-              <span className="px-2 py-0.5 rounded font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+              <span className="px-2 py-0.5 rounded font-semibold bg-callout-info-bg text-accent border border-accent/30">
                 Stage: {note.stage}
               </span>
             )}
-            <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">
+            <span className="px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/30">
               {note.difficulty || 'Core'}
             </span>
-            <span className="px-2 py-0.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted">
+            <span className="px-2 py-0.5 rounded bg-cyber-bg border border-cyber-border text-muted">
               {note.noteType || 'Field Manual'}
             </span>
             {note.dateModified && (
-              <span className="px-2 py-0.5 rounded text-cyber-muted bg-black/40 border border-white/5 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded text-muted bg-surface-sunken border border-subtle flex items-center gap-1">
                 <Clock className="w-2.5 h-2.5" />
                 {note.dateModified}
               </span>
@@ -773,7 +777,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                   onViewModeChange('split');
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 hover:border-purple-400 transition-colors flex items-center gap-1 cursor-pointer"
+                className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-colors flex items-center gap-1 cursor-pointer"
                 title="Switch to Split Edit View"
               >
                 <Edit3 className="w-2.5 h-2.5" />
@@ -785,13 +789,13 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
 
         {/* Tags & Tools */}
         {(note.tags?.length || note.tools?.length) && (
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-purple-900/20 flex-wrap">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-accent/20 flex-wrap">
             {note.tags && note.tags.length > 0 && (
               <div className="flex items-center gap-1 flex-wrap">
                 {note.tags.map((t) => (
                   <span
                     key={t}
-                    className="text-[10px] px-2 py-0.5 rounded bg-purple-950/40 border border-purple-800/40 text-purple-300 font-mono"
+                    className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent font-mono"
                   >
                     #{t}
                   </span>
@@ -800,11 +804,11 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
             )}
             {note.tools && note.tools.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-mono text-cyber-muted">Tools:</span>
+                <span className="text-[10px] font-mono text-muted">Tools:</span>
                 {note.tools.map((tool) => (
                   <span
                     key={tool}
-                    className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold"
+                    className="text-[10px] px-2 py-0.5 rounded bg-callout-success-bg text-callout-success-fg border border-callout-success-fg/30 font-mono font-semibold"
                   >
                     {tool}
                   </span>
@@ -841,9 +845,9 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               minHeight="600px"
             />
           </div>
-          <div className="min-w-0 rounded-xl border border-slate-300 dark:border-cyber-border bg-white dark:bg-surface-elevated/70 p-4 sm:p-5 shadow-sm overflow-y-auto max-h-[850px] space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10 text-xs font-mono text-slate-500 dark:text-cyber-muted">
-              <span className="font-bold flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+          <div className="min-w-0 rounded-xl border border-strong bg-surface-card p-4 sm:p-5 shadow-sm overflow-y-auto max-h-[850px] space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-subtle text-xs font-mono text-muted">
+              <span className="font-semibold flex items-center gap-1.5 text-accent">
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>LIVE PREVIEW</span>
               </span>

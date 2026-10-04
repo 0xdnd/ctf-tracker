@@ -166,11 +166,79 @@ Open 10.10.10.175:8080
       expect(res?.detectedIp).toBe('192.168.1.1');
     });
 
+    it('parses multi-host XML scans detecting all hosts and returning primary target', () => {
+      const multiHostXml = `<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" version="7.94">
+  <host>
+    <address addr="10.10.10.161" addrtype="ipv4"/>
+    <hostnames><hostname name="dc01.forest.local"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="88"><state state="open"/><service name="kerberos-sec"/></port>
+      <port protocol="tcp" portid="389"><state state="open"/><service name="ldap"/></port>
+    </ports>
+  </host>
+  <host>
+    <address addr="10.10.10.162" addrtype="ipv4"/>
+    <hostnames><hostname name="ws01.forest.local"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="445"><state state="open"/><service name="microsoft-ds"/></port>
+    </ports>
+  </host>
+</nmaprun>`;
+      const res = parseNmapXml(multiHostXml);
+      expect(res).not.toBeNull();
+      expect(res?.format).toBe('nmap-xml');
+      expect(res?.hosts).toHaveLength(2);
+      expect(res?.hosts?.[0].ip).toBe('10.10.10.161');
+      expect(res?.hosts?.[1].ip).toBe('10.10.10.162');
+      expect(res?.warnings?.[0]).toContain('Multi-host scan: 2 hosts detected');
+    });
+
+    it('parses IPv6 addresses in Nmap XML', () => {
+      const ipv6Xml = `<?xml version="1.0"?>
+<nmaprun><host><address addr="dead:beef::1" addrtype="ipv6"/><ports><port protocol="tcp" portid="22"><state state="open"/></port></ports></host></nmaprun>`;
+      const res = parseNmapXml(ipv6Xml);
+      expect(res).not.toBeNull();
+      expect(res?.detectedIp).toBe('dead:beef::1');
+    });
+
     it('identifies raw port list fallback', () => {
       const raw = '80, 443, 8080';
       const res = detectAndParseScan(raw);
       expect(res).not.toBeNull();
       expect(res?.ports.map((p) => p.port)).toEqual([80, 443, 8080]);
+    });
+
+    it('neutralizes CVE tokens from raw text so CVE-2021-41773 does not leak fake ports', () => {
+      const cveText = 'Found vulnerability CVE-2021-41773 on Apache and CVE-2017-0144 on SMB';
+      const res = detectAndParseScan(cveText);
+      // Because there are no explicit port markers and only hyphenated CVE tokens, no false-positive ports should be extracted
+      expect(res).toBeNull();
+    });
+
+    it('parses IPv6 addresses and captures NSE script outputs in standard Nmap text mode', () => {
+      const nmapText = `
+Nmap scan report for ipv6.target.lab (fe80::1ff:fe23:4567:890a)
+Host is up (0.0020s latency).
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 2.3.4
+|_ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| ftp-syst:
+|   STAT:
+|_  211-Features
+80/tcp open  http    Apache httpd 2.4.49
+`;
+      const res = detectAndParseScan(nmapText);
+      expect(res).not.toBeNull();
+      expect(res?.format).toBe('nmap-text');
+      expect(res?.detectedIp).toBe('fe80::1ff:fe23:4567:890a');
+      expect(res?.detectedHost).toBe('ipv6.target.lab');
+      expect(res?.ports).toHaveLength(2);
+      expect(res?.ports[0].port).toBe(21);
+      expect(res?.ports[0].scripts?.['ftp-anon']).toContain('Anonymous FTP login allowed');
+      expect(res?.ports[0].cveNotes).toContain('CVE-2011-2523');
+      expect(res?.ports[1].port).toBe(80);
+      expect(res?.ports[1].cveNotes).toContain('CVE-2021-41773');
     });
   });
 });

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   Search, 
@@ -18,14 +19,16 @@ import {
   Globe,
   Award,
   Radio,
-  Keyboard,
+  Crosshair,
+  Copy,
   Settings,
-  Users
+  Users,
+  Keyboard
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
-import { CREATOR_PROFILE_LINKS } from '../../utils/helpers';
+import { CREATOR_PROFILE_LINKS, safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 
 interface PaletteItem {
   id: string;
@@ -50,6 +53,11 @@ export const CommandPalette: React.FC = () => {
     setFlexCardModalOpen,
     setShortcutsModalOpen,
     setSettingsModalOpen,
+    globalVars,
+    activeTargetId,
+    setSnippetsDrawerOpen,
+    setRevShellModalOpen,
+    soundEnabled,
   } = useCtfStore(
     useShallow((s) => ({
       commandPaletteOpen: s.commandPaletteOpen,
@@ -66,6 +74,11 @@ export const CommandPalette: React.FC = () => {
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
+      globalVars: s.globalVars,
+      activeTargetId: s.activeTargetId,
+      setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
+      setRevShellModalOpen: s.setRevShellModalOpen,
+      soundEnabled: s.soundEnabled,
     }))
   );
 
@@ -126,14 +139,71 @@ export const CommandPalette: React.FC = () => {
   const quickActions = useMemo(
     () => [
       {
-        id: 'action-portfolio',
-        label: "Launch Daniel Dayan's Portfolio",
-        icon: Globe,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-cyber-emerald/20 border-cyber-emerald/40',
+        id: 'action-copy-lhost',
+        label: `Copy LHOST / Attacker IP (${globalVars.lhost || '10.10.14.X'})`,
+        icon: Copy,
+        colorClass: 'text-cyber-cyan',
+        bgHoverClass: 'hover:bg-cyber-cyan/15 hover:border-cyber-cyan/50',
         execute: () => {
-          window.open(CREATOR_PROFILE_LINKS.portfolio, '_blank', 'noopener,noreferrer');
+          safeCopyToClipboard(globalVars.lhost || '10.10.14.X');
+          if (soundEnabled) playCyberSound('click');
           setCommandPaletteOpen(false);
+        },
+      },
+      {
+        id: 'action-copy-target',
+        label: `Copy Active Target IP (${globalVars.targetIp || '10.10.10.X'})`,
+        icon: Crosshair,
+        colorClass: 'text-cyber-emerald',
+        bgHoverClass: 'hover:bg-cyber-emerald/15 hover:border-cyber-emerald/50',
+        execute: () => {
+          safeCopyToClipboard(globalVars.targetIp || '10.10.10.X');
+          if (soundEnabled) playCyberSound('click');
+          setCommandPaletteOpen(false);
+        },
+      },
+      {
+        id: 'action-snippets',
+        label: 'Open Tactical Snippets Drawer (Alt+S)',
+        icon: Terminal,
+        colorClass: 'text-cyber-cyan',
+        bgHoverClass: 'hover:bg-cyber-cyan/15 hover:border-cyber-cyan/50',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setSnippetsDrawerOpen(true);
+        },
+      },
+      {
+        id: 'action-revshell',
+        label: 'Launch Reverse Shells Generator',
+        icon: Zap,
+        colorClass: 'text-cyber-emerald',
+        bgHoverClass: 'hover:bg-cyber-emerald/15 hover:border-cyber-emerald/50',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setRevShellModalOpen(true);
+        },
+      },
+      {
+        id: 'action-exam',
+        label: 'Jump to Exam Simulator (Alt+E)',
+        icon: ShieldAlert,
+        colorClass: 'text-amber-400',
+        bgHoverClass: 'hover:bg-amber-500/15 hover:border-amber-500/50',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          navigate('/exam');
+        },
+      },
+      {
+        id: 'action-vault',
+        label: 'Jump to Evidence & Loot Vault',
+        icon: Database,
+        colorClass: 'text-cyber-purple',
+        bgHoverClass: 'hover:bg-cyber-purple/15 hover:border-cyber-purple/50',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          navigate('/vault');
         },
       },
       {
@@ -315,7 +385,7 @@ export const CommandPalette: React.FC = () => {
         },
       },
     ],
-    [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, setThemePreset, setFlexCardModalOpen, setShortcutsModalOpen, setSettingsModalOpen]
+    [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, setThemePreset, setFlexCardModalOpen, setShortcutsModalOpen, setSettingsModalOpen, globalVars, soundEnabled, setSnippetsDrawerOpen, setRevShellModalOpen]
   );
 
   // Filter actions based on search
@@ -405,23 +475,31 @@ export const CommandPalette: React.FC = () => {
     }
   }, [selectedIndex, commandPaletteOpen]);
 
-  if (!commandPaletteOpen) return null;
-
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/75 backdrop-blur-sm animate-fade-in font-mono"
-      onClick={() => setCommandPaletteOpen(false)}
-    >
-      <div 
-        ref={trapRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        className="w-full max-w-2xl rounded-xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden shadow-glow-emerald/10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Search Input Bar */}
-        <div className="flex items-center gap-3 border-b border-cyber-border px-4 py-3 bg-cyber-bg/50">
+    <AnimatePresence>
+      {commandPaletteOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/75 backdrop-blur-sm font-mono"
+          onClick={() => setCommandPaletteOpen(false)}
+        >
+          <motion.div 
+            ref={trapRef}
+            initial={{ opacity: 0, scale: 0.96, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -4 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
+            className="w-full max-w-2xl rounded-xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden machined-edge"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input Bar */}
+            <div className="flex items-center gap-3 border-b border-cyber-border px-4 py-3 bg-cyber-bg/50">
           <Search className="w-5 h-5 text-cyber-emerald flex-shrink-0" />
           <input
             id="command-palette-search-input"
@@ -467,7 +545,7 @@ export const CommandPalette: React.FC = () => {
                       key={action.id}
                       data-palette-index={itemIndex}
                       onClick={() => action.execute()}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-left transition-colors group ${
+                      className={`flex items-center gap-2 p-2 rounded-lg text-left transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer ${
                         isSelected 
                           ? 'ring-1 ring-cyber-cyan bg-cyber-cyan/20 border-cyber-cyan/80 shadow-glow-cyan/20' 
                           : `bg-cyber-bg border border-cyber-border ${action.bgHoverClass}`
@@ -490,7 +568,7 @@ export const CommandPalette: React.FC = () => {
               <span className="flex items-center gap-1.5">
                 <ShieldAlert className="w-3 h-3 text-cyber-emerald" /> LAB MACHINES
               </span>
-              <span className="text-[10px] text-cyber-muted">Total matches: {filteredMachines.length}</span>
+              <span className="text-[10px] text-cyber-muted tabular-nums">Total matches: {filteredMachines.length}</span>
             </div>
 
             <div className="space-y-1">
@@ -510,7 +588,7 @@ export const CommandPalette: React.FC = () => {
                         setActiveTab('tracker');
                         navigate('/tracker');
                       }}
-                      className={`w-full flex items-center justify-between p-2 rounded-lg border transition-colors text-left group ${
+                      className={`w-full flex items-center justify-between p-2 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.97] text-left group cursor-pointer ${
                         isSelected
                           ? 'ring-1 ring-cyber-emerald bg-cyber-emerald/20 border-cyber-emerald/80 shadow-glow-emerald/20'
                           : 'hover:bg-cyber-bg border-transparent hover:border-cyber-border/80'
@@ -524,7 +602,7 @@ export const CommandPalette: React.FC = () => {
                         <span className={`font-bold transition-colors ${isSelected ? 'text-cyber-emerald' : 'text-slate-900 dark:text-white group-hover:text-cyber-emerald'}`}>
                           {m.name}
                         </span>
-                        <span className="text-[10px] text-cyber-muted font-mono">{m.ip}</span>
+                        <span className="text-[10px] text-cyber-muted font-mono tabular-nums">{m.ip}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted">
                           {m.os}
                         </span>
@@ -569,7 +647,7 @@ export const CommandPalette: React.FC = () => {
                         setCommandPaletteOpen(false);
                         navigate('/cheatsheets');
                       }}
-                      className={`w-full p-2 rounded-lg border transition-colors text-left group ${
+                      className={`w-full p-2 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.97] text-left group cursor-pointer ${
                         isSelected
                           ? 'ring-1 ring-cyber-cyan bg-cyber-cyan/20 border-cyber-cyan/80 shadow-glow-cyan/20'
                           : 'hover:bg-cyber-bg border-transparent hover:border-cyber-border/80'
@@ -601,7 +679,9 @@ export const CommandPalette: React.FC = () => {
           </div>
           <span>ZEROBOX TACTICAL PALETTE</span>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    )}
+  </AnimatePresence>
   );
 };

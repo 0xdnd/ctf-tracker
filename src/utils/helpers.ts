@@ -47,13 +47,47 @@ export function interpolateCommand(template: string, vars: GlobalVariables): str
     Object.entries(vars.customVars).forEach(([key, val]) => {
       if (!key) return;
       const safeKey = escapeRegex(key);
-      const reg = new RegExp(`\\{${safeKey}\\}`, 'g');
+      const reg = new RegExp(`\\{${safeKey}\\}`, 'gi');
       result = result.replace(reg, val);
       const regAngle = new RegExp(`<${safeKey}>`, 'gi');
       result = result.replace(regAngle, val);
     });
   }
   return result;
+}
+
+export function getUnresolvedTokens(template: string, vars: GlobalVariables): string[] {
+  if (!template) return [];
+  const missing: string[] = [];
+
+  // Check critical attacker IP (LHOST)
+  if ((/\{LHOST\}|<LHOST>/i.test(template)) && (!vars.lhost || vars.lhost === '10.10.14.X')) {
+    missing.push('LHOST');
+  }
+
+  // Check critical target IP (RHOST / TARGET)
+  if ((/\{(?:TARGET_IP|TARGET|IP)\}|<(?:TARGET_IP|TARGET|IP|Target-IP)>/i.test(template)) && (!vars.targetIp || vars.targetIp === '10.10.10.X')) {
+    missing.push('TARGET_IP');
+  }
+
+  // Check LPORT if empty
+  if ((/\{LPORT\}|<LPORT>/i.test(template)) && !vars.lport) {
+    missing.push('LPORT');
+  }
+
+  // Check any generic un-interpolated curly/angle tokens like {VARIABLE} or <VARIABLE>
+  const interpolated = interpolateCommand(template, vars);
+  const remainingCurly = interpolated.match(/\{([A-Za-z0-9_-]{2,})\}/g) || [];
+  const remainingAngle = interpolated.match(/<([A-Za-z0-9_-]{2,})>/g) || [];
+
+  for (const token of [...remainingCurly, ...remainingAngle]) {
+    const clean = token.replace(/[{<}>]/g, '');
+    if (!missing.includes(clean)) {
+      missing.push(clean);
+    }
+  }
+
+  return missing;
 }
 
 let sharedCyberAudioCtx: AudioContext | null = null;

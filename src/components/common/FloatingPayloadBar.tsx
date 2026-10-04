@@ -16,6 +16,7 @@ import {
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { SyntaxHighlightedCommand } from './SyntaxHighlightedCommand';
 
 interface QuickShell {
   name: string;
@@ -142,7 +143,7 @@ export const FloatingPayloadBar: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 8 }}
-            className="relative flex items-center gap-2 p-2 px-3.5 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-zinc-700/80 shadow-lg text-slate-800 dark:text-slate-100 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 transition-colors cursor-pointer group"
+            className="relative flex items-center gap-2 p-2 px-3.5 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-zinc-700/80 shadow-lg text-slate-800 dark:text-slate-100 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 transition-colors cursor-pointer group machined-edge"
             onClick={() => setIsExpanded(true)}
           >
             {/* Quick Copy Menu Popover */}
@@ -358,7 +359,7 @@ export const FloatingPayloadBar: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.96 }}
             transition={{ duration: 0.16 }}
-            className="w-[calc(100vw-1.5rem)] sm:w-[480px] rounded-2xl bg-white/95 dark:bg-slate-950/95 border border-slate-300 dark:border-[#27272a] shadow-2xl overflow-hidden text-slate-800 dark:text-slate-100"
+            className="w-[calc(100vw-1.5rem)] sm:w-[480px] rounded-2xl bg-white/95 dark:bg-slate-950/95 border border-slate-300 dark:border-[#27272a] shadow-2xl overflow-hidden text-slate-800 dark:text-slate-100 machined-edge"
           >
             {/* HUD Header */}
             <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-[#09090b] border-b border-slate-200 dark:border-[#27272a]">
@@ -524,7 +525,7 @@ export const FloatingPayloadBar: React.FC = () => {
                           <div
                             key={shell.name}
                             onClick={() => copyWithFeedback(`shell-${shell.name}`, cmd)}
-                            className="flex items-center justify-between p-2 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-cyber-card dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyan-500/50 dark:hover:border-cyber-borderGlow cursor-pointer group transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                            className="flex items-center justify-between p-2 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-cyber-card dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyan-500/50 dark:hover:border-cyber-borderGlow cursor-pointer group transition-[transform,background-color,border-color,color] active:scale-[0.97]"
                           >
                             <div className="flex items-center gap-2 min-w-0 pr-2">
                               <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase ${
@@ -537,8 +538,9 @@ export const FloatingPayloadBar: React.FC = () => {
                               <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-cyan-700 dark:group-hover:text-cyber-cyan transition-colors">
                                 {shell.name}
                               </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[180px] sm:max-w-[240px]">
-                                {cmd}
+                              <span className="sr-only">{cmd}</span>
+                              <span aria-hidden="true" className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[180px] sm:max-w-[240px]">
+                                <SyntaxHighlightedCommand command={cmd} />
                               </span>
                             </div>
 

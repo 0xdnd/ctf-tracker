@@ -7,13 +7,14 @@ export const LINUX_TUX_PATH =
 interface OsIconProps {
   os?: OperatingSystem | 'ALL' | string;
   className?: string;
+  monochrome?: boolean;
 }
 
-export const OsIcon: React.FC<OsIconProps> = ({ os, className = 'w-3.5 h-3.5' }) => {
+export const OsIcon: React.FC<OsIconProps> = ({ os, className = 'w-3.5 h-3.5', monochrome = false }) => {
   switch (os) {
     case 'Linux':
       return (
-        <svg viewBox="0 0 24 24" className={className} fill="#FCC624" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 24 24" className={className} fill={monochrome ? 'currentColor' : '#FCC624'} xmlns="http://www.w3.org/2000/svg">
           {/* Official Linux Tux Penguin Icon */}
           <path d={LINUX_TUX_PATH} />
         </svg>
@@ -21,7 +22,7 @@ export const OsIcon: React.FC<OsIconProps> = ({ os, className = 'w-3.5 h-3.5' })
 
     case 'Windows':
       return (
-        <svg viewBox="0 0 24 24" className={className} fill="#00A4EF" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 24 24" className={className} fill={monochrome ? 'currentColor' : '#00A4EF'} xmlns="http://www.w3.org/2000/svg">
           {/* Official Microsoft Windows 4-Pane Grid */}
           <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.901-1.801" />
         </svg>
@@ -29,21 +30,21 @@ export const OsIcon: React.FC<OsIconProps> = ({ os, className = 'w-3.5 h-3.5' })
 
     case 'macOS':
       return (
-        <svg viewBox="0 0 24 24" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 24 24" className={className} fill={monochrome ? 'currentColor' : '#C084FC'} xmlns="http://www.w3.org/2000/svg">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.96c.64-.78 1.08-1.86.96-2.96-1 .04-2.12.67-2.78 1.45-.58.67-1.1 1.77-.96 2.84 1.12.09 2.19-.58 2.78-1.33z"/>
         </svg>
       );
 
     case 'Android':
       return (
-        <svg viewBox="0 0 24 24" className={className} fill="#3DDC84" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 24 24" className={className} fill={monochrome ? 'currentColor' : '#3DDC84'} xmlns="http://www.w3.org/2000/svg">
           <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4116 13.8533 8.082 12 8.082s-3.5902.3296-5.1368.8677L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396" />
         </svg>
       );
 
     case 'BSD':
       return (
-        <svg viewBox="0 0 24 24" className={className} fill="#E11D48" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 24 24" className={className} fill={monochrome ? 'currentColor' : '#E11D48'} xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm-2.2 4.5c.5 0 .9.2 1.2.5.3.3.4.7.4 1.1 0 .6-.3 1.2-.7 1.6-.4.4-1 .6-1.6.6-.7 0-1.3-.2-1.7-.7-.4-.5-.6-1.1-.6-1.8 0-.4.1-.7.4-.9.3-.2.7-.4 1-.4zm6.4 0c.4 0 .8.2 1.1.4.3.2.4.5.4.9 0 .7-.2 1.3-.6 1.8-.4.5-1 .7-1.7.7-.6 0-1.2-.2-1.6-.6-.4-.4-.7-1-.7-1.6 0-.4.1-.8.4-1.1.3-.3.7-.5 1.3-.5zM12 18.2c-3.1 0-5.5-2-5.7-4.7h11.4c-.2 2.7-2.6 4.7-5.7 4.7z"/>
         </svg>
       );
@@ -63,6 +64,7 @@ interface OsBadgeProps {
   size?: 'xs' | 'sm' | 'md';
   showLabel?: boolean;
   className?: string;
+  variant?: 'default' | 'hardware';
 }
 
 export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
@@ -70,6 +72,7 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
   size = 'xs',
   showLabel = true,
   className = '',
+  variant = 'default',
 }) => {
   const sizeClasses = {
     xs: 'px-1.5 py-0.5 text-[9px]',
@@ -83,18 +86,47 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
     md: 'w-3.5 h-3.5',
   };
 
+  const getHardwareTheme = () => {
+    switch (os) {
+      case 'Linux':
+        return 'text-amber-800 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 border-amber-400/60 dark:border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.15)]';
+      case 'Windows':
+        return 'text-sky-800 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 border-sky-400/60 dark:border-sky-500/50 shadow-[0_0_8px_rgba(14,165,233,0.15)]';
+      case 'BSD':
+        return 'text-rose-800 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 border-rose-400/60 dark:border-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.15)]';
+      case 'Android':
+        return 'text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-400/60 dark:border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.15)]';
+      case 'macOS':
+        return 'text-purple-800 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 border-purple-400/60 dark:border-purple-500/50 shadow-[0_0_8px_rgba(168,85,247,0.15)]';
+      default:
+        return 'text-zinc-700 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800';
+    }
+  };
+
+  if (variant === 'hardware') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-[4px] border font-mono tabular-nums text-[10px] tracking-wider uppercase transition-colors select-none cursor-default font-semibold ${getHardwareTheme()} ${sizeClasses[size]} ${className}`}
+        title={`Operating System: ${os || 'Unknown'}`}
+      >
+        <OsIcon os={os} className={`${iconSizes[size]} flex-shrink-0`} monochrome={true} />
+        {showLabel && <span>{os || 'Unknown'}</span>}
+      </span>
+    );
+  }
+
   const getTheme = () => {
     switch (os) {
       case 'Linux':
-        return 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/30';
+        return 'text-amber-900 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 border-amber-400/60 dark:border-amber-500/50 shadow-sm';
       case 'Windows':
-        return 'text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-500/40';
+        return 'text-sky-900 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 border-sky-400/60 dark:border-sky-500/50 shadow-sm';
       case 'BSD':
-        return 'text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-500/40';
+        return 'text-rose-900 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 border-rose-400/60 dark:border-rose-500/50 shadow-sm';
       case 'Android':
-        return 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-500/40';
+        return 'text-emerald-900 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-400/60 dark:border-emerald-500/50 shadow-sm';
       case 'macOS':
-        return 'text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/40';
+        return 'text-purple-900 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 border-purple-400/60 dark:border-purple-500/50 shadow-sm';
       default:
         return 'text-slate-700 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-bg/60 border-slate-300 dark:border-cyber-border';
     }
@@ -102,7 +134,7 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md font-mono font-medium border ${getTheme()} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md font-mono tabular-nums font-medium border ${getTheme()} ${sizeClasses[size]} ${className}`}
       title={`Operating System: ${os || 'Unknown'}`}
     >
       <OsIcon os={os} className={iconSizes[size]} />

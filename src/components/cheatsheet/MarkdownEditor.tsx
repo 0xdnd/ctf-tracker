@@ -21,11 +21,14 @@ import {
   Lightbulb, 
   Flame, 
   HelpCircle,
-  Cpu
+  Cpu,
+  Columns
 } from 'lucide-react';
 import { GlobalVariables } from '../../types';
 import { playCyberSound } from '../../utils/helpers';
 import { useCtfStore } from '../../store/useCtfStore';
+import { sanitizeHtml } from '../../utils/securityUtils';
+import { parseMarkdownToHtml } from '../../utils/writeupHtmlExporter';
 
 export interface MarkdownEditorProps {
   noteId: string;
@@ -55,6 +58,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty'>('saved');
   const [calloutDropdownOpen, setCalloutDropdownOpen] = useState<boolean>(false);
   const [varDropdownOpen, setVarDropdownOpen] = useState<boolean>(false);
+  const [showSplitPreview, setShowSplitPreview] = useState<boolean>(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -191,10 +195,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   return (
-    <div className={`flex flex-col rounded-xl border border-slate-300 dark:border-cyber-border bg-slate-50 dark:bg-surface-elevated overflow-hidden font-mono shadow-md ${className}`}>
+    <div className={`flex flex-col rounded-xl border border-strong bg-surface-sunken overflow-hidden font-mono shadow-md machined-edge ${className}`}>
       
       {/* 1. Technical Formatting Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-1 p-1.5 px-2 bg-slate-100 dark:bg-surface-sunken border-b border-slate-300 dark:border-cyber-border select-none text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-1 p-1.5 px-2 bg-surface-sunken border-b border-strong select-none text-xs">
         
         {/* Left Formatting Cluster */}
         <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
@@ -202,7 +206,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('# ', '', 'Heading 1')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Heading 1 (#)"
             aria-label="Heading 1"
           >
@@ -211,7 +215,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('## ', '', 'Heading 2')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Heading 2 (##)"
             aria-label="Heading 2"
           >
@@ -220,20 +224,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('### ', '', 'Heading 3')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Heading 3 (###)"
             aria-label="Heading 3"
           >
             <Heading3 className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-cyber-border mx-0.5" />
+          <div className="w-px h-3.5 bg-surface-hover mx-0.5" />
 
           {/* Inline Formats */}
           <button
             type="button"
             onClick={() => insertTextAtCursor('**', '**', 'bold')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors font-bold"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors font-semibold"
             title="Bold (Ctrl+B)"
             aria-label="Bold"
           >
@@ -242,7 +246,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('*', '*', 'italic')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors italic"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors italic"
             title="Italic (Ctrl+I)"
             aria-label="Italic"
           >
@@ -251,7 +255,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('~~', '~~', 'strikethrough')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Strikethrough (~~)"
             aria-label="Strikethrough"
           >
@@ -260,20 +264,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('`', '`', 'code')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Inline Code (`)"
             aria-label="Inline Code"
           >
             <Code className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-cyber-border mx-0.5" />
+          <div className="w-px h-3.5 bg-surface-hover mx-0.5" />
 
           {/* Code Blocks & Terminal */}
           <button
             type="button"
             onClick={() => insertTextAtCursor('```bash\n', '\n```\n', '# Terminal command')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-purple-600 dark:text-purple-400 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-accent transition-colors"
             title="Bash / Terminal Code Block"
             aria-label="Terminal Code Block"
           >
@@ -284,7 +288,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('- ', '', 'List item')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Bullet List (- )"
             aria-label="Bullet List"
           >
@@ -293,7 +297,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('1. ', '', 'Numbered item')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Numbered List (1. )"
             aria-label="Numbered List"
           >
@@ -302,20 +306,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('- [ ] ', '', 'Checklist task')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Task Checklist (- [ ] )"
             aria-label="Task Checklist"
           >
             <CheckSquare className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-cyber-border mx-0.5" />
+          <div className="w-px h-3.5 bg-surface-hover mx-0.5" />
 
           {/* Wikilink & Table */}
           <button
             type="button"
             onClick={() => insertTextAtCursor('[[', ']]', 'Note Title')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-cyan-600 dark:text-cyber-cyan transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-accent transition-colors"
             title="Obsidian Wikilink [[Note Title]] (Ctrl+K)"
             aria-label="Wikilink"
           >
@@ -324,7 +328,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={() => insertTextAtCursor('\n| Column 1 | Column 2 | Column 3 |\n| :--- | :--- | :--- |\n| Data 1 | Data 2 | Data 3 |\n', '', '')}
-            className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-slate-700 dark:text-zinc-300 transition-colors"
+            className="p-1 sm:p-1.5 rounded hover:bg-surface-hover text-secondary transition-colors"
             title="Markdown Table"
             aria-label="Markdown Table"
           >
@@ -336,18 +340,18 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             <button
               type="button"
               onClick={() => setCalloutDropdownOpen(!calloutDropdownOpen)}
-              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-amber-600 dark:text-amber-400 transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-callout-warn-fg transition-colors cursor-pointer"
               title="Insert Obsidian Callout Box"
               aria-label="Obsidian Callouts"
             >
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold hidden sm:inline">Callout</span>
+              <span className="text-[10px] font-semibold hidden sm:inline">Callout</span>
               <ChevronDown className="w-2.5 h-2.5" />
             </button>
 
             {calloutDropdownOpen && (
               <div 
-                className="absolute left-0 top-full mt-1 w-44 p-1 rounded-lg bg-white dark:bg-surface-elevated border border-slate-300 dark:border-cyber-border shadow-xl z-50 text-[11px] space-y-0.5"
+                className="absolute left-0 top-full mt-1 w-44 p-1 rounded-lg bg-surface-card border border-strong shadow-xl z-50 text-[11px] space-y-0.5"
                 onMouseLeave={() => setCalloutDropdownOpen(false)}
               >
                 <button
@@ -356,7 +360,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor('> [!NOTE]\n> ', '\n', 'Note title and details');
                     setCalloutDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-blue-600 dark:text-blue-400"
+                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-surface-sunken text-left text-accent"
                 >
                   <Info className="w-3 h-3" />
                   <span>Note ([!NOTE])</span>
@@ -367,7 +371,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor('> [!TIP]\n> ', '\n', 'Pro-tip instructions');
                     setCalloutDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-emerald-600 dark:text-emerald-400"
+                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-surface-sunken text-left text-callout-success-fg"
                 >
                   <Lightbulb className="w-3 h-3" />
                   <span>Tip ([!TIP])</span>
@@ -378,7 +382,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor('> [!WARNING]\n> ', '\n', 'Warning alert');
                     setCalloutDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-amber-600 dark:text-amber-400"
+                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-surface-sunken text-left text-callout-warn-fg"
                 >
                   <AlertTriangle className="w-3 h-3" />
                   <span>Warning ([!WARNING])</span>
@@ -389,7 +393,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor('> [!DANGER]\n> ', '\n', 'Danger / critical caveat');
                     setCalloutDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-rose-600 dark:text-rose-400"
+                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-surface-sunken text-left text-callout-danger-fg"
                 >
                   <Flame className="w-3 h-3" />
                   <span>Danger ([!DANGER])</span>
@@ -400,7 +404,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor('> [!QUESTION]\n> ', '\n', 'Question context');
                     setCalloutDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-cyan-600 dark:text-cyan-400"
+                  className="w-full px-2 py-1 rounded flex items-center gap-1.5 hover:bg-surface-sunken text-left text-accent"
                 >
                   <HelpCircle className="w-3 h-3" />
                   <span>Question ([!QUESTION])</span>
@@ -414,18 +418,18 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             <button
               type="button"
               onClick={() => setVarDropdownOpen(!varDropdownOpen)}
-              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-slate-200 dark:hover:bg-cyber-cardHover text-emerald-600 dark:text-cyber-emerald transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-callout-success-fg transition-colors cursor-pointer"
               title="Insert Target Variables (LHOST, RHOST, LPORT)"
               aria-label="Target Variables"
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold hidden sm:inline">Vars</span>
+              <span className="text-[10px] font-semibold hidden sm:inline">Vars</span>
               <ChevronDown className="w-2.5 h-2.5" />
             </button>
 
             {varDropdownOpen && (
               <div 
-                className="absolute left-0 top-full mt-1 w-48 p-1 rounded-lg bg-white dark:bg-surface-elevated border border-slate-300 dark:border-cyber-border shadow-xl z-50 text-[11px] space-y-0.5"
+                className="absolute left-0 top-full mt-1 w-48 p-1 rounded-lg bg-surface-card border border-strong shadow-xl z-50 text-[11px] space-y-0.5"
                 onMouseLeave={() => setVarDropdownOpen(false)}
               >
                 <button
@@ -434,10 +438,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor(globalVars?.lhost || '{{LHOST}}', '', '');
                     setVarDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center justify-between hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-cyan-600 dark:text-cyber-cyan"
+                  className="w-full px-2 py-1 rounded flex items-center justify-between hover:bg-surface-sunken text-left text-accent"
                 >
                   <span>LHOST</span>
-                  <span className="font-mono text-[9px] text-slate-400">{globalVars?.lhost || 'unset'}</span>
+                  <span className="font-mono text-[9px] text-muted">{globalVars?.lhost || 'unset'}</span>
                 </button>
                 <button
                   type="button"
@@ -445,10 +449,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor(globalVars?.targetIp || '{{RHOST}}', '', '');
                     setVarDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center justify-between hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-emerald-600 dark:text-cyber-emerald"
+                  className="w-full px-2 py-1 rounded flex items-center justify-between hover:bg-surface-sunken text-left text-callout-success-fg"
                 >
                   <span>RHOST</span>
-                  <span className="font-mono text-[9px] text-slate-400">{globalVars?.targetIp || 'unset'}</span>
+                  <span className="font-mono text-[9px] text-muted">{globalVars?.targetIp || 'unset'}</span>
                 </button>
                 <button
                   type="button"
@@ -456,25 +460,46 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     insertTextAtCursor(globalVars?.lport || '{{LPORT}}', '', '');
                     setVarDropdownOpen(false);
                   }}
-                  className="w-full px-2 py-1 rounded flex items-center justify-between hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-left text-purple-600 dark:text-purple-400"
+                  className="w-full px-2 py-1 rounded flex items-center justify-between hover:bg-surface-sunken text-left text-accent"
                 >
                   <span>LPORT</span>
-                  <span className="font-mono text-[9px] text-slate-400">{globalVars?.lport || 'unset'}</span>
+                  <span className="font-mono text-[9px] text-muted">{globalVars?.lport || 'unset'}</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Save Cluster */}
+        {/* Right Save Cluster & Split Toggle */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Dual-Pane Split Preview Toggle (available when not already wrapped in external split container) */}
+          {!isSplitView && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowSplitPreview((prev) => !prev);
+                if (soundEnabled) playCyberSound('toggle');
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold transition-colors active:scale-[0.97] cursor-pointer ${
+                showSplitPreview
+                  ? 'bg-accent-muted text-accent border border-accent shadow-xs'
+                  : 'bg-surface-sunken hover:bg-surface-hover text-secondary border border-strong'
+              }`}
+              title="Toggle Dual-Pane Split Preview"
+              aria-label="Toggle Dual-Pane Split Preview"
+            >
+              <Columns className="w-3 h-3" />
+              <span className="hidden sm:inline">Dual-Pane</span>
+            </button>
+          )}
+
           {/* Status Indicator */}
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
             saveStatus === 'saved'
-              ? 'text-emerald-600 dark:text-cyber-emerald bg-emerald-500/10'
+              ? 'text-callout-success-fg bg-callout-success-bg'
               : saveStatus === 'saving'
-              ? 'text-amber-500 dark:text-cyber-amber bg-amber-500/10 animate-pulse'
-              : 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+              ? 'text-callout-warn-fg bg-callout-warn-bg animate-pulse'
+              : 'text-callout-warn-fg bg-callout-warn-bg'
           }`}>
             {saveStatus === 'saved' && <Check className="w-2.5 h-2.5" />}
             {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}
@@ -484,7 +509,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={handleManualSave}
-            className="flex items-center gap-1 px-2 py-1 rounded-md bg-cyber-cyan/15 hover:bg-cyber-cyan/25 border border-cyber-cyan/40 text-cyan-700 dark:text-cyber-cyan text-xs font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-cyber-cyan/15 hover:bg-cyber-cyan/25 border border-cyber-cyan/40 text-accent text-xs font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
             title="Save Note Now (Ctrl+S)"
             aria-label="Save Note Now"
           >
@@ -494,31 +519,62 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         </div>
       </div>
 
-      {/* 2. Textarea Code Input */}
+      {/* 2. Textarea Code Input & Dual-Pane Live Sanitized Preview */}
       <div className="relative flex-1 min-h-[300px]">
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          data-testid="markdown-editor-textarea"
-          placeholder="Type or paste Markdown notes here... (Obsidian callouts, wikilinks, code blocks supported)"
-          style={{ minHeight }}
-          className="w-full h-full p-4 bg-transparent text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600 text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 selection:bg-cyber-cyan/30"
-          spellCheck={false}
-          autoCapitalize="off"
-          autoCorrect="off"
-        />
+        {showSplitPreview && !isSplitView ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 h-full p-2.5">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={handleTextChange}
+              onKeyDown={handleKeyDown}
+              data-testid="markdown-editor-textarea"
+              placeholder="Type or paste Markdown notes here... (Obsidian callouts, wikilinks, code blocks supported)"
+              style={{ minHeight }}
+              className="w-full h-full p-3.5 bg-surface-sunken text-primary placeholder-muted text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 selection:bg-cyber-cyan/30 border border-subtle rounded-lg"
+              spellCheck={false}
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
+            <div className="rounded-lg border border-subtle bg-surface-sunken p-4 overflow-y-auto max-h-[700px] machined-edge">
+              <div className="text-[10px] font-mono font-semibold text-accent mb-2.5 pb-1.5 border-b border-subtle flex items-center justify-between">
+                <span className="tracking-wider uppercase">MARKDOWN PREVIEW</span>
+                <span className="text-[9px] text-callout-success-fg flex items-center gap-1 font-mono">
+                  ✓ DOMPurify Neutralized
+                </span>
+              </div>
+              <div
+                data-testid="markdown-split-preview"
+                className="prose prose-sm dark:prose-invert max-w-none font-sans text-xs sm:text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(parseMarkdownToHtml(content)) }}
+              />
+            </div>
+          </div>
+        ) : (
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleTextChange}
+            onKeyDown={handleKeyDown}
+            data-testid="markdown-editor-textarea"
+            placeholder="Type or paste Markdown notes here... (Obsidian callouts, wikilinks, code blocks supported)"
+            style={{ minHeight }}
+            className="w-full h-full p-4 bg-transparent text-primary placeholder-muted text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 selection:bg-cyber-cyan/30"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+          />
+        )}
       </div>
 
       {/* 3. Footer Statistics Bar */}
-      <div className="flex items-center justify-between px-3 py-1 bg-slate-100 dark:bg-surface-sunken border-t border-slate-300 dark:border-cyber-border text-[10px] text-slate-500 dark:text-zinc-400 font-mono">
+      <div className="flex items-center justify-between px-3 py-1 bg-surface-sunken border-t border-strong text-[10px] text-muted font-mono">
         <div className="flex items-center gap-3">
           <span>{stats.lines} lines</span>
           <span>{stats.words} words</span>
           <span>{stats.chars} chars</span>
         </div>
-        <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-zinc-500">
+        <div className="flex items-center gap-2 text-[9px] text-muted">
           <span>Ctrl+S Save</span>
           <span>•</span>
           <span>Ctrl+B Bold</span>

@@ -158,16 +158,20 @@ export function scrollToHeadingAnchor(container: HTMLElement, anchor: string): b
 
   const normalizedAnchor = slugifyHeading(anchor);
 
-  // 1. Direct match on id
-  let targetEl = container.querySelector(`[id="${anchor}"]`) || 
-                 container.querySelector(`[id="${normalizedAnchor}"]`) ||
-                 container.querySelector(`[id="h-${normalizedAnchor}"]`) ||
-                 container.querySelector(`[id*="${normalizedAnchor}"]`);
+  // 1. Direct match on id & name attribute safely
+  let targetEl: Element | null = null;
+  try {
+    const escapedAnchor = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(anchor) : anchor.replace(/["\\]/g, '\\$&');
+    const escapedNormalized = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(normalizedAnchor) : normalizedAnchor.replace(/["\\]/g, '\\$&');
 
-  // 2. Match on name attribute (classic anchors <a name="...">)
-  if (!targetEl) {
-    targetEl = container.querySelector(`a[name="${anchor}"]`) || 
-               container.querySelector(`a[name="${normalizedAnchor}"]`);
+    targetEl = container.querySelector(`[id="${escapedAnchor}"]`) || 
+               container.querySelector(`[id="${escapedNormalized}"]`) ||
+               container.querySelector(`[id="h-${escapedNormalized}"]`) ||
+               container.querySelector(`[id*="${escapedNormalized}"]`) ||
+               container.querySelector(`a[name="${escapedAnchor}"]`) || 
+               container.querySelector(`a[name="${escapedNormalized}"]`);
+  } catch {
+    targetEl = null;
   }
 
   // 3. Fallback: Search all heading tags for matching textContent

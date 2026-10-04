@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TACTICAL_SPRING } from '../../utils/motionTokens';
+import { confirmAction } from '../../store/useConfirmStore';
 import { 
   FileText, 
   Download, 
@@ -28,26 +31,96 @@ import { PentestReportModal } from './PentestReportModal';
 import { CPTS_NOTES, CptsNoteEntry, searchCptsNotes, getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
-const renderLineWithWikilinks = (text: string, keyPrefix: string | number) => {
-  if (!text.includes('[[')) return text;
-  const parts = text.split(/(\[\[[^\]]+\]\])/g);
+export const renderInlineMarkdown = (text: string, keyPrefix: string | number): React.ReactNode => {
+  if (!text) return text;
+
+  // Fast path if text has no markdown formatting characters
+  if (!text.includes('[[') && !text.includes('`') && !text.includes('*') && !text.includes('_') && !text.includes('[')) {
+    return text;
+  }
+
+  // Tokenize: wikilinks, inline code, bold (** or __), links [text](url), italic (* or _)
+  const tokenRegex = /(\[\[[^\]]+\]\]|`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\[[^\]\n]+\]\(https?:\/\/[^\s)]+\)|\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))/g;
+  const parts = text.split(tokenRegex);
+
   return parts.map((part, i) => {
+    if (!part) return null;
+    const subKey = `${keyPrefix}-inl-${i}`;
+
+    // Wikilink
     if (part.startsWith('[[') && part.endsWith(']]')) {
       const raw = part.slice(2, -2);
       const [target, alias] = raw.split('|');
       return (
         <span
-          key={`${keyPrefix}-wl-${i}`}
-          className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[11px] font-semibold mx-0.5"
+          key={subKey}
+          className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-cyber-purple/15 border border-cyber-purple/30 text-cyber-purple font-mono text-[11px] font-semibold mx-0.5"
           title={`Wikilink: ${target.trim()}`}
         >
-          <BookOpen className="w-2.5 h-2.5 text-purple-400 inline" />
+          <BookOpen className="w-2.5 h-2.5 text-cyber-purple inline" />
           {alias ? alias.trim() : target.trim()}
         </span>
       );
     }
+
+    // Inline code
+    if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+      return (
+        <code
+          key={subKey}
+          className="px-1.5 py-0.5 rounded bg-cyber-bg border border-cyber-border font-mono text-[11px] text-cyber-cyan font-semibold mx-0.5"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    // Bold (** or __)
+    if (
+      (part.startsWith('**') && part.endsWith('**') && part.length >= 4) ||
+      (part.startsWith('__') && part.endsWith('__') && part.length >= 4)
+    ) {
+      return (
+        <strong key={subKey} className="font-semibold text-primary">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    // Link [text](url)
+    const linkMatch = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (linkMatch) {
+      return (
+        <a
+          key={subKey}
+          href={linkMatch[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-cyber-cyan hover:underline inline-flex items-center gap-0.5 font-medium"
+        >
+          {linkMatch[1]}
+        </a>
+      );
+    }
+
+    // Italic (* or _)
+    if (
+      (part.startsWith('*') && part.endsWith('*') && part.length >= 2) ||
+      (part.startsWith('_') && part.endsWith('_') && part.length >= 2)
+    ) {
+      return (
+        <em key={subKey} className="italic text-secondary">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+
     return part;
   });
+};
+
+const renderLineWithWikilinks = (text: string, keyPrefix: string | number) => {
+  return renderInlineMarkdown(text, keyPrefix);
 };
 
 const renderMarkdownPreview = (text: string) => {
@@ -71,7 +144,7 @@ const renderMarkdownPreview = (text: string) => {
         inFrontmatter = false;
         elements.push(
           <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-cyber-bg border border-cyber-cyan/30 text-[11px] font-mono text-cyber-cyan/90 space-y-0.5">
-            <div className="text-[10px] uppercase font-bold text-cyber-muted mb-1 flex items-center gap-1">
+            <div className="text-[10px] uppercase font-semibold text-cyber-muted mb-1 flex items-center gap-1">
               <FolderGit2 className="w-3 h-3 text-cyber-cyan" /> OBSIDIAN / GITBOOK YAML FRONTMATTER
             </div>
             {frontmatterLines.map((fl, fIdx) => (
@@ -118,13 +191,13 @@ const renderMarkdownPreview = (text: string) => {
     // Headings
     if (line.startsWith('# ')) {
       elements.push(
-        <h1 key={idx} className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2 pb-1 border-b border-cyber-border">
+        <h1 key={idx} className="text-xl font-semibold text-primary mt-4 mb-2 pb-1 border-b border-cyber-border">
           {renderLineWithWikilinks(line.replace('# ', ''), idx)}
         </h1>
       );
     } else if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={idx} className="text-base font-bold text-cyber-cyan mt-4 mb-1.5 flex items-center gap-2">
+        <h2 key={idx} className="text-base font-semibold text-cyber-cyan mt-4 mb-1.5 flex items-center gap-2">
           {renderLineWithWikilinks(line.replace('## ', ''), idx)}
         </h2>
       );
@@ -170,11 +243,11 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
 
   return (
     <div
-      className={`flex flex-col rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
+      className={`flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden shadow-lg transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
       style={{ contain: 'content' }}
     >
-      <div className="flex items-center justify-between border-b border-cyber-border px-4 py-2.5 bg-cyber-bg/70 text-xs">
-        <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
+        <span className="font-semibold text-primary flex items-center gap-2">
           <Eye className="w-4 h-4 text-cyber-emerald" /> LIVE RENDERED PREVIEW
         </span>
         <div className="flex items-center gap-2">
@@ -196,9 +269,18 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
   );
 });
 
+export const computeWriteupTelemetry = (text: string) => {
+  const trimmed = text.trim();
+  return {
+    chars: text.length,
+    words: trimmed ? trimmed.split(/\s+/).length : 0,
+    lines: text.split('\n').length,
+  };
+};
+
 export const WriteupStudio: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand } = useCtfStore(
+  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand, isDeepStorageLoaded } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
       writeupMachineId: s.writeupMachineId,
@@ -207,6 +289,7 @@ export const WriteupStudio: React.FC = () => {
       soundEnabled: s.soundEnabled,
       globalVars: s.globalVars,
       appBrand: s.appBrand,
+      isDeepStorageLoaded: s.isDeepStorageLoaded,
     }))
   );
 
@@ -375,19 +458,25 @@ cat /root/root.txt
     };
   }, []);
 
-  // Synchronize editor content with selected machine writeup
+  // Synchronize editor content with selected machine writeup safely
   useEffect(() => {
-    flushDebouncedSave();
-    if (selectedMachine) {
-      if (selectedMachine.writeupMarkdown) {
-        setEditorContent(selectedMachine.writeupMarkdown);
-      } else {
-        const tmpl = generateTemplate(selectedMachine);
-        setEditorContent(tmpl);
-        updateMachine(selectedMachine.id, { writeupMarkdown: tmpl });
-      }
+    if (!selectedMachine) return;
+
+    if (selectedMachine.writeupMarkdown) {
+      flushDebouncedSave();
+      setEditorContent(selectedMachine.writeupMarkdown);
+      return;
     }
-  }, [selectedMachine?.id]);
+
+    if (isDeepStorageLoaded && !selectedMachine.writeupMarkdown) {
+      flushDebouncedSave();
+      const tmpl = generateTemplate(selectedMachine);
+      setEditorContent(tmpl);
+      updateMachine(selectedMachine.id, { writeupMarkdown: tmpl });
+    }
+  }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, isDeepStorageLoaded]);
+
+  const telemetry = useMemo(() => computeWriteupTelemetry(editorContent), [editorContent]);
 
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -407,9 +496,15 @@ cat /root/root.txt
     }
   };
 
-  const handleResetToTemplate = () => {
+  const handleResetToTemplate = async () => {
     if (!selectedMachine) return;
-    if (confirm(`Reset writeup for ${selectedMachine.name} to standard template?`)) {
+    const ok = await confirmAction({
+      title: `Reset writeup for ${selectedMachine.name}?`,
+      body: 'This replaces the current writeup with the standard template. Unsaved edits will be lost.',
+      confirmLabel: 'Reset',
+      tone: 'danger',
+    });
+    if (ok) {
       const tmpl = generateTemplate(selectedMachine);
       setEditorContent(tmpl);
       updateMachine(selectedMachine.id, { writeupMarkdown: tmpl });
@@ -453,19 +548,19 @@ cat /root/root.txt
   return (
     <div className="space-y-4 w-full font-mono">
       {/* Studio Header Bar */}
-      <div className="p-4 rounded-xl border border-cyber-border bg-cyber-card/90 shadow-md flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 rounded-xl border border-subtle bg-surface-card machined-edge-subtle shadow-md flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-cyber-bg border border-cyber-cyan/40 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-cyber-cyan/40 flex items-center justify-center">
             <FileText className="w-5 h-5 text-cyber-cyan" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 className="text-base font-semibold text-primary flex items-center gap-2">
               EMBEDDED WRITEUP STUDIO
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30">
                 OBSIDIAN & GITBOOK READY
               </span>
             </h1>
-            <p className="text-xs text-cyber-muted mt-0.5">
+            <p className="text-xs text-secondary mt-0.5">
               Dual-pane live editor with automated pentest template generation, frontmatter, and single-click .md export.
             </p>
           </div>
@@ -474,8 +569,8 @@ cat /root/root.txt
         {/* Machine Selector & Export Actions */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Machine Dropdown */}
-          <div className="flex items-center gap-1.5 bg-cyber-bg px-2.5 py-1 rounded-lg border border-cyber-border">
-            <span className="text-[10px] uppercase font-bold text-cyber-muted">Target Box:</span>
+          <div className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 rounded-lg border border-strong">
+            <span className="text-[10px] uppercase font-semibold text-muted">Target Box:</span>
             <CyberSelect
               value={selectedMachine?.id || ''}
               onChange={setWriteupMachineId}
@@ -496,7 +591,7 @@ cat /root/root.txt
 
           <button
             onClick={handleResetToTemplate}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-strong text-secondary hover:text-primary text-xs transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Reset to fresh pentest template"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -505,7 +600,7 @@ cat /root/root.txt
 
           <button
             onClick={handleCopyMarkdown}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-slate-900 dark:text-white text-xs font-semibold transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-card border border-strong hover:border-cyber-cyan text-primary text-xs font-semibold transition-[transform,border-color,background-color] cursor-pointer active:scale-[0.97]"
           >
             {copied ? (
               <>
@@ -522,20 +617,20 @@ cat /root/root.txt
 
           <button
             onClick={() => setCptsDrawerOpen(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-[box-shadow,background-color,border-color,color] shadow-sm ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] shadow-sm cursor-pointer active:scale-[0.97] ${
               cptsDrawerOpen
-                ? 'bg-purple-500 text-black border-purple-400 shadow-purple-500/30'
-                : 'bg-purple-950/30 border-purple-500/40 text-purple-300 hover:bg-purple-900/40 hover:text-white'
+                ? 'bg-cyber-purple text-black border-cyber-purple shadow-cyber-purple/30'
+                : 'bg-cyber-purple/10 border-cyber-purple/40 text-cyber-purple hover:bg-cyber-purple/20 hover:text-primary'
             }`}
             title="Toggle Field Manual Quick Reference Drawer"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Field Manual ({matchingNotes.length})</span>
+            <span>Field Manual (<span className="tabular-nums">{matchingNotes.length}</span>)</span>
           </button>
 
           <button
             onClick={() => setReportModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 text-xs font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-card border border-strong hover:border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 text-xs font-semibold transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Generate print-ready Executive Penetration Testing Report"
           >
             <Printer className="w-3.5 h-3.5" />
@@ -552,7 +647,7 @@ cat /root/root.txt
                 updateMachine(selectedMachine.id, { writeupMarkdown: updated });
                 if (soundEnabled) playCyberSound('engage');
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald/15 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald/15 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] cursor-pointer active:scale-[0.97] shadow-sm"
               title="Append official Hack The Box Walkthrough & Intelligence to this writeup"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -562,7 +657,7 @@ cat /root/root.txt
 
           <button
             onClick={handleDownloadMarkdown}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-emerald text-cyber-emerald font-bold text-xs hover:bg-cyber-emerald/10 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-card border border-strong hover:border-cyber-emerald text-cyber-emerald font-semibold text-xs hover:bg-cyber-emerald/10 transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Export raw Markdown (.md) formatted for Obsidian or GitBook"
           >
             <Download className="w-3.5 h-3.5" />
@@ -571,7 +666,7 @@ cat /root/root.txt
 
           <button
             onClick={handleDownloadHtml}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald text-black font-bold text-xs hover:bg-cyber-emerald/90 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald text-black font-semibold text-xs hover:bg-cyber-emerald/85 transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Export self-contained, air-gapped HTML writeup report with 1-click Print to PDF"
           >
             <Globe className="w-3.5 h-3.5" />
@@ -581,15 +676,21 @@ cat /root/root.txt
       </div>
 
       {/* Field Manual Quick Reference Drawer */}
+      <AnimatePresence initial={false}>
       {cptsDrawerOpen && (
-        <div className="p-4 rounded-xl border border-purple-500/40 bg-cyber-card/95 shadow-2xl space-y-3 font-mono">
-          <div className="flex items-center justify-between border-b border-cyber-border pb-2.5">
+        <motion.div
+          key="cpts-drawer"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0, transition: TACTICAL_SPRING }}
+          exit={{ opacity: 0, y: -8, transition: { duration: 0.14, ease: 'easeOut' } }}
+          className="p-4 rounded-xl border border-cyber-purple/30 bg-surface-elevated machined-edge-subtle shadow-2xl space-y-3 font-mono">
+          <div className="flex items-center justify-between border-b border-cyber-purple/20 pb-2.5">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-purple-400" />
-              <span className="font-bold text-white text-xs tracking-wider">
+              <BookOpen className="w-4 h-4 text-cyber-purple" />
+              <span className="font-semibold text-primary text-xs tracking-wider">
                 TACTICAL INTEL // QUICK REFERENCE & INSERT
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-cyber-purple/20 text-cyber-purple font-mono tabular-nums">
                 {matchingNotes.length} MATCHES (MAX 20)
               </span>
             </div>
@@ -597,7 +698,7 @@ cat /root/root.txt
             <button
               type="button"
               onClick={() => setCptsDrawerOpen(false)}
-              className="p-1 rounded text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+              className="p-1 rounded text-muted hover:text-primary cursor-pointer active:scale-[0.97]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -605,7 +706,7 @@ cat /root/root.txt
 
           {/* Quick Search Bar */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-cyber-muted absolute left-3 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-muted absolute left-3 top-2.5" />
             <input
               type="text"
               id="writeup-notes-search"
@@ -614,50 +715,50 @@ cat /root/root.txt
               value={cptsSearch}
               onChange={(e) => setCptsSearch(e.target.value)}
               placeholder="Search field manual notes & commands (e.g. kerberoast, suid, lfi, bloodhound)..."
-              className="w-full bg-cyber-bg border border-cyber-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-cyber-muted focus:outline-none focus:border-purple-400"
+              className="w-full bg-surface-sunken border border-strong rounded-lg pl-8 pr-3 py-1.5 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-cyber-purple"
             />
           </div>
 
           {/* Matching Notes Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
             {matchingNotes.length === 0 ? (
-              <div className="col-span-full p-4 text-center text-xs text-cyber-muted">
+              <div className="col-span-full p-4 text-center text-xs text-muted">
                 No matching field manual notes found.
               </div>
             ) : (
               matchingNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="p-3 rounded-lg bg-cyber-bg border border-cyber-border hover:border-purple-500/50 transition-colors space-y-2 flex flex-col justify-between"
+                  className="p-3 rounded-lg bg-surface-sunken border border-subtle hover:border-cyber-purple/50 transition-colors space-y-2 flex flex-col justify-between"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold text-slate-900 dark:text-white text-xs truncate" title={note.title}>
+                      <span className="font-semibold text-primary text-xs truncate" title={note.title}>
                         {note.title}
                       </span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 flex-shrink-0 font-mono">
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-purple/15 text-cyber-purple border border-cyber-purple/30 flex-shrink-0 font-mono">
                         {note.difficulty}
                       </span>
                     </div>
-                    <div className="text-[10px] text-cyber-muted line-clamp-2">
+                    <div className="text-[10px] text-muted line-clamp-2">
                       {note.summary || note.subCategory}
                     </div>
                   </div>
 
                   {note.commands && note.commands.length > 0 && (
-                    <div className="p-1.5 rounded bg-black/50 border border-cyber-border/70 font-mono text-[10px] text-cyber-cyan truncate">
+                    <div className="p-1.5 rounded bg-black/50 border border-white/5 font-mono text-[10px] text-cyber-cyan truncate">
                       {interpolateCommand(note.commands[0], { ...globalVars, targetIp: selectedMachine?.ip || globalVars.targetIp })}
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-cyber-border/50">
-                    <span className="text-[9px] text-cyber-muted font-mono truncate">
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-subtle">
+                    <span className="text-[9px] text-muted font-mono truncate">
                       {note.category}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleInsertNote(note)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-500/20 hover:bg-purple-500 hover:text-black border border-purple-500/40 text-purple-300 text-[10px] font-bold transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-purple/20 hover:bg-cyber-purple hover:text-black border border-cyber-purple/40 text-cyber-purple text-[10px] font-semibold transition-colors cursor-pointer active:scale-[0.97]"
                       title="Insert this note and commands into active writeup"
                     >
                       <Plus className="w-3 h-3" />
@@ -668,20 +769,21 @@ cat /root/root.txt
               ))
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Dual-Pane Editor Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch min-h-[calc(100vh-250px)]">
         
         {/* Left Pane: Raw Markdown Editor */}
-        <div className="flex flex-col rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-lg" style={{ contain: 'content' }}>
-          <div className="flex items-center justify-between border-b border-cyber-border px-4 py-2.5 bg-cyber-bg/70 text-xs">
-            <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden shadow-lg" style={{ contain: 'content' }}>
+          <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
+            <span className="font-semibold text-primary flex items-center gap-2">
               <Code className="w-4 h-4 text-cyber-cyan" /> RAW MARKDOWN (YAML & BODY)
             </span>
-            <span className="text-[10px] text-cyber-muted font-mono">
-              {editorContent.length} chars · {editorContent.split('\n').length} lines
+            <span className="text-[10px] text-muted font-mono tabular-nums">
+              {telemetry.chars} chars · {telemetry.lines} lines
             </span>
           </div>
 
@@ -693,7 +795,7 @@ cat /root/root.txt
             onChange={handleEditorChange}
             onBlur={flushDebouncedSave}
             placeholder="Write your penetration testing report or paste notes here..."
-            className="flex-1 w-full p-4 bg-cyber-bg text-cyber-text font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
+            className="flex-1 w-full p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
             spellCheck={false}
           />
         </div>
@@ -701,6 +803,16 @@ cat /root/root.txt
         {/* Right Pane: Live Rendered Preview (Deferred AST tokenization) */}
         <DeferredMarkdownPreviewPane content={editorContent} />
 
+      </div>
+
+      {/* Footer Telemetry Strip */}
+      <div
+        data-testid="writeup-telemetry"
+        className="flex items-center justify-end gap-4 px-4 py-2 rounded-lg border border-subtle bg-surface-sunken text-[10px] text-muted font-mono tabular-nums"
+      >
+        <span data-testid="writeup-telemetry-chars">{telemetry.chars} chars</span>
+        <span data-testid="writeup-telemetry-words">{telemetry.words} words</span>
+        <span data-testid="writeup-telemetry-lines">{telemetry.lines} lines</span>
       </div>
 
       {/* Executive Pentest Report Modal */}

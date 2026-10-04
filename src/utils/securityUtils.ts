@@ -1,5 +1,17 @@
 import DOMPurify from 'dompurify';
 
+// Hook ensuring zero remote egress for all images (blocks remote HTTP/HTTPS tracking beacons)
+DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+  if (data.attrName === 'src' && node.tagName === 'IMG') {
+    const val = (data.attrValue || '').trim();
+    // Allow only relative local paths, local filenames, or safe base64 image data URIs
+    const isSafeSource = /^(\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,|[a-zA-Z0-9_.-]+\.(png|jpe?g|gif|webp|svg))/i.test(val);
+    if (!isSafeSource) {
+      data.attrValue = ''; // Neutralize remote tracking beacon
+    }
+  }
+});
+
 /**
  * Strict DOMPurify sanitization for HTML content (Markdown renders, notes, writeups).
  * Blocks all script execution, iframe/object embedding, and inline event handlers (on*).
@@ -38,11 +50,10 @@ export function sanitizeSvg(dirtySvg: string): string {
 
   const result = DOMPurify.sanitize(dirtySvg, {
     USE_PROFILES: { svg: true, svgFilters: true },
-    ADD_TAGS: ['foreignObject'],
     ADD_ATTR: ['dominant-baseline'],
     ALLOW_DATA_ATTR: false,
     FORBID_TAGS: [
-      'script', 'iframe', 'object', 'embed', 'link', 'meta',
+      'script', 'iframe', 'object', 'embed', 'link', 'meta', 'foreignObject',
       'animate', 'set', 'animateTransform', 'animateMotion', 'discard', 'handler'
     ],
     FORBID_ATTR: [

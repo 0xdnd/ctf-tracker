@@ -108,23 +108,23 @@ export const PersistentNotesWorkspace: React.FC = () => {
          ======================================================== */}
       <aside
         aria-label="Field Notes Workspace Dock"
-        className={`hidden md:flex flex-col border-l border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#0c0c0f] z-20 flex-shrink-0 transition-[box-shadow,background-color,border-color,color] duration-200 overflow-hidden shadow-xl ${
+        className={`hidden md:flex flex-col border-l border-subtle bg-surface-card z-20 flex-shrink-0 transition-[box-shadow,background-color,border-color,color] duration-200 overflow-hidden shadow-xl ${
           dockSize === 'expanded'
             ? 'w-[68vw] min-w-[540px] max-w-6xl'
             : 'w-[48vw] min-w-[420px] max-w-4xl'
         }`}
       >
         {/* Top Control Bar */}
-        <div className="flex items-center justify-between px-3 h-10 bg-slate-50 dark:bg-[#141418] border-b border-slate-200 dark:border-[#27272a] flex-shrink-0 select-none">
+        <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0 select-none">
           {/* Left Title & Status Indicator */}
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-            <span className="text-xs font-mono font-bold text-slate-800 dark:text-zinc-200 tracking-wider flex items-center gap-1.5 uppercase">
-              <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs font-mono font-semibold text-primary tracking-wider flex items-center gap-1.5 ">
+              <Layers className="w-3.5 h-3.5 text-accent" />
               <span>Notes Workspace</span>
             </span>
             {isPinned && (
-              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-cyber-emerald border border-emerald-500/30">
+              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-md bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                 PINNED
               </span>
             )}
@@ -133,14 +133,14 @@ export const PersistentNotesWorkspace: React.FC = () => {
           {/* Right Action Tools */}
           <div className="flex items-center gap-1">
             {/* Tri-Mode View Switcher (Read | Split | Raw) */}
-            <div className="flex items-center p-0.5 rounded-md bg-slate-200/70 dark:bg-black/50 border border-slate-300 dark:border-zinc-800 text-[10px] font-mono">
+            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px] font-mono">
               <button
                 type="button"
                 onClick={() => setViewMode('reading')}
                 className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
                   viewMode === 'reading'
-                    ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyber-cyan font-bold border border-cyan-500/30'
-                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
                 }`}
                 title="Rich Reading View"
               >
@@ -151,8 +151,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
                 onClick={() => setViewMode('split')}
                 className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
                   viewMode === 'split'
-                    ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyber-cyan font-bold border border-cyan-500/30'
-                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
                 }`}
                 title="Side-by-side Editor & Live Preview"
               >
@@ -163,8 +163,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
                 onClick={() => setViewMode('raw')}
                 className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
                   viewMode === 'raw'
-                    ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyber-cyan font-bold border border-cyan-500/30'
-                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
                 }`}
                 title="Raw Markdown Editor"
               >
@@ -176,7 +176,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="px-2 py-1 rounded-md text-[10px] font-mono font-bold hover:bg-slate-200 dark:hover:bg-[#1e1e24] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-zinc-700"
+              className="px-2 py-1 rounded-md text-[10px] font-mono font-semibold hover:bg-surface-hover text-secondary hover:text-primary transition-colors cursor-pointer border border-transparent hover:border-subtle"
               title="Toggle English / Hebrew"
             >
               {language === 'en' ? 'EN' : 'עב'}
@@ -186,7 +186,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={cycleFontSize}
-              className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-[#1e1e24] text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
               title={`Cycle font size (Current: ${fontSize.toUpperCase()})`}
             >
               <Type className="w-3.5 h-3.5" />
@@ -196,7 +196,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={toggleDockSize}
-              className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-[#1e1e24] text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
               title={dockSize === 'expanded' ? 'Collapse Width (50%)' : 'Expand Width (70%)'}
             >
               {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -208,8 +208,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
               onClick={togglePinned}
               className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 isPinned
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-cyber-emerald border border-emerald-500/30'
-                  : 'hover:bg-slate-200 dark:hover:bg-[#1e1e24] text-slate-400 dark:text-zinc-500'
+                  ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+                  : 'hover:bg-surface-hover text-muted'
               }`}
               title={isPinned ? 'Pinned: Notes stay open across all pages' : 'Unpinned: Close with page navigation'}
             >
@@ -220,7 +220,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-md hover:bg-rose-500/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer ml-1"
+              className="p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg transition-colors cursor-pointer ml-1"
               title="Close Notes Workspace"
             >
               <X className="w-3.5 h-3.5" />
@@ -232,7 +232,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
         <NotesWorkspaceTabStrip />
 
         {/* Active Note Content Stage (DOM Keep-Alive) */}
-        <div className="flex-1 overflow-y-auto min-h-0 relative bg-white dark:bg-[#09090b]">
+        <div className="flex-1 overflow-y-auto min-h-0 relative bg-surface-card">
           {openNotes.length > 0 ? (
             openNotes.map((tabNote) => {
               const isActive = tabNote.id === activeNote?.id;
@@ -261,9 +261,9 @@ export const PersistentNotesWorkspace: React.FC = () => {
               );
             })
           ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-slate-400 dark:text-zinc-500 space-y-3 font-mono">
-              <Layers className="w-10 h-10 text-slate-300 dark:text-zinc-700" />
-              <div className="text-sm font-semibold text-slate-600 dark:text-zinc-400">
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted space-y-3 font-mono">
+              <Layers className="w-10 h-10 text-secondary" />
+              <div className="text-sm font-semibold text-secondary">
                 No note selected
               </div>
               <div className="text-xs max-w-sm">
@@ -280,15 +280,15 @@ export const PersistentNotesWorkspace: React.FC = () => {
          ======================================================== */}
       <div
         aria-label="Mobile Notes Workspace"
-        className={`md:hidden fixed bottom-14 left-0 right-0 z-40 bg-white dark:bg-[#0c0c0f] border-t border-slate-300 dark:border-[#27272a] shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-mono ${
+        className={`md:hidden fixed bottom-14 left-0 right-0 z-40 bg-surface-card border-t border-subtle shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-mono ${
           dockSize === 'expanded' ? 'h-[88vh]' : 'h-[75vh]'
         }`}
       >
         {/* Mobile Drag Header */}
-        <div className="flex items-center justify-between px-3 h-10 bg-slate-100 dark:bg-[#141418] border-b border-slate-200 dark:border-[#27272a] flex-shrink-0">
+        <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-            <span className="text-xs font-bold text-slate-800 dark:text-white uppercase truncate max-w-[150px]">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs font-semibold text-primary truncate max-w-[150px]">
               {activeNote?.title || 'Field Notes'}
             </span>
           </div>
@@ -298,7 +298,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={toggleDockSize}
-              className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-[#1e1e24] text-slate-600 dark:text-zinc-300"
+              className="p-1.5 rounded-md hover:bg-surface-hover text-secondary"
               title="Toggle Height"
             >
               {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -308,7 +308,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-[#1e1e24] text-slate-700 dark:text-zinc-300"
+              className="px-2 py-1 rounded-md text-[10px] font-semibold bg-surface-hover text-primary"
             >
               {language === 'en' ? 'EN' : 'עב'}
             </button>
@@ -317,7 +317,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-md hover:bg-rose-500/20 text-slate-400 hover:text-rose-500"
+              className="p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg"
               title="Close Workspace"
             >
               <X className="w-4 h-4" />
@@ -329,7 +329,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
         <NotesWorkspaceTabStrip />
 
         {/* Mobile Note Stage (DOM Keep-Alive) */}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-white dark:bg-[#09090b] p-1">
+        <div className="flex-1 overflow-y-auto min-h-0 bg-surface-card p-1">
           {openNotes.length > 0 ? (
             openNotes.map((tabNote) => {
               const isActive = tabNote.id === activeNote?.id;
@@ -358,7 +358,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               );
             })
           ) : (
-            <div className="text-center py-12 text-slate-400 text-xs">
+            <div className="text-center py-12 text-muted text-xs">
               No active note selected
             </div>
           )}

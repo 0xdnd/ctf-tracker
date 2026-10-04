@@ -1,11 +1,5 @@
 import React from 'react';
 import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
-import logoZerobox from '../../assets/logo-zerobox.png';
-import logoHtb from '../../assets/logo-htb.png';
-import logoMidnight from '../../assets/logo-midnight.png';
-import logoOled from '../../assets/logo-oled.png';
-import logoDefault from '../../assets/logo.png';
-
 export interface CyberLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
@@ -14,16 +8,19 @@ export interface CyberLogoProps {
 }
 
 const THEME_LOGO_MAP: Record<string, string> = {
-  obsidian: logoZerobox,
-  monolith: logoZerobox,
-  industrial: logoOled,
-  zerobox: logoZerobox,
-  neon: logoZerobox,
-  htb: logoHtb,
-  'midnight-blue': logoMidnight,
-  slate: logoMidnight,
-  oled: logoOled,
+  obsidian: './logo-zerobox.png',
+  monolith: './logo-zerobox.png',
+  industrial: './logo-oled.png',
+  zerobox: './logo-zerobox.png',
+  neon: './logo-zerobox.png',
+  htb: './logo-htb.png',
+  'midnight-blue': './logo-midnight.png',
+  slate: './logo-midnight.png',
+  oled: './logo-oled.png',
+  light: './logo-zerobox.png',
 };
+
+const DEFAULT_LOGO = './logo-zerobox.png';
 
 const THEME_GLOW_MAP: Record<string, string> = {
   obsidian: 'drop-shadow-[0_0_8px_rgba(0,240,255,0.4)] group-hover:drop-shadow-[0_0_14px_rgba(0,240,255,0.7)]',
@@ -49,7 +46,7 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
   const currentStoreTheme = useCtfStore((s) => s.themePreset || 'obsidian');
   const activePreset = explicitTheme || currentStoreTheme;
 
-  const currentLogo = THEME_LOGO_MAP[activePreset] || logoDefault;
+  const currentLogo = THEME_LOGO_MAP[activePreset] || DEFAULT_LOGO;
   const currentGlow = THEME_GLOW_MAP[activePreset] || DEFAULT_GLOW;
 
   const containerSizeMap = {
@@ -71,6 +68,8 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
         src={currentLogo}
         alt={`ZeroBox Tactical Cyber Operations - ${activePreset}`}
         key={activePreset}
+        {...({ fetchpriority: 'high' } as any)}
+        decoding="async"
         className="w-full h-full object-contain select-none filter transition-colors duration-300"
       />
     </div>

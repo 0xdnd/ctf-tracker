@@ -219,8 +219,8 @@ export function validateFlagFormat(flag: string): FlagValidationResult {
     };
   }
 
-  // Generic captured string of reasonable length
-  if (trimmed.length >= 6) {
+  // Generic captured string of reasonable length (6 to 256 characters)
+  if (trimmed.length >= 6 && trimmed.length <= 256) {
     return {
       valid: true,
       format: 'custom',

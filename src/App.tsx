@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, Suspense, lazy, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { UnifiedHeader } from './components/layout/UnifiedHeader';
 import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
 import { SnippetsDrawer } from './components/layout/SnippetsDrawer';
@@ -21,6 +21,11 @@ import { useAuthStore } from './store/useAuthStore';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
 import { ExamQuickActionDrawer } from './components/exam/ExamQuickActionDrawer';
 import { PersistentNotesWorkspace } from './components/workspace/PersistentNotesWorkspace';
+import { ensurePersistence, bindExportGuard } from './utils/resilientStorage';
+import { StartCleanModal } from './components/common/StartCleanModal';
+import { ToastContainer } from './components/common/ToastContainer';
+import { ConfirmDialog } from "./components/common/ConfirmDialog";
+import { AlertTriangle, Database } from 'lucide-react';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -111,15 +116,40 @@ const MainAppContent: React.FC = () => {
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
   const uiScale = useCtfStore((s) => s.uiScale || 'auto');
+  const isHydrated = useCtfStore((s) => s.isHydrated);
+
+  // First-run workspace setup detection
+  const [showOnboarding, setShowOnboarding] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem('zerobox_onboarding_completed');
+  });
+
+  // Storage quota / error notification banner
+  const [storageAlert, setStorageAlert] = React.useState<{ kind: string; message: string } | null>(null);
+
+  useEffect(() => {
+    const handleStorageEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail) {
+        setStorageAlert(detail);
+        setTimeout(() => setStorageAlert(null), 9000);
+      }
+    };
+    window.addEventListener('zerobox:storage', handleStorageEvent);
+    return () => window.removeEventListener('zerobox:storage', handleStorageEvent);
+  }, []);
 
   // Tactical keyboard hotkeys engine
   useTacticalHotkeys();
 
-  // Safari ITP defense: request persistent storage
+  // Request durable persistent storage and bind beforeunload unexported guard
   useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
-      navigator.storage.persist().catch(() => {});
-    }
+    ensurePersistence().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const unbind = bindExportGuard(() => useCtfStore.getState().unexportedChangesCount || 0);
+    return () => unbind();
   }, []);
 
   // Escape key handler to easily exit Zen Focus Mode
@@ -240,7 +270,7 @@ const MainAppContent: React.FC = () => {
       setActiveTab('methodology');
     } else if (path.startsWith('/field-manual')) {
       setActiveTab('field-manual');
-    } else if (path.startsWith('/cheatsheets') || path.startsWith('/notes') || path.startsWith('/cpts')) {
+    } else if (path.startsWith('/cheatsheet') || path.startsWith('/notes') || path.startsWith('/cpts')) {
       setActiveTab('cheatsheet');
     } else if (path.startsWith('/writeup')) {
       setActiveTab('writeup');
@@ -256,6 +286,10 @@ const MainAppContent: React.FC = () => {
       setActiveTab('tracker');
     }
   }, [location.pathname, setActiveTab]);
+
+  if (!isHydrated) {
+    return <CyberRouteLoader />;
+  }
 
   return (
     <div 
@@ -367,6 +401,56 @@ const MainAppContent: React.FC = () => {
       {/* Ephemeral Memory Fallback Storage Alert Banner */}
       <EphemeralStorageBanner />
 
+      {/* First-Run Start Clean Workspace Setup Modal */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <StartCleanModal
+            isOpen={showOnboarding}
+            onClose={() => setShowOnboarding(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Storage Quota Alert Banner with 1-Click Export Action */}
+      <AnimatePresence>
+        {storageAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-4 right-4 z-50 p-4 rounded-xl bg-slate-900 border border-amber-500/80 shadow-2xl text-xs font-mono max-w-md flex flex-col gap-2.5"
+          >
+            <div className="flex items-center gap-2 text-amber-400 font-bold">
+              <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
+              <span>STORAGE ALERT</span>
+            </div>
+            <p className="text-slate-200 text-[11px] leading-relaxed">
+              {storageAlert.message}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  useCtfStore.getState().exportWorkspace();
+                  setStorageAlert(null);
+                }}
+                className="px-3 py-1 bg-cyber-emerald text-black font-bold rounded-lg text-xs hover:brightness-110 active:scale-[0.97] transition-all flex items-center gap-1.5 cursor-pointer shadow-glow-emerald"
+              >
+                <Database className="w-3.5 h-3.5" />
+                <span>Export Backup Now</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStorageAlert(null)}
+                className="px-2 py-1 text-slate-400 hover:text-white text-xs cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Tactical Top Header (Unified Single Bar Cockpit) */}
       {!focusMode && !isPopout && <UnifiedHeader />}
 
@@ -435,19 +519,25 @@ const MainAppContent: React.FC = () => {
 
       {/* Tactical Mobile Bottom Navigation Bar (md:hidden) */}
       {!focusMode && !isPopout && <MobileNav />}
+
+      {/* Global Non-Blocking In-App Toast Container */}
+      <ToastContainer />
+      <ConfirmDialog />
     </div>
   );
 };
 
 export const App: React.FC = () => {
   return (
-    <HashRouter>
-      <ScrollProvider>
-        <ThemeProvider>
-          <MainAppContent />
-        </ThemeProvider>
-      </ScrollProvider>
-    </HashRouter>
+    <MotionConfig reducedMotion="user">
+      <HashRouter>
+        <ScrollProvider>
+          <ThemeProvider>
+            <MainAppContent />
+          </ThemeProvider>
+        </ScrollProvider>
+      </HashRouter>
+    </MotionConfig>
   );
 };
 

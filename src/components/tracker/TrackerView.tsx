@@ -28,7 +28,13 @@ import {
   Filter,
   Share2,
   X,
-  Compass
+  Compass,
+  GraduationCap,
+  Crosshair,
+  Tv,
+  Network,
+  Flame,
+  ShieldAlert
 } from 'lucide-react';
 import { useCtfStore, BoxVectorCategory, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -133,7 +139,7 @@ const HTB_OS_OPTIONS: CyberSelectOption<'ALL' | OperatingSystem>[] = [
 ];
 
 const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
-  { value: 'ALL', label: 'All' },
+  { value: 'ALL', label: 'All Status' },
   { value: 'UNCOMPLETED', label: 'Unsolved' },
   { value: 'FOOTHOLD', label: 'Foothold' },
   { value: 'COMPLETED', label: 'Pwned' },
@@ -146,23 +152,31 @@ const CERT_FILTER_OPTIONS: CyberSelectOption<'ALL' | 'OSCP' | 'CPTS' | 'CRTO'>[]
   { value: 'CRTO', label: 'CRTO' },
 ];
 
-const PRIMARY_TRACK_PILLS = [
-  { id: 'ALL', label: 'All Targets' },
-  { id: 'tjnull-oscp', label: '🎓 OSCP', title: "TJ_Null's OSCP NetSec Preparation" },
-  { id: 'cpts-path', label: '🎯 CPTS', title: 'Certified Penetration Testing Specialist' },
-  { id: 'ippsec-vault', label: '📺 IppSec', title: 'IppSec Video Walkthroughs' },
-  { id: 'crto-ad', label: '🏢 Active Directory', title: 'Enterprise AD & Red Team Warfare' },
-  { id: 'popular-classics', label: '⭐ Hall of Fame', title: 'Community Classics & Popular Boxes' },
+interface PrimaryTrackPill {
+  id: string;
+  label: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+}
+
+const PRIMARY_TRACK_PILLS: PrimaryTrackPill[] = [
+  { id: 'ALL', label: 'ALL TARGETS', title: 'All Target Machines', icon: Target, iconColor: 'text-[#0ea5e9]' },
+  { id: 'tjnull-oscp', label: 'OSCP', title: "TJ_Null's OSCP NetSec Preparation", icon: GraduationCap, iconColor: 'text-amber-500 dark:text-amber-400' },
+  { id: 'cpts-path', label: 'CPTS', title: 'Certified Penetration Testing Specialist', icon: Crosshair, iconColor: 'text-emerald-500 dark:text-emerald-400' },
+  { id: 'ippsec-vault', label: 'IPPSEC', title: 'IppSec Video Walkthroughs', icon: Tv, iconColor: 'text-sky-500 dark:text-sky-400' },
+  { id: 'crto-ad', label: 'ACTIVE DIRECTORY', title: 'Enterprise AD & Red Team Warfare', icon: Network, iconColor: 'text-purple-500 dark:text-purple-400' },
+  { id: 'popular-classics', label: 'HALL OF FAME', title: 'Community Classics & Popular Boxes', icon: Trophy, iconColor: 'text-yellow-500 dark:text-yellow-400' },
 ];
 
 const OTHER_TRACK_OPTIONS: CyberSelectOption<string>[] = [
   { value: 'ALL', label: 'More Tracks...' },
-  { value: 'cwee-web', label: '🌐 CWEE Web Exploits' },
-  { value: 'web-master', label: '⚡ Web Master Pathway' },
-  { value: 'linux-privesc', label: '🐧 Linux PrivEsc' },
-  { value: 'windows-privesc', label: '🪟 Windows PrivEsc' },
-  { value: 'beginner-essentials', label: '🌱 Beginner Essentials' },
-  { value: 'insane-hardcore', label: '💀 Hardcore / Insane' },
+  { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-cyan-400" /> },
+  { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-amber-400" /> },
+  { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-orange-400" /> },
+  { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-sky-400" /> },
+  { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> },
+  { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-rose-500" /> },
 ];
 
 export const TrackerView: React.FC = () => {
@@ -197,6 +211,25 @@ export const TrackerView: React.FC = () => {
   const location = useLocation();
 
   const sessionSeed = React.useMemo(() => Math.floor(Math.random() * 1000000), []);
+
+  // Memoized machine counts per track for badge telemetry
+  const trackCounts = React.useMemo(() => {
+    const counts: Record<string, number> = { ALL: machines.length };
+    PRACTICE_TRACKS.forEach((t) => {
+      counts[t.id] = machines.filter(t.filterFn).length;
+    });
+    return counts;
+  }, [machines]);
+
+  const dynamicOtherTrackOptions = React.useMemo<CyberSelectOption<string>[]>(() => [
+    { value: 'ALL', label: 'More Tracks...' },
+    { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-cyan-400" />, badge: `${trackCounts['cwee-web'] ?? 0}` },
+    { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-amber-400" />, badge: `${trackCounts['web-master'] ?? 0}` },
+    { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-orange-400" />, badge: `${trackCounts['linux-privesc'] ?? 0}` },
+    { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />, badge: `${trackCounts['windows-privesc'] ?? 0}` },
+    { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-400" />, badge: `${trackCounts['beginner-essentials'] ?? 0}` },
+    { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, badge: `${trackCounts['insane-hardcore'] ?? 0}` },
+  ], [trackCounts]);
 
   // Lazy-load master machine catalog when TrackerView mounts
   React.useEffect(() => {
@@ -277,7 +310,7 @@ export const TrackerView: React.FC = () => {
       }
       if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
         e.preventDefault();
-        const searchInput = document.getElementById('tracker-search-input') as HTMLInputElement | null;
+        const searchInput = (document.getElementById('tracker-search-input') || document.getElementById('tracker-search-input-mobile')) as HTMLInputElement | null;
         if (searchInput) {
           searchInput.focus();
           searchInput.select();
@@ -406,43 +439,43 @@ export const TrackerView: React.FC = () => {
       {
         value: 'ALL',
         label: 'OS',
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({machines.length})</span>,
+        badge: <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">({machines.length})</span>,
       },
       {
         value: 'Linux',
         label: 'Linux',
         icon: <OsIcon os="Linux" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({counts.Linux})</span>,
+        badge: <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">({counts.Linux})</span>,
       },
       {
         value: 'Windows',
         label: 'Windows',
         icon: <OsIcon os="Windows" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({counts.Windows})</span>,
+        badge: <span className="text-[10px] text-sky-600 dark:text-sky-400 font-mono font-bold">({counts.Windows})</span>,
       },
       {
         value: 'BSD',
         label: 'BSD',
         icon: <OsIcon os="BSD" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({counts.BSD})</span>,
+        badge: <span className="text-[10px] text-rose-600 dark:text-rose-400 font-mono font-bold">({counts.BSD})</span>,
       },
       {
         value: 'Android',
         label: 'Android',
         icon: <OsIcon os="Android" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({counts.Android})</span>,
+        badge: <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">({counts.Android})</span>,
       },
       {
         value: 'macOS',
         label: 'macOS',
         icon: <OsIcon os="macOS" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({counts.macOS})</span>,
+        badge: <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono font-bold">({counts.macOS})</span>,
       },
       {
         value: 'Other',
         label: 'Other',
         icon: <OsIcon os="Other" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-mono">({counts.Other})</span>,
+        badge: <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">({counts.Other})</span>,
       },
     ];
   }, [machines]);
@@ -865,189 +898,20 @@ export const TrackerView: React.FC = () => {
 
   return (
     <div className="space-y-3 w-full">
-      {/* 2-Row Compact High-End Tactical Toolbar */}
-      <div className="relative z-30 font-sans text-xs antialiased text-slate-700 dark:text-cyber-text space-y-0 shadow-sm p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card">
+      {/* High-End Tactical Toolbar */}
+      <div className="relative z-30 font-mono text-xs antialiased text-zinc-700 dark:text-zinc-300 space-y-0 shadow-none p-2 sm:p-2.5 rounded-[4px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/90 machined-edge">
         
-        {/* Row 1: Track Selector & Tactical Actions Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
-          {/* Left: Interactive Practice Tracks Selector */}
-          <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-[10px] text-slate-500 dark:text-cyber-muted font-bold font-mono uppercase tracking-wider flex-shrink-0">
-              <Compass className="w-3.5 h-3.5 text-cyber-cyan" />
-              <span>TRACK:</span>
-            </div>
-
-            {/* Curated Track Segment Pills */}
-            <div className="h-8 flex items-center gap-0.5 bg-slate-100 dark:bg-cyber-bg p-0.5 rounded-lg border border-slate-200 dark:border-cyber-border overflow-x-auto max-w-full custom-scrollbar flex-shrink-0">
-              {PRIMARY_TRACK_PILLS.map((trk) => {
-                const active = (trk.id === 'ALL' && (!filters.selectedTrack || filters.selectedTrack === 'ALL') && (!filters.selectedTracks || filters.selectedTracks.length === 0)) ||
-                  filters.selectedTrack === trk.id ||
-                  (filters.selectedTracks && filters.selectedTracks.includes(trk.id));
-                return (
-                  <button
-                    key={trk.id}
-                    type="button"
-                    title={trk.title}
-                    onClick={() => {
-                      if (trk.id === 'ALL') {
-                        setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
-                      } else {
-                        setFilters({ selectedTrack: trk.id, selectedTracks: [] });
-                      }
-                      if (soundEnabled) playCyberSound('toggle');
-                    }}
-                    className={`h-7 px-2.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
-                      active
-                        ? 'bg-white dark:bg-cyber-card text-cyber-cyan dark:text-cyber-cyan border border-cyber-cyan/40 font-bold shadow-sm ring-1 ring-cyber-cyan/20'
-                        : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-cyber-card/40'
-                    }`}
-                  >
-                    <span>{trk.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Other Specialized Tracks Dropdown */}
-            <CyberSelect<string>
-              id="tracker-more-tracks-select"
-              name="tracker-more-tracks-select"
-              aria-label="More Practice Tracks"
-              value={
-                OTHER_TRACK_OPTIONS.some((o) => o.value === filters.selectedTrack)
-                  ? filters.selectedTrack
-                  : 'ALL'
-              }
-              onChange={(val) => {
-                if (val === 'ALL') {
-                  setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
-                } else {
-                  setFilters({ selectedTrack: val, selectedTracks: [] });
-                }
-              }}
-              options={OTHER_TRACK_OPTIONS}
-              size="xs"
-              variant="default"
-              triggerClassName="h-8 py-0 px-2.5 text-xs rounded-lg border-slate-200/90 dark:border-cyber-border"
-              soundEnabled={soundEnabled}
-            />
-
-            {/* Inline micro progress bar (when any track selected) */}
-            {((filters.selectedTracks && filters.selectedTracks.length > 0) || (filters.selectedTrack && filters.selectedTrack !== 'ALL')) && (() => {
-              const activeIds = (filters.selectedTracks && filters.selectedTracks.length > 0)
-                ? filters.selectedTracks
-                : [filters.selectedTrack!];
-              const tracks = activeIds.map(id => PRACTICE_TRACKS.find(t => t.id === id)).filter(Boolean);
-              const totalSet = new Set<string>();
-              const rootedSet = new Set<string>();
-              tracks.forEach(track => {
-                if (!track) return;
-                machines.filter(track.filterFn).forEach(m => {
-                  totalSet.add(m.id || m.name);
-                  if (m.status === 'root' || m.status === 'completed') rootedSet.add(m.id || m.name);
-                });
-              });
-              const total = totalSet.size;
-              const rooted = rootedSet.size;
-              const pct = total > 0 ? Math.round((rooted / total) * 100) : 0;
-              return (
-                <div className="h-8 flex items-center gap-2 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-cyber-emerald flex-shrink-0">
-                  <div className="w-14 h-1.5 rounded-full bg-slate-200 dark:bg-cyber-bg overflow-hidden">
-                    <div 
-                      className="h-full rounded-full bg-emerald-500 dark:bg-emerald-400 transition-colors duration-300"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-mono font-bold whitespace-nowrap">{rooted}/{total} ({pct}%)</span>
-                </div>
-              );
-            })()}
-          </div>
-          
-          {/* Right: Action Controls */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* Scan Importer */}
-            <button
-              type="button"
-              onClick={() => setReconAutomationModalOpen(true)}
-              className="h-8 px-2.5 flex items-center gap-1.5 rounded-lg bg-slate-100/90 dark:bg-cyber-bg/80 hover:bg-slate-200/90 dark:hover:bg-cyber-cardHover border border-slate-200/90 dark:border-cyber-border hover:border-slate-300 dark:hover:border-cyber-borderGlow text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition-[box-shadow,background-color,border-color,color] shadow-sm cursor-pointer"
-              title="Launch Tactical Scan Importer"
-            >
-              <Zap className="w-3.5 h-3.5 text-cyber-cyan" />
-              <span className="hidden sm:inline">Import</span>
-            </button>
-
-            {/* View Mode Switcher */}
-            <div className="h-8 flex items-center gap-0.5 bg-slate-100/90 dark:bg-cyber-bg/80 p-0.5 rounded-lg border border-slate-200/90 dark:border-cyber-border">
-              <button
-                type="button"
-                data-testid="view-kanban"
-                aria-label="Kanban View"
-                onClick={() => setViewMode('kanban')}
-                className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer ${viewMode === 'kanban' ? 'bg-white dark:bg-cyber-card text-cyber-cyan border border-cyber-cyan/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
-                title="Kanban View"
-              >
-                <Kanban className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-table"
-                aria-label="Table View"
-                onClick={() => setViewMode('table')}
-                className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer ${viewMode === 'table' ? 'bg-white dark:bg-cyber-card text-cyber-cyan border border-cyber-cyan/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
-                title="Table View"
-              >
-                <Table className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-grid"
-                aria-label="Grid View"
-                onClick={() => setViewMode('grid')}
-                className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-cyber-card text-cyber-cyan border border-cyber-cyan/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-graph"
-                aria-label="Attack Graph View"
-                onClick={() => setViewMode('graph')}
-                className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-white dark:bg-cyber-card text-cyber-cyan border border-cyber-cyan/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
-                title="Attack Graph View"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-              {/* Embedded Hide Empty Lanes (kanban only) */}
-              {viewMode === 'kanban' && (
-                <>
-                  <div className="w-px h-4 bg-slate-300 dark:bg-cyber-border mx-0.5" />
-                  <button
-                    type="button"
-                    onClick={() => { setFilters({ hideEmptyLanes: !filters.hideEmptyLanes }); if (soundEnabled) playCyberSound('toggle'); }}
-                    className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer ${filters.hideEmptyLanes ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
-                    title={filters.hideEmptyLanes ? 'Show Empty Lanes' : 'Hide Empty Lanes'}
-                  >
-                    {filters.hideEmptyLanes ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Operational Search & Filters Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-cyber-border/60">
-          {/* Left: Search + Platform + Status + OS + Difficulty + Cert */}
-          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+        {/* A. MOBILE ADAPTIVE COMMAND BAR (< md) */}
+        <div className="md:hidden space-y-2">
+          {/* Mobile Row 1: Search + Filter Drawer Trigger + View Modes */}
+          <div className="flex items-center gap-1.5">
             {/* Search */}
-            <div className="relative h-8 w-full sm:w-56 md:w-64 flex-shrink-0 group">
-              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted group-focus-within:text-cyan-500 dark:group-focus-within:text-cyber-cyan transition-colors pointer-events-none" />
+            <div className="relative h-8 flex-1 group">
+              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-focus-within:text-[#0ea5e9] transition-colors pointer-events-none" />
               <input
                 type="text"
-                id="tracker-search-input"
-                name="tracker-search-input"
+                id="tracker-search-input-mobile"
+                name="tracker-search-input-mobile"
                 aria-label="Search machines"
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({ searchQuery: e.target.value })}
@@ -1057,176 +921,557 @@ export const TrackerView: React.FC = () => {
                     (e.target as HTMLInputElement).blur();
                   }
                 }}
-                placeholder="Search targets, IP, CVE, tags... (/)"
-                className="w-full h-8 pl-8 pr-12 bg-slate-50/90 dark:bg-cyber-bg/80 border border-slate-200/90 dark:border-cyber-border rounded-lg text-xs text-slate-900 dark:text-cyber-text placeholder-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan focus:ring-1 focus:ring-cyan-500/30 dark:focus:ring-cyber-cyan/30 font-sans transition-[box-shadow,background-color,border-color,color] shadow-inner"
+                placeholder="Search targets, IP... (/)"
+                className="w-full h-8 pl-8 pr-7 bg-zinc-100/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-[3px] text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]/30 transition-all shadow-none"
               />
-              {filters.searchQuery ? (
+              {filters.searchQuery && (
                 <button
                   type="button"
                   onClick={() => setFilters({ searchQuery: '' })}
-                  className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-slate-400 dark:text-cyber-muted hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
-                  title="Clear search (Esc)"
+                  className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-white cursor-pointer transition-colors"
+                  title="Clear search"
                 >
                   ✕
                 </button>
-              ) : (
-                <div className="absolute right-2 top-1.5 flex items-center gap-1 pointer-events-none">
-                  <kbd className="px-1.5 py-0.5 text-[9px] font-mono font-bold text-slate-400 dark:text-cyber-muted/80 bg-slate-200/50 dark:bg-cyber-card/80 border border-slate-300/60 dark:border-cyber-border rounded shadow-xs">
-                    /
-                  </kbd>
-                </div>
               )}
             </div>
 
-            {/* Platform Segment Pills */}
-            <div className="h-8 flex items-center gap-0.5 bg-slate-100/90 dark:bg-cyber-bg/80 p-0.5 rounded-lg border border-slate-200/90 dark:border-cyber-border flex-shrink-0">
-              {platformList.map((p) => {
-                const active = filters.selectedPlatform === p;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => { setFilters({ selectedPlatform: p }); if (soundEnabled) playCyberSound('toggle'); }}
-                    className={`h-7 px-2.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
-                      active
-                        ? 'bg-white dark:bg-cyber-card text-cyber-cyan dark:text-cyber-cyan border border-cyber-cyan/40 font-bold shadow-sm ring-1 ring-cyber-cyan/20'
-                        : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-cyber-card/40'
-                    }`}
-                  >
-                    {p !== 'ALL' && <PlatformIcon platform={p as Platform} className="w-3 h-3" />}
-                    <span>{p === 'ALL' ? 'All' : p}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Target Status Segment Pills */}
-            <div className="h-8 flex items-center gap-0.5 bg-slate-100/90 dark:bg-cyber-bg/80 p-0.5 rounded-lg border border-slate-200/90 dark:border-cyber-border flex-shrink-0">
-              {STATUS_PILL_OPTIONS.map((st) => {
-                const active = (filters.selectedStatus || 'ALL') === st.value;
-                return (
-                  <button
-                    key={st.value}
-                    type="button"
-                    onClick={() => {
-                      setFilters({ selectedStatus: st.value });
-                      if (soundEnabled) playCyberSound('toggle');
-                    }}
-                    className={`h-7 px-2.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                      active
-                        ? 'bg-white dark:bg-cyber-card text-cyber-cyan dark:text-cyber-cyan border border-cyber-cyan/40 font-bold shadow-sm ring-1 ring-cyber-cyan/20'
-                        : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-cyber-card/40'
-                    }`}
-                  >
-                    {st.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* OS Dropdown */}
-            <CyberSelect<'ALL' | OperatingSystem>
-              id="htb-os-select"
-              name="htb-os-select"
-              aria-label="Filter OS"
-              value={filters.selectedOs || 'ALL'}
-              onChange={(val) => setFilters({ selectedOs: val })}
-              options={dynamicOsOptions}
-              size="xs"
-              variant="default"
-              triggerClassName="h-8 py-0 px-2.5 text-xs rounded-lg border-slate-200/90 dark:border-cyber-border"
-              soundEnabled={soundEnabled}
-            />
-
-            {/* Difficulty Dropdown */}
-            <CyberSelect<Difficulty | 'ALL'>
-              id="htb-difficulty-select"
-              name="htb-difficulty-select"
-              aria-label="Filter Difficulties"
-              value={filters.selectedDifficulty}
-              onChange={(val) => setFilters({ selectedDifficulty: val })}
-              options={DIFFICULTY_FILTER_OPTIONS}
-              size="xs"
-              variant="default"
-              triggerClassName="h-8 py-0 px-2.5 text-xs rounded-lg border-slate-200/90 dark:border-cyber-border"
-              soundEnabled={soundEnabled}
-            />
-
-            {/* Cert Dropdown */}
-            <CyberSelect<'ALL' | 'OSCP' | 'CPTS' | 'CRTO'>
-              id="tracker-cert-select"
-              name="tracker-cert-select"
-              aria-label="Filter Certification"
-              value={filters.selectedCert || 'ALL'}
-              onChange={(val) => setFilters({ selectedCert: val })}
-              options={CERT_FILTER_OPTIONS}
-              size="xs"
-              variant="default"
-              triggerClassName="h-8 py-0 px-2.5 text-xs rounded-lg border-slate-200/90 dark:border-cyber-border"
-              soundEnabled={soundEnabled}
-            />
-          </div>
-
-          {/* Right: Drawer Trigger + Sort + Counter */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Advanced Filters Drawer Trigger */}
+            {/* Filter Drawer Trigger */}
             <button
               type="button"
               onClick={() => { setFilterDrawerOpen(true); if (soundEnabled) playCyberSound('click'); }}
-              className={`h-8 flex items-center gap-1.5 px-3 rounded-lg border text-xs font-semibold transition-[box-shadow,background-color,border-color,color] shadow-sm cursor-pointer ${
+              className={`h-8 flex items-center gap-1.5 px-2.5 rounded-[3px] border text-[11px] font-mono font-bold uppercase tracking-wider transition-all shadow-none cursor-pointer active:scale-[0.97] ${
                 activeFilterCount > 0
-                  ? 'bg-cyber-cyan/15 border-cyber-cyan text-slate-900 dark:text-white font-bold ring-1 ring-cyber-cyan/20'
-                  : 'bg-slate-50/90 dark:bg-cyber-bg/80 border-slate-200/90 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'
+                  ? 'bg-zinc-900 dark:bg-zinc-950 border-[#0ea5e9] text-[#0ea5e9]'
+                  : 'bg-zinc-100 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'
               }`}
               title="Open Advanced Filters Drawer"
             >
-              <Filter className="w-3.5 h-3.5 text-cyber-cyan" />
-              <span>Filters</span>
+              <Filter className="w-3.5 h-3.5 text-[#0ea5e9]" />
               {activeFilterCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-cyber-cyan text-slate-900 dark:text-black leading-none">
-                  {activeFilterCount}
+                <span className="font-mono text-[10px] font-bold tabular-nums">
+                  [ {activeFilterCount} ]
                 </span>
               )}
             </button>
 
-            {/* Sort Dropdown */}
-            <div className="h-8 flex items-center gap-1 bg-slate-50/90 dark:bg-cyber-bg/80 px-2 rounded-lg border border-slate-200/90 dark:border-cyber-border">
-              <ArrowUpDown className="w-3.5 h-3.5 text-cyber-cyan flex-shrink-0" />
-              <CyberSelect
-                id="tracker-sort-select"
-                name="tracker-sort-select"
-                aria-label={`Sort targets - ${SORT_OPTIONS.find(o => o.value === (filters.sortBy || 'default'))?.label || 'Default Order'}`}
-                value={filters.sortBy || 'default'}
-                onChange={(val) => setFilters({ sortBy: val as any })}
-                options={SORT_OPTIONS}
-                variant="transparent"
+            {/* View Mode Switcher */}
+            <div className="h-8 flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 font-mono">
+              <button
+                type="button"
+                data-testid="view-kanban-mobile"
+                aria-label="Kanban View"
+                onClick={() => setViewMode('kanban')}
+                className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                  viewMode === 'kanban' 
+                    ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+                title="Kanban View"
+              >
+                <Kanban className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                data-testid="view-table-mobile"
+                aria-label="Table View"
+                onClick={() => setViewMode('table')}
+                className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                  viewMode === 'table' 
+                    ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+                title="Table View"
+              >
+                <Table className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                data-testid="view-grid-mobile"
+                aria-label="Grid View"
+                onClick={() => setViewMode('grid')}
+                className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                  viewMode === 'grid' 
+                    ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Row 2: Horizontal Swipe Carousel for Tracks & Progress */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1 font-mono">
+            {PRIMARY_TRACK_PILLS.map((trk) => {
+              const active = (trk.id === 'ALL' && (!filters.selectedTrack || filters.selectedTrack === 'ALL') && (!filters.selectedTracks || filters.selectedTracks.length === 0)) ||
+                filters.selectedTrack === trk.id ||
+                (filters.selectedTracks && filters.selectedTracks.includes(trk.id));
+              const Icon = trk.icon;
+              const count = trackCounts[trk.id] ?? 0;
+              return (
+                <button
+                  key={trk.id}
+                  type="button"
+                  title={trk.title}
+                  onClick={() => {
+                    if (trk.id === 'ALL') {
+                      setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
+                    } else {
+                      setFilters({ selectedTrack: trk.id, selectedTracks: [] });
+                    }
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0 active:scale-[0.96] ${
+                    active
+                      ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                      : 'bg-zinc-100 dark:bg-zinc-900/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
+                  }`}
+                >
+                  <Icon className={`w-3 h-3 ${active ? 'text-[#0ea5e9]' : trk.iconColor}`} />
+                  <span>{trk.label}</span>
+                  <span className={`px-1 py-0.5 rounded-[2px] text-[9px] font-mono tabular-nums leading-none ${
+                    active 
+                      ? 'bg-[#0ea5e9]/20 text-[#0ea5e9] border border-[#0ea5e9]/40' 
+                      : 'bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 border border-zinc-300/40 dark:border-zinc-700/40'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+            <div className="text-[10px] font-mono text-zinc-500 px-1.5 flex-shrink-0 tabular-nums">
+              [ {filteredMachines.length} / {machines.length} ]
+            </div>
+          </div>
+        </div>
+
+        {/* B. DESKTOP HIGH-COMMAND HUD (>= md) */}
+        <div className="hidden md:block space-y-2">
+          {/* Row 1: Track Selector & Tactical Actions Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+            {/* Left: Interactive Practice Tracks Selector */}
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 px-2.5 h-8 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold font-mono uppercase tracking-wider flex-shrink-0">
+                <Compass className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                <span>TRACK:</span>
+              </div>
+
+              {/* Curated Track Segment Pills */}
+              <div className="h-8 flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-shrink-0 font-mono">
+                {PRIMARY_TRACK_PILLS.map((trk) => {
+                  const active = (trk.id === 'ALL' && (!filters.selectedTrack || filters.selectedTrack === 'ALL') && (!filters.selectedTracks || filters.selectedTracks.length === 0)) ||
+                    filters.selectedTrack === trk.id ||
+                    (filters.selectedTracks && filters.selectedTracks.includes(trk.id));
+                  const Icon = trk.icon;
+                  const count = trackCounts[trk.id] ?? 0;
+                  return (
+                    <button
+                      key={trk.id}
+                      type="button"
+                      title={trk.title}
+                      onClick={() => {
+                        if (trk.id === 'ALL') {
+                          setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
+                        } else {
+                          setFilters({ selectedTrack: trk.id, selectedTracks: [] });
+                        }
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                      className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0 active:scale-[0.96] ${
+                        active
+                          ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 border border-transparent'
+                      }`}
+                    >
+                      <Icon className={`w-3 h-3 ${active ? 'text-[#0ea5e9]' : trk.iconColor}`} />
+                      <span>{trk.label}</span>
+                      <span className={`px-1 py-0.5 rounded-[2px] text-[9px] font-mono tabular-nums leading-none ${
+                        active 
+                          ? 'bg-[#0ea5e9]/20 text-[#0ea5e9] border border-[#0ea5e9]/40' 
+                          : 'bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 border border-zinc-300/40 dark:border-zinc-700/40'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Other Specialized Tracks Dropdown */}
+              <CyberSelect<string>
+                id="tracker-more-tracks-select"
+                name="tracker-more-tracks-select"
+                aria-label="More Practice Tracks"
+                value={
+                  dynamicOtherTrackOptions.some((o) => o.value === filters.selectedTrack)
+                    ? filters.selectedTrack
+                    : 'ALL'
+                }
+                onChange={(val) => {
+                  if (val === 'ALL') {
+                    setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
+                  } else {
+                    setFilters({ selectedTrack: val, selectedTracks: [] });
+                  }
+                }}
+                options={dynamicOtherTrackOptions}
                 size="xs"
-                triggerClassName="h-7 py-0 px-1 border-none bg-transparent hover:bg-transparent text-slate-800 dark:text-cyber-text font-sans text-xs"
+                variant="hardware"
+                triggerClassName="h-8 py-0 px-2.5 text-[10px] font-mono rounded-[3px] border-zinc-200 dark:border-zinc-800"
+                soundEnabled={soundEnabled}
+              />
+
+              {/* Inline micro progress bar (when any track selected) */}
+              {((filters.selectedTracks && filters.selectedTracks.length > 0) || (filters.selectedTrack && filters.selectedTrack !== 'ALL')) && (() => {
+                const activeIds = (filters.selectedTracks && filters.selectedTracks.length > 0)
+                  ? filters.selectedTracks
+                  : [filters.selectedTrack!];
+                const tracks = activeIds.map(id => PRACTICE_TRACKS.find(t => t.id === id)).filter(Boolean);
+                const totalSet = new Set<string>();
+                const rootedSet = new Set<string>();
+                tracks.forEach(track => {
+                  if (!track) return;
+                  machines.filter(track.filterFn).forEach(m => {
+                    totalSet.add(m.id || m.name);
+                    if (m.status === 'root' || m.status === 'completed') rootedSet.add(m.id || m.name);
+                  });
+                });
+                const total = totalSet.size;
+                const rooted = rootedSet.size;
+                const pct = total > 0 ? Math.round((rooted / total) * 100) : 0;
+                return (
+                  <div className="h-8 flex items-center gap-2 px-2.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex-shrink-0 font-mono">
+                    <div className="w-14 h-1.5 rounded-[1px] bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                      <div 
+                        className="h-full rounded-[1px] bg-[#0ea5e9] transition-all duration-300"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold whitespace-nowrap tabular-nums">[ {rooted}/{total} · {pct}% ]</span>
+                  </div>
+                );
+              })()}
+            </div>
+            
+            {/* Right: Action Controls */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Scan Importer */}
+              <button
+                type="button"
+                onClick={() => setReconAutomationModalOpen(true)}
+                className="h-8 px-2.5 flex items-center gap-1.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-[10px] font-mono font-bold uppercase tracking-wider transition-colors active:scale-[0.97] cursor-pointer shadow-none"
+                title="Launch Tactical Scan Importer"
+              >
+                <Zap className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                <span className="hidden sm:inline">Import</span>
+              </button>
+
+              {/* View Mode Switcher */}
+              <div className="h-8 flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 font-mono">
+                <button
+                  type="button"
+                  data-testid="view-kanban"
+                  aria-label="Kanban View"
+                  onClick={() => setViewMode('kanban')}
+                  className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                    viewMode === 'kanban' 
+                      ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                  title="Kanban View"
+                >
+                  <Kanban className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  data-testid="view-table"
+                  aria-label="Table View"
+                  onClick={() => setViewMode('table')}
+                  className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                    viewMode === 'table' 
+                      ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                  title="Table View"
+                >
+                  <Table className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  data-testid="view-grid"
+                  aria-label="Grid View"
+                  onClick={() => setViewMode('grid')}
+                  className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                    viewMode === 'grid' 
+                      ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  data-testid="view-graph"
+                  aria-label="Attack Graph View"
+                  onClick={() => setViewMode('graph')}
+                  className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                    viewMode === 'graph' 
+                      ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
+                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                  title="Attack Graph View"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+                {/* Embedded Hide Empty Lanes (kanban only) */}
+                {viewMode === 'kanban' && (
+                  <>
+                    <div className="w-px h-4 bg-zinc-300 dark:border-zinc-800 mx-0.5" />
+                    <button
+                      type="button"
+                      onClick={() => { setFilters({ hideEmptyLanes: !filters.hideEmptyLanes }); if (soundEnabled) playCyberSound('toggle'); }}
+                      className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
+                        filters.hideEmptyLanes 
+                          ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9]' 
+                          : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                      }`}
+                      title={filters.hideEmptyLanes ? 'Show Empty Lanes' : 'Hide Empty Lanes'}
+                    >
+                      {filters.hideEmptyLanes ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Operational Search & Filters Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+            {/* Left: Search + Platform + Status + OS + Difficulty + Cert */}
+            <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+              {/* Search */}
+              <div className="relative h-8 w-48 lg:w-60 flex-shrink-0 group font-mono">
+                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-focus-within:text-[#0ea5e9] transition-colors pointer-events-none" />
+                <input
+                  type="text"
+                  id="tracker-search-input"
+                  name="tracker-search-input"
+                  aria-label="Search machines"
+                  value={filters.searchQuery}
+                  onChange={(e) => setFilters({ searchQuery: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setFilters({ searchQuery: '' });
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  placeholder="Search targets, IP, CVE... (/)"
+                  className="w-full h-8 pl-8 pr-10 bg-zinc-100/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-[3px] text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9]/30 transition-all shadow-none"
+                />
+                {filters.searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setFilters({ searchQuery: '' })}
+                    className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-white cursor-pointer transition-colors"
+                    title="Clear search (Esc)"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <div className="absolute right-2 top-1.5 flex items-center gap-1 pointer-events-none">
+                    <kbd className="px-1.5 py-0.5 text-[9px] font-mono font-bold text-zinc-500 dark:text-zinc-400 bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-[2px] shadow-none">
+                      /
+                    </kbd>
+                  </div>
+                )}
+              </div>
+
+              {/* Platform Segment Pills */}
+              <div className="h-8 flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 font-mono">
+                <div className="px-1.5 text-zinc-400 dark:text-zinc-500">
+                  <Globe className="w-3 h-3 text-[#0ea5e9]" />
+                </div>
+                {platformList.map((p) => {
+                  const active = filters.selectedPlatform === p;
+                  const getPlatformStyles = () => {
+                    if (p === 'HTB') {
+                      return active
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                        : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border-transparent';
+                    }
+                    if (p === 'THM') {
+                      return active
+                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                        : 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border-transparent';
+                    }
+                    if (p === 'Custom') {
+                      return active
+                        ? 'bg-sky-500/20 text-sky-300 border-sky-500/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]'
+                        : 'text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 border-transparent';
+                    }
+                    return active
+                      ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9]'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-transparent';
+                  };
+
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => { setFilters({ selectedPlatform: p }); if (soundEnabled) playCyberSound('toggle'); }}
+                      className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer border active:scale-[0.97] ${getPlatformStyles()}`}
+                    >
+                      {p !== 'ALL' && <PlatformIcon platform={p as Platform} className="w-3 h-3" />}
+                      <span>{p === 'ALL' ? 'All' : p}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Target Status Segment Pills */}
+              <div className="h-8 flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 font-mono">
+                <div className="px-1.5 text-zinc-400 dark:text-zinc-500">
+                  <Target className="w-3 h-3 text-[#0ea5e9]" />
+                </div>
+                {STATUS_PILL_OPTIONS.map((st) => {
+                  const active = (filters.selectedStatus || 'ALL') === st.value;
+                  return (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => {
+                        setFilters({ selectedStatus: st.value });
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                      className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors cursor-pointer active:scale-[0.97] ${
+                        active
+                          ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* OS Dropdown */}
+              <CyberSelect<'ALL' | OperatingSystem>
+                id="htb-os-select"
+                name="htb-os-select"
+                aria-label="Filter OS"
+                value={filters.selectedOs || 'ALL'}
+                onChange={(val) => setFilters({ selectedOs: val })}
+                options={dynamicOsOptions}
+                size="xs"
+                variant="hardware"
+                triggerClassName={`h-8 py-0 px-2.5 text-[10px] font-mono rounded-[3px] border ${
+                  filters.selectedOs === 'Linux'
+                    ? 'border-amber-500/60 text-amber-800 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
+                    : filters.selectedOs === 'Windows'
+                    ? 'border-sky-500/60 text-sky-800 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 shadow-[0_0_8px_rgba(14,165,233,0.2)]'
+                    : filters.selectedOs === 'Android'
+                    ? 'border-emerald-500/60 text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
+                    : filters.selectedOs === 'macOS'
+                    ? 'border-purple-500/60 text-purple-800 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
+                    : filters.selectedOs === 'BSD'
+                    ? 'border-rose-500/60 text-rose-800 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.2)]'
+                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
+                }`}
+                soundEnabled={soundEnabled}
+              />
+
+              {/* Difficulty Dropdown */}
+              <CyberSelect<Difficulty | 'ALL'>
+                id="htb-difficulty-select"
+                name="htb-difficulty-select"
+                aria-label="Filter Difficulties"
+                value={filters.selectedDifficulty}
+                onChange={(val) => setFilters({ selectedDifficulty: val })}
+                options={DIFFICULTY_FILTER_OPTIONS}
+                size="xs"
+                variant="hardware"
+                triggerClassName="h-8 py-0 px-2.5 text-[10px] font-mono rounded-[3px] border-zinc-200 dark:border-zinc-800"
+                soundEnabled={soundEnabled}
+              />
+
+              {/* Cert Dropdown */}
+              <CyberSelect<'ALL' | 'OSCP' | 'CPTS' | 'CRTO'>
+                id="tracker-cert-select"
+                name="tracker-cert-select"
+                aria-label="Filter Certification"
+                value={filters.selectedCert || 'ALL'}
+                onChange={(val) => setFilters({ selectedCert: val })}
+                options={CERT_FILTER_OPTIONS}
+                size="xs"
+                variant="hardware"
+                triggerClassName="h-8 py-0 px-2.5 text-[10px] font-mono rounded-[3px] border-zinc-200 dark:border-zinc-800"
                 soundEnabled={soundEnabled}
               />
             </div>
 
-            {/* Result Counter */}
-            <div className="h-8 px-2.5 flex items-center rounded-lg bg-slate-100/90 dark:bg-cyber-bg/80 border border-slate-200/90 dark:border-cyber-border text-slate-600 dark:text-cyber-muted text-xs whitespace-nowrap font-mono">
-              <strong className="text-slate-900 dark:text-white font-bold">{filteredMachines.length}</strong>
-              <span className="mx-1 text-slate-400 dark:text-cyber-muted/60">/</span>
-              <span>{machines.length}</span>
+            {/* Right: Drawer Trigger + Sort + Counter */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Advanced Filters Drawer Trigger */}
+              <button
+                type="button"
+                onClick={() => { setFilterDrawerOpen(true); if (soundEnabled) playCyberSound('click'); }}
+                className={`h-8 flex items-center gap-1.5 px-3 rounded-[3px] border text-[10px] font-mono font-bold uppercase tracking-wider transition-all shadow-none cursor-pointer active:scale-[0.97] ${
+                  activeFilterCount > 0
+                    ? 'bg-zinc-900 dark:bg-zinc-950 border-[#0ea5e9] text-[#0ea5e9]'
+                    : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+                title="Open Advanced Filters Drawer"
+              >
+                <Filter className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="font-mono text-[10px] font-bold tabular-nums">
+                    [ {activeFilterCount} ]
+                  </span>
+                )}
+              </button>
+
+              {/* Sort Dropdown */}
+              <div className="h-8 flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 px-2 rounded-[3px] border border-zinc-200 dark:border-zinc-800 font-mono text-[10px]">
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#0ea5e9] flex-shrink-0" />
+                <CyberSelect
+                  id="tracker-sort-select"
+                  name="tracker-sort-select"
+                  aria-label={`Sort targets - ${SORT_OPTIONS.find(o => o.value === (filters.sortBy || 'default'))?.label || 'Default Order'}`}
+                  value={filters.sortBy || 'default'}
+                  onChange={(val) => setFilters({ sortBy: val as any })}
+                  options={SORT_OPTIONS}
+                  variant="transparent"
+                  size="xs"
+                  triggerClassName="h-7 py-0 px-1 border-none bg-transparent hover:bg-transparent text-zinc-800 dark:text-zinc-200 font-mono text-[10px] uppercase font-bold"
+                  soundEnabled={soundEnabled}
+                />
+              </div>
+
+              {/* Result Counter */}
+              <div className="h-8 px-2.5 flex items-center rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] whitespace-nowrap font-mono tabular-nums">
+                [ <strong className="text-zinc-900 dark:text-white font-bold">{filteredMachines.length}</strong> / {machines.length} ]
+              </div>
             </div>
           </div>
         </div>
 
         {/* Row 3: Active Filters HUD Ribbon */}
         {activeFilterPills.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2 border-t border-slate-200/80 dark:border-cyber-border/60 bg-slate-50/60 dark:bg-cyber-bg/40 -mx-2 sm:-mx-2.5 -mb-2 sm:-mb-2.5 p-2 sm:p-2.5 rounded-b-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-950/60 -mx-2 sm:-mx-2.5 -mb-2 sm:-mb-2.5 p-2 sm:p-2.5 rounded-b-[4px] font-mono text-[10px]">
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-cyber-muted tracking-wider flex items-center gap-1 mr-1 font-mono flex-shrink-0">
-                <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
-                Active ({activeFilterPills.length}):
+              <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider flex items-center gap-1 mr-1 font-mono flex-shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                [ ACTIVE : {activeFilterPills.length} ]
               </span>
               {activeFilterPills.map((pill) => (
                 <span
                   key={pill.id}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-cyber-cyan/10 text-cyan-900 dark:text-cyber-cyan border border-cyber-cyan/30 shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-bold uppercase tracking-wider bg-zinc-200 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-none"
                 >
                   <span className="truncate max-w-[200px]">{pill.label}</span>
                   <button
@@ -1235,7 +1480,7 @@ export const TrackerView: React.FC = () => {
                       pill.onRemove();
                       if (soundEnabled) playCyberSound('click');
                     }}
-                    className="p-0.5 rounded hover:bg-cyber-cyan/20 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-[2px] hover:bg-zinc-300 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                     title={`Remove ${pill.label}`}
                     aria-label={`Remove filter ${pill.label}`}
                   >
@@ -1249,7 +1494,7 @@ export const TrackerView: React.FC = () => {
                   resetFilters();
                   if (soundEnabled) playCyberSound('toggle');
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-[box-shadow,background-color,border-color,color] ml-1 shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-colors ml-1 active:scale-[0.97] cursor-pointer"
                 title="Reset all filters"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -1258,8 +1503,8 @@ export const TrackerView: React.FC = () => {
             </div>
 
             {/* Live Filter Match Percentage */}
-            <div className="text-[10px] font-mono text-slate-500 dark:text-cyber-muted bg-white/60 dark:bg-cyber-bg/80 px-2 py-1 rounded-md border border-slate-200/80 dark:border-cyber-border/50 flex-shrink-0">
-              Showing <span className="font-bold text-slate-900 dark:text-white">{filteredMachines.length}</span> of {machines.length} ({Math.round((filteredMachines.length / (machines.length || 1)) * 100)}%)
+            <div className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-900 px-2 py-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 tabular-nums">
+              [ <span className="font-bold text-zinc-900 dark:text-white">{filteredMachines.length}</span> / {machines.length} · {Math.round((filteredMachines.length / (machines.length || 1)) * 100)}% ]
             </div>
           </div>
         )}
@@ -1269,12 +1514,12 @@ export const TrackerView: React.FC = () => {
 
       {/* Main View Renderer */}
       {filteredMachines.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-xl border border-dashed border-slate-300 dark:border-cyber-border bg-slate-50/50 dark:bg-cyber-card/30 my-4">
-          <div className="w-10 h-10 rounded-lg bg-slate-200/60 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border flex items-center justify-center mb-2.5">
-            <Search className="w-5 h-5 text-slate-400 dark:text-cyber-muted" />
+        <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-[4px] border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 my-4 machined-edge font-mono">
+          <div className="w-10 h-10 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 flex items-center justify-center mb-2.5">
+            <Search className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">No matching targets found</h3>
-          <p className="text-xs text-slate-500 dark:text-cyber-muted max-w-md mb-3 font-mono">
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">[ NO MATCHING TARGETS FOUND ]</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mb-3 font-mono">
             {filters.searchQuery 
               ? `Zero machines matched "${filters.searchQuery}" with the current filter parameters.`
               : 'Zero machines matched the selected filter configuration.'}
@@ -1285,7 +1530,7 @@ export const TrackerView: React.FC = () => {
               resetFilters();
               if (soundEnabled) playCyberSound('toggle');
             }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-slate-900 dark:text-black bg-cyber-cyan hover:brightness-110 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[3px] text-xs font-bold text-slate-900 dark:text-black bg-[#0ea5e9] hover:brightness-110 transition-all active:scale-[0.97] cursor-pointer shadow-none uppercase font-mono tracking-wider"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset All Filters</span>
@@ -1299,9 +1544,9 @@ export const TrackerView: React.FC = () => {
           {viewMode === 'graph' && (
             <React.Suspense
               fallback={
-                <div className="flex flex-col items-center justify-center p-16 space-y-3 font-mono border border-slate-200 dark:border-cyber-border rounded-xl bg-white dark:bg-cyber-card">
-                  <div className="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin" />
-                  <span className="text-xs text-cyber-muted">Synthesizing BloodHound attack topology graph...</span>
+                <div className="flex flex-col items-center justify-center p-16 space-y-3 font-mono border border-zinc-200 dark:border-zinc-800 rounded-[4px] bg-white dark:bg-zinc-950/90 machined-edge">
+                  <div className="w-8 h-8 rounded-full border-2 border-[#0ea5e9]/20 border-t-[#0ea5e9] animate-spin" />
+                  <span className="text-xs text-zinc-500">[ Synthesizing BloodHound attack topology graph... ]</span>
                 </div>
               }
             >

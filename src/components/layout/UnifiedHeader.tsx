@@ -16,14 +16,14 @@ import {
   Plus,
   ChevronRight,
   ShieldAlert,
-  Coffee,
+  Search,
   Copy,
   Check
 } from 'lucide-react';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
-import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
+import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
 import { SettingsDropdown } from './SettingsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
@@ -32,7 +32,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
   const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
   return (
-    <span className="text-[10px] font-bold text-emerald-700 dark:text-cyber-emerald font-mono">
+    <span className="text-[10px] font-bold text-emerald-700 dark:text-cyber-emerald font-mono tabular-nums">
       {formatSeconds(activeTimerSeconds)}
     </span>
   );
@@ -59,6 +59,7 @@ export const UnifiedHeader: React.FC = () => {
     setNewMachineModalOpen,
     setReconAutomationModalOpen,
     setReportMachineId,
+    setCommandPaletteOpen,
   } = useCtfStore(
     useShallow((s) => ({
       activeTargetId: s.activeTargetId,
@@ -77,6 +78,7 @@ export const UnifiedHeader: React.FC = () => {
       setNewMachineModalOpen: s.setNewMachineModalOpen,
       setReconAutomationModalOpen: s.setReconAutomationModalOpen,
       setReportMachineId: s.setReportMachineId,
+      setCommandPaletteOpen: s.setCommandPaletteOpen,
     }))
   );
 
@@ -202,21 +204,24 @@ export const UnifiedHeader: React.FC = () => {
   }, [targetDropdownOpen]);
 
   return (
-    <header className="h-[52px] px-3 sm:px-4 bg-surface-base border-b border-subtle flex items-center justify-between font-mono select-none z-40 transition-colors flex-shrink-0">
+    <header
+      data-tauri-drag-region="true"
+      className="h-[52px] px-3 sm:px-4 bg-surface-base border-b border-subtle machined-edge flex items-center justify-between font-sans select-none z-40 transition-colors flex-shrink-0 whitespace-nowrap overflow-hidden"
+    >
       
       {/* 1. Left: Brand & Breadcrumb Route Indicator */}
       <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
         <Link 
           to="/tracker" 
-          className="flex items-center gap-2 group transition-opacity hover:opacity-90"
+          className="flex items-center gap-2 group transition-opacity hover:opacity-90 active:scale-[0.97]"
           title="ZEROBOX Tactical CTF Dashboard"
         >
           <CyberLogo size="sm" />
-          <div className="hidden sm:flex flex-col text-left leading-none">
-            <span className="font-black text-sm tracking-tight text-slate-900 dark:text-white">
-              ZERO<span className="cyber-box-glow">BOX</span>
+          <div className="hidden sm:flex flex-col text-left leading-none" data-tauri-drag-region="false">
+            <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-zinc-100">
+              ZERO<span className="text-cyan-600 dark:text-cyber-cyan">BOX</span>
             </span>
-            <span className="text-[9px] text-slate-500 dark:text-cyber-muted font-sans font-medium tracking-tight">
+            <span className="text-[9px] text-slate-500 dark:text-zinc-400 font-sans font-medium tracking-tight">
               Tactical Cyber Ops
             </span>
           </div>
@@ -224,7 +229,7 @@ export const UnifiedHeader: React.FC = () => {
 
         <div className="hidden 2xl:flex items-center gap-1 text-slate-400 dark:text-zinc-600 text-xs pl-1">
           <ChevronRight className="w-3 h-3 text-slate-400 dark:text-zinc-600" />
-          <span className="text-slate-600 dark:text-zinc-300 text-xs font-semibold">{routeName}</span>
+          <span className="text-slate-600 dark:text-zinc-300 text-xs font-semibold tracking-tight">{routeName}</span>
         </div>
       </div>
 
@@ -232,7 +237,7 @@ export const UnifiedHeader: React.FC = () => {
       <div className="relative flex items-center gap-1.5 mx-1 sm:mx-2 min-w-0 flex-shrink" ref={dropdownRef}>
         <ExamHeaderCapsule />
         {activeMachine ? (
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0 h-8.5 rounded-lg bg-surface-elevated border border-slate-300 dark:border-cyber-border text-xs min-w-0 flex-shrink shadow-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0 h-8.5 rounded-lg bg-surface-elevated border border-slate-300 dark:border-cyber-border text-xs min-w-0 flex-shrink shadow-xs machined-edge">
             {/* Target Dropdown Toggle & Name */}
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <PlatformIcon platform={activeMachine.platform} className="w-3.5 h-3.5 flex-shrink-0" />
@@ -262,7 +267,7 @@ export const UnifiedHeader: React.FC = () => {
             <div className="hidden sm:flex items-center gap-1 border-l border-slate-300 dark:border-cyber-border pl-1.5 flex-shrink-0">
               <button
                 onClick={handleQuickUserPwn}
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono transition-[transform,background-color,border-color,color] flex items-center gap-1 active:scale-[0.98] cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono transition-[transform,background-color,border-color,color] flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
                   Boolean(activeMachine.userPwnedAt || activeMachine.userFlag || activeMachine.status === 'foothold' || activeMachine.status === 'root' || activeMachine.status === 'completed')
                     ? 'bg-amber-500/20 text-amber-600 dark:text-cyber-amber border border-amber-500/40 shadow-xs'
                     : 'bg-white dark:bg-zinc-900 hover:bg-amber-500/20 text-slate-500 dark:text-cyber-muted hover:text-amber-600 dark:hover:text-cyber-amber border border-slate-300 dark:border-cyber-border'
@@ -275,7 +280,7 @@ export const UnifiedHeader: React.FC = () => {
 
               <button
                 onClick={handleQuickRootPwn}
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono transition-[transform,background-color,border-color,color] flex items-center gap-1 active:scale-[0.98] cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-mono transition-[transform,background-color,border-color,color] flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
                   Boolean(activeMachine.rootPwnedAt || activeMachine.rootFlag || activeMachine.status === 'root' || activeMachine.status === 'completed')
                     ? 'bg-emerald-500/20 text-emerald-600 dark:text-cyber-emerald border border-emerald-500/40 shadow-xs'
                     : 'bg-white dark:bg-zinc-900 hover:bg-rose-500/20 text-slate-500 dark:text-cyber-muted hover:text-rose-600 dark:hover:text-cyber-crimson border border-slate-300 dark:border-cyber-border'
@@ -315,27 +320,31 @@ export const UnifiedHeader: React.FC = () => {
               </button>
             </div>
 
-            {/* Target Actions: Pentest Report & Disengage */}
-            <div className="flex items-center gap-1 border-l border-slate-300 dark:border-cyber-border pl-1 flex-shrink-0">
+            {/* Target Actions: Pentest Report & Disengage (Safe Separation - H5 Error Prevention) */}
+            <div className="flex items-center border-l border-slate-300 dark:border-cyber-border pl-1.5 flex-shrink-0" data-tauri-drag-region="false">
               <button
+                type="button"
                 onClick={() => {
                   setReportMachineId(activeMachine.id);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="hidden md:flex p-1.5 min-w-[24px] min-h-[24px] flex-shrink-0 items-center justify-center rounded-md hover:bg-rose-500/20 text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
+                className="hidden md:flex p-1.5 min-w-[24px] min-h-[24px] flex-shrink-0 items-center justify-center rounded-md text-slate-500 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyber-cyan hover:bg-slate-200/80 dark:hover:bg-zinc-800 transition-colors active:scale-[0.96] cursor-pointer"
                 title={`Generate Pentest Report for ${activeMachine.name}`}
                 aria-label={`Pentest Report for ${activeMachine.name}`}
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
               </button>
 
+              <div className="w-px h-3.5 bg-slate-300 dark:bg-zinc-800 mx-1" aria-hidden="true" />
+
               <button
+                type="button"
                 onClick={() => {
                   setActiveTarget(null);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="p-1.5 min-w-[24px] min-h-[24px] flex-shrink-0 flex items-center justify-center rounded-md hover:bg-rose-500/20 text-slate-400 dark:text-cyber-muted hover:text-rose-500 transition-colors cursor-pointer"
-                title="Disengage Active Target"
+                className="p-1.5 min-w-[24px] min-h-[24px] flex-shrink-0 flex items-center justify-center rounded-md text-slate-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors active:scale-[0.95] cursor-pointer"
+                title={`Disengage ${activeMachine.name} — Release active engagement`}
                 aria-label="Disengage Active Target"
               >
                 <X className="w-3.5 h-3.5" />
@@ -345,7 +354,7 @@ export const UnifiedHeader: React.FC = () => {
         ) : (
           <button
             onClick={() => setTargetDropdownOpen(!targetDropdownOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#18181b] border border-slate-300 dark:border-[#27272a] hover:border-zinc-700 text-slate-700 dark:text-zinc-300 text-xs font-mono font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.98] group cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#18181b] border border-slate-300 dark:border-[#27272a] hover:border-zinc-700 text-slate-700 dark:text-zinc-300 text-xs font-mono font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer"
           >
             <Crosshair className="w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted group-hover:text-cyber-cyan transition-colors" />
             <span>ENGAGE TARGET</span>
@@ -355,17 +364,17 @@ export const UnifiedHeader: React.FC = () => {
 
         {/* Target Selector Dropdown Popover */}
         {targetDropdownOpen && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-2.5 rounded-xl bg-white dark:bg-[#18181b] border border-slate-300 dark:border-[#27272a] shadow-xl z-50 text-xs space-y-2">
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-2.5 rounded-xl bg-white dark:bg-[#18181b] border border-slate-300 dark:border-[#27272a] shadow-xl machined-edge z-50 text-xs space-y-2">
             <div className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase px-1 font-bold flex items-center justify-between">
               <span>ENGAGE TARGET</span>
-              <span className="text-cyan-600 dark:text-cyber-cyan font-mono font-bold">{machines.length} TOTAL</span>
+              <span className="text-cyan-600 dark:text-cyber-cyan font-mono font-bold tabular-nums">{machines.length} TOTAL</span>
             </div>
             <input
               type="text"
               value={targetSearch}
               onChange={(e) => setTargetSearch(e.target.value)}
               placeholder="Search target name or IP..."
-              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-300 dark:border-[#27272a] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-300 dark:border-[#27272a] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan tabular-nums"
               autoFocus
             />
             {activeTargetId && (
@@ -376,7 +385,7 @@ export const UnifiedHeader: React.FC = () => {
                   setTargetDropdownOpen(false);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="w-full p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 flex items-center justify-center gap-1.5 text-rose-500 text-[11px] font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
+                className="w-full p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 flex items-center justify-center gap-1.5 text-rose-500 text-[11px] font-bold transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
               >
                 <X className="w-3 h-3" />
                 <span>DISENGAGE TARGET</span>
@@ -422,7 +431,7 @@ export const UnifiedHeader: React.FC = () => {
             setNewMachineModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 dark:bg-surface-elevated hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 border border-slate-300 dark:border-cyber-border hover:border-emerald-500/50 text-slate-800 dark:text-zinc-200 hover:text-emerald-600 dark:hover:text-cyber-emerald text-xs font-mono font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.98] flex-shrink-0 cursor-pointer"
+          className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-[6px] bg-slate-100 dark:bg-surface-elevated hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 border border-slate-300 dark:border-zinc-800 hover:border-emerald-500/50 text-slate-800 dark:text-zinc-200 hover:text-emerald-600 dark:hover:text-cyber-emerald text-xs font-mono font-semibold transition-all active:scale-[0.96] flex-shrink-0 cursor-pointer shadow-xs machined-edge"
           title="Deploy Custom Lab Target"
           aria-label="Deploy Box - Deploy Custom Lab Target"
         >
@@ -436,7 +445,7 @@ export const UnifiedHeader: React.FC = () => {
             setReconAutomationModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-300 dark:border-cyber-border hover:border-slate-400 dark:hover:border-cyber-borderGlow text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-mono font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.98] flex-shrink-0 cursor-pointer"
+          className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-[6px] bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white text-xs font-mono font-semibold transition-all active:scale-[0.96] flex-shrink-0 cursor-pointer shadow-xs machined-edge"
           title="Tactical Recon & Scan Automation (Nmap / Rustscan / XML)"
           aria-label="Scans Hub"
         >
@@ -447,13 +456,14 @@ export const UnifiedHeader: React.FC = () => {
         {/* Tactical Inline Variables Capsule (L | R | P) */}
         <div
           aria-label="Tactical Variables (LHOST / RHOST / LPORT)"
-          className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-surface-elevated border border-slate-300/80 dark:border-cyber-border text-[11px] font-mono group hover:border-zinc-700 dark:hover:border-cyber-borderGlow transition-colors flex-shrink-0"
+          data-tauri-drag-region="false"
+          className="hidden lg:flex items-center gap-1 h-8 px-2 rounded-[6px] bg-slate-100 dark:bg-surface-elevated border border-slate-300/80 dark:border-zinc-800 text-[11px] font-mono group hover:border-zinc-700 dark:hover:border-zinc-600 transition-colors flex-shrink-0 shadow-xs machined-edge"
         >
           {/* L: Attacker IP (Tun0 LHOST) */}
           <div className="flex items-center gap-1" title="Attacker IP (Tun0 LHOST) - Click icon to copy">
             <label
               htmlFor="unified-lhost"
-              className="px-1 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/30 flex-shrink-0 cursor-pointer select-none"
+              className="px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-600 dark:text-cyber-cyan border border-cyan-500/30 flex-shrink-0 cursor-pointer select-none"
             >
               L
             </label>
@@ -475,12 +485,12 @@ export const UnifiedHeader: React.FC = () => {
               }}
               placeholder="10.10.14.X"
               title={globalVars.lhost || '10.10.14.X'}
-              className="w-16 xl:w-20 bg-transparent text-slate-900 dark:text-cyber-cyan focus:outline-none placeholder-slate-400 dark:placeholder-zinc-600 font-bold text-[11px] font-mono tracking-tight truncate"
+              className="w-16 xl:w-20 bg-transparent text-slate-900 dark:text-zinc-100 focus:outline-none placeholder-slate-400 dark:placeholder-zinc-600 font-semibold text-[11px] font-mono tabular-nums tracking-tight truncate"
             />
             <button
               type="button"
               onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
-              className="p-0.5 text-slate-400 hover:text-cyber-cyan dark:text-zinc-500 dark:hover:text-cyber-cyan transition-colors cursor-pointer"
+              className="p-0.5 text-slate-400 hover:text-cyan-600 dark:text-zinc-500 dark:hover:text-cyber-cyan transition-colors cursor-pointer"
               title={copiedVar === 'lhost' ? 'Copied LHOST to clipboard!' : 'Copy LHOST'}
               aria-label="Copy LHOST"
             >
@@ -488,13 +498,13 @@ export const UnifiedHeader: React.FC = () => {
             </button>
           </div>
 
-          <div className="w-px h-3 bg-slate-300 dark:bg-cyber-border/80 mx-0.5" />
+          <div className="w-px h-3 bg-slate-300 dark:bg-zinc-800 mx-0.5" aria-hidden="true" />
 
           {/* R: Target IP (RHOST) */}
           <div className="flex items-center gap-1" title="Target IP (RHOST) - Click icon to copy">
             <label
               htmlFor="unified-target-ip"
-              className="px-1 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-cyber-emerald border border-emerald-500/30 flex-shrink-0 cursor-pointer select-none"
+              className="px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-cyber-emerald border border-emerald-500/30 flex-shrink-0 cursor-pointer select-none"
             >
               R
             </label>
@@ -516,12 +526,12 @@ export const UnifiedHeader: React.FC = () => {
               }}
               placeholder="10.10.10.X"
               title={globalVars.targetIp || '10.10.10.X'}
-              className="w-16 xl:w-20 bg-transparent text-slate-900 dark:text-cyber-emerald focus:outline-none placeholder-slate-400 dark:placeholder-zinc-600 font-bold text-[11px] font-mono tracking-tight truncate"
+              className="w-16 xl:w-20 bg-transparent text-slate-900 dark:text-zinc-100 focus:outline-none placeholder-slate-400 dark:placeholder-zinc-600 font-semibold text-[11px] font-mono tabular-nums tracking-tight truncate"
             />
             <button
               type="button"
               onClick={() => handleCopyVar(globalVars.targetIp, 'target')}
-              className="p-0.5 text-slate-400 hover:text-cyber-emerald dark:text-zinc-500 dark:hover:text-cyber-emerald transition-colors cursor-pointer"
+              className="p-0.5 text-slate-400 hover:text-emerald-600 dark:text-zinc-500 dark:hover:text-cyber-emerald transition-colors cursor-pointer"
               title={copiedVar === 'target' ? 'Copied Target IP to clipboard!' : 'Copy Target IP (RHOST)'}
               aria-label="Copy Target IP"
             >
@@ -529,13 +539,13 @@ export const UnifiedHeader: React.FC = () => {
             </button>
           </div>
 
-          <div className="w-px h-3 bg-slate-300 dark:bg-cyber-border/80 mx-0.5" />
+          <div className="w-px h-3 bg-slate-300 dark:bg-zinc-800 mx-0.5" aria-hidden="true" />
 
           {/* P: Listener Port (LPORT) */}
           <div className="flex items-center gap-1" title="Listener Port (LPORT) - Click icon to copy">
             <label
               htmlFor="unified-lport"
-              className="px-1 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex-shrink-0 cursor-pointer select-none"
+              className="px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex-shrink-0 cursor-pointer select-none"
             >
               P
             </label>
@@ -544,9 +554,19 @@ export const UnifiedHeader: React.FC = () => {
               name="lport"
               aria-label="Listener Port (LPORT)"
               type="text"
+              inputMode="numeric"
+              maxLength={5}
               value={globalVars.lport || ''}
               onChange={(e) => {
-                setGlobalVars({ lport: e.target.value });
+                const digits = e.target.value.replace(/\D/g, '');
+                if (!digits) {
+                  setGlobalVars({ lport: '' });
+                } else {
+                  const num = parseInt(digits, 10);
+                  if (num <= 65535) {
+                    setGlobalVars({ lport: String(num) });
+                  }
+                }
                 if (copiedVar === 'lport') {
                   if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
                   setCopiedVar(null);
@@ -557,12 +577,12 @@ export const UnifiedHeader: React.FC = () => {
               }}
               placeholder="4444"
               title={globalVars.lport || '4444'}
-              className="w-10 xl:w-11 bg-transparent text-slate-900 dark:text-purple-300 focus:outline-none placeholder-slate-400 dark:placeholder-zinc-600 font-bold text-[11px] font-mono tracking-tight truncate"
+              className="w-10 xl:w-11 bg-transparent text-slate-900 dark:text-zinc-100 focus:outline-none placeholder-slate-400 dark:placeholder-zinc-600 font-semibold text-[11px] font-mono tabular-nums tracking-tight truncate"
             />
             <button
               type="button"
               onClick={() => handleCopyVar(globalVars.lport, 'lport')}
-              className="p-0.5 text-slate-400 hover:text-purple-400 dark:text-zinc-500 dark:hover:text-purple-400 transition-colors cursor-pointer"
+              className="p-0.5 text-slate-400 hover:text-purple-500 dark:text-zinc-500 dark:hover:text-purple-400 transition-colors cursor-pointer"
               title={copiedVar === 'lport' ? 'Copied LPORT to clipboard!' : 'Copy LPORT'}
               aria-label="Copy LPORT"
             >
@@ -582,7 +602,7 @@ export const UnifiedHeader: React.FC = () => {
             setRevShellModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden md:flex px-2 py-1 rounded-md bg-cyber-cyan/10 hover:bg-cyber-cyan/20 border border-cyber-cyan/30 hover:border-cyber-cyan/60 text-cyber-cyan font-mono font-bold text-xs items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.98] flex-shrink-0 cursor-pointer"
+          className="hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-[6px] bg-cyber-cyan/10 hover:bg-cyber-cyan/20 border border-cyber-cyan/30 hover:border-cyber-cyan/60 text-cyber-cyan font-mono font-bold text-xs transition-all active:scale-[0.96] flex-shrink-0 cursor-pointer shadow-xs machined-edge"
           title="Open Rapid Reverse Shell Crafter (Alt+P)"
           aria-label="RevShell - Open Rapid Reverse Shell Crafter"
         >
@@ -596,7 +616,7 @@ export const UnifiedHeader: React.FC = () => {
             setSnippetsDrawerOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden md:flex p-1.5 sm:px-2 sm:py-1 rounded-md bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-300 dark:border-cyber-border text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-mono font-semibold text-xs items-center gap-1 transition-[transform,background-color,border-color,color] active:scale-[0.98] flex-shrink-0 cursor-pointer"
+          className="hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-[6px] bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-mono font-semibold text-xs transition-all active:scale-[0.96] flex-shrink-0 cursor-pointer shadow-xs machined-edge"
           title="Open Tactical Snippets Drawer (Alt+S)"
           aria-label="Snippets - Open Tactical Snippets Drawer"
         >
@@ -604,41 +624,55 @@ export const UnifiedHeader: React.FC = () => {
           <span className="hidden 2xl:inline">Snippets</span>
         </button>
 
-        {/* Creator Support: Buy Me a Coffee */}
-        <a
-          href={CREATOR_PROFILE_LINKS.coffee}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden 2xl:flex px-2.5 py-1 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/60 text-amber-700 dark:text-amber-400 font-mono font-bold text-xs items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.98] group flex-shrink-0"
-          title="Buy Daniel Dayan a Coffee / Support Open Source (buymeacoffee.com/0xdnd)"
-          aria-label="Buy Coffee"
+        {/* Command Palette Launcher Pill */}
+        <button
+          onClick={() => {
+            setCommandPaletteOpen(true);
+            if (soundEnabled) playCyberSound('click');
+          }}
+          className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-[6px] bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white font-mono font-semibold text-xs transition-all active:scale-[0.96] flex-shrink-0 cursor-pointer shadow-xs machined-edge"
+          title="Open Command Palette (Ctrl+K)"
+          aria-label="Open Command Palette"
         >
-          <Coffee className="w-3.5 h-3.5 text-amber-500 transition-transform flex-shrink-0" />
-          <span className="hidden 2xl:inline">Buy Coffee</span>
-        </a>
+          <Search className="w-3.5 h-3.5 text-cyber-cyan flex-shrink-0" />
+          <span className="hidden 2xl:inline">Palette</span>
+          <kbd className="hidden sm:inline-block px-1 py-0.2 text-[9px] font-bold rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-300 dark:border-zinc-700">
+            Ctrl+K
+          </kbd>
+        </button>
 
         {/* Light / Dark Mode Toggle directly in page header */}
         <ThemeToggle size="sm" soundEnabled={soundEnabled} className="flex-shrink-0" />
 
         {/* Active Operator Profile Switcher Pill */}
         <button
+          type="button"
           onClick={() => {
             setOperatorProfileModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="h-8.5 px-2 rounded-lg bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white text-xs font-mono font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.98] group flex-shrink-0 cursor-pointer"
-          title={`Active Operator: ${user?.name || 'Local Operator'} (${user?.role || 'Offline Mode'}). Click to switch or log in (Alt+O)`}
+          className="h-8 px-2 rounded-[6px] bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700 text-slate-800 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white text-xs font-sans font-medium flex items-center gap-1.5 transition-all active:scale-[0.96] group flex-shrink-0 cursor-pointer shadow-xs machined-edge"
+          title={`Active Operator: ${user?.callsign || user?.name || 'Local Operator'} (${user?.role || 'Offline Mode'}). Click to switch or log in (Alt+O)`}
         >
-          <div className="w-5 h-5 rounded-md bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-[10px] font-bold text-emerald-600 dark:text-cyber-emerald font-mono flex-shrink-0">
-            {(user?.name || 'OP').charAt(0).toUpperCase()}
+          {/* Avatar chip with concentric 3px radius and active micro-LED */}
+          <div className="w-5 h-5 rounded-[3px] bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono flex-shrink-0 relative">
+            {(user?.callsign || user?.name || 'OP').charAt(0).toUpperCase()}
+            <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 border border-white dark:border-zinc-950 shadow-[0_0_4px_rgba(16,185,129,0.8)]" />
           </div>
-          <span className="hidden min-[1400px]:inline font-bold text-xs max-w-[75px] 2xl:max-w-[120px] truncate group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan transition-colors">
-            {user?.name || 'Local Operator'}
+
+          {/* Operator Name with dual-mode high contrast */}
+          <span className="hidden sm:inline-block font-semibold text-xs max-w-[80px] xl:max-w-[120px] truncate group-hover:text-emerald-600 dark:group-hover:text-cyber-emerald transition-colors text-slate-800 dark:text-zinc-200">
+            {user?.callsign || user?.name || 'Local Operator'}
           </span>
-          <span className="hidden min-[1650px]:inline text-[10px] font-mono text-emerald-600 dark:text-cyber-emerald font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-            {operatorRootedCount} 🎯
-          </span>
-          <ChevronDown className="w-3 h-3 text-slate-400 dark:text-cyber-muted group-hover:text-slate-700 dark:group-hover:text-white transition-transform" />
+
+          {/* Root Badge: Hidden at 1024px to free 65px width budget; visible at >= 1280px (xl) */}
+          <div className="hidden xl:flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-bold leading-none tabular-nums flex-shrink-0 shadow-xs">
+            <Crosshair className="w-2.5 h-2.5 text-emerald-500 flex-shrink-0" />
+            <span>{operatorRootedCount}</span>
+            <span className="text-[8px] font-semibold text-emerald-600/70 dark:text-emerald-400/70 tracking-wider">ROOT</span>
+          </div>
+
+          <ChevronDown className="w-3 h-3 text-slate-400 dark:text-zinc-500 group-hover:text-slate-700 dark:group-hover:text-zinc-300 transition-transform duration-200 flex-shrink-0" />
         </button>
 
         {/* Secondary Settings & Profile Menu */}

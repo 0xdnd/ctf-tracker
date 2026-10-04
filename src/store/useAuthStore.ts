@@ -29,14 +29,14 @@ export const DEFAULT_DANIEL_PROFILE: User = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-export const PUBLIC_GOOGLE_CLIENT_ID = '495621757694-hvhvo2snbcmj12jat6srh679i1s7mpih.apps.googleusercontent.com';
+export const PUBLIC_GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 
 const getInitialGoogleClientId = (): string => {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem(CLIENT_ID_STORAGE_KEY);
     if (stored && stored.includes('.apps.googleusercontent.com')) return stored;
   }
-  return (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || PUBLIC_GOOGLE_CLIENT_ID;
+  return PUBLIC_GOOGLE_CLIENT_ID;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -133,23 +133,44 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Rename Active Profile
-      renameProfile: (newName: string) => {
+      // Atomically update any profile (active or inactive) in both profiles array and active user session
+      updateProfile: (profileId: string, updates: Partial<User>) => {
+        const cleanUpdates = { ...updates };
+        if (cleanUpdates.name !== undefined) cleanUpdates.name = cleanUpdates.name.trim();
+        if (cleanUpdates.callsign !== undefined) cleanUpdates.callsign = cleanUpdates.callsign.trim();
+        cleanUpdates.updatedAt = new Date().toISOString();
+
+        const currentProfiles = get().profiles;
+        const exists = currentProfiles.some((p) => p.id === profileId);
+        if (!exists) return;
+
+        const updatedProfiles = currentProfiles.map((p) =>
+          p.id === profileId ? { ...p, ...cleanUpdates } : p
+        );
+
+        const currentUser = get().user;
+        const updatedUser = currentUser && currentUser.id === profileId
+          ? { ...currentUser, ...cleanUpdates }
+          : currentUser;
+
+        set({ profiles: updatedProfiles, user: updatedUser });
+        playCyberSound('click');
+      },
+
+      // Rename Active Profile (sets both name and callsign, or custom callsign)
+      renameProfile: (newName: string, newCallsign?: string) => {
         const cleanName = newName.trim();
         if (!cleanName) return;
 
         const current = get().user;
         if (!current) return;
 
-        const updated: User = { 
-          ...current, 
-          name: cleanName, 
-          callsign: current.callsign === current.name ? cleanName : current.callsign,
-          updatedAt: new Date().toISOString() 
-        };
-        const updatedProfiles = get().profiles.map((p) => (p.id === current.id ? updated : p));
-        set({ user: updated, profiles: updatedProfiles });
-        playCyberSound('click');
+        const cleanCallsign = (newCallsign !== undefined ? newCallsign : cleanName).trim() || cleanName;
+
+        get().updateProfile(current.id, {
+          name: cleanName,
+          callsign: cleanCallsign,
+        });
       },
 
       // Switch Profile

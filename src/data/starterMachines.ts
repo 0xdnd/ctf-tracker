@@ -4,6 +4,7 @@ import { Machine } from '../types';
  * Lightweight starter targets (~10KB) loaded synchronously on initial boot.
  * Allows instant TTI (<100ms) without waiting for the full 1.05MB catalog.
  * The full 400+ machine catalog is hydrated asynchronously via loadCatalog().
+ * All starter machines default to clean unstarted state for fresh operator workspaces.
  */
 export const STARTER_MACHINES: Machine[] = [
   {
@@ -13,21 +14,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Linux",
     platform: "THM",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["File-Upload", "Bypass", "SUID-Python", "Privesc", "CTF"],
     certifications: ["OSCP"],
     roomUrl: "https://tryhackme.com/room/rrootme",
     writeupUrl: "https://0xdnd.gitbook.io/thm-writeups/",
     hint: "Bypass PHP upload extension filter using .phtml on /panel, catch reverse shell, then escalate via /usr/bin/python SUID.",
-    timeSpentSeconds: 2700,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    timeToUserSeconds: 1080,
-    timeToRootSeconds: 2700,
-    userFlag: "THM{flag_captured_daniel_dayan}",
-    rootFlag: "THM{system_pwned_daniel_dayan}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "thm-pickle-rick",
@@ -36,21 +31,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Linux",
     platform: "THM",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["Web-Enumeration", "Command-Injection", "Sudo-Privesc", "Linux", "CTF"],
     certifications: [],
     roomUrl: "https://tryhackme.com/room/picklerick",
     writeupUrl: "https://0xdnd.gitbook.io/thm-writeups/",
     hint: "Inspect page source for username, check robots.txt for clue. Bypass panel command filter using less/cat alternatives, check sudo -l.",
-    timeSpentSeconds: 1800,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    timeToUserSeconds: 720,
-    timeToRootSeconds: 1800,
-    userFlag: "THM{flag_captured_daniel_dayan}",
-    rootFlag: "THM{system_pwned_daniel_dayan}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "thm-cowboyhacker",
@@ -59,21 +48,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Linux",
     platform: "THM",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["FTP-Anonymous", "Hydra", "Tar-SUID", "Linux", "CTF"],
     certifications: [],
     roomUrl: "https://tryhackme.com/room/cowboyhacker",
     writeupUrl: "https://0xdnd.gitbook.io/thm-writeups/",
     hint: "Anonymous FTP reveals task.txt and locks.txt. Brute force SSH user lin with hydra, then abuse tar sudo privileges.",
-    timeSpentSeconds: 2700,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    timeToUserSeconds: 1080,
-    timeToRootSeconds: 2700,
-    userFlag: "THM{flag_captured_daniel_dayan}",
-    rootFlag: "THM{system_pwned_daniel_dayan}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "htb-lame",
@@ -82,19 +65,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Linux",
     platform: "HTB",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["Samba", "CVE-2007-2447", "Metasploit", "Network", "CTF"],
     certifications: ["OSCP"],
     roomUrl: "https://app.hackthebox.com/machines/Lame",
     writeupUrl: "https://0xdf.gitlab.io/2020/04/08/htb-lame.html",
     hint: "Samba 3.0.20 usermap script vulnerability (CVE-2007-2447) grants instant root code execution.",
-    timeSpentSeconds: 2100,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    userFlag: "HTB{lame_user_flag_captured}",
-    rootFlag: "HTB{lame_root_flag_captured}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "htb-legacy",
@@ -103,19 +82,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Windows",
     platform: "HTB",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["SMB", "MS08-067", "EternalBlue", "Windows-XP", "CTF"],
     certifications: ["OSCP"],
     roomUrl: "https://app.hackthebox.com/machines/Legacy",
     writeupUrl: "https://0xdf.gitlab.io/2020/04/09/htb-legacy.html",
     hint: "Vulnerable to MS08-067 or MS17-010 (EternalBlue).",
-    timeSpentSeconds: 1500,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    userFlag: "HTB{legacy_user_flag_captured}",
-    rootFlag: "HTB{legacy_root_flag_captured}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "htb-blue",
@@ -124,19 +99,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Windows",
     platform: "HTB",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["MS17-010", "EternalBlue", "Windows-7", "SMB", "CTF"],
     certifications: ["OSCP"],
     roomUrl: "https://app.hackthebox.com/machines/Blue",
     writeupUrl: "https://0xdf.gitlab.io/2021/05/11/htb-blue.html",
     hint: "Classic MS17-010 EternalBlue remote code execution exploit.",
-    timeSpentSeconds: 1200,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    userFlag: "HTB{blue_user_flag_captured}",
-    rootFlag: "HTB{blue_root_flag_captured}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "htb-sau",
@@ -145,19 +116,15 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Linux",
     platform: "HTB",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["SSRF", "Maltrail", "CVE-2023-27163", "Systemctl", "CTF"],
     certifications: ["OSCP"],
     roomUrl: "https://app.hackthebox.com/machines/Sau",
     writeupUrl: "https://0xdf.gitlab.io/2023/10/28/htb-sau.html",
     hint: "Exploit SSRF in Request Baskets (CVE-2023-27163) to reach Maltrail on port 80, then exploit command injection and systemctl status privesc.",
-    timeSpentSeconds: 3200,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    userFlag: "HTB{sau_user_flag_captured}",
-    rootFlag: "HTB{sau_root_flag_captured}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   },
   {
     id: "htb-forest",
@@ -166,18 +133,14 @@ export const STARTER_MACHINES: Machine[] = [
     os: "Windows",
     platform: "HTB",
     difficulty: "Easy",
-    status: "completed",
+    status: "backlog",
     tags: ["Active-Directory", "AS-REP-Roasting", "BloodHound", "DCSync", "CTF"],
     certifications: ["OSCP", "CPTS"],
     roomUrl: "https://app.hackthebox.com/machines/Forest",
     writeupUrl: "https://0xdf.gitlab.io/2020/04/25/htb-forest.html",
     hint: "Enumerate users via RPC null session, AS-REP roast svc-alfresco, analyze ACLs in BloodHound, and perform DCSync attack.",
-    timeSpentSeconds: 3600,
+    timeSpentSeconds: 0,
     createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2026-08-20T11:30:00.000Z",
-    userFlag: "HTB{forest_user_flag_captured}",
-    rootFlag: "HTB{forest_root_flag_captured}",
-    userPwnedAt: "2026-08-15T14:20:00.000Z",
-    rootPwnedAt: "2026-08-15T15:10:00.000Z"
+    updatedAt: "2026-08-20T11:30:00.000Z"
   }
 ];

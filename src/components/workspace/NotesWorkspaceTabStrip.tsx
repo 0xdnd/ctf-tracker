@@ -8,6 +8,8 @@ import {
   Pin, 
   Layers 
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { getAllCptsNotes, CptsNoteEntry } from '../../utils/obsidianManualUtils';
@@ -60,7 +62,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
   }, [allNotes, searchQuery]);
 
   return (
-    <div className="relative flex items-center bg-slate-100 dark:bg-[#121215] border-b border-slate-200 dark:border-[#27272a] px-2 h-10 select-none flex-shrink-0">
+    <div className="relative flex items-center bg-surface-sunken border-b border-subtle px-2 h-10 select-none flex-shrink-0">
       {/* Scrollable Tab Container */}
       <div 
         ref={tabStripRef}
@@ -75,22 +77,31 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             <div
               key={tabId}
               onClick={() => setActiveTab(tabId)}
-              className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium cursor-pointer transition-colors border flex-shrink-0 max-w-[160px] sm:max-w-[200px] ${
+              className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium cursor-pointer transition-colors border flex-shrink-0 max-w-[160px] sm:max-w-[200px] ${
                 isActive
-                  ? 'bg-white dark:bg-[#1e1e24] text-cyan-700 dark:text-cyber-cyan border-slate-300 dark:border-cyber-cyan/50 shadow-xs'
-                  : 'bg-transparent text-slate-600 dark:text-zinc-400 border-transparent hover:bg-slate-200/70 dark:hover:bg-[#18181d] hover:text-slate-900 dark:hover:text-white'
+                  ? 'text-accent border-transparent'
+                  : 'bg-transparent text-secondary border-transparent hover:bg-surface-hover hover:text-primary'
               }`}
               title={title}
             >
-              <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-cyan-600 dark:text-cyber-cyan' : 'text-slate-400 dark:text-zinc-500'}`} />
-              <span className="truncate text-[11px]">{title}</span>
+              {isActive && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={TACTICAL_SPRING}
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-md bg-surface-card border border-accent/50 shadow-xs pointer-events-none"
+                />
+              )}
+              <FileText className={`relative w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-accent' : 'text-muted'}`} />
+              <span className="relative truncate text-[11px]">{title}</span>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   closeTab(tabId);
                 }}
-                className={`p-0.5 rounded-sm hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors flex-shrink-0 ${
+                className={`relative p-0.5 rounded-sm hover:bg-surface-hover text-muted hover:text-secondary transition-colors flex-shrink-0 ${
                   isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
                 title="Close Tab"
@@ -107,7 +118,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-[#1e1e24] text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors flex-shrink-0 cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors flex-shrink-0 cursor-pointer"
             title="Open Note in Tab"
             aria-label="Open Note in Tab"
           >
@@ -116,22 +127,22 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
 
           {/* Quick Search Dropdown */}
           {isSearchOpen && (
-            <div className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl bg-white dark:bg-[#18181b] border border-slate-300 dark:border-[#27272a] shadow-2xl p-2.5 z-50 space-y-2">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a]">
-                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 flex-shrink-0" />
+            <div className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl bg-surface-card border border-strong shadow-2xl p-2.5 z-50 space-y-2">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface-sunken border border-subtle">
+                <Search className="w-3.5 h-3.5 text-muted flex-shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search field notes & guides..."
-                  className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none font-mono"
+                  className="w-full bg-transparent text-xs text-primary placeholder-muted focus:outline-none font-mono"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                    className="text-muted hover:text-secondary"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -152,22 +163,22 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                       }}
                       className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs font-mono cursor-pointer ${
                         isAlreadyOpen
-                          ? 'bg-cyan-500/10 text-cyan-700 dark:text-cyber-cyan'
-                          : 'hover:bg-slate-100 dark:hover:bg-[#1f1f25] text-slate-700 dark:text-zinc-300'
+                          ? 'bg-accent-muted text-accent'
+                          : 'hover:bg-surface-sunken text-secondary'
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate pr-2">
-                        <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 flex-shrink-0" />
+                        <FileText className="w-3.5 h-3.5 text-muted flex-shrink-0" />
                         <span className="truncate font-medium">{note.title}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-zinc-500 flex-shrink-0">
+                      <span className="text-[10px] text-muted flex-shrink-0">
                         {note.category}
                       </span>
                     </button>
                   );
                 })}
                 {filteredNotes.length === 0 && (
-                  <div className="text-center py-3 text-slate-400 dark:text-zinc-500 text-xs font-mono">
+                  <div className="text-center py-3 text-muted text-xs font-mono">
                     No notes found
                   </div>
                 )}
@@ -182,7 +193,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
         <button
           type="button"
           onClick={closeAllTabs}
-          className="px-1.5 py-1 rounded-md text-[10px] font-mono text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-[#1e1e24] transition-colors flex-shrink-0 cursor-pointer ml-1"
+          className="px-1.5 py-1 rounded-md text-[10px] font-mono text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-colors flex-shrink-0 cursor-pointer ml-1"
           title="Close All Tabs"
         >
           Close All

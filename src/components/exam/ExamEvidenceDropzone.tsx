@@ -93,7 +93,7 @@ export async function downscaleImageFile(
                 width = maxDimension;
               } else {
                 width = Math.round((width * maxDimension) / height);
-                maxDimension = height;
+                height = maxDimension;
               }
             }
 
@@ -330,25 +330,25 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       onPaste={handlePaste}
       tabIndex={0}
       data-testid="evidence-dropzone"
-      className={`p-4 rounded-xl bg-slate-900/90 dark:bg-cyber-card/90 border border-slate-700/80 dark:border-cyber-border font-mono space-y-4 ${className}`}
+      className={`p-4 rounded-2xl bg-surface-card border border-subtle font-sans space-y-4 ${className}`}
     >
       {/* 1. Header & Compliance Badge */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 dark:border-cyber-border pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-3">
         <div className="flex items-center gap-2">
           <div
             className={`p-1.5 rounded-lg border ${
               isUser
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
+                : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
             }`}
           >
             {isUser ? <Flag className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+            <h4 className="text-xs font-semibold tracking-wide text-primary">
               {isUser ? 'Foothold Evidence (local.txt)' : 'PrivEsc / Root Evidence (proof.txt)'}
             </h4>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-muted font-mono tabular-nums">
               Target: {box.name} ({box.ip}) • {isUser ? `+${box.userPoints}` : `+${box.rootPoints}`} PTS
             </span>
           </div>
@@ -357,13 +357,13 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
         {/* Real-Time Compliance Badge */}
         <div data-testid="evidence-compliance-badge">
           {isCompliant ? (
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-callout-success-bg text-callout-success-fg border border-callout-success-border flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
               <span>OFFSEC COMPLIANT</span>
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
+            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
               <span>EVIDENCE INCOMPLETE</span>
             </span>
           )}
@@ -373,21 +373,21 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       {/* 2. Interactive Verification Checklist */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Step A: Captured Flag Input */}
-        <div className="p-3 rounded-lg bg-slate-950/60 dark:bg-cyber-bg/60 border border-slate-800 dark:border-cyber-border space-y-1.5">
+        <div className="p-3 rounded-lg bg-surface-sunken border border-subtle space-y-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor={`flag-input-${box.id}-${flagType}`}
-              className="text-[11px] font-bold text-slate-300 flex items-center gap-1"
+              className="text-[11px] font-semibold text-secondary flex items-center gap-1"
             >
-              <Flag className="w-3 h-3 text-cyan-400" />
+              <Flag className="w-3 h-3 text-accent" />
               <span>1. Flag Hash / Value</span>
             </label>
             {proof.flagText && (
               <span
-                className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
                   hasValidFlag
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                    ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+                    : 'bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border'
                 }`}
               >
                 {hasValidFlag ? `✓ ${flagValidation.label}` : 'Invalid'}
@@ -401,22 +401,22 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
             value={proof.flagText || ''}
             onChange={(e) => handleFlagChange(e.target.value)}
             placeholder="e.g. 7c4a8d09ca3762af61e59520943dc264"
-            className="w-full bg-slate-900 dark:bg-cyber-card border border-slate-700 dark:border-cyber-border rounded px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+            className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-xs font-mono text-primary placeholder:text-muted focus:outline-none focus:border-accent"
           />
         </div>
 
         {/* Step B: whoami command output */}
-        <div className="p-3 rounded-lg bg-slate-950/60 dark:bg-cyber-bg/60 border border-slate-800 dark:border-cyber-border space-y-1.5">
+        <div className="p-3 rounded-lg bg-surface-sunken border border-subtle space-y-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor={`whoami-input-${box.id}-${flagType}`}
-              className="text-[11px] font-bold text-slate-300 flex items-center gap-1"
+              className="text-[11px] font-semibold text-secondary flex items-center gap-1"
             >
-              <Terminal className="w-3 h-3 text-amber-400" />
+              <Terminal className="w-3 h-3 text-accent" />
               <span>2. whoami Output</span>
             </label>
             {hasWhoami && (
-              <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                 ✓ Recorded
               </span>
             )}
@@ -428,22 +428,22 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
             value={proof.whoamiOutput || ''}
             onChange={(e) => handleWhoamiChange(e.target.value)}
             placeholder={isUser ? 'e.g. offsec\\alice' : 'e.g. root / nt authority\\system'}
-            className="w-full bg-slate-900 dark:bg-cyber-card border border-slate-700 dark:border-cyber-border rounded px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+            className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-xs font-mono text-primary placeholder:text-muted focus:outline-none focus:border-accent"
           />
         </div>
 
         {/* Step C: ip a / ipconfig output */}
-        <div className="p-3 rounded-lg bg-slate-950/60 dark:bg-cyber-bg/60 border border-slate-800 dark:border-cyber-border space-y-1.5">
+        <div className="p-3 rounded-lg bg-surface-sunken border border-subtle space-y-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor={`ipconfig-input-${box.id}-${flagType}`}
-              className="text-[11px] font-bold text-slate-300 flex items-center gap-1"
+              className="text-[11px] font-semibold text-secondary flex items-center gap-1"
             >
-              <Network className="w-3 h-3 text-purple-400" />
+              <Network className="w-3 h-3 text-accent" />
               <span>3. ip a / ipconfig Output</span>
             </label>
             {hasIpconfig && (
-              <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                 ✓ Recorded
               </span>
             )}
@@ -455,7 +455,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
             value={proof.ipconfigOutput || ''}
             onChange={(e) => handleIpconfigChange(e.target.value)}
             placeholder={`e.g. inet ${box.ip}/24 or IPv4 Address`}
-            className="w-full bg-slate-900 dark:bg-cyber-card border border-slate-700 dark:border-cyber-border rounded px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400"
+            className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-xs font-mono text-primary placeholder:text-muted focus:outline-none focus:border-accent"
           />
         </div>
       </div>
@@ -463,12 +463,12 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       {/* 3. Screenshot Dropzone & Paste Area */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-            <Camera className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-semibold text-secondary flex items-center gap-1.5">
+            <Camera className="w-3.5 h-3.5 text-accent" />
             <span>Screenshot Evidence Dropzone</span>
           </span>
-          <span className="text-[10px] text-slate-400">
-            Offline downscaling to Base64 JPEG • Press <kbd className="px-1 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Ctrl+V</kbd> to paste
+          <span className="text-[10px] text-muted">
+            Offline downscaling to Base64 JPEG • Press <kbd className="px-1 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary font-mono">Ctrl+V</kbd> to paste
           </span>
         </div>
 
@@ -479,10 +479,10 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`cursor-pointer border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-colors ${
+          className={`cursor-pointer border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-[background-color,border-color] ${
             isDragOver
-              ? 'border-cyan-400 bg-cyan-500/10'
-              : 'border-slate-700 hover:border-cyan-500/50 bg-slate-950/40 hover:bg-slate-950/70'
+              ? 'border-accent bg-accent-muted'
+              : 'border-strong hover:border-accent bg-surface-sunken hover:bg-surface-hover'
           }`}
         >
           <input
@@ -495,14 +495,14 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
           />
 
           <div className="flex flex-col items-center justify-center gap-2">
-            <div className="p-3 rounded-full bg-slate-800/80 border border-slate-700 text-cyan-400">
+            <div className="p-3 rounded-full bg-surface-card border border-subtle text-accent">
               <UploadCloud className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-bold text-white">
+              <p className="text-xs font-semibold text-primary">
                 {isProcessingImage ? 'Downscaling image offline...' : 'Drop terminal screenshot here, or click to browse'}
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">
+              <p className="text-[10px] text-muted mt-0.5">
                 PNG, JPEG, WebP • Auto-downscaled to JPEG &le; 1280px to prevent quota bloat
               </p>
             </div>
@@ -512,9 +512,9 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
 
       {/* 4. Captured Screenshots Gallery */}
       {screenshots.length > 0 && (
-        <div className="space-y-2 pt-2 border-t border-slate-800 dark:border-cyber-border">
+        <div className="space-y-2 pt-2 border-t border-subtle">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-300">
+            <span className="font-semibold text-secondary">
               Verified Screenshots ({screenshots.length})
             </span>
           </div>
@@ -524,10 +524,10 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               <div
                 key={sc.id}
                 data-testid={`screenshot-card-${sc.id}`}
-                className="p-2.5 rounded-lg bg-slate-950/70 dark:bg-cyber-bg/70 border border-slate-800 dark:border-cyber-border flex flex-col justify-between gap-2 text-xs"
+                className="p-2.5 rounded-lg bg-surface-sunken border border-subtle flex flex-col justify-between gap-2 text-xs"
               >
                 {/* Thumbnail Preview */}
-                <div className="relative group rounded overflow-hidden bg-black aspect-video flex items-center justify-center border border-slate-800">
+                <div className="relative group rounded overflow-hidden bg-surface-base aspect-video flex items-center justify-center border border-subtle">
                   <img
                     src={sc.dataUrl}
                     alt={sc.caption}
@@ -536,7 +536,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                   <button
                     type="button"
                     onClick={() => setPreviewImage(sc.dataUrl)}
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity font-bold text-[11px] gap-1"
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex items-center justify-center text-white transition-opacity font-semibold text-[11px] gap-1"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Expand Preview</span>
@@ -552,12 +552,12 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                         type="text"
                         value={captionText}
                         onChange={(e) => setCaptionText(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-cyan-500 rounded px-2 py-0.5 text-[11px] text-white focus:outline-none"
+                        className="flex-1 bg-surface-card border border-accent rounded px-2 py-0.5 text-[11px] text-primary focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => handleSaveCaption(sc.id)}
-                        className="p-1 rounded bg-cyan-600 text-slate-950 hover:bg-cyan-500"
+                        className="p-1 rounded bg-accent text-on-accent hover:bg-accent-hover"
                         title="Save caption"
                       >
                         <Check className="w-3.5 h-3.5" />
@@ -565,13 +565,13 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-1 mt-1">
-                      <span className="text-[11px] text-slate-200 truncate flex-1 font-sans">
+                      <span className="text-[11px] text-primary truncate flex-1 font-sans">
                         {sc.caption}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStartCaptionEdit(sc)}
-                        className="text-slate-400 hover:text-cyan-400 p-0.5"
+                        className="text-muted hover:text-accent p-0.5"
                         title="Edit caption"
                       >
                         <Edit2 className="w-3 h-3" />
@@ -579,7 +579,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                  <div className="flex items-center justify-between text-[10px] text-muted mt-1">
                     <span>
                       {sc.timestamp ? new Date(sc.timestamp).toLocaleTimeString() : 'Logged'}
                       {sc.sizeBytes ? ` • ${(sc.sizeBytes / 1024).toFixed(0)} KB` : ''}
@@ -588,7 +588,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                       type="button"
                       data-testid={`screenshot-delete-btn-${sc.id}`}
                       onClick={() => handleDeleteScreenshot(sc.id)}
-                      className="text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                      className="text-callout-danger-fg hover:opacity-80 flex items-center gap-1 transition-[transform,background-color,border-color,color] active:scale-[0.97]"
                       title="Delete screenshot proof"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -605,14 +605,14 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       {/* 5. Expanded Modal Preview if user clicked image */}
       {previewImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
           onClick={() => setPreviewImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-700 rounded-xl overflow-hidden p-2">
+          <div className="relative max-w-4xl max-h-[90vh] bg-surface-card border border-subtle rounded-2xl overflow-hidden p-2">
             <button
               type="button"
               onClick={() => setPreviewImage(null)}
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-slate-800 text-white hover:bg-slate-700"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-surface-elevated text-primary hover:bg-surface-hover"
             >
               <X className="w-4 h-4" />
             </button>

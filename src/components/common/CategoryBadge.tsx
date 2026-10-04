@@ -27,6 +27,7 @@ export interface CategoryBadgeProps {
   size?: 'xs' | 'sm';
   className?: string;
   showIcon?: boolean;
+  variant?: 'default' | 'hardware';
 }
 
 export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
@@ -34,6 +35,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
   size = 'xs',
   className = '',
   showIcon = true,
+  variant = 'default',
 }) => {
   const { primary, primaryDef, badgeColor, categories } = classifyMachine(machine);
 
@@ -99,6 +101,23 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
     size === 'xs'
       ? 'text-[9px] px-2 py-0.5 rounded-md'
       : 'text-[10px] px-2.5 py-0.5 rounded-md';
+
+  const hardwareSizeClass =
+    size === 'xs'
+      ? 'text-[9px] px-1.5 py-0.5'
+      : 'text-[10px] px-2 py-0.5';
+
+  if (variant === 'hardware') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-300 dark:border-zinc-800/90 bg-zinc-100 dark:bg-zinc-950/80 text-zinc-800 dark:text-zinc-300 font-mono text-[10px] tracking-wider uppercase select-none cursor-default font-medium ${hardwareSizeClass} ${className}`}
+        title={`Primary Vector: ${primary} • All Categories: ${categories.join(', ')}`}
+      >
+        {showIcon && <span className="flex-shrink-0">{getIcon()}</span>}
+        <span className="truncate max-w-[80px]">{primary}</span>
+      </span>
+    );
+  }
 
   return (
     <span

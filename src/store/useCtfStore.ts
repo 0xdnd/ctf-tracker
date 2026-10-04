@@ -34,6 +34,8 @@ import {
   triggerWorkspaceDownload, 
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
+import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
+import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
 export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
 export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
@@ -256,8 +258,11 @@ interface CtfStoreState {
   isCatalogLoaded: boolean;
   isCatalogLoading: boolean;
   loadCatalog: () => Promise<void>;
+  isDeepStorageLoaded: boolean;
 
   // Data Import & Export & Profile Data Isolation
+  isHydrated: boolean;
+  setIsHydrated: (val: boolean) => void;
   currentProfileId: string;
   isEphemeralStorage: boolean;
   setIsEphemeralStorage: (val: boolean) => void;
@@ -361,9 +366,19 @@ export const safeLocalStorage = {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(name, value);
-    } catch {
+    } catch (e: any) {
       isStorageEphemeral = true;
       inMemoryFallbackStorage.set(name, value);
+      const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.number === -2147024882;
+      try {
+        window.dispatchEvent(
+          new CustomEvent('zerobox:storage', {
+            detail: isQuota
+              ? { kind: 'quota', message: 'Storage full — writeups moved to deep storage. Export a backup now.' }
+              : { kind: 'error', message: String(e?.message || e) },
+          })
+        );
+      } catch {}
     }
   },
   removeItem: (name: string): void => {
@@ -526,15 +541,22 @@ export const loadInitialProfileData = (profileId: string) => {
         }
       }
 
+      if (!state && profileId === 'usr_daniel') {
+        state = { machines: DEMO_SOLVED_ROSTER, userSolvesReset: false };
+      }
+
       // Re-integrate any isolated custom machines in case of partial reset or fresh profile
       const storedCustom = loadCustomMachinesFromStorage(profileId);
-      if (storedCustom.length > 0) {
+      if (Array.isArray(storedCustom) && storedCustom.length > 0) {
+        const validCustom = storedCustom.filter((m): m is Machine => m !== null && typeof m === 'object' && typeof m.id === 'string');
         if (!state) {
-          state = { machines: storedCustom };
+          state = { machines: validCustom };
         } else {
-          const existingIds = new Set((state.machines || []).map((m: Machine) => m.id));
-          const missingCustom = storedCustom.filter((m) => !existingIds.has(m.id));
-          state.machines = [...missingCustom, ...(state.machines || [])];
+          const rawExisting = Array.isArray(state.machines) ? state.machines : [];
+          const validExisting = rawExisting.filter((m: Machine) => m !== null && typeof m === 'object' && typeof m.id === 'string');
+          const existingIds = new Set(validExisting.map((m: Machine) => m.id));
+          const missingCustom = validCustom.filter((m) => !existingIds.has(m.id));
+          state.machines = [...missingCustom, ...validExisting];
         }
       }
 
@@ -575,15 +597,18 @@ export const CATALOG_MACHINE_ALIASES: Record<string, string> = {
 };
 
 export const toLeanMachines = (machines: Machine[]): Machine[] => {
-  return machines.map((m) => {
-    // Preserve custom user-added machines completely (including user-entered hints, walkthroughs, etc.)
-    if (m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))) {
-      return { ...m, isCustom: true };
-    }
-    // For static catalog machines, strip heavy static content that is deterministically rehydrated by mergeMachinesWithCatalog
-    const { officialWalkthrough, officialSynopsis, officialPdf, ...userFields } = m;
-    return userFields as Machine;
-  });
+  if (!Array.isArray(machines)) return [];
+  return machines
+    .filter((m): m is Machine => m !== null && typeof m === 'object' && typeof m.id === 'string')
+    .map((m) => {
+      // Preserve custom user-added machines completely (including user-entered hints, walkthroughs, etc.)
+      if (m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))) {
+        return { ...m, isCustom: true };
+      }
+      // For static catalog machines, strip heavy static content that is deterministically rehydrated by mergeMachinesWithCatalog
+      const { officialWalkthrough, officialSynopsis, officialPdf, ...userFields } = m;
+      return userFields as Machine;
+    });
 };
 
 export const mergeMachinesWithCatalog = (
@@ -633,10 +658,12 @@ export const mergeMachinesWithCatalog = (
   });
 
   if (Array.isArray(storedMachines) && storedMachines.length > 0) {
-    storedMachines.forEach((m) => {
-      const normName = m.name ? m.name.toLowerCase().trim() : '';
-      const nameSlug = normalizeMachineSlug(m.name);
-      const idSlug = normalizeMachineSlug(m.id);
+    storedMachines
+      .filter((m): m is Machine => m !== null && typeof m === 'object' && typeof m.id === 'string')
+      .forEach((m) => {
+        const normName = typeof m.name === 'string' ? m.name.toLowerCase().trim() : '';
+        const nameSlug = normalizeMachineSlug(m.name);
+        const idSlug = normalizeMachineSlug(m.id);
 
       // Multi-tier lookup to safeguard against catalog ID, name, or platform drift
       let catalogMachine = map.get(m.id);
@@ -699,83 +726,38 @@ export const mergeMachinesWithCatalog = (
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
           });
         } else {
-          // Default baseline: Sync Daniel Dayan's verified solve history
-          if (catalogMachine.status === 'completed') {
-            map.set(catalogMachine.id, {
-              ...m,
-              ...catalogMachine,
-              status: 'completed',
-              userPwnedAt: m.userPwnedAt || catalogMachine.userPwnedAt || '2026-08-20T10:00:00.000Z',
-              rootPwnedAt: m.rootPwnedAt || catalogMachine.rootPwnedAt || '2026-08-20T11:30:00.000Z',
-              userFlag: m.userFlag || catalogMachine.userFlag || (catalogMachine.platform === 'THM' ? 'THM{flag_captured_daniel_dayan}' : 'HTB{user_pwn_verified}'),
-              rootFlag: m.rootFlag || catalogMachine.rootFlag || (catalogMachine.platform === 'THM' ? 'THM{system_pwned_daniel_dayan}' : 'HTB{root_pwn_verified}'),
-              timeSpentSeconds: m.timeSpentSeconds > 0 ? m.timeSpentSeconds : (catalogMachine.timeSpentSeconds || 3600),
-              timeToUserSeconds: m.timeToUserSeconds || catalogMachine.timeToUserSeconds || 1500,
-              timeToRootSeconds: m.timeToRootSeconds || catalogMachine.timeToRootSeconds || 3600,
-              quickNotes: m.quickNotes || catalogMachine.quickNotes,
-              writeupMarkdown: m.writeupMarkdown || catalogMachine.writeupMarkdown,
-              hint: catalogMachine.hint || m.hint,
-              skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
-              officialPdf: catalogMachine.officialPdf || m.officialPdf,
-              officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
-              officialWalkthrough: catalogMachine.officialWalkthrough || m.officialWalkthrough,
-              tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
-              certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
-            });
-          } else if (catalogMachine.status === 'foothold') {
-            map.set(catalogMachine.id, {
-              ...m,
-              ...catalogMachine,
-              status: 'foothold',
-              userPwnedAt: m.userPwnedAt || catalogMachine.userPwnedAt || '2026-08-20T10:00:00.000Z',
-              userFlag: m.userFlag || catalogMachine.userFlag || 'HTB{user_foothold_captured}',
-              timeSpentSeconds: m.timeSpentSeconds > 0 ? m.timeSpentSeconds : 1800,
-              timeToUserSeconds: m.timeToUserSeconds || 1500,
-              quickNotes: m.quickNotes || catalogMachine.quickNotes,
-              writeupMarkdown: m.writeupMarkdown || catalogMachine.writeupMarkdown,
-              hint: catalogMachine.hint || m.hint,
-              skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
-              officialPdf: catalogMachine.officialPdf || m.officialPdf,
-              officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
-              officialWalkthrough: catalogMachine.officialWalkthrough || m.officialWalkthrough,
-              tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
-              certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
-            });
-          } else {
-            const mStatus = m.status || 'backlog';
-            const hasUserFlag = Boolean(m.userFlag?.trim());
-            const hasRootFlag = Boolean(m.rootFlag?.trim());
-            const isFootholdOrAbove = mStatus === 'foothold' || mStatus === 'root' || mStatus === 'completed';
-            const isRootOrAbove = mStatus === 'root' || mStatus === 'completed';
-            const userHasProgress = mStatus !== 'backlog' || hasUserFlag || hasRootFlag || (m.timeSpentSeconds > 0) || Boolean(m.quickNotes) || Boolean(m.writeupMarkdown);
+          // Clean slate baseline: Catalog metadata is decoupled from candidate solve history.
+          // Candidate solve state is derived strictly from operator progress.
+          const mStatus: PipelineStatus = m.status || 'backlog';
+          const hasUserFlag = Boolean(m.userFlag?.trim());
+          const hasRootFlag = Boolean(m.rootFlag?.trim());
+          const isFootholdOrAbove = mStatus === 'foothold' || mStatus === 'root' || mStatus === 'completed';
+          const isRootOrAbove = mStatus === 'root' || mStatus === 'completed';
+          const userHasProgress = mStatus !== 'backlog' || hasUserFlag || hasRootFlag || (m.timeSpentSeconds > 0) || Boolean(m.quickNotes) || Boolean(m.writeupMarkdown);
 
-            map.set(catalogMachine.id, {
-              ...catalogMachine,
-              ...(userHasProgress ? {
-                status: mStatus,
-                userFlag: m.userFlag,
-                rootFlag: m.rootFlag,
-                userPwnedAt: isFootholdOrAbove || hasUserFlag ? m.userPwnedAt : undefined,
-                rootPwnedAt: isRootOrAbove || hasRootFlag ? m.rootPwnedAt : undefined,
-                timeSpentSeconds: m.timeSpentSeconds,
-                timeToUserSeconds: isFootholdOrAbove ? m.timeToUserSeconds : undefined,
-                timeToRootSeconds: isRootOrAbove ? m.timeToRootSeconds : undefined,
-                perceivedDifficulty: m.perceivedDifficulty,
-                rating: m.rating,
-                quickNotes: m.quickNotes,
-                writeupMarkdown: m.writeupMarkdown,
-                checklist: m.checklist,
-                ip: m.ip && !m.ip.includes('x') ? m.ip : catalogMachine.ip,
-              } : {}),
-              hint: catalogMachine.hint || m.hint,
-              skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
-              officialPdf: catalogMachine.officialPdf || m.officialPdf,
-              officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
-              officialWalkthrough: catalogMachine.officialWalkthrough || m.officialWalkthrough,
-              tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
-              certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
-            });
-          }
+          map.set(catalogMachine.id, {
+            ...catalogMachine,
+            ...m,
+            status: userHasProgress ? mStatus : 'backlog',
+            userFlag: m.userFlag || '',
+            rootFlag: m.rootFlag || '',
+            userPwnedAt: isFootholdOrAbove || hasUserFlag ? m.userPwnedAt : undefined,
+            rootPwnedAt: isRootOrAbove || hasRootFlag ? m.rootPwnedAt : undefined,
+            timeSpentSeconds: m.timeSpentSeconds || 0,
+            timeToUserSeconds: isFootholdOrAbove ? m.timeToUserSeconds : undefined,
+            timeToRootSeconds: isRootOrAbove ? m.timeToRootSeconds : undefined,
+            checklist: m.checklist || catalogMachine.checklist || { openPorts: [], activeItemId: null, itemsState: {} },
+            openPorts: m.openPorts || catalogMachine.openPorts || [],
+            quickNotes: m.quickNotes || catalogMachine.quickNotes,
+            writeupMarkdown: m.writeupMarkdown || catalogMachine.writeupMarkdown,
+            hint: catalogMachine.hint || m.hint,
+            skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
+            officialPdf: catalogMachine.officialPdf || m.officialPdf,
+            officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
+            officialWalkthrough: catalogMachine.officialWalkthrough || m.officialWalkthrough,
+            tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
+            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
+          });
         }
       } else if (
         m.isCustom ||
@@ -844,6 +826,8 @@ export const useCtfStore = create<CtfStoreState>()(
       customNotes: initialProfileData?.customNotes || [],
       deletedNoteIds: initialProfileData?.deletedNoteIds || [],
       userSolvesReset: Boolean(initialProfileData?.userSolvesReset),
+      isHydrated: true,
+      setIsHydrated: (val) => set({ isHydrated: val }),
 
       // Attack Graph & Pivot Topology State
       graphNodePositions: initialAttackGraphData.graphNodePositions,
@@ -886,6 +870,7 @@ export const useCtfStore = create<CtfStoreState>()(
       filters: DEFAULT_FILTERS,
       isCatalogLoaded: false,
       isCatalogLoading: false,
+      isDeepStorageLoaded: false,
 
       setFocusMode: (open) => set({ focusMode: open }),
       toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
@@ -1818,7 +1803,8 @@ export const useCtfStore = create<CtfStoreState>()(
         const customMachines = get().machines.filter(
           (m) => m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))
         );
-        const merged = mergeMachinesWithCatalog(customMachines, false, catalog);
+        const combined = [...customMachines, ...DEMO_SOLVED_ROSTER];
+        const merged = mergeMachinesWithCatalog(combined as Machine[], false, catalog);
         set(() => ({
           machines: merged,
           userSolvesReset: false,
@@ -1950,6 +1936,7 @@ export const useCtfStore = create<CtfStoreState>()(
             const graphState = loadInitialAttackGraphState(profileId);
             set({
               currentProfileId: profileId,
+              isDeepStorageLoaded: false,
               userSolvesReset,
               machines: mergeMachinesWithCatalog(data.machines, userSolvesReset),
               activeTargetId: data.activeTargetId || null,
@@ -1970,9 +1957,15 @@ export const useCtfStore = create<CtfStoreState>()(
               if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
                 const currentMachines = get().machines;
                 const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
-                set({ machines: merged });
+                set({ machines: merged, isDeepStorageLoaded: true });
+              } else {
+                set({ isDeepStorageLoaded: true });
               }
-            }).catch(() => {});
+            }).catch(() => {
+              if (gen === profileLoadGeneration && get().currentProfileId === profileId) {
+                set({ isDeepStorageLoaded: true });
+              }
+            });
 
             return;
           } catch (e) {
@@ -1995,18 +1988,19 @@ export const useCtfStore = create<CtfStoreState>()(
           const writeKey = getWriteProfileStorageKey(profileId);
           safeLocalStorage.setItem(writeKey, JSON.stringify(payload));
           saveAttackGraphState(get().graphNodePositions, get().graphEdges, profileId);
-          set({ currentProfileId: profileId });
+          set({ currentProfileId: profileId, isDeepStorageLoaded: true });
           return;
         }
 
-        const isDanielOrGuest = profileId === 'usr_daniel' || profileId === 'guest';
-        const startFresh = options?.startFresh ?? (!isDanielOrGuest);
+        const isDaniel = profileId === 'usr_daniel';
+        const startFresh = options?.startFresh ?? (!isDaniel);
 
-        if (!startFresh && isDanielOrGuest) {
+        if (!startFresh && isDaniel) {
           const graphState = loadInitialAttackGraphState(profileId);
           set({
             currentProfileId: profileId,
-            machines: mergeMachinesWithCatalog([], false),
+            isDeepStorageLoaded: true,
+            machines: mergeMachinesWithCatalog(DEMO_SOLVED_ROSTER as Machine[], false),
             activeTargetId: null,
             globalVars: DEFAULT_GLOBAL_VARS,
             cheatsheets: INITIAL_CHEATSHEET,
@@ -2027,6 +2021,7 @@ export const useCtfStore = create<CtfStoreState>()(
 
         set({
           currentProfileId: profileId,
+          isDeepStorageLoaded: true,
           machines: freshMachines,
           activeTargetId: null,
           globalVars: DEFAULT_GLOBAL_VARS,
@@ -2311,6 +2306,7 @@ export function flushProfileSave() {
   };
   try {
     const serialized = JSON.stringify(payload);
+    saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, payload).catch(() => {});
     safeLocalStorage.setItem(targetKey, serialized);
     safeLocalStorage.setItem(`specter_ctf_profile_${state.currentProfileId}`, serialized);
     lastSavedMachines = state.machines;
@@ -2491,13 +2487,16 @@ if (typeof window !== 'undefined') {
     if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
       const currentMachines = useCtfStore.getState().machines;
       const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
-      useCtfStore.setState({ machines: merged });
+      useCtfStore.setState({ machines: merged, isDeepStorageLoaded: true });
+    } else {
+      useCtfStore.setState({ isDeepStorageLoaded: true });
     }
     if (deep?.customNotes && deep.customNotes.length > 0 && useCtfStore.getState().customNotes.length === 0) {
       useCtfStore.setState({ customNotes: deep.customNotes });
     }
   }).catch((err) => {
     console.warn('[ZeroBox] Could not hydrate deep payloads from IndexedDB', err);
+    useCtfStore.setState({ isDeepStorageLoaded: true });
   });
 }
 

@@ -80,4 +80,11 @@ describe('CyberLogo component', () => {
     container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS/i);
     expect(container.className).toContain('w-24 h-24');
   });
+
+  it('has fetchpriority="high" and decoding="async" for optimal LCP performance', () => {
+    render(<CyberLogo />);
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('fetchpriority', 'high');
+    expect(img).toHaveAttribute('decoding', 'async');
+  });
 });

@@ -54,7 +54,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                 e.stopPropagation();
                 onToggleFolder(node.id);
               }}
-              className="p-0.5 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 text-slate-400 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 focus:outline-none transition-colors cursor-pointer"
+              className="p-0.5 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 text-slate-400 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 focus:outline-none transition-colors cursor-pointer active:scale-[0.97]"
               title={isExpanded ? 'Collapse folder' : 'Expand folder'}
             >
               <ChevronRight
@@ -81,13 +81,13 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                   e.stopPropagation();
                   onAddNoteToFolder(node.fullPath);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-purple-600 dark:text-purple-400 hover:text-white hover:bg-purple-600 transition-[opacity,background-color,border-color,color] cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-purple-600 dark:text-purple-400 hover:text-white hover:bg-purple-600 transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
                 title={`Add note inside ${node.name}`}
               >
                 <Plus className="w-3 h-3" />
               </button>
             )}
-            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300/80 dark:border-cyber-border text-purple-900 dark:text-purple-300">
+            <span className="text-[9px] font-mono tabular-nums px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300/80 dark:border-cyber-border text-purple-900 dark:text-purple-300">
               {node.count}
             </span>
           </div>
@@ -139,7 +139,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         {note.commands && note.commands.length > 0 && (
-          <span className="text-[8.5px] px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 text-cyan-800 dark:text-cyber-cyan font-mono border border-slate-300/60 dark:border-transparent">
+          <span className="text-[8.5px] px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 text-cyan-800 dark:text-cyber-cyan font-mono tabular-nums border border-slate-300/60 dark:border-transparent">
             {note.commands.length}c
           </span>
         )}
@@ -150,7 +150,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
               e.stopPropagation();
               onDeleteNote(note.id, noteTitle);
             }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 transition-[opacity,background-color,border-color,color] cursor-pointer"
+            className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-cyber-muted hover:text-cyber-crimson hover:bg-rose-950/40 transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Delete note"
           >
             <Trash2 className="w-3 h-3" />

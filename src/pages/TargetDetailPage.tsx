@@ -31,6 +31,7 @@ import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../utils/helpers';
 import { PlatformBadge } from '../components/common/PlatformBadge';
 import { OsBadge } from '../components/common/OsBadge';
+import { DifficultyBadge } from '../components/common/DifficultyBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
 import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
 import { TargetReconDropzone } from '../components/tracker/TargetReconDropzone';
@@ -155,7 +156,7 @@ export const TargetDetailPage: React.FC = () => {
 
   const handleCopy = (text: string, type: 'user' | 'root') => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).catch(() => {});
     if (type === 'user') {
       setCopiedUser(true);
       setTimeout(() => setCopiedUser(false), 2000);
@@ -207,11 +208,11 @@ export const TargetDetailPage: React.FC = () => {
       className="max-w-6xl mx-auto space-y-4 font-mono text-xs pb-12"
     >
       {/* Page Header Bar */}
-      <div className="p-3 rounded-xl border border-cyber-border bg-cyber-card shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <div className="p-3 rounded-[4px] border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-xs flex flex-wrap items-center justify-between gap-3 machined-edge">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/tracker')}
-            className="p-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-cyber-text hover:border-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="p-1.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-[#0ea5e9] active:scale-[0.97] transition-colors"
             title="Back to Target List"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -219,7 +220,7 @@ export const TargetDetailPage: React.FC = () => {
           {isFocusMode ? (
             <button
               onClick={() => navigate(`/target/${machine.id}`)}
-              className="px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white font-bold active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-2 shadow-xs"
+              className="px-3 py-1.5 rounded-[3px] bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white font-bold active:scale-[0.97] transition-colors flex items-center gap-2 shadow-xs"
               title="Exit Focus Mode"
             >
               <Eye className="w-4 h-4" />
@@ -228,7 +229,7 @@ export const TargetDetailPage: React.FC = () => {
           ) : (
             <button
               onClick={() => navigate(`/target/${machine.id}/focus`)}
-              className="p-2 rounded-lg bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-zinc-400 hover:text-cyber-cyan hover:border-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+              className="p-2 rounded-[3px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-[#0ea5e9] hover:border-[#0ea5e9] active:scale-[0.97] transition-colors"
               title="Enter Focus Mode"
             >
               <Crosshair className="w-4 h-4" />
@@ -238,26 +239,19 @@ export const TargetDetailPage: React.FC = () => {
 
           <div>
             <div className="flex items-center gap-2.5">
-              <PlatformBadge platform={machine.platform} size="md" />
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">{machine.name}</h1>
-              <OsBadge os={machine.os} size="sm" />
-              <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${
-                machine.difficulty === 'Easy' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30' :
-                machine.difficulty === 'Medium' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30' :
-                machine.difficulty === 'Hard' ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30' :
-                'bg-purple-950/40 text-purple-400 border border-purple-800'
-              }`}>
-                {machine.difficulty}
-              </span>
+              <PlatformBadge platform={machine.platform} size="md" variant="hardware" />
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide font-mono">{machine.name}</h1>
+              <OsBadge os={machine.os} size="sm" variant="hardware" />
+              <DifficultyBadge difficulty={machine.difficulty} size="sm" variant="hardware" />
               {machine.isActive && (
-                <span className="text-[11px] px-2 py-0.5 rounded-md font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                <span className="text-[11px] px-2 py-0.5 rounded-[3px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 machined-edge">
                   <Lock className="w-3 h-3 text-amber-400" />
                   <span>ACTIVE LAB</span>
                 </span>
               )}
             </div>
             <div className="text-xs text-cyber-muted mt-1 flex flex-wrap items-center gap-4">
-              <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel />
+              <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" variant="hardware" showLabel />
               {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
                 <a
                   href={sanitizeExternalUrl(machine.roomUrl)}
@@ -269,7 +263,7 @@ export const TargetDetailPage: React.FC = () => {
                 </a>
               )}
               {machine.isActive ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/40">
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/40 machined-edge">
                   <Lock className="w-3 h-3 text-amber-400" />
                   <span>ACTIVE LAB · WRITEUPS PROHIBITED (HTB ToS)</span>
                 </span>
