@@ -115,12 +115,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
           <Sun
             className={`${dimensions.iconSize} transition-opacity duration-200 ${
-              !isDark ? 'opacity-0' : 'text-amber-500/40 dark:text-zinc-600 opacity-60'
+              !isDark ? 'opacity-0' : 'text-callout-warn-fg dark:text-zinc-600 opacity-60'
             }`}
           />
           <Moon
             className={`${dimensions.iconSize} transition-opacity duration-200 ${
-              isDark ? 'opacity-0' : 'text-slate-400 dark:text-zinc-600 opacity-60'
+              isDark ? 'opacity-0' : 'text-tertiary dark:text-zinc-600 opacity-60'
             }`}
           />
         </div>
@@ -147,12 +147,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         >
           {isDark ? (
             <div className="flex items-center justify-center relative">
-              <Moon className={`${dimensions.iconSize} text-cyan-400 dark:text-cyan-300 drop-shadow-[0_0_3px_rgba(34,211,238,0.4)]`} />
+              <Moon className={`${dimensions.iconSize} text-callout-info-fg drop-shadow-[0_0_3px_rgba(34,211,238,0.4)]`} />
               <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.8)]" />
             </div>
           ) : (
             <div className="flex items-center justify-center relative">
-              <Sun className={`${dimensions.iconSize} text-amber-500 drop-shadow-[0_0_3px_rgba(245,158,11,0.3)]`} />
+              <Sun className={`${dimensions.iconSize} text-callout-warn-fg drop-shadow-[0_0_3px_rgba(245,158,11,0.3)]`} />
               <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
             </div>
           )}
@@ -163,7 +163,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       {showLabel && (
         <span
           className={`font-mono text-xs font-bold tracking-wider transition-colors duration-150 cursor-pointer ${
-            isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+            isDark ? 'text-tertiary hover:text-primary' : 'text-slate-600 hover:text-slate-900'
           }`}
           onClick={handleToggle}
         >

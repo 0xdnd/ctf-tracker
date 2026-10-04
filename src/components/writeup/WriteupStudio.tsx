@@ -145,7 +145,7 @@ const renderMarkdownPreview = (text: string) => {
         elements.push(
           <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-cyber-bg border border-cyber-cyan/30 text-[11px] font-mono text-cyber-cyan/90 space-y-0.5">
             <div className="text-[10px] uppercase font-semibold text-cyber-muted mb-1 flex items-center gap-1">
-              <FolderGit2 className="w-3 h-3 text-cyber-cyan" /> OBSIDIAN / GITBOOK YAML FRONTMATTER
+              <FolderGit2 className="w-3 h-3 text-cyber-cyan" /> Obsidian / GitBook YAML frontmatter
             </div>
             {frontmatterLines.map((fl, fIdx) => (
               <div key={fIdx}>{fl}</div>
@@ -174,7 +174,7 @@ const renderMarkdownPreview = (text: string) => {
                 <Code className="w-3 h-3" />
               </div>
             )}
-            <pre className="p-3 text-xs text-cyber-emerald font-mono overflow-x-auto whitespace-pre-wrap">
+            <pre tabIndex={0} aria-label={codeBlockLang ? `${codeBlockLang} code block` : 'Code block'} className="p-3 text-xs text-cyber-emerald font-mono overflow-x-auto whitespace-pre-wrap">
               {codeBlockLines.join('\n')}
             </pre>
           </div>
@@ -226,7 +226,30 @@ const renderMarkdownPreview = (text: string) => {
     }
   });
 
-  return elements;
+  // Group consecutive list items into a real <ul> so <li> always has a list parent.
+  const grouped: React.ReactNode[] = [];
+  let listBuf: React.ReactElement[] = [];
+  const flushList = () => {
+    if (listBuf.length > 0) {
+      grouped.push(
+        <ul key={`ul-${grouped.length}`} className="list-disc">
+          {listBuf}
+        </ul>
+      );
+      listBuf = [];
+    }
+  };
+  elements.forEach((el) => {
+    if (React.isValidElement(el) && el.type === 'li') {
+      listBuf.push(el);
+    } else {
+      flushList();
+      grouped.push(el);
+    }
+  });
+  flushList();
+
+  return grouped;
 };
 
 interface DeferredMarkdownPreviewPaneProps {
@@ -248,21 +271,21 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
     >
       <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
         <span className="font-semibold text-primary flex items-center gap-2">
-          <Eye className="w-4 h-4 text-cyber-emerald" /> LIVE RENDERED PREVIEW
+          <Eye className="w-4 h-4 text-cyber-emerald" /> Live rendered preview
         </span>
         <div className="flex items-center gap-2">
           {isStale && (
             <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/30 animate-pulse">
-              SYNCING AST...
+              Syncing AST...
             </span>
           )}
           <span className="text-[10px] text-cyber-emerald font-semibold flex items-center gap-1">
-            <BookOpen className="w-3 h-3" /> OBSIDIAN PREVIEW
+            <BookOpen className="w-3 h-3" /> Obsidian preview
           </span>
         </div>
       </div>
 
-      <div className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-cyber-card/40">
+      <div tabIndex={0} role="region" aria-label="Rendered markdown preview" className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-cyber-card/40">
         {renderedPreview}
       </div>
     </div>
@@ -555,9 +578,9 @@ cat /root/root.txt
           </div>
           <div>
             <h1 className="text-base font-semibold text-primary flex items-center gap-2">
-              EMBEDDED WRITEUP STUDIO
+              Embedded Writeup Studio
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30">
-                OBSIDIAN & GITBOOK READY
+                Obsidian &amp; GitBook ready
               </span>
             </h1>
             <p className="text-xs text-secondary mt-0.5">
@@ -688,14 +711,14 @@ cat /root/root.txt
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-cyber-purple" />
               <span className="font-semibold text-primary text-xs tracking-wider">
-                TACTICAL INTEL // QUICK REFERENCE & INSERT
+                Tactical intel // quick reference &amp; insert
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded bg-cyber-purple/20 text-cyber-purple font-mono tabular-nums">
-                {matchingNotes.length} MATCHES (MAX 20)
+                {matchingNotes.length} matches (max 20)
               </span>
             </div>
 
-            <button
+            <button aria-label="Close quick reference"
               type="button"
               onClick={() => setCptsDrawerOpen(false)}
               className="p-1 rounded text-muted hover:text-primary cursor-pointer active:scale-[0.97]"
@@ -720,7 +743,7 @@ cat /root/root.txt
           </div>
 
           {/* Matching Notes Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+          <div tabIndex={0} role="region" aria-label="Matching field manual notes" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
             {matchingNotes.length === 0 ? (
               <div className="col-span-full p-4 text-center text-xs text-muted">
                 No matching field manual notes found.
@@ -780,7 +803,7 @@ cat /root/root.txt
         <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden shadow-lg" style={{ contain: 'content' }}>
           <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
             <span className="font-semibold text-primary flex items-center gap-2">
-              <Code className="w-4 h-4 text-cyber-cyan" /> RAW MARKDOWN (YAML & BODY)
+              <Code className="w-4 h-4 text-cyber-cyan" /> Raw markdown (YAML &amp; body)
             </span>
             <span className="text-[10px] text-muted font-mono tabular-nums">
               {telemetry.chars} chars · {telemetry.lines} lines

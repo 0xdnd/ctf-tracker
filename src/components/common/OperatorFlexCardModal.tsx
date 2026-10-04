@@ -390,7 +390,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
           <button
             onClick={() => setFlexCardModalOpen(false)}
-            className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="p-1.5 rounded-lg text-cyber-muted hover:text-primary hover:bg-cyber-card transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Close (ESC)"
           >
             <X className="w-4 h-4" />

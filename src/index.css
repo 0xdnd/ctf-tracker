@@ -16,14 +16,14 @@
 
   --border-subtle: 228 228 231;         /* #e4e4e7 - Sharp Zinc Divider */
   --border-strong: 212 212 216;         /* #d4d4d8 - High-Contrast Border */
-  --border-accent: 2 132 199;           /* #0284c7 - Deep Sky Accent */
-  --accent-fg: 9 9 11;                  /* near-black on light-luminance accent (>=4.5:1) */
+  --border-accent: 3 105 161;           /* #0369a1 - Deep Sky Accent (>=4.5:1 as text) */
+  --accent-fg: 255 255 255;             /* white on deep sky accent #0369a1 (~5.9:1) */
 
   --text-primary: 9 9 11;               /* #09090b - Deep Contrast (>14:1) */
   --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
   --text-muted: 82 82 91;               /* #52525b - Zinc-600 (>5.5:1 WCAG AA) */
-  --text-tertiary: 113 113 122;         /* #71717a - Zinc-500 */
-  --text-dim: 100 116 139;              /* #64748b - Subtle Indicators */
+  --text-tertiary: 100 100 108;         /* #64646c - AA-calibrated */
+  --text-dim: 88 102 122;               /* #58667a - AA-calibrated */
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -40,12 +40,12 @@
   --cyber-text: var(--text-primary);
   --cyber-muted: var(--text-muted);
   --cyber-code: var(--surface-sunken);
-  --cyber-cyan: 2 132 199;
+  --cyber-cyan: 3 105 161;
   --cyber-emerald: 21 128 61;
   --cyber-crimson: 225 29 72;
   --cyber-amber: 180 83 9;
   --cyber-purple: 147 51 234;
-  --cyber-neon: 2 132 199;
+  --cyber-neon: 3 105 161;
   --cyber-box: 9 9 11;
 }
 
@@ -68,8 +68,8 @@
   --text-primary: 244 244 245;          /* #f4f4f5 - High-Contrast Zinc-100 */
   --text-secondary: 228 228 231;        /* #e4e4e7 - High-Contrast Zinc-200 */
   --text-muted: 161 161 170;            /* #a1a1aa - Calibrated Zinc-400 */
-  --text-tertiary: 113 113 122;         /* #71717a - Footnotes & Meta */
-  --text-dim: 113 113 122;              /* #71717a - Muted Indicators */
+  --text-tertiary: 135 135 143;         /* #87878f - AA-calibrated */
+  --text-dim: 135 135 143;              /* #87878f - AA-calibrated */
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -106,14 +106,14 @@
 
   --border-subtle: 228 228 231;         /* #e4e4e7 - Sharp Gray Divider */
   --border-strong: 212 212 216;         /* #d4d4d8 - High-Contrast Border */
-  --border-accent: 2 132 199;           /* #0284c7 - Deep Slate-Blue */
-  --accent-fg: 9 9 11;                  /* near-black on light-luminance accent (>=4.5:1) */
+  --border-accent: 3 105 161;           /* #0369a1 - Deep Slate-Blue (>=4.5:1 as text) */
+  --accent-fg: 255 255 255;             /* white on deep sky accent #0369a1 (~5.9:1) */
 
   --text-primary: 9 9 11;               /* #09090b - Deep Contrast (>14:1) */
   --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
   --text-muted: 82 82 91;               /* #52525b - Zinc-600 (>5.5:1 WCAG AA) */
-  --text-tertiary: 113 113 122;         /* #71717a - Zinc-500 */
-  --text-dim: 100 116 139;              /* #64748b - Subtle Indicators */
+  --text-tertiary: 109 109 118;         /* #6d6d76 - AA-calibrated */
+  --text-dim: 96 111 133;               /* #606f85 - AA-calibrated */
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -130,12 +130,12 @@
   --cyber-text: var(--text-primary);
   --cyber-muted: var(--text-muted);
   --cyber-code: var(--surface-sunken);
-  --cyber-cyan: 2 132 199;
+  --cyber-cyan: 3 105 161;
   --cyber-emerald: 21 128 61;
   --cyber-crimson: 239 68 68;
   --cyber-amber: 180 83 9;
   --cyber-purple: 147 51 234;
-  --cyber-neon: 2 132 199;
+  --cyber-neon: 3 105 161;
   --cyber-box: 9 9 11;
 }
 
@@ -156,8 +156,8 @@
   --text-primary: 244 244 245;          /* #f4f4f5 - High-Contrast Zinc-100 (>11:1) */
   --text-secondary: 228 228 231;        /* #e4e4e7 - High-Contrast Zinc-200 */
   --text-muted: 161 161 170;            /* #a1a1aa - Calibrated Zinc-400 (>4.8:1 WCAG AA) */
-  --text-tertiary: 113 113 122;         /* #71717a - Footnotes & Meta */
-  --text-dim: 113 113 122;              /* #71717a - Muted Indicators */
+  --text-tertiary: 156 156 162;         /* #9c9ca2 - AA-calibrated */
+  --text-dim: 156 156 162;              /* #9c9ca2 - AA-calibrated */
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -199,8 +199,8 @@
   --text-primary: 255 255 255;          /* #ffffff - Pure White Contrast (>14:1) */
   --text-secondary: 228 228 231;        /* #e4e4e7 - Slate/Zinc-200 */
   --text-muted: 148 163 184;            /* #94a3b8 - Zinc/Slate (>4.5:1 WCAG AA) */
-  --text-tertiary: 100 116 139;         /* #64748b - Meta / Footnotes */
-  --text-dim: 113 113 122;              /* #71717a - Muted Indicators */
+  --text-tertiary: 123 137 156;         /* #7b899c - AA-calibrated */
+  --text-dim: 135 135 143;              /* #87878f - AA-calibrated */
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -236,14 +236,14 @@
 
   --border-subtle: 203 213 225;         /* #cbd5e1 - Slate-300 Divider */
   --border-strong: 148 163 184;         /* #94a3b8 - Slate-400 High-Contrast Border */
-  --border-accent: 21 128 61;           /* #15803d - HTB Tactical Forest Lime (>4.5:1 WCAG AA) */
-  --accent-fg: 255 255 255;             /* white on deep forest accent (5.02:1) */
+  --border-accent: 21 115 56;           /* #157338 - HTB Tactical Forest Lime (>=4.5:1 as text on all surfaces) */
+  --accent-fg: 255 255 255;             /* white on deep forest accent (5.93:1) */
 
   --text-primary: 15 23 42;             /* #0f172a - Slate-900 (>15:1 WCAG AAA) */
   --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
   --text-muted: 71 85 105;              /* #475569 - Slate-600 (>5.5:1 WCAG AA) */
-  --text-tertiary: 100 116 139;         /* #64748b - Slate-500 */
-  --text-dim: 100 116 139;              /* #64748b - Slate-500 */
+  --text-tertiary: 89 103 124;          /* #59677c - AA-calibrated */
+  --text-dim: 89 103 124;               /* #59677c - AA-calibrated */
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -260,12 +260,12 @@
   --cyber-text: var(--text-primary);
   --cyber-muted: var(--text-muted);
   --cyber-code: var(--surface-sunken);
-  --cyber-cyan: 14 116 144;             /* #0e7490 */
+  --cyber-cyan: 14 107 133;             /* #0e6b85 */
   --cyber-emerald: 21 128 61;           /* #15803d Tactical Lime */
   --cyber-crimson: 225 29 72;
   --cyber-amber: 217 119 6;
   --cyber-purple: 126 34 206;
-  --cyber-neon: 21 128 61;
+  --cyber-neon: 21 115 56;
   --cyber-box: 15 23 42;
 }
 
@@ -315,8 +315,8 @@
   --surface-hover: 238 238 238;
   --border-subtle: 220 220 225;
   --border-strong: 180 180 185;
-  --border-accent: 2 132 199;
-  --accent-fg: 9 9 11;                  /* near-black on light-luminance accent (>=4.5:1) */
+  --border-accent: 3 105 161;
+  --accent-fg: 255 255 255;             /* white on deep sky accent #0369a1 (~5.9:1) */
   --text-primary: 9 9 11;
   --text-muted: 82 82 91;
   --text-tertiary: 140 140 145;
@@ -333,10 +333,10 @@
   --cyber-text: var(--text-primary);
   --cyber-muted: var(--text-muted);
   --cyber-code: var(--surface-sunken);
-  --cyber-cyan: 2 132 199;
+  --cyber-cyan: 3 105 161;
   --cyber-emerald: 16 185 129;
   --cyber-crimson: 239 68 68;
-  --cyber-neon: 2 132 199;
+  --cyber-neon: 3 105 161;
   --cyber-box: 9 9 11;
 }
 
@@ -482,12 +482,19 @@
     -webkit-user-select: none;
   }
 
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
-  [tabindex="0"]:focus-visible {
+  /* Keyboard focus ring. Doubled :focus-visible lifts specificity to (0,2,1) so it
+     beats Tailwind `focus:outline-none` / `focus-visible:outline-none` (0,2,0).
+     :focus-visible never matches on plain mouse focus, so no ring on click. */
+  button:focus-visible:focus-visible,
+  a:focus-visible:focus-visible,
+  input:focus-visible:focus-visible,
+  select:focus-visible:focus-visible,
+  textarea:focus-visible:focus-visible,
+  summary:focus-visible:focus-visible,
+  [role="button"]:focus-visible:focus-visible,
+  [role="tab"]:focus-visible:focus-visible,
+  [role="menuitem"]:focus-visible:focus-visible,
+  [tabindex="0"]:focus-visible:focus-visible {
     outline: 2px solid rgb(var(--border-accent));
     outline-offset: 2px;
   }
@@ -700,7 +707,7 @@ html:not(.dark) .border-gray-900 {
   --callout-tip-fg: 109 40 217;     --callout-tip-bg: 237 233 254;      --callout-tip-border: 196 181 253;
   --callout-warn-fg: 146 64 14;     --callout-warn-bg: 254 243 199;     --callout-warn-border: 252 211 77;
   --callout-danger-fg: 185 28 28;   --callout-danger-bg: 254 226 226;   --callout-danger-border: 252 165 165;
-  --callout-success-fg: 21 128 61;  --callout-success-bg: 220 252 231;  --callout-success-border: 134 239 172;
+  --callout-success-fg: 21 115 56;  --callout-success-bg: 220 252 231;  --callout-success-border: 134 239 172;
 }
 .dark,
 [data-theme="obsidian"].dark,

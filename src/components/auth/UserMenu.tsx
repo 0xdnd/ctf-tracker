@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCtfStore } from '../../store/useCtfStore';
+import { confirmAction } from '../../store/useConfirmStore';
+import { toast } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { 
@@ -132,7 +134,7 @@ export const UserMenu: React.FC = () => {
             setJustSaved(true);
             setTimeout(() => setJustSaved(false), 2000);
           } else {
-            alert('Invalid backup JSON format.');
+            toast.error('Invalid backup JSON format.');
           }
         }
       };
@@ -141,8 +143,14 @@ export const UserMenu: React.FC = () => {
     input.click();
   };
 
-  const handleReset = () => {
-    if (confirm(`Reset all machine progress for "${activeName}"?`)) {
+  const handleReset = async () => {
+    const ok = await confirmAction({
+      title: `Reset progress for "${activeName}"?`,
+      body: 'All machine progress for this operator will be cleared.',
+      confirmLabel: 'Reset progress',
+      tone: 'danger',
+    });
+    if (ok) {
       resetAllProgress();
       setDropdownOpen(false);
     }
@@ -160,7 +168,7 @@ export const UserMenu: React.FC = () => {
               ? 'bg-cyber-emerald text-black shadow-glow-emerald/40'
               : 'bg-cyber-bg border border-cyber-border text-cyber-emerald hover:border-cyber-emerald/60 hover:bg-cyber-emerald/10'
           }`}
-          title="Click to save all progress instantly to browser storage"
+          title="Click to save all progress instantly to browser storage" aria-label="Save all progress"
         >
           {justSaved ? (
             <>
@@ -211,7 +219,7 @@ export const UserMenu: React.FC = () => {
             [{gamification.currentRank.tier}]
           </span>
 
-          <ChevronDown className="w-3 h-3 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-white transition-transform" />
+          <ChevronDown className="w-3 h-3 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-primary transition-transform" />
         </button>
       </div>
 
@@ -256,11 +264,11 @@ export const UserMenu: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 font-mono text-[10px]">
-                  <span className="text-cyan-400 font-bold">
+                  <span className="text-callout-info-fg font-bold">
                     {gamification.totalXp.toLocaleString()} XP
                   </span>
                   <span className="text-cyber-muted">•</span>
-                  <span className="text-purple-400 font-bold">
+                  <span className="text-callout-tip-fg font-bold">
                     {gamification.unlockedCount}/16 🏆
                   </span>
                 </div>
@@ -282,11 +290,11 @@ export const UserMenu: React.FC = () => {
             className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-cyan-500/60 cursor-pointer transition-colors group"
           >
             <div className="flex items-center justify-between text-xs font-mono mb-1">
-              <span className="text-slate-400 group-hover:text-cyan-400 flex items-center gap-1 font-bold">
-                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+              <span className="text-tertiary group-hover:text-callout-info-fg flex items-center gap-1 font-bold">
+                <Trophy className="w-3.5 h-3.5 text-callout-warn-fg" />
                 <span>Trophy Case & Ranks</span>
               </span>
-              <span className="text-cyan-400 font-bold">
+              <span className="text-callout-info-fg font-bold">
                 {gamification.nextRank ? `${gamification.rankProgressPct}%` : 'MAX'}
               </span>
             </div>
@@ -336,7 +344,7 @@ export const UserMenu: React.FC = () => {
               className="p-2 rounded-xl bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-slate-900 dark:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
               title="Upload backup file"
             >
-              <Upload className="w-3.5 h-3.5 text-purple-400" />
+              <Upload className="w-3.5 h-3.5 text-callout-tip-fg" />
               <span>Import Backup</span>
             </button>
           </div>
@@ -366,7 +374,7 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.portfolio}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-cyber-emerald/20 hover:bg-cyber-emerald/30 text-cyber-emerald hover:text-white border border-cyber-emerald/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-cyber-emerald/20 hover:bg-cyber-emerald/30 text-cyber-emerald hover:text-primary border border-cyber-emerald/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
                 title="Daniel Dayan's Official Portfolio"
               >
                 <Globe className="w-3 h-3 flex-shrink-0" />
@@ -376,7 +384,7 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/30 text-[#0077B5] hover:text-white border border-[#0077B5]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/30 text-[#0077B5] hover:text-primary border border-[#0077B5]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
                 title="Daniel Dayan LinkedIn Profile"
               >
                 <svg className="w-3 h-3 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.7a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z"/></svg>
@@ -386,7 +394,7 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.coffee}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#FFDD00]/20 hover:bg-[#FFDD00]/30 text-[#FFDD00] hover:text-white border border-[#FFDD00]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#FFDD00]/20 hover:bg-[#FFDD00]/30 text-[#FFDD00] hover:text-primary border border-[#FFDD00]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
                 title="Buy Daniel Dayan a Coffee (buymeacoffee.com/0xdnd)"
               >
                 <Coffee className="w-3 h-3 flex-shrink-0" />
@@ -422,7 +430,7 @@ export const UserMenu: React.FC = () => {
                   logout();
                   setDropdownOpen(false);
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-cyber-crimson/15 hover:bg-cyber-crimson border border-cyber-crimson/30 hover:border-cyber-crimson text-cyber-crimson hover:text-white font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2 px-3 rounded-xl bg-cyber-crimson/15 hover:bg-cyber-crimson border border-cyber-crimson/30 hover:border-cyber-crimson text-cyber-crimson hover:text-primary font-bold text-xs transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>SIGN OUT TO GUEST</span>
@@ -436,7 +444,7 @@ export const UserMenu: React.FC = () => {
                   setSettingsModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
                 title="Open Operator Settings"
               >
                 <Settings className="w-3 h-3 text-cyber-cyan" />
@@ -445,7 +453,7 @@ export const UserMenu: React.FC = () => {
 
               <button
                 onClick={handleReset}
-                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
                 title="Reset all target progress"
               >
                 <RotateCcw className="w-3 h-3 text-cyber-amber" />

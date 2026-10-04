@@ -139,7 +139,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   className="w-full bg-transparent text-xs text-primary placeholder-muted focus:outline-none font-mono"
                 />
                 {searchQuery && (
-                  <button
+                  <button aria-label="Clear search"
                     type="button"
                     onClick={() => setSearchQuery('')}
                     className="text-muted hover:text-secondary"

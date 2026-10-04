@@ -134,7 +134,7 @@ export const MobileNav: React.FC = () => {
             className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors relative ${
               location.pathname === '/tracker' || location.pathname === '/' || location.pathname.startsWith('/target')
                 ? 'text-cyber-emerald font-bold'
-                : 'text-cyber-muted hover:text-white'
+                : 'text-cyber-muted hover:text-primary'
             }`}
           >
             <div className="relative">
@@ -152,7 +152,7 @@ export const MobileNav: React.FC = () => {
             className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
               location.pathname.startsWith('/methodology')
                 ? 'text-cyber-cyan font-bold'
-                : 'text-cyber-muted hover:text-white'
+                : 'text-cyber-muted hover:text-primary'
             }`}
           >
             <Compass className="w-4 h-4" />
@@ -179,8 +179,8 @@ export const MobileNav: React.FC = () => {
             onClick={() => handleNavClick('/cheatsheets', 'cheatsheet')}
             className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
               location.pathname.startsWith('/cheatsheet')
-                ? 'text-purple-400 font-bold'
-                : 'text-cyber-muted hover:text-white'
+                ? 'text-callout-tip-fg font-bold'
+                : 'text-cyber-muted hover:text-primary'
             }`}
           >
             <Terminal className="w-4 h-4" />
@@ -195,14 +195,14 @@ export const MobileNav: React.FC = () => {
             }}
             className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors relative cursor-pointer ${
               isNotesOpen
-                ? 'text-cyan-500 font-bold'
-                : 'text-cyber-muted hover:text-white'
+                ? 'text-callout-info-fg font-bold'
+                : 'text-cyber-muted hover:text-primary'
             }`}
           >
             <div className="relative">
               <BookOpen className="w-4 h-4" />
               {openNotesCount > 0 && (
-                <span className="absolute -top-1 -right-2 text-[8px] px-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-bold">
+                <span className="absolute -top-1 -right-2 text-[8px] px-1 rounded-full bg-cyan-500/20 text-callout-info-fg border border-cyan-500/40 font-bold">
                   {openNotesCount}
                 </span>
               )}
@@ -217,7 +217,7 @@ export const MobileNav: React.FC = () => {
               if (soundEnabled) playCyberSound('toggle');
             }}
             className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
-              mobileMenuOpen ? 'text-cyber-cyan' : 'text-cyber-muted hover:text-white'
+              mobileMenuOpen ? 'text-cyber-cyan' : 'text-cyber-muted hover:text-primary'
             }`}
           >
             <Menu className="w-4 h-4" />
@@ -259,9 +259,9 @@ export const MobileNav: React.FC = () => {
                   </div>
                 </div>
 
-                <button
+                <button aria-label="Close menu"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg border border-cyber-border bg-cyber-card text-cyber-muted hover:text-white"
+                  className="p-1.5 rounded-lg border border-cyber-border bg-cyber-card text-cyber-muted hover:text-primary"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -297,7 +297,7 @@ export const MobileNav: React.FC = () => {
                         useAuthStore.getState().setOperatorProfileModalOpen(true);
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className="py-2 px-2 rounded-lg font-bold text-xs bg-cyan-500/15 border border-cyan-500/40 text-cyber-cyan hover:bg-cyan-500 hover:text-black transition-colors flex items-center justify-center gap-1.5"
+                      className="py-2 px-2 rounded-lg font-bold text-xs bg-cyan-500/15 border border-cyan-500/40 text-cyber-cyan hover:bg-accent hover:text-on-accent transition-colors flex items-center justify-center gap-1.5"
                     >
                       <User className="w-3.5 h-3.5" />
                       <span>PROFILES</span>
@@ -325,7 +325,7 @@ export const MobileNav: React.FC = () => {
                           onChange={(e) => setGlobalVars({ lhost: e.target.value })}
                           className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
                         />
-                        <button
+                        <button aria-label="Copy LHOST"
                           onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
                           className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
                             copiedVar === 'lhost'
@@ -360,7 +360,7 @@ export const MobileNav: React.FC = () => {
                           onChange={(e) => setGlobalVars({ lport: e.target.value })}
                           className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
                         />
-                        <button
+                        <button aria-label="Copy LPORT"
                           onClick={() => handleCopyVar(globalVars.lport, 'lport')}
                           className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
                             copiedVar === 'lport'
@@ -393,12 +393,12 @@ export const MobileNav: React.FC = () => {
                     onClick={() => handleNavClick('/vault', 'vault')}
                     className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
                       location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')
-                        ? 'bg-amber-500/10 border-amber-500 text-amber-500 font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-amber-500/10 border-amber-500 text-callout-warn-fg font-bold'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Database className="w-4 h-4 text-amber-500" />
+                      <Database className="w-4 h-4 text-callout-warn-fg" />
                       <span>Evidence & Loot Vault</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -409,7 +409,7 @@ export const MobileNav: React.FC = () => {
                     className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
                       location.pathname.startsWith('/writeup')
                         ? 'bg-cyber-amber/10 border-cyber-amber text-cyber-amber font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -424,7 +424,7 @@ export const MobileNav: React.FC = () => {
                     className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
                       location.pathname === '/exam'
                         ? 'bg-cyber-cyan/10 border-cyber-cyan text-cyber-cyan font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -439,7 +439,7 @@ export const MobileNav: React.FC = () => {
                     className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
                       location.pathname === '/analytics'
                         ? 'bg-cyber-emerald/10 border-cyber-emerald text-cyber-emerald font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -454,7 +454,7 @@ export const MobileNav: React.FC = () => {
                       setMobileMenuOpen(false);
                       setCommandPaletteOpen(true);
                     }}
-                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
                   >
                     <div className="flex items-center gap-2">
                       <Search className="w-4 h-4 text-cyber-emerald" />
@@ -468,7 +468,7 @@ export const MobileNav: React.FC = () => {
                       setMobileMenuOpen(false);
                       setNewMachineModalOpen(true);
                     }}
-                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
                   >
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4 text-cyber-cyan" />
@@ -482,10 +482,10 @@ export const MobileNav: React.FC = () => {
                       setMobileMenuOpen(false);
                       setBackupModalOpen(true);
                     }}
-                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
                   >
                     <div className="flex items-center gap-2">
-                      <Database className="w-4 h-4 text-purple-400" />
+                      <Database className="w-4 h-4 text-callout-tip-fg" />
                       <span>Backup / Restore JSON</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -539,7 +539,7 @@ export const MobileNav: React.FC = () => {
                     className={`w-full p-2.5 rounded-lg border flex items-center justify-center gap-2 text-left transition-colors ${
                       soundEnabled 
                         ? 'bg-cyber-emerald/15 border-cyber-emerald text-cyber-emerald font-bold' 
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                     }`}
                   >
                     {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -575,7 +575,7 @@ export const MobileNav: React.FC = () => {
                       href={CREATOR_PROFILE_LINKS.coffee}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-[#FFDD00]/15 hover:bg-[#FFDD00]/25 border border-[#FFDD00]/40 text-[#FFDD00] hover:text-white flex items-center justify-center gap-1.5 font-bold text-[11px] transition-colors"
+                      className="p-2 rounded-lg bg-[#FFDD00]/15 hover:bg-[#FFDD00]/25 border border-[#FFDD00]/40 text-[#FFDD00] hover:text-primary flex items-center justify-center gap-1.5 font-bold text-[11px] transition-colors"
                     >
                       <Coffee className="w-3.5 h-3.5" />
                       <span>Buy a Coffee</span>
@@ -585,7 +585,7 @@ export const MobileNav: React.FC = () => {
                         setMobileMenuOpen(false);
                         setLicenseModalOpen(true);
                       }}
-                      className="p-2 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1 text-[11px] font-bold transition-colors"
+                      className="p-2 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-primary flex items-center justify-center gap-1 text-[11px] font-bold transition-colors"
                     >
                       <Scale className="w-3.5 h-3.5 text-cyber-amber" />
                       <span>License</span>

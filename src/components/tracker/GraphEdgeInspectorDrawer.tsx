@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { confirmAction } from '../../store/useConfirmStore';
 import { 
   X, 
   Terminal, 
@@ -128,9 +129,15 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     onUpdateEdge(edge.id, { notes: edgeNotes });
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!edge) return;
-    if (window.confirm('Delete this attack vector / pivot edge?')) {
+    const ok = await confirmAction({
+      title: 'Delete this attack edge?',
+      body: 'This attack vector / pivot edge will be permanently removed.',
+      confirmLabel: 'Delete edge',
+      tone: 'danger',
+    });
+    if (ok) {
       onDeleteEdge(edge.id);
       if (soundEnabled) playCyberSound('toggle');
       onClose();
@@ -175,15 +182,15 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                 {edge.status === 'compromised' ? 'Active / Established' : 'Potential Vector'}
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-cyber-muted">
+            <p className="text-[11px] text-tertiary dark:text-cyber-muted">
               {meta.description}
             </p>
           </div>
         </div>
 
-        <button
+        <button aria-label="Close inspector"
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors active:scale-[0.97] cursor-pointer"
+          className="p-1.5 rounded-lg text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors active:scale-[0.97] cursor-pointer"
           title="Close Inspector (Esc)"
         >
           <X className="w-5 h-5" />
@@ -196,36 +203,36 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         <div className="p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border/70 flex items-center justify-between gap-2 machined-edge">
           {/* Source Box */}
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-cyber-muted mb-1 flex items-center gap-1">
+            <div className="text-[10px] uppercase font-bold text-tertiary dark:text-cyber-muted mb-1 flex items-center gap-1">
               <span>Pivot Origin</span>
               {sourceMachine?.status === 'root' && (
-                <span className="text-emerald-500 font-bold">🎯 Root</span>
+                <span className="text-callout-success-fg font-bold">🎯 Root</span>
               )}
             </div>
             <div className="font-bold text-slate-900 dark:text-white text-xs truncate">
               {sourceMachine?.name || edge.sourceId}
             </div>
-            <div className="font-mono text-[11px] text-slate-500 dark:text-cyber-muted truncate tabular-nums">
+            <div className="font-mono text-[11px] text-tertiary dark:text-cyber-muted truncate tabular-nums">
               {srcIp}
             </div>
           </div>
 
           <div className="flex flex-col items-center px-1">
-            <ArrowRight className="w-4 h-4 text-cyber-cyan animate-pulse" />
-            <span className="text-[9px] font-mono text-cyber-cyan font-bold mt-0.5 tabular-nums">
+            <ArrowRight className="w-4 h-4 text-callout-info-fg animate-pulse" />
+            <span className="text-[9px] font-mono text-callout-info-fg font-bold mt-0.5 tabular-nums">
               {edge.port ? `:${edge.port}` : meta.defaultPort ? `:${meta.defaultPort}` : ''}
             </span>
           </div>
 
           {/* Target Box */}
           <div className="flex-1 min-w-0 text-right">
-            <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-cyber-muted mb-1 flex items-center justify-end gap-1">
+            <div className="text-[10px] uppercase font-bold text-tertiary dark:text-cyber-muted mb-1 flex items-center justify-end gap-1">
               <span>Target Machine</span>
             </div>
             <div className="font-bold text-slate-900 dark:text-white text-xs truncate">
               {targetMachine?.name || edge.targetId}
             </div>
-            <div className="font-mono text-[11px] text-slate-500 dark:text-cyber-muted truncate tabular-nums">
+            <div className="font-mono text-[11px] text-tertiary dark:text-cyber-muted truncate tabular-nums">
               {tgtIp}
             </div>
           </div>
@@ -274,8 +281,8 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                 onClick={handleStatusToggle}
                 className={`w-full py-1.5 px-2 rounded-lg font-bold text-xs border transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer ${
                   edge.status === 'compromised'
-                    ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-amber-500/15 border-amber-500/50 text-amber-600 dark:text-amber-400'
+                    ? 'bg-emerald-500/15 border-emerald-500/50 text-callout-success-fg'
+                    : 'bg-amber-500/15 border-amber-500/50 text-callout-warn-fg'
                 }`}
               >
                 <span>{edge.status === 'compromised' ? 'Established' : 'Potential'}</span>
@@ -288,30 +295,30 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         <div className="space-y-3 pt-1 border-t border-slate-200 dark:border-cyber-border/60">
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
+              <Terminal className="w-3.5 h-3.5 text-callout-info-fg" />
               <span>Generated Terminal Commands</span>
             </span>
-            <div className="text-[10px] font-mono text-slate-400 dark:text-cyber-muted">
-              LHOST: <strong className="text-cyber-cyan tabular-nums">{globalVars.lhost}</strong>
+            <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted">
+              LHOST: <strong className="text-callout-info-fg tabular-nums">{globalVars.lhost}</strong>
             </div>
           </div>
 
           {/* Listener / Server Command */}
           {commands.listenerCommand && (
             <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 machined-edge">
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                <span className="font-bold uppercase tracking-wider text-cyber-cyan">
+              <div className="flex items-center justify-between text-[10px] text-tertiary">
+                <span className="font-bold uppercase tracking-wider text-callout-info-fg">
                   1. Attacker / Pivot Command
                 </span>
                 <button
                   onClick={() => handleCopy(commands.listenerCommand, 'listener')}
                   className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyber-cyan hover:text-black text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedKey === 'listener' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'listener' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'listener' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-[11px] font-mono text-emerald-400 overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-[11px] font-mono text-callout-success-fg overflow-x-auto whitespace-pre-wrap select-all">
                 <span className="sr-only">{commands.listenerCommand}</span>
                 <span aria-hidden="true">
                   <SyntaxHighlightedCommand command={commands.listenerCommand} />
@@ -323,23 +330,23 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
           {/* Client / Agent Command */}
           {commands.clientCommand && (
             <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5 machined-edge">
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                <span className="font-bold uppercase tracking-wider text-purple-400">
+              <div className="flex items-center justify-between text-[10px] text-tertiary">
+                <span className="font-bold uppercase tracking-wider text-callout-tip-fg">
                   2. Remote Target / Client Hook
                 </span>
                 <button
                   onClick={() => handleCopy(commands.clientCommand, 'client')}
                   className="px-2 py-0.5 rounded bg-slate-800 hover:bg-purple-500 hover:text-white text-slate-300 text-[10px] font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedKey === 'client' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'client' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'client' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-[11px] font-mono text-purple-300 overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-[11px] font-mono text-callout-tip-fg overflow-x-auto whitespace-pre-wrap select-all">
                 <span className="sr-only">{commands.clientCommand}</span>
                 <span aria-hidden="true">
                   {commands.clientCommand.startsWith('#') ? (
-                    <span className="text-slate-400 dark:text-cyber-muted italic">
+                    <span className="text-tertiary dark:text-cyber-muted italic">
                       {commands.clientCommand}
                     </span>
                   ) : (
@@ -354,7 +361,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
           {commands.proxychainsSnippet && (
             <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle space-y-1.5 machined-edge">
               <div className="flex items-center justify-between text-[10px] text-muted">
-                <span className="font-bold uppercase tracking-wider text-amber-400 font-sans">
+                <span className="font-bold uppercase tracking-wider text-callout-warn-fg font-sans">
                   3. Proxychains / Routing Rule
                 </span>
                 <button
@@ -362,11 +369,11 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                   onClick={() => handleCopy(commands.proxychainsSnippet, 'proxy')}
                   className="px-2 py-0.5 rounded bg-surface-elevated hover:bg-surface-hover text-secondary hover:text-primary text-[10px] font-bold border border-subtle transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedKey === 'proxy' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'proxy' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'proxy' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-[11px] font-mono text-amber-300 overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-[11px] font-mono text-callout-warn-fg overflow-x-auto whitespace-pre-wrap select-all">
                 <span className="sr-only">{commands.proxychainsSnippet}</span>
                 <span aria-hidden="true">
                   <SyntaxHighlightedCommand command={commands.proxychainsSnippet} />
@@ -379,7 +386,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
           {commands.verificationCommand && (
             <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle space-y-1.5 machined-edge">
               <div className="flex items-center justify-between text-[10px] text-muted">
-                <span className="font-bold uppercase tracking-wider text-blue-400 font-sans">
+                <span className="font-bold uppercase tracking-wider text-callout-info-fg font-sans">
                   4. Connectivity Verification
                 </span>
                 <button
@@ -387,11 +394,11 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                   onClick={() => handleCopy(commands.verificationCommand, 'verify')}
                   className="px-2 py-0.5 rounded bg-surface-elevated hover:bg-surface-hover text-secondary hover:text-primary text-[10px] font-bold border border-subtle transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedKey === 'verify' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'verify' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedKey === 'verify' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-[11px] font-mono text-blue-300 overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-[11px] font-mono text-callout-info-fg overflow-x-auto whitespace-pre-wrap select-all">
                 <SyntaxHighlightedCommand command={commands.verificationCommand} />
               </div>
             </div>
@@ -419,7 +426,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         <button
           type="button"
           onClick={handleDelete}
-          className="px-3 py-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 text-xs font-bold transition-colors flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
+          className="px-3 py-1.5 rounded-lg text-callout-danger-fg hover:bg-rose-500/10 border border-rose-500/30 text-xs font-bold transition-colors flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Delete Vector</span>

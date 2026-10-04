@@ -137,7 +137,7 @@ export const LicenseModal: React.FC = () => {
 
             <button
               onClick={() => setLicenseModalOpen(false)}
-              className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+              className="p-1.5 rounded-lg text-cyber-muted hover:text-primary hover:bg-cyber-card active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               title="Close License (ESC)"
             >
               <X className="w-4 h-4" />
@@ -169,7 +169,7 @@ export const LicenseModal: React.FC = () => {
 
                 <button
                   onClick={handleOpenCreatorDossier}
-                  className="px-3 py-2 rounded-xl bg-cyber-emerald/15 hover:bg-cyber-emerald/25 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:text-white transition-colors font-bold flex items-center gap-2 flex-shrink-0"
+                  className="px-3 py-2 rounded-xl bg-cyber-emerald/15 hover:bg-cyber-emerald/25 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:text-primary transition-colors font-bold flex items-center gap-2 flex-shrink-0"
                   title="View Author Dossier & Verified Links"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export const LicenseModal: React.FC = () => {
 
                 <button
                   onClick={handleCopyLicense}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-card border border-cyber-border hover:border-cyber-amber text-cyber-muted hover:text-white transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-card border border-cyber-border hover:border-cyber-amber text-cyber-muted hover:text-primary transition-colors"
                   title="Copy complete license text to clipboard"
                 >
                   {copied ? (
@@ -260,7 +260,7 @@ export const LicenseModal: React.FC = () => {
                 </button>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-black/60 border border-cyber-border/70 text-[10px] font-mono text-gray-400 overflow-x-auto max-h-44 scrollbar-thin select-all leading-relaxed whitespace-pre-wrap">
+              <div className="p-3.5 rounded-xl bg-black/60 border border-cyber-border/70 text-[10px] font-mono text-tertiary overflow-x-auto max-h-44 scrollbar-thin select-all leading-relaxed whitespace-pre-wrap">
                 {FULL_LICENSE_TEXT}
               </div>
             </div>
@@ -269,7 +269,7 @@ export const LicenseModal: React.FC = () => {
             <div className="p-3 rounded-xl bg-[#080c14] border border-cyber-border/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyber-emerald" />
-                <span className="text-gray-400">Official Author Verified Channels:</span>
+                <span className="text-tertiary">Official Author Verified Channels:</span>
               </div>
               <div className="flex items-center gap-2">
                 <a

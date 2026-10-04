@@ -29,10 +29,10 @@ export const CyberBadge: React.FC<CyberBadgeProps> = ({
   const variantClasses = {
     neutral: 'bg-surface-sunken/80 dark:bg-surface-sunken border border-border-subtle text-text-secondary font-medium',
     accent: 'bg-accent/10 border border-accent/30 text-accent font-semibold',
-    success: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-semibold',
-    warning: 'bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold',
-    danger: 'bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 font-semibold',
-    info: 'bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-400 font-semibold',
+    success: 'bg-emerald-500/10 border border-emerald-500/30 text-callout-success-fg font-semibold',
+    warning: 'bg-amber-500/10 border border-amber-500/30 text-callout-warn-fg font-semibold',
+    danger: 'bg-rose-500/10 border border-rose-500/30 text-callout-danger-fg font-semibold',
+    info: 'bg-sky-500/10 border border-sky-500/30 text-callout-info-fg font-semibold',
   }[variant];
 
   const defaultDotColor = {

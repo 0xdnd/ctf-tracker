@@ -54,6 +54,7 @@ import { classifyMachine, VULN_CATEGORIES } from '../../utils/categoryUtils';
 import { getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
 import { QuickCommandsTab } from './QuickCommandsTab';
 import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
+import { confirmAction } from '../../store/useConfirmStore';
 
 const ModalSessionTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) =>
@@ -285,9 +286,9 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
   const pipelineStages: { id: PipelineStatus; label: string; color: string }[] = [
     { id: 'backlog', label: 'Backlog', color: 'border-cyber-muted text-cyber-muted' },
-    { id: 'recon', label: 'Recon In-Progress', color: 'border-cyber-cyan text-cyber-cyan' },
+    { id: 'recon', label: 'Recon In-Progress', color: 'border-cyber-cyan text-callout-info-fg' },
     { id: 'foothold', label: 'Foothold Obtained', color: 'border-cyber-amber text-cyber-amber' },
-    { id: 'root', label: 'Root / System Pwned', color: 'border-cyber-crimson text-cyber-crimson' },
+    { id: 'root', label: 'Root / System Pwned', color: 'border-cyber-crimson text-callout-danger-fg' },
     { id: 'completed', label: 'Completed & Logged', color: 'border-cyber-emerald text-cyber-emerald' },
   ];
 
@@ -322,19 +323,19 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <CategoryBadge machine={machine} size="sm" variant="hardware" />
               <DifficultyBadge difficulty={machine.difficulty} size="sm" variant="hardware" />
               {machine.isActive && (
-                <span className="text-[11px] px-2 py-0.5 rounded-[3px] font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 flex items-center gap-1 machined-edge">
-                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span className="text-[11px] px-2 py-0.5 rounded-[3px] font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-callout-warn-fg border border-amber-300 dark:border-amber-500/40 flex items-center gap-1 machined-edge">
+                  <Lock className="w-3 h-3 text-callout-warn-fg" />
                   <span>ACTIVE LAB</span>
                 </span>
               )}
             </div>
-            <div className="text-xs text-slate-500 dark:text-cyber-muted mt-1 flex flex-wrap items-center gap-3">
+            <div className="text-xs text-tertiary dark:text-cyber-muted mt-1 flex flex-wrap items-center gap-3">
               <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" variant="hardware" showLabel />
               {Boolean(machine.ip && machine.ip.includes('x')) && (
                 <button
                   type="button"
                   onClick={() => setAssignIpMachineId(machine.id)}
-                  className="px-2.5 py-1 rounded-[3px] bg-amber-100 dark:bg-cyber-amber/15 border border-amber-300 dark:border-cyber-amber/40 text-amber-900 dark:text-cyber-amber hover:bg-amber-200 dark:hover:bg-cyber-amber hover:text-black font-bold text-[10px] transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1 shadow-xs active:scale-[0.97]"
+                  className="px-2.5 py-1 rounded-[3px] bg-amber-100 dark:bg-cyber-amber/15 border border-amber-300 dark:border-cyber-amber/40 text-callout-warn-fg hover:bg-amber-200 dark:hover:bg-cyber-amber hover:text-black font-bold text-[10px] transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1 shadow-xs active:scale-[0.97]"
                   title="Target has placeholder IP. Click to assign live spawned IP"
                 >
                   <Crosshair className="w-3 h-3" />
@@ -346,14 +347,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   href={sanitizeExternalUrl(machine.roomUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-cyan-700 dark:text-cyber-cyan hover:underline font-medium"
+                  className="flex items-center gap-1 text-callout-info-fg hover:underline font-medium"
                 >
                   Official Room <ExternalLink className="w-3 h-3" />
                 </a>
               )}
               {machine.isActive ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 machined-edge">
-                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/40 text-callout-warn-fg border border-amber-300 dark:border-amber-500/40 machined-edge">
+                  <Lock className="w-3 h-3 text-callout-warn-fg" />
                   <span>ACTIVE LAB · WRITEUPS PROHIBITED (HTB ToS)</span>
                 </span>
               ) : Boolean(sanitizeExternalUrl(machine.writeupUrl)) ? (
@@ -361,7 +362,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   href={sanitizeExternalUrl(machine.writeupUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-purple-700 dark:text-cyber-purple hover:underline font-medium"
+                  className="flex items-center gap-1 text-callout-tip-fg hover:underline font-medium"
                 >
                   Writeup <ExternalLink className="w-3 h-3" />
                 </a>
@@ -372,13 +373,20 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           <div className="flex items-center gap-1.5 sm:gap-2">
             {machine.isCustom && (
               <button
-                onClick={() => {
-                  if (confirm(`Delete custom machine ${machine.name}?`)) {
+                onClick={async () => {
+                  const ok = await confirmAction({
+                    title: `Delete custom machine ${machine.name}?`,
+                    body: 'This custom machine and its notes will be permanently removed.',
+                    confirmLabel: 'Delete machine',
+                    tone: 'danger',
+                  });
+                  if (ok) {
                     deleteMachine(machine.id);
                   }
                 }}
-                className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-red-600 dark:hover:text-cyber-crimson border border-slate-200 dark:border-cyber-border transition-colors active:scale-[0.97]"
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-callout-danger-fg dark:hover:text-cyber-crimson border border-slate-200 dark:border-cyber-border transition-colors active:scale-[0.97]"
                 title="Delete Custom Machine"
+                aria-label="Delete custom machine"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -387,10 +395,10 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             {/* Direct Pentest Pre-Report Button */}
             <button
               onClick={() => setReportMachineId(machine.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60 hover:bg-purple-200 dark:hover:bg-purple-900/60 hover:text-purple-950 dark:hover:text-white font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-xs active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-callout-tip-fg border border-purple-300 dark:border-purple-800/60 hover:bg-purple-200 dark:hover:bg-purple-900/60 hover:text-callout-tip-fg dark:hover:text-primary font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-xs active:scale-[0.97]"
               title="Open Executive Pentest Pre-Report"
             >
-              <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <FileText className="w-3.5 h-3.5 text-callout-tip-fg" />
               <span className="hidden sm:inline">Pre-Report</span>
             </button>
 
@@ -399,7 +407,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 setSelectedMachineId(machine.id);
                 setReconAutomationModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/15 text-cyan-900 dark:text-cyber-cyan border border-cyan-300 dark:border-cyber-cyan/40 hover:bg-cyan-400 hover:text-black dark:hover:bg-cyber-cyan dark:hover:text-black font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-xs active:scale-[0.97]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/15 text-callout-info-fg border border-cyan-300 dark:border-cyber-cyan/40 hover:bg-accent hover:text-on-accent font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] shadow-xs active:scale-[0.97]"
               title="Open Multi-Format Scan Importer & Payload Crafter for this target"
             >
               <Zap className="w-3.5 h-3.5" />
@@ -410,19 +418,19 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               title={machine.name}
               className="px-2 py-1.5"
             />
-            <button
+            <button aria-label="Open full page mission workspace"
               onClick={() => {
                 navigate(`/target/${machine.id}`);
                 setSelectedMachineId(null);
               }}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-cyan-700 dark:hover:text-cyber-cyan border border-slate-200 dark:border-cyber-border hover:border-cyan-500 dark:hover:border-cyber-cyan transition-colors active:scale-[0.97]"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-callout-info-fg dark:hover:text-cyber-cyan border border-slate-200 dark:border-cyber-border hover:border-cyan-500 dark:hover:border-cyber-cyan transition-colors active:scale-[0.97]"
               title="Open Dedicated Full Page Mission Workspace"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
-            <button
+            <button aria-label="Close machine details"
               onClick={() => setSelectedMachineId(null)}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-cyber-border transition-colors active:scale-[0.97]"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary border border-slate-200 dark:border-cyber-border transition-colors active:scale-[0.97]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -446,25 +454,25 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             onClick={() => setActiveModalTab('commands')}
             className={`flex items-center gap-1.5 py-2.5 px-4 font-sans font-semibold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'commands'
-                ? 'border-amber-500 text-amber-500 bg-amber-500/[0.04]'
+                ? 'border-amber-500 text-callout-warn-fg bg-amber-500/[0.04]'
                 : 'border-transparent text-muted hover:text-primary'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <Zap className="w-3.5 h-3.5 text-callout-warn-fg" />
             <span>⚡ ATTACK ARSENAL</span>
           </button>
           <button
             onClick={() => setActiveModalTab('checklist')}
             className={`flex items-center gap-1.5 py-2.5 px-4 font-sans font-semibold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'checklist'
-                ? 'border-cyan-500 text-cyan-500 bg-cyan-500/[0.04]'
+                ? 'border-cyan-500 text-callout-info-fg bg-cyan-500/[0.04]'
                 : 'border-transparent text-muted hover:text-primary'
             }`}
           >
             <ListChecks className="w-3.5 h-3.5" />
             <span>ATTACK CHECKLIST & METHODOLOGY</span>
             {checklistCompletedCount > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold tabular-nums">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-callout-info-fg font-bold tabular-nums">
                 {checklistCompletedCount} done
               </span>
             )}
@@ -473,11 +481,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             onClick={() => setActiveModalTab('report')}
             className={`flex items-center gap-1.5 py-2.5 px-4 font-sans font-semibold text-xs border-b-2 whitespace-nowrap transition-colors ${
               activeModalTab === 'report'
-                ? 'border-purple-500 text-purple-500 bg-purple-500/[0.04]'
+                ? 'border-purple-500 text-callout-tip-fg bg-purple-500/[0.04]'
                 : 'border-transparent text-muted hover:text-primary'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-purple-500" />
+            <FileText className="w-3.5 h-3.5 text-callout-tip-fg" />
             <span>📄 PENTEST REPORT</span>
           </button>
           {!machine.isActive && Boolean(machine.officialSynopsis || machine.officialWalkthrough || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf) && (
@@ -485,13 +493,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               onClick={() => setActiveModalTab('walkthrough')}
               className={`flex items-center gap-1.5 py-2.5 px-4 font-sans font-semibold text-xs border-b-2 whitespace-nowrap transition-colors ${
                 activeModalTab === 'walkthrough'
-                  ? 'border-emerald-500 text-emerald-500 bg-emerald-500/[0.04]'
+                  ? 'border-emerald-500 text-callout-success-fg bg-emerald-500/[0.04]'
                   : 'border-transparent text-muted hover:text-primary'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+              <BookOpen className="w-3.5 h-3.5 text-callout-success-fg" />
               <span>OFFICIAL HTB INTEL</span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30 uppercase">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-callout-success-fg font-bold border border-emerald-500/30 uppercase">
                 HTB
               </span>
             </button>
@@ -509,30 +517,30 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Report Header Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border machined-edge">
                 <div>
-                  <div className="text-[10px] text-purple-700 dark:text-purple-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <div className="text-[10px] text-callout-tip-fg font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5" /> EXECUTIVE SECURITY ASSESSMENT PRE-REPORT
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span>{machine.name}</span>
-                    <span className="text-slate-500 dark:text-cyber-muted font-normal text-xs font-mono tabular-nums">({machine.ip})</span>
+                    <span className="text-tertiary dark:text-cyber-muted font-normal text-xs font-mono tabular-nums">({machine.ip})</span>
                   </h3>
                   <div className="text-xs text-slate-600 dark:text-cyber-muted mt-1">
-                    Classification: <span className="text-amber-700 dark:text-cyber-amber font-semibold">CONFIDENTIAL // CLIENT PENETRATION AUDIT</span>
+                    Classification: <span className="text-callout-warn-fg font-semibold">CONFIDENTIAL // CLIENT PENETRATION AUDIT</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopyReportMd}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-cyan-500 text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-xs transition-colors active:scale-[0.97] cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-cyan-500 text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary text-xs transition-colors active:scale-[0.97] cursor-pointer"
                   >
-                    {copiedReportMd ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedReportMd ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedReportMd ? 'Copied' : 'Copy MD'}</span>
                   </button>
 
                   <button
                     onClick={() => setReportMachineId(machine.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/60 font-bold text-xs transition-colors shadow-sm active:scale-[0.97] cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800 text-callout-tip-fg hover:bg-purple-200 dark:hover:bg-purple-900/60 font-bold text-xs transition-colors shadow-sm active:scale-[0.97] cursor-pointer"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     <span>Print / PDF</span>
@@ -543,18 +551,18 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Threat Level & Severity Matrix */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border machined-edge">
-                  <div className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase font-bold mb-1">COMPROMISE STATUS</div>
+                  <div className="text-[10px] text-tertiary dark:text-cyber-muted uppercase font-bold mb-1">COMPROMISE STATUS</div>
                   <div className="text-sm font-bold flex items-center gap-2">
                     {machine.status === 'completed' || machine.status === 'root' ? (
-                      <span className="text-emerald-700 dark:text-cyber-emerald flex items-center gap-1">
+                      <span className="text-callout-success-fg flex items-center gap-1">
                         <CheckCircle2 className="w-4 h-4" /> 100% ROOT PWNED
                       </span>
                     ) : machine.status === 'foothold' ? (
-                      <span className="text-amber-700 dark:text-cyber-amber flex items-center gap-1">
+                      <span className="text-callout-warn-fg flex items-center gap-1">
                         <AlertOctagon className="w-4 h-4" /> FOOTHOLD OBTAINED
                       </span>
                     ) : (
-                      <span className="text-cyan-700 dark:text-cyber-cyan flex items-center gap-1">
+                      <span className="text-callout-info-fg flex items-center gap-1">
                         <AlertCircle className="w-4 h-4" /> RECON IN-PROGRESS
                       </span>
                     )}
@@ -562,16 +570,16 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border machined-edge">
-                  <div className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase font-bold mb-1">RISK SEVERITY</div>
-                  <div className="text-sm font-bold text-rose-700 dark:text-cyber-crimson flex items-center gap-1.5">
+                  <div className="text-[10px] text-tertiary dark:text-cyber-muted uppercase font-bold mb-1">RISK SEVERITY</div>
+                  <div className="text-sm font-bold text-callout-danger-fg flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4" />
                     <span className="tabular-nums">CVSS 9.4 CRITICAL</span>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border machined-edge">
-                  <div className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase font-bold mb-1">TOTAL TIME LOGGED</div>
-                  <div className="text-sm font-bold text-cyan-700 dark:text-cyber-cyan flex items-center gap-1.5 font-mono tabular-nums">
+                  <div className="text-[10px] text-tertiary dark:text-cyber-muted uppercase font-bold mb-1">TOTAL TIME LOGGED</div>
+                  <div className="text-sm font-bold text-callout-info-fg flex items-center gap-1.5 font-mono tabular-nums">
                     <Clock className="w-4 h-4" />
                     <span>{formatSeconds(machine.timeSpentSeconds)}</span>
                   </div>
@@ -580,7 +588,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
               {/* Executive Summary Narrative */}
               <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-cyber-bg/60 border border-slate-200 dark:border-cyber-border space-y-2 machined-edge">
-                <div className="text-[10px] uppercase font-bold text-cyan-800 dark:text-cyber-cyan tracking-wider">
+                <div className="text-[10px] uppercase font-bold text-callout-info-fg tracking-wider">
                   1. EXECUTIVE SUMMARY
                 </div>
                 <p className="text-slate-600 dark:text-cyber-muted leading-relaxed">
@@ -590,12 +598,12 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
               {/* Attack Path & Flag Proof of Compromise */}
               <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-cyber-bg/60 border border-slate-200 dark:border-cyber-border space-y-3 machined-edge">
-                <div className="text-[10px] uppercase font-bold text-emerald-800 dark:text-cyber-emerald tracking-wider">
+                <div className="text-[10px] uppercase font-bold text-callout-success-fg tracking-wider">
                   2. ATTACK CHAIN & PROOF OF COMPROMISE
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono">
                   <div className="p-3 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border machined-edge">
-                    <div className="text-[10px] text-cyan-800 dark:text-cyber-cyan font-bold mb-1 flex items-center justify-between">
+                    <div className="text-[10px] text-callout-info-fg font-bold mb-1 flex items-center justify-between">
                       <span>USER ACCESS FLAG</span>
                       <span>{machine.userPwnedAt ? '✓ PWNED' : 'PENDING'}</span>
                     </div>
@@ -604,7 +612,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     </div>
                   </div>
                   <div className="p-3 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border machined-edge">
-                    <div className="text-[10px] text-emerald-800 dark:text-cyber-emerald font-bold mb-1 flex items-center justify-between">
+                    <div className="text-[10px] text-callout-success-fg font-bold mb-1 flex items-center justify-between">
                       <span>ROOT / SYSTEM FLAG</span>
                       <span>{machine.rootPwnedAt ? '✓ ROOTED' : 'PENDING'}</span>
                     </div>
@@ -616,7 +624,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
                 {machine.quickNotes && (
                   <div className="p-3 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-1 machined-edge">
-                    <div className="text-[10px] text-slate-500 dark:text-cyber-muted font-bold uppercase">Assessor Field Notes:</div>
+                    <div className="text-[10px] text-tertiary dark:text-cyber-muted font-bold uppercase">Assessor Field Notes:</div>
                     <div className="text-slate-800 dark:text-white whitespace-pre-wrap">{machine.quickNotes}</div>
                   </div>
                 )}
@@ -624,7 +632,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
               {/* Remediation Action Plan */}
               <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-cyber-bg/60 border border-slate-200 dark:border-cyber-border space-y-2">
-                <div className="text-[10px] uppercase font-bold text-amber-800 dark:text-cyber-amber tracking-wider">
+                <div className="text-[10px] uppercase font-bold text-callout-warn-fg tracking-wider">
                   3. STRATEGIC REMEDIATION ROADMAP
                 </div>
                 <ul className="space-y-1.5 text-slate-600 dark:text-cyber-muted list-disc list-inside">
@@ -637,8 +645,8 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           ) : activeModalTab === 'walkthrough' ? (
             machine.isActive ? (
               <div className="p-8 rounded-xl border border-amber-500/40 bg-amber-950/20 text-center space-y-3 font-mono">
-                <Lock className="w-8 h-8 text-amber-400 mx-auto" />
-                <h3 className="text-sm font-bold text-amber-300 uppercase tracking-wider">
+                <Lock className="w-8 h-8 text-callout-warn-fg mx-auto" />
+                <h3 className="text-sm font-bold text-callout-warn-fg uppercase tracking-wider">
                   Active Lab · Walkthroughs Strictly Prohibited
                 </h3>
                 <p className="text-xs text-cyber-muted max-w-md mx-auto">
@@ -650,20 +658,20 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Header banner */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border">
                 <div>
-                  <div className="text-[10px] text-emerald-800 dark:text-cyber-emerald font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" /> OFFICIAL HACK THE BOX INTELLIGENCE BRIEFING
+                  <div className="text-[10px] text-callout-success-fg font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" /> OFFICIAL HACK THE BOX INTELLIGENCE BRIEFING
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span>{machine.name}</span>
-                    <span className="text-slate-500 dark:text-cyber-muted font-normal text-xs font-mono">({machine.ip})</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/20 text-emerald-900 dark:text-cyber-emerald font-bold border border-emerald-300 dark:border-cyber-emerald/40 font-mono">
+                    <span className="text-tertiary dark:text-cyber-muted font-normal text-xs font-mono">({machine.ip})</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/20 text-callout-success-fg font-bold border border-emerald-300 dark:border-cyber-emerald/40 font-mono">
                       OFFICIAL HTB
                     </span>
                   </h3>
                   {machine.officialPdf && (
-                    <div className="text-xs text-slate-500 dark:text-cyber-muted mt-1 flex items-center gap-1.5">
+                    <div className="text-xs text-tertiary dark:text-cyber-muted mt-1 flex items-center gap-1.5">
                       <span>Source Archive:</span>
-                      <span className="text-cyan-800 dark:text-cyber-cyan font-mono text-[11px] bg-white dark:bg-cyber-card px-1.5 py-0.5 rounded border border-slate-200 dark:border-cyber-border">
+                      <span className="text-callout-info-fg font-mono text-[11px] bg-white dark:bg-cyber-card px-1.5 py-0.5 rounded border border-slate-200 dark:border-cyber-border">
                         {machine.officialPdf}
                       </span>
                     </div>
@@ -681,15 +689,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                           setTimeout(() => setCopiedWalkthrough(false), 2000);
                         }
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-emerald-500 text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border hover:border-emerald-500 text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary text-xs transition-colors"
                     >
-                      {copiedWalkthrough ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedWalkthrough ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedWalkthrough ? 'Copied' : 'Copy Walkthrough'}</span>
                     </button>
                   )}
                   <button
                     onClick={handleOpenInWriteup}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/20 border border-emerald-300 dark:border-cyber-emerald/50 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/20 border border-emerald-300 dark:border-cyber-emerald/50 text-callout-success-fg hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-sm"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>Writeup Studio</span>
@@ -700,8 +708,8 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Section 1: Official Synopsis */}
               {machine.officialSynopsis && (
                 <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border space-y-2">
-                  <div className="text-[10px] uppercase font-bold text-cyan-800 dark:text-cyber-cyan tracking-wider flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" /> OFFICIAL SYNOPSIS & THREAT OVERVIEW
+                  <div className="text-[10px] uppercase font-bold text-callout-info-fg tracking-wider flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-callout-info-fg" /> OFFICIAL SYNOPSIS & THREAT OVERVIEW
                   </div>
                   <p className="text-slate-800 dark:text-white text-xs sm:text-sm leading-relaxed font-sans font-normal">
                     {machine.officialSynopsis}
@@ -712,16 +720,16 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Section 2: Core Skills Learned */}
               {machine.skillsLearned && machine.skillsLearned.length > 0 && (
                 <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border space-y-2.5">
-                  <div className="text-[10px] uppercase font-bold text-emerald-800 dark:text-cyber-emerald tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-cyber-emerald" /> TARGET SKILLS REQUIRED & LEARNED
+                  <div className="text-[10px] uppercase font-bold text-callout-success-fg tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-callout-success-fg" /> TARGET SKILLS REQUIRED & LEARNED
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {machine.skillsLearned.map((skill, sIdx) => (
                       <span
                         key={sIdx}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/30 text-emerald-900 dark:text-cyber-emerald text-xs font-medium flex items-center gap-1.5"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/30 text-callout-success-fg text-xs font-medium flex items-center gap-1.5"
                       >
-                        <Check className="w-3 h-3 text-emerald-600 dark:text-cyber-emerald stroke-[2.5]" />
+                        <Check className="w-3 h-3 text-callout-success-fg stroke-[2.5]" />
                         <span>{skill}</span>
                       </span>
                     ))}
@@ -732,8 +740,8 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Section 3: Full Structured Walkthrough */}
               {machine.officialWalkthrough && (
                 <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border space-y-3">
-                  <div className="text-[10px] uppercase font-bold text-purple-700 dark:text-purple-400 tracking-wider flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> TACTICAL EXPLOITATION WALKTHROUGH
+                  <div className="text-[10px] uppercase font-bold text-callout-tip-fg tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-callout-tip-fg" /> TACTICAL EXPLOITATION WALKTHROUGH
                   </div>
                   <div className="prose prose-invert max-w-none text-xs leading-relaxed text-slate-700 dark:text-cyber-muted space-y-4 font-sans">
                     {machine.officialWalkthrough.split('\n\n').map((paragraph, pIdx) => {
@@ -797,7 +805,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             {/* Header / Port list */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-800 dark:text-cyber-cyan flex items-center gap-1.5">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-callout-info-fg flex items-center gap-1.5">
                   <Radio className="w-3.5 h-3.5" /> RECON INTAKE & OPEN PORTS ({machine.openPorts?.length || 0})
                 </span>
               </div>
@@ -829,7 +837,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <div
                 className={`mb-2.5 p-2 rounded text-[11px] font-mono font-bold flex items-center gap-2 ${
                   modalScanToast.isError
-                    ? 'bg-rose-950/60 border border-rose-500 text-rose-300'
+                    ? 'bg-rose-950/60 border border-rose-500 text-callout-danger-fg'
                     : 'bg-emerald-950/60 border border-cyber-emerald text-cyber-emerald'
                 }`}
               >
@@ -872,7 +880,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     className={`p-2 rounded-lg border text-center font-semibold transition-colors ${
                       isSelected
                         ? `bg-white dark:bg-cyber-bg border-2 ${stage.color} shadow-md`
-                        : 'bg-slate-50 dark:bg-cyber-bg/40 border-slate-200 dark:border-cyber-border/80 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-border'
+                        : 'bg-slate-50 dark:bg-cyber-bg/40 border-slate-200 dark:border-cyber-border/80 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300 dark:hover:border-cyber-border'
                     }`}
                   >
                     {stage.label}
@@ -885,11 +893,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {/* Section 2: Engagement Stopwatch & Time Metrics */}
           <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
             <div>
-              <div className="text-[10px] uppercase font-semibold text-slate-500 dark:text-cyber-muted flex items-center gap-1">
-                <Clock className="w-3 h-3 text-cyan-600 dark:text-cyber-cyan" /> SESSION TIMER
+              <div className="text-[10px] uppercase font-semibold text-tertiary dark:text-cyber-muted flex items-center gap-1">
+                <Clock className="w-3 h-3 text-callout-info-fg" /> SESSION TIMER
               </div>
               <ModalSessionTimerDisplay machineId={machine.id} fallbackSeconds={machine.timeSpentSeconds} isActiveTarget={isActiveTarget} />
-              <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
+              <div className="text-[10px] text-tertiary dark:text-cyber-muted">
                 {isActiveTarget ? 'Active Engagement' : 'Standby'}
               </div>
             </div>
@@ -902,7 +910,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     startTimer();
                     if (soundEnabled) playCyberSound('timer');
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-callout-success-fg hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-colors"
                 >
                   <Crosshair className="w-3.5 h-3.5" /> Set Active Target
                 </button>
@@ -911,27 +919,34 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   {isTimerRunning ? (
                     <button
                       onClick={pauseTimer}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-amber-100 dark:bg-cyber-amber/10 border border-amber-300 dark:border-cyber-amber/40 text-amber-900 dark:text-cyber-amber hover:bg-amber-500 hover:text-white dark:hover:bg-cyber-amber dark:hover:text-black font-semibold transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-amber-100 dark:bg-cyber-amber/10 border border-amber-300 dark:border-cyber-amber/40 text-callout-warn-fg hover:bg-amber-500 hover:text-white dark:hover:bg-cyber-amber dark:hover:text-black font-semibold transition-colors"
                     >
                       <Pause className="w-3.5 h-3.5" /> Pause
                     </button>
                   ) : (
                     <button
                       onClick={startTimer}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-emerald-900 dark:text-cyber-emerald hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-100 dark:bg-cyber-emerald/10 border border-emerald-300 dark:border-cyber-emerald/40 text-callout-success-fg hover:bg-emerald-500 hover:text-white dark:hover:bg-cyber-emerald dark:hover:text-black font-semibold transition-colors"
                     >
                       <Play className="w-3.5 h-3.5" /> Resume
                     </button>
                   )}
                   <button
-                    onClick={() => {
-                      if (confirm('Reset session timer?')) {
+                    onClick={async () => {
+                      const ok = await confirmAction({
+                        title: 'Reset session timer?',
+                        body: 'The elapsed session time for this machine will be cleared.',
+                        confirmLabel: 'Reset timer',
+                        tone: 'danger',
+                      });
+                      if (ok) {
                         resetTimer();
                         if (soundEnabled) playCyberSound('click');
                       }
                     }}
-                    className="p-1.5 rounded-md bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+                    className="p-1.5 rounded-md bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
                     title="Reset Timer"
+                    aria-label="Reset session timer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
@@ -942,14 +957,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             {/* Time to User & Root Milestones */}
             <div className="grid grid-cols-2 gap-2 text-[10px] w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-cyber-border pt-2 sm:pt-0 sm:pl-4">
               <div>
-                <span className="text-slate-500 dark:text-cyber-muted block">Time to User:</span>
-                <span className="font-bold text-cyan-700 dark:text-cyber-cyan font-mono">
+                <span className="text-tertiary dark:text-cyber-muted block">Time to User:</span>
+                <span className="font-bold text-callout-info-fg font-mono">
                   {machine.timeToUserSeconds ? formatSeconds(machine.timeToUserSeconds) : '--:--:--'}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-cyber-muted block">Time to Root:</span>
-                <span className="font-bold text-rose-700 dark:text-cyber-crimson font-mono">
+                <span className="text-tertiary dark:text-cyber-muted block">Time to Root:</span>
+                <span className="font-bold text-callout-danger-fg font-mono">
                   {machine.timeToRootSeconds ? formatSeconds(machine.timeToRootSeconds) : '--:--:--'}
                 </span>
               </div>
@@ -959,7 +974,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {/* Section 3: Flags Vault (Concentric R_inner = 8px) */}
           <div className="rounded-lg p-4 bg-surface-card border border-subtle surface-card-depth machined-edge space-y-3">
             <div className="text-[11px] uppercase font-sans font-semibold tracking-wider text-secondary flex items-center gap-1.5">
-              <Flag className="w-3.5 h-3.5 text-amber-500" /> FLAGS VAULT (OBFUSCATED & COPYABLE)
+              <Flag className="w-3.5 h-3.5 text-callout-warn-fg" /> FLAGS VAULT (OBFUSCATED & COPYABLE)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* User Flag */}
@@ -969,7 +984,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     <Flag className="w-3 h-3" /> USER FLAG
                   </span>
                   {isUserPwned && (
-                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 font-bold font-mono">
+                    <span className="text-[9px] text-callout-success-fg flex items-center gap-0.5 font-bold font-mono">
                       <Check className="w-3 h-3" /> PWNED
                     </span>
                   )}
@@ -1028,11 +1043,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {/* Root Flag */}
               <div className="p-3 rounded-md border border-subtle bg-surface-sunken/50 space-y-2 machined-edge">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 font-sans">
+                  <span className="text-callout-success-fg font-semibold flex items-center gap-1 font-sans">
                     <Flag className="w-3 h-3" /> ROOT / SYSTEM FLAG
                   </span>
                   {isRootPwned && (
-                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 font-bold font-mono">
+                    <span className="text-[9px] text-callout-success-fg flex items-center gap-0.5 font-bold font-mono">
                       <Check className="w-3 h-3" /> ROOTED
                     </span>
                   )}
@@ -1093,7 +1108,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {/* Section 3.5: Target Field Notes & Loot (Concentric R_inner = 8px) */}
           <div className="rounded-lg p-4 bg-surface-card border border-subtle surface-card-depth machined-edge space-y-3">
             <div className="flex items-center justify-between text-[11px] uppercase font-sans font-semibold tracking-wider text-secondary">
-              <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+              <span className="flex items-center gap-1.5 text-callout-tip-fg">
                 <FileCode className="w-3.5 h-3.5" /> TARGET FIELD NOTES & LOOT
               </span>
               <span className="text-[10px] text-muted font-normal font-sans">
@@ -1116,13 +1131,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {machine.officialSynopsis && (
             <div className="p-3.5 rounded-lg border border-emerald-300 dark:border-cyber-emerald/40 bg-emerald-50 dark:bg-cyber-emerald/5 space-y-2 machined-edge">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-emerald-800 dark:text-cyber-emerald uppercase font-bold flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-700 dark:text-cyber-emerald" /> OFFICIAL HTB SYNOPSIS & INTEL
+                <span className="text-[10px] text-callout-success-fg uppercase font-bold flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-callout-success-fg" /> OFFICIAL HTB SYNOPSIS & INTEL
                 </span>
                 <button
                   type="button"
                   onClick={() => setActiveModalTab('walkthrough')}
-                  className="text-[10px] text-emerald-700 dark:text-cyber-emerald hover:underline flex items-center gap-1 font-bold"
+                  className="text-[10px] text-callout-success-fg hover:underline flex items-center gap-1 font-bold"
                 >
                   <span>Open Full Walkthrough</span>
                   <ExternalLink className="w-3 h-3" />
@@ -1136,13 +1151,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   {machine.skillsLearned.slice(0, 4).map((sk, skIdx) => (
                     <span
                       key={skIdx}
-                      className="px-2 py-0.5 rounded bg-white dark:bg-cyber-card border border-emerald-300 dark:border-cyber-emerald/30 text-emerald-900 dark:text-cyber-emerald text-[10px] font-medium shadow-xs"
+                      className="px-2 py-0.5 rounded bg-white dark:bg-cyber-card border border-emerald-300 dark:border-cyber-emerald/30 text-callout-success-fg text-[10px] font-medium shadow-xs"
                     >
                       {sk}
                     </span>
                   ))}
                   {machine.skillsLearned.length > 4 && (
-                    <span className="text-[10px] text-slate-500 dark:text-cyber-muted self-center">
+                    <span className="text-[10px] text-tertiary dark:text-cyber-muted self-center">
                       +{machine.skillsLearned.length - 4} more
                     </span>
                   )}
@@ -1153,8 +1168,8 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
           {/* Section 4: Spoiler-Masked Hint / Active ToS Guard */}
           {machine.isActive ? (
-            <div className="p-3 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-300 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <div className="p-3 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-callout-warn-fg flex items-center gap-2">
+              <Lock className="w-4 h-4 text-callout-warn-fg flex-shrink-0" />
               <span className="text-[11px] font-mono">
                 Active Lab: Intel hints and spoilers are strictly prohibited by Hack The Box Terms of Service (AUP §8.2).
               </span>
@@ -1162,13 +1177,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           ) : machine.hint ? (
             <div className="p-3 rounded-lg border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-amber-800 dark:text-cyber-amber uppercase font-semibold flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 text-amber-600 dark:text-cyber-amber" /> INTEL HINT (SPOILER MASKED)
+                <span className="text-[10px] text-callout-warn-fg uppercase font-semibold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-callout-warn-fg" /> INTEL HINT (SPOILER MASKED)
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowHint(!showHint)}
-                  className="text-[10px] text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white flex items-center gap-1"
+                  className="text-[10px] text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary flex items-center gap-1"
                 >
                   {showHint ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   <span>{showHint ? 'Mask Hint' : 'Reveal Hint'}</span>
@@ -1189,7 +1204,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {/* Section 5: Perceived Difficulty & Enjoyment Rating */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-3 rounded-lg border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50">
-              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-cyber-muted mb-2">
+              <div className="text-[10px] uppercase font-bold tracking-wider text-tertiary dark:text-cyber-muted mb-2">
                 PERCEIVED DIFFICULTY VS OFFICIAL
               </div>
               <div className="flex items-center gap-1.5">
@@ -1200,7 +1215,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     className={`px-2 py-1 rounded text-[10px] border transition-colors ${
                       machine.perceivedDifficulty === diff
                         ? 'bg-emerald-600 text-white dark:bg-cyber-emerald dark:text-black font-bold border-emerald-600 dark:border-cyber-emerald shadow-xs'
-                        : 'bg-white dark:bg-cyber-card text-slate-700 dark:text-cyber-muted border-slate-200 dark:border-cyber-border hover:text-slate-900 dark:hover:text-white'
+                        : 'bg-white dark:bg-cyber-card text-slate-700 dark:text-cyber-muted border-slate-200 dark:border-cyber-border hover:text-slate-900 dark:hover:text-primary'
                     }`}
                   >
                     {diff}
@@ -1210,7 +1225,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             </div>
 
             <div className="p-3 rounded-lg border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50">
-              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-cyber-muted mb-2">
+              <div className="text-[10px] uppercase font-bold tracking-wider text-tertiary dark:text-cyber-muted mb-2">
                 MATRIX OF SATISFACTION (ENJOYMENT)
               </div>
               <div className="flex items-center gap-1">
@@ -1218,11 +1233,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   <button
                     key={star}
                     onClick={() => updateMachine(machine.id, { rating: star })}
-                    className="p-1 text-slate-400 dark:text-cyber-muted hover:text-amber-500 dark:hover:text-cyber-amber transition-colors"
+                    className="p-1 text-tertiary dark:text-cyber-muted hover:text-callout-warn-fg dark:hover:text-cyber-amber transition-colors"
                   >
                     <Star
                       className={`w-4 h-4 ${
-                        (machine.rating || 0) >= star ? 'text-amber-500 fill-amber-500 dark:text-cyber-amber dark:fill-cyber-amber' : ''
+                        (machine.rating || 0) >= star ? 'text-callout-warn-fg fill-amber-500 dark:text-cyber-amber dark:fill-cyber-amber' : ''
                       }`}
                     />
                   </button>
@@ -1237,12 +1252,12 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {/* Section 6: Identified Vulnerability Archetypes & Tags */}
           <div className="space-y-4">
             <div>
-              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-cyber-muted mb-2 flex items-center justify-between">
+              <div className="text-[10px] uppercase font-bold tracking-wider text-tertiary dark:text-cyber-muted mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-cyber-purple" />
+                  <Sparkles className="w-3.5 h-3.5 text-callout-tip-fg" />
                   <span>IDENTIFIED VULNERABILITY ARCHETYPES ({classifyMachine(machine).categories.length})</span>
                 </div>
-                <span className="text-[10px] text-slate-400 dark:text-cyber-muted italic">Click to filter targets</span>
+                <span className="text-[10px] text-tertiary dark:text-cyber-muted italic">Click to filter targets</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {classifyMachine(machine).categories.length > 0 ? (
@@ -1266,25 +1281,25 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     );
                   })
                 ) : (
-                  <span className="text-xs text-slate-500 dark:text-cyber-muted italic">Standard Host Operations</span>
+                  <span className="text-xs text-tertiary dark:text-cyber-muted italic">Standard Host Operations</span>
                 )}
               </div>
             </div>
 
             <div>
-              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-cyber-muted mb-2 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-cyan-700 dark:text-cyber-cyan" /> ATTACK VECTORS & TAGS
+              <div className="text-[10px] uppercase font-bold tracking-wider text-tertiary dark:text-cyber-muted mb-2 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-callout-info-fg" /> ATTACK VECTORS & TAGS
               </div>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {machine.tags.map((t) => (
                   <span
                     key={t}
-                    className="px-2 py-0.5 rounded-md bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-cyan-900 dark:text-cyber-cyan text-[11px] flex items-center gap-1"
+                    className="px-2 py-0.5 rounded-md bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-callout-info-fg text-[11px] flex items-center gap-1"
                   >
                   {t}
                   <button
                     onClick={() => handleRemoveTag(t)}
-                    className="hover:text-red-600 dark:hover:text-cyber-crimson ml-0.5"
+                    className="hover:text-callout-danger-fg dark:hover:text-cyber-crimson ml-0.5"
                   >
                     ×
                   </button>
@@ -1323,11 +1338,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           {recommendedNotes.length > 0 && (
             <div className="p-3.5 rounded-xl bg-purple-50/70 dark:bg-cyber-bg/80 border border-purple-200 dark:border-purple-500/40 space-y-3 shadow-sm">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-[10px] text-purple-800 dark:text-purple-400 uppercase font-bold flex items-center gap-1.5 tracking-wider">
-                  <BookOpen className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
+                <span className="text-[10px] text-callout-tip-fg uppercase font-bold flex items-center gap-1.5 tracking-wider">
+                  <BookOpen className="w-3.5 h-3.5 text-callout-tip-fg" />
                   TACTICAL INTEL // OBSIDIAN VAULT ({recommendedNotes.length} MATCHING NOTES)
                 </span>
-                <span className="text-[9px] px-2 py-0.5 rounded font-mono bg-purple-100 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/60 text-purple-900 dark:text-purple-300 font-bold">
+                <span className="text-[9px] px-2 py-0.5 rounded font-mono bg-purple-100 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/60 text-callout-tip-fg font-bold">
                   {userNotes.length > 0 ? `Private Vault (${userNotes.length} Notes)` : 'Field Manual Vault'}
                 </span>
               </div>
@@ -1348,14 +1363,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                           {note.title}
                         </span>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-500/15 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 font-mono font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-500/15 text-callout-tip-fg border border-purple-300 dark:border-purple-500/30 font-mono font-bold">
                             {note.difficulty}
                           </span>
                           {note.commands && note.commands.length > 1 && (
                             <button
                               type="button"
                               onClick={() => setExpandedNotes(prev => ({ ...prev, [note.id]: !prev[note.id] }))}
-                              className="text-[9px] text-cyan-700 dark:text-cyber-cyan hover:underline flex items-center gap-0.5 font-semibold"
+                              className="text-[9px] text-callout-info-fg hover:underline flex items-center gap-0.5 font-semibold"
                               title="Toggle all commands"
                             >
                               {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -1376,7 +1391,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                             const interpolated0 = interpolateCommand(note.commands[0], targetVars);
                             return (
                               <div className="flex items-center justify-between gap-2 p-1.5 rounded bg-slate-950 border border-slate-800 font-mono text-[10px]">
-                                <code className="text-cyan-300 truncate flex-1 select-all" title={interpolated0}>
+                                <code className="text-callout-info-fg truncate flex-1 select-all" title={interpolated0}>
                                   {interpolated0}
                                 </code>
                                 <button
@@ -1401,7 +1416,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                             const interpolated = interpolateCommand(cmd, targetVars);
                             return (
                               <div key={cIdx} className="flex items-center justify-between gap-2 p-1.5 rounded bg-slate-950 border border-purple-900/60 font-mono text-[10px]">
-                                <code className="text-purple-300 truncate flex-1 select-all" title={interpolated}>
+                                <code className="text-callout-tip-fg truncate flex-1 select-all" title={interpolated}>
                                   {interpolated}
                                 </code>
                                 <button
@@ -1425,7 +1440,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                             <button
                               type="button"
                               onClick={() => setExpandedNotes(prev => ({ ...prev, [note.id]: true }))}
-                              className="text-[9px] text-slate-600 dark:text-cyber-muted hover:text-purple-700 dark:hover:text-purple-300 transition-colors flex items-center gap-1 font-mono"
+                              className="text-[9px] text-slate-600 dark:text-cyber-muted hover:text-callout-tip-fg dark:hover:text-callout-tip-fg transition-colors flex items-center gap-1 font-mono"
                             >
                               <span>+ {extraCommandsCount} more commands from this note...</span>
                             </button>
@@ -1444,14 +1459,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
         {/* Modal Footer (Pinned at Bottom) */}
         <div className="flex-shrink-0 border-t border-slate-200 dark:border-cyber-border p-3 sm:p-3.5 bg-slate-50/95 dark:bg-cyber-bg/95 backdrop-blur-sm flex items-center justify-between">
-          <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
+          <div className="text-[10px] text-tertiary dark:text-cyber-muted">
             Created: {new Date(machine.createdAt).toLocaleDateString()}
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setReportMachineId(machine.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-white font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-950/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-300 dark:border-purple-800 text-callout-tip-fg hover:text-callout-tip-fg dark:hover:text-primary font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
               title="Open Printable Pentest Report PDF"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -1459,7 +1474,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             </button>
             <button
               onClick={handleOpenInWriteup}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/40 text-cyan-900 dark:text-cyber-cyan hover:bg-cyan-500 hover:text-white dark:hover:bg-cyber-cyan dark:hover:text-black font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/40 text-callout-info-fg hover:bg-accent hover:text-on-accent font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
             >
               <FileText className="w-3.5 h-3.5" /> Writeup Studio
             </button>

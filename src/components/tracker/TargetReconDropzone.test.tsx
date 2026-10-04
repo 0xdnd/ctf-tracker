@@ -1,8 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TargetReconDropzone } from './TargetReconDropzone';
 import { Machine } from '../../types';
+
+const confirmMock = vi.hoisted(() => vi.fn());
+vi.mock('../../store/useConfirmStore', () => ({
+  confirmAction: (...args: unknown[]) => confirmMock(...args),
+}));
 
 describe('TargetReconDropzone component', () => {
   const mockMachine: Machine = {
@@ -157,7 +162,8 @@ describe('TargetReconDropzone component', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('ffuf -u http://10.10.10.3/FUZZ');
   });
 
-  it('clears scan data when clicking clear button', () => {
+  it('clears scan data only after the confirmation resolves true', async () => {
+    confirmMock.mockResolvedValue(true);
     const machineWithServices: Machine = {
       ...mockMachine,
       services: [{ port: 80, protocol: 'tcp', state: 'open', service: 'http' }],
@@ -174,11 +180,36 @@ describe('TargetReconDropzone component', () => {
     const clearBtn = screen.getByRole('button', { name: /Clear/i });
     fireEvent.click(clearBtn);
 
-    expect(handleUpdate).toHaveBeenCalledWith('htb-lame', {
-      services: [],
-      openPorts: [],
-      scanSummary: undefined,
-      rawScanOutput: undefined,
+    await waitFor(() => {
+      expect(handleUpdate).toHaveBeenCalledWith('htb-lame', {
+        services: [],
+        openPorts: [],
+        scanSummary: undefined,
+        rawScanOutput: undefined,
+      });
     });
+    expect(confirmMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps scan data when the clear confirmation is cancelled', async () => {
+    confirmMock.mockResolvedValue(false);
+    const machineWithServices: Machine = {
+      ...mockMachine,
+      services: [{ port: 80, protocol: 'tcp', state: 'open', service: 'http' }],
+    };
+
+    const handleUpdate = vi.fn();
+    render(
+      <TargetReconDropzone
+        machine={machineWithServices}
+        onUpdateMachine={handleUpdate}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Clear/i }));
+
+    await waitFor(() => expect(confirmMock).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    expect(handleUpdate).not.toHaveBeenCalled();
   });
 });

@@ -89,17 +89,17 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
   const getHardwareTheme = () => {
     switch (os) {
       case 'Linux':
-        return 'text-amber-800 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 border-amber-400/60 dark:border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.15)]';
+        return 'text-callout-warn-fg bg-amber-500/10 dark:bg-amber-500/20 border-amber-400/60 dark:border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.15)]';
       case 'Windows':
-        return 'text-sky-800 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 border-sky-400/60 dark:border-sky-500/50 shadow-[0_0_8px_rgba(14,165,233,0.15)]';
+        return 'text-callout-info-fg bg-sky-500/10 dark:bg-sky-500/20 border-sky-400/60 dark:border-sky-500/50 shadow-[0_0_8px_rgba(14,165,233,0.15)]';
       case 'BSD':
-        return 'text-rose-800 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 border-rose-400/60 dark:border-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.15)]';
+        return 'text-callout-danger-fg bg-rose-500/10 dark:bg-rose-500/20 border-rose-400/60 dark:border-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.15)]';
       case 'Android':
-        return 'text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-400/60 dark:border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.15)]';
+        return 'text-callout-success-fg bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-400/60 dark:border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.15)]';
       case 'macOS':
-        return 'text-purple-800 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 border-purple-400/60 dark:border-purple-500/50 shadow-[0_0_8px_rgba(168,85,247,0.15)]';
+        return 'text-callout-tip-fg bg-purple-500/10 dark:bg-purple-500/20 border-purple-400/60 dark:border-purple-500/50 shadow-[0_0_8px_rgba(168,85,247,0.15)]';
       default:
-        return 'text-zinc-700 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800';
+        return 'text-zinc-700 dark:text-tertiary bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800';
     }
   };
 
@@ -118,15 +118,15 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
   const getTheme = () => {
     switch (os) {
       case 'Linux':
-        return 'text-amber-900 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 border-amber-400/60 dark:border-amber-500/50 shadow-sm';
+        return 'text-callout-warn-fg bg-amber-500/10 dark:bg-amber-500/20 border-amber-400/60 dark:border-amber-500/50 shadow-sm';
       case 'Windows':
-        return 'text-sky-900 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 border-sky-400/60 dark:border-sky-500/50 shadow-sm';
+        return 'text-callout-info-fg bg-sky-500/10 dark:bg-sky-500/20 border-sky-400/60 dark:border-sky-500/50 shadow-sm';
       case 'BSD':
-        return 'text-rose-900 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 border-rose-400/60 dark:border-rose-500/50 shadow-sm';
+        return 'text-callout-danger-fg bg-rose-500/10 dark:bg-rose-500/20 border-rose-400/60 dark:border-rose-500/50 shadow-sm';
       case 'Android':
-        return 'text-emerald-900 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-400/60 dark:border-emerald-500/50 shadow-sm';
+        return 'text-callout-success-fg bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-400/60 dark:border-emerald-500/50 shadow-sm';
       case 'macOS':
-        return 'text-purple-900 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 border-purple-400/60 dark:border-purple-500/50 shadow-sm';
+        return 'text-callout-tip-fg bg-purple-500/10 dark:bg-purple-500/20 border-purple-400/60 dark:border-purple-500/50 shadow-sm';
       default:
         return 'text-slate-700 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-bg/60 border-slate-300 dark:border-cyber-border';
     }

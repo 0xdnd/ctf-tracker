@@ -72,26 +72,26 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
   // Semantic Token Variant Matrix (WCAG AAA in both Dark and Light modes):
   const variantClasses: Record<CyberButtonVariant, string> = {
     default:
-      'bg-slate-100 hover:bg-slate-200/90 dark:bg-surface-elevated dark:hover:bg-surface-hover ' +
-      'border border-slate-300/80 dark:border-border-subtle ' +
-      'text-slate-800 dark:text-text-primary hover:text-slate-950 dark:hover:text-white ' +
+      'bg-surface-elevated hover:bg-surface-hover ' +
+      'border border-border-subtle hover:border-border-strong ' +
+      'text-text-primary ' +
       'shadow-xs dark:shadow-none machined-edge',
-    
+
     primary:
       'bg-accent hover:brightness-105 active:brightness-95 ' +
-      'text-slate-950 font-bold ' +
+      'text-on-accent font-bold ' +
       'border border-accent shadow-xs',
 
     secondary:
       'bg-surface-card hover:bg-surface-hover ' +
       'border border-border-subtle hover:border-border-strong ' +
-      'text-text-primary dark:text-text-primary ' +
+      'text-text-primary ' +
       'shadow-xs',
 
     danger:
-      'bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/25 ' +
-      'border border-rose-500/40 hover:border-rose-500/60 ' +
-      'text-rose-700 dark:text-rose-400 font-semibold',
+      'bg-callout-danger-bg hover:brightness-95 active:brightness-90 ' +
+      'border border-callout-danger-border ' +
+      'text-callout-danger-fg font-semibold',
 
     ghost:
       'bg-transparent hover:bg-surface-hover ' +
@@ -104,9 +104,9 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
       'text-text-primary',
 
     hardware:
-      'bg-zinc-100 dark:bg-zinc-950/80 hover:bg-zinc-200 dark:hover:bg-zinc-900 ' +
-      'border border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 ' +
-      'text-zinc-800 dark:text-zinc-200 font-mono text-[10px] tracking-wider uppercase ' +
+      'bg-surface-sunken hover:bg-surface-hover ' +
+      'border border-border-subtle hover:border-border-strong ' +
+      'text-text-secondary font-mono text-[10px] tracking-wider uppercase ' +
       'machined-edge',
   };
 

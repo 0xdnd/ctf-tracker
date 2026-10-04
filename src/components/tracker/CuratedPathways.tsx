@@ -136,9 +136,9 @@ export const CuratedPathways: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between px-3 py-1.5 gap-2">
         {/* Left: Primary/Combined Track Progress Indicator */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 flex-wrap">
-          <div className="flex items-center gap-1.5 text-cyber-cyan flex-shrink-0">
+          <div className="flex items-center gap-1.5 text-callout-info-fg flex-shrink-0">
             <Target className="w-3.5 h-3.5" />
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-cyber-muted hidden sm:inline">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-tertiary dark:text-cyber-muted hidden sm:inline">
               TARGET TRACK:
             </span>
           </div>
@@ -146,19 +146,19 @@ export const CuratedPathways: React.FC = () => {
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className={`flex items-center gap-2 truncate text-left transition-colors ${
-              activeTrackIds.length > 0 ? 'text-cyber-cyan font-bold' : 'text-slate-800 dark:text-cyber-text hover:text-cyber-cyan'
+              activeTrackIds.length > 0 ? 'text-callout-info-fg font-bold' : 'text-slate-800 dark:text-cyber-text hover:text-callout-info-fg'
             }`}
             title="Click to view all available certification & curated tracks"
           >
             <span className="font-bold text-xs truncate flex items-center gap-1">
               {combinedActiveStats.label}
               {activeTrackIds.length > 1 && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/40">
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-cyan/20 text-callout-info-fg border border-cyber-cyan/40">
                   UNION
                 </span>
               )}
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-cyber-muted font-mono flex-shrink-0">
+            <span className="text-[10px] text-tertiary dark:text-cyber-muted font-mono flex-shrink-0">
               {combinedActiveStats.stats.rooted}/{combinedActiveStats.stats.total}
             </span>
           </button>
@@ -170,7 +170,7 @@ export const CuratedPathways: React.FC = () => {
               style={{ width: `${combinedActiveStats.stats.percent}%` }}
             />
           </div>
-          <span className="text-[10px] font-bold text-cyber-cyan font-mono flex-shrink-0">
+          <span className="text-[10px] font-bold text-callout-info-fg font-mono flex-shrink-0">
             {combinedActiveStats.stats.percent}%
           </span>
 
@@ -191,8 +191,8 @@ export const CuratedPathways: React.FC = () => {
                   }}
                   className={`px-2 py-0.5 rounded text-[10px] border transition-colors flex items-center gap-1 font-sans ${
                     isActive
-                      ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyan-800 dark:text-cyber-cyan font-bold shadow-sm'
-                      : 'bg-slate-100 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
+                      ? 'bg-cyber-cyan/20 border-cyber-cyan text-callout-info-fg font-bold shadow-sm'
+                      : 'bg-slate-100 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300'
                   }`}
                   title={`${isActive ? 'Remove' : 'Add'} ${track.name}`}
                 >
@@ -209,7 +209,7 @@ export const CuratedPathways: React.FC = () => {
           {activeTrackIds.length > 0 && (
             <button
               onClick={handleClearAllTracks}
-              className="text-[10px] text-slate-500 dark:text-cyber-muted hover:text-rose-600 dark:hover:text-rose-400 hover:underline px-1 flex items-center gap-0.5 transition-colors"
+              className="text-[10px] text-tertiary dark:text-cyber-muted hover:text-callout-danger-fg dark:hover:text-callout-danger-fg hover:underline px-1 flex items-center gap-0.5 transition-colors"
               title="Reset track filter to all machines"
             >
               <X className="w-3 h-3" />
@@ -222,10 +222,10 @@ export const CuratedPathways: React.FC = () => {
               setIsExpanded(!isExpanded);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="p-1 px-2 rounded-md bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white flex items-center gap-1 text-[10px] transition-colors"
+            className="p-1 px-2 rounded-md bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary flex items-center gap-1 text-[10px] transition-colors"
             title={isExpanded ? 'Collapse tracks matrix' : `Expand all ${PRACTICE_TRACKS.length} tactical tracks`}
           >
-            <Layers className="w-3 h-3 text-cyan-600 dark:text-cyber-cyan" />
+            <Layers className="w-3 h-3 text-callout-info-fg" />
             <span>{isExpanded ? 'Hide Tracks' : `All ${PRACTICE_TRACKS.length} Tracks`}</span>
             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
@@ -237,14 +237,14 @@ export const CuratedPathways: React.FC = () => {
         <div className="p-3 border-t border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/90 space-y-2.5 animate-in fade-in duration-150">
           <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-cyber-muted px-1 flex-wrap gap-2">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
+              <Sparkles className="w-3.5 h-3.5 text-callout-info-fg" />
               <strong className="text-slate-800 dark:text-white">Multi-Track Selection:</strong> Select one or more tracks to combine their target pools.
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleSelectAllTracks}
-                className="text-[10px] text-cyan-700 dark:text-cyber-cyan hover:underline font-semibold"
+                className="text-[10px] text-callout-info-fg hover:underline font-semibold"
               >
                 Select All
               </button>
@@ -252,7 +252,7 @@ export const CuratedPathways: React.FC = () => {
               <button
                 type="button"
                 onClick={handleClearAllTracks}
-                className="text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-white hover:underline"
+                className="text-[10px] text-tertiary hover:text-slate-800 dark:hover:text-primary hover:underline"
               >
                 Deselect All
               </button>
@@ -279,7 +279,7 @@ export const CuratedPathways: React.FC = () => {
                       <span className="font-bold text-xs block leading-snug truncate">
                         {track.shortName || track.name}
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-cyber-muted capitalize block">
+                      <span className="text-[10px] text-tertiary dark:text-cyber-muted capitalize block">
                         {track.category}
                       </span>
                     </div>
@@ -300,9 +300,9 @@ export const CuratedPathways: React.FC = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-cyber-muted mt-0.5 font-mono">
+                  <div className="flex items-center justify-between text-[10px] text-tertiary dark:text-cyber-muted mt-0.5 font-mono">
                     <span>{stats.rooted}/{stats.total} pwned</span>
-                    <span className="text-cyan-700 dark:text-cyber-cyan font-bold">{stats.percent}%</span>
+                    <span className="text-callout-info-fg font-bold">{stats.percent}%</span>
                   </div>
                 </button>
               );

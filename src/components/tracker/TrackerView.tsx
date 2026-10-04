@@ -49,6 +49,7 @@ import { FilterDrawer } from '../layout/FilterDrawer';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsIcon } from '../common/OsBadge';
 import { CyberSelect, CyberMultiSelect, CyberSelectOption } from '../common/CyberSelect';
+import { CanvasSkeleton } from '../common/Skeleton';
 import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
 import { 
   VULN_CATEGORIES, 
@@ -162,21 +163,21 @@ interface PrimaryTrackPill {
 
 const PRIMARY_TRACK_PILLS: PrimaryTrackPill[] = [
   { id: 'ALL', label: 'ALL TARGETS', title: 'All Target Machines', icon: Target, iconColor: 'text-[#0ea5e9]' },
-  { id: 'tjnull-oscp', label: 'OSCP', title: "TJ_Null's OSCP NetSec Preparation", icon: GraduationCap, iconColor: 'text-amber-500 dark:text-amber-400' },
-  { id: 'cpts-path', label: 'CPTS', title: 'Certified Penetration Testing Specialist', icon: Crosshair, iconColor: 'text-emerald-500 dark:text-emerald-400' },
-  { id: 'ippsec-vault', label: 'IPPSEC', title: 'IppSec Video Walkthroughs', icon: Tv, iconColor: 'text-sky-500 dark:text-sky-400' },
-  { id: 'crto-ad', label: 'ACTIVE DIRECTORY', title: 'Enterprise AD & Red Team Warfare', icon: Network, iconColor: 'text-purple-500 dark:text-purple-400' },
-  { id: 'popular-classics', label: 'HALL OF FAME', title: 'Community Classics & Popular Boxes', icon: Trophy, iconColor: 'text-yellow-500 dark:text-yellow-400' },
+  { id: 'tjnull-oscp', label: 'OSCP', title: "TJ_Null's OSCP NetSec Preparation", icon: GraduationCap, iconColor: 'text-callout-warn-fg' },
+  { id: 'cpts-path', label: 'CPTS', title: 'Certified Penetration Testing Specialist', icon: Crosshair, iconColor: 'text-callout-success-fg' },
+  { id: 'ippsec-vault', label: 'IPPSEC', title: 'IppSec Video Walkthroughs', icon: Tv, iconColor: 'text-callout-info-fg' },
+  { id: 'crto-ad', label: 'ACTIVE DIRECTORY', title: 'Enterprise AD & Red Team Warfare', icon: Network, iconColor: 'text-callout-tip-fg' },
+  { id: 'popular-classics', label: 'HALL OF FAME', title: 'Community Classics & Popular Boxes', icon: Trophy, iconColor: 'text-callout-warn-fg' },
 ];
 
 const OTHER_TRACK_OPTIONS: CyberSelectOption<string>[] = [
   { value: 'ALL', label: 'More Tracks...' },
-  { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-cyan-400" /> },
-  { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-amber-400" /> },
-  { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-orange-400" /> },
-  { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-sky-400" /> },
-  { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> },
-  { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-rose-500" /> },
+  { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-callout-info-fg" /> },
+  { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-callout-warn-fg" /> },
+  { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-callout-warn-fg" /> },
+  { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-callout-info-fg" /> },
+  { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-callout-success-fg" /> },
+  { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-callout-danger-fg" /> },
 ];
 
 export const TrackerView: React.FC = () => {
@@ -223,12 +224,12 @@ export const TrackerView: React.FC = () => {
 
   const dynamicOtherTrackOptions = React.useMemo<CyberSelectOption<string>[]>(() => [
     { value: 'ALL', label: 'More Tracks...' },
-    { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-cyan-400" />, badge: `${trackCounts['cwee-web'] ?? 0}` },
-    { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-amber-400" />, badge: `${trackCounts['web-master'] ?? 0}` },
-    { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-orange-400" />, badge: `${trackCounts['linux-privesc'] ?? 0}` },
-    { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />, badge: `${trackCounts['windows-privesc'] ?? 0}` },
-    { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-400" />, badge: `${trackCounts['beginner-essentials'] ?? 0}` },
-    { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, badge: `${trackCounts['insane-hardcore'] ?? 0}` },
+    { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-callout-info-fg" />, badge: `${trackCounts['cwee-web'] ?? 0}` },
+    { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-callout-warn-fg" />, badge: `${trackCounts['web-master'] ?? 0}` },
+    { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-callout-warn-fg" />, badge: `${trackCounts['linux-privesc'] ?? 0}` },
+    { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-callout-info-fg" />, badge: `${trackCounts['windows-privesc'] ?? 0}` },
+    { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-callout-success-fg" />, badge: `${trackCounts['beginner-essentials'] ?? 0}` },
+    { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-callout-danger-fg" />, badge: `${trackCounts['insane-hardcore'] ?? 0}` },
   ], [trackCounts]);
 
   // Lazy-load master machine catalog when TrackerView mounts
@@ -439,43 +440,43 @@ export const TrackerView: React.FC = () => {
       {
         value: 'ALL',
         label: 'OS',
-        badge: <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">({machines.length})</span>,
+        badge: <span className="text-[10px] text-tertiary font-mono">({machines.length})</span>,
       },
       {
         value: 'Linux',
         label: 'Linux',
         icon: <OsIcon os="Linux" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">({counts.Linux})</span>,
+        badge: <span className="text-[10px] text-callout-warn-fg font-mono font-bold">({counts.Linux})</span>,
       },
       {
         value: 'Windows',
         label: 'Windows',
         icon: <OsIcon os="Windows" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-sky-600 dark:text-sky-400 font-mono font-bold">({counts.Windows})</span>,
+        badge: <span className="text-[10px] text-callout-info-fg font-mono font-bold">({counts.Windows})</span>,
       },
       {
         value: 'BSD',
         label: 'BSD',
         icon: <OsIcon os="BSD" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-rose-600 dark:text-rose-400 font-mono font-bold">({counts.BSD})</span>,
+        badge: <span className="text-[10px] text-callout-danger-fg font-mono font-bold">({counts.BSD})</span>,
       },
       {
         value: 'Android',
         label: 'Android',
         icon: <OsIcon os="Android" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">({counts.Android})</span>,
+        badge: <span className="text-[10px] text-callout-success-fg font-mono font-bold">({counts.Android})</span>,
       },
       {
         value: 'macOS',
         label: 'macOS',
         icon: <OsIcon os="macOS" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono font-bold">({counts.macOS})</span>,
+        badge: <span className="text-[10px] text-callout-tip-fg font-mono font-bold">({counts.macOS})</span>,
       },
       {
         value: 'Other',
         label: 'Other',
         icon: <OsIcon os="Other" className="w-3.5 h-3.5" />,
-        badge: <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">({counts.Other})</span>,
+        badge: <span className="text-[10px] text-tertiary font-mono">({counts.Other})</span>,
       },
     ];
   }, [machines]);
@@ -907,7 +908,7 @@ export const TrackerView: React.FC = () => {
           <div className="flex items-center gap-1.5">
             {/* Search */}
             <div className="relative h-8 flex-1 group">
-              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-focus-within:text-[#0ea5e9] transition-colors pointer-events-none" />
+              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-tertiary group-focus-within:text-[#0ea5e9] transition-colors pointer-events-none" />
               <input
                 type="text"
                 id="tracker-search-input-mobile"
@@ -928,7 +929,7 @@ export const TrackerView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFilters({ searchQuery: '' })}
-                  className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-white cursor-pointer transition-colors"
+                  className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-tertiary hover:text-zinc-700 dark:hover:text-primary cursor-pointer transition-colors"
                   title="Clear search"
                 >
                   ✕
@@ -943,7 +944,7 @@ export const TrackerView: React.FC = () => {
               className={`h-8 flex items-center gap-1.5 px-2.5 rounded-[3px] border text-[11px] font-mono font-bold uppercase tracking-wider transition-all shadow-none cursor-pointer active:scale-[0.97] ${
                 activeFilterCount > 0
                   ? 'bg-zinc-900 dark:bg-zinc-950 border-[#0ea5e9] text-[#0ea5e9]'
-                  : 'bg-zinc-100 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'
+                  : 'bg-zinc-100 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-primary'
               }`}
               title="Open Advanced Filters Drawer"
             >
@@ -965,7 +966,7 @@ export const TrackerView: React.FC = () => {
                 className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                   viewMode === 'kanban' 
                     ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                    : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                 }`}
                 title="Kanban View"
               >
@@ -979,7 +980,7 @@ export const TrackerView: React.FC = () => {
                 className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                   viewMode === 'table' 
                     ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                    : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                 }`}
                 title="Table View"
               >
@@ -993,7 +994,7 @@ export const TrackerView: React.FC = () => {
                 className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                   viewMode === 'grid' 
                     ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                    : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                 }`}
                 title="Grid View"
               >
@@ -1026,7 +1027,7 @@ export const TrackerView: React.FC = () => {
                   className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0 active:scale-[0.96] ${
                     active
                       ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-                      : 'bg-zinc-100 dark:bg-zinc-900/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
+                      : 'bg-zinc-100 dark:bg-zinc-900/80 text-tertiary border border-zinc-200 dark:border-zinc-800'
                   }`}
                 >
                   <Icon className={`w-3 h-3 ${active ? 'text-[#0ea5e9]' : trk.iconColor}`} />
@@ -1034,14 +1035,14 @@ export const TrackerView: React.FC = () => {
                   <span className={`px-1 py-0.5 rounded-[2px] text-[9px] font-mono tabular-nums leading-none ${
                     active 
                       ? 'bg-[#0ea5e9]/20 text-[#0ea5e9] border border-[#0ea5e9]/40' 
-                      : 'bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 border border-zinc-300/40 dark:border-zinc-700/40'
+                      : 'bg-zinc-200/80 dark:bg-zinc-800/80 text-tertiary border border-zinc-300/40 dark:border-zinc-700/40'
                   }`}>
                     {count}
                   </span>
                 </button>
               );
             })}
-            <div className="text-[10px] font-mono text-zinc-500 px-1.5 flex-shrink-0 tabular-nums">
+            <div className="text-[10px] font-mono text-tertiary px-1.5 flex-shrink-0 tabular-nums">
               [ {filteredMachines.length} / {machines.length} ]
             </div>
           </div>
@@ -1053,7 +1054,7 @@ export const TrackerView: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
             {/* Left: Interactive Practice Tracks Selector */}
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 px-2.5 h-8 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold font-mono uppercase tracking-wider flex-shrink-0">
+              <div className="flex items-center gap-1.5 px-2.5 h-8 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] text-tertiary font-bold font-mono uppercase tracking-wider flex-shrink-0">
                 <Compass className="w-3.5 h-3.5 text-[#0ea5e9]" />
                 <span>TRACK:</span>
               </div>
@@ -1082,7 +1083,7 @@ export const TrackerView: React.FC = () => {
                       className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0 active:scale-[0.96] ${
                         active
                           ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 border border-transparent'
+                          : 'text-tertiary hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 border border-transparent'
                       }`}
                     >
                       <Icon className={`w-3 h-3 ${active ? 'text-[#0ea5e9]' : trk.iconColor}`} />
@@ -1090,7 +1091,7 @@ export const TrackerView: React.FC = () => {
                       <span className={`px-1 py-0.5 rounded-[2px] text-[9px] font-mono tabular-nums leading-none ${
                         active 
                           ? 'bg-[#0ea5e9]/20 text-[#0ea5e9] border border-[#0ea5e9]/40' 
-                          : 'bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 border border-zinc-300/40 dark:border-zinc-700/40'
+                          : 'bg-zinc-200/80 dark:bg-zinc-800/80 text-tertiary border border-zinc-300/40 dark:border-zinc-700/40'
                       }`}>
                         {count}
                       </span>
@@ -1161,7 +1162,7 @@ export const TrackerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setReconAutomationModalOpen(true)}
-                className="h-8 px-2.5 flex items-center gap-1.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-[10px] font-mono font-bold uppercase tracking-wider transition-colors active:scale-[0.97] cursor-pointer shadow-none"
+                className="h-8 px-2.5 flex items-center gap-1.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-primary text-[10px] font-mono font-bold uppercase tracking-wider transition-colors active:scale-[0.97] cursor-pointer shadow-none"
                 title="Launch Tactical Scan Importer"
               >
                 <Zap className="w-3.5 h-3.5 text-[#0ea5e9]" />
@@ -1178,7 +1179,7 @@ export const TrackerView: React.FC = () => {
                   className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                     viewMode === 'kanban' 
                       ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                      : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                   }`}
                   title="Kanban View"
                 >
@@ -1192,7 +1193,7 @@ export const TrackerView: React.FC = () => {
                   className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                     viewMode === 'table' 
                       ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                      : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                   }`}
                   title="Table View"
                 >
@@ -1206,7 +1207,7 @@ export const TrackerView: React.FC = () => {
                   className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                     viewMode === 'grid' 
                       ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                      : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                   }`}
                   title="Grid View"
                 >
@@ -1220,7 +1221,7 @@ export const TrackerView: React.FC = () => {
                   className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                     viewMode === 'graph' 
                       ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none' 
-                      : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                      : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                   }`}
                   title="Attack Graph View"
                 >
@@ -1236,7 +1237,7 @@ export const TrackerView: React.FC = () => {
                       className={`w-7 h-7 flex items-center justify-center rounded-[2px] transition-colors cursor-pointer active:scale-[0.97] ${
                         filters.hideEmptyLanes 
                           ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9]' 
-                          : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                          : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                       }`}
                       title={filters.hideEmptyLanes ? 'Show Empty Lanes' : 'Hide Empty Lanes'}
                     >
@@ -1254,7 +1255,7 @@ export const TrackerView: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
               {/* Search */}
               <div className="relative h-8 w-48 lg:w-60 flex-shrink-0 group font-mono">
-                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-focus-within:text-[#0ea5e9] transition-colors pointer-events-none" />
+                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-tertiary group-focus-within:text-[#0ea5e9] transition-colors pointer-events-none" />
                 <input
                   type="text"
                   id="tracker-search-input"
@@ -1275,14 +1276,14 @@ export const TrackerView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFilters({ searchQuery: '' })}
-                    className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-white cursor-pointer transition-colors"
+                    className="absolute right-2 top-2 w-4 h-4 flex items-center justify-center text-xs text-tertiary hover:text-zinc-700 dark:hover:text-primary cursor-pointer transition-colors"
                     title="Clear search (Esc)"
                   >
                     ✕
                   </button>
                 ) : (
                   <div className="absolute right-2 top-1.5 flex items-center gap-1 pointer-events-none">
-                    <kbd className="px-1.5 py-0.5 text-[9px] font-mono font-bold text-zinc-500 dark:text-zinc-400 bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-[2px] shadow-none">
+                    <kbd className="px-1.5 py-0.5 text-[9px] font-mono font-bold text-tertiary bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-[2px] shadow-none">
                       /
                     </kbd>
                   </div>
@@ -1291,7 +1292,7 @@ export const TrackerView: React.FC = () => {
 
               {/* Platform Segment Pills */}
               <div className="h-8 flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 font-mono">
-                <div className="px-1.5 text-zinc-400 dark:text-zinc-500">
+                <div className="px-1.5 text-tertiary">
                   <Globe className="w-3 h-3 text-[#0ea5e9]" />
                 </div>
                 {platformList.map((p) => {
@@ -1299,22 +1300,22 @@ export const TrackerView: React.FC = () => {
                   const getPlatformStyles = () => {
                     if (p === 'HTB') {
                       return active
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                        : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border-transparent';
+                        ? 'bg-emerald-500/20 text-callout-success-fg border-emerald-500/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                        : 'text-callout-success-fg hover:text-callout-success-fg hover:bg-emerald-500/10 border-transparent';
                     }
                     if (p === 'THM') {
                       return active
-                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
-                        : 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border-transparent';
+                        ? 'bg-rose-500/20 text-callout-danger-fg border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                        : 'text-callout-danger-fg hover:text-callout-danger-fg hover:bg-rose-500/10 border-transparent';
                     }
                     if (p === 'Custom') {
                       return active
-                        ? 'bg-sky-500/20 text-sky-300 border-sky-500/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]'
-                        : 'text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 border-transparent';
+                        ? 'bg-sky-500/20 text-callout-info-fg border-sky-500/60 shadow-[0_0_10px_rgba(14,165,233,0.3)]'
+                        : 'text-callout-info-fg hover:text-callout-info-fg hover:bg-sky-500/10 border-transparent';
                     }
                     return active
                       ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9]'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-transparent';
+                      : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary border-transparent';
                   };
 
                   return (
@@ -1333,7 +1334,7 @@ export const TrackerView: React.FC = () => {
 
               {/* Target Status Segment Pills */}
               <div className="h-8 flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 font-mono">
-                <div className="px-1.5 text-zinc-400 dark:text-zinc-500">
+                <div className="px-1.5 text-tertiary">
                   <Target className="w-3 h-3 text-[#0ea5e9]" />
                 </div>
                 {STATUS_PILL_OPTIONS.map((st) => {
@@ -1349,7 +1350,7 @@ export const TrackerView: React.FC = () => {
                       className={`h-7 px-2 rounded-[2px] text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors cursor-pointer active:scale-[0.97] ${
                         active
                           ? 'bg-zinc-900 text-[#0ea5e9] border border-[#0ea5e9]/50 dark:bg-zinc-950 dark:text-[#0ea5e9] shadow-none'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                          : 'text-tertiary hover:text-zinc-900 dark:hover:text-primary'
                       }`}
                     >
                       {st.label}
@@ -1370,15 +1371,15 @@ export const TrackerView: React.FC = () => {
                 variant="hardware"
                 triggerClassName={`h-8 py-0 px-2.5 text-[10px] font-mono rounded-[3px] border ${
                   filters.selectedOs === 'Linux'
-                    ? 'border-amber-500/60 text-amber-800 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/20 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
+                    ? 'border-amber-500/60 text-callout-warn-fg bg-amber-500/10 dark:bg-amber-500/20 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
                     : filters.selectedOs === 'Windows'
-                    ? 'border-sky-500/60 text-sky-800 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 shadow-[0_0_8px_rgba(14,165,233,0.2)]'
+                    ? 'border-sky-500/60 text-callout-info-fg bg-sky-500/10 dark:bg-sky-500/20 shadow-[0_0_8px_rgba(14,165,233,0.2)]'
                     : filters.selectedOs === 'Android'
-                    ? 'border-emerald-500/60 text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
+                    ? 'border-emerald-500/60 text-callout-success-fg bg-emerald-500/10 dark:bg-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
                     : filters.selectedOs === 'macOS'
-                    ? 'border-purple-500/60 text-purple-800 dark:text-purple-300 bg-purple-500/10 dark:bg-purple-500/20 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
+                    ? 'border-purple-500/60 text-callout-tip-fg bg-purple-500/10 dark:bg-purple-500/20 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
                     : filters.selectedOs === 'BSD'
-                    ? 'border-rose-500/60 text-rose-800 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.2)]'
+                    ? 'border-rose-500/60 text-callout-danger-fg bg-rose-500/10 dark:bg-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.2)]'
                     : 'border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
                 }`}
                 soundEnabled={soundEnabled}
@@ -1422,7 +1423,7 @@ export const TrackerView: React.FC = () => {
                 className={`h-8 flex items-center gap-1.5 px-3 rounded-[3px] border text-[10px] font-mono font-bold uppercase tracking-wider transition-all shadow-none cursor-pointer active:scale-[0.97] ${
                   activeFilterCount > 0
                     ? 'bg-zinc-900 dark:bg-zinc-950 border-[#0ea5e9] text-[#0ea5e9]'
-                    : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'
+                    : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-primary'
                 }`}
                 title="Open Advanced Filters Drawer"
               >
@@ -1453,7 +1454,7 @@ export const TrackerView: React.FC = () => {
               </div>
 
               {/* Result Counter */}
-              <div className="h-8 px-2.5 flex items-center rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] whitespace-nowrap font-mono tabular-nums">
+              <div className="h-8 px-2.5 flex items-center rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-tertiary text-[10px] whitespace-nowrap font-mono tabular-nums">
                 [ <strong className="text-zinc-900 dark:text-white font-bold">{filteredMachines.length}</strong> / {machines.length} ]
               </div>
             </div>
@@ -1464,7 +1465,7 @@ export const TrackerView: React.FC = () => {
         {activeFilterPills.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-950/60 -mx-2 sm:-mx-2.5 -mb-2 sm:-mb-2.5 p-2 sm:p-2.5 rounded-b-[4px] font-mono text-[10px]">
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider flex items-center gap-1 mr-1 font-mono flex-shrink-0">
+              <span className="text-[10px] uppercase font-bold text-tertiary tracking-wider flex items-center gap-1 mr-1 font-mono flex-shrink-0">
                 <Sparkles className="w-3.5 h-3.5 text-[#0ea5e9]" />
                 [ ACTIVE : {activeFilterPills.length} ]
               </span>
@@ -1480,7 +1481,7 @@ export const TrackerView: React.FC = () => {
                       pill.onRemove();
                       if (soundEnabled) playCyberSound('click');
                     }}
-                    className="p-0.5 rounded-[2px] hover:bg-zinc-300 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-[2px] hover:bg-zinc-300 dark:hover:bg-zinc-800 text-tertiary hover:text-zinc-900 dark:hover:text-primary transition-colors cursor-pointer"
                     title={`Remove ${pill.label}`}
                     aria-label={`Remove filter ${pill.label}`}
                   >
@@ -1494,7 +1495,7 @@ export const TrackerView: React.FC = () => {
                   resetFilters();
                   if (soundEnabled) playCyberSound('toggle');
                 }}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-colors ml-1 active:scale-[0.97] cursor-pointer"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-bold uppercase tracking-wider text-callout-danger-fg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-colors ml-1 active:scale-[0.97] cursor-pointer"
                 title="Reset all filters"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -1503,7 +1504,7 @@ export const TrackerView: React.FC = () => {
             </div>
 
             {/* Live Filter Match Percentage */}
-            <div className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 bg-white/60 dark:bg-zinc-900 px-2 py-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 tabular-nums">
+            <div className="text-[10px] font-mono text-tertiary bg-white/60 dark:bg-zinc-900 px-2 py-0.5 rounded-[3px] border border-zinc-200 dark:border-zinc-800 flex-shrink-0 tabular-nums">
               [ <span className="font-bold text-zinc-900 dark:text-white">{filteredMachines.length}</span> / {machines.length} · {Math.round((filteredMachines.length / (machines.length || 1)) * 100)}% ]
             </div>
           </div>
@@ -1516,10 +1517,10 @@ export const TrackerView: React.FC = () => {
       {filteredMachines.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-[4px] border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 my-4 machined-edge font-mono">
           <div className="w-10 h-10 rounded-[3px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 flex items-center justify-center mb-2.5">
-            <Search className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
+            <Search className="w-5 h-5 text-tertiary" />
           </div>
           <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">[ NO MATCHING TARGETS FOUND ]</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mb-3 font-mono">
+          <p className="text-xs text-tertiary max-w-md mb-3 font-mono">
             {filters.searchQuery 
               ? `Zero machines matched "${filters.searchQuery}" with the current filter parameters.`
               : 'Zero machines matched the selected filter configuration.'}
@@ -1542,14 +1543,7 @@ export const TrackerView: React.FC = () => {
           {viewMode === 'table' && <TableView filteredMachines={filteredMachines} />}
           {viewMode === 'grid' && <GridView filteredMachines={filteredMachines} />}
           {viewMode === 'graph' && (
-            <React.Suspense
-              fallback={
-                <div className="flex flex-col items-center justify-center p-16 space-y-3 font-mono border border-zinc-200 dark:border-zinc-800 rounded-[4px] bg-white dark:bg-zinc-950/90 machined-edge">
-                  <div className="w-8 h-8 rounded-full border-2 border-[#0ea5e9]/20 border-t-[#0ea5e9] animate-spin" />
-                  <span className="text-xs text-zinc-500">[ Synthesizing BloodHound attack topology graph... ]</span>
-                </div>
-              }
-            >
+            <React.Suspense fallback={<CanvasSkeleton label="Loading attack graph…" />}>
               <GraphView filteredMachines={filteredMachines} />
             </React.Suspense>
           )}

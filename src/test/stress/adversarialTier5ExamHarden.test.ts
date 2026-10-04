@@ -20,6 +20,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 // Store & Utils
 import { useExamStore, EXAM_STORAGE_KEY } from '../../store/examStore';
@@ -513,6 +514,9 @@ describe('TIER 5 ADVERSARIAL COVERAGE HARDENING SUITE', () => {
       // Click delete screenshot
       const deleteBtn = screen.getByTestId('screenshot-delete-btn-sc_edit_test');
       fireEvent.click(deleteBtn);
+      await act(async () => {
+        useConfirmStore.getState().settle(true);
+      });
 
       await waitFor(() => {
         expect(screen.queryByText('Initial Caption')).not.toBeInTheDocument();

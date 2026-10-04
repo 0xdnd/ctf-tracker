@@ -250,7 +250,7 @@ export const OperatorDossierModal: React.FC = () => {
                 </a>
                 <button
                   onClick={(e) => handleCopyLink(e, links.github, 'github')}
-                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-white/20 text-cyber-muted hover:text-white border border-cyber-border hover:border-white/50 transition-colors flex-shrink-0"
+                  className="p-1.5 rounded-lg bg-cyber-bg hover:bg-white/20 text-cyber-muted hover:text-primary border border-cyber-border hover:border-white/50 transition-colors flex-shrink-0"
                   title="Copy GitHub URL"
                 >
                   {copiedField === 'github' ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -293,11 +293,11 @@ export const OperatorDossierModal: React.FC = () => {
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 min-w-0 flex-1"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-callout-warn-fg flex-shrink-0">
                     <Coffee className="w-4 h-4" />
                   </div>
                   <div className="truncate">
-                    <div className="font-bold text-cyber-text group-hover:text-amber-500 transition-colors flex items-center gap-1.5 text-xs font-mono">
+                    <div className="font-bold text-cyber-text group-hover:text-callout-warn-fg transition-colors flex items-center gap-1.5 text-xs font-mono">
                       <span>Buy Me a Coffee // Sponsor Daniel Dayan</span>
                       <ExternalLink className="w-3 h-3 text-cyber-muted opacity-60" />
                     </div>

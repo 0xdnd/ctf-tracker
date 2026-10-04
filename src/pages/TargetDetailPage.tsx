@@ -123,14 +123,14 @@ export const TargetDetailPage: React.FC = () => {
   if (!machine) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-6 font-mono space-y-4">
-        <AlertCircle className="w-12 h-12 text-cyber-crimson animate-pulse" />
+        <AlertCircle className="w-12 h-12 text-callout-danger-fg animate-pulse" />
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">TARGET NOT FOUND</h2>
         <p className="text-xs text-cyber-muted max-w-md">
-          The requested target ID <code className="text-cyber-cyan">{id}</code> could not be located in the local catalog.
+          The requested target ID <code className="text-callout-info-fg">{id}</code> could not be located in the local catalog.
         </p>
         <Link
           to="/tracker"
-          className="px-4 py-2 rounded-lg bg-cyber-card border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-bold text-xs transition-colors"
+          className="px-4 py-2 rounded-lg bg-cyber-card border border-cyber-cyan text-callout-info-fg hover:bg-cyber-cyan hover:text-black font-bold text-xs transition-colors"
         >
           Return to Tracker
         </Link>
@@ -194,9 +194,9 @@ export const TargetDetailPage: React.FC = () => {
 
   const pipelineStages: { id: PipelineStatus; label: string; color: string }[] = [
     { id: 'backlog', label: 'Backlog', color: 'border-cyber-muted text-cyber-muted' },
-    { id: 'recon', label: 'Recon In-Progress', color: 'border-cyber-cyan text-cyber-cyan' },
+    { id: 'recon', label: 'Recon In-Progress', color: 'border-cyber-cyan text-callout-info-fg' },
     { id: 'foothold', label: 'Foothold Obtained', color: 'border-cyber-amber text-cyber-amber' },
-    { id: 'root', label: 'Root / System Pwned', color: 'border-cyber-crimson text-cyber-crimson' },
+    { id: 'root', label: 'Root / System Pwned', color: 'border-cyber-crimson text-callout-danger-fg' },
     { id: 'completed', label: 'Completed & Logged', color: 'border-cyber-emerald text-cyber-emerald' },
   ];
 
@@ -210,9 +210,9 @@ export const TargetDetailPage: React.FC = () => {
       {/* Page Header Bar */}
       <div className="p-3 rounded-[4px] border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-xs flex flex-wrap items-center justify-between gap-3 machined-edge">
         <div className="flex items-center gap-3">
-          <button
+          <button aria-label="Back to target list"
             onClick={() => navigate('/tracker')}
-            className="p-1.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-[#0ea5e9] active:scale-[0.97] transition-colors"
+            className="p-1.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-tertiary hover:text-zinc-900 dark:hover:text-primary hover:border-[#0ea5e9] active:scale-[0.97] transition-colors"
             title="Back to Target List"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -220,16 +220,16 @@ export const TargetDetailPage: React.FC = () => {
           {isFocusMode ? (
             <button
               onClick={() => navigate(`/target/${machine.id}`)}
-              className="px-3 py-1.5 rounded-[3px] bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white font-bold active:scale-[0.97] transition-colors flex items-center gap-2 shadow-xs"
+              className="px-3 py-1.5 rounded-[3px] bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-500/40 text-callout-danger-fg hover:bg-rose-600 hover:text-white font-bold active:scale-[0.97] transition-colors flex items-center gap-2 shadow-xs"
               title="Exit Focus Mode"
             >
               <Eye className="w-4 h-4" />
               <span>EXIT FOCUS</span>
             </button>
           ) : (
-            <button
+            <button aria-label="Enter focus mode"
               onClick={() => navigate(`/target/${machine.id}/focus`)}
-              className="p-2 rounded-[3px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-[#0ea5e9] hover:border-[#0ea5e9] active:scale-[0.97] transition-colors"
+              className="p-2 rounded-[3px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-tertiary hover:text-accent hover:border-[#0ea5e9] active:scale-[0.97] transition-colors"
               title="Enter Focus Mode"
             >
               <Crosshair className="w-4 h-4" />
@@ -244,8 +244,8 @@ export const TargetDetailPage: React.FC = () => {
               <OsBadge os={machine.os} size="sm" variant="hardware" />
               <DifficultyBadge difficulty={machine.difficulty} size="sm" variant="hardware" />
               {machine.isActive && (
-                <span className="text-[11px] px-2 py-0.5 rounded-[3px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 machined-edge">
-                  <Lock className="w-3 h-3 text-amber-400" />
+                <span className="text-[11px] px-2 py-0.5 rounded-[3px] font-mono font-bold bg-amber-500/20 text-callout-warn-fg border border-amber-500/40 flex items-center gap-1 machined-edge">
+                  <Lock className="w-3 h-3 text-callout-warn-fg" />
                   <span>ACTIVE LAB</span>
                 </span>
               )}
@@ -257,14 +257,14 @@ export const TargetDetailPage: React.FC = () => {
                   href={sanitizeExternalUrl(machine.roomUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-cyan-600 dark:text-cyber-cyan hover:underline"
+                  className="flex items-center gap-1 text-callout-info-fg hover:underline"
                 >
                   Official Room <ExternalLink className="w-3 h-3" />
                 </a>
               )}
               {machine.isActive ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/40 machined-edge">
-                  <Lock className="w-3 h-3 text-amber-400" />
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-amber-950/40 text-callout-warn-fg border border-amber-500/40 machined-edge">
+                  <Lock className="w-3 h-3 text-callout-warn-fg" />
                   <span>ACTIVE LAB · WRITEUPS PROHIBITED (HTB ToS)</span>
                 </span>
               ) : Boolean(sanitizeExternalUrl(machine.writeupUrl)) ? (
@@ -272,7 +272,7 @@ export const TargetDetailPage: React.FC = () => {
                   href={sanitizeExternalUrl(machine.writeupUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-purple-600 dark:text-cyber-purple hover:underline"
+                  className="flex items-center gap-1 text-callout-tip-fg hover:underline"
                 >
                   Writeup <ExternalLink className="w-3 h-3" />
                 </a>
@@ -284,16 +284,16 @@ export const TargetDetailPage: React.FC = () => {
         {/* Stopwatch & Action Buttons */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border px-3 py-1.5 rounded-lg">
-            <Clock className="w-4 h-4 text-cyan-600 dark:text-cyber-cyan" />
+            <Clock className="w-4 h-4 text-callout-info-fg" />
             <TargetDetailTimerDisplay machineId={machine.id} fallbackSeconds={machine.timeSpentSeconds} isActiveTarget={isActiveTarget} />
             {isActiveTarget ? (
               <div className="flex items-center gap-1">
                 {isTimerRunning ? (
-                  <button onClick={pauseTimer} className="p-1 text-amber-600 dark:text-cyber-amber hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-[transform,background-color,border-color,color]" title="Pause">
+                  <button aria-label="Pause timer" onClick={pauseTimer} className="p-1 text-callout-warn-fg hover:text-slate-900 dark:hover:text-primary active:scale-[0.98] transition-[transform,background-color,border-color,color]" title="Pause">
                     <Pause className="w-3.5 h-3.5" />
                   </button>
                 ) : (
-                  <button onClick={startTimer} className="p-1 text-emerald-600 dark:text-cyber-emerald hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-[transform,background-color,border-color,color]" title="Resume">
+                  <button aria-label="Resume timer" onClick={startTimer} className="p-1 text-callout-success-fg hover:text-slate-900 dark:hover:text-primary active:scale-[0.98] transition-[transform,background-color,border-color,color]" title="Resume">
                     <Play className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -302,7 +302,7 @@ export const TargetDetailPage: React.FC = () => {
                     setActiveTarget(null);
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="p-1 text-zinc-400 hover:text-rose-500 active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+                  className="p-1 text-tertiary hover:text-callout-danger-fg active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   title="Disengage Active Target"
                   aria-label="Disengage active target"
                 >
@@ -327,7 +327,7 @@ export const TargetDetailPage: React.FC = () => {
               setWriteupMachineId(machine.id);
               navigate('/writeup');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-cyber-card border border-cyber-cyan/40 text-cyan-700 dark:text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-cyber-card border border-cyber-cyan/40 text-callout-info-fg hover:bg-cyber-cyan hover:text-black font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <FileText className="w-4 h-4" /> Writeup Studio
           </button>
@@ -341,7 +341,7 @@ export const TargetDetailPage: React.FC = () => {
           data-testid="tab-checklist"
           className={`flex items-center gap-1.5 py-2 px-3.5 font-bold text-xs border-b-2 transition-colors ${
             activeTab === 'checklist'
-              ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/10'
+              ? 'border-cyber-cyan text-callout-info-fg bg-cyber-cyan/10'
               : 'border-transparent text-cyber-muted hover:text-cyber-text'
           }`}
         >
@@ -373,7 +373,7 @@ export const TargetDetailPage: React.FC = () => {
           <Network className="w-4 h-4 text-cyber-purple" />
           <span>RECON & ATTACK SURFACE</span>
           {machine.services && machine.services.length > 0 && (
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40">
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-purple-500/20 text-callout-tip-fg border border-purple-500/40">
               {machine.services.length}
             </span>
           )}
@@ -432,7 +432,7 @@ export const TargetDetailPage: React.FC = () => {
                     className={`p-2.5 rounded-lg border text-center font-mono text-xs font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color] ${
                       isSelected
                         ? `bg-slate-100 dark:bg-cyber-card border-2 ${stage.color} shadow-xs`
-                        : 'bg-slate-50 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'
+                        : 'bg-slate-50 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300 dark:hover:border-cyber-borderGlow'
                     }`}
                   >
                     {stage.label}
@@ -445,14 +445,14 @@ export const TargetDetailPage: React.FC = () => {
           {/* Section 2: Flags Vault */}
           <div>
             <div className="text-[10px] uppercase font-bold tracking-wider text-cyber-muted mb-2 flex items-center gap-1.5 font-mono">
-              <Flag className="w-3.5 h-3.5 text-cyber-crimson" /> FLAGS VAULT
+              <Flag className="w-3.5 h-3.5 text-callout-danger-fg" /> FLAGS VAULT
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {/* User Flag */}
               <div className="p-2.5 rounded-xl bg-cyber-bg border border-cyber-border space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-cyber-cyan font-mono text-xs flex items-center gap-1">
+                  <span className="font-semibold text-callout-info-fg font-mono text-xs flex items-center gap-1">
                     <Flag className="w-3 h-3" /> USER FLAG
                   </span>
                   {isUserPwned && (
@@ -480,15 +480,15 @@ export const TargetDetailPage: React.FC = () => {
                     placeholder="Enter user flag..."
                     className="flex-1 bg-cyber-card px-3 py-1.5 rounded-lg border border-cyber-border text-cyber-text text-xs font-mono focus:outline-none focus:border-cyber-cyan transition-colors"
                   />
-                  <button
+                  <button aria-label={showUserFlag ? 'Hide user flag' : 'Reveal user flag'}
                     onClick={() => setShowUserFlag(!showUserFlag)}
                     className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-text active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {showUserFlag ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
-                  <button
+                  <button aria-label="Copy user flag"
                     onClick={() => handleCopy(machine.userFlag || '', 'user')}
-                    className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-cyan active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+                    className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-callout-info-fg active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {copiedUser ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
@@ -526,13 +526,13 @@ export const TargetDetailPage: React.FC = () => {
                     placeholder="Enter root flag..."
                     className="flex-1 bg-cyber-card px-3 py-1.5 rounded-lg border border-cyber-border text-cyber-text text-xs font-mono focus:outline-none focus:border-cyber-emerald transition-colors"
                   />
-                  <button
+                  <button aria-label={showRootFlag ? 'Hide root flag' : 'Reveal root flag'}
                     onClick={() => setShowRootFlag(!showRootFlag)}
                     className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-text active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
                     {showRootFlag ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
-                  <button
+                  <button aria-label="Copy root flag"
                     onClick={() => handleCopy(machine.rootFlag || '', 'root')}
                     className="p-1.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-muted hover:text-cyber-emerald active:scale-[0.98] transition-[transform,background-color,border-color,color]"
                   >
@@ -548,12 +548,12 @@ export const TargetDetailPage: React.FC = () => {
             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5 font-mono">
-                  <Network className="w-3.5 h-3.5 text-purple-400" /> DISCOVERED ATTACK SURFACE ({machine.services.length} PORTS)
+                  <Network className="w-3.5 h-3.5 text-callout-tip-fg" /> DISCOVERED ATTACK SURFACE ({machine.services.length} PORTS)
                 </span>
                 <button
                   type="button"
                   onClick={() => setActiveTab('recon')}
-                  className="text-[11px] text-purple-400 hover:underline flex items-center gap-1 font-mono font-semibold"
+                  className="text-[11px] text-callout-tip-fg hover:underline flex items-center gap-1 font-mono font-semibold"
                 >
                   View Full Recon Matrix &rarr;
                 </button>
@@ -564,7 +564,7 @@ export const TargetDetailPage: React.FC = () => {
                     key={`${svc.port}-${svc.protocol}`}
                     className="px-2 py-1 rounded-md bg-white dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-[11px] font-mono flex items-center gap-1.5"
                   >
-                    <span className="text-cyber-cyan font-bold">{svc.port}/{svc.protocol}</span>
+                    <span className="text-callout-info-fg font-bold">{svc.port}/{svc.protocol}</span>
                     <span className="text-slate-700 dark:text-slate-300 font-semibold">{svc.service}</span>
                     {svc.version && <span className="text-cyber-muted text-[10px]">({svc.version})</span>}
                   </span>
@@ -577,11 +577,11 @@ export const TargetDetailPage: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1 font-mono">
-                <AlertCircle className="w-3 h-3 text-amber-500" /> INTEL HINT
+                <AlertCircle className="w-3 h-3 text-callout-warn-fg" /> INTEL HINT
               </span>
               <button
                 onClick={() => setShowHint(!showHint)}
-                className="text-[10px] font-mono text-amber-500 hover:underline"
+                className="text-[10px] font-mono text-callout-warn-fg hover:underline"
               >
                 {showHint ? 'Hide Hint' : 'Reveal Hint'}
               </button>
@@ -596,13 +596,13 @@ export const TargetDetailPage: React.FC = () => {
           {/* Section 4: Tags & Tactical Field Notes */}
           <div className="space-y-3">
             <div className="text-[10px] uppercase font-bold text-cyber-muted flex items-center gap-1.5 font-mono">
-              <Tag className="w-3.5 h-3.5 text-purple-400" /> ATTACK VECTORS & TAGS
+              <Tag className="w-3.5 h-3.5 text-callout-tip-fg" /> ATTACK VECTORS & TAGS
             </div>
             <div className="flex flex-wrap gap-1.5">
               {machine.tags.map((t) => (
-                <span key={t} className="px-2 py-1 rounded-md bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-cyber-cyan text-xs font-mono flex items-center gap-1">
+                <span key={t} className="px-2 py-1 rounded-md bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border text-callout-info-fg text-xs font-mono flex items-center gap-1">
                   <span>{t}</span>
-                  <button onClick={() => handleRemoveTag(t)} className="text-cyber-muted hover:text-rose-500">✕</button>
+                  <button aria-label={`Remove tag ${t}`} onClick={() => handleRemoveTag(t)} className="text-cyber-muted hover:text-callout-danger-fg">✕</button>
                 </span>
               ))}
             </div>
@@ -620,7 +620,7 @@ export const TargetDetailPage: React.FC = () => {
               />
               <button
                 onClick={handleAddTag}
-                className="px-3.5 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500 hover:text-slate-950 font-mono text-xs font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+                className="px-3.5 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/50 text-callout-tip-fg hover:bg-purple-500 hover:text-slate-950 font-mono text-xs font-semibold active:scale-[0.98] transition-[transform,background-color,border-color,color]"
               >
                 Add
               </button>

@@ -112,9 +112,9 @@ export const NewMachineModal: React.FC = () => {
             <Server className="w-5 h-5 text-cyber-emerald" />
             <h3 className="text-base font-bold text-white">DEPLOY NEW LAB TARGET</h3>
           </div>
-          <button
+          <button aria-label="Close dialog"
             onClick={() => setNewMachineModalOpen(false)}
-            className="p-1.5 rounded-lg bg-cyber-bg text-cyber-muted hover:text-white border border-cyber-border transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="p-1.5 rounded-lg bg-cyber-bg text-cyber-muted hover:text-primary border border-cyber-border transition-[transform,background-color,border-color,color] active:scale-[0.98]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -226,17 +226,17 @@ export const NewMachineModal: React.FC = () => {
           {/* Active Lab ToS Safeguard Control */}
           <div className={`p-3 rounded-lg border transition-colors ${
             effectiveIsActive 
-              ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-300' 
+              ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-callout-warn-fg' 
               : 'border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50'
           }`}>
             <label className="flex items-center justify-between cursor-pointer">
               <div className="flex items-center gap-2">
-                <Lock className={`w-4 h-4 ${effectiveIsActive ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-cyber-muted'}`} />
+                <Lock className={`w-4 h-4 ${effectiveIsActive ? 'text-callout-warn-fg' : 'text-tertiary dark:text-cyber-muted'}`} />
                 <div>
                   <span className="font-bold text-xs text-slate-900 dark:text-white block">
                     Active Seasonal Lab (In-Season HTB / THM)
                   </span>
-                  <span className="text-[10px] text-slate-500 dark:text-cyber-muted">
+                  <span className="text-[10px] text-tertiary dark:text-cyber-muted">
                     {isKnownActive 
                       ? 'Known in-season HTB machine detected. ToS safeguards automatically engaged.'
                       : 'Mark if target is in-season / active to enforce spoiler & writeup locks.'}
@@ -249,11 +249,11 @@ export const NewMachineModal: React.FC = () => {
                 checked={effectiveIsActive}
                 disabled={isKnownActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 dark:border-cyber-border text-amber-600 focus:ring-amber-500 bg-white dark:bg-cyber-card cursor-pointer"
+                className="w-4 h-4 rounded border-slate-300 dark:border-cyber-border text-callout-warn-fg focus:ring-amber-500 bg-white dark:bg-cyber-card cursor-pointer"
               />
             </label>
             {effectiveIsActive && (
-              <p className="text-[11px] leading-relaxed pt-2 border-t border-amber-300/40 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 font-mono">
+              <p className="text-[11px] leading-relaxed pt-2 border-t border-amber-300/40 dark:border-amber-500/30 text-callout-warn-fg font-mono">
                 Active Lab Safe-Mode: Personal time, flags, notes, and checklist tracking are fully supported. Public writeup URLs and spoilers are locked out to comply with Hack The Box Terms of Service (AUP §8.2).
               </p>
             )}
@@ -280,8 +280,8 @@ export const NewMachineModal: React.FC = () => {
               Key Hint / Vulnerability Intel
             </label>
             {effectiveIsActive ? (
-              <div className="p-2.5 rounded-lg border border-dashed border-amber-300 dark:border-amber-500/40 bg-amber-500/5 text-amber-900 dark:text-amber-300 text-[11px] font-mono flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div className="p-2.5 rounded-lg border border-dashed border-amber-300 dark:border-amber-500/40 bg-amber-500/5 text-callout-warn-fg text-[11px] font-mono flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-callout-warn-fg flex-shrink-0" />
                 <span>Intel hints and spoilers are locked for active labs per HTB Terms of Service (AUP §8.2).</span>
               </div>
             ) : (
@@ -302,7 +302,7 @@ export const NewMachineModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setNewMachineModalOpen(false)}
-              className="px-3.5 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="px-3.5 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             >
               Cancel
             </button>

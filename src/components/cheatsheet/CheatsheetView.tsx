@@ -1327,7 +1327,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 className="w-full pl-9 pr-4 py-2 bg-surface-card border border-strong rounded-lg text-xs text-primary placeholder:text-muted focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
               />
               {searchQuery && (
-                <button
+                <button aria-label="Clear search"
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-2.5 text-xs text-muted hover:text-primary"
                 >
@@ -1388,7 +1388,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            <motion.button
+                            <motion.button aria-label="Star snippet"
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => toggleStarCommand(cmd.id)}
@@ -1406,9 +1406,14 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               <motion.button
                                 whileHover={{ scale: 1.15 }}
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() => deleteCustomCommand(cmd.id)}
+                                onClick={async () => {
+                                  if (await confirmAction({ title: 'Delete this custom snippet?', body: 'This custom command will be permanently removed.', confirmLabel: 'Delete snippet', tone: 'danger' })) {
+                                    deleteCustomCommand(cmd.id);
+                                  }
+                                }}
                                 className="p-1 rounded text-muted hover:text-callout-danger-fg transition-colors"
                                 title="Delete Snippet"
+                                aria-label="Delete snippet"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </motion.button>
@@ -1487,7 +1492,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     {selectedCptsSubCategory !== 'ALL' && (
                       <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent font-mono flex items-center gap-1">
                         <span>📁 {selectedCptsSubCategory}</span>
-                        <button
+                        <button aria-label="Clear subcategory filter"
                           type="button"
                           onClick={() => setSelectedCptsSubCategory('ALL')}
                           className="hover:text-accent text-accent ml-1 font-semibold"
@@ -2093,7 +2098,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                           )}
                                         </button>
                                       )}
-                                      <button
+                                      <button aria-label="Delete field note"
                                         type="button"
                                         onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
                                         className="p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors cursor-pointer"
@@ -2307,7 +2312,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                              <span>Copy All ({note.commands.length})</span>
                                            </button>
                                          )}
-                                          <button
+                                          <button aria-label="Delete field note"
                                             type="button"
                                             onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
                                             className="p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg border border-subtle hover:border-callout-danger-border/50 transition-colors cursor-pointer"
@@ -2548,7 +2553,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   )}
                                 </button>
                               )}
-                              <button
+                              <button aria-label="Delete field note"
                                 type="button"
                                 onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
                                 className="p-1.5 rounded-md text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg border border-subtle hover:border-callout-danger-border/50 transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"

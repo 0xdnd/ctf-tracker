@@ -241,7 +241,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <div className="p-3.5 rounded-xl bg-surface-card border border-subtle space-y-2.5 machined-edge">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400">
+                  <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-callout-success-fg">
                     <FileJson className="w-4 h-4" />
                   </div>
                   <div>
@@ -254,7 +254,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownload('json')}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-callout-success-fg hover:bg-emerald-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download .JSON</span>
@@ -264,7 +264,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                   onClick={() => handleCopy('json')}
                   className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedFormat === 'json' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedFormat === 'json' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedFormat === 'json' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
@@ -274,7 +274,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <div className="p-3.5 rounded-xl bg-surface-card border border-subtle space-y-2.5 machined-edge">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-sky-500/15 border border-sky-500/40 text-sky-400">
+                  <div className="p-2 rounded-lg bg-sky-500/15 border border-sky-500/40 text-callout-info-fg">
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
                   <div>
@@ -287,7 +287,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownload('csv')}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-sky-500/20 border border-sky-500/50 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="flex-1 py-1.5 px-3 rounded-lg bg-sky-500/20 border border-sky-500/50 text-callout-info-fg hover:bg-accent hover:text-on-accent font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download .CSV</span>
@@ -297,7 +297,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                   onClick={() => handleCopy('csv')}
                   className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedFormat === 'csv' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedFormat === 'csv' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedFormat === 'csv' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
@@ -307,7 +307,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <div className="p-3.5 rounded-xl bg-surface-card border border-subtle space-y-2.5 machined-edge">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-400">
+                  <div className="p-2 rounded-lg bg-purple-500/15 border border-purple-500/40 text-callout-tip-fg">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
@@ -320,7 +320,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownload('markdown')}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="flex-1 py-1.5 px-3 rounded-lg bg-purple-500/20 border border-purple-500/50 text-callout-tip-fg hover:bg-purple-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download .MD</span>
@@ -330,7 +330,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                   onClick={() => handleCopy('markdown')}
                   className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
-                  {copiedFormat === 'markdown' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedFormat === 'markdown' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedFormat === 'markdown' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>

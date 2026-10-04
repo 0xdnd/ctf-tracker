@@ -1632,7 +1632,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               }}
               className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
                 showAllNodes
-                  ? 'bg-accent text-black border-accent shadow-xs'
+                  ? 'bg-accent text-on-accent border-accent shadow-xs'
                   : 'bg-surface-sunken text-accent border-subtle hover:border-accent/40'
               }`}
               title={showAllNodes ? 'Switch to scoped 48 targets' : 'Render all targets in topology graph'}
@@ -1641,10 +1641,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               {showAllNodes ? 'SHOW SCOPED (48)' : 'SHOW ALL'}
             </button>
           )}
-          <span className="text-[10px] text-purple-400 font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
+          <span className="text-[10px] text-callout-tip-fg font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
             {clusters.length} SUBNETS
           </span>
-          <span className="text-[10px] text-emerald-500 font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
+          <span className="text-[10px] text-callout-success-fg font-bold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
             {graphEdges.length} VECTORS
           </span>
         </div>
@@ -1685,7 +1685,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           }}
           className={`px-2.5 py-1 rounded-md text-xs font-bold font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1.5 cursor-pointer ${
             isConnectingMode
-              ? 'bg-accent text-black font-extrabold shadow-xs'
+              ? 'bg-accent text-on-accent font-extrabold shadow-xs'
               : 'hover:bg-surface-hover text-accent border border-transparent hover:border-subtle'
           }`}
           title={isConnectingMode ? 'Cancel Pivot Link Connection' : 'Add Pivot / Attack Vector Edge (Alt+C)'}
@@ -1700,7 +1700,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         <button
           data-testid="graph-export-canvas"
           onClick={handleExportObsidian}
-          className="p-1.5 rounded-md hover:bg-surface-hover text-purple-400 hover:text-purple-300 transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-callout-tip-fg hover:text-callout-tip-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
           title="Export as Native Obsidian Canvas (.canvas)"
         >
           <Download className="w-4 h-4" />
@@ -1711,7 +1711,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         <button
           data-testid="graph-export-svg"
           onClick={handleExportSvg}
-          className="p-1.5 rounded-md hover:bg-surface-hover text-accent hover:text-cyan-300 transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-accent hover:text-callout-info-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
           title="Export High-Resolution Vector Image (.svg)"
         >
           <Share2 className="w-4 h-4" />
@@ -1776,7 +1776,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           onClick={() => setIsFullscreen(!isFullscreen)}
           aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Attack Topology'}
           className={`p-1.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-            isFullscreen ? 'bg-accent text-black font-bold' : 'hover:bg-surface-hover text-muted hover:text-primary'
+            isFullscreen ? 'bg-accent text-on-accent font-bold' : 'hover:bg-surface-hover text-muted hover:text-primary'
           }`}
           title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Attack Topology'}
         >
@@ -1940,10 +1940,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           <button
             data-testid="graph-minimap-toggle"
             onClick={() => setIsMinimapOpen(true)}
-            className="p-1.5 px-2.5 rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-white shadow-xs flex items-center gap-1.5 text-xs font-bold font-mono active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color]"
+            className="p-1.5 px-2.5 rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-primary shadow-xs flex items-center gap-1.5 text-xs font-bold font-mono active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color]"
             title="Expand Tactical Radar Minimap"
           >
-            <Radio className="w-3.5 h-3.5 text-cyber-cyan" />
+            <Radio className="w-3.5 h-3.5 text-callout-info-fg" />
             <span className="hidden sm:inline">MINIMAP</span>
           </button>
         )}
@@ -2364,7 +2364,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               <button
                 data-testid="flyout-close-btn"
                 onClick={() => setSelectedNode(null)}
-                className="p-1 rounded-md text-muted hover:text-slate-900 dark:hover:text-white flex-shrink-0 active:scale-[0.97] transition-transform cursor-pointer"
+                className="p-1 rounded-md text-muted hover:text-slate-900 dark:hover:text-primary flex-shrink-0 active:scale-[0.97] transition-transform cursor-pointer"
                 title="Dismiss Details"
               >
                 <X className="w-4 h-4" />
@@ -2380,9 +2380,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 <span className="text-muted uppercase font-bold">Status:</span>
                 <div className={`font-bold mt-0.5 uppercase ${
                   selectedNode.status === 'root' || selectedNode.status === 'completed'
-                    ? 'text-emerald-500'
+                    ? 'text-callout-success-fg'
                     : selectedNode.status === 'foothold'
-                    ? 'text-amber-500'
+                    ? 'text-callout-warn-fg'
                     : 'text-accent'
                 }`}>
                   {selectedNode.status}
@@ -2396,7 +2396,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   setActiveTarget(selectedNode.id);
                   if (soundEnabled) playCyberSound('engage');
                 }}
-                className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-black font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-callout-success-fg hover:bg-emerald-500 hover:text-black font-bold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <Crosshair className="w-3.5 h-3.5" />
                 <span>Engage Target</span>
@@ -2410,7 +2410,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   setSelectedNode(null);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="py-1.5 px-2.5 rounded-lg bg-accent/15 border border-accent/40 text-accent hover:bg-accent hover:text-black text-xs font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
+                className="py-1.5 px-2.5 rounded-lg bg-accent/15 border border-accent/40 text-accent hover:bg-accent hover:text-on-accent text-xs font-bold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
                 title="Create pivot / attack vector originating from this machine"
               >
                 <Network className="w-3.5 h-3.5" />
@@ -2422,7 +2422,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   setSelectedMachineId(selectedNode.id);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-slate-900 dark:hover:text-white text-xs transition-colors active:scale-[0.97] cursor-pointer"
+                className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-slate-900 dark:hover:text-primary text-xs transition-colors active:scale-[0.97] cursor-pointer"
                 title="Open Inspection Modal"
               >
                 <Maximize2 className="w-3.5 h-3.5" />

@@ -141,7 +141,7 @@ const GridCard = React.memo<GridCardProps>(({
             exit={{ opacity: 0, y: -8 }}
             className={`absolute top-2 inset-x-2 z-20 px-2.5 py-1.5 rounded-[3px] text-[11px] font-mono font-bold flex items-center justify-between shadow-md ${
               scanToast.isError
-                ? 'bg-rose-950/95 border border-rose-500 text-rose-300'
+                ? 'bg-rose-950/95 border border-rose-500 text-callout-danger-fg'
                 : 'bg-zinc-900 border border-emerald-500 text-emerald-400'
             }`}
           >
@@ -168,7 +168,7 @@ const GridCard = React.memo<GridCardProps>(({
             <span className="tracking-tight flex items-center gap-1.5 truncate">
               <span className="truncate">{m.name}</span>
               {m.isActive && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded-[2px] font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase tracking-wider">
+                <span className="text-[9px] px-1.5 py-0.5 rounded-[2px] font-mono font-bold bg-amber-500/10 text-callout-warn-fg border border-amber-500/30 uppercase tracking-wider">
                   ACTIVE
                 </span>
               )}
@@ -209,8 +209,8 @@ const GridCard = React.memo<GridCardProps>(({
 
         {/* Hint Spoiler Peek / Active ToS Guard */}
         {m.isActive ? (
-          <div className="mb-3 px-2.5 py-1.5 rounded-[2px] border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-mono flex items-center gap-1.5 machined-edge">
-            <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+          <div className="mb-3 px-2.5 py-1.5 rounded-[2px] border border-amber-500/30 bg-amber-500/10 text-callout-warn-fg text-[10px] font-mono flex items-center gap-1.5 machined-edge">
+            <Lock className="w-3 h-3 text-callout-warn-fg flex-shrink-0" />
             <span>Active Lab · Writeups Prohibited (HTB ToS)</span>
           </div>
         ) : m.hint ? (
@@ -296,7 +296,7 @@ const GridCard = React.memo<GridCardProps>(({
             onClick={() => onToggleUserFlag(m.id)}
             className={`px-2 py-0.5 rounded-xs text-[10px] border font-mono font-bold flex items-center gap-1 transition-colors duration-150 active:scale-[0.97] cursor-pointer tabular-nums ${
               hasUser
-                ? 'bg-amber-500/10 border-amber-500/50 text-amber-600 dark:text-amber-400 shadow-xs'
+                ? 'bg-amber-500/10 border-amber-500/50 text-callout-warn-fg shadow-xs'
                 : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
             }`}
             title="Toggle User Flag"
@@ -309,7 +309,7 @@ const GridCard = React.memo<GridCardProps>(({
             onClick={() => onToggleRootFlag(m.id, hasRoot)}
             className={`px-2 py-0.5 rounded-xs text-[10px] border font-mono font-bold flex items-center gap-1 transition-colors duration-150 active:scale-[0.97] cursor-pointer tabular-nums ${
               hasRoot
-                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                ? 'bg-emerald-500/10 border-emerald-500/50 text-callout-success-fg shadow-xs'
                 : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
             }`}
             title="Toggle Root Flag"

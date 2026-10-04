@@ -126,7 +126,7 @@ export const StartCleanModal: React.FC<StartCleanModalProps> = ({ isOpen, onClos
                   </span>
                 </div>
                 <div className="font-bold text-sm text-white">Explore Demo Solves</div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="text-[11px] text-tertiary leading-relaxed">
                   Load Daniel Dayan&apos;s 63 verified completed targets (45 HTB + 18 THM) with flags, timestamps, and notes to preview walkthroughs and reports.
                 </p>
               </div>

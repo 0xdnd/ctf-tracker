@@ -36,6 +36,7 @@ import { ExamEvidenceDropzone, downscaleImageFile } from '../../components/exam/
 import { ExamBioBreakModal } from '../../components/exam/ExamBioBreakModal';
 import { useExamStore } from '../../store/examStore';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 vi.mock('canvas-confetti', () => ({
   default: vi.fn(),
@@ -161,7 +162,7 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
       expect(useExamStore.getState().status).toBe('running');
     });
 
-    it('resets exam session when reset button is clicked', () => {
+    it('resets exam session when reset button is clicked and confirmed', async () => {
       useExamStore.getState().startExam('OSCP');
 
       render(
@@ -172,6 +173,9 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
 
       const resetBtn = screen.getByTestId('exam-timer-reset-btn');
       fireEvent.click(resetBtn);
+      await act(async () => {
+        useConfirmStore.getState().settle(true);
+      });
 
       expect(useExamStore.getState().status).toBe('idle');
       expect(screen.getByTestId('exam-setup-view')).toBeInTheDocument();
@@ -421,6 +425,9 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
       // Delete screenshot
       const deleteBtn = screen.getByTestId('screenshot-delete-btn-sc_test_1');
       fireEvent.click(deleteBtn);
+      await act(async () => {
+        useConfirmStore.getState().settle(true);
+      });
 
       await waitFor(() => {
         const updatedBox = useExamStore.getState().boxes.find((b) => b.id === box.id)!;

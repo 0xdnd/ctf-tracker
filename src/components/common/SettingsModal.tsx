@@ -181,7 +181,7 @@ export const SettingsModal: React.FC = () => {
                 setSettingsModalOpen(false);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-bg transition-colors"
+              className="p-1.5 rounded-lg text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-slate-200 dark:hover:bg-cyber-bg transition-colors"
               aria-label="Close Settings"
             >
               <X className="w-5 h-5" />
@@ -198,7 +198,7 @@ export const SettingsModal: React.FC = () => {
                   <Palette className="w-4 h-4 text-cyber-cyan" />
                   <span>Tactical Theme Presets</span>
                 </span>
-                <span className="text-[10px] text-slate-400 dark:text-cyber-muted font-bold">
+                <span className="text-[10px] text-tertiary dark:text-cyber-muted font-bold">
                   3 CANONICAL THEMES
                 </span>
               </div>
@@ -242,7 +242,7 @@ export const SettingsModal: React.FC = () => {
                               <Icon className="w-3.5 h-3.5 text-cyber-cyan" />
                               <span>{preset.name}</span>
                             </div>
-                            <span className="text-[10px] text-slate-400 dark:text-cyber-muted">
+                            <span className="text-[10px] text-tertiary dark:text-cyber-muted">
                               {preset.tagline}
                             </span>
                           </div>
@@ -257,7 +257,7 @@ export const SettingsModal: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-cyber-border/40 text-[9px] text-slate-500 dark:text-cyber-muted">
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-cyber-border/40 text-[9px] text-tertiary dark:text-cyber-muted">
                         <span className="font-mono">Active Accent: {activeAccent}</span>
                         <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-[8px] font-bold">
                           {preset.badge}
@@ -276,7 +276,7 @@ export const SettingsModal: React.FC = () => {
                   <Sparkles className="w-4 h-4 text-cyber-cyan" />
                   <span>Design Token Palette (1-Click Copy)</span>
                 </span>
-                <span className="text-[10px] text-slate-400 dark:text-cyber-muted">
+                <span className="text-[10px] text-tertiary dark:text-cyber-muted">
                   Click any swatch to copy CSS variable
                 </span>
               </div>
@@ -307,7 +307,7 @@ export const SettingsModal: React.FC = () => {
                             <Copy className="w-2.5 h-2.5 text-cyber-muted opacity-0 group-hover:opacity-100 transition-opacity" />
                           )}
                         </div>
-                        <div className="text-[9px] text-slate-500 dark:text-cyber-muted font-mono truncate">
+                        <div className="text-[9px] text-tertiary dark:text-cyber-muted font-mono truncate">
                           {tokenColor}
                         </div>
                       </div>
@@ -324,7 +324,7 @@ export const SettingsModal: React.FC = () => {
                   </div>
                   <div>
                     <div className="font-bold text-xs text-slate-900 dark:text-white">Full Theme & Color Matrix Inspector</div>
-                    <div className="text-[10px] text-slate-500 dark:text-cyber-muted">Inspect 17 tokens, typography scale & WCAG contrast audit</div>
+                    <div className="text-[10px] text-tertiary dark:text-cyber-muted">Inspect 17 tokens, typography scale & WCAG contrast audit</div>
                   </div>
                 </div>
                 <button
@@ -334,7 +334,7 @@ export const SettingsModal: React.FC = () => {
                     window.location.hash = '#/theme';
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 hover:bg-cyan-100 dark:hover:bg-cyber-cyan/25 border border-cyan-400 dark:border-cyber-cyan/40 text-cyan-800 dark:text-cyber-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 hover:bg-cyan-100 dark:hover:bg-cyber-cyan/25 border border-cyan-400 dark:border-cyber-cyan/40 text-callout-info-fg dark:text-cyber-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"
                 >
                   <span>Open Full Studio</span>
                   <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -354,7 +354,7 @@ export const SettingsModal: React.FC = () => {
                 <div className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-xs text-slate-900 dark:text-white">Color Mode</div>
-                    <div className="text-[10px] text-slate-400 dark:text-cyber-muted">
+                    <div className="text-[10px] text-tertiary dark:text-cyber-muted">
                       {isDark ? 'Dark Mode Active' : 'Light Mode Active'}
                     </div>
                   </div>
@@ -368,7 +368,7 @@ export const SettingsModal: React.FC = () => {
                       className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-[box-shadow,background-color,border-color,color] ${
                         isDark 
                           ? 'bg-blue-600 text-white shadow-sm' 
-                          : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                          : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                       }`}
                     >
                       <Moon className="w-3.5 h-3.5" />
@@ -383,7 +383,7 @@ export const SettingsModal: React.FC = () => {
                       className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-[box-shadow,background-color,border-color,color] ${
                         !isDark 
                           ? 'bg-blue-600 text-white shadow-sm' 
-                          : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                          : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                       }`}
                     >
                       <Sun className="w-3.5 h-3.5" />
@@ -396,7 +396,7 @@ export const SettingsModal: React.FC = () => {
                 <div className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-xs text-slate-900 dark:text-white">Audio Feedback</div>
-                    <div className="text-[10px] text-slate-400 dark:text-cyber-muted">
+                    <div className="text-[10px] text-tertiary dark:text-cyber-muted">
                       Web Audio tactical SFX
                     </div>
                   </div>
@@ -405,7 +405,7 @@ export const SettingsModal: React.FC = () => {
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-bold transition-colors ${
                       soundEnabled
                         ? 'border-cyber-emerald bg-cyber-emerald/15 text-cyber-emerald'
-                        : 'border-slate-300 dark:border-cyber-border bg-white dark:bg-cyber-card text-slate-400'
+                        : 'border-slate-300 dark:border-cyber-border bg-white dark:bg-cyber-card text-tertiary'
                     }`}
                   >
                     {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
@@ -418,10 +418,10 @@ export const SettingsModal: React.FC = () => {
               <div className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-purple-500" />
+                    <Layers className="w-3.5 h-3.5 text-callout-tip-fg" />
                     <span>Interface Scaling</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 dark:text-cyber-muted uppercase font-bold">
+                  <span className="text-[10px] text-tertiary dark:text-cyber-muted uppercase font-bold">
                     Active: {uiScale || 'normal'}
                   </span>
                 </div>
@@ -455,7 +455,7 @@ export const SettingsModal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-slate-500 dark:text-cyber-muted block mb-1">
+                  <label className="text-[10px] text-tertiary dark:text-cyber-muted block mb-1">
                     Attacker IP (LHOST)
                   </label>
                   <input
@@ -467,7 +467,7 @@ export const SettingsModal: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-500 dark:text-cyber-muted block mb-1">
+                  <label className="text-[10px] text-tertiary dark:text-cyber-muted block mb-1">
                     Attacker Port (LPORT)
                   </label>
                   <input
@@ -493,9 +493,9 @@ export const SettingsModal: React.FC = () => {
                   setBackupModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
               >
-                <Database className="w-3.5 h-3.5 text-purple-500" />
+                <Database className="w-3.5 h-3.5 text-callout-tip-fg" />
                 <span className="hidden sm:inline">Backup Database</span>
               </button>
 
@@ -506,9 +506,9 @@ export const SettingsModal: React.FC = () => {
                   useCtfStore.getState().setLicenseModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" />
                 <span className="hidden sm:inline">License</span>
               </button>
             </div>

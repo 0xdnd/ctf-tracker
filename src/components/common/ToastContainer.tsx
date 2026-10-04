@@ -34,21 +34,21 @@ export const ToastContainer: React.FC = () => {
             }`}
           >
             <div className="flex-shrink-0 pt-0.5">
-              {t.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-              {t.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500" />}
-              {t.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
-              {t.type === 'info' && <Info className="w-4 h-4 text-cyan-500" />}
+              {t.type === 'success' && <CheckCircle2 className="w-4 h-4 text-callout-success-fg" />}
+              {t.type === 'error' && <AlertCircle className="w-4 h-4 text-callout-danger-fg" />}
+              {t.type === 'warning' && <AlertTriangle className="w-4 h-4 text-callout-warn-fg" />}
+              {t.type === 'info' && <Info className="w-4 h-4 text-callout-info-fg" />}
             </div>
 
             <div className="flex-1 min-w-0 pr-1">
               {t.title && <div className="font-semibold text-xs leading-tight mb-0.5">{t.title}</div>}
-              <div className="text-[11px] text-slate-600 dark:text-zinc-400 leading-snug">{t.message}</div>
+              <div className="text-[11px] text-slate-600 dark:text-tertiary leading-snug">{t.message}</div>
             </div>
 
             <button
               type="button"
               onClick={() => removeToast(t.id)}
-              className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0 cursor-pointer"
+              className="p-1 rounded-md text-tertiary hover:text-slate-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0 cursor-pointer"
               aria-label="Dismiss notification"
             >
               <X className="w-3.5 h-3.5" />

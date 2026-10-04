@@ -17,6 +17,7 @@ import {
   Edit2
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
+import { confirmAction } from '../../store/useConfirmStore';
 import { 
   ExamBox, 
   ScreenshotProof, 
@@ -301,8 +302,15 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
     updateProof(box.id, flagType, { ipconfigOutput: val });
   };
 
-  const handleDeleteScreenshot = (screenshotId: string) => {
+  const handleDeleteScreenshot = async (screenshotId: string) => {
     if (!box) return;
+    const ok = await confirmAction({
+      title: 'Delete this screenshot proof?',
+      body: 'The screenshot will be removed from this evidence record.',
+      confirmLabel: 'Delete screenshot',
+      tone: 'danger',
+    });
+    if (!ok) return;
     removeScreenshot(box.id, flagType, screenshotId);
   };
 
@@ -559,6 +567,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                         onClick={() => handleSaveCaption(sc.id)}
                         className="p-1 rounded bg-accent text-on-accent hover:bg-accent-hover"
                         title="Save caption"
+                        aria-label="Save caption"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -573,6 +582,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                         onClick={() => handleStartCaptionEdit(sc)}
                         className="text-muted hover:text-accent p-0.5"
                         title="Edit caption"
+                        aria-label="Edit caption"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
@@ -609,7 +619,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
           onClick={() => setPreviewImage(null)}
         >
           <div className="relative max-w-4xl max-h-[90vh] bg-surface-card border border-subtle rounded-2xl overflow-hidden p-2">
-            <button
+            <button aria-label="Close screenshot preview"
               type="button"
               onClick={() => setPreviewImage(null)}
               className="absolute top-3 right-3 p-1.5 rounded-full bg-surface-elevated text-primary hover:bg-surface-hover"

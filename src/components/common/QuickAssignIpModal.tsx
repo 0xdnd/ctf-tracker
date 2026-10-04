@@ -151,7 +151,7 @@ export const QuickAssignIpModal: React.FC = () => {
 
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-md text-cyber-muted hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="p-1.5 rounded-md text-cyber-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Close (Esc)"
           >
             <X className="w-4 h-4" />
@@ -234,21 +234,21 @@ export const QuickAssignIpModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handlePreFill('10.10.11.')}
-                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-white text-xs transition-colors"
+                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-primary text-xs transition-colors"
                   >
                     10.10.11. (Modern)
                   </button>
                   <button
                     type="button"
                     onClick={() => handlePreFill('10.129.')}
-                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-white text-xs transition-colors"
+                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-primary text-xs transition-colors"
                   >
                     10.129. (Starting Point / Labs)
                   </button>
                   <button
                     type="button"
                     onClick={() => handlePreFill('10.10.10.')}
-                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-white text-xs transition-colors"
+                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-primary text-xs transition-colors"
                   >
                     10.10.10. (Retired Classic)
                   </button>
@@ -258,7 +258,7 @@ export const QuickAssignIpModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handlePreFill('10.10.')}
-                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-white text-xs transition-colors"
+                    className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-primary text-xs transition-colors"
                   >
                     10.10. (TryHackMe Subnet)
                   </button>
@@ -273,7 +273,7 @@ export const QuickAssignIpModal: React.FC = () => {
           <button
             type="button"
             onClick={handleClose}
-            className="px-3.5 py-1.5 rounded-lg border border-cyber-border text-cyber-muted hover:text-white text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="px-3.5 py-1.5 rounded-lg border border-cyber-border text-cyber-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
           >
             Keep {machine.ip}
           </button>

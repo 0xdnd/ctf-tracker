@@ -114,11 +114,11 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-purple-900/40 p-4 bg-purple-950/30">
           <div className="flex items-center gap-2.5">
-            <BookOpen className="w-5 h-5 text-purple-400" />
+            <BookOpen className="w-5 h-5 text-callout-tip-fg" />
             <div>
               <h3 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
                 <span>CREATE CUSTOM FIELD MANUAL NOTE</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-900/60 border border-purple-500/40 text-purple-200">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-900/60 border border-purple-500/40 text-callout-tip-fg">
                   OBSIDIAN COMPATIBLE
                 </span>
               </h3>
@@ -130,7 +130,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-white border border-cyber-border transition-colors"
+            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-primary border border-cyber-border transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -141,7 +141,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Titles: EN & HE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-purple-300 font-bold uppercase tracking-wider mb-1 text-[11px]">
+              <label className="block text-callout-tip-fg font-bold uppercase tracking-wider mb-1 text-[11px]">
                 Note Title (English) *
               </label>
               <input
@@ -158,7 +158,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-purple-300 font-bold uppercase tracking-wider mb-1 text-[11px]">
+              <label className="block text-callout-tip-fg font-bold uppercase tracking-wider mb-1 text-[11px]">
                 Note Title (Hebrew - אופציונלי)
               </label>
               <input
@@ -179,13 +179,13 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           <div className="space-y-1.5 p-3 rounded-lg bg-cyber-bg/70 border border-cyber-border">
             <div className="flex items-center justify-between">
               <label className="block text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Folder className="w-3.5 h-3.5 text-purple-400" />
+                <Folder className="w-3.5 h-3.5 text-callout-tip-fg" />
                 <span>Target Directory / Sub-folder Depth</span>
               </label>
               <button
                 type="button"
                 onClick={() => setUseCustomDir(!useCustomDir)}
-                className="text-[10px] text-purple-400 hover:text-purple-300 underline font-semibold"
+                className="text-[10px] text-callout-tip-fg hover:text-callout-tip-fg underline font-semibold"
               >
                 {useCustomDir ? '← Choose Existing Directory' : '+ Create New Sub-directory'}
               </button>
@@ -214,7 +214,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 options={existingDirectories.map((dir) => ({
                   value: dir,
                   label: dir,
-                  icon: <Folder className="w-3.5 h-3.5 text-purple-400" />,
+                  icon: <Folder className="w-3.5 h-3.5 text-callout-tip-fg" />,
                 }))}
                 searchable
                 searchPlaceholder="Search folder paths..."
@@ -278,7 +278,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Commands Textarea */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="block text-purple-300 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <label className="block text-callout-tip-fg font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
                 <span>Commands & Payloads (One per line)</span>
               </label>
@@ -356,7 +356,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white transition-colors"
+              className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary transition-colors"
             >
               Cancel
             </button>

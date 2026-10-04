@@ -24,29 +24,29 @@ export const StatusBadge: React.FC<StatusBadgeProps> = React.memo(({
     if (variant === 'hardware') {
       switch (normalized) {
         case 'recon':
-          return 'bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-500/40 text-sky-700 dark:text-sky-400';
+          return 'bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-500/40 text-callout-info-fg';
         case 'foothold':
-          return 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400';
+          return 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/40 text-callout-warn-fg';
         case 'root':
         case 'pwned':
-          return 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400';
+          return 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-500/40 text-callout-success-fg';
         case 'completed':
-          return 'bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/40 text-purple-700 dark:text-purple-400';
+          return 'bg-purple-50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-500/40 text-callout-tip-fg';
         case 'backlog':
         default:
-          return 'bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400';
+          return 'bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-tertiary';
       }
     }
     switch (normalized) {
       case 'recon':
-        return 'bg-sky-500/15 border-sky-500/40 text-sky-700 dark:text-sky-400';
+        return 'bg-sky-500/15 border-sky-500/40 text-callout-info-fg';
       case 'foothold':
-        return 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-400';
+        return 'bg-amber-500/15 border-amber-500/40 text-callout-warn-fg';
       case 'root':
       case 'pwned':
-        return 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-400';
+        return 'bg-emerald-500/15 border-emerald-500/40 text-callout-success-fg';
       case 'completed':
-        return 'bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-400';
+        return 'bg-purple-500/15 border-purple-500/40 text-callout-tip-fg';
       case 'backlog':
       default:
         return 'bg-surface-sunken border-border-subtle text-text-muted';

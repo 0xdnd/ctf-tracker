@@ -17,14 +17,16 @@ const SHORTCUTS: ShortcutEntry[] = [
   { keys: ['4'], description: 'Switch to DMZ Topology Graph view', category: 'navigation' },
   { keys: ['j', 'Alt+↓'], description: 'Select next target machine', category: 'navigation' },
   { keys: ['k', 'Alt+↑'], description: 'Select previous target machine', category: 'navigation' },
-  { keys: ['Space'], description: 'Inspect selected target details modal', category: 'navigation' },
+  { keys: ['Space'], description: 'Inspect active target details modal', category: 'navigation' },
   { keys: ['/'], description: 'Focus target search filter', category: 'navigation' },
 
   // Tactical Actions
   { keys: ['Ctrl', 'S'], description: 'Tactical 1-Click Save to Local Storage & Profile', category: 'actions' },
   { keys: ['Ctrl', 'P'], description: 'Executive Pre-Report PDF Generator for active target', category: 'actions' },
   { keys: ['Alt', 'S'], description: 'Slide-over Snippets & Commands Drawer (or Ctrl+Space)', category: 'actions' },
-  { keys: ['Alt', 'F'], description: 'Toggle Zen / Focus Mode (maximize board real-estate)', category: 'actions' },
+  { keys: ['Alt', 'E'], description: 'Toggle Exam Mission quick-action drawer', category: 'actions' },
+  { keys: ['Alt', 'R'], description: 'Open Reverse Shell Crafter (or Alt+P / Ctrl+Shift+R)', category: 'actions' },
+  { keys: ['Alt', 'O'], description: 'Open Operator Profile switcher (or Ctrl+Shift+O)', category: 'actions' },
   { keys: ['t'], description: 'Toggle active target stopwatch timer', category: 'actions' },
   { keys: ['u'], description: 'Quick-pwn User flag on active target', category: 'actions' },
   { keys: ['r'], description: 'Quick-pwn Root / SYSTEM flag on active target', category: 'actions' },
@@ -95,9 +97,9 @@ export const KeyboardShortcutsModal: React.FC = () => {
             </div>
           </div>
 
-          <button
+          <button aria-label="Close keyboard shortcuts"
             onClick={() => setShortcutsModalOpen(false)}
-            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-white hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -163,7 +165,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
 
           {/* System Section */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-callout-tip-fg uppercase tracking-wider">
               <Command className="w-3.5 h-3.5" />
               <span>System & Global Palettes</span>
             </div>
@@ -178,7 +180,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
                     {s.keys.map((k, i) => (
                       <kbd
                         key={i}
-                        className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-purple-300 text-[11px] font-bold shadow-inner"
+                        className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-callout-tip-fg text-[11px] font-bold shadow-inner"
                       >
                         {k}
                       </kbd>

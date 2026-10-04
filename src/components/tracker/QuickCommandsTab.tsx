@@ -346,7 +346,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
               {targetIp}
             </code>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-callout-warn-fg font-bold text-[10px]">
               <span>⚠️ UNCONFIGURED (SET IP ABOVE)</span>
             </span>
           )}
@@ -354,9 +354,9 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
 
         <div className="flex items-center gap-2 text-[11px] flex-shrink-0">
           <span className="text-cyber-muted font-bold">LHOST:</span>
-          <code className="text-cyber-cyan font-bold">{lhost}</code>
+          <code className="text-callout-info-fg font-bold">{lhost}</code>
           <span className="text-cyber-muted font-bold">LPORT:</span>
-          <code className="text-cyber-cyan font-bold">{lport}</code>
+          <code className="text-callout-info-fg font-bold">{lport}</code>
         </div>
       </div>
 
@@ -372,8 +372,8 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] border shadow-xs ${
                 activeCategory === cat.id
-                  ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan font-bold'
-                  : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white'
+                  ? 'bg-cyber-cyan/20 border-cyber-cyan text-callout-info-fg font-bold'
+                  : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary'
               }`}
             >
               <span>{cat.label}</span>
@@ -414,7 +414,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-white font-bold text-xs">{cmd.title}</span>
-                    <span className="px-2 py-0.5 rounded-md text-[9px] bg-cyber-bg text-cyber-cyan border border-cyber-border font-mono">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] bg-cyber-bg text-callout-info-fg border border-cyber-border font-mono">
                       {cmd.relevance}
                     </span>
                   </div>
@@ -424,7 +424,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                       isCopied
                         ? 'bg-cyber-emerald text-black font-extrabold'
-                        : 'bg-cyber-bg hover:bg-cyber-cyan hover:text-black text-cyber-muted hover:text-white border border-cyber-border'
+                        : 'bg-cyber-bg hover:bg-cyber-cyan hover:text-black text-cyber-muted hover:text-primary border border-cyber-border'
                     }`}
                     title="1-Click Copy Command to Clipboard"
                   >

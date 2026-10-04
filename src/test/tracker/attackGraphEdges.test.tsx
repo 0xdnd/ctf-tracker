@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { GraphView } from '../../components/tracker/GraphView';
 import { GraphEdgeInspectorDrawer } from '../../components/tracker/GraphEdgeInspectorDrawer';
@@ -10,6 +10,7 @@ import {
   ExportGraphNode 
 } from '../../utils/graphExportUtils';
 import { useCtfStore, safeLocalStorage } from '../../store/useCtfStore';
+import { useConfirmStore } from '../../store/useConfirmStore';
 import { Machine } from '../../types';
 import { AttackGraphEdge, ATTACK_EDGE_TYPES, ATTACK_EDGE_META } from '../../types/graph';
 
@@ -347,8 +348,10 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
       });
     });
 
-    it('calls onDeleteEdge when delete button is confirmed', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
+    it('calls onDeleteEdge when delete button is confirmed', async () => {
+      const originalOpen = useConfirmStore.getState().open;
+      const confirmSpy = vi.fn().mockResolvedValue(true);
+      useConfirmStore.setState({ open: confirmSpy });
       const onUpdateEdge = vi.fn();
       const onDeleteEdge = vi.fn();
       const onClose = vi.fn();
@@ -368,9 +371,10 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
       const deleteBtn = screen.getByText('Delete Vector');
       fireEvent.click(deleteBtn);
 
-      expect(window.confirm).toHaveBeenCalled();
-      expect(onDeleteEdge).toHaveBeenCalledWith(sampleEdge.id);
+      await waitFor(() => expect(onDeleteEdge).toHaveBeenCalledWith(sampleEdge.id));
+      expect(confirmSpy).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
+      useConfirmStore.setState({ open: originalOpen });
     });
 
     it('closes on Escape key press', () => {

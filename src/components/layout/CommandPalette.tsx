@@ -188,7 +188,7 @@ export const CommandPalette: React.FC = () => {
         id: 'action-exam',
         label: 'Jump to Exam Simulator (Alt+E)',
         icon: ShieldAlert,
-        colorClass: 'text-amber-400',
+        colorClass: 'text-callout-warn-fg',
         bgHoverClass: 'hover:bg-amber-500/15 hover:border-amber-500/50',
         execute: () => {
           setCommandPaletteOpen(false);
@@ -321,7 +321,7 @@ export const CommandPalette: React.FC = () => {
         id: 'theme-monolith',
         label: 'Switch Theme: Clean Monolith (Architectural Off-White & Crisp Graphite)',
         icon: Sun,
-        colorClass: 'text-sky-600 dark:text-sky-400',
+        colorClass: 'text-callout-info-fg',
         bgHoverClass: 'hover:bg-sky-500/10 hover:border-sky-500/40',
         execute: () => {
           setThemePreset('monolith');
@@ -343,7 +343,7 @@ export const CommandPalette: React.FC = () => {
         id: 'action-flexcard',
         label: 'Export Operator Flex Card (Scorecard PNG)',
         icon: Award,
-        colorClass: 'text-purple-600 dark:text-purple-400',
+        colorClass: 'text-callout-tip-fg',
         bgHoverClass: 'hover:bg-purple-500/10 hover:border-purple-500/40',
         execute: () => {
           setCommandPaletteOpen(false);
@@ -354,7 +354,7 @@ export const CommandPalette: React.FC = () => {
         id: 'action-vault',
         label: 'Evidence & Loot Vault (Creds, Hashes, Flags & Keys)',
         icon: Database,
-        colorClass: 'text-amber-500',
+        colorClass: 'text-callout-warn-fg',
         bgHoverClass: 'hover:bg-amber-500/10 hover:border-amber-500/40',
         execute: () => {
           setCommandPaletteOpen(false);
@@ -366,7 +366,7 @@ export const CommandPalette: React.FC = () => {
         id: 'action-exam',
         label: '24h Exam Simulator (OSCP / CPTS)',
         icon: Radio,
-        colorClass: 'text-rose-600 dark:text-rose-400',
+        colorClass: 'text-callout-danger-fg',
         bgHoverClass: 'hover:bg-rose-500/10 hover:border-rose-500/40',
         execute: () => {
           setCommandPaletteOpen(false);
@@ -515,7 +515,7 @@ export const CommandPalette: React.FC = () => {
           {query && (
             <button 
               onClick={() => setQuery('')} 
-              className="text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+              className="text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
               title="Clear search"
             >
               <X className="w-4 h-4" />
@@ -610,13 +610,13 @@ export const CommandPalette: React.FC = () => {
                           m.difficulty === 'Easy' ? 'text-cyber-emerald bg-cyber-emerald/10' :
                           m.difficulty === 'Medium' ? 'text-cyber-amber bg-cyber-amber/10' :
                           m.difficulty === 'Hard' ? 'text-cyber-crimson bg-cyber-crimson/10' :
-                          'text-purple-400 bg-purple-950/40'
+                          'text-callout-tip-fg bg-purple-950/40'
                         }`}>
                           {m.difficulty}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-white">
+                      <div className="flex items-center gap-2 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-primary">
                         <span className="text-[10px] uppercase font-mono">{m.status}</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </div>

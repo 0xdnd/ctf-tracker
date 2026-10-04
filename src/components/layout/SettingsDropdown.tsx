@@ -107,12 +107,12 @@ export const SettingsDropdown: React.FC = () => {
         className={`h-8 w-8 rounded-[6px] border flex items-center justify-center group relative cursor-pointer shadow-xs machined-edge transition-all active:scale-[0.96] ${
           isOpen
             ? 'bg-cyber-cyan/15 text-cyber-cyan border-cyber-cyan shadow-[0_0_10px_rgba(0,240,255,0.25)]'
-            : 'bg-slate-100 dark:bg-zinc-900/90 border-slate-300 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:border-slate-400 dark:hover:border-zinc-700'
+            : 'bg-slate-100 dark:bg-zinc-900/90 border-slate-300 dark:border-zinc-800 text-slate-600 dark:text-tertiary hover:text-slate-900 dark:hover:text-zinc-100 hover:border-slate-400 dark:hover:border-zinc-700'
         }`}
         title="Settings & Workspace Utilities"
         aria-label="Settings and options"
       >
-        <Settings className={`w-3.5 h-3.5 stroke-[1.8] transition-transform duration-300 ${isOpen ? 'rotate-90 text-cyan-400' : 'group-hover:rotate-45'}`} />
+        <Settings className={`w-3.5 h-3.5 stroke-[1.8] transition-transform duration-300 ${isOpen ? 'rotate-90 text-callout-info-fg' : 'group-hover:rotate-45'}`} />
         {unexportedChangesCount > 0 && (
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full border border-white dark:border-zinc-950 shadow-[0_0_5px_rgba(251,191,36,0.9)] animate-pulse" />
         )}

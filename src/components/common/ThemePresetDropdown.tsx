@@ -141,7 +141,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
         <div className="absolute right-0 top-full mt-1.5 w-72 p-2.5 rounded-xl bg-cyber-card border border-cyber-border shadow-2xl z-50 text-xs space-y-2 animate-in fade-in duration-100">
           
           {/* Header */}
-          <div className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase px-2 py-0.5 font-bold border-b border-slate-100 dark:border-cyber-border/60 flex items-center justify-between">
+          <div className="text-[10px] text-tertiary dark:text-cyber-muted uppercase px-2 py-0.5 font-bold border-b border-slate-100 dark:border-cyber-border/60 flex items-center justify-between">
             <span>THEME PRESETS</span>
             <span className="text-cyber-cyan font-mono text-[9px] font-bold">{THEME_OPTIONS.length} THEMES</span>
           </div>
@@ -181,7 +181,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
                         <Icon className="w-3 h-3 text-cyber-cyan flex-shrink-0" />
                         <span className="font-bold text-xs">{opt.name}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-cyber-muted truncate">
+                      <span className="text-[10px] text-tertiary dark:text-cyber-muted truncate">
                         {opt.tagline}
                       </span>
                     </div>
@@ -197,7 +197,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
 
           {/* Clean Dark / Light Mode Switcher Strip */}
           <div className="pt-1.5 border-t border-slate-100 dark:border-cyber-border/60">
-            <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-cyber-muted mb-1.5 px-1 flex items-center justify-between">
+            <div className="text-[10px] uppercase font-bold text-tertiary dark:text-cyber-muted mb-1.5 px-1 flex items-center justify-between">
               <span>COLOR MODE</span>
               <span className="text-cyber-cyan font-bold">{isDark ? 'DARK ACTIVE' : 'LIGHT ACTIVE'}</span>
             </div>
@@ -209,7 +209,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
                 className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
                   isDark
                     ? 'bg-zinc-900 text-cyber-cyan border border-cyber-cyan/40 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                    : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -222,10 +222,10 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
                 className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
                   !isDark
                     ? 'bg-white text-cyber-cyan border border-cyber-cyan/50 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                    : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
                 }`}
               >
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <Sun className="w-3.5 h-3.5 text-callout-warn-fg" />
                 <span>Light</span>
               </button>
             </div>

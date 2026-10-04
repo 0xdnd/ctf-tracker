@@ -319,7 +319,7 @@ export function CyberSelect<T extends string = string>({
             {isSearchable && (
               <div className={`px-1.5 pt-1 pb-1.5 border-b ${variant === 'hardware' ? 'border-zinc-200 dark:border-zinc-800' : 'border-slate-200/80 dark:border-cyber-border/70'} mb-1`}>
                 <div className="relative flex items-center">
-                  <Search className="w-3 h-3 text-slate-400 dark:text-cyber-muted absolute left-2 pointer-events-none" />
+                  <Search className="w-3 h-3 text-tertiary dark:text-cyber-muted absolute left-2 pointer-events-none" />
                   <input
                     ref={searchInputRef}
                     id={`${id || 'cyber-select'}-search-input`}
@@ -337,14 +337,14 @@ export function CyberSelect<T extends string = string>({
                     onClick={(e) => e.stopPropagation()}
                   />
                   {searchQuery && (
-                    <button
+                    <button aria-label="Clear search"
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSearchQuery('');
                         searchInputRef.current?.focus();
                       }}
-                      className="absolute right-1.5 text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-cyber-text p-0.5"
+                      className="absolute right-1.5 text-tertiary dark:text-cyber-muted hover:text-slate-800 dark:hover:text-cyber-text p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -359,7 +359,7 @@ export function CyberSelect<T extends string = string>({
               className="max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin pr-0.5"
             >
               {filteredOptions.length === 0 ? (
-                <div className="py-3 px-2 text-center text-slate-400 dark:text-cyber-muted text-[11px]">
+                <div className="py-3 px-2 text-center text-tertiary dark:text-cyber-muted text-[11px]">
                   No matching options found
                 </div>
               ) : (
@@ -386,7 +386,7 @@ export function CyberSelect<T extends string = string>({
                             ? 'bg-zinc-100 dark:bg-zinc-900/80 text-zinc-900 dark:text-zinc-100'
                             : 'bg-slate-100 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text'
                           : variant === 'hardware'
-                          ? 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100'
+                          ? 'text-zinc-600 dark:text-tertiary hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100'
                           : 'text-slate-600 dark:text-cyber-muted hover:bg-slate-100 dark:hover:bg-cyber-bg hover:text-slate-900 dark:hover:text-cyber-text'
                       } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
@@ -407,7 +407,7 @@ export function CyberSelect<T extends string = string>({
                         <div className="truncate">
                           <div className="truncate">{opt.label}</div>
                           {opt.description && (
-                            <div className="text-[10px] text-slate-400 dark:text-cyber-muted font-normal truncate">
+                            <div className="text-[10px] text-tertiary dark:text-cyber-muted font-normal truncate">
                               {opt.description}
                             </div>
                           )}
@@ -667,7 +667,7 @@ export function CyberMultiSelect<T extends string = string>({
           >
             <div className="px-1 pt-0.5 pb-1.5 border-b border-slate-200/80 dark:border-cyber-border/70 mb-1 space-y-1.5">
               <div className="relative flex items-center">
-                <Search className="w-3 h-3 text-slate-400 dark:text-cyber-muted absolute left-2 pointer-events-none" />
+                <Search className="w-3 h-3 text-tertiary dark:text-cyber-muted absolute left-2 pointer-events-none" />
                 <input
                   ref={searchInputRef}
                   id={`${id || 'cyber-multiselect'}-search-input`}
@@ -685,7 +685,7 @@ export function CyberMultiSelect<T extends string = string>({
                   onClick={(e) => e.stopPropagation()}
                 />
                 {searchQuery && (
-                  <button
+                  <button aria-label="Clear search"
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -707,7 +707,7 @@ export function CyberMultiSelect<T extends string = string>({
                   <button
                     type="button"
                     onClick={handleClearAll}
-                    className="text-rose-500 hover:underline font-bold transition-colors font-mono text-[10px] uppercase"
+                    className="text-callout-danger-fg hover:underline font-bold transition-colors font-mono text-[10px] uppercase"
                   >
                     Clear All
                   </button>
@@ -737,7 +737,7 @@ export function CyberMultiSelect<T extends string = string>({
                             ? 'bg-zinc-200 dark:bg-zinc-900 text-[#0ea5e9] font-bold border border-[#0ea5e9]/40'
                             : 'bg-cyber-cyan/15 text-cyber-cyan font-bold border border-cyber-cyan/30'
                           : variant === 'hardware'
-                          ? 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100'
+                          ? 'text-zinc-600 dark:text-tertiary hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100'
                           : 'text-cyber-muted hover:bg-cyber-bg hover:text-cyber-text'
                       }`}
                     >

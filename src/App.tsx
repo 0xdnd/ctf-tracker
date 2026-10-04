@@ -13,6 +13,7 @@ import { BackToTopButton } from './components/common/BackToTopButton';
 import { ScrollProvider, useScrollActions } from './context/ScrollContext';
 import { TrackerView } from './components/tracker/TrackerView';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
+import { ViewSkeleton } from './components/common/Skeleton';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
 import { useCtfStore, mergeMachinesWithCatalog, UiScale } from './store/useCtfStore';
@@ -52,21 +53,7 @@ const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m 
 const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
 const ThemeShowcaseDemo = lazy(() => import('./components/common/ThemeShowcaseDemo').then(m => ({ default: m.ThemeShowcaseDemo })));
 
-const CyberRouteLoader: React.FC = () => (
-  <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 font-mono">
-    <div className="relative flex items-center justify-center">
-      <div className="w-10 h-10 rounded border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
-    </div>
-    <div className="text-center space-y-1">
-      <div className="text-xs tracking-wider text-slate-700 dark:text-slate-300 font-semibold uppercase">
-        Loading module...
-      </div>
-      <div className="text-[10px] text-slate-500 tracking-wider">
-        Local offline datastore
-      </div>
-    </div>
-  </div>
-);
+const CyberRouteLoader: React.FC = () => <ViewSkeleton />;
 
 const TimerController: React.FC = () => {
   const isTimerRunning = useCtfStore((s) => s.isTimerRunning);
@@ -477,7 +464,7 @@ const MainAppContent: React.FC = () => {
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               className="relative z-10"
             >
-              <RouteErrorBoundary>
+              <RouteErrorBoundary resetKey={location.pathname}>
                 <Suspense fallback={<CyberRouteLoader />}>
                   <Routes location={location} key={location.pathname}>
                     <Route path="/" element={<Navigate to="/tracker" replace />} />

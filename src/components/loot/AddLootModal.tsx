@@ -172,7 +172,7 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
               {/* Secret Textarea */}
               <div>
                 <label className="block text-[11px] font-medium text-text-secondary mb-1">
-                  SECRET VALUE / KEY <span className="text-rose-500">*</span>
+                  SECRET VALUE / KEY <span className="text-callout-danger-fg">*</span>
                 </label>
                 <textarea
                   required

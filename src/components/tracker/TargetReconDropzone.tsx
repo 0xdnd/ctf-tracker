@@ -17,6 +17,7 @@ import {
 import { Machine, TargetServicePort } from '../../types';
 import { detectAndParseScan, ScanImportResult, ParsedPort } from '../../utils/scanParserUtils';
 import { playCyberSound } from '../../utils/helpers';
+import { confirmAction } from '../../store/useConfirmStore';
 
 interface TargetReconDropzoneProps {
   machine: Machine;
@@ -151,7 +152,14 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
     setTimeout(() => setCopiedTool(null), 1800);
   };
 
-  const handleClearScan = () => {
+  const handleClearScan = async () => {
+    const ok = await confirmAction({
+      title: 'Clear scan data?',
+      body: 'Discovered services, open ports, and the raw scan output for this target will be removed.',
+      confirmLabel: 'Clear scan',
+      tone: 'danger',
+    });
+    if (!ok) return;
     onUpdateMachine(machine.id, {
       services: [],
       openPorts: [],
@@ -171,14 +179,14 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
       <div className="p-4 sm:p-5 rounded-xl border border-cyber-border bg-cyber-bg/90 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan">
+            <div className="w-8 h-8 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-callout-info-fg">
               <Network className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 RECON ARTIFACT DROPZONE & SERVICE DISCOVERY
                 {activeServices.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-callout-success-fg border border-emerald-500/40">
                     {activeServices.length} PORTS ACTIVE
                   </span>
                 )}
@@ -193,7 +201,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             <button
               type="button"
               onClick={() => setIsPasteMode(!isPasteMode)}
-              className="px-3 py-1.5 rounded-lg border border-cyber-border bg-cyber-card text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-white hover:border-cyber-cyan transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg border border-cyber-border bg-cyber-card text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:border-cyber-cyan transition-colors flex items-center gap-1.5"
             >
               <Terminal className="w-3.5 h-3.5" />
               <span>{isPasteMode ? 'Switch to Dropzone' : 'Paste Scan Output'}</span>
@@ -202,7 +210,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             <button
               type="button"
               onClick={handleLoadSample}
-              className="px-3 py-1.5 rounded-lg border border-cyber-purple/40 bg-cyber-purple/10 text-xs font-semibold text-purple-700 dark:text-purple-300 hover:bg-cyber-purple/20 transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg border border-cyber-purple/40 bg-cyber-purple/10 text-xs font-semibold text-callout-tip-fg hover:bg-cyber-purple/20 transition-colors flex items-center gap-1.5"
               title="Load sample Nmap scan for demonstration"
             >
               <Sparkles className="w-3.5 h-3.5 text-cyber-purple" />
@@ -213,7 +221,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               <button
                 type="button"
                 onClick={handleClearScan}
-                className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-callout-danger-fg hover:bg-rose-500/20 transition-colors flex items-center gap-1.5"
                 title="Clear current scan services"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -246,7 +254,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               onChange={handleFileInputChange}
               className="hidden"
             />
-            <div className="w-12 h-12 rounded-full bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan mb-3">
+            <div className="w-12 h-12 rounded-full bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-callout-info-fg mb-3">
               <Upload className="w-6 h-6 animate-pulse" />
             </div>
             <p className="text-xs font-bold text-slate-800 dark:text-white mb-1">
@@ -269,7 +277,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               <button
                 type="button"
                 onClick={() => setPastedText('')}
-                className="px-3 py-1.5 rounded-lg border border-cyber-border text-xs text-cyber-muted hover:text-white transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                className="px-3 py-1.5 rounded-lg border border-cyber-border text-xs text-cyber-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               >
                 Clear Text
               </button>
@@ -277,7 +285,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                 type="button"
                 onClick={() => handleProcessScanText(pastedText)}
                 disabled={!pastedText.trim()}
-                className="px-4 py-1.5 rounded-lg bg-cyber-cyan text-black font-bold text-xs hover:bg-cyan-400 transition-[transform,background-color,border-color,color] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-4 py-1.5 rounded-lg bg-accent text-on-accent font-bold text-xs hover:bg-accent-hover transition-[transform,background-color,border-color,color] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>Parse & Apply Scan</span>
@@ -287,8 +295,8 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
         )}
 
         {appliedSuccess && (
-          <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-callout-success-fg text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-callout-success-fg" />
             <span>Scan successfully analyzed! Ports, services, and attack vectors applied to target.</span>
           </div>
         )}
@@ -299,7 +307,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
         <div className="rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-sm">
           <div className="px-4 py-3 border-b border-cyber-border bg-cyber-bg/60 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-white">
-              <ShieldAlert className="w-4 h-4 text-cyber-cyan" />
+              <ShieldAlert className="w-4 h-4 text-callout-info-fg" />
               <span>DISCOVERED SERVICES & EXPLOIT INTELLIGENCE ({activeServices.length})</span>
             </div>
             {machine.scanSummary && (
@@ -324,11 +332,11 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               <tbody className="divide-y divide-cyber-border/40">
                 {activeServices.map((svc) => (
                   <tr key={`${svc.port}-${svc.protocol}`} className="hover:bg-cyber-bg/50 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-cyber-cyan whitespace-nowrap">
+                    <td className="py-2.5 px-3 font-bold text-callout-info-fg whitespace-nowrap">
                       {svc.port}/{svc.protocol}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-callout-success-fg border border-emerald-500/30">
                         {svc.state}
                       </span>
                     </td>
@@ -340,7 +348,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                     </td>
                     <td className="py-2.5 px-3">
                       {svc.cveNotes ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/40 inline-flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-callout-danger-fg border border-rose-500/40 inline-flex items-center gap-1">
                           <AlertTriangle className="w-2.5 h-2.5" />
                           {svc.cveNotes}
                         </span>
@@ -356,7 +364,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                               key={tool}
                               type="button"
                               onClick={() => handleCopyCommand(tool)}
-                              className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border/80 text-[10px] font-mono text-cyber-muted hover:text-cyber-cyan hover:border-cyber-cyan transition-colors flex items-center gap-1"
+                              className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border/80 text-[10px] font-mono text-cyber-muted hover:text-callout-info-fg hover:border-cyber-cyan transition-colors flex items-center gap-1"
                               title={`Click to copy: ${tool}`}
                             >
                               <span>{tool.split(' ')[0]}</span>

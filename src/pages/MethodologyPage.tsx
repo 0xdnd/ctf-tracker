@@ -213,12 +213,12 @@ export const MethodologyPage: React.FC = () => {
   // Branch icons map
   const getBranchIcon = (branch: ServiceBranchType) => {
     switch (branch) {
-      case 'web': return <Globe className="w-3.5 h-3.5 text-cyber-cyan" />;
+      case 'web': return <Globe className="w-3.5 h-3.5 text-callout-info-fg" />;
       case 'file_sharing': return <FolderLock className="w-3.5 h-3.5 text-cyber-emerald" />;
       case 'remote_access': return <Key className="w-3.5 h-3.5 text-cyber-amber" />;
       case 'database': return <Database className="w-3.5 h-3.5 text-cyber-purple" />;
-      case 'network_mgmt': return <Network className="w-3.5 h-3.5 text-cyber-cyan" />;
-      case 'linux_privesc': return <Cpu className="w-3.5 h-3.5 text-cyber-crimson" />;
+      case 'network_mgmt': return <Network className="w-3.5 h-3.5 text-callout-info-fg" />;
+      case 'linux_privesc': return <Cpu className="w-3.5 h-3.5 text-callout-danger-fg" />;
       case 'windows_privesc': return <Layers className="w-3.5 h-3.5 text-callout-info-fg" />;
       default: return <Compass className="w-3.5 h-3.5 text-muted" />;
     }
@@ -435,7 +435,7 @@ export const MethodologyPage: React.FC = () => {
             value={targetContextId}
             onChange={setTargetContextId}
             options={[
-              { value: 'universal', label: 'Universal Reference (All Branches & Phases)', icon: <Globe className="w-3.5 h-3.5 text-cyber-cyan" /> },
+              { value: 'universal', label: 'Universal Reference (All Branches & Phases)', icon: <Globe className="w-3.5 h-3.5 text-callout-info-fg" /> },
               ...machines.map((m) => ({
                 value: m.id,
                 label: `${m.name} (${m.platform})`,

@@ -64,7 +64,7 @@ const LANES: LaneConfig[] = [
     title: 'BACKLOG',
     subtitle: 'Queued & Scoped Labs',
     accentColor: '#71717A',
-    badgeClass: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800',
+    badgeClass: 'text-tertiary bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800',
     borderClass: 'border-zinc-200 dark:border-zinc-800',
     icon: Layers,
     emptyTitle: 'BACKLOG EMPTY',
@@ -88,7 +88,7 @@ const LANES: LaneConfig[] = [
     title: 'FOOTHOLD',
     subtitle: 'User Shell / Initial Access',
     accentColor: '#f59e0b',
-    badgeClass: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30',
+    badgeClass: 'text-callout-warn-fg bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30',
     borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-amber-500/30',
     icon: Key,
     emptyTitle: 'NO ACTIVE FOOTHOLDS',
@@ -100,7 +100,7 @@ const LANES: LaneConfig[] = [
     title: 'SYSTEM PWNED',
     subtitle: 'Root / System Flag Captured',
     accentColor: '#10b981',
-    badgeClass: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30',
+    badgeClass: 'text-callout-success-fg bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30',
     borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/30',
     icon: Zap,
     emptyTitle: 'NO PENDING ROOT PWNS',
@@ -112,7 +112,7 @@ const LANES: LaneConfig[] = [
     title: 'COMPLETED',
     subtitle: 'Writeup Archived & Retired',
     accentColor: '#8b5cf6',
-    badgeClass: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30',
+    badgeClass: 'text-callout-tip-fg bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30',
     borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-purple-500/30',
     icon: Award,
     emptyTitle: 'NO ARCHIVED LABS',
@@ -147,7 +147,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
   const hasUser = Boolean(m.userPwnedAt || m.userFlag);
   const hasRoot = Boolean(m.rootPwnedAt || m.rootFlag);
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({
     id: m.id,
     data: { machine: m },
   });
@@ -162,7 +162,6 @@ const KanbanCard = React.memo<KanbanCardProps>(({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
       {...listeners}
       data-testid="kanban-card"
       onClick={() => onSelect(m.id)}
@@ -183,9 +182,16 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       {/* Machine Name & IP */}
       <div className="flex items-start justify-between gap-2 mt-1">
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-sm leading-snug font-sans truncate transition-colors text-primary group-hover:text-accent">
+          {/* Primary keyboard/drag activator: the card wrapper stays non-interactive so
+              sibling controls are not nested inside a role="button" element. */}
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            {...attributes}
+            className="block w-full text-left bg-transparent p-0 border-0 font-semibold text-sm leading-snug font-sans truncate transition-colors text-primary group-hover:text-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xs"
+          >
             {m.name}
-          </div>
+          </button>
           <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" variant="hardware" className="mt-1 font-mono text-[11px] tabular-nums" />
         </div>
 
@@ -210,7 +216,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           <span
             className={`flex items-center gap-1 px-1.5 py-0.5 rounded-xs border text-[10px] font-bold font-mono transition-colors tabular-nums ${
               hasUser
-                ? 'bg-amber-500/10 border-amber-500/50 text-amber-600 dark:text-amber-400 shadow-xs'
+                ? 'bg-amber-500/10 border-amber-500/50 text-callout-warn-fg shadow-xs'
                 : 'bg-surface-sunken border-subtle text-muted'
             }`}
             title={hasUser ? 'User Flag Captured (Initial Foothold)' : 'User Flag Pending (Foothold required)'}
@@ -221,7 +227,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           <span
             className={`flex items-center gap-1 px-1.5 py-0.5 rounded-xs border text-[10px] font-bold font-mono transition-colors tabular-nums ${
               hasRoot
-                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                ? 'bg-emerald-500/10 border-emerald-500/50 text-callout-success-fg shadow-xs'
                 : 'bg-surface-sunken border-subtle text-muted'
             }`}
             title={hasRoot ? 'Root / System Flag Captured (PrivEsc complete)' : 'Root Flag Pending (Privilege escalation required)'}
@@ -593,7 +599,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
                 className={`px-2.5 py-1.5 rounded-[3px] text-xs font-mono font-bold whitespace-nowrap flex items-center gap-1.5 transition-colors shadow-none active:scale-[0.97] machined-edge cursor-pointer ${
                   isSelected
                     ? 'bg-zinc-900 border border-[#0ea5e9] text-[#0ea5e9] dark:bg-zinc-900 dark:border-[#0ea5e9] dark:text-[#0ea5e9]'
-                    : 'bg-white dark:bg-zinc-900/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
+                    : 'bg-white dark:bg-zinc-900/80 text-tertiary border border-zinc-200 dark:border-zinc-800'
                 }`}
               >
                 <span>{lane.title}</span>

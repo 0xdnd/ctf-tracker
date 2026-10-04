@@ -353,7 +353,7 @@ export const ReconAutomationModal: React.FC = () => {
 
           <button
             onClick={() => setReconAutomationModalOpen(false)}
-            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-white hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -380,8 +380,8 @@ export const ReconAutomationModal: React.FC = () => {
             />
 
             {isTargetFrozen && (
-              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-amber-950/40 border border-amber-600/50 text-amber-300 font-semibold">
-                <Lock className="w-3 h-3 text-amber-400" />
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-amber-950/40 border border-amber-600/50 text-callout-warn-fg font-semibold">
+                <Lock className="w-3 h-3 text-callout-warn-fg" />
                 <span>SOLVE FROZEN (IMMUTABLE)</span>
               </span>
             )}
@@ -422,7 +422,7 @@ export const ReconAutomationModal: React.FC = () => {
             className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
               activeTab === 'parser'
                 ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/5'
-                : 'border-transparent text-cyber-muted hover:text-white'
+                : 'border-transparent text-cyber-muted hover:text-primary'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
@@ -439,7 +439,7 @@ export const ReconAutomationModal: React.FC = () => {
             className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
               activeTab === 'payloads'
                 ? 'border-cyber-emerald text-cyber-emerald bg-cyber-emerald/5'
-                : 'border-transparent text-cyber-muted hover:text-white'
+                : 'border-transparent text-cyber-muted hover:text-primary'
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
@@ -453,8 +453,8 @@ export const ReconAutomationModal: React.FC = () => {
             onClick={() => setActiveTab('rules')}
             className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
               activeTab === 'rules'
-                ? 'border-purple-400 text-purple-400 bg-purple-950/20'
-                : 'border-transparent text-cyber-muted hover:text-white'
+                ? 'border-purple-400 text-callout-tip-fg bg-purple-950/20'
+                : 'border-transparent text-cyber-muted hover:text-primary'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -479,19 +479,19 @@ export const ReconAutomationModal: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_WINDOWS_AD_SCAN)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-blue-400 hover:border-blue-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-callout-info-fg hover:border-blue-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Windows AD
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_NMAP_XML)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-emerald-400 hover:border-emerald-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-callout-success-fg hover:border-emerald-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <FileCode className="w-3 h-3" /> Nmap XML
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_RUSTSCAN)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-orange-400 hover:border-orange-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-callout-warn-fg hover:border-orange-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Rustscan
                   </button>
@@ -565,11 +565,11 @@ export const ReconAutomationModal: React.FC = () => {
                     <span className="text-cyber-muted font-bold">DETECTED FORMAT:</span>
                     <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
                       parsedResults.format === 'nmap-xml'
-                        ? 'bg-emerald-950/60 border border-emerald-500/60 text-emerald-400'
+                        ? 'bg-emerald-950/60 border border-emerald-500/60 text-callout-success-fg'
                         : parsedResults.format === 'rustscan'
-                        ? 'bg-orange-950/60 border border-orange-500/60 text-orange-400'
+                        ? 'bg-orange-950/60 border border-orange-500/60 text-callout-warn-fg'
                         : parsedResults.format === 'gnmap'
-                        ? 'bg-purple-950/60 border border-purple-500/60 text-purple-400'
+                        ? 'bg-purple-950/60 border border-purple-500/60 text-callout-tip-fg'
                         : 'bg-cyber-cyan/15 border border-cyber-cyan/50 text-cyber-cyan'
                     }`}>
                       {parsedResults.format}
@@ -603,12 +603,12 @@ export const ReconAutomationModal: React.FC = () => {
               {/* Frozen Solve Banner Warning */}
               {isTargetFrozen && parsedResults && (
                 <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/50 flex items-start gap-3 text-xs">
-                  <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-callout-warn-fg flex-shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <div className="font-bold text-amber-300">
+                    <div className="font-bold text-callout-warn-fg">
                       TARGET IS COMPLETED // MODIFICATION FROZEN
                     </div>
-                    <p className="text-amber-200/80 leading-relaxed text-[11px]">
+                    <p className="text-callout-warn-fg leading-relaxed text-[11px]">
                       Target <strong className="text-white font-semibold">{targetMachine?.name}</strong> is one of Daniel Dayan's 63 completed solves. 
                       Solve statuses, flags, and checklist milestones are strictly frozen to preserve operational integrity. 
                       To apply this scan, please select an in-progress or backlog target from the dropdown above.
@@ -651,7 +651,7 @@ export const ReconAutomationModal: React.FC = () => {
                     >
                       {isTargetFrozen ? (
                         <>
-                          <Lock className="w-3.5 h-3.5 text-gray-400" />
+                          <Lock className="w-3.5 h-3.5 text-tertiary" />
                           <span>FROZEN // SOLVE COMPLETED</span>
                         </>
                       ) : appliedSuccess ? (
@@ -731,12 +731,12 @@ export const ReconAutomationModal: React.FC = () => {
                       value={globalVars.lhost}
                       onChange={(e) => setGlobalVars({ lhost: e.target.value })}
                       placeholder="10.10.14.X"
-                      className="w-28 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-emerald-700 dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
+                      className="w-28 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-callout-success-fg dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
                     />
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-500 dark:text-cyber-muted text-[10px] uppercase font-bold">LPORT:</span>
+                    <span className="text-tertiary dark:text-cyber-muted text-[10px] uppercase font-bold">LPORT:</span>
                     <input
                       id="recon-lport-input"
                       name="recon-lport"
@@ -757,12 +757,12 @@ export const ReconAutomationModal: React.FC = () => {
                         }
                       }}
                       placeholder="4444"
-                      className="w-16 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-emerald-700 dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
+                      className="w-16 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-callout-success-fg dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
                     />
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-500 dark:text-cyber-muted text-[10px] uppercase font-bold">TARGET IP:</span>
+                    <span className="text-tertiary dark:text-cyber-muted text-[10px] uppercase font-bold">TARGET IP:</span>
                     <span className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-cyber-cyan font-mono font-bold text-xs">
                       {payloadTargetIp}
                     </span>
@@ -800,7 +800,7 @@ export const ReconAutomationModal: React.FC = () => {
                         className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-[transform,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.98] ${
                           isSelected
                             ? 'bg-cyber-emerald text-black shadow-glow-emerald/30 border border-cyber-emerald'
-                            : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-borderGlow'
+                            : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary hover:border-cyber-borderGlow'
                         }`}
                       >
                         <span>{enc.badge}</span>
@@ -821,7 +821,7 @@ export const ReconAutomationModal: React.FC = () => {
                       className={`px-3 py-1 rounded-md text-xs font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                         payloadCategory === cat
                           ? 'bg-cyber-cyan/15 border border-cyber-cyan text-cyber-cyan shadow-sm'
-                          : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white'
+                          : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary'
                       }`}
                     >
                       {cat === 'all' && 'ALL PAYLOADS'}
@@ -869,10 +869,10 @@ export const ReconAutomationModal: React.FC = () => {
                           </span>
                           <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
                             item.os === 'Windows'
-                              ? 'text-blue-400 bg-blue-950/40 border border-blue-800/40'
+                              ? 'text-callout-info-fg bg-blue-950/40 border border-blue-800/40'
                               : item.os === 'Linux'
                               ? 'text-cyber-emerald bg-emerald-950/40 border border-emerald-800/40'
-                              : 'text-purple-400 bg-purple-950/40 border border-purple-800/40'
+                              : 'text-callout-tip-fg bg-purple-950/40 border border-purple-800/40'
                           }`}>
                             {item.os}
                           </span>
@@ -881,7 +881,7 @@ export const ReconAutomationModal: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => copyPayload(rawCmd, item.id + '-raw')}
-                            className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-white hover:border-cyber-cyan active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
+                            className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary hover:border-cyber-cyan active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
                           >
                             {copiedPayloadKey === item.id + '-raw' ? (
                               <>

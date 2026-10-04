@@ -422,7 +422,7 @@ export function classifyMachine(m: Machine): ClassificationResult {
       primary: 'Target Host',
       categories: [],
       domains: [],
-      badgeColor: 'bg-gray-500/15 text-gray-400 border-gray-500/30',
+      badgeColor: 'bg-gray-500/15 text-tertiary border-gray-500/30',
       isAD: false,
     };
   }
@@ -492,7 +492,7 @@ export function classifyMachine(m: Machine): ClassificationResult {
     badgeColor = highestPriorityDef.badgeColor;
   } else {
     primary = `${m.os || 'Target'} Host`;
-    badgeColor = 'bg-slate-100 dark:bg-gray-500/25 text-slate-800 dark:text-gray-400 border-slate-300 dark:border-gray-500/30';
+    badgeColor = 'bg-slate-100 dark:bg-gray-500/25 text-slate-800 dark:text-tertiary border-slate-300 dark:border-gray-500/30';
   }
 
   const result: ClassificationResult = {

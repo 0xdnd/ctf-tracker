@@ -19,6 +19,7 @@ import {
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
+import { confirmAction } from '../../store/useConfirmStore';
 import { loadVaultFromIndexedDb, saveVaultToIndexedDb } from '../../utils/indexedDbVault';
 import { parseObsidianVaultZip, VaultZipImportProgress } from '../../utils/zipVaultImporter';
 import { parseObsidianVaultDirectory, extractFilesFromDataTransfer } from '../../utils/directoryVaultImporter';
@@ -51,7 +52,6 @@ export const NotesImportModal: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [zipProgress, setZipProgress] = useState<VaultZipImportProgress | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [confirmWipe, setConfirmWipe] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +62,6 @@ export const NotesImportModal: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
     setNotesImportModalOpen(false);
     setFeedback(null);
-    setConfirmWipe(false);
     setZipProgress(null);
     setIsDragging(false);
   };
@@ -333,14 +332,16 @@ export const NotesImportModal: React.FC = () => {
   };
 
   const handleWipeVault = async () => {
-    if (!confirmWipe) {
-      setConfirmWipe(true);
-      return;
-    }
+    const ok = await confirmAction({
+      title: 'Wipe local notes vault?',
+      body: 'All imported notes will be permanently removed from IndexedDB and memory.',
+      confirmLabel: 'Wipe vault',
+      tone: 'danger',
+    });
+    if (!ok) return;
 
     await clearUserNotes();
     if (soundEnabled) playCyberSound('root');
-    setConfirmWipe(false);
     setFeedback({ type: 'success', message: 'Local notes vault completely wiped from IndexedDB and memory.' });
   };
 
@@ -384,17 +385,17 @@ export const NotesImportModal: React.FC = () => {
               </div>
             </div>
 
-            <button 
+            <button aria-label="Close notes import" 
               onClick={handleClose}
-              className="p-1.5 rounded-lg text-cyber-muted hover:text-white hover:bg-cyber-card transition-colors"
+              className="p-1.5 rounded-lg text-cyber-muted hover:text-primary hover:bg-cyber-card transition-colors"
             >
               <X size={18} />
             </button>
           </div>
 
           {/* Privacy Banner */}
-          <div className="px-6 py-2.5 bg-emerald-950/30 border-b border-emerald-500/20 flex items-center gap-2.5 text-xs text-emerald-300">
-            <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+          <div className="px-6 py-2.5 bg-emerald-950/30 border-b border-emerald-500/20 flex items-center gap-2.5 text-xs text-callout-success-fg">
+            <ShieldCheck size={16} className="text-callout-success-fg shrink-0" />
             <span>
               <strong>Zero-Leak Architecture:</strong> Your notes are never transmitted over the internet or uploaded to GitHub. They reside exclusively in your local browser sandbox.
             </span>
@@ -407,7 +408,7 @@ export const NotesImportModal: React.FC = () => {
               <div>
                 <div className="text-sm font-semibold text-white font-mono flex items-center gap-2">
                   <span>Vault Status:</span>
-                  <span className={userNotes.length > 0 ? 'text-emerald-400' : 'text-amber-400'}>
+                  <span className={userNotes.length > 0 ? 'text-callout-success-fg' : 'text-callout-warn-fg'}>
                     {userNotes.length > 0 ? `${userNotes.length} Notes Loaded (${totalCommands.toLocaleString()} Cmds)` : 'Empty (No Notes Imported)'}
                   </span>
                 </div>
@@ -420,14 +421,10 @@ export const NotesImportModal: React.FC = () => {
             {userNotes.length > 0 && (
               <button
                 onClick={handleWipeVault}
-                className={`px-3 py-1.5 text-xs font-mono rounded border transition-colors flex items-center gap-1.5 ${
-                  confirmWipe 
-                    ? 'bg-rose-600 text-white border-rose-500 font-bold animate-pulse' 
-                    : 'bg-rose-950/40 text-rose-300 border-rose-800/60 hover:bg-rose-900/60'
-                }`}
+                className="px-3 py-1.5 text-xs font-mono rounded border transition-colors flex items-center gap-1.5 bg-rose-950/40 text-callout-danger-fg border-rose-800/60 hover:bg-rose-900/60"
               >
                 <Trash2 size={13} />
-                <span>{confirmWipe ? 'CONFIRM WIPE?' : 'Wipe Vault'}</span>
+                <span>Wipe Vault</span>
               </button>
             )}
           </div>
@@ -439,7 +436,7 @@ export const NotesImportModal: React.FC = () => {
               className={`pb-2 px-3 text-xs font-mono font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
                 activeTab === 'upload'
                   ? 'text-cyber-cyan border-cyber-cyan'
-                  : 'text-cyber-muted border-transparent hover:text-white'
+                  : 'text-cyber-muted border-transparent hover:text-primary'
               }`}
             >
               <Upload size={14} />
@@ -450,7 +447,7 @@ export const NotesImportModal: React.FC = () => {
               className={`pb-2 px-3 text-xs font-mono font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
                 activeTab === 'paste'
                   ? 'text-cyber-cyan border-cyber-cyan'
-                  : 'text-cyber-muted border-transparent hover:text-white'
+                  : 'text-cyber-muted border-transparent hover:text-primary'
               }`}
             >
               <Terminal size={14} />
@@ -461,7 +458,7 @@ export const NotesImportModal: React.FC = () => {
               className={`pb-2 px-3 text-xs font-mono font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
                 activeTab === 'export'
                   ? 'text-cyber-cyan border-cyber-cyan'
-                  : 'text-cyber-muted border-transparent hover:text-white'
+                  : 'text-cyber-muted border-transparent hover:text-primary'
               }`}
             >
               <Download size={14} />
@@ -503,13 +500,13 @@ export const NotesImportModal: React.FC = () => {
             {feedback && (
               <div className={`p-3 rounded-lg border text-xs font-mono flex items-start gap-2.5 ${
                 feedback.type === 'success'
-                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                  : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-callout-success-fg'
+                  : 'bg-rose-950/40 border-rose-500/40 text-callout-danger-fg'
               }`}>
                 {feedback.type === 'success' ? (
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <CheckCircle2 size={16} className="text-callout-success-fg shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+                  <AlertCircle size={16} className="text-callout-danger-fg shrink-0 mt-0.5" />
                 )}
                 <span>{feedback.message}</span>
               </div>
@@ -536,7 +533,7 @@ export const NotesImportModal: React.FC = () => {
                 >
                   <div className="max-w-md mx-auto space-y-3">
                     <div className="flex items-center justify-center gap-3">
-                      <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                      <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-callout-tip-fg">
                         <FolderOpen size={28} />
                       </div>
                       <div className="p-3 rounded-xl bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan">
@@ -569,7 +566,7 @@ export const NotesImportModal: React.FC = () => {
                         type="button"
                         onClick={() => !isProcessing && fileInputRef.current?.click()}
                         disabled={isProcessing}
-                        className="py-2.5 px-3 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-cyan/50 text-cyber-cyan hover:text-white font-mono font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                        className="py-2.5 px-3 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-cyan/50 text-cyber-cyan hover:text-primary font-mono font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <Archive size={16} />
                         <span>Select .ZIP / .JSON</span>
@@ -584,13 +581,13 @@ export const NotesImportModal: React.FC = () => {
                         disabled={isProcessing}
                         className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-purple-700 via-indigo-600 to-cyan-600 hover:from-purple-600 hover:to-cyan-500 text-white font-mono font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer border border-purple-400/40"
                       >
-                        <Sparkles size={16} className="text-yellow-300 animate-pulse" />
+                        <Sparkles size={16} className="text-callout-warn-fg animate-pulse" />
                         <span>⚡ 1-Click Load Desktop CPTS Field Manual (404 Notes)</span>
                       </button>
                     </div>
 
-                    <div className="text-[11px] text-slate-500 pt-1">
-                      Works directly with <code className="text-purple-300 font-bold">CPTS Field Manual</code> folder or <code className="text-purple-300 font-bold">CPTS-Field-Manual.zip</code> on Desktop.
+                    <div className="text-[11px] text-tertiary pt-1">
+                      Works directly with <code className="text-callout-tip-fg font-bold">CPTS Field Manual</code> folder or <code className="text-callout-tip-fg font-bold">CPTS-Field-Manual.zip</code> on Desktop.
                     </div>
                   </div>
 
@@ -627,7 +624,7 @@ export const NotesImportModal: React.FC = () => {
                     <span>How local directory import works:</span>
                   </div>
                   <ul className="list-disc list-inside space-y-1 text-slate-300">
-                    <li><strong>Direct Folder:</strong> Click <strong className="text-purple-300">Select Folder / Dir</strong> to import your notes folder directly from disk without needing to zip it first.</li>
+                    <li><strong>Direct Folder:</strong> Click <strong className="text-callout-tip-fg">Select Folder / Dir</strong> to import your notes folder directly from disk without needing to zip it first.</li>
                     <li><strong>Nested Sub-directories:</strong> Preserves arbitrary folder depths (00 Methodology, 01 Recon, etc.) with automatic category grouping.</li>
                     <li><strong>Zero-Egress:</strong> All markdown notes, frontmatter, and commands are parsed in-browser and cached in your private IndexedDB.</li>
                     <li><strong>Persistence:</strong> Stored locally on this browser and retained across reloads.</li>

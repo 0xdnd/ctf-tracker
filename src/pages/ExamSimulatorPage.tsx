@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { confirmAction } from '../store/useConfirmStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   GraduationCap, 
@@ -149,6 +150,16 @@ export const ExamSimulatorPage: React.FC = () => {
   const passingStatus = getPassingStatus();
   const currentRemaining = getRemainingSeconds();
   const trackConfig = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
+
+  const handleResetExam = async () => {
+    const ok = await confirmAction({
+      title: 'Reset this exam session?',
+      body: 'Timer, flags, screenshots and notes for the current simulation will be cleared. This cannot be undone.',
+      confirmLabel: 'Reset exam',
+      tone: 'danger',
+    });
+    if (ok) resetExam(track);
+  };
 
   // Dynamic Pacing Telemetry
   const pacing = useMemo(() => {
@@ -671,15 +682,17 @@ export const ExamSimulatorPage: React.FC = () => {
                         : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
                     }`}
                     title={status === 'running' ? 'Pause Exam' : 'Resume Exam'}
+                    aria-label={status === 'running' ? 'Pause exam' : 'Resume exam'}
                   >
                     {status === 'running' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   </button>
                   <button
                     type="button"
                     data-testid="exam-timer-reset-btn"
-                    onClick={() => resetExam(track)}
+                    onClick={handleResetExam}
                     className="p-2 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle text-muted hover:text-primary active:scale-[0.97] transition shadow-xs machined-edge"
                     title="Reset Exam Session"
+                    aria-label="Reset exam session"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
@@ -912,7 +925,7 @@ export const ExamSimulatorPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => resetExam(track)}
+              onClick={handleResetExam}
               className="px-5 py-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover text-secondary border border-subtle font-semibold text-xs transition active:scale-[0.97] shadow-xs machined-edge"
             >
               Start New Simulation
@@ -963,7 +976,7 @@ export const ExamSimulatorPage: React.FC = () => {
             <span className="text-xs font-semibold text-primary px-2 py-0.5 rounded bg-surface-sunken border border-subtle font-mono tabular-nums">
               {box.userPoints + box.rootPoints} PTS TOTAL
             </span>
-            <button
+            <button aria-label={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
               type="button"
               onClick={() => setExpandedBoxId(isExpanded ? null : box.id)}
               className="p-1 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary transition border border-subtle active:scale-[0.97] machined-edge"

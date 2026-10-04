@@ -34,6 +34,7 @@ import { LootTimeline } from '../components/loot/LootTimeline';
 import { AddLootModal } from '../components/loot/AddLootModal';
 import { ExportLootDrawer } from '../components/loot/ExportLootDrawer';
 import { MODAL_ASYMMETRIC_TRANSITION } from '../utils/motionTokens';
+import { confirmAction } from '../store/useConfirmStore';
 
 export type EvidenceCategory = 'all' | 'flag' | 'password' | 'hash' | 'ssh_key' | 'token' | 'service';
 
@@ -298,7 +299,14 @@ export const EvidenceVaultPage: React.FC = () => {
     setCustomLoot((prev) => [newItem, ...prev]);
   }, []);
 
-  const handleDeleteCustomLoot = useCallback((id: string) => {
+  const handleDeleteCustomLoot = useCallback(async (id: string) => {
+    const ok = await confirmAction({
+      title: 'Delete this custom loot entry?',
+      body: 'The entry will be permanently removed from the vault.',
+      confirmLabel: 'Delete entry',
+      tone: 'danger',
+    });
+    if (!ok) return;
     setCustomLoot((prev) => prev.filter((i) => i.id !== id));
     if (soundEnabled) playCyberSound('toggle');
   }, [soundEnabled]);
@@ -350,19 +358,19 @@ export const EvidenceVaultPage: React.FC = () => {
   const getCategoryBadgeClass = (category: EvidenceCategory) => {
     switch (category) {
       case 'flag':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-cyber-emerald border-emerald-500/30';
+        return 'bg-emerald-500/10 text-callout-success-fg border-emerald-500/30';
       case 'password':
-        return 'bg-amber-500/10 text-amber-600 dark:text-cyber-amber border-amber-500/30';
+        return 'bg-amber-500/10 text-callout-warn-fg border-amber-500/30';
       case 'hash':
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+        return 'bg-purple-500/10 text-callout-tip-fg border-purple-500/30';
       case 'ssh_key':
-        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyber-cyan border-cyan-500/30';
+        return 'bg-cyan-500/10 text-callout-info-fg border-cyan-500/30';
       case 'token':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30';
+        return 'bg-blue-500/10 text-callout-info-fg border-blue-500/30';
       case 'service':
-        return 'bg-slate-500/10 text-slate-600 dark:text-zinc-400 border-slate-500/30';
+        return 'bg-slate-500/10 text-tertiary border-slate-500/30';
       default:
-        return 'bg-slate-500/10 text-slate-600 dark:text-zinc-400 border-slate-500/30';
+        return 'bg-slate-500/10 text-tertiary border-slate-500/30';
     }
   };
 
@@ -372,17 +380,17 @@ export const EvidenceVaultPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-subtle pb-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-cyber-amber border border-amber-500/30">
+            <div className="p-2 rounded-lg bg-amber-500/10 text-callout-warn-fg border border-amber-500/30">
               <Database className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                 <span>EVIDENCE & LOOT VAULT</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/30 font-bold font-mono tabular-nums">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-cyber-cyan/15 text-callout-info-fg border border-cyber-cyan/30 font-bold font-mono tabular-nums">
                   {metrics.total} ARTIFACTS
                 </span>
               </h1>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 font-sans">
+              <p className="text-xs text-tertiary mt-0.5 font-sans">
                 Centralized credential locker, captured flags, NT/Kerberos hashes, SSH keys, and target recon intelligence.
               </p>
             </div>
@@ -402,7 +410,7 @@ export const EvidenceVaultPage: React.FC = () => {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-[0.97] cursor-pointer ${
                 viewMode === 'table'
                   ? 'bg-cyber-emerald text-black shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
               }`}
             >
               <Database className="w-3.5 h-3.5" />
@@ -417,7 +425,7 @@ export const EvidenceVaultPage: React.FC = () => {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-[0.97] cursor-pointer ${
                 viewMode === 'timeline'
                   ? 'bg-cyber-emerald text-black shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -431,7 +439,7 @@ export const EvidenceVaultPage: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-subtle text-slate-700 dark:text-zinc-300 font-bold text-xs transition-colors cursor-pointer shadow-xs active:scale-[0.97] machined-edge"
             title={allRevealed ? 'Mask all secrets' : 'Reveal all secrets'}
           >
-            {allRevealed ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5 text-amber-500" />}
+            {allRevealed ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5 text-callout-warn-fg" />}
             <span>{allRevealed ? 'MASK ALL' : 'REVEAL ALL'}</span>
           </button>
 
@@ -441,7 +449,7 @@ export const EvidenceVaultPage: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-subtle text-slate-700 dark:text-zinc-300 font-bold text-xs transition-colors cursor-pointer shadow-xs active:scale-[0.97] machined-edge"
             title="Open Evidence Vault Exporter Drawer"
           >
-            <Download className="w-3.5 h-3.5 text-cyber-cyan" />
+            <Download className="w-3.5 h-3.5 text-callout-info-fg" />
             <span>EXPORT LOOT</span>
           </button>
 
@@ -479,39 +487,39 @@ export const EvidenceVaultPage: React.FC = () => {
       {/* 2. KPI Metrics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="p-3.5 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
-          <div className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase font-bold tracking-wider">TOTAL ARTIFACTS</div>
+          <div className="text-[10px] text-tertiary uppercase font-bold tracking-wider">TOTAL ARTIFACTS</div>
           <div className="text-xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono tabular-nums">{metrics.total}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
-          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold tracking-wider flex items-center justify-between">
+          <div className="text-[10px] text-callout-success-fg uppercase font-bold tracking-wider flex items-center justify-between">
             <span>PROVED FLAGS</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           </div>
-          <div className="text-xl font-extrabold text-emerald-600 dark:text-cyber-emerald mt-1 font-mono tabular-nums">{metrics.flags}</div>
+          <div className="text-xl font-extrabold text-callout-success-fg mt-1 font-mono tabular-nums">{metrics.flags}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
-          <div className="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-bold tracking-wider flex items-center justify-between">
+          <div className="text-[10px] text-callout-warn-fg uppercase font-bold tracking-wider flex items-center justify-between">
             <span>PASSWORDS</span>
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
           </div>
-          <div className="text-xl font-extrabold text-amber-600 dark:text-cyber-amber mt-1 font-mono tabular-nums">{metrics.passwords}</div>
+          <div className="text-xl font-extrabold text-callout-warn-fg mt-1 font-mono tabular-nums">{metrics.passwords}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
-          <div className="text-[10px] text-purple-600 dark:text-purple-400 uppercase font-bold tracking-wider flex items-center justify-between">
+          <div className="text-[10px] text-callout-tip-fg uppercase font-bold tracking-wider flex items-center justify-between">
             <span>HASHES</span>
             <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
           </div>
-          <div className="text-xl font-extrabold text-purple-600 dark:text-purple-400 mt-1 font-mono tabular-nums">{metrics.hashes}</div>
+          <div className="text-xl font-extrabold text-callout-tip-fg mt-1 font-mono tabular-nums">{metrics.hashes}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
-          <div className="text-[10px] text-cyan-600 dark:text-cyan-400 uppercase font-bold tracking-wider flex items-center justify-between">
+          <div className="text-[10px] text-callout-info-fg uppercase font-bold tracking-wider flex items-center justify-between">
             <span>SSH KEYS</span>
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
           </div>
-          <div className="text-xl font-extrabold text-cyan-600 dark:text-cyber-cyan mt-1 font-mono tabular-nums">{metrics.keys}</div>
+          <div className="text-xl font-extrabold text-callout-info-fg mt-1 font-mono tabular-nums">{metrics.keys}</div>
         </div>
         <div className="p-3.5 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
-          <div className="text-[10px] text-slate-500 dark:text-zinc-400 uppercase font-bold tracking-wider flex items-center justify-between">
+          <div className="text-[10px] text-tertiary uppercase font-bold tracking-wider flex items-center justify-between">
             <span>RECON SERVICES</span>
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
           </div>
@@ -522,7 +530,7 @@ export const EvidenceVaultPage: React.FC = () => {
       {/* 3. Search and Category Filter Toolbar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 rounded-xl border border-subtle bg-surface-card shadow-xs machined-edge">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
@@ -531,9 +539,9 @@ export const EvidenceVaultPage: React.FC = () => {
             className="w-full pl-9 pr-8 py-2 rounded-lg bg-surface-base border border-subtle text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-cyber-cyan font-sans"
           />
           {searchQuery && (
-            <button
+            <button aria-label="Clear search"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-tertiary hover:text-slate-600 dark:hover:text-primary cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -561,7 +569,7 @@ export const EvidenceVaultPage: React.FC = () => {
                 className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider transition-all whitespace-nowrap active:scale-[0.97] cursor-pointer ${
                   isSelected
                     ? 'bg-cyber-cyan text-slate-900 font-extrabold shadow-xs'
-                    : 'bg-surface-base border border-subtle text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    : 'bg-surface-base border border-subtle text-tertiary hover:text-slate-900 dark:hover:text-primary'
                 }`}
               >
                 {labels[cat]}
@@ -587,7 +595,7 @@ export const EvidenceVaultPage: React.FC = () => {
         <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden shadow-xs machined-edge">
           <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
             <table className="w-full text-left border-collapse min-w-[960px]">
-              <thead className="sticky top-0 z-10 bg-surface-base border-b border-subtle uppercase text-[10px] text-slate-500 dark:text-zinc-400 font-bold tracking-wider machined-edge">
+              <thead className="sticky top-0 z-10 bg-surface-base border-b border-subtle uppercase text-[10px] text-tertiary font-bold tracking-wider machined-edge">
                 <tr>
                   <th className="py-3 px-4">TARGET</th>
                   <th className="py-3 px-3">CATEGORY</th>
@@ -615,7 +623,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                               <span>{item.targetName}</span>
                               {item.isCustom && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold">
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/10 text-callout-warn-fg border border-amber-500/30 font-bold">
                                   CUSTOM
                                 </span>
                               )}
@@ -645,10 +653,10 @@ export const EvidenceVaultPage: React.FC = () => {
                           <div className="flex-1 max-w-md bg-surface-base border border-subtle rounded-lg px-2.5 py-1.5 font-mono text-xs text-slate-800 dark:text-zinc-200 select-all overflow-hidden text-ellipsis whitespace-nowrap tabular-nums">
                             {isRevealed ? item.secret : '••••••••••••••••••••••••'}
                           </div>
-                          <button
+                          <button aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
                             type="button"
                             onClick={() => handleToggleReveal(item.id)}
-                            className="p-1.5 rounded-md hover:bg-surface-base text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer active:scale-[0.97]"
+                            className="p-1.5 rounded-md hover:bg-surface-base text-tertiary hover:text-slate-800 dark:hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
                             title={isRevealed ? 'Mask secret' : 'Reveal secret'}
                           >
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -657,20 +665,20 @@ export const EvidenceVaultPage: React.FC = () => {
                       </td>
 
                       {/* Discovered timestamp */}
-                      <td className="py-2.5 px-3 text-[10px] font-mono text-slate-500 dark:text-zinc-400 whitespace-nowrap tabular-nums">
+                      <td className="py-2.5 px-3 text-[10px] font-mono text-tertiary whitespace-nowrap tabular-nums">
                         {formatIsoTimestamp(item.discoveredAt)}
                       </td>
 
                       {/* Actions */}
                       <td className="py-2.5 px-4 text-right pr-6">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
+                          <button aria-label="Copy secret to clipboard"
                             type="button"
                             onClick={() => handleCopy(item.secret, item.id)}
                             className={`p-1.5 rounded-md border text-xs font-bold transition-all cursor-pointer active:scale-[0.97] ${
                               isCopied
                                 ? 'bg-cyber-emerald text-slate-900 border-cyber-emerald'
-                                : 'bg-surface-base border-subtle text-slate-600 dark:text-zinc-300 hover:border-cyber-cyan hover:text-cyber-cyan'
+                                : 'bg-surface-base border-subtle text-slate-600 dark:text-zinc-300 hover:border-cyber-cyan hover:text-callout-info-fg'
                             }`}
                             title="Copy secret to clipboard"
                           >
@@ -678,10 +686,10 @@ export const EvidenceVaultPage: React.FC = () => {
                           </button>
 
                           {item.targetId && item.targetId !== 'global' && (
-                            <button
+                            <button aria-label="Inspect target details"
                               type="button"
                               onClick={() => navigate(`/target/${item.targetId}`)}
-                              className="p-1.5 rounded-md border border-subtle bg-surface-base text-slate-600 dark:text-zinc-300 hover:border-cyber-cyan hover:text-cyber-cyan transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 rounded-md border border-subtle bg-surface-base text-slate-600 dark:text-zinc-300 hover:border-cyber-cyan hover:text-callout-info-fg transition-colors cursor-pointer active:scale-[0.97]"
                               title="Inspect Target Details"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -692,8 +700,9 @@ export const EvidenceVaultPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteCustomLoot(item.id)}
-                              className="p-1.5 rounded-md border border-subtle bg-surface-base text-slate-400 hover:text-rose-500 hover:border-rose-500/30 transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 rounded-md border border-subtle bg-surface-base text-tertiary hover:text-callout-danger-fg hover:border-rose-500/30 transition-colors cursor-pointer active:scale-[0.97]"
                               title="Delete custom loot entry"
+                              aria-label="Delete custom loot entry"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -706,7 +715,7 @@ export const EvidenceVaultPage: React.FC = () => {
 
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-zinc-500">
+                    <td colSpan={6} className="py-12 text-center text-tertiary">
                       <Database className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-zinc-600" />
                       <div className="font-bold text-sm">NO EVIDENCE RECORDED MATCHING FILTERS</div>
                       <div className="text-xs mt-1">Submit flags, import Nmap scans, or click "LOG EVIDENCE" to record target loot.</div>

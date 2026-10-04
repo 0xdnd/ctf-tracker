@@ -230,8 +230,8 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
       <div className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border/80 shadow-sm flex flex-wrap items-center justify-between gap-3">
         {/* LHOST Configuration */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-cyan-700 dark:text-cyber-cyan uppercase tracking-wider flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyber-cyan" />
+          <span className="text-[11px] font-bold text-callout-info-fg dark:text-cyber-cyan uppercase tracking-wider flex items-center gap-1">
+            <Zap className="w-3.5 h-3.5 text-callout-info-fg dark:text-cyber-cyan" />
             LHOST:
           </span>
           <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 px-2 shadow-inner focus-within:border-cyan-500 dark:focus-within:border-cyber-cyan focus-within:ring-1 focus-within:ring-cyan-500/30 transition-colors">
@@ -254,7 +254,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                 setLhost(targetIp);
                 if (soundEnabled) playCyberSound('toggle');
               }}
-              className="h-8 px-2.5 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="h-8 px-2.5 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-callout-info-fg dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Set to Active Target IP"
             >
               TARGET
@@ -266,7 +266,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               setLhost('127.0.0.1');
               if (soundEnabled) playCyberSound('toggle');
             }}
-            className="h-8 px-2 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-cyan-700 dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="h-8 px-2 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-callout-info-fg dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             title="Set to localhost"
           >
             127.0.0.1
@@ -275,15 +275,15 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
 
         {/* LPORT Configuration */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-emerald-700 dark:text-cyber-emerald uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-callout-success-fg dark:text-cyber-emerald uppercase tracking-wider">
             LPORT:
           </span>
           {/* Precision Stepper Capsule */}
           <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 p-0.5 shadow-inner focus-within:border-emerald-500 dark:focus-within:border-cyber-emerald focus-within:ring-1 focus-within:ring-emerald-500/30 transition-colors">
-            <button
+            <button aria-label="Decrease port"
               type="button"
               onClick={() => handlePortStep(-1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Decrease port (-1)"
             >
               <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -296,12 +296,12 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               value={lport}
               onChange={(e) => setLport(e.target.value)}
               placeholder="4444"
-              className="w-14 h-7 text-center bg-transparent text-emerald-800 dark:text-cyber-emerald text-xs font-mono font-bold tracking-wider focus:outline-none selection:bg-emerald-500/30"
+              className="w-14 h-7 text-center bg-transparent text-callout-success-fg dark:text-cyber-emerald text-xs font-mono font-bold tracking-wider focus:outline-none selection:bg-emerald-500/30"
             />
-            <button
+            <button aria-label="Increase port"
               type="button"
               onClick={() => handlePortStep(1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Increase port (+1)"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -323,7 +323,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   className={`h-7 px-2.5 flex items-center justify-center rounded-md text-[11px] font-mono font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                     isActive
                       ? 'bg-emerald-600 dark:bg-cyber-emerald text-white dark:text-slate-950'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/80'
+                      : 'text-slate-600 dark:text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800/80'
                   }`}
                 >
                   {p}
@@ -335,7 +335,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
 
         {/* Shell Binary Selector */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider font-mono">
+          <span className="text-[11px] font-bold text-callout-tip-fg uppercase tracking-wider font-mono">
             SHELL:
           </span>
           <div className="inline-flex items-center gap-1 p-0.5 rounded-lg bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80">
@@ -352,7 +352,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   className={`h-7 px-2.5 flex items-center rounded-md text-[11px] font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                     isActive
                       ? 'bg-purple-600 dark:bg-cyber-purple text-white dark:text-slate-950 font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/80 font-medium'
+                      : 'text-slate-600 dark:text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800/80 font-medium'
                   }`}
                 >
                   {bin.replace('/bin/', '')}
@@ -387,8 +387,8 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               }}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-[box-shadow,background-color,border-color,color] ${
                 platformFilter === tab.id
-                  ? 'bg-cyan-500 text-black shadow-glow-cyan/20 font-bold'
-                  : 'bg-cyber-card hover:bg-cyber-border border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-accent text-on-accent shadow-glow-cyan/20 font-bold'
+                  : 'bg-cyber-card hover:bg-cyber-border border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
               }`}
             >
               {tab.label}
@@ -411,9 +411,9 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             className="w-full pl-8 pr-7 py-1 rounded-lg bg-cyber-card border border-cyber-border text-xs text-slate-900 dark:text-white placeholder-cyber-muted focus:border-cyber-cyan focus:outline-none"
           />
           {searchQuery && (
-            <button
+            <button aria-label="Clear filter"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-cyber-muted hover:text-slate-900 dark:hover:text-white"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -439,7 +439,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   className={`px-2 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5 ${
                     isSelected
                       ? 'bg-emerald-500 dark:bg-cyber-emerald text-black font-bold shadow-sm'
-                      : 'bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white'
+                      : 'bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-slate-300 hover:text-slate-950 dark:hover:text-primary'
                   }`}
                   title={`${shell.name} (${shell.language}) - ${shell.platform}`}
                 >
@@ -449,7 +449,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                       className={`text-[9px] px-1 py-0.2 rounded uppercase font-semibold ${
                         isSelected
                           ? 'bg-black/20 text-black'
-                          : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800/40'
+                          : 'bg-purple-100 dark:bg-purple-950/60 text-callout-tip-fg border border-purple-300 dark:border-purple-800/40'
                       }`}
                     >
                       FILE
@@ -472,10 +472,10 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             <span className="font-bold text-slate-900 dark:text-white text-xs truncate">
               {activeShell.name}
             </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-cyan-900 dark:text-cyber-cyan font-bold">
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-callout-info-fg dark:text-cyber-cyan font-bold">
               {activeShell.platform}
             </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-cyber-purple/10 border border-purple-300 dark:border-cyber-purple/30 text-purple-900 dark:text-cyber-purple font-mono">
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-cyber-purple/10 border border-purple-300 dark:border-cyber-purple/30 text-callout-tip-fg dark:text-cyber-purple font-mono">
               {activeShell.language}
             </span>
             {activeShell.notes && (
@@ -502,7 +502,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
                     encoding === enc
                       ? 'bg-cyber-cyan text-black font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                      : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                   }`}
                   title={`Encode payload with ${enc.replace('_', ' ')}`}
                 >
@@ -526,7 +526,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
                     wrapper === w
                       ? 'bg-purple-700 dark:bg-purple-800 text-white font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                      : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
                   }`}
                   title={w === 'none' ? 'Direct execution without shell wrapper' : `Wrap payload in ${w}`}
                 >
@@ -582,8 +582,8 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
       {/* 5. COMPACT LISTENER COMMAND STRIP */}
       <div className="p-2.5 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Terminal className="w-4 h-4 text-emerald-600 dark:text-cyber-emerald flex-shrink-0" />
-          <span className="text-[11px] font-bold text-emerald-800 dark:text-cyber-emerald uppercase">LISTENER:</span>
+          <Terminal className="w-4 h-4 text-callout-success-fg dark:text-cyber-emerald flex-shrink-0" />
+          <span className="text-[11px] font-bold text-callout-success-fg dark:text-cyber-emerald uppercase">LISTENER:</span>
 
           {/* Listener selector pills */}
           <div className="flex items-center gap-1 overflow-x-auto max-w-md scrollbar-none">
@@ -596,8 +596,8 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                 }}
                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono whitespace-nowrap transition-colors ${
                   listenerType === l.id
-                    ? 'bg-emerald-100 dark:bg-cyber-emerald/20 text-emerald-900 dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/60 font-bold'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-card text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-cyber-border'
+                    ? 'bg-emerald-100 dark:bg-cyber-emerald/20 text-callout-success-fg dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/60 font-bold'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-card text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary border border-slate-200 dark:border-cyber-border'
                 }`}
               >
                 {l.label}
@@ -611,7 +611,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
           <code className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-xs select-all">
             <SyntaxHighlightedCommand command={listenerCommand} />
           </code>
-          <button
+          <button aria-label="Copy listener command"
             onClick={handleCopyListener}
             className={`p-1.5 rounded-lg border transition-colors ${
               copiedListener

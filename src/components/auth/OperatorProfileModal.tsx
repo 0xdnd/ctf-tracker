@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore, DEFAULT_DANIEL_PROFILE } from '../../store/useAuthStore';
 import { useCtfStore, safeLocalStorage, getProfileStorageKey } from '../../store/useCtfStore';
+import { confirmAction } from '../../store/useConfirmStore';
+import { toast } from '../../store/useToastStore';
 import { playCyberSound } from '../../utils/helpers';
 import { OperatorLoginOptions } from '../../types/auth';
 import { CYBER_AVATAR_PRESETS, getAvatarSvgDataUri } from '../../data/avatarPresets';
@@ -41,11 +43,11 @@ const ROLE_OPTIONS = [
 ];
 
 const ACCENT_COLORS = [
-  { id: 'emerald', name: 'Tactical Emerald', bg: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/50' },
-  { id: 'cyan', name: 'Electric Cyan', bg: 'bg-cyan-500', text: 'text-cyan-400', border: 'border-cyan-500/50' },
-  { id: 'amber', name: 'Warning Amber', bg: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/50' },
-  { id: 'crimson', name: 'Red Team Crimson', bg: 'bg-rose-500', text: 'text-rose-400', border: 'border-rose-500/50' },
-  { id: 'purple', name: 'Domain Purple', bg: 'bg-purple-500', text: 'text-purple-400', border: 'border-purple-500/50' },
+  { id: 'emerald', name: 'Tactical Emerald', bg: 'bg-emerald-500', text: 'text-callout-success-fg', border: 'border-emerald-500/50' },
+  { id: 'cyan', name: 'Electric Cyan', bg: 'bg-cyan-500', text: 'text-callout-info-fg', border: 'border-cyan-500/50' },
+  { id: 'amber', name: 'Warning Amber', bg: 'bg-amber-500', text: 'text-callout-warn-fg', border: 'border-amber-500/50' },
+  { id: 'crimson', name: 'Red Team Crimson', bg: 'bg-rose-500', text: 'text-callout-danger-fg', border: 'border-rose-500/50' },
+  { id: 'purple', name: 'Domain Purple', bg: 'bg-purple-500', text: 'text-callout-tip-fg', border: 'border-purple-500/50' },
 ];
 
 export const OperatorProfileModal: React.FC = () => {
@@ -227,12 +229,18 @@ export const OperatorProfileModal: React.FC = () => {
     setEditingProfileId(null);
   };
 
-  const handleDeleteProfile = (profileId: string, name: string) => {
+  const handleDeleteProfile = async (profileId: string, name: string) => {
     if (profiles.length <= 1) {
-      alert('Cannot delete the last active operator profile.');
+      toast.error('Cannot delete the last active operator profile.');
       return;
     }
-    if (window.confirm(`Are you sure you want to delete profile "${name}"? All isolated progress for this operator will be permanently removed.`)) {
+    const ok = await confirmAction({
+      title: `Delete profile "${name}"?`,
+      body: 'All isolated progress for this operator will be permanently removed.',
+      confirmLabel: 'Delete profile',
+      tone: 'danger',
+    });
+    if (ok) {
       deleteProfile(profileId);
       if (soundEnabled) playCyberSound('toggle');
     }
@@ -260,7 +268,7 @@ export const OperatorProfileModal: React.FC = () => {
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 dark:border-cyber-border/80 flex items-center justify-between bg-slate-50/80 dark:bg-cyber-card/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-cyan-600 dark:text-cyber-cyan shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-callout-info-fg dark:text-cyber-cyan shadow-sm">
               <Users className="w-5 h-5" />
             </div>
             <div>
@@ -268,19 +276,19 @@ export const OperatorProfileModal: React.FC = () => {
                 <h2 className="text-base font-bold tracking-wide text-slate-900 dark:text-white">
                   Operator Identity & Profiles
                 </h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-cyber-emerald border border-emerald-500/30 font-mono">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-callout-success-fg dark:text-cyber-emerald border border-emerald-500/30 font-mono">
                   OFFLINE READY
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-cyber-muted">
+              <p className="text-xs text-tertiary dark:text-cyber-muted">
                 100% offline project. Log in with your callsign, switch operators, or explore creator reference solves.
               </p>
             </div>
           </div>
 
-          <button
+          <button aria-label="Close operator profiles"
             onClick={() => setOperatorProfileModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors"
+            className="p-1.5 rounded-lg text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
@@ -299,7 +307,7 @@ export const OperatorProfileModal: React.FC = () => {
                     className="w-10 h-10 rounded-xl bg-slate-900 border-2 border-emerald-500 p-0.5 object-contain shadow-sm"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-600 dark:text-cyber-emerald font-bold text-sm shadow-sm font-mono">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-callout-success-fg dark:text-cyber-emerald font-bold text-sm shadow-sm font-mono">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -325,7 +333,7 @@ export const OperatorProfileModal: React.FC = () => {
                         autoFocus
                         placeholder="New Callsign"
                       />
-                      <button
+                      <button aria-label="Save callsign"
                         type="button"
                         onClick={handleSaveActiveCallsign}
                         className="p-1 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white transition-colors cursor-pointer"
@@ -333,10 +341,10 @@ export const OperatorProfileModal: React.FC = () => {
                       >
                         <Check className="w-3 h-3" />
                       </button>
-                      <button
+                      <button aria-label="Cancel rename"
                         type="button"
                         onClick={() => setIsEditingActiveCallsign(false)}
-                        className="p-1 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                        className="p-1 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-tertiary hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
                         title="Cancel (Esc)"
                       >
                         <X className="w-3 h-3" />
@@ -347,13 +355,13 @@ export const OperatorProfileModal: React.FC = () => {
                       <span className="text-sm font-bold text-slate-900 dark:text-white">
                         {user.callsign || user.name}
                       </span>
-                      <button
+                      <button aria-label="Quick-edit active callsign"
                         type="button"
                         onClick={() => {
                           setIsEditingActiveCallsign(true);
                           setActiveCallsignInput(user.callsign || user.name);
                         }}
-                        className="p-1 rounded-md text-slate-400 hover:text-cyan-500 dark:hover:text-cyber-cyan hover:bg-slate-200/50 dark:hover:bg-cyber-bg transition-colors cursor-pointer"
+                        className="p-1 rounded-md text-tertiary hover:text-callout-info-fg dark:hover:text-cyber-cyan hover:bg-slate-200/50 dark:hover:bg-cyber-bg transition-colors cursor-pointer"
                         title="Quick-Edit Active Callsign"
                       >
                         <Edit3 className="w-3 h-3" />
@@ -364,20 +372,20 @@ export const OperatorProfileModal: React.FC = () => {
                     </>
                   )}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-cyber-muted flex items-center gap-2">
+                <div className="text-xs text-tertiary dark:text-cyber-muted flex items-center gap-2">
                   <span>{user.role || 'Tactical Operator'}</span>
                   <span>•</span>
-                  <span className="font-mono text-cyan-600 dark:text-cyber-cyan font-bold">{gamification.totalXp.toLocaleString()} XP</span>
+                  <span className="font-mono text-callout-info-fg dark:text-cyber-cyan font-bold">{gamification.totalXp.toLocaleString()} XP</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3 font-mono text-right">
               <div>
-                <div className="text-sm font-bold text-emerald-600 dark:text-cyber-emerald">
+                <div className="text-sm font-bold text-callout-success-fg dark:text-cyber-emerald">
                   {currentStats?.rooted || 0} Rooted
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
+                <div className="text-[10px] text-tertiary dark:text-cyber-muted">
                   {gamification.unlockedCount} / 16 Trophies
                 </div>
               </div>
@@ -394,11 +402,11 @@ export const OperatorProfileModal: React.FC = () => {
                   <span className="text-sm font-bold text-slate-900 dark:text-white">
                     Local / Guest Operator
                   </span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-600 dark:text-cyber-cyan border border-cyan-500/40">
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-cyan-500/20 text-callout-info-fg dark:text-cyber-cyan border border-cyan-500/40">
                     AIR-GAPPED
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 dark:text-cyber-muted">
+                <div className="text-xs text-tertiary dark:text-cyber-muted">
                   Offline CTF workspace. Enter your callsign in "Login as New Operator" to save your personal profile.
                 </div>
               </div>
@@ -406,10 +414,10 @@ export const OperatorProfileModal: React.FC = () => {
 
             <div className="flex items-center gap-3 font-mono text-right">
               <div>
-                <div className="text-sm font-bold text-emerald-600 dark:text-cyber-emerald">
+                <div className="text-sm font-bold text-callout-success-fg dark:text-cyber-emerald">
                   {currentRooted} Rooted
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
+                <div className="text-[10px] text-tertiary dark:text-cyber-muted">
                   {currentFootholds} Footholds
                 </div>
               </div>
@@ -420,23 +428,23 @@ export const OperatorProfileModal: React.FC = () => {
         {/* Offline Workspace Solves Lifecycle Banner */}
         <div className="px-5 py-2.5 bg-slate-100/80 dark:bg-cyber-bg/70 border-b border-slate-200 dark:border-cyber-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-cyan-600 dark:text-cyber-cyan flex-shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-callout-info-fg dark:text-cyber-cyan flex-shrink-0">
               <RotateCcw className="w-3.5 h-3.5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-900 dark:text-white">Workspace Solves:</span>
                 {userSolvesReset ? (
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-mono">
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-500/15 text-callout-info-fg border border-blue-500/30 font-mono">
                     Personal Practice (0 Solves)
                   </span>
                 ) : (
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 font-mono">
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/15 text-callout-tip-fg border border-purple-500/30 font-mono">
                     Creator Showcase (63 Solves)
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-cyber-muted">
+              <p className="text-[10px] text-tertiary dark:text-cyber-muted">
                 {userSolvesReset
                   ? 'Tracking your own progress from 0%. All 929 targets ready.'
                   : 'Daniel Dayan\'s solved machines are loaded as reference walkthroughs.'}
@@ -452,25 +460,31 @@ export const OperatorProfileModal: React.FC = () => {
                   restoreDanielSolves();
                   if (soundEnabled) playCyberSound('engage');
                 }}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-callout-tip-fg border border-purple-500/30 hover:bg-purple-500/25 transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Load Daniel's 63 solved machines as a reference baseline"
               >
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <Sparkles className="w-3.5 h-3.5 text-callout-tip-fg" />
                 <span>Load Reference Solves (63)</span>
               </button>
             ) : (
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm('Reset all catalog solves to 0 so you can track your own progress? (You can restore reference solves anytime).')) {
+                onClick={async () => {
+                  const ok = await confirmAction({
+                    title: 'Reset all catalog solves to 0?',
+                    body: 'Track your own progress from scratch. You can restore reference solves anytime.',
+                    confirmLabel: 'Reset solves',
+                    tone: 'danger',
+                  });
+                  if (ok) {
                     resetSolvesToZero();
                     if (soundEnabled) playCyberSound('root');
                   }
                 }}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-500/15 text-callout-info-fg border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Start fresh at 0% to track your own CTF conquests"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-callout-info-fg" />
                 <span>Reset to My Solves (0)</span>
               </button>
             )}
@@ -483,8 +497,8 @@ export const OperatorProfileModal: React.FC = () => {
             onClick={() => setActiveTab('roster')}
             className={`pb-2.5 px-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
               activeTab === 'roster'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyber-cyan'
-                : 'border-transparent text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                ? 'border-cyan-500 text-callout-info-fg dark:text-cyber-cyan'
+                : 'border-transparent text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -494,8 +508,8 @@ export const OperatorProfileModal: React.FC = () => {
             onClick={() => setActiveTab('new')}
             className={`pb-2.5 px-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
               activeTab === 'new'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyber-cyan'
-                : 'border-transparent text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                ? 'border-cyan-500 text-callout-info-fg dark:text-cyber-cyan'
+                : 'border-transparent text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -505,8 +519,8 @@ export const OperatorProfileModal: React.FC = () => {
             onClick={() => setActiveTab('trophies')}
             className={`pb-2.5 px-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
               activeTab === 'trophies'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyber-cyan'
-                : 'border-transparent text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+                ? 'border-cyan-500 text-callout-info-fg dark:text-cyber-cyan'
+                : 'border-transparent text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
@@ -518,20 +532,20 @@ export const OperatorProfileModal: React.FC = () => {
         <div className="p-5 overflow-y-auto flex-1 space-y-4">
           {activeTab === 'roster' && (
             <div className="space-y-3">
-              <div className="text-xs text-slate-500 dark:text-cyber-muted flex items-center justify-between">
+              <div className="text-xs text-tertiary dark:text-cyber-muted flex items-center justify-between">
                 <span>Select an operator to switch workspaces immediately:</span>
                 <span className="font-mono text-[11px]">{profiles.length} Operator{profiles.length > 1 ? 's' : ''} Configured</span>
               </div>
 
               {profiles.length === 0 && (
                 <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-cyber-border text-center space-y-2">
-                  <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyber-cyan flex items-center justify-center mx-auto">
+                  <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-callout-info-fg dark:text-cyber-cyan flex items-center justify-center mx-auto">
                     <User className="w-4 h-4" />
                   </div>
                   <div className="text-xs font-bold text-slate-800 dark:text-zinc-200">
                     No custom profiles created yet
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-cyber-muted max-w-sm mx-auto">
+                  <p className="text-[11px] text-tertiary dark:text-cyber-muted max-w-sm mx-auto">
                     You are operating in local storage. Create your own named operator profile to track your solves, or explore Daniel's creator reference profile below.
                   </p>
                 </div>
@@ -591,7 +605,7 @@ export const OperatorProfileModal: React.FC = () => {
                                   autoFocus
                                   placeholder="Callsign"
                                 />
-                                <button
+                                <button aria-label="Save callsign"
                                   type="button"
                                   onClick={() => handleSaveRename(p.id)}
                                   className="p-1 rounded bg-cyan-500 text-white hover:bg-cyan-600 transition-colors cursor-pointer"
@@ -599,10 +613,10 @@ export const OperatorProfileModal: React.FC = () => {
                                 >
                                   <Check className="w-3 h-3" />
                                 </button>
-                                <button
+                                <button aria-label="Cancel rename"
                                   type="button"
                                   onClick={() => setEditingProfileId(null)}
-                                  className="p-1 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                                  className="p-1 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-tertiary hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
                                   title="Cancel (Esc)"
                                 >
                                   <X className="w-3 h-3" />
@@ -618,7 +632,7 @@ export const OperatorProfileModal: React.FC = () => {
                                 )}
                               </div>
                             )}
-                            <div className="text-[10px] text-slate-500 dark:text-cyber-muted truncate">
+                            <div className="text-[10px] text-tertiary dark:text-cyber-muted truncate">
                               {p.role || 'Tactical Operator'}
                             </div>
                           </div>
@@ -626,20 +640,20 @@ export const OperatorProfileModal: React.FC = () => {
 
                         {!isEditing && (
                           <div className="flex items-center gap-1">
-                            <button
+                            <button aria-label="Rename callsign"
                               onClick={() => {
                                 setEditingProfileId(p.id);
                                 setEditingName(p.name);
                               }}
-                              className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                              className="p-1 rounded text-tertiary hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                               title="Rename Call-sign"
                             >
                               <Edit3 className="w-3 h-3" />
                             </button>
                             {profiles.length > 1 && (
-                              <button
+                              <button aria-label="Delete profile"
                                 onClick={() => handleDeleteProfile(p.id, p.name)}
-                                className="p-1 rounded text-slate-400 hover:text-rose-500 transition-colors"
+                                className="p-1 rounded text-tertiary hover:text-callout-danger-fg transition-colors"
                                 title="Delete Profile"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -651,18 +665,18 @@ export const OperatorProfileModal: React.FC = () => {
 
                       <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-cyber-border/40 flex items-center justify-between text-xs">
                         <div className="font-mono text-[11px] text-slate-600 dark:text-zinc-300">
-                          <span className="font-bold text-emerald-600 dark:text-cyber-emerald">{stats.rooted}</span> Rooted · <span className="text-amber-500">{stats.footholds}</span> Footholds
+                          <span className="font-bold text-callout-success-fg dark:text-cyber-emerald">{stats.rooted}</span> Rooted · <span className="text-callout-warn-fg">{stats.footholds}</span> Footholds
                         </div>
 
                         {isActive ? (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-cyber-emerald flex items-center gap-1">
+                          <span className="text-[10px] font-bold text-callout-success-fg dark:text-cyber-emerald flex items-center gap-1">
                             <Check className="w-3 h-3 stroke-[2.5]" />
                             <span>Active</span>
                           </span>
                         ) : (
                           <button
                             onClick={() => handleSwitchOperator(p.id)}
-                            className="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-200 hover:bg-cyan-500 hover:text-white dark:bg-cyber-bg dark:hover:bg-cyber-cyan dark:hover:text-black transition-colors flex items-center gap-1"
+                            className="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-200 hover:bg-accent hover:text-on-accent dark:bg-cyber-bg transition-colors flex items-center gap-1"
                           >
                             <span>Switch</span>
                             <ArrowRight className="w-3 h-3" />
@@ -688,11 +702,11 @@ export const OperatorProfileModal: React.FC = () => {
                             <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
                               Daniel Dayan
                             </span>
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40">
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-callout-tip-fg border border-purple-500/40">
                               CREATOR SHOWCASE
                             </span>
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-cyber-muted truncate">
+                          <div className="text-[10px] text-tertiary dark:text-cyber-muted truncate">
                             Lead Pentester · 63 Verified Solves
                           </div>
                         </div>
@@ -700,7 +714,7 @@ export const OperatorProfileModal: React.FC = () => {
                     </div>
 
                     <div className="mt-3 pt-2.5 border-t border-purple-500/20 flex items-center justify-between text-xs">
-                      <div className="font-mono text-[11px] text-purple-700 dark:text-purple-300">
+                      <div className="font-mono text-[11px] text-callout-tip-fg">
                         <span className="font-bold">63</span> Rooted Machines
                       </div>
 
@@ -710,9 +724,9 @@ export const OperatorProfileModal: React.FC = () => {
                           await restoreDanielSolves();
                           if (soundEnabled) playCyberSound('engage');
                         }}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-500/15 hover:bg-purple-500 hover:text-white dark:bg-purple-900/30 dark:hover:bg-purple-500 dark:hover:text-white text-purple-700 dark:text-purple-300 border border-purple-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-500/15 hover:bg-purple-500 hover:text-primary dark:bg-purple-900/30 dark:hover:bg-purple-500 text-callout-tip-fg border border-purple-500/30 transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        <Sparkles className="w-3 h-3 text-callout-tip-fg" />
                         <span>Explore Showcase</span>
                       </button>
                     </div>
@@ -723,7 +737,7 @@ export const OperatorProfileModal: React.FC = () => {
               <div className="pt-2">
                 <button
                   onClick={() => setActiveTab('new')}
-                  className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-cyber-border/80 hover:border-cyan-500 dark:hover:border-cyber-cyan text-slate-600 dark:text-cyber-muted hover:text-cyan-600 dark:hover:text-cyber-cyan text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-cyber-border/80 hover:border-cyan-500 dark:hover:border-cyber-cyan text-slate-600 dark:text-cyber-muted hover:text-callout-info-fg dark:hover:text-cyber-cyan text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>+ Log in as a Different / New Operator</span>
@@ -735,14 +749,14 @@ export const OperatorProfileModal: React.FC = () => {
           {activeTab === 'new' && (
             <form onSubmit={handleCreateOrLogin} className="space-y-4">
               {errorMsg && (
-                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs">
+                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-callout-danger-fg text-xs">
                   {errorMsg}
                 </div>
               )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">
-                  Operator Name or Callsign <span className="text-rose-500">*</span>
+                  Operator Name or Callsign <span className="text-callout-danger-fg">*</span>
                 </label>
                 <input
                   ref={inputRef}
@@ -754,7 +768,7 @@ export const OperatorProfileModal: React.FC = () => {
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:focus:ring-cyber-cyan transition-[box-shadow,background-color,border-color,color]"
                   required
                 />
-                <span className="text-[10px] text-slate-400 dark:text-cyber-muted mt-0.5 block">
+                <span className="text-[10px] text-tertiary dark:text-cyber-muted mt-0.5 block">
                   Entering an existing callsign logs directly into that operator's saved progress.
                 </span>
               </div>
@@ -763,7 +777,7 @@ export const OperatorProfileModal: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1.5 flex items-center justify-between">
                   <span>Tactical Avatar Preset</span>
-                  <span className="text-[11px] font-mono text-cyan-600 dark:text-cyber-cyan">
+                  <span className="text-[11px] font-mono text-callout-info-fg dark:text-cyber-cyan">
                     {CYBER_AVATAR_PRESETS.find(p => p.id === selectedAvatarId)?.name || 'Glitch Skull'}
                   </span>
                 </label>
@@ -815,7 +829,7 @@ export const OperatorProfileModal: React.FC = () => {
                         onClick={() => setSelectedRole(r.id)}
                         className={`p-2 rounded-lg text-left text-xs font-medium border transition-colors flex items-center gap-2 ${
                           isSelected
-                            ? 'bg-cyan-500/15 border-cyan-500 text-cyan-800 dark:text-cyber-cyan font-bold'
+                            ? 'bg-cyan-500/15 border-cyan-500 text-callout-info-fg dark:text-cyber-cyan font-bold'
                             : 'bg-slate-50 dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-slate-700'
                         }`}
                       >
@@ -863,9 +877,9 @@ export const OperatorProfileModal: React.FC = () => {
                   >
                     <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
                       <span>🌟 Fresh Clean Slate</span>
-                      <span className="text-[9px] px-1 rounded bg-emerald-500/20 text-emerald-600 dark:text-cyber-emerald">Recommended</span>
+                      <span className="text-[9px] px-1 rounded bg-emerald-500/20 text-callout-success-fg dark:text-cyber-emerald">Recommended</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-cyber-muted mt-1 leading-snug">
+                    <p className="text-[11px] text-tertiary dark:text-cyber-muted mt-1 leading-snug">
                       929 targets loaded with 0 solved machines. Clean flags and notes for a fresh CTF journey.
                     </p>
                   </div>
@@ -881,7 +895,7 @@ export const OperatorProfileModal: React.FC = () => {
                     <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
                       <span>📋 Fork Current Progress</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-cyber-muted mt-1 leading-snug">
+                    <p className="text-[11px] text-tertiary dark:text-cyber-muted mt-1 leading-snug">
                       Clone active machines, solved flags, and notes to continue collaborating or testing.
                     </p>
                   </div>
@@ -898,7 +912,7 @@ export const OperatorProfileModal: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-600 dark:bg-cyber-cyan dark:hover:bg-cyan-400 text-white dark:text-black transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-md"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-accent hover:bg-accent-hover text-on-accent transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-md"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Log in as {operatorName.trim() || 'Operator'}</span>
@@ -918,7 +932,7 @@ export const OperatorProfileModal: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono tracking-wider text-cyan-400 font-bold uppercase">
+                        <span className="text-xs font-mono tracking-wider text-callout-info-fg font-bold uppercase">
                           OPERATOR STATUS
                         </span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${gamification.currentRank.badgeColor} bg-black/40 border border-current font-mono`}>
@@ -928,16 +942,16 @@ export const OperatorProfileModal: React.FC = () => {
                       <h3 className="text-base font-bold text-white tracking-wide">
                         {gamification.currentRank.title}
                       </h3>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-tertiary">
                         {gamification.currentRank.description}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-left sm:text-right font-mono">
-                    <div className="text-xs text-slate-400 uppercase tracking-wider">Total Experience</div>
-                    <div className="text-xl font-black text-cyan-300">
-                      {gamification.totalXp.toLocaleString()} <span className="text-xs text-cyan-500 font-semibold">XP</span>
+                    <div className="text-xs text-tertiary uppercase tracking-wider">Total Experience</div>
+                    <div className="text-xl font-black text-callout-info-fg">
+                      {gamification.totalXp.toLocaleString()} <span className="text-xs text-callout-info-fg font-semibold">XP</span>
                     </div>
                   </div>
                 </div>
@@ -945,10 +959,10 @@ export const OperatorProfileModal: React.FC = () => {
                 {/* Progress to Next Rank */}
                 <div className="mt-4 pt-3 border-t border-slate-700/60">
                   <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                    <span className="text-slate-400">
+                    <span className="text-tertiary">
                       {gamification.nextRank ? `Next: [${gamification.nextRank.tier}] ${gamification.nextRank.title}` : 'Max Tactical Rank Achieved!'}
                     </span>
-                    <span className="text-cyan-400 font-bold">
+                    <span className="text-callout-info-fg font-bold">
                       {gamification.nextRank ? `${gamification.rankProgressPct}%` : '100%'}
                     </span>
                   </div>
@@ -959,7 +973,7 @@ export const OperatorProfileModal: React.FC = () => {
                     />
                   </div>
                   {gamification.nextRank && (
-                    <div className="text-[10px] text-slate-400 mt-1 flex justify-between font-mono">
+                    <div className="text-[10px] text-tertiary mt-1 flex justify-between font-mono">
                       <span>{gamification.currentRank.minXp.toLocaleString()} XP</span>
                       <span>{gamification.nextRank.minXp.toLocaleString()} XP</span>
                     </div>
@@ -970,26 +984,26 @@ export const OperatorProfileModal: React.FC = () => {
               {/* Tactical Stats Quick Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-slate-500 dark:text-cyber-muted uppercase">Rooted Targets</div>
-                  <div className="text-base font-bold text-emerald-600 dark:text-cyber-emerald font-mono">
+                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Rooted Targets</div>
+                  <div className="text-base font-bold text-callout-success-fg dark:text-cyber-emerald font-mono">
                     {gamification.stats.rootedMachines}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-slate-500 dark:text-cyber-muted uppercase">Flags Captured</div>
-                  <div className="text-base font-bold text-cyan-600 dark:text-cyber-cyan font-mono">
+                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Flags Captured</div>
+                  <div className="text-base font-bold text-callout-info-fg dark:text-cyber-cyan font-mono">
                     {gamification.stats.totalFlags}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-slate-500 dark:text-cyber-muted uppercase">Nmap Scans</div>
-                  <div className="text-base font-bold text-amber-500 font-mono">
+                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Nmap Scans</div>
+                  <div className="text-base font-bold text-callout-warn-fg font-mono">
                     {gamification.stats.nmapScansCount}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-slate-500 dark:text-cyber-muted uppercase">Trophies Unlocked</div>
-                  <div className="text-base font-bold text-purple-500 font-mono">
+                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Trophies Unlocked</div>
+                  <div className="text-base font-bold text-callout-tip-fg font-mono">
                     {gamification.unlockedCount} / 16
                   </div>
                 </div>
@@ -1003,8 +1017,8 @@ export const OperatorProfileModal: React.FC = () => {
                     onClick={() => setTrophyCategoryFilter(cat)}
                     className={`px-2.5 py-1 rounded-lg font-mono text-[11px] font-bold uppercase transition-colors whitespace-nowrap cursor-pointer ${
                       trophyCategoryFilter === cat
-                        ? 'bg-cyan-500 text-white dark:bg-cyber-cyan dark:text-black shadow-sm'
-                        : 'bg-slate-100 dark:bg-cyber-card text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-cyber-border'
+                        ? 'bg-accent text-on-accent shadow-sm'
+                        : 'bg-slate-100 dark:bg-cyber-card text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary border border-slate-200 dark:border-cyber-border'
                     }`}
                   >
                     {cat}
@@ -1020,9 +1034,9 @@ export const OperatorProfileModal: React.FC = () => {
                     const isUnlocked = trophy.unlocked;
                     const rarityColors: Record<string, string> = {
                       common: 'text-slate-300 border-slate-400/30 bg-slate-400/10',
-                      rare: 'text-sky-400 border-sky-400/30 bg-sky-400/10',
-                      epic: 'text-purple-400 border-purple-400/40 bg-purple-400/10',
-                      legendary: 'text-amber-400 border-amber-400/40 bg-amber-400/10',
+                      rare: 'text-callout-info-fg border-sky-400/30 bg-sky-400/10',
+                      epic: 'text-callout-tip-fg border-purple-400/40 bg-purple-400/10',
+                      legendary: 'text-callout-warn-fg border-amber-400/40 bg-amber-400/10',
                     };
                     const badgeClass = rarityColors[trophy.definition.rarity] || rarityColors.common;
 
@@ -1041,19 +1055,19 @@ export const OperatorProfileModal: React.FC = () => {
                               ? 'bg-slate-800 border-cyan-500/50 shadow-inner'
                               : 'bg-slate-200 dark:bg-cyber-bg border-slate-300 dark:border-cyber-border grayscale opacity-60'
                           }`}>
-                            <Award className="w-5 h-5 text-cyan-400" />
+                            <Award className="w-5 h-5 text-callout-info-fg" />
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-xs font-bold ${isUnlocked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-zinc-400'}`}>
+                              <span className={`text-xs font-bold ${isUnlocked ? 'text-slate-900 dark:text-white' : 'text-tertiary'}`}>
                                 {trophy.definition.title}
                               </span>
                               <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase border ${badgeClass}`}>
                                 {trophy.definition.rarity}
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-cyber-muted mt-0.5 line-clamp-2">
+                            <p className="text-[11px] text-tertiary dark:text-cyber-muted mt-0.5 line-clamp-2">
                               {trophy.definition.description}
                             </p>
                           </div>
@@ -1062,19 +1076,19 @@ export const OperatorProfileModal: React.FC = () => {
                         <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-cyber-border/40 flex items-center justify-between text-xs">
                           <div className="font-mono text-[10px]">
                             {isUnlocked ? (
-                              <span className="text-emerald-500 font-bold flex items-center gap-1">
+                              <span className="text-callout-success-fg font-bold flex items-center gap-1">
                                 <Check className="w-3 h-3 stroke-[2.5]" />
                                 <span>UNLOCKED {trophy.unlockedAt ? new Date(trophy.unlockedAt).toLocaleDateString() : ''}</span>
                               </span>
                             ) : (
-                              <span className="text-slate-400 flex items-center gap-1">
-                                <Lock className="w-3 h-3 text-slate-400" />
+                              <span className="text-tertiary flex items-center gap-1">
+                                <Lock className="w-3 h-3 text-tertiary" />
                                 <span>{trophy.currentCount} / {trophy.targetCount}</span>
                               </span>
                             )}
                           </div>
 
-                          <div className="font-mono font-bold text-[11px] text-cyan-600 dark:text-cyber-cyan">
+                          <div className="font-mono font-bold text-[11px] text-callout-info-fg dark:text-cyber-cyan">
                             +{trophy.definition.xpReward} XP
                           </div>
                         </div>
@@ -1095,8 +1109,8 @@ export const OperatorProfileModal: React.FC = () => {
           )}
 
           {/* Air-gapped security note */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border/50 text-[11px] text-slate-500 dark:text-cyber-muted flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border/50 text-[11px] text-tertiary dark:text-cyber-muted flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-callout-success-fg flex-shrink-0" />
             <span>
               <strong>Zero-Egress Isolation:</strong> All operator profiles and machine progress are partitioned in your local browser storage. Zero data is transmitted to external servers.
             </span>

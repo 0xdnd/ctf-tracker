@@ -60,9 +60,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 1,
     name: 'Reconnaissance & Attack Surface',
     subtitle: 'Discovered services, open ports, software banners & CVE candidates',
-    accentColor: 'text-sky-400',
+    accentColor: 'text-callout-info-fg',
     borderAccent: 'border-sky-500/30',
-    badgeBg: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+    badgeBg: 'bg-sky-500/10 text-callout-info-fg border-sky-500/30',
     icon: Server,
   },
   {
@@ -70,9 +70,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 2,
     name: 'Initial Foothold & Access',
     subtitle: 'User proof flags, compromised web passwords & application credentials',
-    accentColor: 'text-amber-400',
+    accentColor: 'text-callout-warn-fg',
     borderAccent: 'border-amber-500/30',
-    badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    badgeBg: 'bg-amber-500/10 text-callout-warn-fg border-amber-500/30',
     icon: Key,
   },
   {
@@ -80,9 +80,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 3,
     name: 'Lateral Movement & Pivoting',
     subtitle: 'SSH private keys, internal tokens, Kerberos tickets & routing relays',
-    accentColor: 'text-cyan-400',
+    accentColor: 'text-callout-info-fg',
     borderAccent: 'border-cyan-500/30',
-    badgeBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+    badgeBg: 'bg-cyan-500/10 text-callout-info-fg border-cyan-500/30',
     icon: Terminal,
   },
   {
@@ -90,9 +90,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 4,
     name: 'Privilege Escalation & Root Pwn',
     subtitle: 'Root/System flags, extracted password hashes & administrative proofs',
-    accentColor: 'text-emerald-400',
+    accentColor: 'text-callout-success-fg',
     borderAccent: 'border-emerald-500/30',
-    badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    badgeBg: 'bg-emerald-500/10 text-callout-success-fg border-emerald-500/30',
     icon: ShieldCheck,
   },
 ];
@@ -196,7 +196,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-[0.97] cursor-pointer ${
                 groupingMode === 'phase'
                   ? 'bg-cyber-emerald text-black shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -208,7 +208,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-[0.97] cursor-pointer ${
                 groupingMode === 'chronological'
                   ? 'bg-cyber-emerald text-black shadow-xs'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -218,7 +218,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 tracking-wider">
+          <label className="text-[10px] uppercase font-bold text-tertiary tracking-wider">
             FILTER TARGET:
           </label>
           <select
@@ -238,9 +238,9 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
 
       {filteredItems.length === 0 ? (
         <div className="p-12 text-center rounded-2xl border border-dashed border-subtle bg-surface-card/40 machined-edge">
-          <ShieldCheck className="w-10 h-10 text-slate-400 dark:text-zinc-600 mx-auto mb-3" />
+          <ShieldCheck className="w-10 h-10 text-tertiary mx-auto mb-3" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">Zero Artifacts in Selected Scope</h3>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs text-tertiary mt-1">
             Log flags, extracted credentials, or run recon scans to populate the loot timeline.
           </p>
         </div>
@@ -274,7 +274,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
                           {phaseItems.length}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                      <p className="text-[11px] text-tertiary mt-0.5">
                         {phase.subtitle}
                       </p>
                     </div>
@@ -283,7 +283,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
 
                 {/* Phase Items Grid */}
                 {phaseItems.length === 0 ? (
-                  <div className="p-4 text-center rounded-xl bg-surface-base/50 border border-dashed border-subtle text-xs text-slate-400 dark:text-zinc-500">
+                  <div className="p-4 text-center rounded-xl bg-surface-base/50 border border-dashed border-subtle text-xs text-tertiary">
                     No artifacts logged for this phase yet.
                   </div>
                 ) : (
@@ -368,19 +368,19 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
   const categoryColor = useMemo(() => {
     switch (item.category) {
       case 'flag':
-        return 'border-emerald-500/40 bg-emerald-500/5 text-emerald-400';
+        return 'border-emerald-500/40 bg-emerald-500/5 text-callout-success-fg';
       case 'password':
-        return 'border-amber-500/40 bg-amber-500/5 text-amber-400';
+        return 'border-amber-500/40 bg-amber-500/5 text-callout-warn-fg';
       case 'hash':
-        return 'border-purple-500/40 bg-purple-500/5 text-purple-400';
+        return 'border-purple-500/40 bg-purple-500/5 text-callout-tip-fg';
       case 'ssh_key':
-        return 'border-cyan-500/40 bg-cyan-500/5 text-cyan-400';
+        return 'border-cyan-500/40 bg-cyan-500/5 text-callout-info-fg';
       case 'token':
-        return 'border-blue-500/40 bg-blue-500/5 text-blue-400';
+        return 'border-blue-500/40 bg-blue-500/5 text-callout-info-fg';
       case 'service':
-        return 'border-slate-500/40 bg-slate-500/5 text-slate-400';
+        return 'border-slate-500/40 bg-slate-500/5 text-tertiary';
       default:
-        return 'border-subtle bg-surface-base text-zinc-400';
+        return 'border-subtle bg-surface-base text-tertiary';
     }
   }, [item.category]);
 
@@ -394,12 +394,12 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
               {item.typeLabel}
             </span>
             {phaseTag && (
-              <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500">
+              <span className="text-[10px] font-mono text-tertiary">
                 · {phaseTag}
               </span>
             )}
             {item.isCustom && (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-400 border border-purple-500/30 font-bold uppercase">
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-callout-tip-fg border border-purple-500/30 font-bold uppercase">
                 Custom Loot
               </span>
             )}
@@ -409,7 +409,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
               {item.targetName}
             </h4>
-            <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 tabular-nums">
+            <span className="text-[11px] font-mono text-tertiary tabular-nums">
               {item.targetIp}
             </span>
           </div>
@@ -421,8 +421,9 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onToggleReveal}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-surface-base transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 rounded-lg text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-surface-base transition-colors active:scale-[0.97] cursor-pointer"
               title={isRevealed ? 'Mask Secret' : 'Reveal Secret'}
+              aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
             >
               {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -434,7 +435,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
               isCopied
                 ? 'bg-cyber-emerald text-black px-2'
-                : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-surface-base'
+                : 'text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-surface-base'
             }`}
             title="Copy Secret to Clipboard"
           >
@@ -452,8 +453,9 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onDelete}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 rounded-lg text-tertiary hover:text-callout-danger-fg hover:bg-rose-500/10 transition-colors active:scale-[0.97] cursor-pointer"
               title="Delete Custom Loot"
+              aria-label="Delete custom loot"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -464,18 +466,18 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
       {/* Secret Display Box */}
       <div className="p-2.5 rounded-xl bg-surface-base border border-subtle font-mono text-xs flex items-center justify-between gap-2 machined-edge">
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">
+          <div className="text-[10px] font-bold text-tertiary uppercase tracking-wider mb-0.5">
             IDENTITY / USER: <strong className="text-slate-700 dark:text-zinc-200">{item.username}</strong>
           </div>
           <div className="truncate select-all text-slate-900 dark:text-white">
             {isService ? (
               <span className="text-slate-700 dark:text-zinc-300 font-mono tabular-nums">{item.secret}</span>
             ) : isRevealed ? (
-              <span className={`tabular-nums ${isFlag ? 'text-cyber-emerald font-bold' : isHash ? 'text-purple-400 font-bold' : 'text-amber-400 font-bold'}`}>
+              <span className={`tabular-nums ${isFlag ? 'text-cyber-emerald font-bold' : isHash ? 'text-callout-tip-fg font-bold' : 'text-callout-warn-fg font-bold'}`}>
                 {item.secret}
               </span>
             ) : (
-              <span className="text-slate-400 dark:text-zinc-500 tracking-widest select-none">
+              <span className="text-tertiary tracking-widest select-none">
                 ••••••••••••••••••••
               </span>
             )}
@@ -484,12 +486,12 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
       </div>
 
       {/* Footer Notes and Discovery Timestamp */}
-      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-500 font-mono pt-1">
-        <span className="truncate max-w-[260px] text-slate-600 dark:text-zinc-400" title={item.notes}>
+      <div className="flex items-center justify-between text-[10px] text-tertiary font-mono pt-1">
+        <span className="truncate max-w-[260px] text-tertiary" title={item.notes}>
           {item.notes}
         </span>
         {showTimestamp && (
-          <span className="shrink-0 tabular-nums text-slate-400 dark:text-zinc-500">
+          <span className="shrink-0 tabular-nums text-tertiary">
             {formatIsoTimestamp(item.discoveredAt)}
           </span>
         )}
