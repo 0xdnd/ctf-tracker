@@ -16,13 +16,27 @@ describe('SyntaxHighlightedCommand component', () => {
     const { container } = render(<SyntaxHighlightedCommand command={cmd} />);
     expect(container.textContent).toBe(cmd);
 
-    // IP should have underline/cyan class
+    // IP should use the syntax number token with underline
     const ipSpan = screen.getByText('10.10.14.50');
-    expect(ipSpan.className).toContain('text-cyan-400');
+    expect(ipSpan.className).toContain('text-syntax-number');
+    expect(ipSpan.className).toContain('underline');
 
-    // Port should have amber class
+    // Port should use the syntax number token with tabular figures
     const portSpan = screen.getByText('4444');
-    expect(portSpan.className).toContain('text-amber-400');
+    expect(portSpan.className).toContain('text-syntax-number');
+    expect(portSpan.className).toContain('tabular-nums');
+
+    // Binary and operator tokens use distinct syntax tokens
+    expect(screen.getAllByText('nc')[0].className).toContain('text-syntax-keyword');
+    expect(screen.getAllByText('|')[0].className).toContain('text-syntax-comment');
+    expect(screen.getByText('-i').className).toContain('text-syntax-flag');
+  });
+
+  it('renders on the fixed-dark inverse surface', () => {
+    const { container } = render(<SyntaxHighlightedCommand command="nc -lvnp 4444" />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('bg-surface-inverse');
+    expect(root.className).toContain('text-on-inverse');
   });
 
   it('handles empty commands safely', () => {

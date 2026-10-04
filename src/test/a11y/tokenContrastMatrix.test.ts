@@ -26,7 +26,7 @@ function parseBlock(selectorNeedle: string): Record<string, RGB> {
   const close = css.indexOf('}', open);
   const body = css.slice(open + 1, close);
   const out: Record<string, RGB> = {};
-  const re = /--([a-z-]+):\s*(\d+)\s+(\d+)\s+(\d+)\s*;/g;
+  const re = /--([a-z0-9-]+):\s*(\d+)\s+(\d+)\s+(\d+)\s*;/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(body))) out[m[1]] = [Number(m[2]), Number(m[3]), Number(m[4])];
   return out;
@@ -56,6 +56,21 @@ const CALLOUT_BLOCKS = {
 function calloutTokens(mode: 'light' | 'dark'): Record<string, RGB> {
   return parseBlock(CALLOUT_BLOCKS[mode]);
 }
+
+const CAT_INDICES = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+const INVERSE_TOKENS = [
+  'surface-inverse',
+  'surface-inverse-elevated',
+  'border-inverse',
+  'text-on-inverse',
+  'text-on-inverse-muted',
+] as const;
+const INVERSE_SURFACES = ['surface-inverse', 'surface-inverse-elevated'] as const;
+const INVERSE_TEXT = ['text-on-inverse', 'text-on-inverse-muted'] as const;
+const SYNTAX_NAMES = ['keyword', 'string', 'number', 'flag', 'variable', 'comment'] as const;
+
+// Syntax tokens are shared by every preset x mode: they only ever render on the (always dark) inverse surface.
+const SYNTAX_BLOCK = ':root {\n  --syntax-keyword';
 
 describe('Token contrast matrix: every text token on every surface token (WCAG AA 4.5:1)', () => {
   for (const [combo, needle] of Object.entries(BLOCKS)) {
@@ -96,6 +111,52 @@ describe('Token contrast matrix: every text token on every surface token (WCAG A
             expect(r, `${combo}: ${tk} [${tokens[tk]}] on ${surface} [${tokens[surface]}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
           });
         }
+      }
+    }
+
+    // Categorical tokens: --cat-N-{fg,bg,border}
+    for (const n of CAT_INDICES) {
+      const fg = tokens[`cat-${n}-fg`];
+      const bg = tokens[`cat-${n}-bg`];
+      const border = tokens[`cat-${n}-border`];
+      it(`[${combo}] cat-${n} fg/bg/border defined`, () => {
+        expect(fg, `${combo} missing --cat-${n}-fg`).toBeDefined();
+        expect(bg, `${combo} missing --cat-${n}-bg`).toBeDefined();
+        expect(border, `${combo} missing --cat-${n}-border`).toBeDefined();
+      });
+      it(`[${combo}] cat-${n}-fg on cat-${n}-bg >= 4.5:1`, () => {
+        const r = ratio(fg, bg);
+        expect(r, `${combo}: cat-${n}-fg [${fg}] on cat-${n}-bg [${bg}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
+      });
+      for (const surface of SURFACE_TOKENS) {
+        it(`[${combo}] cat-${n}-fg on ${surface} >= 4.5:1`, () => {
+          const r = ratio(fg, tokens[surface]);
+          expect(r, `${combo}: cat-${n}-fg [${fg}] on ${surface} [${tokens[surface]}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
+        });
+      }
+    }
+
+    // Inverse (intentionally fixed-dark) surface, dark in BOTH modes
+    it(`[${combo}] defines all inverse tokens`, () => {
+      for (const t of INVERSE_TOKENS) expect(tokens[t], `${combo} missing --${t}`).toBeDefined();
+    });
+    for (const surface of INVERSE_SURFACES) {
+      it(`[${combo}] ${surface} is dark (luminance < 0.05)`, () => {
+        expect(lum(tokens[surface]), `${combo}: ${surface} [${tokens[surface]}] must be dark`).toBeLessThan(0.05);
+      });
+      for (const text of INVERSE_TEXT) {
+        it(`[${combo}] ${text} on ${surface} >= 4.5:1`, () => {
+          const r = ratio(tokens[text], tokens[surface]);
+          expect(r, `${combo}: ${text} [${tokens[text]}] on ${surface} [${tokens[surface]}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
+        });
+      }
+      for (const name of SYNTAX_NAMES) {
+        it(`[${combo}] syntax-${name} on ${surface} >= 4.5:1`, () => {
+          const fg = parseBlock(SYNTAX_BLOCK)[`syntax-${name}`];
+          expect(fg, `missing --syntax-${name}`).toBeDefined();
+          const r = ratio(fg, tokens[surface]);
+          expect(r, `${combo}: syntax-${name} [${fg}] on ${surface} [${tokens[surface]}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
+        });
       }
     }
 

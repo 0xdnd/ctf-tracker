@@ -51,7 +51,6 @@ const TargetDetailPage = lazy(() => import('./pages/TargetDetailPage').then(m =>
 const MethodologyPage = lazy(() => import('./pages/MethodologyPage').then(m => ({ default: m.MethodologyPage })));
 const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m => ({ default: m.ExamSimulatorPage })));
 const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
-const ThemeShowcaseDemo = lazy(() => import('./components/common/ThemeShowcaseDemo').then(m => ({ default: m.ThemeShowcaseDemo })));
 
 const CyberRouteLoader: React.FC = () => <ViewSkeleton />;
 
@@ -487,9 +486,6 @@ const MainAppContent: React.FC = () => {
                     <Route path="/vault" element={<EvidenceVaultPage />} />
                     <Route path="/evidence" element={<EvidenceVaultPage />} />
                     <Route path="/loot" element={<EvidenceVaultPage />} />
-                    <Route path="/theme-demo" element={<ThemeShowcaseDemo />} />
-                    <Route path="/theme" element={<ThemeShowcaseDemo />} />
-                    <Route path="/dark-mode" element={<ThemeShowcaseDemo />} />
                     <Route path="*" element={<Navigate to="/tracker" replace />} />
                   </Routes>
                 </Suspense>

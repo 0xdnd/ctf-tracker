@@ -30,4 +30,19 @@ describe('StatusBadge Component (Zero Layout Shift Contract)', () => {
     render(<StatusBadge status="backlog" />);
     expect(screen.getByText('BACKLOG')).toBeInTheDocument();
   });
+
+  it('maps statuses onto semantic callout tokens', () => {
+    const expected: Record<string, string> = {
+      recon: 'text-callout-info-fg',
+      foothold: 'text-callout-warn-fg',
+      root: 'text-callout-success-fg',
+      completed: 'text-callout-tip-fg',
+      backlog: 'bg-surface-sunken',
+    };
+    for (const [status, cls] of Object.entries(expected)) {
+      const { container, unmount } = render(<StatusBadge status={status} />);
+      expect(container.querySelector('span')?.className).toContain(cls);
+      unmount();
+    }
+  });
 });

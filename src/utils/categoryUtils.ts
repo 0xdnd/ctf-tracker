@@ -19,6 +19,161 @@ export interface VulnCategoryDef {
   badgeColor: string;
   textColor: string;
   borderColor: string;
+  /** Categorical token slot (cat-1 .. cat-8) this category is rendered with. */
+  catIndex: CatIndex;
+}
+
+// ---------------------------------------------------------------------------
+// Single source of truth for badge colours.
+// Every colour is a design token (src/index.css) so all presets x modes stay
+// AA-compliant. Class strings are written out in full so Tailwind can see them.
+// ---------------------------------------------------------------------------
+
+export type CatIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export interface BadgeTone {
+  /** bg + text + border, ready to drop on a badge. */
+  badge: string;
+  text: string;
+  bg: string;
+  border: string;
+}
+
+export const CAT_TONES: Record<CatIndex, BadgeTone> = {
+  1: { badge: 'bg-cat-1-bg text-cat-1-fg border-cat-1-border', text: 'text-cat-1-fg', bg: 'bg-cat-1-bg', border: 'border-cat-1-border' },
+  2: { badge: 'bg-cat-2-bg text-cat-2-fg border-cat-2-border', text: 'text-cat-2-fg', bg: 'bg-cat-2-bg', border: 'border-cat-2-border' },
+  3: { badge: 'bg-cat-3-bg text-cat-3-fg border-cat-3-border', text: 'text-cat-3-fg', bg: 'bg-cat-3-bg', border: 'border-cat-3-border' },
+  4: { badge: 'bg-cat-4-bg text-cat-4-fg border-cat-4-border', text: 'text-cat-4-fg', bg: 'bg-cat-4-bg', border: 'border-cat-4-border' },
+  5: { badge: 'bg-cat-5-bg text-cat-5-fg border-cat-5-border', text: 'text-cat-5-fg', bg: 'bg-cat-5-bg', border: 'border-cat-5-border' },
+  6: { badge: 'bg-cat-6-bg text-cat-6-fg border-cat-6-border', text: 'text-cat-6-fg', bg: 'bg-cat-6-bg', border: 'border-cat-6-border' },
+  7: { badge: 'bg-cat-7-bg text-cat-7-fg border-cat-7-border', text: 'text-cat-7-fg', bg: 'bg-cat-7-bg', border: 'border-cat-7-border' },
+  8: { badge: 'bg-cat-8-bg text-cat-8-fg border-cat-8-border', text: 'text-cat-8-fg', bg: 'bg-cat-8-bg', border: 'border-cat-8-border' },
+};
+
+export const NEUTRAL_TONE: BadgeTone = {
+  badge: 'bg-surface-sunken text-secondary border-subtle',
+  text: 'text-secondary',
+  bg: 'bg-surface-sunken',
+  border: 'border-subtle',
+};
+
+export type SemanticToneId = 'info' | 'tip' | 'warn' | 'danger' | 'success';
+
+export const SEMANTIC_TONES: Record<SemanticToneId, BadgeTone> = {
+  info: { badge: 'bg-callout-info-bg text-callout-info-fg border-callout-info-border', text: 'text-callout-info-fg', bg: 'bg-callout-info-bg', border: 'border-callout-info-border' },
+  tip: { badge: 'bg-callout-tip-bg text-callout-tip-fg border-callout-tip-border', text: 'text-callout-tip-fg', bg: 'bg-callout-tip-bg', border: 'border-callout-tip-border' },
+  warn: { badge: 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border', text: 'text-callout-warn-fg', bg: 'bg-callout-warn-bg', border: 'border-callout-warn-border' },
+  danger: { badge: 'bg-callout-danger-bg text-callout-danger-fg border-callout-danger-border', text: 'text-callout-danger-fg', bg: 'bg-callout-danger-bg', border: 'border-callout-danger-border' },
+  success: { badge: 'bg-callout-success-bg text-callout-success-fg border-callout-success-border', text: 'text-callout-success-fg', bg: 'bg-callout-success-bg', border: 'border-callout-success-border' },
+};
+
+/** Deterministic category -> cat-N slot. Related categories share a hue; icons + labels disambiguate. */
+export const CATEGORY_CAT_INDEX: Record<string, CatIndex> = {
+  Web: 1,
+  'CMS Exploits': 1,
+  'Windows PrivEsc': 1,
+  'Cloud & Containers': 1,
+  Deserialization: 2,
+  'Active Directory': 2,
+  'Reverse Engineering': 2,
+  LFI: 3,
+  SSRF: 3,
+  'Network / SMB': 3,
+  Pivoting: 3,
+  SQLi: 4,
+  XXE: 4,
+  Cryptography: 4,
+  RCE: 5,
+  'Kernel Exploits': 5,
+  'Binary / BOF': 5,
+  'File Upload': 6,
+  IDOR: 6,
+  'Linux PrivEsc': 6,
+  XSS: 7,
+  'Auth & Passwords': 7,
+  'API & GraphQL': 7,
+  ADCS: 8,
+  SSTI: 8,
+};
+
+export const PLATFORM_CAT_INDEX: Record<string, CatIndex> = {
+  HTB: 6,
+  THM: 5,
+};
+
+export const OS_CAT_INDEX: Record<string, CatIndex> = {
+  Linux: 7,
+  Windows: 1,
+  macOS: 2,
+  BSD: 5,
+  Android: 6,
+};
+
+const DIFFICULTY_TONE: Record<string, SemanticToneId> = {
+  'Very Easy': 'info',
+  Easy: 'success',
+  Medium: 'warn',
+  Hard: 'danger',
+  Insane: 'tip',
+};
+
+const STATUS_TONE: Record<string, SemanticToneId> = {
+  recon: 'info',
+  foothold: 'warn',
+  root: 'success',
+  pwned: 'success',
+  completed: 'tip',
+};
+
+export function getCategoryCatIndex(categoryId: string): CatIndex | undefined {
+  return CATEGORY_CAT_INDEX[categoryId];
+}
+
+export function getCategoryTone(categoryId: string): BadgeTone {
+  const idx = CATEGORY_CAT_INDEX[categoryId];
+  return idx ? CAT_TONES[idx] : NEUTRAL_TONE;
+}
+
+export function getPlatformTone(platform?: string): BadgeTone {
+  const idx = platform ? PLATFORM_CAT_INDEX[platform] : undefined;
+  return idx ? CAT_TONES[idx] : NEUTRAL_TONE;
+}
+
+export function getOsTone(os?: string): BadgeTone {
+  const idx = os ? OS_CAT_INDEX[os] : undefined;
+  return idx ? CAT_TONES[idx] : NEUTRAL_TONE;
+}
+
+export function getDifficultyTone(difficulty?: string): BadgeTone {
+  const id = difficulty ? DIFFICULTY_TONE[difficulty] : undefined;
+  return id ? SEMANTIC_TONES[id] : NEUTRAL_TONE;
+}
+
+export function getStatusTone(status?: string): BadgeTone {
+  const id = status ? STATUS_TONE[status.toLowerCase()] : undefined;
+  return id ? SEMANTIC_TONES[id] : NEUTRAL_TONE;
+}
+
+function defineCategory(
+  id: string,
+  label: string,
+  shortLabel: string,
+  domain: VulnDomainId,
+  priority: number,
+): VulnCategoryDef {
+  const catIndex = CATEGORY_CAT_INDEX[id];
+  const tone = CAT_TONES[catIndex];
+  return {
+    id,
+    label,
+    shortLabel,
+    domain,
+    priority,
+    badgeColor: tone.badge,
+    textColor: tone.text,
+    borderColor: tone.border,
+    catIndex,
+  };
 }
 
 export const VULN_DOMAINS: VulnDomainDef[] = [
@@ -27,296 +182,71 @@ export const VULN_DOMAINS: VulnDomainDef[] = [
     label: 'All Attack Vectors',
     shortLabel: 'ALL VECTORS',
     iconName: 'Layers',
-    badgeColor: 'border-cyber-border text-slate-900 dark:text-white',
+    badgeColor: 'border-subtle text-primary',
   },
   {
     id: 'web',
     label: 'Web & API Security',
     shortLabel: '🌐 WEB & API',
     iconName: 'Globe',
-    badgeColor: 'border-cyan-400 dark:border-cyan-500/50 text-cyan-900 dark:text-cyan-400',
+    badgeColor: 'border-cat-1-border text-cat-1-fg',
   },
   {
     id: 'ad',
     label: 'Active Directory & Identity',
     shortLabel: '🛡️ AD & IDENTITY',
     iconName: 'Cpu',
-    badgeColor: 'border-purple-400 dark:border-purple-500/50 text-purple-900 dark:text-purple-400',
+    badgeColor: 'border-cat-2-border text-cat-2-fg',
   },
   {
     id: 'system',
     label: 'Host & System Exploitation',
     shortLabel: '⚡ HOST & PRIVESC',
     iconName: 'Terminal',
-    badgeColor: 'border-emerald-400 dark:border-emerald-500/50 text-emerald-900 dark:text-emerald-400',
+    badgeColor: 'border-cat-6-border text-cat-6-fg',
   },
   {
     id: 'advanced',
     label: 'Advanced & Specialized CTF',
     shortLabel: '🧩 ADVANCED & CTF',
     iconName: 'Sparkles',
-    badgeColor: 'border-rose-400 dark:border-rose-500/50 text-rose-900 dark:text-rose-400',
+    badgeColor: 'border-cat-5-border text-cat-5-fg',
   },
 ];
 
 export const VULN_CATEGORIES: VulnCategoryDef[] = [
   // --- DOMAIN 1: WEB & API EXPLOITATION ---
-  {
-    id: 'Web',
-    label: 'Web Application',
-    shortLabel: 'Web',
-    domain: 'web',
-    priority: 50,
-    badgeColor: 'bg-cyan-100 dark:bg-cyan-500/25 text-cyan-900 dark:text-cyan-400 border-cyan-300 dark:border-cyan-500/30',
-    textColor: 'text-cyan-800 dark:text-cyan-400',
-    borderColor: 'border-cyan-400 dark:border-cyan-500/40',
-  },
-  {
-    id: 'SQLi',
-    label: 'SQL Injection',
-    shortLabel: 'SQLi',
-    domain: 'web',
-    priority: 68,
-    badgeColor: 'bg-amber-100 dark:bg-amber-500/25 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-500/30',
-    textColor: 'text-amber-800 dark:text-amber-300',
-    borderColor: 'border-amber-400 dark:border-amber-500/40',
-  },
-  {
-    id: 'RCE',
-    label: 'Remote Code Execution / Command Injection',
-    shortLabel: 'RCE',
-    domain: 'web',
-    priority: 70,
-    badgeColor: 'bg-rose-100 dark:bg-rose-500/25 text-rose-900 dark:text-rose-400 border-rose-300 dark:border-rose-500/30',
-    textColor: 'text-rose-800 dark:text-rose-400',
-    borderColor: 'border-rose-400 dark:border-rose-500/40',
-  },
-  {
-    id: 'File Upload',
-    label: 'Arbitrary File Upload & Web Shell',
-    shortLabel: 'File Upload',
-    domain: 'web',
-    priority: 62,
-    badgeColor: 'bg-lime-100 dark:bg-lime-500/25 text-lime-900 dark:text-lime-400 border-lime-300 dark:border-lime-500/30',
-    textColor: 'text-lime-800 dark:text-lime-400',
-    borderColor: 'border-lime-400 dark:border-lime-500/40',
-  },
-  {
-    id: 'LFI',
-    label: 'File Inclusion (LFI/RFI/Traversal)',
-    shortLabel: 'LFI/Traversal',
-    domain: 'web',
-    priority: 56,
-    badgeColor: 'bg-sky-100 dark:bg-sky-500/25 text-sky-900 dark:text-sky-300 border-sky-300 dark:border-sky-500/30',
-    textColor: 'text-sky-800 dark:text-sky-300',
-    borderColor: 'border-sky-400 dark:border-sky-500/40',
-  },
-  {
-    id: 'SSRF',
-    label: 'Server-Side Request Forgery',
-    shortLabel: 'SSRF',
-    domain: 'web',
-    priority: 65,
-    badgeColor: 'bg-teal-100 dark:bg-teal-500/25 text-teal-900 dark:text-teal-300 border-teal-300 dark:border-teal-500/30',
-    textColor: 'text-teal-800 dark:text-teal-300',
-    borderColor: 'border-teal-400 dark:border-teal-500/40',
-  },
-  {
-    id: 'SSTI',
-    label: 'Server-Side Template Injection',
-    shortLabel: 'SSTI',
-    domain: 'web',
-    priority: 75,
-    badgeColor: 'bg-pink-100 dark:bg-pink-500/25 text-pink-900 dark:text-pink-300 border-pink-300 dark:border-pink-500/30',
-    textColor: 'text-pink-800 dark:text-pink-300',
-    borderColor: 'border-pink-400 dark:border-pink-500/40',
-  },
-  {
-    id: 'Deserialization',
-    label: 'Insecure Deserialization',
-    shortLabel: 'Deserialization',
-    domain: 'web',
-    priority: 80,
-    badgeColor: 'bg-violet-100 dark:bg-violet-500/25 text-violet-900 dark:text-violet-300 border-violet-300 dark:border-violet-500/30',
-    textColor: 'text-violet-800 dark:text-violet-300',
-    borderColor: 'border-violet-400 dark:border-violet-500/40',
-  },
-  {
-    id: 'Auth & Passwords',
-    label: 'Auth Bypass & Password Attacks',
-    shortLabel: 'Auth & Pass',
-    domain: 'web',
-    priority: 52,
-    badgeColor: 'bg-yellow-100 dark:bg-yellow-500/25 text-yellow-950 dark:text-yellow-400 border-yellow-300 dark:border-yellow-500/30',
-    textColor: 'text-yellow-800 dark:text-yellow-400',
-    borderColor: 'border-yellow-400 dark:border-yellow-500/40',
-  },
-  {
-    id: 'IDOR',
-    label: 'Insecure Direct Object Reference (IDOR)',
-    shortLabel: 'IDOR',
-    domain: 'web',
-    priority: 60,
-    badgeColor: 'bg-emerald-100 dark:bg-emerald-500/25 text-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30',
-    textColor: 'text-emerald-800 dark:text-emerald-300',
-    borderColor: 'border-emerald-400 dark:border-emerald-500/40',
-  },
-  {
-    id: 'API & GraphQL',
-    label: 'API & GraphQL Security',
-    shortLabel: 'API/GraphQL',
-    domain: 'web',
-    priority: 55,
-    badgeColor: 'bg-indigo-100 dark:bg-indigo-500/25 text-indigo-900 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30',
-    textColor: 'text-indigo-800 dark:text-indigo-300',
-    borderColor: 'border-indigo-400 dark:border-indigo-500/40',
-  },
-  {
-    id: 'XXE',
-    label: 'XML External Entity (XXE)',
-    shortLabel: 'XXE',
-    domain: 'web',
-    priority: 64,
-    badgeColor: 'bg-orange-100 dark:bg-orange-500/25 text-orange-950 dark:text-orange-300 border-orange-300 dark:border-orange-500/30',
-    textColor: 'text-orange-800 dark:text-orange-300',
-    borderColor: 'border-orange-400 dark:border-orange-500/40',
-  },
-  {
-    id: 'CMS Exploits',
-    label: 'CMS Exploits (WordPress/Drupal/Joomla)',
-    shortLabel: 'CMS',
-    domain: 'web',
-    priority: 54,
-    badgeColor: 'bg-blue-100 dark:bg-blue-500/25 text-blue-900 dark:text-blue-300 border-blue-300 dark:border-blue-500/30',
-    textColor: 'text-blue-800 dark:text-blue-300',
-    borderColor: 'border-blue-400 dark:border-blue-500/40',
-  },
-  {
-    id: 'XSS',
-    label: 'Cross-Site Scripting',
-    shortLabel: 'XSS',
-    domain: 'web',
-    priority: 45,
-    badgeColor: 'bg-yellow-100 dark:bg-yellow-500/25 text-yellow-950 dark:text-yellow-300 border-yellow-300 dark:border-yellow-500/30',
-    textColor: 'text-yellow-800 dark:text-yellow-300',
-    borderColor: 'border-yellow-400 dark:border-yellow-500/40',
-  },
+  defineCategory('Web', 'Web Application', 'Web', 'web', 50),
+  defineCategory('SQLi', 'SQL Injection', 'SQLi', 'web', 68),
+  defineCategory('RCE', 'Remote Code Execution / Command Injection', 'RCE', 'web', 70),
+  defineCategory('File Upload', 'Arbitrary File Upload & Web Shell', 'File Upload', 'web', 62),
+  defineCategory('LFI', 'File Inclusion (LFI/RFI/Traversal)', 'LFI/Traversal', 'web', 56),
+  defineCategory('SSRF', 'Server-Side Request Forgery', 'SSRF', 'web', 65),
+  defineCategory('SSTI', 'Server-Side Template Injection', 'SSTI', 'web', 75),
+  defineCategory('Deserialization', 'Insecure Deserialization', 'Deserialization', 'web', 80),
+  defineCategory('Auth & Passwords', 'Auth Bypass & Password Attacks', 'Auth & Pass', 'web', 52),
+  defineCategory('IDOR', 'Insecure Direct Object Reference (IDOR)', 'IDOR', 'web', 60),
+  defineCategory('API & GraphQL', 'API & GraphQL Security', 'API/GraphQL', 'web', 55),
+  defineCategory('XXE', 'XML External Entity (XXE)', 'XXE', 'web', 64),
+  defineCategory('CMS Exploits', 'CMS Exploits (WordPress/Drupal/Joomla)', 'CMS', 'web', 54),
+  defineCategory('XSS', 'Cross-Site Scripting', 'XSS', 'web', 45),
 
   // --- DOMAIN 2: ACTIVE DIRECTORY & IDENTITY ---
-  {
-    id: 'ADCS',
-    label: 'ADCS / Active Directory Certificates',
-    shortLabel: 'ADCS',
-    domain: 'ad',
-    priority: 100,
-    badgeColor: 'bg-fuchsia-100 dark:bg-fuchsia-500/30 text-fuchsia-950 dark:text-fuchsia-300 border-fuchsia-300 dark:border-fuchsia-500/40',
-    textColor: 'text-fuchsia-800 dark:text-fuchsia-300',
-    borderColor: 'border-fuchsia-400 dark:border-fuchsia-500/50',
-  },
-  {
-    id: 'Active Directory',
-    label: 'Active Directory & Kerberos',
-    shortLabel: 'AD',
-    domain: 'ad',
-    priority: 95,
-    badgeColor: 'bg-purple-100 dark:bg-purple-500/25 text-purple-900 dark:text-purple-400 border-purple-300 dark:border-purple-500/30',
-    textColor: 'text-purple-800 dark:text-purple-400',
-    borderColor: 'border-purple-400 dark:border-purple-500/40',
-  },
+  defineCategory('ADCS', 'ADCS / Active Directory Certificates', 'ADCS', 'ad', 100),
+  defineCategory('Active Directory', 'Active Directory & Kerberos', 'AD', 'ad', 95),
 
   // --- DOMAIN 3: HOST & SYSTEM EXPLOITATION ---
-  {
-    id: 'Kernel Exploits',
-    label: 'Kernel Exploits & Zero-Days',
-    shortLabel: 'Kernel',
-    domain: 'system',
-    priority: 90,
-    badgeColor: 'bg-red-100 dark:bg-red-500/30 text-red-950 dark:text-red-300 border-red-300 dark:border-red-500/40',
-    textColor: 'text-red-800 dark:text-red-300',
-    borderColor: 'border-red-400 dark:border-red-500/50',
-  },
-  {
-    id: 'Windows PrivEsc',
-    label: 'Windows Privilege Escalation',
-    shortLabel: 'Win PE',
-    domain: 'system',
-    priority: 42,
-    badgeColor: 'bg-blue-100 dark:bg-blue-500/25 text-blue-900 dark:text-blue-400 border-blue-300 dark:border-blue-500/30',
-    textColor: 'text-blue-800 dark:text-blue-400',
-    borderColor: 'border-blue-400 dark:border-blue-500/40',
-  },
-  {
-    id: 'Linux PrivEsc',
-    label: 'Linux Privilege Escalation',
-    shortLabel: 'Linux PE',
-    domain: 'system',
-    priority: 40,
-    badgeColor: 'bg-emerald-100 dark:bg-emerald-500/25 text-emerald-900 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30',
-    textColor: 'text-emerald-800 dark:text-emerald-400',
-    borderColor: 'border-emerald-400 dark:border-emerald-500/40',
-  },
-  {
-    id: 'Network / SMB',
-    label: 'Network Protocols (SMB/RPC/SNMP/FTP)',
-    shortLabel: 'SMB/Net',
-    domain: 'system',
-    priority: 34,
-    badgeColor: 'bg-orange-100 dark:bg-orange-500/25 text-orange-950 dark:text-orange-300 border-orange-300 dark:border-orange-500/30',
-    textColor: 'text-orange-800 dark:text-orange-300',
-    borderColor: 'border-orange-400 dark:border-orange-500/40',
-  },
+  defineCategory('Kernel Exploits', 'Kernel Exploits & Zero-Days', 'Kernel', 'system', 90),
+  defineCategory('Windows PrivEsc', 'Windows Privilege Escalation', 'Win PE', 'system', 42),
+  defineCategory('Linux PrivEsc', 'Linux Privilege Escalation', 'Linux PE', 'system', 40),
+  defineCategory('Network / SMB', 'Network Protocols (SMB/RPC/SNMP/FTP)', 'SMB/Net', 'system', 34),
 
   // --- DOMAIN 4: ADVANCED & SPECIALIZED CTF ---
-  {
-    id: 'Binary / BOF',
-    label: 'Buffer Overflow & Binary Pwn',
-    shortLabel: 'BOF/Pwn',
-    domain: 'advanced',
-    priority: 85,
-    badgeColor: 'bg-red-100 dark:bg-red-600/25 text-red-900 dark:text-red-400 border-red-300 dark:border-red-600/30',
-    textColor: 'text-red-800 dark:text-red-400',
-    borderColor: 'border-red-400 dark:border-red-600/40',
-  },
-  {
-    id: 'Cloud & Containers',
-    label: 'Cloud & Docker/K8s Breakouts',
-    shortLabel: 'Cloud/Docker',
-    domain: 'advanced',
-    priority: 48,
-    badgeColor: 'bg-sky-100 dark:bg-sky-500/25 text-sky-950 dark:text-sky-300 border-sky-300 dark:border-sky-500/30',
-    textColor: 'text-sky-800 dark:text-sky-300',
-    borderColor: 'border-sky-400 dark:border-sky-500/40',
-  },
-  {
-    id: 'Reverse Engineering',
-    label: 'Reverse Engineering & Decompilation',
-    shortLabel: 'Reversing',
-    domain: 'advanced',
-    priority: 46,
-    badgeColor: 'bg-purple-100 dark:bg-purple-500/25 text-purple-950 dark:text-purple-300 border-purple-300 dark:border-purple-500/30',
-    textColor: 'text-purple-800 dark:text-purple-300',
-    borderColor: 'border-purple-400 dark:border-purple-500/40',
-  },
-  {
-    id: 'Cryptography',
-    label: 'Cryptography & Broken Ciphers',
-    shortLabel: 'Crypto',
-    domain: 'advanced',
-    priority: 44,
-    badgeColor: 'bg-amber-100 dark:bg-amber-500/25 text-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-500/30',
-    textColor: 'text-amber-800 dark:text-amber-300',
-    borderColor: 'border-amber-400 dark:border-amber-500/40',
-  },
-  {
-    id: 'Pivoting',
-    label: 'Pivoting, Tunneling & Port Forwarding',
-    shortLabel: 'Pivoting',
-    domain: 'advanced',
-    priority: 36,
-    badgeColor: 'bg-indigo-100 dark:bg-indigo-500/25 text-indigo-950 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30',
-    textColor: 'text-indigo-800 dark:text-indigo-300',
-    borderColor: 'border-indigo-400 dark:border-indigo-500/40',
-  },
+  defineCategory('Binary / BOF', 'Buffer Overflow & Binary Pwn', 'BOF/Pwn', 'advanced', 85),
+  defineCategory('Cloud & Containers', 'Cloud & Docker/K8s Breakouts', 'Cloud/Docker', 'advanced', 48),
+  defineCategory('Reverse Engineering', 'Reverse Engineering & Decompilation', 'Reversing', 'advanced', 46),
+  defineCategory('Cryptography', 'Cryptography & Broken Ciphers', 'Crypto', 'advanced', 44),
+  defineCategory('Pivoting', 'Pivoting, Tunneling & Port Forwarding', 'Pivoting', 'advanced', 36),
 ];
 
 export interface ClassificationResult {
@@ -422,7 +352,7 @@ export function classifyMachine(m: Machine): ClassificationResult {
       primary: 'Target Host',
       categories: [],
       domains: [],
-      badgeColor: 'bg-gray-500/15 text-tertiary border-gray-500/30',
+      badgeColor: NEUTRAL_TONE.badge,
       isAD: false,
     };
   }
@@ -492,7 +422,7 @@ export function classifyMachine(m: Machine): ClassificationResult {
     badgeColor = highestPriorityDef.badgeColor;
   } else {
     primary = `${m.os || 'Target'} Host`;
-    badgeColor = 'bg-slate-100 dark:bg-gray-500/25 text-slate-800 dark:text-tertiary border-slate-300 dark:border-gray-500/30';
+    badgeColor = NEUTRAL_TONE.badge;
   }
 
   const result: ClassificationResult = {

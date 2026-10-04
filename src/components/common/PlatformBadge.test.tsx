@@ -11,7 +11,7 @@ describe('PlatformBadge component', () => {
     expect(badge).toBeInTheDocument();
     const container = badge.closest('.inline-flex');
     expect(container).toBeInTheDocument();
-    expect(container?.className).toContain('text-emerald-900');
+    expect(container?.className).toContain('text-cat-6-fg');
   });
 
   it('renders THM platform badge with label and styling', () => {
@@ -21,7 +21,7 @@ describe('PlatformBadge component', () => {
     expect(badge).toBeInTheDocument();
     const container = badge.closest('.inline-flex');
     expect(container).toBeInTheDocument();
-    expect(container?.className).toContain('text-red-900');
+    expect(container?.className).toContain('text-cat-5-fg');
   });
 
   it('renders Custom platform badge with neutral styling', () => {
@@ -31,7 +31,7 @@ describe('PlatformBadge component', () => {
     expect(badge).toBeInTheDocument();
     const container = badge.closest('.inline-flex');
     expect(container).toBeInTheDocument();
-    expect(container?.className).toContain('text-slate-800');
+    expect(container?.className).toContain('bg-surface-sunken');
   });
 
   it('hides label when showLabel is false', () => {

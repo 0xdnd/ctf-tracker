@@ -33,6 +33,19 @@ const BINARY_SET = new Set([
   'msfconsole', 'msfvenom',
 ]);
 
+// Token type -> syntax-* design tokens (rendered on bg-surface-inverse).
+const TOKEN_CLASS: Record<Token['type'], string> = {
+  binary: 'text-syntax-keyword font-bold',
+  ip: 'text-syntax-number font-bold underline decoration-syntax-number/40',
+  port: 'text-syntax-number font-semibold tabular-nums',
+  flag: 'text-syntax-flag font-medium',
+  operator: 'text-syntax-comment font-bold',
+  string: 'text-syntax-string',
+  variable: 'text-syntax-variable font-bold',
+  device: 'text-syntax-string font-bold',
+  default: 'text-on-inverse',
+};
+
 function tokenizeCommand(command: string): Token[] {
   if (!command) return [];
 
@@ -111,40 +124,9 @@ export const SyntaxHighlightedCommand: React.FC<SyntaxHighlightedCommandProps> =
   const tokens = React.useMemo(() => tokenizeCommand(command), [command]);
 
   return (
-    <span className={`font-mono inline-block break-all select-all ${className}`}>
+    <span className={`font-mono inline-block break-all select-all rounded-md bg-surface-inverse px-2 py-1 text-on-inverse ${className}`}>
       {tokens.map((token, index) => {
-        let colorClass = 'text-slate-800 dark:text-slate-200';
-
-        switch (token.type) {
-          case 'binary':
-            colorClass = 'text-emerald-700 dark:text-[#9fef00] font-bold';
-            break;
-          case 'ip':
-            colorClass = 'text-cyan-700 dark:text-cyan-400 font-bold underline decoration-cyan-500/30';
-            break;
-          case 'port':
-            colorClass = 'text-amber-700 dark:text-amber-400 font-semibold tabular-nums';
-            break;
-          case 'flag':
-            colorClass = 'text-purple-700 dark:text-purple-300 font-medium';
-            break;
-          case 'operator':
-            colorClass = 'text-sky-700 dark:text-sky-400 font-bold';
-            break;
-          case 'string':
-            colorClass = 'text-teal-700 dark:text-teal-400';
-            break;
-          case 'variable':
-            colorClass = 'text-rose-700 dark:text-rose-300 font-bold';
-            break;
-          case 'device':
-            colorClass = 'text-pink-700 dark:text-pink-300 font-bold';
-            break;
-          case 'default':
-          default:
-            colorClass = 'text-slate-800 dark:text-slate-200';
-            break;
-        }
+        const colorClass = TOKEN_CLASS[token.type] ?? TOKEN_CLASS.default;
 
         return (
           <span key={index} className={colorClass}>

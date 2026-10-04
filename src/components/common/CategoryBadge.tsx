@@ -20,7 +20,7 @@ import {
   Lock
 } from 'lucide-react';
 import { Machine } from '../../types';
-import { classifyMachine } from '../../utils/categoryUtils';
+import { classifyMachine, getCategoryTone, NEUTRAL_TONE } from '../../utils/categoryUtils';
 
 export interface CategoryBadgeProps {
   machine: Machine;
@@ -41,59 +41,60 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
 
   const getIcon = () => {
     const catId = primaryDef?.id || primary;
+    const iconClass = `w-2.5 h-2.5 ${(primaryDef ? getCategoryTone(primaryDef.id) : NEUTRAL_TONE).text}`;
     switch (catId) {
       case 'ADCS':
-        return <Cpu className="w-2.5 h-2.5 text-fuchsia-400" />;
+        return <Cpu className={iconClass} />;
       case 'Active Directory':
-        return <Cpu className="w-2.5 h-2.5 text-purple-400" />;
+        return <Cpu className={iconClass} />;
       case 'Kernel Exploits':
-        return <Zap className="w-2.5 h-2.5 text-red-400" />;
+        return <Zap className={iconClass} />;
       case 'Binary / BOF':
-        return <Sparkles className="w-2.5 h-2.5 text-red-400" />;
+        return <Sparkles className={iconClass} />;
       case 'SSTI':
-        return <Code className="w-2.5 h-2.5 text-pink-400" />;
+        return <Code className={iconClass} />;
       case 'Deserialization':
-        return <Binary className="w-2.5 h-2.5 text-violet-400" />;
+        return <Binary className={iconClass} />;
       case 'RCE':
-        return <Flame className="w-2.5 h-2.5 text-rose-400" />;
+        return <Flame className={iconClass} />;
       case 'SQLi':
-        return <Database className="w-2.5 h-2.5 text-amber-400" />;
+        return <Database className={iconClass} />;
       case 'SSRF':
-        return <Globe className="w-2.5 h-2.5 text-teal-400" />;
+        return <Globe className={iconClass} />;
       case 'File Upload':
-        return <Upload className="w-2.5 h-2.5 text-lime-400" />;
+        return <Upload className={iconClass} />;
       case 'LFI':
-        return <FileCode className="w-2.5 h-2.5 text-sky-400" />;
+        return <FileCode className={iconClass} />;
       case 'XXE':
-        return <Code className="w-2.5 h-2.5 text-orange-400" />;
+        return <Code className={iconClass} />;
       case 'IDOR':
-        return <KeyRound className="w-2.5 h-2.5 text-emerald-400" />;
+        return <KeyRound className={iconClass} />;
       case 'API & GraphQL':
-        return <Network className="w-2.5 h-2.5 text-indigo-400" />;
+        return <Network className={iconClass} />;
       case 'CMS Exploits':
-        return <Globe className="w-2.5 h-2.5 text-blue-400" />;
+        return <Globe className={iconClass} />;
       case 'XSS':
-        return <Globe className="w-2.5 h-2.5 text-yellow-400" />;
+        return <Globe className={iconClass} />;
       case 'Web':
-        return <Globe className="w-2.5 h-2.5 text-cyan-400" />;
+        return <Globe className={iconClass} />;
       case 'Cloud & Containers':
-        return <Boxes className="w-2.5 h-2.5 text-sky-400" />;
+        return <Boxes className={iconClass} />;
       case 'Reverse Engineering':
-        return <Binary className="w-2.5 h-2.5 text-purple-400" />;
+        return <Binary className={iconClass} />;
       case 'Cryptography':
-        return <Lock className="w-2.5 h-2.5 text-amber-400" />;
+        return <Lock className={iconClass} />;
       case 'Windows PrivEsc':
-        return <Layers className="w-2.5 h-2.5 text-blue-400" />;
+        return <Layers className={iconClass} />;
       case 'Linux PrivEsc':
-        return <Terminal className="w-2.5 h-2.5 text-emerald-400" />;
+        return <Terminal className={iconClass} />;
       case 'Auth & Passwords':
-        return <KeyRound className="w-2.5 h-2.5 text-yellow-400" />;
+        return <KeyRound className={iconClass} />;
       case 'Pivoting':
-        return <Network className="w-2.5 h-2.5 text-indigo-400" />;
+        return <Network className={iconClass} />;
       case 'Network / SMB':
-        return <Key className="w-2.5 h-2.5 text-orange-400" />;
+        return <Key className={iconClass} />;
       default:
-        return <Shield className="w-2.5 h-2.5 text-gray-400" />;
+        return <Shield className={iconClass} />;
     }
   };
 
@@ -110,7 +111,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
   if (variant === 'hardware') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-300 dark:border-zinc-800/90 bg-zinc-100 dark:bg-zinc-950/80 text-zinc-800 dark:text-zinc-300 font-mono text-[10px] tracking-wider uppercase select-none cursor-default font-medium ${hardwareSizeClass} ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-[3px] border border-subtle bg-surface-sunken text-secondary font-mono text-[10px] tracking-wider uppercase select-none cursor-default font-medium ${hardwareSizeClass} ${className}`}
         title={`Primary Vector: ${primary} • All Categories: ${categories.join(', ')}`}
       >
         {showIcon && <span className="flex-shrink-0">{getIcon()}</span>}

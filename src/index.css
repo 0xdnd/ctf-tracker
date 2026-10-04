@@ -25,6 +25,23 @@
   --text-tertiary: 100 100 108;         /* #64646c - AA-calibrated */
   --text-dim: 88 102 122;               /* #58667a - AA-calibrated */
 
+  /* Categorical tokens (--cat-N-fg/bg/border): calm hues, fg >= 4.5:1 on own bg and on every surface */
+  --cat-1-fg: 29 78 216;  --cat-1-bg: 219 234 254;  --cat-1-border: 147 197 253;   /* blue */
+  --cat-2-fg: 109 40 217;  --cat-2-bg: 237 233 254;  --cat-2-border: 196 181 253;   /* violet */
+  --cat-3-fg: 17 94 89;  --cat-3-bg: 204 251 241;  --cat-3-border: 94 234 212;   /* teal */
+  --cat-4-fg: 154 52 18;  --cat-4-bg: 255 237 213;  --cat-4-border: 253 186 116;   /* orange */
+  --cat-5-fg: 190 18 60;  --cat-5-bg: 255 228 230;  --cat-5-border: 253 164 175;   /* rose */
+  --cat-6-fg: 22 101 52;  --cat-6-bg: 220 252 231;  --cat-6-border: 134 239 172;   /* green */
+  --cat-7-fg: 133 77 14;  --cat-7-bg: 254 249 195;  --cat-7-border: 253 224 71;   /* yellow */
+  --cat-8-fg: 162 28 175;  --cat-8-bg: 250 232 255;  --cat-8-border: 240 171 252;   /* fuchsia */
+
+  /* Inverse surface: intentionally fixed-dark panels (terminals, code), dark in BOTH modes */
+  --surface-inverse: 15 15 18;
+  --surface-inverse-elevated: 28 28 33;
+  --border-inverse: 52 52 60;
+  --text-on-inverse: 244 244 245;
+  --text-on-inverse-muted: 161 161 170;
+
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -71,6 +88,23 @@
   --text-tertiary: 135 135 143;         /* #87878f - AA-calibrated */
   --text-dim: 135 135 143;              /* #87878f - AA-calibrated */
 
+  /* Categorical tokens (--cat-N-fg/bg/border): calm hues, fg >= 4.5:1 on own bg and on every surface */
+  --cat-1-fg: 147 197 253;  --cat-1-bg: 14 30 58;  --cat-1-border: 30 64 175;   /* blue */
+  --cat-2-fg: 196 181 253;  --cat-2-bg: 34 22 64;  --cat-2-border: 91 33 182;   /* violet */
+  --cat-3-fg: 94 234 212;  --cat-3-bg: 8 40 40;  --cat-3-border: 17 94 89;   /* teal */
+  --cat-4-fg: 253 186 116;  --cat-4-bg: 54 28 12;  --cat-4-border: 154 52 18;   /* orange */
+  --cat-5-fg: 253 164 175;  --cat-5-bg: 58 16 24;  --cat-5-border: 159 18 57;   /* rose */
+  --cat-6-fg: 134 239 172;  --cat-6-bg: 14 45 28;  --cat-6-border: 22 101 52;   /* green */
+  --cat-7-fg: 254 240 138;  --cat-7-bg: 52 40 8;  --cat-7-border: 133 77 14;   /* yellow */
+  --cat-8-fg: 240 171 252;  --cat-8-bg: 56 20 62;  --cat-8-border: 134 25 143;   /* fuchsia */
+
+  /* Inverse surface: intentionally fixed-dark panels (terminals, code), dark in BOTH modes */
+  --surface-inverse: 5 5 8;
+  --surface-inverse-elevated: 20 20 24;
+  --border-inverse: 42 42 48;
+  --text-on-inverse: 244 244 245;
+  --text-on-inverse-muted: 161 161 170;
+
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -114,6 +148,23 @@
   --text-muted: 82 82 91;               /* #52525b - Zinc-600 (>5.5:1 WCAG AA) */
   --text-tertiary: 109 109 118;         /* #6d6d76 - AA-calibrated */
   --text-dim: 96 111 133;               /* #606f85 - AA-calibrated */
+
+  /* Categorical tokens (--cat-N-fg/bg/border): calm hues, fg >= 4.5:1 on own bg and on every surface */
+  --cat-1-fg: 29 78 216;  --cat-1-bg: 219 234 254;  --cat-1-border: 147 197 253;   /* blue */
+  --cat-2-fg: 109 40 217;  --cat-2-bg: 237 233 254;  --cat-2-border: 196 181 253;   /* violet */
+  --cat-3-fg: 17 94 89;  --cat-3-bg: 204 251 241;  --cat-3-border: 94 234 212;   /* teal */
+  --cat-4-fg: 154 52 18;  --cat-4-bg: 255 237 213;  --cat-4-border: 253 186 116;   /* orange */
+  --cat-5-fg: 190 18 60;  --cat-5-bg: 255 228 230;  --cat-5-border: 253 164 175;   /* rose */
+  --cat-6-fg: 22 101 52;  --cat-6-bg: 220 252 231;  --cat-6-border: 134 239 172;   /* green */
+  --cat-7-fg: 133 77 14;  --cat-7-bg: 254 249 195;  --cat-7-border: 253 224 71;   /* yellow */
+  --cat-8-fg: 162 28 175;  --cat-8-bg: 250 232 255;  --cat-8-border: 240 171 252;   /* fuchsia */
+
+  /* Inverse surface: intentionally fixed-dark panels (terminals, code), dark in BOTH modes */
+  --surface-inverse: 24 24 27;
+  --surface-inverse-elevated: 39 39 42;
+  --border-inverse: 63 63 70;
+  --text-on-inverse: 244 244 245;
+  --text-on-inverse-muted: 161 161 170;
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -159,6 +210,23 @@
   --text-tertiary: 156 156 162;         /* #9c9ca2 - AA-calibrated */
   --text-dim: 156 156 162;              /* #9c9ca2 - AA-calibrated */
 
+  /* Categorical tokens (--cat-N-fg/bg/border): calm hues, fg >= 4.5:1 on own bg and on every surface */
+  --cat-1-fg: 147 197 253;  --cat-1-bg: 14 30 58;  --cat-1-border: 30 64 175;   /* blue */
+  --cat-2-fg: 196 181 253;  --cat-2-bg: 34 22 64;  --cat-2-border: 91 33 182;   /* violet */
+  --cat-3-fg: 94 234 212;  --cat-3-bg: 8 40 40;  --cat-3-border: 17 94 89;   /* teal */
+  --cat-4-fg: 253 186 116;  --cat-4-bg: 54 28 12;  --cat-4-border: 154 52 18;   /* orange */
+  --cat-5-fg: 253 164 175;  --cat-5-bg: 58 16 24;  --cat-5-border: 159 18 57;   /* rose */
+  --cat-6-fg: 134 239 172;  --cat-6-bg: 14 45 28;  --cat-6-border: 22 101 52;   /* green */
+  --cat-7-fg: 254 240 138;  --cat-7-bg: 52 40 8;  --cat-7-border: 133 77 14;   /* yellow */
+  --cat-8-fg: 240 171 252;  --cat-8-bg: 56 20 62;  --cat-8-border: 134 25 143;   /* fuchsia */
+
+  /* Inverse surface: intentionally fixed-dark panels (terminals, code), dark in BOTH modes */
+  --surface-inverse: 9 9 11;
+  --surface-inverse-elevated: 24 24 27;
+  --border-inverse: 52 52 58;
+  --text-on-inverse: 244 244 245;
+  --text-on-inverse-muted: 161 161 170;
+
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -202,6 +270,23 @@
   --text-tertiary: 123 137 156;         /* #7b899c - AA-calibrated */
   --text-dim: 135 135 143;              /* #87878f - AA-calibrated */
 
+  /* Categorical tokens (--cat-N-fg/bg/border): calm hues, fg >= 4.5:1 on own bg and on every surface */
+  --cat-1-fg: 147 197 253;  --cat-1-bg: 14 30 58;  --cat-1-border: 30 64 175;   /* blue */
+  --cat-2-fg: 196 181 253;  --cat-2-bg: 34 22 64;  --cat-2-border: 91 33 182;   /* violet */
+  --cat-3-fg: 94 234 212;  --cat-3-bg: 8 40 40;  --cat-3-border: 17 94 89;   /* teal */
+  --cat-4-fg: 253 186 116;  --cat-4-bg: 54 28 12;  --cat-4-border: 154 52 18;   /* orange */
+  --cat-5-fg: 253 164 175;  --cat-5-bg: 58 16 24;  --cat-5-border: 159 18 57;   /* rose */
+  --cat-6-fg: 134 239 172;  --cat-6-bg: 14 45 28;  --cat-6-border: 22 101 52;   /* green */
+  --cat-7-fg: 254 240 138;  --cat-7-bg: 52 40 8;  --cat-7-border: 133 77 14;   /* yellow */
+  --cat-8-fg: 240 171 252;  --cat-8-bg: 56 20 62;  --cat-8-border: 134 25 143;   /* fuchsia */
+
+  /* Inverse surface: intentionally fixed-dark panels (terminals, code), dark in BOTH modes */
+  --surface-inverse: 3 6 10;
+  --surface-inverse-elevated: 14 20 28;
+  --border-inverse: 38 52 70;
+  --text-on-inverse: 255 255 255;
+  --text-on-inverse-muted: 148 163 184;
+
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -244,6 +329,23 @@
   --text-muted: 71 85 105;              /* #475569 - Slate-600 (>5.5:1 WCAG AA) */
   --text-tertiary: 89 103 124;          /* #59677c - AA-calibrated */
   --text-dim: 89 103 124;               /* #59677c - AA-calibrated */
+
+  /* Categorical tokens (--cat-N-fg/bg/border): calm hues, fg >= 4.5:1 on own bg and on every surface */
+  --cat-1-fg: 29 78 216;  --cat-1-bg: 219 234 254;  --cat-1-border: 147 197 253;   /* blue */
+  --cat-2-fg: 109 40 217;  --cat-2-bg: 237 233 254;  --cat-2-border: 196 181 253;   /* violet */
+  --cat-3-fg: 17 94 89;  --cat-3-bg: 204 251 241;  --cat-3-border: 94 234 212;   /* teal */
+  --cat-4-fg: 154 52 18;  --cat-4-bg: 255 237 213;  --cat-4-border: 253 186 116;   /* orange */
+  --cat-5-fg: 190 18 60;  --cat-5-bg: 255 228 230;  --cat-5-border: 253 164 175;   /* rose */
+  --cat-6-fg: 22 101 52;  --cat-6-bg: 220 252 231;  --cat-6-border: 134 239 172;   /* green */
+  --cat-7-fg: 133 77 14;  --cat-7-bg: 254 249 195;  --cat-7-border: 253 224 71;   /* yellow */
+  --cat-8-fg: 162 28 175;  --cat-8-bg: 250 232 255;  --cat-8-border: 240 171 252;   /* fuchsia */
+
+  /* Inverse surface: intentionally fixed-dark panels (terminals, code), dark in BOTH modes */
+  --surface-inverse: 15 23 42;
+  --surface-inverse-elevated: 30 41 59;
+  --border-inverse: 51 65 85;
+  --text-on-inverse: 248 250 252;
+  --text-on-inverse-muted: 148 163 184;
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -723,4 +825,15 @@ html:not(.dark) .border-gray-900 {
   --callout-warn-fg: 252 211 77;      --callout-warn-bg: 50 32 8;       --callout-warn-border: 180 83 9;
   --callout-danger-fg: 252 165 165;   --callout-danger-bg: 58 16 20;    --callout-danger-border: 185 28 28;
   --callout-success-fg: 134 239 172;  --callout-success-bg: 14 45 28;   --callout-success-border: 21 128 61;
+}
+
+/* Syntax tokens for code/command highlighting. Always rendered on --surface-inverse(-elevated),
+   which is dark in every preset x mode, so a single shared set applies. >= 4.5:1 on both. */
+:root {
+  --syntax-keyword: 196 181 253;
+  --syntax-string: 134 214 170;
+  --syntax-number: 253 186 116;
+  --syntax-flag: 125 211 252;
+  --syntax-variable: 249 168 212;
+  --syntax-comment: 150 150 162;
 }

@@ -16,14 +16,14 @@ describe('DifficultyBadge component', () => {
     render(<DifficultyBadge difficulty="Easy" />);
 
     const badge = screen.getByText('Easy');
-    expect(badge.className).toContain('emerald');
+    expect(badge.className).toContain('text-callout-success-fg');
   });
 
   it('applies appropriate theme classes for Hard difficulty', () => {
     render(<DifficultyBadge difficulty="Hard" />);
 
     const badge = screen.getByText('Hard');
-    expect(badge.className).toContain('rose');
+    expect(badge.className).toContain('text-callout-danger-fg');
   });
 
   it('applies custom size and className props', () => {

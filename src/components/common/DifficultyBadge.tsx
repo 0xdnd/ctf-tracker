@@ -1,5 +1,6 @@
 import React from 'react';
 import { Difficulty } from '../../types';
+import { getDifficultyTone } from '../../utils/categoryUtils';
 
 export interface DifficultyBadgeProps {
   difficulty: Difficulty | string;
@@ -26,22 +27,7 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = React.memo(({
     md: 'text-xs px-2.5 py-0.5',
   }[size];
 
-  const getHardwareTheme = () => {
-    switch (difficulty) {
-      case 'Very Easy':
-        return 'text-callout-info-fg bg-cyan-500/10 dark:bg-cyan-950/30 border-cyan-500/30 dark:border-cyan-500/40';
-      case 'Easy':
-        return 'text-callout-success-fg bg-emerald-500/10 dark:bg-emerald-950/30 border-emerald-500/30 dark:border-emerald-500/40';
-      case 'Medium':
-        return 'text-callout-warn-fg bg-amber-500/10 dark:bg-amber-950/30 border-amber-500/30 dark:border-amber-500/40';
-      case 'Hard':
-        return 'text-callout-danger-fg bg-rose-500/10 dark:bg-rose-950/30 border-rose-500/30 dark:border-rose-500/40';
-      case 'Insane':
-        return 'text-callout-tip-fg bg-purple-500/10 dark:bg-purple-950/30 border-purple-500/30 dark:border-purple-500/40';
-      default:
-        return 'text-zinc-700 dark:text-tertiary bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800';
-    }
-  };
+  const getHardwareTheme = () => getDifficultyTone(difficulty).badge;
 
   if (variant === 'hardware') {
     return (
@@ -54,22 +40,7 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = React.memo(({
     );
   }
 
-  const getTheme = () => {
-    switch (difficulty) {
-      case 'Very Easy':
-        return 'text-callout-info-fg bg-cyan-500/10 border-cyan-500/30';
-      case 'Easy':
-        return 'text-callout-success-fg bg-emerald-500/10 border-emerald-500/30';
-      case 'Medium':
-        return 'text-callout-warn-fg bg-amber-500/10 border-amber-500/30';
-      case 'Hard':
-        return 'text-callout-danger-fg bg-rose-500/10 border-rose-500/30';
-      case 'Insane':
-        return 'text-callout-tip-fg bg-purple-500/10 border-purple-500/30';
-      default:
-        return 'text-slate-700 dark:text-tertiary bg-surface-sunken border-border-subtle';
-    }
-  };
+  const getTheme = () => getDifficultyTone(difficulty).badge;
 
   return (
     <span
