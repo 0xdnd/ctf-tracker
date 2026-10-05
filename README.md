@@ -31,58 +31,39 @@ Built with an **offline-first architecture** (Zustand + LocalStorage/IndexedDB),
 
 ## 🚀 Core Modules
 
-### 1. 🛡️ Module A: The Advanced Machine & Lab Tracker
-- **Multi-Platform Coverage:** Hack The Box (415 retired & Starting Point boxes), TryHackMe (514 standalone CTF rooms), and custom user targets. 100% compliant with Hack The Box Terms of Service (AUP §8.2/8.3: all active machines excluded; retired content only). Standardized OS classification (Linux and Windows).
-- **5-Stage Attack Lifecycle Pipeline:**
-  1. `Target Backlog`
-  2. `Active Recon` (Port & service discovery)
-  3. `Foothold Obtained` (Initial user shell)
-  4. `System Pwned` (Root / SYSTEM flag captured)
-  5. `Completed & Logged` (Retired / writeup archived)
-- **Multi-Mode Views:**
-  - **Kanban Board:** Fluid drag-and-drop & stage progression with Framer Motion layout animations.
-  - **Data Table:** Dense terminal-style table with multi-column sorting (Name, Platform, OS, Difficulty, Status, Time) and quick flag toggles.
-  - **Cyber Cards Grid:** High-contrast cards featuring platform dots, difficulty badges, and hint spoiler buttons.
-- **Flags Vault:** Secure obfuscated fields (`••••••••`) with one-click copy and instant verification.
-- **Live Stopwatch:** Tracks real engagement duration with granular `Time-to-User` and `Time-to-Root` metrics.
-- **Global Command Palette (`Ctrl+K`):** Jump to any box, cheatsheet command, or execute actions from anywhere.
+### 1. 🛡️ Lab & Machine Tracker
+- **929-machine catalog:** 415 retired HTB machines and Starting Point labs, 514 THM CTF rooms, plus your own custom targets.
+- **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
+- **Four views:** Kanban board, dense sortable table, card grid, and an attack **graph view** with an edge inspector for pivots between hosts.
+- **Target dossier:** per-machine detail page with Nmap/scan import, methodology checklist, flags, and user/root timers.
+- **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus a global command palette.
 
-### 2. ⚡ Module B: Dynamic Cheatsheet & Reverse Shell Builder
-- **Real-Time Variable Injection:** Global sticky parameters (`LHOST`, `LPORT`, `TARGET_IP`, `INTERFACE`) dynamically interpolate into all commands simultaneously!
-- **Dedicated Reverse Shell Studio:** Interactive generator supporting **Bash, Python 3, PHP, Netcat, PowerShell, Socat TTY, Perl, and Ruby**, with ready-to-run listener commands.
-- **Curated Offensive Categories:**
-  1. Network Discovery & Port Scanning (`nmap`, `masscan`, `rustscan`)
-  2. Web Enumeration & Fuzzing (`ffuf`, `gobuster`, `feroxbuster`, `nikto`, `wpscan`)
-  3. Exploitation & Payloads (`sqlmap`, LFI wrappers, `msfvenom` one-liners)
-  4. Linux Post-Exploitation & PrivEsc (Interactive TTY stabilization, `LinPEAS`, SUID, `getcap`, `sudo -l`)
-  5. Windows & Active Directory (`BloodHound`, `PowerView`, `Mimikatz`, `impacket`, `NetExec`, `Evil-WinRM`)
-  6. Pivoting & Tunneling (`Chisel`, SSH Dynamic Forwarding, `Ligolo-ng`, `socat` relays)
-  7. File Transfers (`python3 http`, `certutil`, `powershell`, `smbserver`)
-- **Custom Payload Vault:** Add, edit, bookmark, and tag your personal exploit snippets.
+### 2. 🗝️ Evidence & Loot Vault
+- Credentials, hashes, flags, keys and tokens collected across every target in one place.
+- Loot timeline, quick add, and an export drawer for reports.
 
-### 3. 📝 Module C: Embedded Writeup Studio (Obsidian & GitBook Ready)
-- **Dual-Pane Live Editor:** Raw markdown on the left, live rendered preview on the right.
-- **Automated Pentest Templates:** Pre-populates target IP, platform, OS, difficulty, and standard reporting sections:
-  1. Executive Summary & Attack Path
-  2. Reconnaissance & Nmap Scan Results
-  3. Vulnerability Analysis & Foothold Proof-of-Concept
-  4. Privilege Escalation & Root Evidence
-  5. Post-Exploitation Loot & Remediation
-- **Standardized YAML Frontmatter:** Directly exportable as `.md` files into Obsidian vaults or GitBook documentation repositories.
+### 3. 🧭 Methodology & Field Manual
+- **Attack methodology:** phase-by-phase tree with decision branches and playbooks.
+- **Dynamic cheatsheet:** set `LHOST`, `LPORT`, `TARGET_IP` once and they are injected into every command.
+- **Reverse shell builder:** 130+ Linux and Windows payloads with matching listener commands.
+- **Notes workspace:** Obsidian-style note viewer with multi-tab docked notes and an IndexedDB-backed private vault.
 
-### 4. 📊 Module D: Operational Analytics & Skill Radar
-- **Offensive Skill Vector Radar:** Interactive SVG radar chart visualizing proficiencies across Web Security, Active Directory, Linux PrivEsc, Windows PrivEsc, Network/Pivoting, and Binary Exploitation.
-- **Pwn Progress Matrix:** Tier-by-tier completion rates across Very Easy, Easy, Medium, Hard, and Insane difficulties.
-- **90-Day Activity Heatmap:** GitHub/HTB-style calendar tracking daily study sessions and root captures.
-- **Speed Benchmarks:** Average time to initial access and average time to root.
+### 4. 📝 Writeup Studio & Reports
+- Dual-pane Markdown editor with live preview.
+- Pentest report templates pre-filled with target data, exportable as `.md` for Obsidian or GitBook.
+
+### 5. 📊 Analytics & ⏱️ Exam Simulator
+- **Skill radar** across Web, AD, Linux/Windows PrivEsc, Pivoting and more, plus a **90-day activity heatmap** and speed benchmarks.
+- **24h exam simulator** with OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a burn-down chart.
 
 ---
 
-## 🎨 Theme & UI/UX Design
-- **Cyberpunk Palette:** Jet Black (`#0B0F19`), Slate Cards (`#111827`), Glowing Emerald (`#10B981` HTB), Crimson (`#EF4444` THM), Cyan (`#06B6D4` Tech), and Purple (`#8B5CF6` AD).
-- **Retro CRT Mode:** Optional CRT scanlines, screen curvature vignette, and phosphor beam overlay.
-- **Web Audio FX:** Synthesized tactical clicks, confirmation chimes, and root fanfares with zero external audio assets.
-- **Data Portability:** 1-Click JSON export and import restore.
+## 🎨 Design & Principles
+- **Refined tactical UI:** calm dark (zinc / graphite / OLED) and light themes, switchable presets, Inter for text and monospace for IPs, hashes and commands.
+- **Accessible:** WCAG 2.1 AA contrast, visible focus states, keyboard navigation, and `prefers-reduced-motion` support.
+- **Offline-first & private:** zero backend and no outbound network requests. All data stays in your browser (LocalStorage + IndexedDB).
+- **Data portability:** one-click JSON backup and restore.
+- **Audio cues:** synthesized alerts with no external audio files.
 
 ---
 
@@ -111,6 +92,21 @@ npm run preview
 ```
 
 > **Windows shortcut:** after `npm install`, double-click `START-TRACKER.bat` to start the dev server and open the tracker in your browser. On macOS/Linux, use the npm commands above.
+
+### 🖥️ Desktop App (Tauri)
+ZeroBox also ships as a native desktop app. With the [Tauri prerequisites](https://tauri.app/start/prerequisites/) installed:
+
+```bash
+npm run tauri:dev     # run the desktop app in development
+npm run tauri:build   # build an installer
+```
+
+### ✅ Testing
+```bash
+npx tsc --noEmit   # type check
+npm test           # unit & component tests (Vitest)
+npm run test:e2e   # browser E2E crawl (Python + Playwright)
+```
 
 ---
 
