@@ -57,10 +57,10 @@ export const ShareLinkButton: React.FC<ShareLinkButtonProps> = ({
       onClick={handleShare}
       title={copied ? 'Direct link copied to clipboard!' : `Share direct link to ${title}`}
       aria-label={`Share direct link to ${title}`}
-      className={`relative inline-flex items-center justify-center gap-1.5 transition-colors text-xs font-mono font-medium rounded-lg ${
+      className={`relative inline-flex items-center justify-center gap-1.5 transition-colors text-xs font-medium rounded-lg ${
         copied
-          ? 'bg-emerald-500/20 border border-emerald-500/50 text-callout-success-fg'
-          : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-card border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-cyber-cyan hover:border-slate-300 dark:hover:border-cyber-cyan/40'
+          ? 'bg-callout-success-bg border border-callout-success-border/50 text-callout-success-fg'
+          : 'bg-surface-sunken hover:bg-surface-hover border border-subtle text-secondary hover:text-primary hover:border-strong'
       } ${className}`}
     >
       {copied ? (
@@ -69,7 +69,7 @@ export const ShareLinkButton: React.FC<ShareLinkButtonProps> = ({
         <Share2 className="w-3.5 h-3.5" />
       )}
       {!iconOnly && (
-        <span>{copied ? 'Copied Link!' : label || 'Share'}</span>
+        <span>{copied ? 'Link copied' : label || 'Share'}</span>
       )}
     </button>
   );

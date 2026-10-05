@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FloatingPayloadBar } from './FloatingPayloadBar';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -29,7 +29,7 @@ describe('FloatingPayloadBar component', () => {
     const chip = screen.getByText('10.10.14.99:9001');
     fireEvent.click(chip);
 
-    expect(screen.getByText('PAYLOAD CONTROLLER')).toBeInTheDocument();
+    expect(screen.getByText('Payload controller')).toBeInTheDocument();
     expect(screen.getByText('LHOST (Attacker)')).toBeInTheDocument();
     expect(screen.getByText('LPORT')).toBeInTheDocument();
     expect(screen.getByDisplayValue('10.10.14.99')).toBeInTheDocument();
@@ -90,24 +90,46 @@ describe('FloatingPayloadBar component', () => {
     render(<FloatingPayloadBar />);
     const targetName = screen.getByText('Pickle Rick');
     expect(targetName).toBeInTheDocument();
-    expect(targetName.className).toContain('text-slate-900');
-    expect(targetName.className).toContain('dark:text-white');
+    expect(targetName.className).toContain('text-primary');
+    expect(targetName.className).not.toMatch(/text-(slate|zinc|white)/);
     expect(screen.getByText('(10.10.10.42)')).toBeInTheDocument();
   });
 
-  it('contains light mode background and border classes on minimized chip and expanded bar', () => {
+  it('uses theme tokens (no raw palette, no translucency hacks) on the collapsed pill and expanded bar', () => {
     const { container } = render(<FloatingPayloadBar />);
-    const chip = container.querySelector('[class*="bg-white/95"]');
+    const chip = container.querySelector('[class*="rounded-full"][class*="bg-surface-card"]');
     expect(chip).toBeInTheDocument();
-    expect(chip?.className).toContain('dark:bg-slate-900/95');
-    expect(chip?.className).toContain('border-slate-200/90');
+    expect(chip?.className).toContain('border-subtle');
+    expect(chip?.className).toContain('h-8');
+    expect(chip?.className).not.toMatch(/(slate|zinc|white)/);
 
     // Expand
     fireEvent.click(screen.getByText('10.10.14.99:9001'));
     const expandedBar = container.querySelector('[class*="w-[calc(100vw-1.5rem)]"]');
     expect(expandedBar).toBeInTheDocument();
-    expect(expandedBar?.className).toContain('bg-white/95');
-    expect(expandedBar?.className).toContain('dark:bg-slate-950/95');
+    expect(expandedBar?.className).toContain('bg-surface-card');
+    expect(expandedBar?.className).not.toMatch(/(slate|zinc|white)/);
+  });
+
+  it('keeps the telemetry mono and the collapsed copy affordance hover-revealed (not removed)', () => {
+    render(<FloatingPayloadBar />);
+    const telemetry = screen.getByText('10.10.14.99:9001');
+    expect(telemetry.className).toContain('font-mono');
+    expect(telemetry.className).toContain('tabular-nums');
+
+    const lhostBtn = screen.getByLabelText('Copy LHOST');
+    expect(lhostBtn.className).toContain('opacity-0');
+    expect(lhostBtn.className).toContain('group-hover:opacity-100');
+    expect(lhostBtn.className).toContain('group-focus-within:opacity-100');
+    expect(lhostBtn.className).toContain('[@media(hover:none)]:opacity-100');
+  });
+
+  it('collapses the expanded controller with Escape', async () => {
+    render(<FloatingPayloadBar />);
+    fireEvent.click(screen.getByText('10.10.14.99:9001'));
+    expect(screen.getByText('Payload controller')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByLabelText('Tactical Payload Bar'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByText('Payload controller')).not.toBeInTheDocument());
   });
 
   it('opens quick copy menu and allows copying all info and individual fields', () => {

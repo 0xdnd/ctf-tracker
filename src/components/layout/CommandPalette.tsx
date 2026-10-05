@@ -142,8 +142,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-copy-lhost',
         label: `Copy LHOST / Attacker IP (${globalVars.lhost || '10.10.14.X'})`,
         icon: Copy,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/15 hover:border-cyber-cyan/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           safeCopyToClipboard(globalVars.lhost || '10.10.14.X');
           if (soundEnabled) playCyberSound('click');
@@ -154,8 +154,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-copy-target',
         label: `Copy Active Target IP (${globalVars.targetIp || '10.10.10.X'})`,
         icon: Crosshair,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-cyber-emerald/15 hover:border-cyber-emerald/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           safeCopyToClipboard(globalVars.targetIp || '10.10.10.X');
           if (soundEnabled) playCyberSound('click');
@@ -164,10 +164,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-snippets',
-        label: 'Open Tactical Snippets Drawer (Alt+S)',
+        label: 'Open snippets drawer (Alt+S)',
         icon: Terminal,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/15 hover:border-cyber-cyan/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setSnippetsDrawerOpen(true);
@@ -175,10 +175,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-revshell',
-        label: 'Launch Reverse Shells Generator',
+        label: 'Open reverse shell generator',
         icon: Zap,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-cyber-emerald/15 hover:border-cyber-emerald/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setRevShellModalOpen(true);
@@ -188,8 +188,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-exam',
         label: 'Jump to Exam Simulator (Alt+E)',
         icon: ShieldAlert,
-        colorClass: 'text-callout-warn-fg',
-        bgHoverClass: 'hover:bg-amber-500/15 hover:border-amber-500/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           navigate('/exam');
@@ -199,8 +199,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-vault',
         label: 'Jump to Evidence & Loot Vault',
         icon: Database,
-        colorClass: 'text-cyber-purple',
-        bgHoverClass: 'hover:bg-cyber-purple/15 hover:border-cyber-purple/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           navigate('/vault');
@@ -210,8 +210,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-switch-operator',
         label: 'Switch Operator / Log In Profile (Alt+O)',
         icon: Users,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-cyber-emerald/15 hover:border-cyber-emerald/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           useAuthStore.getState().setOperatorProfileModalOpen(true);
@@ -221,8 +221,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-dossier',
         label: 'View Creator Dossier (Daniel Dayan)',
         icon: Terminal,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/15 hover:border-cyber-cyan/50',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setOperatorModalOpen(true);
@@ -230,10 +230,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-recon',
-        label: 'Tactical Recon & Scan Automation',
+        label: 'Recon and scan automation',
         icon: Zap,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-cyber-emerald/10 hover:border-cyber-emerald/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setReconAutomationModalOpen(true);
@@ -243,8 +243,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-add-box',
         label: 'Add Custom Box',
         icon: Plus,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-cyber-emerald/10 hover:border-cyber-emerald/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setNewMachineModalOpen(true);
@@ -254,8 +254,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-methodology',
         label: 'Attack Methodology (8-Phases)',
         icon: Compass,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           navigate('/methodology');
@@ -265,8 +265,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-writeup',
         label: 'Open Writeup Studio',
         icon: FileText,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setActiveTab('writeup');
@@ -277,8 +277,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-backup',
         label: 'Backup / Restore JSON',
         icon: Database,
-        colorClass: 'text-cyber-purple',
-        bgHoverClass: 'hover:bg-cyber-purple/10 hover:border-cyber-purple/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setBackupModalOpen(true);
@@ -288,8 +288,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-settings',
         label: 'Open Operator Settings & Themes',
         icon: Settings,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setSettingsModalOpen(true);
@@ -297,10 +297,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'theme-htb',
-        label: 'Switch Theme: Hack The Box (Tactical Navy Slate & Lime)',
+        label: 'Switch theme: Hack The Box',
         icon: Terminal,
-        colorClass: 'text-[#15803D] dark:text-[#9FEF00]',
-        bgHoverClass: 'hover:bg-[#15803D]/10 dark:hover:bg-[#9FEF00]/10 hover:border-[#15803D]/40 dark:hover:border-[#9FEF00]/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setThemePreset('htb');
           setCommandPaletteOpen(false);
@@ -308,10 +308,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'theme-obsidian',
-        label: 'Switch Theme: Obsidian Dark / Zinc (Cold Zinc Slate & Sky)',
+        label: 'Switch theme: Obsidian',
         icon: Zap,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyan-500/10 hover:border-cyan-500/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setThemePreset('obsidian');
           setCommandPaletteOpen(false);
@@ -319,10 +319,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'theme-monolith',
-        label: 'Switch Theme: Clean Monolith (Architectural Off-White & Crisp Graphite)',
+        label: 'Switch theme: Clean Monolith',
         icon: Sun,
-        colorClass: 'text-callout-info-fg',
-        bgHoverClass: 'hover:bg-sky-500/10 hover:border-sky-500/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setThemePreset('monolith');
           setCommandPaletteOpen(false);
@@ -330,10 +330,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-revshell',
-        label: 'Reverse Shell Forge (Payload Crafter & Listener)',
+        label: 'Reverse shell forge (payloads and listener)',
         icon: Terminal,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           navigate('/cheatsheets?tab=revshell');
@@ -341,10 +341,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-flexcard',
-        label: 'Export Operator Flex Card (Scorecard PNG)',
+        label: 'Export operator flex card (PNG)',
         icon: Award,
-        colorClass: 'text-callout-tip-fg',
-        bgHoverClass: 'hover:bg-purple-500/10 hover:border-purple-500/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setFlexCardModalOpen(true);
@@ -352,10 +352,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-vault',
-        label: 'Evidence & Loot Vault (Creds, Hashes, Flags & Keys)',
+        label: 'Evidence and loot vault',
         icon: Database,
-        colorClass: 'text-callout-warn-fg',
-        bgHoverClass: 'hover:bg-amber-500/10 hover:border-amber-500/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setActiveTab('vault');
@@ -366,8 +366,8 @@ export const CommandPalette: React.FC = () => {
         id: 'action-exam',
         label: '24h Exam Simulator (OSCP / CPTS)',
         icon: Radio,
-        colorClass: 'text-callout-danger-fg',
-        bgHoverClass: 'hover:bg-rose-500/10 hover:border-rose-500/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           navigate('/exam');
@@ -375,10 +375,10 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-shortcuts',
-        label: 'Keyboard Shortcuts Reference [?]',
+        label: 'Keyboard shortcuts (?)',
         icon: Keyboard,
-        colorClass: 'text-cyber-cyan',
-        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
           setShortcutsModalOpen(true);
@@ -483,24 +483,24 @@ export const CommandPalette: React.FC = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/75 backdrop-blur-sm font-mono"
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
           onClick={() => setCommandPaletteOpen(false)}
         >
           <motion.div 
             ref={trapRef}
             initial={{ opacity: 0, scale: 0.96, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: -4 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            exit={{ opacity: 0, scale: 0.98, y: -4, transition: { duration: 0.12 } }}
+            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            className="w-full max-w-2xl rounded-xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden machined-edge"
+            className="w-full max-w-2xl rounded-xl border border-subtle bg-surface-elevated shadow-xl overflow-hidden machined-edge"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Search Input Bar */}
-            <div className="flex items-center gap-3 border-b border-cyber-border px-4 py-3 bg-cyber-bg/50">
-          <Search className="w-5 h-5 text-cyber-emerald flex-shrink-0" />
+            <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card">
+          <Search className="w-5 h-5 text-muted flex-shrink-0" />
           <input
             id="command-palette-search-input"
             name="command-palette-search"
@@ -508,21 +508,21 @@ export const CommandPalette: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command, machine name, IP, tag, or quick action..."
-            className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-cyber-muted focus:outline-none"
+            placeholder="Search commands, machines, IPs, tags..."
+            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
             autoFocus
           />
           {query && (
             <button 
               onClick={() => setQuery('')} 
-              className="text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
+              className="text-muted hover:text-primary"
               title="Clear search"
             >
               <X className="w-4 h-4" />
             </button>
           )}
-          <kbd className="px-2 py-0.5 rounded text-[10px] bg-cyber-border/70 text-cyber-muted border border-cyber-border">
-            ESC
+          <kbd className="px-2 py-0.5 rounded text-[10px] bg-surface-sunken text-muted border border-subtle font-mono">
+            Esc
           </kbd>
         </div>
 
@@ -532,8 +532,8 @@ export const CommandPalette: React.FC = () => {
           {/* Quick Actions */}
           {filteredActions.length > 0 && (
             <div>
-              <div className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-cyber-muted flex items-center gap-1.5">
-                <Sliders className="w-3 h-3 text-cyber-cyan" /> QUICK ACTIONS
+              <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center gap-1.5">
+                <Sliders className="w-3 h-3" /> Quick actions
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {filteredActions.map((action) => {
@@ -547,12 +547,12 @@ export const CommandPalette: React.FC = () => {
                       onClick={() => action.execute()}
                       className={`flex items-center gap-2 p-2 rounded-lg text-left transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer ${
                         isSelected 
-                          ? 'ring-1 ring-cyber-cyan bg-cyber-cyan/20 border-cyber-cyan/80 shadow-glow-cyan/20' 
-                          : `bg-cyber-bg border border-cyber-border ${action.bgHoverClass}`
+                          ? 'bg-surface-hover ring-1 ring-accent border-transparent' 
+                          : `bg-transparent border border-transparent ${action.bgHoverClass}`
                       }`}
                     >
-                      <Icon className={`w-4 h-4 ${action.colorClass} group-hover:scale-110 transition-transform`} />
-                      <span className={`font-medium ${isSelected ? 'text-cyber-cyan font-bold' : 'text-slate-900 dark:text-white group-hover:text-cyber-cyan'}`}>
+                      <Icon className={`w-4 h-4 ${action.colorClass}`} />
+                      <span className="font-medium text-primary">
                         {action.label}
                       </span>
                     </button>
@@ -564,16 +564,16 @@ export const CommandPalette: React.FC = () => {
 
           {/* Machine Hits */}
           <div>
-            <div className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-cyber-muted flex items-center justify-between">
+            <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <ShieldAlert className="w-3 h-3 text-cyber-emerald" /> LAB MACHINES
+                <ShieldAlert className="w-3 h-3" /> Lab machines
               </span>
-              <span className="text-[10px] text-cyber-muted tabular-nums">Total matches: {filteredMachines.length}</span>
+              <span className="text-[10px] text-muted tabular-nums">{filteredMachines.length} matches</span>
             </div>
 
             <div className="space-y-1">
               {filteredMachines.length === 0 ? (
-                <div className="px-3 py-2 text-cyber-muted text-center">No matching machines found.</div>
+                <div className="px-3 py-2 text-muted text-center">No matching machines found.</div>
               ) : (
                 filteredMachines.map((m) => {
                   const itemIndex = allItems.findIndex((i) => i.id === `machine-${m.id}`);
@@ -590,34 +590,25 @@ export const CommandPalette: React.FC = () => {
                       }}
                       className={`w-full flex items-center justify-between p-2 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.97] text-left group cursor-pointer ${
                         isSelected
-                          ? 'ring-1 ring-cyber-emerald bg-cyber-emerald/20 border-cyber-emerald/80 shadow-glow-emerald/20'
-                          : 'hover:bg-cyber-bg border-transparent hover:border-cyber-border/80'
+                          ? 'bg-surface-hover ring-1 ring-accent border-transparent'
+                          : 'hover:bg-surface-hover border-transparent'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-2 h-2 rounded-full ${
-                          m.platform === 'HTB' ? 'bg-cyber-emerald' :
-                          m.platform === 'THM' ? 'bg-cyber-crimson' : 'bg-cyber-cyan'
-                        }`} />
-                        <span className={`font-bold transition-colors ${isSelected ? 'text-cyber-emerald' : 'text-slate-900 dark:text-white group-hover:text-cyber-emerald'}`}>
+                        <span className="font-medium text-primary">
                           {m.name}
                         </span>
-                        <span className="text-[10px] text-cyber-muted font-mono tabular-nums">{m.ip}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-bg border border-cyber-border text-cyber-muted">
+                        <span className="text-[11px] text-muted font-mono tabular-nums">{m.ip}</span>
+                        <span className="text-[11px] text-muted">
                           {m.os}
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                          m.difficulty === 'Easy' ? 'text-cyber-emerald bg-cyber-emerald/10' :
-                          m.difficulty === 'Medium' ? 'text-cyber-amber bg-cyber-amber/10' :
-                          m.difficulty === 'Hard' ? 'text-cyber-crimson bg-cyber-crimson/10' :
-                          'text-callout-tip-fg bg-purple-950/40'
-                        }`}>
+                        <span className="text-[11px] text-muted">
                           {m.difficulty}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-primary">
-                        <span className="text-[10px] uppercase font-mono">{m.status}</span>
+                      <div className="flex items-center gap-2 text-muted group-hover:text-primary">
+                        <span className="text-[11px]">{m.status}</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </div>
                     </button>
@@ -630,8 +621,8 @@ export const CommandPalette: React.FC = () => {
           {/* Cheatsheet Commands */}
           {filteredCheats.length > 0 && (
             <div>
-              <div className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-cyber-muted flex items-center gap-1.5">
-                <Terminal className="w-3 h-3 text-cyber-cyan" /> CHEATSHEET SNIPPETS
+              <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center gap-1.5">
+                <Terminal className="w-3 h-3" /> Cheatsheet snippets
               </div>
 
               <div className="space-y-1">
@@ -649,17 +640,17 @@ export const CommandPalette: React.FC = () => {
                       }}
                       className={`w-full p-2 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.97] text-left group cursor-pointer ${
                         isSelected
-                          ? 'ring-1 ring-cyber-cyan bg-cyber-cyan/20 border-cyber-cyan/80 shadow-glow-cyan/20'
-                          : 'hover:bg-cyber-bg border-transparent hover:border-cyber-border/80'
+                          ? 'bg-surface-hover ring-1 ring-accent border-transparent'
+                          : 'hover:bg-surface-hover border-transparent'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className={`font-semibold transition-colors ${isSelected ? 'text-cyber-cyan' : 'text-slate-900 dark:text-white group-hover:text-cyber-cyan'}`}>
+                        <span className="font-medium text-primary">
                           {c.title}
                         </span>
-                        <span className="text-[10px] text-cyber-muted">{c.category}</span>
+                        <span className="text-[10px] text-muted">{c.category}</span>
                       </div>
-                      <div className="font-mono text-[11px] text-cyber-muted truncate bg-black/40 px-2 py-1 rounded border border-cyber-border/40">
+                      <div className="font-mono tabular-nums text-[11px] text-on-inverse truncate bg-surface-inverse px-2 py-1 rounded border border-inverse">
                         {c.commandTemplate}
                       </div>
                     </button>
@@ -672,12 +663,12 @@ export const CommandPalette: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-cyber-border bg-cyber-bg/70 px-4 py-2 flex items-center justify-between text-[10px] text-cyber-muted">
+        <div className="border-t border-subtle bg-surface-card px-4 py-2 flex items-center justify-between text-[10px] text-muted">
           <div className="flex items-center gap-3">
-            <span>Navigate: <kbd className="bg-cyber-card px-1 py-0.5 rounded">↑</kbd> <kbd className="bg-cyber-card px-1 py-0.5 rounded">↓</kbd></span>
-            <span>Select: <kbd className="bg-cyber-card px-1 py-0.5 rounded">Enter</kbd></span>
+            <span>Navigate <kbd className="bg-surface-sunken px-1 py-0.5 rounded font-mono">↑</kbd> <kbd className="bg-surface-sunken px-1 py-0.5 rounded font-mono">↓</kbd></span>
+            <span>Select <kbd className="bg-surface-sunken px-1 py-0.5 rounded font-mono">Enter</kbd></span>
           </div>
-          <span>ZEROBOX TACTICAL PALETTE</span>
+          <span>ZeroBox command palette</span>
         </div>
       </motion.div>
     </motion.div>

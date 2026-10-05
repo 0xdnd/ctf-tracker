@@ -126,40 +126,45 @@ export const RevShellModal: React.FC = () => {
 
   if (!revShellModalOpen) return null;
 
+  const labelCls = 'block text-[11px] text-on-inverse-muted font-medium mb-1';
+  const inputCls =
+    'w-full px-2.5 py-1.5 rounded-lg bg-surface-inverse-elevated border border-inverse text-on-inverse text-xs font-mono tabular-nums placeholder:text-on-inverse-muted focus:border-syntax-flag focus:outline-none';
+
   return (
-    <div 
+    <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="revshell-modal-title"
       data-testid="revshell-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150 font-mono"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/70 animate-in fade-in duration-150 font-sans"
     >
-      <div 
-        className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+      {/* Intentionally dark panel in both color modes */}
+      <div
+        className="w-full max-w-2xl bg-surface-inverse text-on-inverse border border-inverse rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-zinc-900/80 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-4 py-3 bg-surface-inverse-elevated border-b border-inverse">
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span id="revshell-modal-title" className="font-bold text-sm text-zinc-100 uppercase tracking-wider">
-              RAPID REVERSE SHELL GENERATOR
+            <Radio className="w-4 h-4 text-on-inverse-muted" />
+            <span id="revshell-modal-title" className="font-semibold text-sm text-on-inverse tracking-tight">
+              Reverse shell generator
             </span>
           </div>
           <button
             type="button"
             onClick={() => setRevShellModalOpen(false)}
             aria-label="Close Reverse Shell Generator"
-            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse transition-colors cursor-pointer [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-syntax-flag"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Live Variable Sync Strip */}
-        <div className="px-4 py-3 bg-zinc-900/40 border-b border-zinc-800/80 grid grid-cols-3 gap-3 text-xs">
+        {/* Live variable sync */}
+        <div className="px-4 py-3 border-b border-inverse grid grid-cols-3 gap-3 text-xs">
           <div>
-            <label htmlFor="revshell-lhost" className="block text-[10px] text-zinc-400 uppercase font-semibold mb-1">
+            <label htmlFor="revshell-lhost" className={labelCls}>
               LHOST (Tun0 / Attacker)
             </label>
             <input
@@ -169,11 +174,11 @@ export const RevShellModal: React.FC = () => {
               value={globalVars.lhost || ''}
               onChange={(e) => setGlobalVars({ lhost: e.target.value })}
               placeholder="10.10.14.X"
-              className="font-mono tabular-nums w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
+              className={`font-mono tabular-nums ${inputCls}`}
             />
           </div>
           <div>
-            <label htmlFor="revshell-lport" className="block text-[10px] text-zinc-400 uppercase font-semibold mb-1">
+            <label htmlFor="revshell-lport" className={labelCls}>
               LPORT (Listener)
             </label>
             <input
@@ -195,11 +200,11 @@ export const RevShellModal: React.FC = () => {
                 }
               }}
               placeholder="4444"
-              className="font-mono tabular-nums w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
+              className={`font-mono tabular-nums ${inputCls}`}
             />
           </div>
           <div>
-            <label htmlFor="revshell-rhost" className="block text-[10px] text-zinc-400 uppercase font-semibold mb-1">
+            <label htmlFor="revshell-rhost" className={labelCls}>
               RHOST (Active Target)
             </label>
             <input
@@ -209,21 +214,21 @@ export const RevShellModal: React.FC = () => {
               value={globalVars.targetIp || ''}
               onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
               placeholder="10.10.10.X"
-              className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-emerald-500 focus:outline-none"
+              className={inputCls}
             />
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 px-4 py-2 bg-zinc-900/20 border-b border-zinc-800/60 overflow-x-auto text-xs">
+        {/* Category tabs */}
+        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-inverse overflow-x-auto text-xs scrollbar-none">
           {(['All', 'Linux', 'Windows', 'Web', 'Listener'] as const).map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer border ${
                 categoryFilter === cat
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                  ? 'bg-surface-inverse-elevated text-on-inverse border-syntax-flag/60'
+                  : 'text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse-elevated border-transparent'
               }`}
             >
               {cat}
@@ -231,42 +236,35 @@ export const RevShellModal: React.FC = () => {
           ))}
         </div>
 
-        {/* Payload List */}
+        {/* Payload list */}
         <div className="p-4 space-y-3 overflow-y-auto flex-1">
           {filteredTemplates.map((t) => {
             const rawCmd = t.command(lhost, lport, rhost);
             const isCopied = copiedId === t.id;
 
             return (
-              <div 
+              <div
                 key={t.id}
-                className="p-3 rounded-xl bg-zinc-900/70 border border-zinc-800/80 hover:border-zinc-700 transition-colors space-y-2"
+                className="p-3 rounded-xl bg-surface-inverse-elevated border border-inverse hover:border-syntax-comment/60 transition-colors space-y-2"
               >
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-zinc-100">{t.name}</span>
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
-                      t.category === 'Linux' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
-                      t.category === 'Windows' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' :
-                      t.category === 'Web' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
-                      'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                    }`}>
-                      {t.category.toUpperCase()}
-                    </span>
+                    <span className="font-medium text-on-inverse">{t.name}</span>
+                    <span className="text-[11px] text-on-inverse-muted">{t.category}</span>
                   </div>
                   <button
                     onClick={() => handleCopy(t.id, rawCmd)}
-                    className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer active:scale-[0.97] ${
                       isCopied
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60'
-                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-zinc-700'
+                        ? 'border-syntax-string/60 text-syntax-string'
+                        : 'border-inverse text-on-inverse hover:bg-surface-inverse'
                     }`}
                   >
-                    {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{isCopied ? 'COPIED' : 'COPY'}</span>
+                    {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
-                <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-xs font-mono text-zinc-300 break-all select-all">
+                <div className="p-2.5 rounded-lg bg-surface-inverse border border-inverse text-xs font-mono tabular-nums text-on-inverse break-all select-all">
                   {rawCmd}
                 </div>
               </div>
@@ -275,16 +273,16 @@ export const RevShellModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900/60 border-t border-zinc-800 text-xs text-zinc-400">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-surface-inverse-elevated border-t border-inverse text-xs text-on-inverse-muted">
           <span>Variables auto-interpolated from active engagement context</span>
           <button
             onClick={() => {
               setRevShellModalOpen(false);
               navigate('/cheatsheets?tab=revshell');
             }}
-            className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 hover:underline text-xs"
+            className="flex items-center gap-1 text-syntax-flag hover:underline text-xs cursor-pointer"
           >
-            <span>Full RevShell Arsenal</span>
+            <span>Full RevShell arsenal</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

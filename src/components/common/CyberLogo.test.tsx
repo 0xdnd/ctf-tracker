@@ -11,73 +11,69 @@ describe('CyberLogo component', () => {
     });
   });
 
-  it('renders default zerobox logo and glowing container', () => {
+  it('renders the default zerobox logo without any glow', () => {
     render(<CyberLogo />);
 
     const img = screen.getByRole('img');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('alt', 'ZeroBox Tactical Cyber Operations - zerobox');
+    expect(img).toHaveAttribute('alt', 'ZeroBox logo - zerobox');
+    expect(img).toHaveAttribute('src', './logo-zerobox.png');
 
-    const container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS/i);
+    const container = screen.getByTitle('ZeroBox (zerobox)');
     expect(container).toBeInTheDocument();
-    expect(container.className).toContain('rgba(0,240,255');
+    expect(container.className).not.toContain('drop-shadow');
   });
 
-  it('renders HTB lime green logo and glow when theme is htb', () => {
+  it('renders the HTB logo when theme is htb', () => {
     render(<CyberLogo theme="htb" />);
 
     const img = screen.getByRole('img');
-    expect(img).toHaveAttribute('alt', 'ZeroBox Tactical Cyber Operations - htb');
-
-    const container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS \(HTB\)/i);
-    expect(container.className).toContain('rgba(159,239,0');
+    expect(img).toHaveAttribute('alt', 'ZeroBox logo - htb');
+    expect(img).toHaveAttribute('src', './logo-htb.png');
+    expect(screen.getByTitle('ZeroBox (htb)').className).not.toContain('drop-shadow');
   });
 
-  it('renders Midnight Blue logo and sky blue glow when theme is midnight-blue', () => {
+  it('renders the Midnight Blue logo when theme is midnight-blue', () => {
     render(<CyberLogo theme="midnight-blue" />);
 
     const img = screen.getByRole('img');
-    expect(img).toHaveAttribute('alt', 'ZeroBox Tactical Cyber Operations - midnight-blue');
-
-    const container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS \(MIDNIGHT-BLUE\)/i);
-    expect(container.className).toContain('rgba(56,189,248');
+    expect(img).toHaveAttribute('alt', 'ZeroBox logo - midnight-blue');
+    expect(img).toHaveAttribute('src', './logo-midnight.png');
   });
 
-  it('renders OLED logo and ice glow when theme is oled', () => {
+  it('renders the OLED logo when theme is oled', () => {
     render(<CyberLogo theme="oled" />);
 
     const img = screen.getByRole('img');
-    expect(img).toHaveAttribute('alt', 'ZeroBox Tactical Cyber Operations - oled');
-
-    const container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS \(OLED\)/i);
-    expect(container.className).toContain('rgba(56,189,248');
+    expect(img).toHaveAttribute('alt', 'ZeroBox logo - oled');
+    expect(img).toHaveAttribute('src', './logo-oled.png');
   });
 
   it('reactively updates when store themePreset changes', () => {
     const { rerender } = render(<CyberLogo />);
-    expect(screen.getByRole('img')).toHaveAttribute('alt', 'ZeroBox Tactical Cyber Operations - zerobox');
+    expect(screen.getByRole('img')).toHaveAttribute('alt', 'ZeroBox logo - zerobox');
 
     act(() => {
       useCtfStore.setState({ themePreset: 'htb' });
     });
     rerender(<CyberLogo />);
-    expect(screen.getByRole('img')).toHaveAttribute('alt', 'ZeroBox Tactical Cyber Operations - htb');
+    expect(screen.getByRole('img')).toHaveAttribute('alt', 'ZeroBox logo - htb');
   });
 
-  it('supports disabling the glow effect', () => {
-    render(<CyberLogo glow={false} />);
+  it('never renders a glow, even when the legacy glow prop is passed', () => {
+    render(<CyberLogo glow />);
 
-    const container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS/i);
+    const container = screen.getByTitle('ZeroBox (zerobox)');
     expect(container.className).not.toContain('drop-shadow');
   });
 
   it('applies the requested size classes', () => {
     const { rerender } = render(<CyberLogo size="sm" />);
-    let container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS/i);
+    let container = screen.getByTitle('ZeroBox (zerobox)');
     expect(container.className).toContain('w-8 h-8');
 
     rerender(<CyberLogo size="2xl" />);
-    container = screen.getByTitle(/ZEROBOX \/\/ TACTICAL CYBER OPERATIONS/i);
+    container = screen.getByTitle('ZeroBox (zerobox)');
     expect(container.className).toContain('w-24 h-24');
   });
 

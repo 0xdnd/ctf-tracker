@@ -102,244 +102,223 @@ export const LicenseModal: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   };
 
+  const permitted = [
+    ['Personal learning', 'Run, compile, and use locally for individual CTF practice and penetration testing labs (HTB, THM, OffSec).'],
+    ['Source code inspection', 'Clone and inspect code for academic research, security auditing, and educational study.'],
+    ['Open contributions', "Submit bug reports, feature suggestions, and upstream PRs to Daniel Dayan's official repository."],
+    ['Offline personal use', 'Keep private local backups and customized offline configurations for your own study.'],
+  ];
+  const prohibited = [
+    ['No selling or monetization', 'You may NOT sell, rent, license, or charge money/fees for this software in any form.'],
+    ['No paid course bundling', 'You may NOT bundle ZeroBox into paid bootcamps, commercial academies, or paywalled services.'],
+    ['No public re-publishing', 'You may NOT host public SaaS mirrors, re-publish, or claim authorship under another brand.'],
+    ['No stripping attribution', "You may NOT remove Daniel Dayan's name, portfolio links, or copyright notices."],
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
-      {/* Dark Cyber Backdrop */}
-      <motion.div 
+      {/* Backdrop */}
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        exit={{ opacity: 0, transition: { duration: 0.12 } }}
         transition={{ duration: 0.15 }}
-        className="fixed inset-0 bg-black/85 backdrop-blur-md"
+        className="fixed inset-0 bg-surface-inverse/70"
         onClick={() => setLicenseModalOpen(false)}
       />
 
-      {/* Modal Container */}
+      {/* Modal container */}
       <motion.div
         initial={{ scale: 0.98, opacity: 0, y: 8 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.98, opacity: 0, y: 8 }}
+        exit={{ scale: 0.98, opacity: 0, y: 8, transition: { duration: 0.12 } }}
         transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="relative w-full max-w-3xl my-auto bg-cyber-card border border-cyber-border rounded-2xl shadow-xl text-cyber-text overflow-hidden z-10 flex flex-col max-h-[90vh] font-mono text-xs"
+        className="relative w-full max-w-3xl my-auto bg-surface-card border border-subtle rounded-2xl shadow-xl text-primary overflow-hidden z-10 flex flex-col max-h-[90vh] font-sans text-xs"
       >
-          {/* Top Tactical Terminal Header */}
-          <div className="px-4 py-3 bg-cyber-bg border-b border-cyber-border flex items-center justify-between select-none">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyber-amber animate-pulse" />
-              <Scale className="w-4 h-4 text-cyber-amber" />
-              <span className="font-bold text-cyber-amber tracking-wider uppercase">
-                ZEROBOX // LEGAL & INTELLECTUAL PROPERTY COVENANT
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-cyber-amber/20 text-cyber-amber border border-cyber-amber/40">
-                ZNSL-1.0
-              </span>
+        {/* Header */}
+        <div className="px-4 py-3 bg-surface-card border-b border-subtle flex items-center justify-between select-none">
+          <div className="flex items-center gap-2">
+            <Scale className="w-4 h-4 text-muted" />
+            <span className="font-semibold text-primary text-sm tracking-tight">License and attribution</span>
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-medium font-mono bg-surface-sunken text-secondary border border-subtle">
+              ZNSL-1.0
+            </span>
+          </div>
+
+          <button
+            onClick={() => setLicenseModalOpen(false)}
+            className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-surface-hover active:scale-[0.97] transition-[transform,background-color,border-color,color] cursor-pointer [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11 flex items-center justify-center"
+            title="Close License (ESC)"
+            aria-label="Close license"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Summary */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-muted" />
+                <h3 className="text-base sm:text-lg font-semibold text-primary tracking-tight">
+                  ZeroBox Source-Available Non-Commercial License
+                </h3>
+              </div>
+              <div className="text-muted text-[11px]">
+                Copyright © 2026 <strong className="text-primary font-medium">Daniel Dayan</strong> (<span className="text-secondary">@0xdnd</span>). All Rights Reserved.
+              </div>
+              <p className="text-secondary text-[12px] leading-relaxed pt-1 max-w-xl">
+                ZeroBox is a free, transparent offensive security platform for personal study and educational preparation.
+                Commercial monetization, unauthorized public re-publishing, reselling, or removing author attribution is strictly forbidden.
+              </p>
             </div>
 
             <button
-              onClick={() => setLicenseModalOpen(false)}
-              className="p-1.5 rounded-lg text-cyber-muted hover:text-primary hover:bg-cyber-card active:scale-[0.98] transition-[transform,background-color,border-color,color]"
-              title="Close License (ESC)"
+              onClick={handleOpenCreatorDossier}
+              className="px-3 py-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-primary transition-colors font-medium flex items-center gap-2 flex-shrink-0 cursor-pointer active:scale-[0.97] [@media(pointer:coarse)]:min-h-11"
+              title="View Author Dossier & Verified Links"
             >
-              <X className="w-4 h-4" />
+              <UserCheck className="w-3.5 h-3.5 text-muted" />
+              <span>Daniel Dayan</span>
             </button>
           </div>
 
-          {/* Scrollable Content */}
-          <div className="overflow-y-auto p-5 sm:p-6 space-y-5">
-            {/* Hero Header Card */}
-            <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-cyber-card/90 via-cyber-bg to-[#1a150c] border border-cyber-amber/40 relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-cyber-amber/10 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-cyber-amber" />
-                    <h3 className="text-base sm:text-lg font-black text-white tracking-wide">
-                      ZeroBox Source-Available Non-Commercial License
-                    </h3>
-                  </div>
-                  <div className="text-cyber-muted text-[11px]">
-                    Copyright © 2026 <strong className="text-cyber-emerald">Daniel Dayan</strong> (<span className="text-cyber-cyan">@0xdnd</span>). All Rights Reserved.
-                  </div>
-                  <p className="text-gray-300 text-[11px] leading-relaxed pt-1 max-w-xl">
-                    ZeroBox is engineered as a free, transparent offensive cybersecurity platform for personal study and educational preparation. 
-                    Commercial monetization, unauthorized public re-publishing, reselling, or removing author attribution is strictly forbidden.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleOpenCreatorDossier}
-                  className="px-3 py-2 rounded-xl bg-cyber-emerald/15 hover:bg-cyber-emerald/25 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:text-primary transition-colors font-bold flex items-center gap-2 flex-shrink-0"
-                  title="View Author Dossier & Verified Links"
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>DANIEL DAYAN</span>
-                </button>
+          {/* Permissions matrix */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="p-4 rounded-xl bg-surface-sunken border border-subtle space-y-2.5">
+              <div className="flex items-center gap-2 text-callout-success-fg font-semibold text-xs pb-1 border-b border-subtle">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Permitted uses (non-commercial)</span>
               </div>
+              <ul className="space-y-2 text-[12px] text-secondary">
+                {permitted.map(([head, body]) => (
+                  <li key={head} className="flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-callout-success-fg mt-1.5 flex-shrink-0" aria-hidden="true" />
+                    <span><strong className="text-primary font-medium">{head}:</strong> {body}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Permissions Matrix: Allowed vs Prohibited */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* ALLOWED */}
-              <div className="p-4 rounded-xl bg-cyber-card/70 border border-cyber-emerald/40 space-y-2.5">
-                <div className="flex items-center gap-2 text-cyber-emerald font-bold text-xs uppercase tracking-wider pb-1 border-b border-cyber-emerald/20">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>✅ PERMITTED USES (NON-COMMERCIAL)</span>
-                </div>
-                <ul className="space-y-2 text-[11px] text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-emerald font-bold mt-0.5">•</span>
-                    <span><strong>Personal Learning:</strong> Run, compile, and use locally for individual CTF practice and penetration testing labs (HTB, THM, OffSec).</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-emerald font-bold mt-0.5">•</span>
-                    <span><strong>Source Code Inspection:</strong> Clone and inspect code for academic research, security auditing, and educational study.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-emerald font-bold mt-0.5">•</span>
-                    <span><strong>Open Contributions:</strong> Submit bug reports, feature suggestions, and upstream PRs to Daniel Dayan's official repository.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-emerald font-bold mt-0.5">•</span>
-                    <span><strong>Offline Personal Use:</strong> Keep private local backups and customized offline configurations for your own study.</span>
-                  </li>
-                </ul>
+            <div className="p-4 rounded-xl bg-surface-sunken border border-subtle space-y-2.5">
+              <div className="flex items-center gap-2 text-callout-danger-fg font-semibold text-xs pb-1 border-b border-subtle">
+                <XCircle className="w-4 h-4" />
+                <span>Strictly prohibited</span>
               </div>
-
-              {/* FORBIDDEN */}
-              <div className="p-4 rounded-xl bg-cyber-card/70 border border-cyber-crimson/40 space-y-2.5">
-                <div className="flex items-center gap-2 text-cyber-crimson font-bold text-xs uppercase tracking-wider pb-1 border-b border-cyber-crimson/20">
-                  <XCircle className="w-4 h-4" />
-                  <span>❌ STRICTLY PROHIBITED (VIOLATIONS)</span>
-                </div>
-                <ul className="space-y-2 text-[11px] text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-crimson font-bold mt-0.5">•</span>
-                    <span><strong>No Selling / Monetization:</strong> You may NOT sell, rent, license, or charge money/fees for this software in any form.</span>
+              <ul className="space-y-2 text-[12px] text-secondary">
+                {prohibited.map(([head, body]) => (
+                  <li key={head} className="flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-callout-danger-fg mt-1.5 flex-shrink-0" aria-hidden="true" />
+                    <span><strong className="text-primary font-medium">{head}:</strong> {body}</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-crimson font-bold mt-0.5">•</span>
-                    <span><strong>No Paid Course Bundling:</strong> You may NOT bundle ZeroBox into paid bootcamps, commercial academies, or paywalled services.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-crimson font-bold mt-0.5">•</span>
-                    <span><strong>No Public Re-Publishing:</strong> You may NOT host public SaaS mirrors, re-publish, or claim authorship under another brand.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyber-crimson font-bold mt-0.5">•</span>
-                    <span><strong>No Stripping Attribution:</strong> You may NOT remove Daniel Dayan's name, portfolio links, or copyright notices.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Full Legal Text Scrollable Box */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-[10px] text-cyber-muted uppercase tracking-wider">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <Terminal className="w-3 h-3 text-cyber-amber" />
-                  <span>COMPLETE LEGAL TEXT COVENANT</span>
-                </div>
-
-                <button
-                  onClick={handleCopyLicense}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-card border border-cyber-border hover:border-cyber-amber text-cyber-muted hover:text-primary transition-colors"
-                  title="Copy complete license text to clipboard"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3 h-3 text-cyber-emerald" />
-                      <span className="text-cyber-emerald font-bold">COPIED!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3" />
-                      <span>COPY TEXT</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/60 border border-cyber-border/70 text-[10px] font-mono text-tertiary overflow-x-auto max-h-44 scrollbar-thin select-all leading-relaxed whitespace-pre-wrap">
-                {FULL_LICENSE_TEXT}
-              </div>
-            </div>
-
-            {/* Direct Official Author Links */}
-            <div className="p-3 rounded-xl bg-[#080c14] border border-cyber-border/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyber-emerald" />
-                <span className="text-tertiary">Official Author Verified Channels:</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={CREATOR_PROFILE_LINKS.portfolio}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyber-emerald hover:underline font-bold flex items-center gap-1"
-                >
-                  <span>Portfolio</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <span className="text-cyber-border">•</span>
-                <a
-                  href={CREATOR_PROFILE_LINKS.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#0077B5] hover:underline font-bold flex items-center gap-1"
-                >
-                  <span>LinkedIn</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <span className="text-cyber-border">•</span>
-                <a
-                  href={CREATOR_PROFILE_LINKS.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white hover:underline font-bold flex items-center gap-1"
-                >
-                  <span>GitHub</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <span className="text-cyber-border">•</span>
-                <a
-                  href={CREATOR_PROFILE_LINKS.coffee}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#FFDD00] hover:underline font-bold flex items-center gap-1"
-                >
-                  <Coffee className="w-3 h-3" />
-                  <span>Buy Me a Coffee</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Footer Bar */}
-          <div className="px-5 py-3 bg-[#080c14] border-t border-cyber-border/80 flex items-center justify-between gap-3">
-            <span className="text-[10px] text-cyber-muted">
-              Enforced by applicable national and international copyright law.
-            </span>
+          {/* Full legal text */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[11px] text-muted">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Terminal className="w-3 h-3" />
+                <span>Complete license text</span>
+              </div>
 
-            <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyLicense}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyber-card hover:bg-cyber-card/80 text-gray-200 border border-cyber-border active:scale-[0.98] transition-[transform,background-color,border-color,color] flex items-center gap-1.5"
+                className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-card border border-subtle hover:border-strong text-muted hover:text-primary transition-colors cursor-pointer"
+                title="Copy complete license text to clipboard"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy License'}</span>
-              </button>
-
-              <button
-                onClick={() => setLicenseModalOpen(false)}
-                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyber-amber hover:bg-cyber-amber/90 text-black active:scale-[0.98] transition-[transform,background-color,border-color,color]"
-              >
-                Understood & Agree
+                {copied ? (
+                  <>
+                    <Check className="w-3 h-3 text-callout-success-fg" />
+                    <span className="text-callout-success-fg font-medium">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    <span>Copy text</span>
+                  </>
+                )}
               </button>
             </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-inverse border border-inverse text-[11px] font-mono text-on-inverse-muted overflow-x-auto max-h-44 scrollbar-thin select-all leading-relaxed whitespace-pre-wrap">
+              {FULL_LICENSE_TEXT}
+            </div>
           </div>
-        </motion.div>
-      </div>
+
+          {/* Official author links */}
+          <div className="pt-3 border-t border-subtle flex flex-wrap items-center justify-between gap-2 text-[12px]">
+            <span className="text-muted">Official author channels</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <a
+                href={CREATOR_PROFILE_LINKS.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline font-medium flex items-center gap-1"
+              >
+                <span>Portfolio</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={CREATOR_PROFILE_LINKS.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline font-medium flex items-center gap-1"
+              >
+                <span>LinkedIn</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={CREATOR_PROFILE_LINKS.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline font-medium flex items-center gap-1"
+              >
+                <span>GitHub</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={CREATOR_PROFILE_LINKS.coffee}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline font-medium flex items-center gap-1"
+              >
+                <Coffee className="w-3 h-3" />
+                <span>Buy Me a Coffee</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 bg-surface-card border-t border-subtle flex items-center justify-between gap-3">
+          <span className="text-[11px] text-muted">
+            Enforced by applicable national and international copyright law.
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyLicense}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-card hover:bg-surface-hover text-primary border border-subtle active:scale-[0.97] transition-[transform,background-color,border-color,color] flex items-center gap-1.5 cursor-pointer"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied' : 'Copy License'}</span>
+            </button>
+
+            <button
+              onClick={() => setLicenseModalOpen(false)}
+              className="px-4 py-1.5 rounded-lg text-xs font-medium bg-accent hover:bg-accent-hover text-on-accent active:scale-[0.97] transition-[transform,background-color,border-color,color] cursor-pointer"
+            >
+              Understood & Agree
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };

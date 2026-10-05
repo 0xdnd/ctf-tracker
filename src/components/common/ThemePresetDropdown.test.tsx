@@ -24,7 +24,7 @@ describe('ThemePresetDropdown component', () => {
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('opens dropdown and displays the HTB option with #9fef00 dot and #000000 background description', () => {
+  it('opens dropdown and displays the HTB option with its lime swatch and OLED description', () => {
     render(
       <MemoryRouter>
         <ThemePresetDropdown />
@@ -40,8 +40,8 @@ describe('ThemePresetDropdown component', () => {
     const htbOption = screen.getByText('Hack The Box');
     expect(htbOption).toBeInTheDocument();
 
-    // Verify #000000 background description in tagline
-    const tagline = screen.getByText(/OLED Pitch Black \(#000000\) & Official HTB Lime \(#9fef00\)/i);
+    // Verify the OLED description in the tagline
+    const tagline = screen.getByText(/OLED black and official HTB lime/i);
     expect(tagline).toBeInTheDocument();
 
     // Verify #9fef00 dot color swatch is present

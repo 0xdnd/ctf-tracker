@@ -31,21 +31,19 @@ export const BackToTopButton: React.FC = React.memo(() => {
         <motion.button
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 20 }}
-          whileHover={{ scale: 1.03, y: -1 }}
+          exit={{ opacity: 0, scale: 0.9, y: 12, transition: { duration: 0.12 } }}
           whileTap={{ scale: 0.98 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           onClick={handleClick}
-          className="fixed bottom-20 right-4 md:bottom-16 md:right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border hover:border-cyber-cyan text-cyber-muted hover:text-cyber-cyan shadow-md font-mono text-xs transition-colors group"
+          className="fixed bottom-20 right-4 md:bottom-16 md:right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary shadow-md text-xs font-sans transition-colors group [@media(pointer:coarse)]:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           title="Scroll Back to Top"
         >
           <div className="relative">
             <ArrowUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-cyber-cyan rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
+                      </div>
           <div className="flex flex-col text-left">
-            <span className="font-bold tracking-wider text-[10px] leading-tight">TOP</span>
-            <span className="text-[9px] text-cyber-muted font-normal leading-tight">
+            <span className="font-medium text-[11px] leading-tight">Top</span>
+            <span className="text-[10px] text-muted font-mono tabular-nums font-normal leading-tight">
               {percent}%
             </span>
           </div>

@@ -97,37 +97,31 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         tabIndex={0}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className="relative flex items-center cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber-cyan border machined-edge transition-colors"
+        className="relative flex items-center cursor-pointer overflow-hidden bg-surface-sunken border border-subtle hover:border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors [@media(pointer:coarse)]:min-h-11"
         style={{
           width: dimensions.width,
           height: dimensions.height,
           borderRadius: dimensions.outerRadius,
         }}
-        animate={{
-          backgroundColor: isDark ? 'rgba(9, 9, 11, 0.95)' : 'rgba(241, 245, 249, 0.95)',
-          borderColor: isDark ? 'rgba(39, 39, 42, 0.9)' : 'rgba(203, 213, 225, 0.9)',
-        }}
-        transition={{ duration: 0.2 }}
-        whileHover={prefersReducedMotion ? {} : { borderColor: isDark ? 'rgba(63, 63, 70, 1)' : 'rgba(148, 163, 184, 1)' }}
-        whileTap={prefersReducedMotion ? {} : { scale: 0.96 }}
+        whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
       >
-        {/* Track Fixed Background Icons (Optically Aligned) */}
+        {/* Track icons */}
         <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
           <Sun
-            className={`${dimensions.iconSize} transition-opacity duration-200 ${
-              !isDark ? 'opacity-0' : 'text-callout-warn-fg dark:text-zinc-600 opacity-60'
+            className={`${dimensions.iconSize} text-muted transition-opacity duration-200 ${
+              !isDark ? 'opacity-0' : 'opacity-70'
             }`}
           />
           <Moon
-            className={`${dimensions.iconSize} transition-opacity duration-200 ${
-              isDark ? 'opacity-0' : 'text-tertiary dark:text-zinc-600 opacity-60'
+            className={`${dimensions.iconSize} text-muted transition-opacity duration-200 ${
+              isDark ? 'opacity-0' : 'opacity-70'
             }`}
           />
         </div>
 
-        {/* Sliding Precision Hardware Knob */}
+        {/* Sliding knob */}
         <motion.div
-          className="absolute z-10 flex items-center justify-center border shadow-xs"
+          className="absolute z-10 flex items-center justify-center border border-strong bg-surface-elevated shadow-xs"
           style={{
             width: dimensions.knobWidth,
             height: dimensions.knobHeight,
@@ -135,39 +129,24 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             left: dimensions.padding,
             borderRadius: dimensions.innerRadius,
           }}
-          animate={{
-            x: isDark ? dimensions.travel : 0,
-            backgroundColor: isDark ? '#27272a' : '#ffffff',
-            borderColor: isDark ? 'rgba(63, 63, 70, 0.8)' : 'rgba(203, 213, 225, 0.8)',
-            boxShadow: isDark
-              ? 'inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 3px rgba(0,0,0,0.5)'
-              : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.12)',
-          }}
+          animate={{ x: isDark ? dimensions.travel : 0 }}
           transition={springTransition}
         >
           {isDark ? (
-            <div className="flex items-center justify-center relative">
-              <Moon className={`${dimensions.iconSize} text-callout-info-fg drop-shadow-[0_0_3px_rgba(34,211,238,0.4)]`} />
-              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.8)]" />
-            </div>
+            <Moon className={`${dimensions.iconSize} text-primary`} />
           ) : (
-            <div className="flex items-center justify-center relative">
-              <Sun className={`${dimensions.iconSize} text-callout-warn-fg drop-shadow-[0_0_3px_rgba(245,158,11,0.3)]`} />
-              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
-            </div>
+            <Sun className={`${dimensions.iconSize} text-primary`} />
           )}
         </motion.div>
       </motion.button>
 
-      {/* Optional Mode Label */}
+      {/* Optional mode label */}
       {showLabel && (
         <span
-          className={`font-mono text-xs font-bold tracking-wider transition-colors duration-150 cursor-pointer ${
-            isDark ? 'text-tertiary hover:text-primary' : 'text-slate-600 hover:text-slate-900'
-          }`}
+          className="text-xs font-medium text-secondary hover:text-primary transition-colors duration-150 cursor-pointer"
           onClick={handleToggle}
         >
-          {isDark ? 'DARK' : 'LIGHT'}
+          {isDark ? 'Dark' : 'Light'}
         </span>
       )}
     </div>

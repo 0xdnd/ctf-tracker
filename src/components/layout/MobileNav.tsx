@@ -123,173 +123,170 @@ export const MobileNav: React.FC = () => {
     setTimeout(() => setCopiedVar(null), 2000);
   };
 
+  const tabBase =
+    'flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 rounded-lg transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  const tabState = (active: boolean) => (active ? 'text-primary font-medium' : 'text-muted hover:text-primary');
+  const rowBase =
+    'w-full min-h-[44px] px-3 rounded-lg flex items-center justify-between text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  const rowState = (active: boolean) =>
+    active
+      ? 'bg-surface-hover text-primary font-medium'
+      : 'text-secondary hover:bg-surface-hover hover:text-primary';
+  const sectionLabel = 'text-[11px] font-medium text-muted px-1 mb-1';
+  const iconCls = 'w-4 h-4 text-muted flex-shrink-0';
+
+  const isTracker = location.pathname === '/tracker' || location.pathname === '/' || location.pathname.startsWith('/target');
+
   return (
     <>
-      {/* Fixed Tactical Mobile Bottom Navigation Bar (Screens < 768px) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-cyber-bg/95 backdrop-blur-lg border-t border-cyber-border/80 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] font-mono shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+      {/* Fixed mobile bottom navigation (screens < 768px) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-card border-t border-subtle px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] font-sans">
         <div className="flex items-center justify-around">
           {/* Targets */}
           <button
             onClick={() => handleNavClick('/tracker', 'tracker')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors relative ${
-              location.pathname === '/tracker' || location.pathname === '/' || location.pathname.startsWith('/target')
-                ? 'text-cyber-emerald font-bold'
-                : 'text-cyber-muted hover:text-primary'
-            }`}
+            aria-current={isTracker ? 'page' : undefined}
+            className={`${tabBase} ${tabState(isTracker)}`}
           >
-            <div className="relative">
-              <Crosshair className="w-4 h-4" />
-              <span className="absolute -top-1 -right-2 text-[8px] px-1 rounded-full bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald/40 font-bold">
-                {rootedMachines}
-              </span>
-            </div>
-            <span className="text-[10px] mt-0.5 tracking-tight">Targets</span>
+            <Crosshair className="w-4 h-4" />
+            <span className="text-[11px] mt-0.5">Targets</span>
+            {isTracker && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
 
           {/* Methodology */}
           <button
             onClick={() => handleNavClick('/methodology', 'methodology')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
-              location.pathname.startsWith('/methodology')
-                ? 'text-cyber-cyan font-bold'
-                : 'text-cyber-muted hover:text-primary'
-            }`}
+            aria-current={location.pathname.startsWith('/methodology') ? 'page' : undefined}
+            className={`${tabBase} ${tabState(location.pathname.startsWith('/methodology'))}`}
           >
             <Compass className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5 tracking-tight">Method</span>
+            <span className="text-[11px] mt-0.5">Method</span>
+            {location.pathname.startsWith('/methodology') && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
 
-          {/* Automations (Glowing Center Orb) */}
+          {/* Automations */}
           <motion.button
-            whileTap={{ scale: 0.92 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               setReconAutomationModalOpen(true);
               if (soundEnabled) playCyberSound('engage');
             }}
-            className="flex flex-col items-center justify-center p-1 -mt-3.5"
+            className={`${tabBase} ${tabState(reconAutomationModalOpen)}`}
           >
-            <div className="w-9 h-9 rounded-full bg-cyber-bg border-2 border-cyber-emerald flex items-center justify-center text-cyber-emerald">
-              <Zap className="w-4 h-4" />
-            </div>
-            <span className="text-[9px] mt-0.5 text-cyber-emerald font-bold tracking-tight">Auto</span>
+            <Zap className="w-4 h-4" />
+            <span className="text-[11px] mt-0.5">Auto</span>
           </motion.button>
 
           {/* Cheatsheets */}
           <button
             onClick={() => handleNavClick('/cheatsheets', 'cheatsheet')}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
-              location.pathname.startsWith('/cheatsheet')
-                ? 'text-callout-tip-fg font-bold'
-                : 'text-cyber-muted hover:text-primary'
-            }`}
+            aria-current={location.pathname.startsWith('/cheatsheet') ? 'page' : undefined}
+            className={`${tabBase} ${tabState(location.pathname.startsWith('/cheatsheet'))}`}
           >
             <Terminal className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5 tracking-tight">Cheats</span>
+            <span className="text-[11px] mt-0.5">Cheats</span>
+            {location.pathname.startsWith('/cheatsheet') && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
 
-          {/* Notes Workspace */}
+          {/* Notes workspace */}
           <button
             onClick={() => {
               toggleNotesWorkspace();
               if (soundEnabled) playCyberSound('click');
             }}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors relative cursor-pointer ${
-              isNotesOpen
-                ? 'text-callout-info-fg font-bold'
-                : 'text-cyber-muted hover:text-primary'
-            }`}
+            className={`${tabBase} ${tabState(isNotesOpen)}`}
           >
             <div className="relative">
               <BookOpen className="w-4 h-4" />
               {openNotesCount > 0 && (
-                <span className="absolute -top-1 -right-2 text-[8px] px-1 rounded-full bg-cyan-500/20 text-callout-info-fg border border-cyan-500/40 font-bold">
+                <span className="absolute -top-1.5 -right-2.5 min-w-[14px] text-center text-[10px] leading-[14px] px-1 rounded-full bg-accent text-on-accent font-medium tabular-nums">
                   {openNotesCount}
                 </span>
               )}
             </div>
-            <span className="text-[10px] mt-0.5 tracking-tight">Notes</span>
+            <span className="text-[11px] mt-0.5">Notes</span>
           </button>
 
-          {/* Mobile Drawer Menu Toggle */}
+          {/* More */}
           <button
             onClick={() => {
               setMobileMenuOpen(!mobileMenuOpen);
               if (soundEnabled) playCyberSound('toggle');
             }}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg transition-colors ${
-              mobileMenuOpen ? 'text-cyber-cyan' : 'text-cyber-muted hover:text-primary'
-            }`}
+            aria-expanded={mobileMenuOpen}
+            className={`${tabBase} ${tabState(mobileMenuOpen)}`}
           >
             <Menu className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5 tracking-tight">More</span>
+            <span className="text-[11px] mt-0.5">More</span>
           </button>
         </div>
       </nav>
 
-      {/* Slide-out Mobile Tactical Drawer */}
+      {/* Slide-out drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-[60] flex font-mono">
+          <div className="md:hidden fixed inset-0 z-[60] flex font-sans">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.12 } }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+              className="fixed inset-0 bg-surface-inverse/70"
             />
 
-            {/* Sliding Panel */}
+            {/* Sliding panel */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-              className="relative ml-auto w-[85%] max-w-sm h-full bg-cyber-card border-l border-cyber-border shadow-2xl flex flex-col z-10 overflow-hidden"
+              exit={{ x: '100%', transition: { duration: 0.15, ease: 'easeOut' } }}
+              transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
+              className="relative ml-auto w-[85%] max-w-sm h-full bg-surface-card border-l border-subtle shadow-xl flex flex-col z-10 overflow-hidden"
             >
-              {/* Drawer Header */}
-              <div className="p-4 border-b border-cyber-border flex items-center justify-between bg-cyber-bg">
+              {/* Drawer header */}
+              <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-card">
                 <div className="flex items-center gap-2.5">
                   <CyberLogo size="md" />
                   <div>
-                    <div className="font-bold text-white text-xs tracking-wider">
-                      ZERO<span className="cyber-box-glow">BOX</span> // MOBILE
+                    <div className="font-semibold text-primary text-sm tracking-tight">
+                      ZERO<span className="text-accent">BOX</span>
                     </div>
-                    <div className="text-[10px] text-cyber-muted">Tactical CTF & Lab Suite</div>
+                    <div className="text-[11px] text-muted">Lab and CTF suite</div>
                   </div>
                 </div>
 
-                <button aria-label="Close menu"
+                <button
+                  aria-label="Close menu"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg border border-cyber-border bg-cyber-card text-cyber-muted hover:text-primary"
+                  className="w-11 h-11 flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Drawer Body */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs scrollbar-thin">
-                {/* 1-Click Save Progress Card */}
-                <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] uppercase font-bold text-cyber-muted">
-                      OPERATOR: <span className="text-white font-bold">{user ? user.name : 'Local Operator'}</span>
+              {/* Drawer body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-5 text-sm scrollbar-thin">
+                {/* Operator and save */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <div className="text-xs text-muted">
+                      Operator <span className="text-primary font-medium">{user ? user.name : 'Local Operator'}</span>
                     </div>
-                    <div className="text-[10px] text-cyber-emerald font-bold">
-                      {rootedMachines} / {totalMachines} Pwned
+                    <div className="text-xs text-muted tabular-nums">
+                      <span className="font-mono tabular-nums text-secondary">{rootedMachines} / {totalMachines}</span> pwned
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={handleMobileQuickSave}
-                      className={`py-2 px-2 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5 ${
+                      className={`min-h-[44px] px-2 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-1.5 border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                         justSavedMobile
-                          ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
-                          : 'bg-cyber-emerald/15 border border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black'
+                          ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
+                          : 'bg-surface-base border-subtle text-primary hover:bg-surface-hover'
                       }`}
                     >
-                      <Save className="w-3.5 h-3.5" />
-                      <span>{justSavedMobile ? '✓ SAVED' : 'SAVE DATA'}</span>
+                      {justSavedMobile ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                      <span>{justSavedMobile ? 'Saved' : 'Save data'}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -297,24 +294,24 @@ export const MobileNav: React.FC = () => {
                         useAuthStore.getState().setOperatorProfileModalOpen(true);
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className="py-2 px-2 rounded-lg font-bold text-xs bg-cyan-500/15 border border-cyan-500/40 text-cyber-cyan hover:bg-accent hover:text-on-accent transition-colors flex items-center justify-center gap-1.5"
+                      className="min-h-[44px] px-2 rounded-lg font-medium text-sm bg-accent text-on-accent hover:bg-accent-hover transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-card"
                     >
                       <User className="w-3.5 h-3.5" />
-                      <span>PROFILES</span>
+                      <span>Profiles</span>
                     </button>
                   </div>
                 </div>
 
-                {/* 1. Mobile Payload Variables Hub */}
-                <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border space-y-2">
-                  <div className="text-[10px] uppercase font-bold text-cyber-cyan flex items-center gap-1.5">
-                    <Server className="w-3 h-3" /> PAYLOAD TUNING (LHOST:LPORT)
+                {/* Payload variables */}
+                <div className="space-y-2">
+                  <div className={`${sectionLabel} flex items-center gap-1.5`}>
+                    <Server className="w-3 h-3" /> Payload tuning (LHOST:LPORT)
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[10px] text-cyber-muted">LHOST (tun0):</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-cyber-card px-2 py-1 rounded border transition-colors ${
-                        copiedVar === 'lhost' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border'
+                      <span className="text-[11px] text-muted">LHOST (tun0)</span>
+                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors ${
+                        copiedVar === 'lhost' ? 'border-callout-success-border' : 'border-subtle'
                       }`}>
                         <input
                           type="text"
@@ -323,33 +320,27 @@ export const MobileNav: React.FC = () => {
                           aria-label="Attacker Host LHOST"
                           value={globalVars.lhost}
                           onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-                          className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
+                          className="w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
                         />
-                        <button aria-label="Copy LHOST"
+                        <button
+                          aria-label="Copy LHOST"
                           onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
-                          className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
-                            copiedVar === 'lhost'
-                              ? 'bg-cyber-emerald text-black font-bold shadow-glow-emerald px-1.5'
-                              : 'text-cyber-muted hover:text-cyber-cyan'
-                          }`}
+                          className="p-1.5 rounded transition-colors flex items-center gap-0.5 text-muted hover:text-primary cursor-pointer"
                           title="Copy LHOST"
                         >
                           {copiedVar === 'lhost' ? (
-                            <>
-                              <Check className="w-3 h-3 stroke-[3]" />
-                              <span className="text-[8px] uppercase font-bold text-black">COPIED</span>
-                            </>
+                            <Check className="w-3.5 h-3.5 text-callout-success-fg" />
                           ) : (
-                            <Copy className="w-3 h-3" />
+                            <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-cyber-muted">LPORT:</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-cyber-card px-2 py-1 rounded border transition-colors ${
-                        copiedVar === 'lport' ? 'border-cyber-emerald bg-cyber-emerald/10' : 'border-cyber-border'
+                      <span className="text-[11px] text-muted">LPORT</span>
+                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors ${
+                        copiedVar === 'lport' ? 'border-callout-success-border' : 'border-subtle'
                       }`}>
                         <input
                           type="text"
@@ -358,24 +349,18 @@ export const MobileNav: React.FC = () => {
                           aria-label="Attacker Port LPORT"
                           value={globalVars.lport}
                           onChange={(e) => setGlobalVars({ lport: e.target.value })}
-                          className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
+                          className="w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
                         />
-                        <button aria-label="Copy LPORT"
+                        <button
+                          aria-label="Copy LPORT"
                           onClick={() => handleCopyVar(globalVars.lport, 'lport')}
-                          className={`p-1 rounded transition-colors flex items-center gap-0.5 ${
-                            copiedVar === 'lport'
-                              ? 'bg-cyber-emerald text-black font-bold shadow-glow-emerald px-1.5'
-                              : 'text-cyber-muted hover:text-cyber-cyan'
-                          }`}
+                          className="p-1.5 rounded transition-colors flex items-center gap-0.5 text-muted hover:text-primary cursor-pointer"
                           title="Copy LPORT"
                         >
                           {copiedVar === 'lport' ? (
-                            <>
-                              <Check className="w-3 h-3 stroke-[3]" />
-                              <span className="text-[8px] uppercase font-bold text-black">COPIED</span>
-                            </>
+                            <Check className="w-3.5 h-3.5 text-callout-success-fg" />
                           ) : (
-                            <Copy className="w-3 h-3" />
+                            <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
                       </div>
@@ -383,70 +368,52 @@ export const MobileNav: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 2. Operations & Modules */}
-                <div className="space-y-1">
-                  <div className="text-[10px] uppercase font-bold text-cyber-muted px-1 mb-1">
-                    TACTICAL MODULES
-                  </div>
+                {/* Modules */}
+                <div className="space-y-0.5">
+                  <div className={sectionLabel}>Modules</div>
 
                   <button
                     onClick={() => handleNavClick('/vault', 'vault')}
-                    className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
-                      location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')
-                        ? 'bg-amber-500/10 border-amber-500 text-callout-warn-fg font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                    }`}
+                    className={`${rowBase} ${rowState(location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot'))}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Database className="w-4 h-4 text-callout-warn-fg" />
+                    <div className="flex items-center gap-2.5">
+                      <Database className={iconCls} />
                       <span>Evidence & Loot Vault</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
 
                   <button
                     onClick={() => handleNavClick('/writeup', 'writeup')}
-                    className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
-                      location.pathname.startsWith('/writeup')
-                        ? 'bg-cyber-amber/10 border-cyber-amber text-cyber-amber font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                    }`}
+                    className={`${rowBase} ${rowState(location.pathname.startsWith('/writeup'))}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-cyber-amber" />
+                    <div className="flex items-center gap-2.5">
+                      <FileText className={iconCls} />
                       <span>Writeup Studio</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
 
                   <button
                     onClick={() => handleNavClick('/exam', 'exam')}
-                    className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
-                      location.pathname === '/exam'
-                        ? 'bg-cyber-cyan/10 border-cyber-cyan text-cyber-cyan font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                    }`}
+                    className={`${rowBase} ${rowState(location.pathname === '/exam')}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-cyber-cyan" />
+                    <div className="flex items-center gap-2.5">
+                      <GraduationCap className={iconCls} />
                       <span>24h Exam Simulator (OSCP)</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
 
                   <button
                     onClick={() => handleNavClick('/analytics', 'analytics')}
-                    className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors ${
-                      location.pathname === '/analytics'
-                        ? 'bg-cyber-emerald/10 border-cyber-emerald text-cyber-emerald font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                    }`}
+                    className={`${rowBase} ${rowState(location.pathname === '/analytics')}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-cyber-emerald" />
+                    <div className="flex items-center gap-2.5">
+                      <BarChart3 className={iconCls} />
                       <span>Pwn Analytics & Radar</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
 
                   <button
@@ -454,13 +421,13 @@ export const MobileNav: React.FC = () => {
                       setMobileMenuOpen(false);
                       setCommandPaletteOpen(true);
                     }}
-                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
+                    className={`${rowBase} ${rowState(false)}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Search className="w-4 h-4 text-cyber-emerald" />
+                    <div className="flex items-center gap-2.5">
+                      <Search className={iconCls} />
                       <span>Command Search (Ctrl+K)</span>
                     </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-card border border-cyber-border">⌘K</span>
+                    <kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle">Ctrl+K</kbd>
                   </button>
 
                   <button
@@ -468,13 +435,13 @@ export const MobileNav: React.FC = () => {
                       setMobileMenuOpen(false);
                       setNewMachineModalOpen(true);
                     }}
-                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
+                    className={`${rowBase} ${rowState(false)}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Plus className="w-4 h-4 text-cyber-cyan" />
+                    <div className="flex items-center gap-2.5">
+                      <Plus className={iconCls} />
                       <span>Deploy Custom Target</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
 
                   <button
@@ -482,39 +449,31 @@ export const MobileNav: React.FC = () => {
                       setMobileMenuOpen(false);
                       setBackupModalOpen(true);
                     }}
-                    className="w-full p-2.5 rounded-lg bg-cyber-bg border border-cyber-border flex items-center justify-between text-left text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
+                    className={`${rowBase} ${rowState(false)}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Database className="w-4 h-4 text-callout-tip-fg" />
+                    <div className="flex items-center gap-2.5">
+                      <Database className={iconCls} />
                       <span>Backup / Restore JSON</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
                 </div>
 
-                {/* 3. Tactical Environment Toggles */}
-                <div className="space-y-2">
-                  <div className="text-[10px] uppercase font-bold text-cyber-muted px-1">
-                    ENVIRONMENT & THEME
-                  </div>
-                  {/* Theme Switcher (Real Moon / Radiant Sun) */}
-                  <div className="p-3 rounded-lg border border-cyber-border bg-cyber-bg flex items-center justify-between">
+                {/* Environment and theme */}
+                <div className="space-y-1">
+                  <div className={sectionLabel}>Environment and theme</div>
+                  <div className="px-3 min-h-[56px] rounded-lg bg-surface-base border border-subtle flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <span>Celestial Theme</span>
-                      </div>
-                      <div className="text-[10px] text-cyber-muted">Real Moon / Radiant Sun</div>
+                      <div className="text-sm font-medium text-primary">Appearance</div>
+                      <div className="text-[11px] text-muted">Light or dark</div>
                     </div>
                     <ThemeToggle size="sm" showLabel />
                   </div>
 
-                  {/* Theme Presets (Obsidian, Clean Monolith, Hack The Box) */}
-                  <div className="p-3 rounded-lg border border-cyber-border bg-cyber-bg flex items-center justify-between">
+                  <div className="px-3 min-h-[56px] rounded-lg bg-surface-base border border-subtle flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <span>Theme Preset</span>
-                      </div>
-                      <div className="text-[10px] text-cyber-muted">Obsidian, Clean Monolith, Hack The Box</div>
+                      <div className="text-sm font-medium text-primary">Theme Preset</div>
+                      <div className="text-[11px] text-muted">Obsidian, Clean Monolith, Hack The Box</div>
                     </div>
                     <ThemePresetDropdown />
                   </div>
@@ -525,38 +484,39 @@ export const MobileNav: React.FC = () => {
                       setSettingsModalOpen(true);
                       if (soundEnabled) playCyberSound('click');
                     }}
-                    className="w-full p-2.5 rounded-lg border border-cyber-border bg-cyber-bg hover:border-cyber-cyan/50 text-slate-700 dark:text-cyber-text hover:text-cyber-cyan flex items-center justify-between text-xs font-mono transition-colors"
+                    className={`${rowBase} ${rowState(false)}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Settings className="w-4 h-4 text-cyber-cyan" />
-                      <span className="font-bold">Operator Settings & Themes</span>
+                    <div className="flex items-center gap-2.5">
+                      <Settings className={iconCls} />
+                      <span>Operator Settings & Themes</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-cyber-muted" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
 
                   <button
                     onClick={toggleSound}
-                    className={`w-full p-2.5 rounded-lg border flex items-center justify-center gap-2 text-left transition-colors ${
-                      soundEnabled 
-                        ? 'bg-cyber-emerald/15 border-cyber-emerald text-cyber-emerald font-bold' 
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                    }`}
+                    className={`${rowBase} ${rowState(false)}`}
                   >
-                    {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                    <span>{soundEnabled ? 'Cyber Audio Enabled' : 'Cyber Audio Muted'}</span>
+                    <div className="flex items-center gap-2.5">
+                      {soundEnabled ? <Volume2 className={iconCls} /> : <VolumeX className={iconCls} />}
+                      <span>{soundEnabled ? 'Audio on' : 'Audio muted'}</span>
+                    </div>
+                    <span className={`text-[11px] font-medium ${soundEnabled ? 'text-callout-success-fg' : 'text-muted'}`}>
+                      {soundEnabled ? 'On' : 'Off'}
+                    </span>
                   </button>
                 </div>
 
-                {/* 4. Creator & Support Card */}
-                <div className="p-3 rounded-xl bg-gradient-to-br from-cyber-card via-cyber-bg to-[#0d1527] border border-cyber-border/80 space-y-2">
+                {/* Creator and support */}
+                <div className="pt-3 border-t border-subtle space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-cyber-emerald/20 border border-cyber-emerald/50 flex items-center justify-center text-cyber-emerald text-[10px] font-black">
+                      <div className="w-7 h-7 rounded-md bg-surface-hover border border-subtle flex items-center justify-center text-primary text-[11px] font-semibold">
                         DD
                       </div>
                       <div>
-                        <div className="text-slate-900 dark:text-white font-bold text-xs">Daniel Dayan</div>
-                        <div className="text-[10px] text-cyber-muted">@0xdnd • Creator & Architect</div>
+                        <div className="text-primary font-medium text-sm">Daniel Dayan</div>
+                        <div className="text-[11px] text-muted">@0xdnd, creator and architect</div>
                       </div>
                     </div>
                     <button
@@ -564,18 +524,18 @@ export const MobileNav: React.FC = () => {
                         setMobileMenuOpen(false);
                         setOperatorModalOpen(true);
                       }}
-                      className="text-[10px] text-cyber-emerald hover:underline font-bold"
+                      className="min-h-[44px] px-2 text-xs text-accent hover:underline font-medium cursor-pointer"
                     >
-                      Dossier ↗
+                      Dossier
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  <div className="grid grid-cols-2 gap-2">
                     <a
                       href={CREATOR_PROFILE_LINKS.coffee}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-[#FFDD00]/15 hover:bg-[#FFDD00]/25 border border-[#FFDD00]/40 text-[#FFDD00] hover:text-primary flex items-center justify-center gap-1.5 font-bold text-[11px] transition-colors"
+                      className="min-h-[44px] rounded-lg bg-surface-base hover:bg-surface-hover border border-subtle text-secondary hover:text-primary flex items-center justify-center gap-1.5 font-medium text-xs transition-colors"
                     >
                       <Coffee className="w-3.5 h-3.5" />
                       <span>Buy a Coffee</span>
@@ -585,18 +545,18 @@ export const MobileNav: React.FC = () => {
                         setMobileMenuOpen(false);
                         setLicenseModalOpen(true);
                       }}
-                      className="p-2 rounded-lg bg-cyber-card hover:bg-cyber-card/80 border border-cyber-border text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-primary flex items-center justify-center gap-1 text-[11px] font-bold transition-colors"
+                      className="min-h-[44px] rounded-lg bg-surface-base hover:bg-surface-hover border border-subtle text-secondary hover:text-primary flex items-center justify-center gap-1.5 text-xs font-medium transition-colors cursor-pointer"
                     >
-                      <Scale className="w-3.5 h-3.5 text-cyber-amber" />
+                      <Scale className="w-3.5 h-3.5" />
                       <span>License</span>
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Drawer Footer */}
-              <div className="p-3 border-t border-cyber-border bg-cyber-bg text-center text-[10px] text-cyber-muted">
-                ZEROBOX SUITE • MOBILE OPERATING SYSTEM
+              {/* Drawer footer */}
+              <div className="p-3 border-t border-subtle bg-surface-card text-center text-[11px] text-muted">
+                ZeroBox mobile
               </div>
             </motion.div>
           </div>

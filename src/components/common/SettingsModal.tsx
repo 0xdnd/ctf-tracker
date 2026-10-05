@@ -43,46 +43,46 @@ const THEME_PRESETS: ThemeCardInfo[] = [
   {
     id: 'obsidian',
     name: 'Obsidian Dark / Zinc',
-    tagline: 'Cold Zinc Dark & Clean Zinc Slate (#0ea5e9)',
+    tagline: 'Cold zinc dark and clean zinc slate',
     badge: 'ZINC DARK',
-    darkAccentHex: '#0ea5e9',
-    lightAccentHex: '#0284c7',
-    darkCardHex: '#121215',
-    lightCardHex: '#ffffff',
+    darkAccentHex: 'rgb(14 165 233)',
+    lightAccentHex: 'rgb(2 132 199)',
+    darkCardHex: 'rgb(18 18 21)',
+    lightCardHex: 'rgb(255 255 255)',
     icon: Zap,
   },
   {
     id: 'monolith',
     name: 'Clean Monolith',
-    tagline: 'Architectural Off-White & Crisp Graphite (#fafafa)',
+    tagline: 'Architectural off-white and crisp graphite',
     badge: 'MONOLITH',
-    darkAccentHex: '#38bdf8',
-    lightAccentHex: '#0284c7',
-    darkCardHex: '#27272a',
-    lightCardHex: '#ffffff',
+    darkAccentHex: 'rgb(56 189 248)',
+    lightAccentHex: 'rgb(2 132 199)',
+    darkCardHex: 'rgb(39 39 42)',
+    lightCardHex: 'rgb(255 255 255)',
     icon: Sun,
   },
   {
     id: 'htb',
     name: 'Hack The Box',
-    tagline: 'OLED Pitch Black (#000000) & Official HTB Lime (#9fef00)',
+    tagline: 'OLED black and official HTB lime',
     badge: 'HTB OLED',
-    darkAccentHex: '#9fef00',
-    lightAccentHex: '#15803d',
-    darkCardHex: '#0b1015',
-    lightCardHex: '#ffffff',
+    darkAccentHex: 'rgb(159 239 0)',
+    lightAccentHex: 'rgb(21 128 61)',
+    darkCardHex: 'rgb(11 16 21)',
+    lightCardHex: 'rgb(255 255 255)',
     icon: Terminal,
   },
 ];
 
 const QUICK_DESIGN_TOKENS = [
-  { name: 'Primary Cyan', varName: '--cyber-cyan', role: 'Laser Glow & Tab Active', darkHex: '#00F0FF', lightHex: '#008B99' },
-  { name: 'Foothold Emerald', varName: '--cyber-emerald', role: 'Target Active Engagement', darkHex: '#10B981', lightHex: '#0D9488' },
-  { name: 'Warning Amber', varName: '--cyber-amber', role: 'Linux OS & Medium Labs', darkHex: '#F59E0B', lightHex: '#D97706' },
-  { name: 'Danger Crimson', varName: '--cyber-crimson', role: 'Hard Labs & Destructive', darkHex: '#F43F5E', lightHex: '#E11D48' },
-  { name: 'Domain Purple', varName: '--cyber-purple', role: 'AD Vectors & Insane Labs', darkHex: '#A855F7', lightHex: '#9333EA' },
-  { name: 'Card Surface', varName: '--cyber-card', role: 'Component Containers', darkHex: '#0D1527', lightHex: '#FFFFFF' },
-  { name: 'Tactical Border', varName: '--cyber-border', role: 'Structural Dividers', darkHex: '#1E293B', lightHex: '#E2E8F0' },
+  { name: 'Accent', varName: '--border-accent', role: 'Primary action, focus, selection' },
+  { name: 'Success', varName: '--callout-success-fg', role: 'Rooted and healthy states' },
+  { name: 'Warning', varName: '--callout-warn-fg', role: 'Caution and in-progress' },
+  { name: 'Danger', varName: '--callout-danger-fg', role: 'Destructive and failed' },
+  { name: 'Info', varName: '--callout-info-fg', role: 'Neutral information' },
+  { name: 'Card surface', varName: '--surface-card', role: 'Component containers' },
+  { name: 'Subtle border', varName: '--border-subtle', role: 'Structural dividers' },
 ];
 
 export const SettingsModal: React.FC = () => {
@@ -143,7 +143,7 @@ export const SettingsModal: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm font-mono"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/70 font-sans"
       onClick={() => setSettingsModalOpen(false)}
     >
       <motion.div
@@ -153,26 +153,23 @@ export const SettingsModal: React.FC = () => {
         aria-label="Settings configuration modal"
         initial={{ scale: 0.98, opacity: 0, y: 8 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.98, opacity: 0, y: 8 }}
+        exit={{ scale: 0.98, opacity: 0, y: 8, transition: { duration: 0.12 } }}
         transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="relative w-full max-w-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-surface-card border border-subtle rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header Bar */}
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-cyber-border flex items-center justify-between bg-slate-50 dark:bg-cyber-bg/50">
+          <div className="px-6 py-4 border-b border-subtle flex items-center justify-between bg-surface-sunken">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-cyber-cyan/15 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-surface-card border border-subtle flex items-center justify-center text-secondary">
                 <Settings className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>OPERATOR SETTINGS</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30">
-                    PREFERENCES
-                  </span>
+                <h2 className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <span>Operator settings</span>
                 </h2>
-                <p className="text-[11px] text-slate-600 dark:text-cyber-muted">
-                  Themes, design token swatches, audio feedback, and tactical defaults
+                <p className="text-[11px] text-secondary">
+                  Themes, design tokens, audio feedback, and defaults
                 </p>
               </div>
             </div>
@@ -181,7 +178,7 @@ export const SettingsModal: React.FC = () => {
                 setSettingsModalOpen(false);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="p-1.5 rounded-lg text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-slate-200 dark:hover:bg-cyber-bg transition-colors"
+              className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               aria-label="Close Settings"
             >
               <X className="w-5 h-5" />
@@ -189,16 +186,16 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           {/* Modal Body */}
-          <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700 dark:text-cyber-text">
+          <div className="p-6 overflow-y-auto space-y-5 text-xs text-secondary">
             
             {/* Section 1: Themes & Presets */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Palette className="w-4 h-4 text-cyber-cyan" />
-                  <span>Tactical Theme Presets</span>
+                <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <Palette className="w-4 h-4 text-muted" />
+                  <span>Theme presets</span>
                 </span>
-                <span className="text-[10px] text-tertiary dark:text-cyber-muted font-bold">
+                <span className="text-[10px] text-muted font-semibold">
                   3 CANONICAL THEMES
                 </span>
               </div>
@@ -219,8 +216,8 @@ export const SettingsModal: React.FC = () => {
                       }}
                       className={`p-3 rounded-xl border text-left transition-colors flex flex-col justify-between group ${
                         isSelected
-                          ? 'bg-slate-100 dark:bg-cyber-bg border-cyber-cyan shadow-sm ring-1 ring-cyber-cyan/30'
-                          : 'bg-white dark:bg-cyber-bg/40 border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-slate-600'
+                          ? 'bg-surface-sunken border-accent ring-1 ring-accent/30'
+                          : 'bg-surface-base/40 border-subtle hover:border-strong'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2 w-full">
@@ -228,38 +225,38 @@ export const SettingsModal: React.FC = () => {
                           {/* Dual Swatch (Dark & Light dots) */}
                           <div className="flex items-center -space-x-1 flex-shrink-0" title="Dark & Light accents">
                             <span 
-                              className="w-4 h-4 rounded-full border border-black/30 z-10 shadow-sm"
+                              className="w-4 h-4 rounded-full border border-strong z-10"
                               style={{ backgroundColor: preset.darkAccentHex }}
                             />
                             <span 
-                              className="w-4 h-4 rounded-full border border-white/60 shadow-sm"
+                              className="w-4 h-4 rounded-full border border-strong"
                               style={{ backgroundColor: preset.lightAccentHex }}
                             />
                           </div>
 
                           <div>
-                            <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                              <Icon className="w-3.5 h-3.5 text-cyber-cyan" />
+                            <div className="font-semibold text-xs text-primary flex items-center gap-1.5">
+                              <Icon className="w-3.5 h-3.5 text-muted" />
                               <span>{preset.name}</span>
                             </div>
-                            <span className="text-[10px] text-tertiary dark:text-cyber-muted">
+                            <span className="text-[10px] text-muted">
                               {preset.tagline}
                             </span>
                           </div>
                         </div>
 
                         {isSelected ? (
-                          <span className="p-0.5 rounded-full bg-cyber-cyan/20 text-cyber-cyan flex-shrink-0">
+                          <span className="p-0.5 rounded-full bg-accent/15 text-accent flex-shrink-0">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </span>
                         ) : (
-                          <span className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-cyber-border flex-shrink-0" />
+                          <span className="w-3.5 h-3.5 rounded-full border border-strong flex-shrink-0" />
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-cyber-border/40 text-[9px] text-tertiary dark:text-cyber-muted">
-                        <span className="font-mono">Active Accent: {activeAccent}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-cyber-card border border-slate-200 dark:border-cyber-border text-[8px] font-bold">
+                      <div className="flex items-center justify-between pt-1 border-t border-subtle text-[10px] text-muted">
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-strong" style={{ backgroundColor: activeAccent }} />Active accent</span>
+                        <span className="px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-[10px] font-medium">
                           {preset.badge}
                         </span>
                       </div>
@@ -270,20 +267,20 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             {/* Quick Design Token Swatches Bar */}
-            <div className="pt-2 border-t border-slate-200 dark:border-cyber-border space-y-2">
+            <div className="pt-2 border-t border-subtle space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-cyber-cyan" />
-                  <span>Design Token Palette (1-Click Copy)</span>
+                <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-muted" />
+                  <span>Design tokens</span>
                 </span>
-                <span className="text-[10px] text-tertiary dark:text-cyber-muted">
-                  Click any swatch to copy CSS variable
+                <span className="text-[10px] text-muted">
+                  Click a swatch to copy its CSS variable
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {QUICK_DESIGN_TOKENS.map((token) => {
-                  const tokenColor = isDark ? token.darkHex : token.lightHex;
+                  const tokenColor = `rgb(var(${token.varName}))`;
                   const isCopied = copiedToken === token.varName;
 
                   return (
@@ -291,24 +288,24 @@ export const SettingsModal: React.FC = () => {
                       key={token.varName}
                       type="button"
                       onClick={() => handleCopyToken(token.varName)}
-                      className="p-2 rounded-lg border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50 hover:border-cyber-cyan transition-colors text-left flex items-center gap-2 group"
-                      title={`Click to copy ${token.varName} (${tokenColor})`}
+                      className="p-2 rounded-lg border border-subtle bg-surface-sunken hover:border-accent transition-colors text-left flex items-center gap-2 group"
+                      title={`Click to copy ${token.varName}`}
                     >
                       <span 
-                        className="w-3.5 h-3.5 rounded-md flex-shrink-0 shadow-sm border border-black/20"
+                        className="w-3.5 h-3.5 rounded-md flex-shrink-0 border border-strong"
                         style={{ backgroundColor: tokenColor }}
                       />
                       <div className="truncate flex-1 min-w-0">
-                        <div className="text-[10px] font-bold text-slate-800 dark:text-slate-200 truncate flex items-center justify-between">
+                        <div className="text-[10px] font-semibold text-primary truncate flex items-center justify-between">
                           <span>{token.name}</span>
                           {isCopied ? (
-                            <span className="text-[9px] text-cyber-emerald font-bold">COPIED!</span>
+                            <span className="text-[10px] text-callout-success-fg font-medium">Copied</span>
                           ) : (
-                            <Copy className="w-2.5 h-2.5 text-cyber-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Copy className="w-2.5 h-2.5 text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
                           )}
                         </div>
-                        <div className="text-[9px] text-tertiary dark:text-cyber-muted font-mono truncate">
-                          {tokenColor}
+                        <div className="text-[10px] text-muted font-mono truncate">
+                          {token.varName}
                         </div>
                       </div>
                     </button>
@@ -317,14 +314,14 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {/* Deep Link to Full Studio Matrix */}
-              <div className="mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg/40 border border-slate-200 dark:border-cyber-border">
+              <div className="mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 p-3 rounded-xl bg-surface-sunken border border-subtle">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-cyber-cyan/15 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan flex-shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-surface-card border border-subtle flex items-center justify-center text-secondary flex-shrink-0">
                     <Palette className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <div className="font-bold text-xs text-slate-900 dark:text-white">Full Theme & Color Matrix Inspector</div>
-                    <div className="text-[10px] text-tertiary dark:text-cyber-muted">Inspect 17 tokens, typography scale & WCAG contrast audit</div>
+                    <div className="font-semibold text-xs text-primary">Theme and color matrix</div>
+                    <div className="text-[10px] text-muted">Inspect tokens, type scale and WCAG contrast</div>
                   </div>
                 </div>
                 <button
@@ -334,7 +331,7 @@ export const SettingsModal: React.FC = () => {
                     window.location.hash = '#/theme';
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyber-cyan/15 hover:bg-cyan-100 dark:hover:bg-cyber-cyan/25 border border-cyan-400 dark:border-cyber-cyan/40 text-callout-info-fg dark:text-cyber-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-strong text-primary font-medium text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"
                 >
                   <span>Open Full Studio</span>
                   <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -343,32 +340,32 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             {/* Section 2: Mode & Display Settings */}
-            <div className="pt-2 border-t border-slate-200 dark:border-cyber-border space-y-3">
-              <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Sun className="w-4 h-4 text-cyber-cyan" />
-                <span>Display & Mode</span>
+            <div className="pt-2 border-t border-subtle space-y-3">
+              <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                <Sun className="w-4 h-4 text-muted" />
+                <span>Display and mode</span>
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Dark / Light Toggle */}
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40 flex items-center justify-between">
+                <div className="p-3 rounded-xl border border-subtle bg-surface-sunken flex items-center justify-between">
                   <div>
-                    <div className="font-bold text-xs text-slate-900 dark:text-white">Color Mode</div>
-                    <div className="text-[10px] text-tertiary dark:text-cyber-muted">
-                      {isDark ? 'Dark Mode Active' : 'Light Mode Active'}
+                    <div className="font-semibold text-xs text-primary">Color Mode</div>
+                    <div className="text-[10px] text-muted">
+                      {isDark ? 'Dark mode active' : 'Light mode active'}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 bg-slate-200 dark:bg-cyber-card p-0.5 rounded-lg border border-slate-300 dark:border-cyber-border">
+                  <div className="flex items-center gap-1 bg-surface-hover p-0.5 rounded-lg border border-strong">
                     <button
                       type="button"
                       onClick={() => {
                         setTheme('dark');
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-[box-shadow,background-color,border-color,color] ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-[box-shadow,background-color,border-color,color] ${
                         isDark 
-                          ? 'bg-blue-600 text-white shadow-sm' 
-                          : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
+                          ? 'bg-accent text-on-accent' 
+                          : 'text-secondary hover:text-primary'
                       }`}
                     >
                       <Moon className="w-3.5 h-3.5" />
@@ -380,10 +377,10 @@ export const SettingsModal: React.FC = () => {
                         setTheme('light');
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-[box-shadow,background-color,border-color,color] ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-[box-shadow,background-color,border-color,color] ${
                         !isDark 
-                          ? 'bg-blue-600 text-white shadow-sm' 
-                          : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
+                          ? 'bg-accent text-on-accent' 
+                          : 'text-secondary hover:text-primary'
                       }`}
                     >
                       <Sun className="w-3.5 h-3.5" />
@@ -393,19 +390,19 @@ export const SettingsModal: React.FC = () => {
                 </div>
 
                 {/* Audio Feedback */}
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40 flex items-center justify-between">
+                <div className="p-3 rounded-xl border border-subtle bg-surface-sunken flex items-center justify-between">
                   <div>
-                    <div className="font-bold text-xs text-slate-900 dark:text-white">Audio Feedback</div>
-                    <div className="text-[10px] text-tertiary dark:text-cyber-muted">
-                      Web Audio tactical SFX
+                    <div className="font-semibold text-xs text-primary">Audio Feedback</div>
+                    <div className="text-[10px] text-muted">
+                      Interface sound effects
                     </div>
                   </div>
                   <button
                     onClick={() => toggleSound()}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-bold transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold transition-colors ${
                       soundEnabled
-                        ? 'border-cyber-emerald bg-cyber-emerald/15 text-cyber-emerald'
-                        : 'border-slate-300 dark:border-cyber-border bg-white dark:bg-cyber-card text-tertiary'
+                        ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                        : 'border-strong bg-surface-card text-muted'
                     }`}
                   >
                     {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
@@ -415,14 +412,14 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {/* UI Scaling */}
-              <div className="p-3 rounded-xl border border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/40 space-y-2">
+              <div className="p-3 rounded-xl border border-subtle bg-surface-sunken space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-callout-tip-fg" />
-                    <span>Interface Scaling</span>
+                  <div className="font-semibold text-xs text-primary flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-muted" />
+                    <span>Interface scale</span>
                   </div>
-                  <span className="text-[10px] text-tertiary dark:text-cyber-muted uppercase font-bold">
-                    Active: {uiScale || 'normal'}
+                  <span className="text-[10px] text-muted font-semibold">
+                    {uiScale || 'normal'}
                   </span>
                 </div>
                 <div className="grid grid-cols-5 gap-1.5">
@@ -433,10 +430,10 @@ export const SettingsModal: React.FC = () => {
                         setUiScale(scale);
                         if (soundEnabled) playCyberSound('click');
                       }}
-                      className={`py-1.5 rounded-lg border text-center font-bold text-[10px] uppercase transition-colors ${
+                      className={`py-1.5 rounded-lg border text-center font-semibold text-[10px] transition-colors ${
                         uiScale === scale
-                          ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan shadow-sm'
-                          : 'bg-white dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:border-slate-400'
+                          ? 'bg-surface-card border-accent text-primary'
+                          : 'bg-surface-card border-subtle text-secondary hover:border-strong'
                       }`}
                     >
                       {scale}
@@ -447,15 +444,15 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             {/* Section 3: Attacker Variables Default */}
-            <div className="pt-2 border-t border-slate-200 dark:border-cyber-border space-y-3">
-              <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Server className="w-4 h-4 text-cyber-emerald" />
-                <span>Default Attacker Variables</span>
+            <div className="pt-2 border-t border-subtle space-y-3">
+              <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                <Server className="w-4 h-4 text-muted" />
+                <span>Default attacker variables</span>
               </span>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-tertiary dark:text-cyber-muted block mb-1">
+                  <label className="text-[10px] text-muted block mb-1">
                     Attacker IP (LHOST)
                   </label>
                   <input
@@ -463,11 +460,11 @@ export const SettingsModal: React.FC = () => {
                     value={globalVars.lhost}
                     onChange={(e) => setGlobalVars({ lhost: e.target.value })}
                     placeholder="10.10.14.x"
-                    className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyber-cyan font-mono"
+                    className="w-full px-3 py-1.5 rounded-lg bg-surface-base border border-strong text-xs text-primary focus:outline-none focus:border-accent font-mono tabular-nums"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-tertiary dark:text-cyber-muted block mb-1">
+                  <label className="text-[10px] text-muted block mb-1">
                     Attacker Port (LPORT)
                   </label>
                   <input
@@ -475,7 +472,7 @@ export const SettingsModal: React.FC = () => {
                     value={globalVars.lport}
                     onChange={(e) => setGlobalVars({ lport: e.target.value })}
                     placeholder="4444"
-                    className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyber-cyan font-mono"
+                    className="w-full px-3 py-1.5 rounded-lg bg-surface-base border border-strong text-xs text-primary focus:outline-none focus:border-accent font-mono tabular-nums"
                   />
                 </div>
               </div>
@@ -484,7 +481,7 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           {/* Footer Bar */}
-          <div className="px-6 py-3.5 bg-slate-50 dark:bg-cyber-bg/80 border-t border-slate-200 dark:border-cyber-border flex items-center justify-between">
+          <div className="px-6 py-3.5 bg-surface-sunken border-t border-subtle flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -493,9 +490,9 @@ export const SettingsModal: React.FC = () => {
                   setBackupModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-secondary hover:text-primary hover:bg-surface-hover transition-colors flex items-center gap-1.5 border border-subtle"
               >
-                <Database className="w-3.5 h-3.5 text-callout-tip-fg" />
+                <Database className="w-3.5 h-3.5 text-muted" />
                 <span className="hidden sm:inline">Backup Database</span>
               </button>
 
@@ -506,9 +503,9 @@ export const SettingsModal: React.FC = () => {
                   useCtfStore.getState().setLicenseModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-200 dark:hover:bg-cyber-card transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-cyber-border"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-secondary hover:text-primary hover:bg-surface-hover transition-colors flex items-center gap-1.5 border border-subtle"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" />
+                <ShieldCheck className="w-3.5 h-3.5 text-muted" />
                 <span className="hidden sm:inline">License</span>
               </button>
             </div>
@@ -519,7 +516,7 @@ export const SettingsModal: React.FC = () => {
                 setSettingsModalOpen(false);
                 if (soundEnabled) playCyberSound('click');
               }}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyber-cyan hover:bg-cyan-400 text-black shadow-sm transition-[box-shadow,background-color,border-color,color]"
+              className="px-4 py-1.5 rounded-lg text-xs font-medium bg-accent hover:bg-accent-hover text-on-accent transition-[background-color,border-color,color] active:scale-[0.97] cursor-pointer"
             >
               Done
             </button>

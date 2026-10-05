@@ -11,7 +11,6 @@ import {
   LayoutGrid, 
   ChevronLeft, 
   ChevronRight,
-  Flame,
   Radio,
   Compass,
   GraduationCap,
@@ -74,46 +73,38 @@ export const Sidebar: React.FC = () => {
       label: 'Lab & Target Tracker',
       icon: Crosshair,
       badge: `${rootedMachines}/${totalMachines}`,
-      badgeColor: 'text-cyber-emerald bg-cyber-emerald/10 border-cyber-emerald/30',
     },
     {
       id: 'vault',
       path: '/vault',
       label: 'Evidence & Loot Vault',
       icon: Database,
-      sublabel: 'Creds, Hashes, Flags & Keys',
       badge: `${footholdMachines + rootedMachines}`,
-      badgeColor: 'text-callout-warn-fg bg-amber-500/10 border-amber-500/30',
     },
     {
       id: 'methodology',
       path: '/methodology',
       label: 'Attack Methodology',
       icon: Compass,
-      sublabel: '8-Phase & Branches A-G',
     },
     {
       id: 'cheatsheet',
       path: '/cheatsheets',
       label: 'Snippets & Vault',
       icon: Terminal,
-      sublabel: 'Commands, Payloads & Field Manual',
       badge: `${cheatsheets.length + userNotes.length}`,
-      badgeColor: 'text-cyber-cyan bg-cyber-cyan/15 border-cyber-cyan/30',
     },
     {
       id: 'writeup',
       path: '/writeup',
       label: 'Writeup Studio',
       icon: FileText,
-      sublabel: 'Obsidian / GitBook',
     },
     {
       id: 'analytics',
       path: '/analytics',
       label: 'Skill Radar & Analytics',
       icon: BarChart3,
-      sublabel: 'Heatmap & Matrix',
     },
     {
       id: 'exam',
@@ -121,7 +112,6 @@ export const Sidebar: React.FC = () => {
       label: '24h Exam Simulator',
       icon: GraduationCap,
       badge: 'OSCP',
-      badgeColor: 'text-callout-tip-fg bg-purple-100 border-purple-300 dark:bg-purple-950/40 dark:border-purple-800/50',
     },
   ] as const;
 
@@ -131,32 +121,39 @@ export const Sidebar: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   };
 
+  const layoutModes = [
+    { id: 'kanban', label: 'Kanban', title: 'Kanban Board View', Icon: Kanban },
+    { id: 'table', label: 'Table', title: 'Data Table View', Icon: Table },
+    { id: 'grid', label: 'Cards', title: 'Grid Cards View', Icon: LayoutGrid },
+    { id: 'graph', label: 'Graph', title: 'Attack Topology Network Graph', Icon: Radio },
+  ] as const;
+
   return (
     <aside
-      className={`hidden md:flex relative flex-col border-r border-slate-200 dark:border-[#27272a] bg-white dark:bg-[#09090b] text-slate-900 dark:text-zinc-100 transition-[width,background-color,border-color] duration-300 z-30 h-full max-h-full ${
+      className={`hidden md:flex relative flex-col border-r border-subtle bg-surface-card text-primary font-sans transition-[width,background-color,border-color] duration-300 z-30 h-full max-h-full ${
         collapsed ? 'w-16' : 'w-72'
       }`}
     >
-      {/* Collapse Toggle Button */}
+      {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-5 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 dark:border-[#27272a] bg-white dark:bg-[#18181b] text-slate-700 dark:text-tertiary hover:text-slate-900 dark:hover:text-primary transition-colors cursor-pointer shadow-sm"
+        className="absolute -right-3 top-5 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-strong bg-surface-elevated text-secondary hover:text-primary transition-colors cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         aria-label={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
       >
         {collapsed ? <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" /> : <ChevronLeft className="h-3.5 w-3.5 stroke-[2.5]" />}
       </button>
 
-      {/* Middle Scrollable Section: Operations & Layout Modes */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin px-2.5 py-3 space-y-1 font-mono">
-        <div className={`px-2 text-[10px] uppercase font-bold tracking-wider text-tertiary mb-1.5 ${collapsed ? 'hidden' : 'block'}`}>
-          OPERATIONS // MODULES
+      {/* Navigation */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin px-2.5 py-3 space-y-0.5">
+        <div className={`px-2 text-[11px] font-medium text-muted mb-1.5 ${collapsed ? 'hidden' : 'block'}`}>
+          Modules
         </div>
 
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = 
-            location.pathname === item.path || 
+          const isActive =
+            location.pathname === item.path ||
             (item.id === 'tracker' && (location.pathname === '/' || location.pathname.startsWith('/target'))) ||
             (item.id === 'cheatsheet' && (location.pathname.startsWith('/cheatsheet') || location.pathname.startsWith('/field-manual') || location.pathname.startsWith('/notes') || location.pathname.startsWith('/cpts'))) ||
             (item.id === 'vault' && (location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')));
@@ -165,30 +162,24 @@ export const Sidebar: React.FC = () => {
               key={item.id}
               whileTap={{ scale: 0.97 }}
               onClick={() => handleTabClick(item)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-colors relative group cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 isActive
-                  ? 'bg-slate-100 dark:bg-[#18181b] text-slate-900 dark:text-white border border-slate-300 dark:border-[#27272a] font-bold shadow-xs'
-                  : 'text-slate-600 dark:text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-slate-100/70 dark:hover:bg-[#18181b]/50 border border-transparent'
+                  ? 'bg-surface-hover text-primary font-medium'
+                  : 'text-secondary hover:text-primary hover:bg-surface-hover/70'
               }`}
             >
               {isActive && (
-                <span 
-                  className="absolute left-0 top-1 bottom-1 w-0.5 bg-emerald-500 rounded-r"
-                />
+                <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />
               )}
-              <div
-                className="flex-shrink-0"
-              >
-                <Icon className={`w-4 h-4 ${
-                  isActive ? 'text-callout-success-fg' : 'text-tertiary group-hover:text-zinc-300'
-                }`} />
+              <div className="flex-shrink-0">
+                <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted group-hover:text-secondary'}`} />
               </div>
-              
+
               {!collapsed && (
                 <div className="flex-1 flex items-center justify-between min-w-0 text-left">
-                  <span className="font-semibold truncate mr-2">{item.label}</span>
+                  <span className="truncate mr-2">{item.label}</span>
                   {'badge' in item && item.badge && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md border border-zinc-800 bg-zinc-900 text-zinc-400 flex-shrink-0 font-mono font-bold whitespace-nowrap tabular-nums">
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
                       {item.badge}
                     </span>
                   )}
@@ -200,142 +191,88 @@ export const Sidebar: React.FC = () => {
 
         {/* View switcher when in Tracker view */}
         {activeTab === 'tracker' && !collapsed && (
-          <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-[#27272a]">
-            <div className="px-2 text-[10px] uppercase font-bold tracking-wider text-tertiary mb-1.5">
-              LAYOUT MODES
-            </div>
-            <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-[#18181b] p-1 rounded-lg border border-slate-200 dark:border-[#27272a] machined-edge">
-              <button
-                onClick={() => {
-                  setViewMode('kanban');
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`flex flex-col items-center justify-center py-1.5 rounded-md text-[10px] font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-                  viewMode === 'kanban'
-                    ? 'bg-zinc-200 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold border border-zinc-300 dark:border-zinc-700 shadow-xs'
-                    : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
-                }`}
-                title="Kanban Board View"
-              >
-                <Kanban className="w-3.5 h-3.5 mb-0.5" />
-                <span>Kanban</span>
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode('table');
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`flex flex-col items-center justify-center py-1.5 rounded-md text-[10px] font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-zinc-200 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold border border-zinc-300 dark:border-zinc-700 shadow-xs'
-                    : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
-                }`}
-                title="Data Table View"
-              >
-                <Table className="w-3.5 h-3.5 mb-0.5" />
-                <span>Table</span>
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode('grid');
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`flex flex-col items-center justify-center py-1.5 rounded-md text-[10px] font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-                  viewMode === 'grid'
-                    ? 'bg-zinc-200 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold border border-zinc-300 dark:border-zinc-700 shadow-xs'
-                    : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
-                }`}
-                title="Grid Cards View"
-              >
-                <LayoutGrid className="w-3.5 h-3.5 mb-0.5" />
-                <span>Cards</span>
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode('graph');
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`flex flex-col items-center justify-center py-1.5 rounded-md text-[10px] font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-                  viewMode === 'graph'
-                    ? 'bg-zinc-200 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold border border-zinc-300 dark:border-zinc-700 shadow-xs'
-                    : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
-                }`}
-                title="Attack Topology Network Graph"
-              >
-                <Radio className="w-3.5 h-3.5 mb-0.5" />
-                <span>Graph</span>
-              </button>
+          <div className="mt-3 pt-2.5 border-t border-subtle">
+            <div className="px-2 text-[11px] font-medium text-muted mb-1.5">Layout</div>
+            <div className="grid grid-cols-4 gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle">
+              {layoutModes.map(({ id, label, title, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setViewMode(id);
+                    if (soundEnabled) playCyberSound('click');
+                  }}
+                  className={`flex flex-col items-center justify-center py-1.5 rounded-md text-[11px] transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    viewMode === id
+                      ? 'bg-surface-card text-primary font-medium border border-strong shadow-xs'
+                      : 'text-muted hover:text-primary border border-transparent'
+                  }`}
+                  title={title}
+                >
+                  <Icon className="w-3.5 h-3.5 mb-0.5" />
+                  <span>{label}</span>
+                </button>
+              ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* Permanently Pinned Bottom Viewport Capsule: Pwn Progress & Lead Operator Card */}
-      {/* Footer System Telemetry & Profile */}
+      {/* Footer: progress and about */}
       {!collapsed ? (
-        <div className="flex-shrink-0 border-t border-slate-200 dark:border-[#27272a] bg-slate-50 dark:bg-[#18181b] p-3 font-mono text-xs overflow-hidden">
-          <div className="flex items-center justify-between mb-1.5 px-0.5">
-            <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-callout-warn-fg" /> PWN PROGRESS
-            </span>
-            <span className="text-xs font-bold text-callout-success-fg font-mono tabular-nums">
-              {pwnPercentage}%
-            </span>
-          </div>
-          
-          <div className="w-full bg-slate-200 dark:bg-[#09090b] rounded-full h-1.5 border border-slate-300 dark:border-[#27272a] overflow-hidden mb-2">
-            <div
-              className="h-full bg-emerald-500 transition-[width] duration-500 rounded-full"
-              style={{ width: `${Math.min(100, Math.max(0, pwnPercentage))}%` }}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5 text-[10px] mb-2">
-            <div className="bg-slate-100 dark:bg-[#09090b] px-2 py-1 rounded-md border border-slate-200 dark:border-[#27272a] flex items-center justify-between">
-              <span className="text-tertiary">Rooted:</span>
-              <span className="text-callout-success-fg font-bold tabular-nums">{rootedMachines}</span>
-            </div>
-            <div className="bg-slate-100 dark:bg-[#09090b] px-2 py-1 rounded-md border border-slate-200 dark:border-[#27272a] flex items-center justify-between">
-              <span className="text-tertiary">Footholds:</span>
-              <span className="text-callout-info-fg font-bold tabular-nums">{footholdMachines}</span>
-            </div>
-          </div>
-
-          {/* Refined Tactical Shell Footer: Operational Telemetry & About ZeroBox Trigger */}
-          <div className="pt-2 border-t border-slate-200 dark:border-[#27272a] space-y-2">
-            <button
-              type="button"
-              onClick={() => {
-                setOperatorModalOpen(true);
-                if (soundEnabled) playCyberSound('click');
-              }}
-              className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-100 dark:bg-[#09090b] hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-[#27272a] hover:border-zinc-700 text-slate-700 dark:text-zinc-300 transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer"
-              title="About ZeroBox & Credits"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-5 h-5 rounded-[4px] bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-callout-info-fg dark:text-cyber-cyan flex-shrink-0">
-                  <Terminal className="w-3 h-3" />
-                </div>
-                <div className="truncate text-left leading-none">
-                  <div className="text-[11px] font-bold text-slate-900 dark:text-zinc-200">ZeroBox</div>
-                  <div className="text-[9px] text-tertiary">v2.4 • Offline Suite</div>
-                </div>
-              </div>
-              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-tertiary border border-slate-300 dark:border-zinc-700 flex-shrink-0">
-                ABOUT
+        <div className="flex-shrink-0 border-t border-subtle p-3 text-xs overflow-hidden space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-1.5 px-0.5">
+              <span className="text-[11px] font-medium text-muted">Pwn progress</span>
+              <span className="text-xs font-medium text-primary font-mono tabular-nums">
+                {pwnPercentage}%
               </span>
-            </button>
+            </div>
+
+            <div className="w-full bg-surface-sunken rounded-full h-1 overflow-hidden mb-1.5">
+              <div
+                className="h-full bg-accent transition-[width] duration-500 rounded-full"
+                style={{ width: `${Math.min(100, Math.max(0, pwnPercentage))}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between px-0.5 text-[11px] text-muted">
+              <span>
+                Rooted <span className="text-secondary font-mono tabular-nums">{rootedMachines}</span>
+              </span>
+              <span>
+                Footholds <span className="text-secondary font-mono tabular-nums">{footholdMachines}</span>
+              </span>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex-shrink-0 border-t border-slate-200 dark:border-[#27272a] bg-slate-50 dark:bg-[#18181b] p-2 flex flex-col items-center gap-2 overflow-hidden">
+
           <button
             type="button"
             onClick={() => {
               setOperatorModalOpen(true);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[10px] font-bold text-callout-info-fg dark:text-cyber-cyan hover:bg-cyan-500/20 transition-all active:scale-[0.97] cursor-pointer"
+            className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-surface-hover text-secondary transition-[transform,background-color,color] active:scale-[0.97] group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            title="About ZeroBox & Credits"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Terminal className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+              <div className="truncate text-left leading-tight">
+                <div className="text-xs font-medium text-primary">ZeroBox</div>
+                <div className="text-[11px] text-muted">v2.4, offline suite</div>
+              </div>
+            </div>
+            <span className="text-[11px] text-muted flex-shrink-0 group-hover:text-secondary">About</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex-shrink-0 border-t border-subtle p-2 flex flex-col items-center gap-2 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => {
+              setOperatorModalOpen(true);
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className="w-8 h-8 rounded-lg bg-surface-hover border border-subtle flex items-center justify-center text-[11px] font-semibold text-primary hover:bg-surface-sunken transition-interactive active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             title="About ZeroBox & Credits"
             aria-label="About ZeroBox & Credits"
           >

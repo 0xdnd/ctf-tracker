@@ -130,9 +130,9 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
     return (
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`inline-flex items-center gap-1 bg-white dark:bg-[#09090b] border ${variant === 'hardware' ? 'border-[#0ea5e9]' : 'border-cyan-500/70 dark:border-cyan-500/50'} rounded-[3px] p-0.5 font-mono tabular-nums ${className}`}
+        className={`inline-flex items-center gap-1 bg-surface-card border ${variant === 'hardware' ? 'border-accent' : 'border-accent/70'} rounded-[3px] p-0.5 font-mono tabular-nums ${className}`}
       >
-        {showLabel && <span className="text-[10px] text-cyber-muted px-1">IP:</span>}
+        {showLabel && <span className="text-[10px] text-muted px-1">IP:</span>}
         <input
           ref={inputRef}
           id={`edit-ip-${machineId}`}
@@ -143,13 +143,13 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
           onChange={(e) => setIpValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
-          className={`bg-white dark:bg-transparent text-slate-900 dark:text-white border ${variant === 'hardware' ? 'border-zinc-300 dark:border-zinc-700 focus:border-[#0ea5e9]' : 'border-cyan-500/40 dark:border-transparent'} rounded-[3px] px-1 font-mono font-bold focus:outline-none tabular-nums ${sizeClasses.input}`}
+          className={`bg-surface-card text-primary border ${variant === 'hardware' ? 'border-strong focus:border-accent' : 'border-accent/40'} rounded-[3px] px-1 font-mono font-bold focus:outline-none tabular-nums ${sizeClasses.input}`}
           placeholder="10.10.x.x"
         />
         <button
           type="button"
           onClick={handleSave}
-          className={`${sizeClasses.button} rounded-[3px] bg-cyber-emerald/20 text-cyber-emerald hover:bg-cyber-emerald hover:text-black transition-all active:scale-[0.97]`}
+          className={`${sizeClasses.button} rounded-[3px] bg-callout-success-bg text-callout-success-fg hover:bg-callout-success-fg/20 transition-interactive active:scale-[0.97]`}
           title="Save IP (Enter)"
         >
           <Check className={sizeClasses.icon} />
@@ -157,7 +157,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
         <button
           type="button"
           onClick={handleCancel}
-          className={`${sizeClasses.button} rounded-[3px] bg-cyber-crimson/20 text-cyber-crimson hover:bg-cyber-crimson hover:text-primary transition-all active:scale-[0.97]`}
+          className={`${sizeClasses.button} rounded-[3px] bg-callout-danger-bg text-callout-danger-fg hover:bg-callout-danger-fg/20 transition-interactive active:scale-[0.97]`}
           title="Cancel (Esc)"
         >
           <X className={sizeClasses.icon} />
@@ -172,23 +172,22 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
         onClick={(e) => e.stopPropagation()}
         className={`group/ip inline-flex items-center gap-1 font-mono tabular-nums ${sizeClasses.text} ${className}`}
       >
-        {showLabel && <span className="text-slate-600 dark:text-cyber-muted text-[10px]">IP:</span>}
-        <div className="inline-flex items-center rounded-[3px] border border-amber-300/60 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5 overflow-hidden tabular-nums">
+        {showLabel && <span className="text-secondary text-[11px]">IP</span>}
+        <div className="inline-flex items-center rounded-[3px] border border-callout-warn-border/60 bg-callout-warn-bg overflow-hidden tabular-nums">
           <button
             type="button"
             onClick={handleOpenQuickModal}
             aria-label={size === 'xs' ? (initialIp ? `Set IP (${initialIp})` : 'Set dynamic IP') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}
-            className={`min-h-[24px] inline-flex items-center gap-1 ${size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-0.5'} text-callout-warn-fg hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:text-callout-warn-fg transition-all active:scale-[0.97] font-bold tracking-wide tabular-nums`}
+            className={`min-h-[24px] inline-flex items-center gap-1 ${size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-0.5'} text-callout-warn-fg hover:bg-callout-warn-fg/10 transition-interactive active:scale-[0.97] font-bold tabular-nums`}
             title="Dynamic spawned IP needed! Click to quickly assign spawned instance IP"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500/70 dark:bg-amber-400/80 animate-pulse" />
             <span className="tabular-nums">{size === 'xs' ? (initialIp || 'Set IP') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}</span>
           </button>
           <button
             type="button"
             onClick={handleStartEdit}
             aria-label="Edit IP inline"
-            className={`min-w-[24px] min-h-[24px] inline-flex items-center justify-center ${size === 'xs' ? 'px-1 py-0.5' : 'px-1.5 py-0.5'} text-callout-warn-fg hover:text-callout-warn-fg hover:bg-amber-100 dark:hover:bg-amber-500/30 border-l border-amber-300/60 dark:border-amber-500/30 transition-all active:scale-[0.97]`}
+            className={`min-w-[24px] min-h-[24px] inline-flex items-center justify-center ${size === 'xs' ? 'px-1 py-0.5' : 'px-1.5 py-0.5'} text-callout-warn-fg hover:bg-callout-warn-fg/10 border-l border-callout-warn-border/60 transition-interactive active:scale-[0.97]`}
             title="Edit inline"
           >
             <Pencil className={sizeClasses.icon} />
@@ -203,23 +202,23 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
       onClick={(e) => e.stopPropagation()}
       className={`group/ip inline-flex items-center gap-1.5 font-mono tabular-nums ${sizeClasses.text} ${className}`}
     >
-      {showLabel && <span className="text-slate-600 dark:text-cyber-muted text-[10px]">IP:</span>}
+      {showLabel && <span className="text-secondary text-[11px]">IP</span>}
 
       <div
         className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] border transition-colors tabular-nums ${
           justSaved
-            ? 'bg-cyber-emerald/15 border-cyber-emerald text-cyber-emerald'
+            ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
             : copied
-            ? (variant === 'hardware' ? 'bg-[#0ea5e9]/15 border-[#0ea5e9] text-[#0ea5e9]' : 'bg-cyber-cyan/15 border-cyber-cyan text-cyber-cyan')
+            ? 'bg-accent/10 border-accent text-accent'
             : variant === 'hardware'
-            ? 'bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600'
-            : 'bg-slate-100 dark:bg-[#09090b] border-slate-300 dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-600 text-slate-800 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-primary'
+            ? 'bg-surface-sunken border-subtle text-secondary hover:border-strong'
+            : 'bg-surface-sunken border-subtle hover:border-strong text-primary'
         }`}
       >
         <span
           onClick={handleCopy}
           onDoubleClick={handleStartEdit}
-          className="cursor-pointer font-bold select-all tracking-wide tabular-nums"
+          className="cursor-pointer font-bold select-all tabular-nums"
           title="Click to copy IP • Double-click to edit"
         >
           {initialIp}
@@ -227,15 +226,15 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
 
         {/* Copy confirmation or icon */}
         {copied ? (
-          <CheckCheck className={`${sizeClasses.icon} text-cyber-cyan stroke-[2.5]`} />
+          <CheckCheck className={`${sizeClasses.icon} text-callout-success-fg stroke-[2.5]`} />
         ) : justSaved ? (
-          <Check className={`${sizeClasses.icon} text-cyber-emerald stroke-[2.5]`} />
+          <Check className={`${sizeClasses.icon} text-callout-success-fg stroke-[2.5]`} />
         ) : (
           <button
             type="button"
             onClick={handleCopy}
             aria-label="Copy IP"
-            className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-cyber-muted hover:text-cyber-cyan transition-all active:scale-[0.97]"
+            className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 cursor-pointer"
             title="Copy IP"
           >
             <Copy className={sizeClasses.icon} />
@@ -247,7 +246,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
           type="button"
           onClick={handleStartEdit}
           aria-label="Change target IP"
-          className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-cyber-muted hover:text-cyber-amber transition-all active:scale-[0.97] hover:scale-110 ml-0.5 opacity-70 group-hover/ip:opacity-100"
+          className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] ml-0.5 opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 cursor-pointer"
           title="Change / Update Target IP"
         >
           <Pencil className={sizeClasses.icon} />
@@ -255,8 +254,8 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
       </div>
 
       {justSaved && (
-        <span className="text-[9px] text-cyber-emerald font-bold animate-pulse uppercase tabular-nums">
-          IP SAVED ✓
+        <span className="text-[11px] text-callout-success-fg font-medium tabular-nums">
+          IP saved
         </span>
       )}
     </div>

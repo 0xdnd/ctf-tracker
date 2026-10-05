@@ -49,24 +49,24 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-cyber-bg text-cyber-text flex flex-col items-center justify-center p-4 sm:p-6 font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white">
-          <div className="w-full max-w-2xl p-4 sm:p-5 rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl space-y-3.5">
-            <div className="flex items-center gap-2.5 border-b border-cyber-border pb-3">
-              <AlertTriangle className="w-5 h-5 text-cyber-crimson flex-shrink-0" />
+        <div className="min-h-screen bg-surface-base text-primary flex flex-col items-center justify-center p-4 sm:p-6 font-sans selection:bg-accent/15 selection:text-current">
+          <div className="w-full max-w-2xl p-4 sm:p-5 rounded-2xl border border-subtle bg-surface-card shadow-2xl space-y-3.5">
+            <div className="flex items-center gap-2.5 border-b border-subtle pb-3">
+              <AlertTriangle className="w-5 h-5 text-callout-danger-fg flex-shrink-0" />
               <div>
-                <h1 className="text-sm font-bold text-white tracking-wider">
-                  SYSTEM ANOMALY DETECTED // RUNTIME RECOVERY
+                <h1 className="text-sm font-semibold text-primary">
+                  Something went wrong
                 </h1>
-                <p className="text-xs text-cyber-muted">
-                  An unexpected render exception was trapped by the kernel boundary.
+                <p className="text-xs text-muted">
+                  An unexpected error was caught. You can reload the page or reset the local store.
                 </p>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border text-xs text-cyber-crimson font-mono overflow-x-auto max-h-48">
+            <div className="p-3 rounded-xl bg-surface-base border border-subtle text-xs text-callout-danger-fg font-mono overflow-x-auto max-h-48">
               <strong>Error:</strong> {this.state.error?.message || 'Unknown runtime error'}
               {this.state.error?.stack && (
-                <pre className="text-[10px] text-cyber-muted mt-2 whitespace-pre-wrap">
+                <pre className="text-[10px] text-muted mt-2 whitespace-pre-wrap">
                   {this.state.error.stack}
                 </pre>
               )}
@@ -75,16 +75,16 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 onClick={() => window.location.reload()}
-                className="px-3.5 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white text-xs hover:border-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                className="px-3.5 py-1.5 rounded-lg bg-surface-card border border-subtle text-primary text-xs hover:border-strong transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               >
-                Reload Page
+                Reload page
               </button>
               <button
                 onClick={this.handleReset}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyber-crimson text-black font-bold text-xs hover:bg-cyber-crimson/90 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border text-callout-danger-fg font-medium text-xs hover:bg-callout-danger-bg/80 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Store & Recover</span>
+                <span>Reset store and recover</span>
               </button>
             </div>
           </div>
