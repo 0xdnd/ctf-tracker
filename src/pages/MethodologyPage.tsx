@@ -483,7 +483,7 @@ export const MethodologyPage: React.FC = () => {
 
             {/* Service branch chips */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0">
+              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0">
                 <div className="flex min-w-max items-center gap-1.5 py-0.5">
                   <span className="mr-1 flex-shrink-0 text-xs text-muted">Branches</span>
                   <button
@@ -619,7 +619,12 @@ export const MethodologyPage: React.FC = () => {
 
                                       {item.commandSnippet && (
                                         <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-inverse p-2 text-[12px]">
-                                          <div className="min-w-0 flex-1 select-all overflow-x-auto no-scrollbar whitespace-nowrap">
+                                          <div
+                                            tabIndex={0}
+                                            role="region"
+                                            aria-label={`Command for ${item.title}`}
+                                            className="min-w-0 flex-1 select-all overflow-x-auto no-scrollbar whitespace-nowrap rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                          >
                                             <SyntaxHighlightedCommand
                                               command={interpolateCommand(item.commandSnippet, globalVars)}
                                               className="text-[12px]"
