@@ -10,16 +10,16 @@ All skills from Antigravity/Gemini (including `ultimate-redesign`, `impeccable`,
 
 ## Current Roadmap & Progress Status
 
-The master blueprint is defined in [`PROJECT.md`](file:///c:/Users/DANIEL/Desktop/Projects/ctf-tracker/PROJECT.md).
+All milestones (M1–M6) are complete. See `dev/AI_HANDOFF.md` for the current architecture and history. The original blueprint is in [`dev/PROJECT.md`](dev/PROJECT.md).
 
 | Milestone | Scope | Status | Notes |
 |---|---|---|---|
 | **M1** | Design System, Tokens, Typography, Motion, Base Primitives & Shell | **DONE & CERTIFIED** | Inter body sans, mono telemetry, concentric radii, `CyberButton`/`CyberBadge`/`CyberInput`/`CyberSelect`, in-app toasts, single-line `UnifiedHeader`. |
-| **M2** | Primary Operations Views: Lab Tracker & Evidence Vault | **IMPLEMENTED** | `GridView`, `TableView`, `KanbanBoard`, `GraphView`, `GraphEdgeInspectorDrawer`, `MachineDetailModal`, `EvidenceVaultPage`, `LootTimeline`, `AddLootModal`, `ExportLootDrawer`. All 10 files completed and passing tests. |
-| **M3** | Specialist Views: Methodology, Field Manual/Notes & Writeup Studio | **NEXT UP (START HERE)** | `MethodologyPage`, `ChecklistWorkspace`, `CheatsheetView`, `ObsidianNoteViewer`, `PersistentNotesWorkspace`, `WriteupStudio`, `PentestReportModal`. |
-| **M4** | Specialist Cockpits: Analytics Radar & 24h Exam Simulator | **PLANNED** | Accessible SVG Radar chart, 7-day multi-row activity heatmap, `ExamSimulatorPage`, SVG velocity burn-down chart, `ExamHeaderCapsule`. |
-| **M5** | Nielsen 10 Usability Heuristics & WCAG 2.1 AA A11y Hardening | **PLANNED** | In-app toasts, skeleton loading states, confirmation dialogs, contrast calibration >= 4.5:1 across all presets, visible focus indicators. |
-| **M6** | Final Full Verification, Visual Proof & Sign-Off | **PLANNED** | Full Vitest & Playwright E2E suites, live browser before/after screenshots (Light & Dark, 1440px & 390px), Lighthouse >= 95, heuristics report. |
+| **M2** | Primary Operations Views: Lab Tracker & Evidence Vault | **DONE** | `GridView`, `TableView`, `KanbanBoard`, `GraphView`, `GraphEdgeInspectorDrawer`, `MachineDetailModal`, `EvidenceVaultPage`, `LootTimeline`, `AddLootModal`, `ExportLootDrawer`. All 10 files completed and passing tests. |
+| **M3** | Specialist Views: Methodology, Field Manual/Notes & Writeup Studio | **DONE** | `MethodologyPage`, `ChecklistWorkspace`, `CheatsheetView`, `ObsidianNoteViewer`, `PersistentNotesWorkspace`, `WriteupStudio`, `PentestReportModal`. |
+| **M4** | Specialist Cockpits: Analytics Radar & 24h Exam Simulator | **DONE** | Accessible SVG Radar chart, 7-day multi-row activity heatmap, `ExamSimulatorPage`, SVG velocity burn-down chart, `ExamHeaderCapsule`. |
+| **M5** | Nielsen 10 Usability Heuristics & WCAG 2.1 AA A11y Hardening | **DONE** | In-app toasts, skeleton loading states, confirmation dialogs, contrast calibration >= 4.5:1 across all presets, visible focus indicators. |
+| **M6** | Final Full Verification, Visual Proof & Sign-Off | **DONE** | Full Vitest & Playwright E2E suites, live browser before/after screenshots (Light & Dark, 1440px & 390px), Lighthouse >= 95, heuristics report. |
 
 ---
 

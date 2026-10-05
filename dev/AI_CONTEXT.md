@@ -104,13 +104,13 @@ ctf-tracker/
 * **137 Tactical Phase Cards**: Integrated command templates, operational guidelines, and completion progress bars.
 
 ### 3. Field Manual & Obsidian Vault (`/cheatsheets`)
-* **Docked Multi-Tab Workspace** ([`ObsidianNoteViewer.tsx`](file:///c:/Users/DANIEL/.cline/data/workspaces/chat/ctf-tracker/src/components/cheatsheet/ObsidianNoteViewer.tsx)):
+* **Docked Multi-Tab Workspace** ([`ObsidianNoteViewer.tsx`](../src/components/cheatsheet/ObsidianNoteViewer.tsx)):
   * Renders inline beside the permanent left Tree Explorer (zero popup modal barriers).
   * Multiple parallel note tabs with active purple accent indicators and individual `×` close buttons.
   * `Ctrl+T` Spotlight Quick Switcher for opening arbitrary notes.
   * `Ctrl+W` shortcut to close active tabs with adjacent tab auto-focus.
   * Bidirectional synchronization: clicking any note in the tree opens it inline; switching tabs updates the active tree leaf highlight.
-* **Advanced Search Engine & Addon Bar** ([`SearchFilterAddonBar.tsx`](file:///c:/Users/DANIEL/.cline/data/workspaces/chat/ctf-tracker/src/components/cheatsheet/SearchFilterAddonBar.tsx)):
+* **Advanced Search Engine & Addon Bar** ([`SearchFilterAddonBar.tsx`](../src/components/cheatsheet/SearchFilterAddonBar.tsx)):
   * Single source of truth derived from the raw search query string.
   * **Dynamic Tool Selector**: Popover with real-time tool counts extracted from active notes (e.g. `nmap`, `bloodhound`, `netexec`, `hashcat`, `mimikatz`, `chisel`, `ffuf`).
   * **Tactical Stage Selector**: Filter by attack lifecycle stage (`Recon`, `Enumeration`, `PrivEsc`, `AD`, etc.).
@@ -120,7 +120,7 @@ ctf-tracker/
   * **Syntax Guide Modal**: Clickable operator reference with 1-click query insertion.
 * **Obsidian Markdown Rendering Pipeline**:
   * 11 Callout Types: `tip`, `warning`, `danger`, `important`, `note`, `example`, `info`, `question`, `success`, `abstract`, `cite`.
-  * Collapsible Obsidian Properties Card ([`ObsidianProperties.tsx`](file:///c:/Users/DANIEL/.cline/data/workspaces/chat/ctf-tracker/src/components/obsidian/ObsidianProperties.tsx)) matching native Obsidian v1.4+.
+  * Collapsible Obsidian Properties Card ([`ObsidianProperties.tsx`](../src/components/obsidian/ObsidianProperties.tsx)) matching native Obsidian v1.4+.
   * Dynamic `#` hover anchor copy links on headings with unicode Hebrew slugification (`slugifyHeading`).
   * Right slide-out Table of Contents drawer with smooth section jumping.
   * LaTeX Math equations via KaTeX (`KaTeXView.tsx`).
@@ -137,7 +137,7 @@ ctf-tracker/
 * 40-Point Active Directory set milestone tracker & scoring engine.
 * OffSec exam compliance checklists (screenshot verifications, flags formatting, non-metasploit rules).
 * Candidate running log & 1-click Markdown Exam Submission Report Exporter.
-* **Embedded Tactical War Room Cockpit** ([`WarRoomView.tsx`](file:///c:/Users/DANIEL/.cline/data/workspaces/chat/ctf-tracker/src/pages/WarRoomView.tsx)):
+* **Embedded Tactical War Room Cockpit** ([`WarRoomView.tsx`](../src/pages/WarRoomView.tsx)):
   * Dual-pane operations desk: Live Multi-Hop Network Topology Graph on the left, Compromised Credential Vault & Payload Forge on the right.
   * Split-pane ratio adjuster (`40/60`, `50/50`, `60/40`) and fullscreen toggle.
 
@@ -175,7 +175,7 @@ ctf-tracker/
 
 ## 6. Defensive Security & Sanitization Posture
 
-1. **SVG & Mermaid DOMPurify Sanitization** ([`securityUtils.ts`](file:///c:/Users/DANIEL/.cline/data/workspaces/chat/ctf-tracker/src/utils/securityUtils.ts)):
+1. **SVG & Mermaid DOMPurify Sanitization** ([`securityUtils.ts`](../src/utils/securityUtils.ts)):
    * All rendered Mermaid SVGs pass through `sanitizeSvg(svgString)`.
    * Strips dangerous tags: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<meta>`, `<link>`.
    * Strips all `on*` event handlers (`onclick`, `onerror`, `onload`).
