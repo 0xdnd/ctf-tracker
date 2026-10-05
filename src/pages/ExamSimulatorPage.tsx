@@ -51,6 +51,8 @@ import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils'
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
 import { buildBurndownSeries, resolveChartWindow } from '../utils/examBurndown';
+import { PageHeader } from '../components/common/PageHeader';
+import { CyberButton } from '../components/common/CyberButton';
 import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
 import { ExamReportModal } from '../components/exam/ExamReportModal';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
@@ -285,7 +287,7 @@ export const ExamSimulatorPage: React.FC = () => {
             exit={{ opacity: 0, y: -20, scale: 0.96 }}
             transition={TACTICAL_SPRING}
             data-testid="exam-victory-banner"
-            className="p-4 sm:p-5 rounded-2xl bg-surface-elevated border border-callout-success-border shadow-md machined-edge relative overflow-hidden"
+            className="p-4 sm:p-5 rounded-2xl bg-surface-elevated border border-callout-success-border machined-edge relative overflow-hidden"
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -295,17 +297,17 @@ export const ExamSimulatorPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-2 py-0.5 rounded font-semibold bg-accent text-on-accent">
-                      VICTORY CONFIRMED
+                      Victory confirmed
                     </span>
                     <span className="text-xs text-callout-success-fg font-semibold tabular-nums font-mono">
-                      {scoreData.totalScore} / {scoreData.maxScore} PTS ACHIEVED
+                      {scoreData.totalScore} / {scoreData.maxScore} pts achieved
                     </span>
                   </div>
-                  <h2 className="text-lg font-semibold text-primary mt-0.5 tracking-wide">
-                    {track} PASSING THRESHOLD SURPASSED!
+                  <h2 className="text-lg font-semibold text-primary mt-0.5 tracking-[-0.01em]">
+                    {track} passing threshold surpassed
                   </h2>
                   <p className="text-xs text-secondary mt-0.5">
-                    Congratulations operator! Verify all proof screenshots, `whoami`, and network outputs before exporting your report.
+                    Verify every proof screenshot, `whoami` and network output before you export your report.
                   </p>
                 </div>
               </div>
@@ -314,15 +316,15 @@ export const ExamSimulatorPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleExportReport}
-                  className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-semibold text-xs flex items-center gap-1.5 active:scale-[0.97] transition shadow-sm machined-edge"
+                  className="px-4 py-2 max-sm:py-3 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-medium text-xs flex items-center gap-1.5 active:scale-[0.97] transition-interactive"
                 >
                   <FileDown className="w-4 h-4" />
-                  <span>Export Report (.md)</span>
+                  <span>Export report (.md)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowVictoryBanner(false)}
-                  className="p-2 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary border border-subtle active:scale-[0.97] transition machined-edge"
+                  className="p-2 max-sm:p-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary border border-subtle active:scale-[0.97] transition-interactive"
                   aria-label="Dismiss victory banner"
                 >
                   <X className="w-4 h-4" />
@@ -341,44 +343,32 @@ export const ExamSimulatorPage: React.FC = () => {
           data-testid="exam-setup-view"
           className="space-y-6 animate-in fade-in duration-200"
         >
-          {/* Header Banner */}
-          <div className="p-5 rounded-2xl border border-subtle bg-surface-card shadow-sm machined-edge space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg bg-callout-tip-bg border border-callout-tip-border text-callout-tip-fg flex-shrink-0">
-                  <GraduationCap className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-semibold text-primary flex items-center gap-2">
-                    ZEROBOX // CERTIFICATION EXAM SIMULATOR
-                  </h1>
-                  <p className="text-xs text-muted mt-1">
-                    Authentic OffSec OSCP, HTB CPTS & CRTO hands-on lab environments with persistent scoring matrices & evidence engine.
-                  </p>
-                </div>
-              </div>
-
-              {/* Start Exam CTA */}
-              <button
-                type="button"
+          <PageHeader
+            title="Certification exam simulator"
+            description="Timed OSCP, CPTS and CRTO practice with scoring, pacing and an evidence checklist."
+            icon={<GraduationCap />}
+            primaryAction={
+              <CyberButton
+                variant="primary"
+                size="md"
                 data-testid="exam-start-btn"
+                className="max-sm:h-11 max-sm:flex-1"
+                iconLeft={<Play className="w-3.5 h-3.5 fill-current" />}
                 onClick={handleStartExam}
-                className="px-5 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-semibold text-xs flex items-center gap-2 shadow-sm active:scale-[0.97] transition machined-edge"
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Launch {track} Exam Clock</span>
-              </button>
-            </div>
-          </div>
+                Launch {track} exam clock
+              </CyberButton>
+            }
+          />
 
           {/* Track Selection Cards */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold text-secondary">
-                1. Select Certification Ruleset
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <h2 className="text-sm font-semibold text-primary">
+                1. Select certification ruleset
               </h2>
-              <span className="text-[10px] text-muted">
-                Calibrated to authentic syllabus standards
+              <span className="text-[11px] text-muted">
+                Matches the official syllabus scoring
               </span>
             </div>
 
@@ -398,18 +388,18 @@ export const ExamSimulatorPage: React.FC = () => {
                         setTrack(t);
                       }
                     }}
-                    className={`cursor-pointer p-4 rounded-2xl border text-left transition active:scale-[0.97] machined-edge ${
-                      isSelected
-                        ? 'bg-surface-sunken border-2 border-accent shadow-sm'
-                        : 'bg-surface-card border-subtle hover:border-strong'
-                    }`}
+                    className={`cursor-pointer p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge ${
+ isSelected
+ ? 'bg-surface-sunken border-accent ring-1 ring-accent'
+ : 'bg-surface-card border-subtle hover:border-strong'
+ }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-callout-tip-bg text-callout-tip-fg border border-callout-tip-border">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle">
                         {t}
                       </span>
-                      <span className="text-[11px] font-semibold text-accent font-mono tabular-nums">
-                        Pass: {conf.passThreshold} Pts
+                      <span className="text-[11px] font-medium text-muted font-mono tabular-nums">
+                        Pass: {conf.passThreshold} pts
                       </span>
                     </div>
 
@@ -418,7 +408,7 @@ export const ExamSimulatorPage: React.FC = () => {
                       {conf.description}
                     </p>
 
-                    <div className="pt-2 border-t border-subtle text-[10px] text-muted flex items-center justify-between">
+                    <div className="pt-2 border-t border-subtle text-[11px] text-muted flex items-center justify-between">
                       <span className="font-mono tabular-nums">Duration: {Math.round(conf.durationSeconds / 3600)}h</span>
                       <span>{conf.targetSummary}</span>
                     </div>
@@ -429,16 +419,16 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
 
           {/* Candidate Profile & Configuration */}
-          <div className="p-5 rounded-2xl border border-subtle bg-surface-card shadow-sm machined-edge space-y-4">
-            <h2 className="text-xs font-semibold text-secondary flex items-center gap-1.5">
-              <User className="w-4 h-4 text-accent" />
-              <span>2. Candidate Identity & Lab Parameters</span>
+          <div className="space-y-4 pt-2">
+            <h2 className="text-sm font-semibold text-primary flex items-center gap-1.5">
+              <User className="w-4 h-4 text-muted" />
+              <span>2. Candidate identity and lab parameters</span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
                 <label htmlFor="candidate-name" className="block text-[11px] text-muted mb-1">
-                  Candidate Full Name
+                  Candidate full name
                 </label>
                 <input
                   id="candidate-name"
@@ -453,7 +443,7 @@ export const ExamSimulatorPage: React.FC = () => {
 
               <div>
                 <label htmlFor="candidate-callsign" className="block text-[11px] text-muted mb-1">
-                  Candidate Callsign
+                  Candidate callsign
                 </label>
                 <input
                   id="candidate-callsign"
@@ -468,7 +458,7 @@ export const ExamSimulatorPage: React.FC = () => {
 
               <div>
                 <label htmlFor="candidate-osid" className="block text-[11px] text-muted mb-1">
-                  OffSec OSID / HTB ID
+                  OffSec OSID or HTB ID
                 </label>
                 <input
                   id="candidate-osid"
@@ -492,30 +482,31 @@ export const ExamSimulatorPage: React.FC = () => {
                   className="rounded border-strong bg-surface-sunken text-accent focus:ring-0"
                 />
                 <span className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-semibold text-callout-warn-fg">[Legacy Pre-Nov 2024]</span>
-                  <span>Include +10 OffSec Bonus Lab Points</span>
+                  <span className="font-medium text-secondary">Legacy rubric (before Nov 2024):</span>
+                  <span>include +10 OffSec bonus lab points</span>
                 </span>
               </label>
-              <p className="mt-1 text-[11px] text-muted pl-6">
-                ⚠️ OffSec officially eliminated the 10-point bonus starting November 1, 2024 (OSCP+). Current rubric requires 70+ pts scored exclusively on exam targets.
+              <p className="mt-1 text-[11px] text-muted pl-6 flex items-start gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px text-callout-warn-fg" aria-hidden="true" />
+                <span>OffSec removed the 10-point bonus on November 1, 2024 (OSCP+). The current rubric requires 70+ pts scored on exam targets only.</span>
               </p>
             </div>
           </div>
 
           {/* Target Set Preview */}
-          <div className="p-5 rounded-2xl border border-subtle bg-surface-card shadow-sm machined-edge space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold text-secondary flex items-center gap-1.5">
-                <Target className="w-4 h-4 text-callout-success-fg" />
-                <span>3. Generated Mock Target Set ({boxes.length} Machines)</span>
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-primary flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-muted" />
+                <span>3. Mock target set ({boxes.length} machines)</span>
               </h2>
               <button
                 type="button"
                 onClick={shuffleTargets}
-                className="px-2.5 py-1 rounded-lg bg-surface-sunken hover:bg-surface-hover text-accent text-xs font-semibold border border-subtle flex items-center gap-1 active:scale-[0.97] transition shadow-xs machined-edge"
+                className="px-2.5 py-1 max-sm:py-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-secondary text-xs font-medium border border-subtle flex items-center gap-1 active:scale-[0.97] transition-interactive"
               >
                 <Shuffle className="w-3.5 h-3.5" />
-                <span>Re-roll Mock Targets</span>
+                <span>Re-roll targets</span>
               </button>
             </div>
 
@@ -523,20 +514,20 @@ export const ExamSimulatorPage: React.FC = () => {
               {boxes.map((b) => (
                 <div
                   key={b.id}
-                  className="p-3 rounded-lg bg-surface-sunken border border-subtle text-xs space-y-1.5 shadow-xs machined-edge"
+                  className="p-3 rounded-lg bg-surface-sunken border border-subtle text-xs space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-primary truncate">{b.name}</span>
                     <DifficultyBadge difficulty={b.difficulty} size="xs" />
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-muted">
-                    <span>IP: <strong className="text-accent font-mono tabular-nums">{b.ip}</strong></span>
+                    <span>IP: <strong className="font-medium text-primary font-mono tabular-nums">{b.ip}</strong></span>
                     <OsBadge os={b.os} size="xs" />
                   </div>
-                  <div className="text-[10px] text-muted pt-1 border-t border-subtle flex items-center justify-between">
+                  <div className="text-[11px] text-muted pt-1 border-t border-subtle flex items-center justify-between">
                     <span>{b.label}</span>
                     <span className="font-semibold text-secondary font-mono tabular-nums">
-                      {b.userPoints + b.rootPoints} PTS
+                      {b.userPoints + b.rootPoints} pts
                     </span>
                   </div>
                 </div>
@@ -555,79 +546,71 @@ export const ExamSimulatorPage: React.FC = () => {
           className="space-y-6 animate-in fade-in duration-200"
         >
           {/* Top Telemetry & Control HUD */}
-          <div className="p-4 sm:p-5 rounded-2xl border border-subtle bg-surface-card shadow-sm machined-edge space-y-4">
-            {/* Header Identity Row */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-subtle">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg bg-callout-tip-bg border border-callout-tip-border text-callout-tip-fg flex-shrink-0">
-                  <GraduationCap className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-base sm:text-lg font-semibold text-primary tracking-wide">
-                      {trackConfig.name} // ACTIVE COCKPIT
-                    </h1>
-                    <span
-                      data-testid="exam-status-badge"
-                      className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
-                        scoreData.isPassing
-                          ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                          : passingStatus === 'Critical'
-                          ? 'bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border animate-pulse'
-                          : 'bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border'
-                      }`}
-                    >
-                      {passingStatus}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted">
-                    Candidate: <strong className="text-secondary">{candidateName} ({candidateCallsign})</strong> • OSID: {osid}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Buttons: Bio-Break & Export */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
+          <div className="space-y-4">
+            <PageHeader
+              title={trackConfig.name}
+              description={`Candidate ${candidateName} (${candidateCallsign}) · OSID ${osid}`}
+              icon={<GraduationCap />}
+              actions={
+                <CyberButton
+                  variant="secondary"
+                  size="md"
                   data-testid="exam-open-bio-break-btn"
                   onClick={() => setIsBioBreakModalOpen(true)}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition flex items-center gap-1.5 active:scale-[0.97] shadow-xs machined-edge ${
-                    activeBreak.isActive
-                      ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg animate-pulse'
-                      : 'bg-surface-sunken hover:bg-surface-hover border-subtle text-secondary hover:text-primary'
-                  }`}
-                  title="Open Operator Bio-Break Manager"
+                  title="Open the bio-break manager"
+                  iconLeft={<Coffee className="w-3.5 h-3.5" />}
                 >
-                  <Coffee className="w-3.5 h-3.5 text-callout-warn-fg" />
-                  <span>{activeBreak.isActive ? 'Active Break' : 'Bio Break'}</span>
+                  <span>{activeBreak.isActive ? 'Active break' : 'Bio break'}</span>
                   {activeBreak.isActive && (
-                    <span className="font-mono text-callout-warn-fg tabular-nums">
+                    <span className="ml-1 font-mono tabular-nums text-callout-warn-fg">
                       ({formatSecondsToHms(getBreakRemainingSeconds())})
                     </span>
                   )}
-                </button>
-
-                <button
-                  type="button"
+                </CyberButton>
+              }
+              primaryAction={
+                <CyberButton
+                  variant="primary"
+                  size="md"
                   data-testid="exam-export-report-btn"
+                  className="max-sm:h-11 max-sm:flex-1"
                   onClick={handleExportReport}
-                  className="px-3 py-1.5 rounded-lg bg-callout-success-bg hover:bg-callout-success-border/30 border border-callout-success-border text-callout-success-fg font-semibold text-xs transition flex items-center gap-1.5 active:scale-[0.97] shadow-xs machined-edge"
-                  title="Download formal Markdown Exam Log"
+                  title="Download the exam log as Markdown"
+                  iconLeft={<FileDown className="w-3.5 h-3.5" />}
                 >
-                  <FileDown className="w-3.5 h-3.5" />
-                  <span>Export Report</span>
-                </button>
-              </div>
-            </div>
+                  Export report
+                </CyberButton>
+              }
+              overflow={[
+                {
+                  id: 'bio-break',
+                  label: activeBreak.isActive ? 'Active break' : 'Bio break',
+                  icon: <Coffee className="w-3.5 h-3.5" />,
+                  onSelect: () => setIsBioBreakModalOpen(true),
+                },
+              ]}
+            >
+              <span
+                data-testid="exam-status-badge"
+                className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded font-medium border ${
+ scoreData.isPassing
+ ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
+ : passingStatus === 'Critical'
+ ? 'bg-callout-danger-bg text-callout-danger-fg border-callout-danger-border'
+ : 'bg-surface-sunken text-secondary border-subtle'
+ }`}
+              >
+                {passingStatus}
+              </span>
+            </PageHeader>
 
             {/* Telemetry Numbers Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Card 1: Score Counter */}
               <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
                 <div>
-                  <span className="text-[10px] text-muted font-semibold">
-                    Total Exam Score
+                  <span className="text-xs text-muted font-medium">
+                    Total exam score
                   </span>
                   <div
                     data-testid="exam-score-display"
@@ -635,22 +618,22 @@ export const ExamSimulatorPage: React.FC = () => {
                   >
                     <span
                       className={`text-2xl font-semibold font-mono tabular-nums ${
-                        scoreData.isPassing ? 'text-callout-success-fg' : 'text-callout-warn-fg'
-                      }`}
+ scoreData.isPassing ? 'text-callout-success-fg' : 'text-primary'
+ }`}
                     >
                       {scoreData.totalScore}
                     </span>
-                    <span className="text-muted text-xs font-mono tabular-nums">/ {scoreData.maxScore} PTS</span>
+                    <span className="text-muted text-xs font-mono tabular-nums">/ {scoreData.maxScore} pts</span>
                   </div>
                 </div>
                 <div className="text-right">
                   {scoreData.isPassing ? (
-                    <span className="text-[10px] font-semibold text-callout-success-fg px-2 py-0.5 rounded bg-callout-success-bg border border-callout-success-border">
-                      PASSED
+                    <span className="text-xs font-medium text-callout-success-fg px-2 py-0.5 rounded bg-callout-success-bg border border-callout-success-border">
+                      Passed
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-callout-warn-fg px-2 py-0.5 rounded bg-callout-warn-bg border border-callout-warn-border font-mono tabular-nums">
-                      {scoreData.pointsNeeded} PTS NEEDED
+                    <span className="text-xs font-medium text-secondary px-2 py-0.5 rounded bg-surface-card border border-subtle font-mono tabular-nums">
+                      {scoreData.pointsNeeded} pts needed
                     </span>
                   )}
                 </div>
@@ -659,9 +642,9 @@ export const ExamSimulatorPage: React.FC = () => {
               {/* Card 2: Countdown Timer */}
               <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
                 <div>
-                  <span className="text-[10px] text-muted font-semibold flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-accent" />
-                    <span>Countdown Clock</span>
+                  <span className="text-xs text-muted font-medium flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>Countdown clock</span>
                   </span>
                   <div
                     data-testid="exam-countdown-timer"
@@ -676,12 +659,12 @@ export const ExamSimulatorPage: React.FC = () => {
                     type="button"
                     data-testid="exam-timer-toggle-btn"
                     onClick={handleToggleTimer}
-                    className={`p-2 rounded-lg border transition active:scale-[0.97] shadow-xs machined-edge ${
-                      status === 'running'
-                        ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
-                        : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
-                    }`}
-                    title={status === 'running' ? 'Pause Exam' : 'Resume Exam'}
+                    className={`p-2 max-sm:p-3 rounded-lg border transition-interactive active:scale-[0.97] ${
+ status === 'running'
+ ? 'bg-surface-card border-subtle text-secondary hover:bg-surface-hover'
+ : 'bg-accent border-accent text-on-accent'
+ }`}
+                    title={status === 'running' ? 'Pause exam' : 'Resume exam'}
                     aria-label={status === 'running' ? 'Pause exam' : 'Resume exam'}
                   >
                     {status === 'running' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -690,8 +673,8 @@ export const ExamSimulatorPage: React.FC = () => {
                     type="button"
                     data-testid="exam-timer-reset-btn"
                     onClick={handleResetExam}
-                    className="p-2 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle text-muted hover:text-primary active:scale-[0.97] transition shadow-xs machined-edge"
-                    title="Reset Exam Session"
+                    className="p-2 max-sm:p-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-muted hover:text-primary active:scale-[0.97] transition-interactive"
+                    title="Reset exam session"
                     aria-label="Reset exam session"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -706,9 +689,9 @@ export const ExamSimulatorPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 lg:col-span-1">
               {/* Card 3: Pacing Velocity */}
               <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle shadow-xs machined-edge">
-                <span className="text-[10px] text-muted font-semibold flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-callout-warn-fg" />
-                  <span>Velocity Pacing</span>
+                <span className="text-xs text-muted font-medium flex items-center gap-1">
+                  <Flame className="w-3 h-3" />
+                  <span>Velocity pacing</span>
                 </span>
                 <div className="flex items-baseline gap-2 mt-0.5">
                   <span className="text-xl font-semibold font-mono text-primary tabular-nums">
@@ -716,16 +699,16 @@ export const ExamSimulatorPage: React.FC = () => {
                   </span>
                   <span className="text-[11px] text-muted">pts / hr current</span>
                 </div>
-                <div className="text-[10px] text-muted mt-1">
+                <div className="text-[11px] text-muted mt-1">
                   Required: <span className="font-mono tabular-nums">{pacing.requiredPacePtsPerHour}</span> pts/hr
                 </div>
               </div>
 
               {/* Card 4: Unrooted Boxes & Time Budget */}
               <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle shadow-xs machined-edge">
-                <span className="text-[10px] text-muted font-semibold flex items-center gap-1">
-                  <Layers className="w-3 h-3 text-callout-tip-fg" />
-                  <span>Target Budget</span>
+                <span className="text-xs text-muted font-medium flex items-center gap-1">
+                  <Layers className="w-3 h-3" />
+                  <span>Target budget</span>
                 </span>
                 <div className="flex items-baseline gap-2 mt-0.5">
                   <span className="text-xl font-semibold font-mono text-primary tabular-nums">
@@ -733,7 +716,7 @@ export const ExamSimulatorPage: React.FC = () => {
                   </span>
                   <span className="text-[11px] text-muted">unrooted targets</span>
                 </div>
-                <div className="text-[10px] text-muted mt-1">
+                <div className="text-[11px] text-muted mt-1">
                   ~<span className="font-mono tabular-nums">{Math.round(pacing.timeRemainingPerUnrootedBoxSeconds / 60)}</span>m per box
                 </div>
               </div>
@@ -741,9 +724,9 @@ export const ExamSimulatorPage: React.FC = () => {
 
               {/* Burn-down / velocity chart */}
               <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle shadow-xs machined-edge lg:col-span-2">
-                <span className="text-[10px] text-muted font-semibold flex items-center gap-1 mb-2">
-                  <Target className="w-3 h-3 text-accent" />
-                  <span>Burn-down to Pass</span>
+                <span className="text-xs text-muted font-medium flex items-center gap-1 mb-2">
+                  <Target className="w-3 h-3" />
+                  <span>Burn-down to pass</span>
                 </span>
                 {burndownSeries ? (
                   <ExamBurndownChart
@@ -757,26 +740,23 @@ export const ExamSimulatorPage: React.FC = () => {
             </div>
 
             {/* Pacing Recommendation Strip */}
-            <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-secondary flex items-center gap-2 shadow-xs machined-edge">
-              <Zap className="w-4 h-4 text-accent flex-shrink-0" />
+            <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-secondary flex items-center gap-2">
+              <Zap className="w-4 h-4 text-muted flex-shrink-0" />
               <span className="text-[11px] leading-snug">
-                <strong>Tactical Guidance:</strong> {pacing.recommendation}
+                <strong className="font-medium">Guidance:</strong> {pacing.recommendation}
               </span>
             </div>
 
             {/* Compliance Warning if flags lack proofs */}
             {scoreData.complianceIssues.length > 0 && scoreData.totalScore > 0 && (
-              <div className="p-3 rounded-lg bg-callout-warn-bg border border-callout-warn-border text-callout-warn-fg text-xs flex items-start gap-2.5 shadow-xs machined-edge">
+              <div className="p-3 rounded-lg bg-callout-warn-bg border border-callout-warn-border text-callout-warn-fg text-xs flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-callout-warn-fg flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <div className="font-semibold flex items-center gap-2">
-                    <span>PROOF COMPLIANCE ALERT ({scoreData.complianceIssues.length} items missing)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-callout-warn-bg border border-callout-warn-border text-callout-warn-fg">
-                      RISK
-                    </span>
+                    <span>Proof compliance: {scoreData.complianceIssues.length} items missing</span>
                   </div>
                   <p className="text-[11px] text-callout-warn-fg mt-0.5">
-                    Certifications require verified proof screenshots, `whoami`, and network configuration (`ip a`/`ipconfig`) output for every flag! Expand targets below to attach evidence.
+                    Every flag needs a proof screenshot plus `whoami` and network configuration (`ip a` or `ipconfig`) output. Expand a target below to attach evidence.
                   </p>
                 </div>
               </div>
@@ -790,11 +770,11 @@ export const ExamSimulatorPage: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-callout-tip-bg text-callout-tip-fg border border-callout-tip-border">
-                      Active Directory Set (40 PTS)
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
+                      Active Directory set (40 pts)
                     </span>
                     <span className="text-xs text-muted">
-                      {scoreData.adSetCompromised ? '✓ Fully Compromised' : 'Chained domain privilege escalation'}
+                      {scoreData.adSetCompromised ? '✓ Fully compromised' : 'Chained domain privilege escalation'}
                     </span>
                   </div>
                 </div>
@@ -809,11 +789,11 @@ export const ExamSimulatorPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-callout-info-bg text-accent border border-callout-info-border">
-                    Standalone Machines ({standaloneBoxes.length} Boxes)
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
+                    Standalone machines ({standaloneBoxes.length})
                   </span>
                   <span className="text-xs text-muted">
-                    Independent Foothold & Root Flags
+                    Independent user and root flags
                   </span>
                 </div>
               </div>
@@ -825,14 +805,14 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
 
           {/* Exam Scratchpad & Evidence Vault */}
-          <div className="p-5 rounded-2xl border border-subtle bg-surface-card shadow-sm machined-edge space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-accent" />
-                <span>OFFICIAL EXAM EVIDENCE VAULT & CREDENTIAL SCRATCHPAD</span>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <span className="text-sm font-semibold text-primary flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-muted" />
+                <span>Evidence and credential scratchpad</span>
               </span>
-              <span className="text-[10px] text-muted">
-                Embedded directly into exported exam reports
+              <span className="text-[11px] text-muted">
+                Included in the exported report
               </span>
             </div>
             <textarea
@@ -849,21 +829,21 @@ export const ExamSimulatorPage: React.FC = () => {
 
           {/* Operational Timeline / Milestones */}
           {milestones.length > 0 && (
-            <div className="p-5 rounded-2xl border border-subtle bg-surface-card shadow-sm machined-edge space-y-3">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-primary flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-callout-tip-fg" />
-                  <span>OPERATIONAL MILESTONE AUDIT TRAIL ({milestones.length})</span>
+                <span className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-muted" />
+                  <span>Milestones ({milestones.length})</span>
                 </span>
               </div>
               <div className="max-h-48 overflow-y-auto space-y-1.5">
                 {milestones.slice().reverse().map((m, idx) => (
                   <div
                     key={`${m.id}_${idx}`}
-                    className="p-2 rounded-lg bg-surface-sunken border border-subtle text-xs flex items-start justify-between gap-3 font-mono tabular-nums machined-edge"
+                    className="p-2 rounded-lg bg-surface-sunken border border-subtle text-xs flex items-start justify-between gap-3"
                   >
                     <span className="text-secondary">{m.notes}</span>
-                    <span className="text-[10px] text-muted font-mono flex-shrink-0 tabular-nums">
+                    <span className="text-xs text-muted font-mono flex-shrink-0 tabular-nums">
                       {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                   </div>
@@ -880,14 +860,14 @@ export const ExamSimulatorPage: React.FC = () => {
       {status === 'completed' && (
         <div
           data-testid="exam-completion-view"
-          className="p-6 rounded-2xl border border-subtle bg-surface-card shadow-lg machined-edge space-y-6 text-center animate-in fade-in"
+          className="p-6 rounded-2xl border border-subtle bg-surface-card machined-edge space-y-6 text-center animate-in fade-in"
         >
           <div className="max-w-md mx-auto space-y-3">
             <div className="inline-flex p-3 rounded-2xl bg-surface-sunken border border-subtle text-accent mb-2">
               <Trophy className="w-8 h-8" />
             </div>
             <h1 className="text-2xl font-semibold text-primary">
-              EXAM SESSION CONCLUDED
+              Exam session concluded
             </h1>
             <p className="text-xs text-muted leading-relaxed">
               Final score evaluation completed for candidate <strong>{candidateName} ({candidateCallsign})</strong>.
@@ -896,18 +876,18 @@ export const ExamSimulatorPage: React.FC = () => {
 
           {/* Final Score Card */}
           <div className="max-w-xs mx-auto p-4 rounded-2xl bg-surface-sunken border border-subtle space-y-2 shadow-xs machined-edge">
-            <div className="text-[11px] text-muted font-semibold">Final Score</div>
+            <div className="text-xs text-muted font-medium">Final score</div>
             <div className="text-3xl font-semibold font-mono text-primary tabular-nums">
-              {scoreData.totalScore} / {scoreData.maxScore} PTS
+              {scoreData.totalScore} / {scoreData.maxScore} pts
             </div>
             <div>
               {scoreData.isPassing ? (
                 <span className="px-3 py-1 rounded text-xs font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
-                  PASSED (Threshold: {scoreData.passThreshold} pts)
+                  Passed (threshold: {scoreData.passThreshold} pts)
                 </span>
               ) : (
                 <span className="px-3 py-1 rounded text-xs font-semibold bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border">
-                  FAILED (Threshold: {scoreData.passThreshold} pts)
+                  Failed (threshold: {scoreData.passThreshold} pts)
                 </span>
               )}
             </div>
@@ -918,17 +898,17 @@ export const ExamSimulatorPage: React.FC = () => {
             <button
               type="button"
               onClick={handleExportReport}
-              className="px-5 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-semibold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-[0.97] machined-edge"
+              className="px-5 py-2.5 max-sm:py-3.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-medium text-xs flex items-center gap-1.5 transition-interactive active:scale-[0.97]"
             >
               <FileDown className="w-4 h-4" />
-              <span>Export Submission Report (.md)</span>
+              <span>Export submission report (.md)</span>
             </button>
             <button
               type="button"
               onClick={handleResetExam}
-              className="px-5 py-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover text-secondary border border-subtle font-semibold text-xs transition active:scale-[0.97] shadow-xs machined-edge"
+              className="px-5 py-2.5 max-sm:py-3.5 rounded-lg bg-surface-sunken hover:bg-surface-hover text-secondary border border-subtle font-medium text-xs transition-interactive active:scale-[0.97]"
             >
-              Start New Simulation
+              Start new simulation
             </button>
           </div>
         </div>
@@ -961,25 +941,25 @@ export const ExamSimulatorPage: React.FC = () => {
     return (
       <div
         key={box.id}
-        className={`p-4 rounded-2xl border bg-surface-card transition shadow-xs machined-edge ${
-          isFullyPwned
-            ? 'border-callout-success-border ring-1 ring-callout-success-border'
-            : 'border-subtle hover:border-strong'
-        }`}
+        className={`p-4 rounded-2xl border bg-surface-card transition-interactive machined-edge ${
+ isFullyPwned
+ ? 'border-callout-success-border'
+ : 'border-subtle hover:border-strong'
+ }`}
       >
         {/* Card Header */}
         <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-surface-sunken text-secondary border border-subtle">
+          <span className="text-[11px] px-2 py-0.5 rounded font-semibold bg-surface-sunken text-secondary border border-subtle">
             {box.label}
           </span>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-primary px-2 py-0.5 rounded bg-surface-sunken border border-subtle font-mono tabular-nums">
-              {box.userPoints + box.rootPoints} PTS TOTAL
+              {box.userPoints + box.rootPoints} pts total
             </span>
             <button aria-label={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
               type="button"
               onClick={() => setExpandedBoxId(isExpanded ? null : box.id)}
-              className="p-1 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary transition border border-subtle active:scale-[0.97] machined-edge"
+              className="p-1 max-sm:p-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary transition-interactive border border-subtle active:scale-[0.97]"
               title={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
             >
               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -990,9 +970,9 @@ export const ExamSimulatorPage: React.FC = () => {
         {/* Identity & Difficulty */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div>
-            <h3 className="text-base font-semibold text-primary tracking-wide">{box.name}</h3>
+            <h3 className="text-base font-semibold text-primary tracking-[-0.01em]">{box.name}</h3>
             <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
-              <span>IP: <strong className="text-accent font-mono tabular-nums">{box.ip}</strong></span>
+              <span>IP: <strong className="font-medium text-primary font-mono tabular-nums">{box.ip}</strong></span>
               <span>•</span>
               <OsBadge os={box.os} size="xs" />
             </div>
@@ -1006,17 +986,17 @@ export const ExamSimulatorPage: React.FC = () => {
             <button
               type="button"
               onClick={() => togglePwn(box.id, 'user')}
-              className={`p-2 rounded-lg border text-xs flex items-center justify-between transition active:scale-[0.97] font-mono tabular-nums shadow-none machined-edge ${
-                box.userPwned
-                  ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg font-semibold'
-                  : 'bg-surface-sunken hover:bg-surface-hover border-subtle text-muted hover:text-primary'
-              }`}
+              className={`p-2 max-sm:p-3 rounded-lg border text-xs flex items-center justify-between transition-interactive active:scale-[0.97] ${
+ box.userPwned
+ ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg font-medium'
+ : 'bg-surface-sunken hover:bg-surface-hover border-subtle text-muted hover:text-primary'
+ }`}
             >
               <span className="flex items-center gap-1.5">
                 <Flag className="w-3.5 h-3.5" />
                 <span>User Flag</span>
               </span>
-              <span>{box.userPwned ? `✓ +${box.userPoints}` : `+${box.userPoints}`}</span>
+              <span className="font-mono tabular-nums">{box.userPwned ? `✓ +${box.userPoints}` : `+${box.userPoints}`}</span>
             </button>
           ) : <div />}
 
@@ -1024,17 +1004,17 @@ export const ExamSimulatorPage: React.FC = () => {
             <button
               type="button"
               onClick={() => togglePwn(box.id, 'root')}
-              className={`p-2 rounded-lg border text-xs flex items-center justify-between transition active:scale-[0.97] font-mono tabular-nums shadow-none machined-edge ${
-                box.rootPwned
-                  ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg font-semibold'
-                  : 'bg-surface-sunken hover:bg-surface-hover border-subtle text-muted hover:text-primary'
-              }`}
+              className={`p-2 max-sm:p-3 rounded-lg border text-xs flex items-center justify-between transition-interactive active:scale-[0.97] ${
+ box.rootPwned
+ ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg font-medium'
+ : 'bg-surface-sunken hover:bg-surface-hover border-subtle text-muted hover:text-primary'
+ }`}
             >
               <span className="flex items-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5" />
                 <span>Root Flag</span>
               </span>
-              <span>{box.rootPwned ? `👑 +${box.rootPoints}` : `+${box.rootPoints}`}</span>
+              <span className="font-mono tabular-nums">{box.rootPwned ? `✓ +${box.rootPoints}` : `+${box.rootPoints}`}</span>
             </button>
           ) : <div />}
         </div>
@@ -1055,11 +1035,11 @@ export const ExamSimulatorPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveProofTab('user')}
-                    className={`flex-1 py-1 px-2 rounded-lg text-xs font-semibold border transition shadow-none active:scale-[0.97] machined-edge ${
-                      activeProofTab === 'user'
-                        ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
-                        : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
-                    }`}
+                    className={`flex-1 py-1 max-sm:py-3 px-2 rounded-lg text-xs font-medium border transition-interactive active:scale-[0.97] ${
+ activeProofTab === 'user'
+ ? 'bg-accent-muted border-accent text-accent'
+ : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
+ }`}
                   >
                     User Evidence ({box.userProof.flagText ? '✓' : '○'})
                   </button>
@@ -1069,11 +1049,11 @@ export const ExamSimulatorPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveProofTab('root')}
-                    className={`flex-1 py-1 px-2 rounded-lg text-xs font-semibold border transition shadow-none active:scale-[0.97] machined-edge ${
-                      activeProofTab === 'root'
-                        ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
-                        : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
-                    }`}
+                    className={`flex-1 py-1 max-sm:py-3 px-2 rounded-lg text-xs font-medium border transition-interactive active:scale-[0.97] ${
+ activeProofTab === 'root'
+ ? 'bg-accent-muted border-accent text-accent'
+ : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
+ }`}
                   >
                     Root Evidence ({box.rootProof.flagText ? '✓' : '○'})
                   </button>

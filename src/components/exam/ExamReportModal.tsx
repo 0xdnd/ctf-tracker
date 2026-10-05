@@ -236,7 +236,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       {/* Backdrop */}
       <div
         data-testid="exam-report-backdrop"
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -266,7 +266,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                 >
                   Submission-Ready Exam Report Generator
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-surface-sunken text-secondary border border-subtle">
+                <span className="text-[11px] px-2 py-0.5 rounded font-semibold bg-surface-sunken text-secondary border border-subtle">
                   {selectedTrack}
                 </span>
               </div>
@@ -279,21 +279,21 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
           <div className="flex items-center gap-3">
             {/* Score Pill */}
             <div className="px-3 py-1 rounded-lg bg-surface-card border border-subtle flex items-center gap-2">
-              <span className="text-[10px] text-muted font-medium">Score:</span>
+              <span className="text-[11px] text-muted font-medium">Score:</span>
               <span
                 data-testid="report-modal-score"
                 className={`text-xs font-mono font-semibold tabular-nums ${
-                  scoreData.isPassing ? 'text-callout-success-fg' : 'text-callout-warn-fg'
-                }`}
+ scoreData.isPassing ? 'text-callout-success-fg' : 'text-callout-warn-fg'
+ }`}
               >
                 {scoreData.totalScore} / {scoreData.maxScore} PTS
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                  scoreData.isPassing
-                    ? 'bg-callout-success-bg text-callout-success-fg'
-                    : 'bg-callout-warn-bg text-callout-warn-fg'
-                }`}
+                className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+ scoreData.isPassing
+ ? 'bg-callout-success-bg text-callout-success-fg'
+ : 'bg-callout-warn-bg text-callout-warn-fg'
+ }`}
               >
                 {scoreData.isPassing ? 'PASSED' : 'IN PROGRESS'}
               </span>
@@ -329,9 +329,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-semibold text-secondary flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-accent" />
-                <span>1. Certification Template & Candidate Parameters</span>
+                <span>1. Certification template and candidate details</span>
               </span>
-              <span className="text-[10px] text-muted">
+              <span className="text-[11px] text-muted">
                 Passing Threshold: {trackConfig.passThreshold} Pts
               </span>
             </div>
@@ -347,13 +347,13 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                     data-testid={`report-track-select-${t.toLowerCase()}`}
                     onClick={() => setSelectedTrack(t)}
                     className={`py-2 px-3 rounded-lg border text-xs font-semibold text-center transition-[transform,background-color,border-color,color] active:scale-[0.97] ${
-                      isSelected
-                        ? 'bg-accent-muted border-accent text-accent'
-                        : 'bg-surface-card border-subtle text-muted hover:text-primary hover:border-strong'
-                    }`}
+ isSelected
+ ? 'bg-accent-muted border-accent text-accent'
+ : 'bg-surface-card border-subtle text-muted hover:text-primary hover:border-strong'
+ }`}
                   >
                     <div>{t === 'OSCP' ? 'OffSec OSCP' : t === 'CPTS' ? 'HTB CPTS' : 'ZPS CRTO'}</div>
-                    <div className="text-[10px] font-normal text-muted mt-0.5">
+                    <div className="text-[11px] font-normal text-muted mt-0.5">
                       {t === 'OSCP' ? 'PEN-200 (70 pts)' : t === 'CPTS' ? '14 Flags (85 pts)' : '8 Objs (75 pts)'}
                     </div>
                   </button>
@@ -458,7 +458,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   onChange={(e) => setIncludeScreenshots(e.target.checked)}
                   className="rounded border-subtle bg-surface-card accent-[rgb(var(--border-accent))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 />
-                <span>Include Base64 Proof Screenshots</span>
+                <span>Include Base64 proof screenshots</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer">
@@ -469,7 +469,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   onChange={(e) => setIncludeRemediation(e.target.checked)}
                   className="rounded border-subtle bg-surface-card accent-[rgb(var(--border-accent))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 />
-                <span>Include Strategic Remediation</span>
+                <span>Include remediation guidance</span>
               </label>
             </div>
           </div>
@@ -483,13 +483,13 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   data-testid="report-tab-preview"
                   onClick={() => setActiveTab('preview')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-[background-color,border-color,color] ${
-                    activeTab === 'preview'
-                      ? 'bg-accent-muted text-accent border border-accent'
-                      : 'text-muted hover:text-primary border border-transparent'
-                  }`}
+ activeTab === 'preview'
+ ? 'bg-accent-muted text-accent border border-accent'
+ : 'text-muted hover:text-primary border border-transparent'
+ }`}
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  <span>Formatted Preview</span>
+                  <span>Formatted preview</span>
                 </button>
 
                 <button
@@ -497,17 +497,17 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   data-testid="report-tab-raw"
                   onClick={() => setActiveTab('raw')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-[background-color,border-color,color] ${
-                    activeTab === 'raw'
-                      ? 'bg-accent-muted text-accent border border-accent'
-                      : 'text-muted hover:text-primary border border-transparent'
-                  }`}
+ activeTab === 'raw'
+ ? 'bg-accent-muted text-accent border border-accent'
+ : 'text-muted hover:text-primary border border-transparent'
+ }`}
                 >
                   <FileCode className="w-3.5 h-3.5" />
                   <span>Raw Markdown</span>
                 </button>
               </div>
 
-              <span className="text-[10px] text-muted font-mono tabular-nums">
+              <span className="text-[11px] text-muted font-mono tabular-nums">
                 {generatedMarkdown.length} characters • {generatedMarkdown.split('\n').length} lines
               </span>
             </div>
@@ -539,7 +539,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
         <div className="px-5 py-3.5 border-t border-subtle bg-surface-sunken flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted">
             <span className="w-2 h-2 rounded-full bg-callout-success-fg motion-safe:animate-pulse" />
-            <span className="text-[11px]">Strict Zero-Egress Air-Gapped Export</span>
+            <span className="text-[11px]">Offline export, nothing leaves this device</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -549,10 +549,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               data-testid="report-copy-markdown-btn"
               onClick={handleCopyMarkdown}
               className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] ${
-                copied
-                  ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
-                  : 'bg-surface-card hover:bg-surface-hover border-subtle text-primary'
-              }`}
+ copied
+ ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
+ : 'bg-surface-card hover:bg-surface-hover border-subtle text-primary'
+ }`}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copied!' : 'Copy Markdown'}</span>

@@ -16,6 +16,7 @@ import { formatSeconds, formatDurationHuman } from '../../utils/helpers';
 import { Difficulty, Platform } from '../../types';
 import { classifyMachine } from '../../utils/categoryUtils';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
+import { PageHeader } from '../common/PageHeader';
 import { buildHeatmapWeeks, toLocalDateKey, WEEKDAY_LONG, WEEKDAY_SHORT, type HeatLevel } from '../../utils/analyticsHeatmap';
 
 // Theme-token paint for SVG attributes (Tailwind has no stroke/fill utilities for the text/border token sets).
@@ -387,28 +388,12 @@ export const AnalyticsView: React.FC = () => {
   return (
     <div className="space-y-6 w-full pb-12">
 
-      {/* Analytics Header Station */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={TACTICAL_SPRING}
-        className="p-4 sm:p-5 rounded-2xl border border-subtle bg-surface-card machined-edge flex flex-wrap items-center justify-between gap-4"
+      <PageHeader
+        title="Analytics and skill radar"
+        description="Time benchmarks, difficulty progress and your attack-vector strengths."
+        icon={<BarChart3 aria-hidden="true" />}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center flex-shrink-0">
-            <BarChart3 className="w-5 h-5 text-accent" aria-hidden="true" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-primary">
-              Operational analytics and skill radar
-            </h1>
-            <p className="text-xs text-muted mt-0.5">
-              Comprehensive telemetry, difficulty matrix benchmarks, and offensive skill vector breakdown.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="px-3 py-1 rounded-lg bg-surface-sunken border border-subtle text-secondary font-medium">
             <span className="tabular-nums font-mono text-primary">{rootedMachines.length}</span> targets rooted
           </span>
@@ -416,10 +401,10 @@ export const AnalyticsView: React.FC = () => {
             <span className="tabular-nums font-mono text-primary">{footholdsCount}</span> footholds
           </span>
         </div>
-      </motion.div>
+      </PageHeader>
 
       {/* Top 4 KPI Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
@@ -429,16 +414,16 @@ export const AnalyticsView: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ ...TACTICAL_SPRING, delay: idx * 0.05 }}
-              className="p-4 rounded-2xl border border-subtle bg-surface-card machined-edge"
+              className="p-3 sm:p-4 rounded-2xl border border-subtle bg-surface-card machined-edge min-w-0"
             >
-              <div className="flex items-center justify-between text-muted text-xs mb-1.5">
-                <span className="font-medium text-[11px]">{kpi.label}</span>
-                <div className="p-1 rounded-md bg-surface-sunken border border-subtle">
-                  <Icon className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+              <div className="flex items-center justify-between gap-2 text-muted text-xs mb-1.5">
+                <span className="font-medium text-xs truncate">{kpi.label}</span>
+                <div className="hidden sm:block p-1 rounded-md bg-surface-sunken border border-subtle">
+                  <Icon className="w-3.5 h-3.5 text-muted" aria-hidden="true" />
                 </div>
               </div>
-              <div className="text-2xl font-semibold font-mono text-primary tabular-nums tracking-tight">{kpi.val}</div>
-              <div className="text-[11px] text-muted mt-1 tabular-nums">{kpi.sub}</div>
+              <div className="text-xl sm:text-2xl font-semibold font-mono text-primary tabular-nums tracking-tight truncate">{kpi.val}</div>
+              <div className="text-[11px] text-muted mt-1 tabular-nums truncate">{kpi.sub}</div>
             </motion.div>
           );
         })}
@@ -458,14 +443,14 @@ export const AnalyticsView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between border-b border-subtle pb-3 mb-4">
               <div className="flex items-center gap-2">
-                <Radar className="w-4 h-4 text-accent" aria-hidden="true" />
+                <Radar className="w-4 h-4 text-muted" aria-hidden="true" />
                 <h2 className="font-semibold text-primary text-sm">Offensive skill vector radar</h2>
               </div>
-              <span className="text-[11px] text-muted">Pwned tag synthesis</span>
+              <span className="text-xs text-muted">From pwned tags</span>
             </div>
 
             <p className="text-xs text-muted mb-4">
-              Multidimensional rating synthesized automatically from completed machine attack vectors and exploit categories.
+              Scored from the attack vectors of the machines you have rooted.
             </p>
 
             <div className="py-4">{renderRadarChart()}</div>
@@ -497,10 +482,10 @@ export const AnalyticsView: React.FC = () => {
           >
             <div className="flex items-center justify-between border-b border-subtle pb-3">
               <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-accent" aria-hidden="true" />
+                <Flame className="w-4 h-4 text-muted" aria-hidden="true" />
                 <h2 className="font-semibold text-primary text-sm">Pwn progress matrix</h2>
               </div>
-              <span className="text-[11px] text-muted">By difficulty tier</span>
+              <span className="text-xs text-muted">By difficulty</span>
             </div>
 
             <div className="space-y-3">
@@ -540,10 +525,10 @@ export const AnalyticsView: React.FC = () => {
           >
             <div className="flex items-center justify-between border-b border-subtle pb-2.5">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-accent" aria-hidden="true" />
+                <ShieldCheck className="w-4 h-4 text-muted" aria-hidden="true" />
                 <h2 className="font-semibold text-primary text-sm">Lab platform roster</h2>
               </div>
-              <span className="text-[11px] text-muted">Cross-platform</span>
+              <span className="text-xs text-muted">All platforms</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
@@ -578,14 +563,14 @@ export const AnalyticsView: React.FC = () => {
       >
         <div className="flex items-center justify-between border-b border-subtle pb-3">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-accent" aria-hidden="true" />
+            <Calendar className="w-4 h-4 text-muted" aria-hidden="true" />
             <h2 className="font-semibold text-primary text-sm">Engagement activity heatmap</h2>
           </div>
-          <span className="text-[11px] text-muted">Past 90 days</span>
+          <span className="text-xs text-muted">Past 90 days</span>
         </div>
 
         <p className="text-xs text-muted">
-          Daily operational study sessions and machine root events.
+          Study sessions and pwn events per day.
         </p>
 
         <ActivityHeatmap counts={heatmapCounts} />

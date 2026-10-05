@@ -82,7 +82,7 @@ describe('Loot and Vault Components (Milestone 2)', () => {
       );
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText('LOG NEW EVIDENCE & LOOT')).toBeInTheDocument();
+      expect(screen.getByText('Log new evidence')).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/e\.g\. Administrator/i)).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/Paste password, hash string/i)).toBeInTheDocument();
     });
@@ -134,14 +134,14 @@ describe('Loot and Vault Components (Milestone 2)', () => {
       );
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText('EVIDENCE VAULT EXPORTER')).toBeInTheDocument();
-      expect(screen.getByText('All Artifacts')).toBeInTheDocument();
-      expect(screen.getByText('Filtered Scope')).toBeInTheDocument();
+      expect(screen.getByText('Export evidence')).toBeInTheDocument();
+      expect(screen.getByText('All artifacts')).toBeInTheDocument();
+      expect(screen.getByText('Filtered scope')).toBeInTheDocument();
 
       // Exporters
-      expect(screen.getByText(/JSON Package/i)).toBeInTheDocument();
-      expect(screen.getByText(/CSV Spreadsheet/i)).toBeInTheDocument();
-      expect(screen.getByText(/Markdown Pentest Table/i)).toBeInTheDocument();
+      expect(screen.getByText(/JSON package/i)).toBeInTheDocument();
+      expect(screen.getByText(/CSV spreadsheet/i)).toBeInTheDocument();
+      expect(screen.getByText(/Markdown table/i)).toBeInTheDocument();
     });
 
     it('toggles scope between all and filtered', () => {
@@ -156,7 +156,7 @@ describe('Loot and Vault Components (Milestone 2)', () => {
         />
       );
 
-      const filteredScopeBtn = screen.getByText('Filtered Scope').closest('button')!;
+      const filteredScopeBtn = screen.getByText('Filtered scope').closest('button')!;
       fireEvent.click(filteredScopeBtn);
 
       expect(screen.getByText('1 records')).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe('Loot and Vault Components (Milestone 2)', () => {
       );
 
       expect(screen.getByTestId('loot-timeline-view')).toBeInTheDocument();
-      expect(screen.getByText('KILL-CHAIN PHASES')).toBeInTheDocument();
+      expect(screen.getByText('Kill-chain phases')).toBeInTheDocument();
       expect(screen.getByText(/Initial Foothold & Access/i)).toBeInTheDocument();
       expect(screen.getByText(/Privilege Escalation & Root Pwn/i)).toBeInTheDocument();
     });
@@ -192,7 +192,7 @@ describe('Loot and Vault Components (Milestone 2)', () => {
         />
       );
 
-      const chronoBtn = screen.getByText('CHRONOLOGICAL STREAM');
+      const chronoBtn = screen.getByText('Chronological stream');
       fireEvent.click(chronoBtn);
 
       // Verify chronological stream items rendered

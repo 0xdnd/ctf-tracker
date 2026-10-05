@@ -82,7 +82,7 @@ export const ExamHeaderCapsule: React.FC = () => {
       {/* Track Badge */}
       <span
         data-testid="exam-capsule-track"
-        className="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-surface-sunken text-secondary border border-subtle flex-shrink-0"
+        className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken text-secondary border border-subtle flex-shrink-0"
       >
         {track}
       </span>
@@ -99,7 +99,7 @@ export const ExamHeaderCapsule: React.FC = () => {
         )}
         <span className="font-mono tabular-nums">{formatSecondsToHms(remainingTime)}</span>
         {status === 'paused' && (
-          <span className="text-[10px] tracking-wide text-callout-warn-fg font-semibold hidden md:inline">
+          <span className="text-[11px] text-callout-warn-fg font-semibold hidden md:inline">
             [PAUSED]
           </span>
         )}
@@ -114,16 +114,16 @@ export const ExamHeaderCapsule: React.FC = () => {
       >
         <span
           className={`font-mono font-semibold tabular-nums ${
-            isPassing
-              ? 'text-callout-success-fg'
-              : isCritical
-              ? 'text-callout-danger-fg'
-              : 'text-callout-warn-fg'
-          }`}
+ isPassing
+ ? 'text-callout-success-fg'
+ : isCritical
+ ? 'text-callout-danger-fg'
+ : 'text-callout-warn-fg'
+ }`}
         >
           {score.totalScore}
         </span>
-        <span className="text-[10px] text-muted font-mono tabular-nums">
+        <span className="text-[11px] text-muted font-mono tabular-nums">
           / {score.maxScore || 100} PTS
         </span>
       </div>
@@ -133,7 +133,7 @@ export const ExamHeaderCapsule: React.FC = () => {
         {isPassing ? (
           <span
             data-testid="exam-capsule-status"
-            className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border flex items-center gap-1"
+            className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border flex items-center gap-1"
           >
             <CheckCircle2 className="w-2.5 h-2.5 flex-shrink-0" />
             <span>Passing</span>
@@ -141,7 +141,7 @@ export const ExamHeaderCapsule: React.FC = () => {
         ) : isCritical ? (
           <span
             data-testid="exam-capsule-status"
-            className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border flex items-center gap-1 motion-safe:animate-pulse"
+            className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border flex items-center gap-1 motion-safe:animate-pulse"
           >
             <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
             <span>Critical</span>
@@ -149,7 +149,7 @@ export const ExamHeaderCapsule: React.FC = () => {
         ) : (
           <span
             data-testid="exam-capsule-status"
-            className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1"
+            className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1"
           >
             <Zap className="w-2.5 h-2.5 text-accent flex-shrink-0" />
             <span>In Progress</span>
@@ -161,7 +161,7 @@ export const ExamHeaderCapsule: React.FC = () => {
       {activeBreak.isActive && (
         <span
           data-testid="exam-capsule-break"
-          className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1 motion-safe:animate-pulse flex-shrink-0"
+          className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1 motion-safe:animate-pulse flex-shrink-0"
           title={`Active ${activeBreak.type} break`}
         >
           <Coffee className="w-2.5 h-2.5 flex-shrink-0" />
@@ -172,8 +172,8 @@ export const ExamHeaderCapsule: React.FC = () => {
       {/* Quick Action Chevron */}
       <ChevronDown
         className={`w-3 h-3 text-muted group-hover:text-accent transition-transform duration-150 flex-shrink-0 ${
-          isQuickDrawerOpen ? 'rotate-180' : ''
-        }`}
+ isQuickDrawerOpen ? 'rotate-180' : ''
+ }`}
       />
     </div>
   );

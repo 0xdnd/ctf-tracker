@@ -106,7 +106,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
           {/* Backdrop */}
           <div
             data-testid="bio-break-backdrop"
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -168,19 +168,19 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-callout-warn-fg motion-safe:animate-ping" />
-                      <span className="text-xs font-semibold tracking-wide text-callout-warn-fg">
+                      <span className="text-xs font-semibold text-callout-warn-fg">
                         {formatBreakTypeLabel(activeBreak.type)} ACTIVE
                       </span>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-surface-card text-callout-warn-fg border border-callout-warn-border font-semibold">
-                      Clock Running
+                    <span className="text-[11px] px-2 py-0.5 rounded bg-surface-card text-callout-warn-fg border border-callout-warn-border font-semibold">
+                      Clock running
                     </span>
                   </div>
 
                   {/* Primary clock: break countdown */}
                   <div className="text-center py-2">
                     <div className="text-xs text-secondary font-medium mb-1">
-                      Remaining Break Duration
+                      Remaining break time
                     </div>
                     <div
                       data-testid="break-countdown"
@@ -207,7 +207,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                   <div className="p-3 rounded-lg bg-surface-sunken border border-subtle text-xs text-secondary space-y-1">
                     <div className="flex items-center gap-1.5 font-semibold text-callout-warn-fg text-[11px]">
                       <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>Dual Exam Clock Telemetry</span>
+                      <span>Break and exam clocks</span>
                     </div>
                     <p className="text-[11px] text-muted leading-relaxed">
                       Your certification exam countdown continues in the background without penalty. An audible cyber alarm will trigger when this break expires.
@@ -219,10 +219,10 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                     type="button"
                     data-testid="break-cancel-btn"
                     onClick={handleCancelBreak}
-                    className="w-full py-2.5 px-4 rounded-lg bg-surface-card hover:bg-surface-hover text-callout-warn-fg border border-callout-warn-border text-xs font-semibold tracking-wide transition-[transform,background-color,border-color,color] flex items-center justify-center gap-2 active:scale-[0.97]"
+                    className="w-full py-2.5 px-4 rounded-lg bg-surface-card hover:bg-surface-hover text-callout-warn-fg border border-callout-warn-border text-xs font-semibold transition-[transform,background-color,border-color,color] flex items-center justify-center gap-2 active:scale-[0.97]"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    <span>Conclude Break & Resume Cockpit</span>
+                    <span>End break and resume</span>
                   </button>
                 </div>
               ) : (
@@ -230,9 +230,9 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-primary">
-                      Select Break Duration Preset
+                      Break duration
                     </span>
-                    <span className="text-[10px] text-muted">
+                    <span className="text-[11px] text-muted">
                       Runs in parallel with exam
                     </span>
                   </div>
@@ -248,12 +248,12 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                       >
                         <div className="flex items-center justify-between mb-2">
                           <Icon className="w-4 h-4 text-accent" />
-                          <span className="text-[10px] font-medium font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-card text-secondary border border-subtle">
+                          <span className="text-[11px] font-medium font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-card text-secondary border border-subtle">
                             {tag}
                           </span>
                         </div>
                         <div className="text-xs font-semibold text-primary">{title}</div>
-                        <p className="text-[10px] text-muted mt-1">{sub}</p>
+                        <p className="text-[11px] text-muted mt-1">{sub}</p>
                       </button>
                     ))}
                   </div>
@@ -299,7 +299,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                       className="mt-5 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-[transform,background-color,border-color,color] flex items-center gap-1 active:scale-[0.97]"
                     >
                       <Play className="w-3 h-3" />
-                      <span>Start Break</span>
+                      <span>Start break</span>
                     </button>
                   </form>
                 </div>
@@ -332,7 +332,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
 
             {/* Footer */}
             <div className="px-5 py-3 border-t border-subtle bg-surface-sunken flex items-center justify-between text-xs">
-              <span className="text-[10px] text-muted">
+              <span className="text-[11px] text-muted">
                 Press <kbd className="px-1 py-0.5 rounded bg-surface-card border border-subtle text-secondary font-mono">Esc</kbd> to dismiss
               </span>
               <button

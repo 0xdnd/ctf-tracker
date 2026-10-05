@@ -18,6 +18,20 @@ import { playCyberSound } from '../../utils/helpers';
 import { PRACTICE_TRACKS } from '../../data/tracksData';
 import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
 
+// Resolve an "R G B" CSS custom property to a canvas-safe rgb() string.
+const cssRgb = (name: string, fallback: string): string => {
+  try {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const parts = raw.split(/\s+/).map(Number);
+    if (parts.length >= 3 && parts.every((n) => Number.isFinite(n))) {
+      return `rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+    }
+  } catch {
+    /* fall through to the fallback */
+  }
+  return fallback;
+};
+
 export const OperatorFlexCardModal: React.FC = () => {
   const {
     flexCardModalOpen,
@@ -108,215 +122,174 @@ export const OperatorFlexCardModal: React.FC = () => {
     canvas.width = W;
     canvas.height = H;
 
-    // 1. Dark Cyber Background
-    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, '#060913');
-    bgGrad.addColorStop(0.5, '#0b1120');
-    bgGrad.addColorStop(1, '#05070d');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // 2. Subtle Grid overlay
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.04)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 30) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-    for (let y = 0; y < H; y += 30) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
-    }
-
-    // 3. Neon Cyber Borders
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(20, 20, W - 40, H - 40);
-
-    ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(28, 28, W - 56, H - 56);
-
-    // Corner decorative brackets
-    const drawBracket = (cx: number, cy: number, size: number) => {
-      ctx.strokeStyle = '#06b6d4';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + (cy < H / 2 ? size : -size));
-      ctx.lineTo(cx, cy);
-      ctx.lineTo(cx + (cx < W / 2 ? size : -size), cy);
-      ctx.stroke();
+    // Palette resolved from the theme tokens (canvas cannot consume Tailwind classes).
+    const C = {
+      bg: cssRgb('--surface-inverse', 'rgb(15, 15, 18)'),
+      panel: cssRgb('--surface-inverse-elevated', 'rgb(28, 28, 33)'),
+      line: cssRgb('--border-inverse', 'rgb(52, 52, 60)'),
+      text: cssRgb('--text-on-inverse', 'rgb(244, 244, 245)'),
+      muted: cssRgb('--text-on-inverse-muted', 'rgb(161, 161, 170)'),
+      accent: cssRgb('--border-accent', 'rgb(14, 165, 233)'),
     };
-    drawBracket(20, 20, 25);
-    drawBracket(W - 20, 20, 25);
-    drawBracket(20, H - 20, 25);
-    drawBracket(W - 20, H - 20, 25);
+    const SANS = '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif';
+    const MONO = '"JetBrains Mono", ui-monospace, Consolas, monospace';
 
-    // 4. Header Bar
-    // Avatar Pill
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
+    // 1. Flat inverse background with a single hairline frame
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(20.5, 20.5, W - 41, H - 41);
+
+    // 2. Header: avatar monogram, callsign, rank
+    ctx.fillStyle = C.panel;
+    ctx.strokeStyle = C.line;
     ctx.beginPath();
     ctx.roundRect(60, 55, 75, 75, 14);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 36px monospace';
-    ctx.fillText(initials, 75, 107);
+    ctx.fillStyle = C.text;
+    ctx.font = `600 34px ${SANS}`;
+    ctx.fillText(initials, 75, 105);
 
-    // Operator Title & Callsign
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px monospace';
+    ctx.fillStyle = C.text;
+    ctx.font = `600 32px ${SANS}`;
     ctx.fillText(callsign, 155, 90);
 
-    ctx.fillStyle = '#06b6d4';
-    ctx.font = 'bold 16px monospace';
-    ctx.fillText(`[${rank.tier}] ${rank.title} // ${role}`, 155, 118);
+    ctx.fillStyle = C.muted;
+    ctx.font = `500 16px ${SANS}`;
+    ctx.fillText(`${rank.tier} ${rank.title}, ${role}`, 155, 118);
 
-    // Security Clearance Badge
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.5;
+    // Rank pill
+    ctx.fillStyle = C.panel;
+    ctx.strokeStyle = C.line;
     ctx.beginPath();
     ctx.roundRect(W - 390, 60, 330, 36, 8);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 13px monospace';
-    ctx.fillText(`★ TIER ${rank.tier}: ${rank.title.toUpperCase()} ★`, W - 370, 84);
+    ctx.fillStyle = C.text;
+    ctx.font = `500 14px ${SANS}`;
+    ctx.fillText(`Tier ${rank.tier}: ${rank.title}`, W - 370, 83);
 
-    // Platform Subtitle
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '13px monospace';
-    ctx.fillText(`ZEROBOX // ${gamification.totalXp.toLocaleString()} XP // ${gamification.unlockedCount} TROPHIES UNLOCKED`, 155, 145);
+    // Subtitle
+    ctx.fillStyle = C.muted;
+    ctx.font = `13px ${MONO}`;
+    ctx.fillText(`${gamification.totalXp.toLocaleString()} XP  ·  ${gamification.unlockedCount} trophies unlocked`, 155, 145);
 
-    // 5. Hero Stats Row (Three main cyber boxes)
-    // Box 1: Total Pwns
-    const drawStatCard = (x: number, y: number, w: number, h: number, label: string, val: string, sub: string, color: string) => {
-      ctx.fillStyle = 'rgba(13, 18, 31, 0.85)';
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
+    // 3. Hero stats row
+    const drawStatCard = (x: number, y: number, w: number, h: number, label: string, val: string, sub: string) => {
+      ctx.fillStyle = C.panel;
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, 14);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = '#9ca3af';
-      ctx.font = 'bold 12px monospace';
-      ctx.fillText(label.toUpperCase(), x + 20, y + 32);
+      ctx.fillStyle = C.muted;
+      ctx.font = `500 13px ${SANS}`;
+      ctx.fillText(label, x + 20, y + 32);
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 44px monospace';
+      ctx.fillStyle = C.text;
+      ctx.font = `600 44px ${MONO}`;
       ctx.fillText(val, x + 20, y + 84);
 
-      ctx.fillStyle = color;
-      ctx.font = 'bold 13px monospace';
+      ctx.fillStyle = C.muted;
+      ctx.font = `13px ${SANS}`;
       ctx.fillText(sub, x + 20, y + 115);
     };
 
-    drawStatCard(60, 175, 330, 140, 'Total Compromised Targets', `${totalPwned}`, `ROSTER: ${totalMachines} BOOT-TO-ROOT LABS`, '#10b981');
-    drawStatCard(415, 175, 330, 140, 'Hack The Box Infiltration', `${htbPwned} Solves`, 'HTB CERTIFIED LABS PWNED', '#06b6d4');
-    drawStatCard(770, 175, 370, 140, 'TryHackMe Network Pwns', `${thmPwned} Solves`, 'THM ROOMS & LAB CHALLENGES', '#ef4444');
+    drawStatCard(60, 175, 330, 140, 'Total compromised targets', `${totalPwned}`, `Roster: ${totalMachines} boot-to-root labs`);
+    drawStatCard(415, 175, 330, 140, 'Hack The Box', `${htbPwned} solves`, 'Labs pwned on HTB');
+    drawStatCard(770, 175, 370, 140, 'TryHackMe', `${thmPwned} solves`, 'Rooms and lab challenges');
 
-    // 6. Syllabus Mastery Cards
-    const drawTrackRow = (x: number, y: number, w: number, h: number, title: string, progressText: string, pct: number, color: string) => {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+    // 4. Track progress rows
+    const drawTrackRow = (x: number, y: number, w: number, h: number, title: string, progressText: string, pct: number) => {
+      ctx.fillStyle = C.panel;
+      ctx.strokeStyle = C.line;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, 10);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px monospace';
+      ctx.fillStyle = C.text;
+      ctx.font = `600 15px ${SANS}`;
       ctx.fillText(title, x + 18, y + 28);
 
-      ctx.fillStyle = color;
-      ctx.font = 'bold 14px monospace';
+      ctx.fillStyle = C.muted;
+      ctx.font = `500 14px ${MONO}`;
       ctx.fillText(progressText, x + w - 160, y + 28);
 
-      // Progress bar background
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = C.line;
       ctx.beginPath();
       ctx.roundRect(x + 18, y + 42, w - 36, 8, 4);
       ctx.fill();
 
-      // Progress bar fill
       if (pct > 0) {
-        ctx.fillStyle = color;
+        ctx.fillStyle = C.accent;
         ctx.beginPath();
         ctx.roundRect(x + 18, y + 42, Math.max(10, ((w - 36) * pct) / 100), 8, 4);
         ctx.fill();
       }
     };
 
-    drawTrackRow(60, 335, 510, 68, '🎯 TJ_Null OSCP 2024 Track', `${oscpPwned}/${oscpTotal} (${oscpPct}%)`, Math.max(12, oscpPct), '#10b981');
-    drawTrackRow(595, 335, 545, 68, '🏆 CPTS Trophy Room Track', `${cptsPwned}/${cptsTotal} (${cptsPct}%)`, Math.max(8, cptsPct), '#06b6d4');
+    drawTrackRow(60, 335, 510, 68, 'TJ_Null OSCP 2024 track', `${oscpPwned}/${oscpTotal} (${oscpPct}%)`, Math.max(12, oscpPct));
+    drawTrackRow(595, 335, 545, 68, 'CPTS trophy room track', `${cptsPwned}/${cptsTotal} (${cptsPct}%)`, Math.max(8, cptsPct));
 
-    // 7. Tactical Expertise Metrics / Unlocked Trophies
-    const drawSkillBadge = (x: number, y: number, text: string, color: string) => {
-      ctx.fillStyle = 'rgba(13, 21, 38, 0.8)';
-      ctx.strokeStyle = color;
+    // 5. Unlocked trophies (or default focus areas)
+    const drawSkillBadge = (x: number, y: number, text: string) => {
+      ctx.fillStyle = C.panel;
+      ctx.strokeStyle = C.line;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(x, y, 245, 38, 8);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = color;
-      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = C.text;
+      ctx.font = `500 12px ${SANS}`;
       ctx.fillText(text, x + 15, y + 24);
     };
 
+    const defaultBadges = [
+      'Active Directory (BloodHound)',
+      'Web apps (SQLi, RCE, SSRF)',
+      'Linux privesc (SUID, kernel)',
+      'Windows privesc (tokens, DPAPI)',
+    ];
     const topTrophies = gamification.trophies.filter((t) => t.unlocked).slice(0, 4);
     if (topTrophies.length >= 2) {
       topTrophies.forEach((t, idx) => {
-        const xPos = 60 + idx * 265;
-        drawSkillBadge(xPos, 420, `🏆 ${t.definition.title}`, '#10b981');
+        drawSkillBadge(60 + idx * 265, 420, t.definition.title);
       });
-      const defaultBadges = [
-        { text: '⚡ Active Directory // BloodHound', color: '#a855f7' },
-        { text: '🌐 Web Apps // SQLi, RCE, SSRF', color: '#06b6d4' },
-        { text: '🐧 Linux PrivEsc // SUID & Kernel', color: '#ef4444' },
-        { text: '🪟 Windows PrivEsc // Tokens & DPAPI', color: '#3b82f6' },
-      ];
       for (let i = topTrophies.length; i < 4; i++) {
-        const xPos = 60 + i * 265;
-        drawSkillBadge(xPos, 420, defaultBadges[i].text, defaultBadges[i].color);
+        drawSkillBadge(60 + i * 265, 420, defaultBadges[i]);
       }
     } else {
-      drawSkillBadge(60, 420, '⚡ Active Directory // BloodHound', '#a855f7');
-      drawSkillBadge(325, 420, '🌐 Web Apps // SQLi, RCE, SSRF', '#06b6d4');
-      drawSkillBadge(590, 420, '🐧 Linux PrivEsc // SUID & Kernel', '#ef4444');
-      drawSkillBadge(855, 420, '🪟 Windows PrivEsc // Tokens & DPAPI', '#3b82f6');
+      defaultBadges.forEach((text, i) => drawSkillBadge(60 + i * 265, 420, text));
     }
 
-    // 8. Footer Watermark
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+    // 6. Footer
+    ctx.strokeStyle = C.line;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(60, 485);
     ctx.lineTo(W - 60, 485);
     ctx.stroke();
 
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText('ZEROBOX SUITE // ZERO-KNOWLEDGE TACTICAL STATION', 60, 520);
+    ctx.fillStyle = C.text;
+    ctx.font = `600 14px ${SANS}`;
+    ctx.fillText('ZeroBox', 60, 520);
 
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '12px monospace';
-    ctx.fillText('Architected & Built by Daniel Dayan (@0xdnd) • 0xdnd.github.io', 60, 545);
+    ctx.fillStyle = C.muted;
+    ctx.font = `12px ${SANS}`;
+    ctx.fillText('Built by Daniel Dayan (@0xdnd)  ·  0xdnd.github.io', 60, 545);
 
-    ctx.fillStyle = '#06b6d4';
-    ctx.font = 'bold 13px monospace';
+    ctx.fillStyle = C.muted;
+    ctx.font = `13px ${MONO}`;
     ctx.fillText('0xdnd.github.io/ctf-tracker', W - 310, 535);
 
     setRendering(false);
@@ -373,25 +346,25 @@ export const OperatorFlexCardModal: React.FC = () => {
   if (!flexCardModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono" onClick={() => setFlexCardModalOpen(false)}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-surface-inverse/60 backdrop-blur-md animate-fade-in font-sans" onClick={() => setFlexCardModalOpen(false)}>
       <div 
-        className="w-full max-w-4xl max-h-[95vh] flex flex-col rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden"
+        className="w-full max-w-4xl max-h-[95vh] flex flex-col rounded-2xl border border-subtle bg-surface-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-cyber-border px-4 py-3 bg-cyber-bg">
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle px-4 py-3 bg-surface-card">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyber-emerald" />
-            <Award className="w-4 h-4 text-cyber-emerald" />
-            <span className="font-bold text-cyber-emerald tracking-wide text-xs uppercase">
-              OPERATOR ACHIEVEMENTS // SHARABLE FLEX CARD
-            </span>
+            <Award className="w-4 h-4 text-muted" />
+            <h2 className="font-semibold text-primary text-sm tracking-[-0.01em]">
+              Achievement card
+            </h2>
           </div>
 
           <button
             onClick={() => setFlexCardModalOpen(false)}
-            className="p-1.5 rounded-lg text-cyber-muted hover:text-primary hover:bg-cyber-card transition-[transform,background-color,border-color,color] active:scale-[0.98]"
-            title="Close (ESC)"
+            className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-[transform,background-color,border-color,color] active:scale-[0.97]"
+            aria-label="Close achievement card"
+            title="Close (Esc)"
           >
             <X className="w-4 h-4" />
           </button>
@@ -399,7 +372,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
         {/* Card Canvas Preview */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col items-center space-y-3">
-          <div className="relative w-full max-w-3xl rounded-xl border border-cyber-border overflow-hidden shadow-xl bg-black">
+          <div className="relative w-full max-w-3xl rounded-xl border border-subtle overflow-hidden bg-surface-inverse">
             <canvas 
               ref={canvasRef} 
               className="w-full h-auto block"
@@ -407,35 +380,35 @@ export const OperatorFlexCardModal: React.FC = () => {
             />
           </div>
 
-          <p className="text-cyber-muted text-xs text-center max-w-xl">
-            Export a high-resolution 1200x630 OpenGraph social card to showcase your verified CTF solved record on <strong>LinkedIn</strong>, <strong>Twitter/X</strong>, and <strong>Discord</strong>.
+          <p className="text-muted text-xs text-center max-w-xl">
+            Export a 1200x630 social card with your verified solve record for LinkedIn, X or Discord.
           </p>
         </div>
 
         {/* Action Buttons Footer */}
-        <div className="px-4 py-3 bg-cyber-bg border-t border-cyber-border flex flex-wrap items-center justify-between gap-2.5 text-xs">
+        <div className="px-4 py-3 bg-surface-card border-t border-subtle flex flex-wrap items-center justify-between gap-2.5 text-xs">
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadPng}
-              className="px-3.5 py-1.5 rounded-lg bg-cyber-emerald text-black font-extrabold hover:bg-cyber-emerald/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 max-sm:py-3 rounded-lg bg-accent text-on-accent font-medium hover:brightness-110 transition-[transform,filter] active:scale-[0.97] flex items-center gap-1.5"
             >
-              <Download className="w-4 h-4 stroke-[2.5]" />
-              <span>DOWNLOAD PNG (1200x630)</span>
+              <Download className="w-4 h-4" />
+              <span>Download PNG</span>
             </button>
 
             <button
               onClick={handleCopyPng}
-              className="px-3.5 py-1.5 rounded-lg bg-cyber-card border border-cyber-border hover:border-cyber-cyan text-white hover:text-cyber-cyan transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 max-sm:py-3 rounded-lg bg-surface-card border border-subtle hover:border-strong text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1.5"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-cyber-emerald" />
-                  <span className="text-cyber-emerald font-bold">COPIED TO CLIPBOARD!</span>
+                  <Check className="w-4 h-4 text-callout-success-fg" />
+                  <span className="text-callout-success-fg font-medium">Copied</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-4 h-4" />
-                  <span>COPY IMAGE</span>
+                  <span>Copy image</span>
                 </>
               )}
             </button>
@@ -444,15 +417,15 @@ export const OperatorFlexCardModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleShareLinkedIn}
-              className="px-3.5 py-1.5 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/35 border border-[#0077B5]/50 text-white font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 max-sm:py-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1.5"
             >
-              <Share2 className="w-3.5 h-3.5 text-[#0077B5]" />
+              <Share2 className="w-3.5 h-3.5" />
               <span>Share on LinkedIn</span>
             </button>
 
             <button
               onClick={handleShareTwitter}
-              className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 max-sm:py-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>

@@ -345,18 +345,18 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
         <div className="flex items-center gap-2">
           <div
             className={`p-1.5 rounded-lg border ${
-              isUser
-                ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
-                : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
-            }`}
+ isUser
+ ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
+ : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
+ }`}
           >
             {isUser ? <Flag className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
           </div>
           <div>
-            <h4 className="text-xs font-semibold tracking-wide text-primary">
+            <h4 className="text-xs font-semibold text-primary">
               {isUser ? 'Foothold Evidence (local.txt)' : 'PrivEsc / Root Evidence (proof.txt)'}
             </h4>
-            <span className="text-[10px] text-muted font-mono tabular-nums">
+            <span className="text-[11px] text-muted font-mono tabular-nums">
               Target: {box.name} ({box.ip}) • {isUser ? `+${box.userPoints}` : `+${box.rootPoints}`} PTS
             </span>
           </div>
@@ -365,12 +365,12 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
         {/* Real-Time Compliance Badge */}
         <div data-testid="evidence-compliance-badge">
           {isCompliant ? (
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-callout-success-bg text-callout-success-fg border border-callout-success-border flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
               <span>OFFSEC COMPLIANT</span>
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               <span>EVIDENCE INCOMPLETE</span>
             </span>
@@ -388,15 +388,15 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               className="text-[11px] font-semibold text-secondary flex items-center gap-1"
             >
               <Flag className="w-3 h-3 text-accent" />
-              <span>1. Flag Hash / Value</span>
+              <span>1. Flag hash or value</span>
             </label>
             {proof.flagText && (
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                  hasValidFlag
-                    ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                    : 'bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border'
-                }`}
+                className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+ hasValidFlag
+ ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+ : 'bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border'
+ }`}
               >
                 {hasValidFlag ? `✓ ${flagValidation.label}` : 'Invalid'}
               </span>
@@ -421,10 +421,10 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               className="text-[11px] font-semibold text-secondary flex items-center gap-1"
             >
               <Terminal className="w-3 h-3 text-accent" />
-              <span>2. whoami Output</span>
+              <span>2. whoami output</span>
             </label>
             {hasWhoami && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
+              <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                 ✓ Recorded
               </span>
             )}
@@ -448,10 +448,10 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               className="text-[11px] font-semibold text-secondary flex items-center gap-1"
             >
               <Network className="w-3 h-3 text-accent" />
-              <span>3. ip a / ipconfig Output</span>
+              <span>3. ip a or ipconfig output</span>
             </label>
             {hasIpconfig && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
+              <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                 ✓ Recorded
               </span>
             )}
@@ -473,9 +473,9 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-secondary flex items-center gap-1.5">
             <Camera className="w-3.5 h-3.5 text-accent" />
-            <span>Screenshot Evidence Dropzone</span>
+            <span>Screenshot evidence</span>
           </span>
-          <span className="text-[10px] text-muted">
+          <span className="text-[11px] text-muted">
             Offline downscaling to Base64 JPEG • Press <kbd className="px-1 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary font-mono">Ctrl+V</kbd> to paste
           </span>
         </div>
@@ -488,10 +488,10 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={`cursor-pointer border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-[background-color,border-color] ${
-            isDragOver
-              ? 'border-accent bg-accent-muted'
-              : 'border-strong hover:border-accent bg-surface-sunken hover:bg-surface-hover'
-          }`}
+ isDragOver
+ ? 'border-accent bg-accent-muted'
+ : 'border-strong hover:border-accent bg-surface-sunken hover:bg-surface-hover'
+ }`}
         >
           <input
             ref={fileInputRef}
@@ -510,7 +510,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               <p className="text-xs font-semibold text-primary">
                 {isProcessingImage ? 'Downscaling image offline...' : 'Drop terminal screenshot here, or click to browse'}
               </p>
-              <p className="text-[10px] text-muted mt-0.5">
+              <p className="text-[11px] text-muted mt-0.5">
                 PNG, JPEG, WebP • Auto-downscaled to JPEG &le; 1280px to prevent quota bloat
               </p>
             </div>
@@ -544,10 +544,10 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                   <button
                     type="button"
                     onClick={() => setPreviewImage(sc.dataUrl)}
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex items-center justify-center text-white transition-opacity font-semibold text-[11px] gap-1"
+                    className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Expand Preview</span>
+                    <span>Expand preview</span>
                   </button>
                 </div>
 
@@ -589,7 +589,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[10px] text-muted mt-1">
+                  <div className="flex items-center justify-between text-[11px] text-muted mt-1">
                     <span>
                       {sc.timestamp ? new Date(sc.timestamp).toLocaleTimeString() : 'Logged'}
                       {sc.sizeBytes ? ` • ${(sc.sizeBytes / 1024).toFixed(0)} KB` : ''}
@@ -615,7 +615,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       {/* 5. Expanded Modal Preview if user clicked image */}
       {previewImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-surface-inverse/60 backdrop-blur-md flex items-center justify-center p-4"
           onClick={() => setPreviewImage(null)}
         >
           <div className="relative max-w-4xl max-h-[90vh] bg-surface-card border border-subtle rounded-2xl overflow-hidden p-2">

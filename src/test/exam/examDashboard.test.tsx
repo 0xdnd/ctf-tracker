@@ -103,7 +103,7 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
 
       expect(screen.getByTestId('exam-setup-view')).toBeInTheDocument();
       expect(screen.getByTestId('exam-start-btn')).toBeInTheDocument();
-      expect(screen.getByText(/ZEROBOX \/\/ CERTIFICATION EXAM SIMULATOR/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Certification exam simulator' })).toBeInTheDocument();
 
       // Track selection cards
       expect(screen.getByTestId('exam-track-select-oscp')).toBeInTheDocument();
@@ -228,7 +228,7 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
       await waitFor(() => {
         expect(screen.getByTestId('exam-victory-banner')).toBeInTheDocument();
       });
-      expect(screen.getByText(/PASSING THRESHOLD SURPASSED!/i)).toBeInTheDocument();
+      expect(screen.getByText(/passing threshold surpassed/i)).toBeInTheDocument();
     });
 
     it('opens bio-break modal when bio-break button is clicked in cockpit', () => {
