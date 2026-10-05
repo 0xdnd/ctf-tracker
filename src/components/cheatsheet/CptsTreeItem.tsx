@@ -81,13 +81,14 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                   e.stopPropagation();
                   onAddNoteToFolder(node.fullPath);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-secondary hover:text-primary hover:bg-surface-hover transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
+                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 p-0.5 rounded text-secondary hover:text-primary hover:bg-surface-hover transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
                 title={`Add note inside ${node.name}`}
+                aria-label={`Add note inside ${node.name}`}
               >
                 <Plus className="w-3 h-3" />
               </button>
             )}
-            <span className="text-[9px] font-mono tabular-nums px-1.5 py-0.2 rounded bg-surface-hover/80 border border-strong/80 text-secondary">
+            <span className="text-[9px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-hover/80 border border-strong/80 text-secondary">
               {node.count}
             </span>
           </div>
@@ -125,21 +126,24 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
 
   return (
     <div
-      onClick={() => onSelectNote(note)}
       data-tree-type="note"
       data-note-id={note.id}
-      className="flex items-center justify-between py-1 px-1.5 rounded-md text-xs cursor-pointer transition-colors text-secondary hover:text-primary hover:bg-surface-hover group border border-transparent hover:border-strong"
+      className="flex items-center justify-between py-1 px-1.5 rounded-md text-xs transition-colors text-secondary hover:text-primary hover:bg-surface-hover group border border-transparent hover:border-strong"
       title={noteTitle}
     >
-      <div className="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1 pl-4">
+      <button
+        type="button"
+        onClick={() => onSelectNote(note)}
+        className="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1 pl-4 text-left cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
         <FileText className="w-3.5 h-3.5 text-tertiary group-hover:text-muted flex-shrink-0 transition-colors" />
         <span className="truncate text-[11px] group-hover:text-primary">
           {noteTitle}
         </span>
-      </div>
+      </button>
       <div className="flex items-center gap-1 flex-shrink-0">
         {note.commands && note.commands.length > 0 && (
-          <span className="text-[8.5px] px-1.5 py-0.2 rounded bg-surface-hover/80 text-secondary font-mono tabular-nums border border-strong/60 dark:border-transparent">
+          <span className="text-[8.5px] px-1.5 py-0.5 rounded bg-surface-hover/80 text-secondary font-mono tabular-nums border border-strong/60 dark:border-transparent">
             {note.commands.length}c
           </span>
         )}
@@ -150,8 +154,9 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
               e.stopPropagation();
               onDeleteNote(note.id, noteTitle);
             }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
+            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 p-0.5 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Delete note"
+            aria-label={`Delete note ${noteTitle}`}
           >
             <Trash2 className="w-3 h-3" />
           </button>

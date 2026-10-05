@@ -102,7 +102,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   closeTab(tabId);
                 }}
                 className={`relative p-0.5 rounded-sm hover:bg-surface-hover text-muted hover:text-secondary transition-colors flex-shrink-0 ${
-                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
                 }`}
                 title="Close Tab"
                 aria-label={`Close tab ${title}`}

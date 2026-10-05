@@ -347,19 +347,19 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
               {lane.title}
             </div>
             <div className="text-xs text-muted truncate font-sans">{lane.subtitle}</div>
+            {laneMachines.length > limit && (
+                <button
+                  onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
+                  className="mt-1 text-xs px-1.5 py-0.5 rounded bg-accent-muted text-accent border border-accent/30 font-medium hover:bg-accent/20 transition-colors active:scale-[0.97] cursor-pointer font-sans whitespace-nowrap"
+                  title="Render all targets in this lane immediately"
+                >
+                  Show all
+                </button>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {laneMachines.length > limit && (
-            <button
-              onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
-              className="text-xs px-1.5 py-0.5 rounded bg-accent-muted text-accent border border-accent/30 font-medium hover:bg-accent/20 transition-colors active:scale-[0.97] cursor-pointer font-mono tabular-nums"
-              title="Render all targets in this lane immediately"
-            >
-              All ({laneMachines.length})
-            </button>
-          )}
           <span className="font-mono text-xs font-medium text-muted tabular-nums select-none">
             {laneMachines.length}
           </span>

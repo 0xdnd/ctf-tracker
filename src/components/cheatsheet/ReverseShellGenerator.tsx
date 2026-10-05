@@ -5,8 +5,6 @@ import {
   Check,
   Download,
   Search,
-  Plus,
-  Minus,
   X,
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -40,8 +38,6 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const lhost = globalVars.lhost || '10.10.14.x';
   const lport = globalVars.lport || '4444';
-  const targetIp = globalVars.targetIp;
-  const setLhost = (val: string) => setGlobalVars({ lhost: val });
   const setLport = (val: string) => setGlobalVars({ lport: val });
 
   // Active configuration
@@ -176,14 +172,6 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
     }
   }, [listenerType, lport]);
 
-  // Stepper handlers
-  const handlePortStep = (delta: number) => {
-    const current = parseInt(lport, 10) || 4444;
-    const next = Math.max(1, Math.min(65535, current + delta));
-    setLport(next.toString());
-    if (soundEnabled) playCyberSound('toggle');
-  };
-
   // Copy payload
   const handleCopyPayload = () => {
     safeCopyToClipboard(resolvedPayload);
@@ -221,88 +209,15 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
     'inline-flex h-7 flex-shrink-0 items-center justify-center whitespace-nowrap rounded-md px-2.5 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-9';
   const segOn = 'bg-surface-card text-primary shadow-xs';
   const segOff = 'text-muted hover:text-primary';
-  const quickBtn =
-    'inline-flex h-8 items-center rounded-lg border border-subtle bg-surface-sunken px-2.5 font-mono tabular-nums text-xs text-secondary transition-[transform,background-color,color] hover:bg-surface-hover hover:text-primary active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11';
 
   return (
     <div className="space-y-4 text-xs">
       {/* 1. Attacker configuration */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-subtle pb-4">
-        {/* LHOST */}
+        {/* LHOST / LPORT / TARGET are edited once in the page header; presets only here */}
         <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="revshell-lhost-input" className="text-xs font-medium text-muted">LHOST</label>
-          <div className="inline-flex h-8 items-center rounded-lg border border-subtle bg-surface-sunken px-2 transition-colors focus-within:border-accent [@media(pointer:coarse)]:h-11">
-            <input
-              type="text"
-              id="revshell-lhost-input"
-              name="revshell-lhost"
-              aria-label="Reverse Shell LHOST"
-              value={lhost}
-              onChange={(e) => setLhost(e.target.value)}
-              placeholder="10.10.14.x"
-              className="h-7 w-32 bg-transparent font-mono tabular-nums text-xs text-primary placeholder:text-muted focus:outline-none"
-              title="Attacker IP / Tun0 interface IP"
-            />
-          </div>
-          {targetIp && (
-            <button
-              type="button"
-              onClick={() => {
-                setLhost(targetIp);
-                if (soundEnabled) playCyberSound('toggle');
-              }}
-              className={quickBtn}
-              title="Set to Active Target IP"
-            >
-              Target
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setLhost('127.0.0.1');
-              if (soundEnabled) playCyberSound('toggle');
-            }}
-            className={quickBtn}
-            title="Set to localhost"
-          >
-            127.0.0.1
-          </button>
-        </div>
-
-        {/* LPORT */}
-        <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="revshell-lport-input" className="text-xs font-medium text-muted">LPORT</label>
-          <div className="inline-flex h-8 items-center rounded-lg border border-subtle bg-surface-sunken p-0.5 transition-colors focus-within:border-accent [@media(pointer:coarse)]:h-11">
-            <button aria-label="Decrease port"
-              type="button"
-              onClick={() => handlePortStep(-1)}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-[transform,background-color,color] hover:bg-surface-card hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-9 [@media(pointer:coarse)]:w-9"
-              title="Decrease port (-1)"
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-            <input
-              type="text"
-              id="revshell-lport-input"
-              name="revshell-lport"
-              aria-label="Reverse Shell LPORT"
-              value={lport}
-              onChange={(e) => setLport(e.target.value)}
-              placeholder="4444"
-              className="h-7 w-14 bg-transparent text-center font-mono tabular-nums text-xs text-primary focus:outline-none"
-            />
-            <button aria-label="Increase port"
-              type="button"
-              onClick={() => handlePortStep(1)}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-[transform,background-color,color] hover:bg-surface-card hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-9 [@media(pointer:coarse)]:w-9"
-              title="Increase port (+1)"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          <div className={`hidden sm:inline-flex ${segWrap}`}>
+          <span className="text-xs font-medium text-muted">LPORT preset</span>
+          <div className={`inline-flex ${segWrap}`}>
             {COMMON_PORTS.map((p) => {
               const isActive = lport === p;
               return (
