@@ -110,6 +110,8 @@ npm run build
 npm run preview
 ```
 
+> **Windows shortcut:** after `npm install`, double-click `START-TRACKER.bat` to start the dev server and open the tracker in your browser. On macOS/Linux, use the npm commands above.
+
 ---
 
 ## 👨‍💻 Creator & System Architect
