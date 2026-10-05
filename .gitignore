@@ -95,3 +95,8 @@ archive_standalone_hud/
 *.zip
 crop_deploy.png
 scripts/*.py
+!scripts/run_webapp_tests.py
+!scripts/axe_contrast_scan.py
+
+# Generated verification reports (axe, lighthouse)
+reports/
