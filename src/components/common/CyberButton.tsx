@@ -73,8 +73,8 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
   const variantClasses: Record<CyberButtonVariant, string> = {
     default:
       'bg-surface-elevated hover:bg-surface-hover ' +
-      'border border-border-subtle hover:border-border-strong ' +
-      'text-text-primary ' +
+      'border border-subtle hover:border-strong ' +
+      'text-primary ' +
       'shadow-xs dark:shadow-none machined-edge',
 
     primary:
@@ -84,8 +84,8 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
 
     secondary:
       'bg-surface-card hover:bg-surface-hover ' +
-      'border border-border-subtle hover:border-border-strong ' +
-      'text-text-primary ' +
+      'border border-subtle hover:border-strong ' +
+      'text-primary ' +
       'shadow-xs',
 
     danger:
@@ -96,17 +96,17 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
     ghost:
       'bg-transparent hover:bg-surface-hover ' +
       'border border-transparent ' +
-      'text-text-secondary hover:text-text-primary',
+      'text-secondary hover:text-primary',
 
     outline:
       'bg-transparent hover:bg-surface-card ' +
-      'border border-border-subtle hover:border-border-strong ' +
-      'text-text-primary',
+      'border border-subtle hover:border-strong ' +
+      'text-primary',
 
     hardware:
       'bg-surface-sunken hover:bg-surface-hover ' +
-      'border border-border-subtle hover:border-border-strong ' +
-      'text-text-secondary ' +
+      'border border-subtle hover:border-strong ' +
+      'text-secondary ' +
       'machined-edge',
   };
 

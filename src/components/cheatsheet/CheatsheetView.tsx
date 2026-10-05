@@ -33,6 +33,7 @@ import {
   ArrowUpDown,
   RotateCcw,
   PanelRight,
+  SlidersHorizontal,
   Maximize2,
   ExternalLink
 } from 'lucide-react';
@@ -157,6 +158,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [expandedIndexRows, setExpandedIndexRows] = useState<Record<string, boolean>>({});
   const [collapsedGroupSections, setCollapsedGroupSections] = useState<Record<string, boolean>>({});
   const [jumpDropdownOpen, setJumpDropdownOpen] = useState(false);
+  const [hudOptionsOpen, setHudOptionsOpen] = useState(false);
   const [jumpSearchQuery, setJumpSearchQuery] = useState('');
   const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null);
   const [cptsLimit, setCptsLimit] = useState(30);
@@ -1605,6 +1607,22 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       )}
                     </div>
 
+                    {/* View options disclosure: below sm only; desktop controls stay mounted */}
+                    <button
+                      type="button"
+                      aria-expanded={hudOptionsOpen}
+                      aria-controls="cpts-hud-view-options"
+                      onClick={() => setHudOptionsOpen((o) => !o)}
+                      className="sm:hidden flex items-center gap-1.5 px-3 h-11 rounded-lg bg-surface-card border border-subtle text-secondary text-xs font-medium active:scale-[0.97] cursor-pointer"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>View options</span>
+                    </button>
+
+                    <div
+                      id="cpts-hud-view-options"
+                      className={hudOptionsOpen ? 'flex flex-wrap items-center gap-2 w-full sm:contents' : 'hidden sm:contents'}
+                    >
                     {/* Sort Order Selector: Number Order / Topic / Title */}
                     <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
                       <button
@@ -1801,6 +1819,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       >
                         <span>⬅️ RTL</span>
                       </button>
+                    </div>
                     </div>
                   </div>
                 </div>

@@ -162,11 +162,11 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
     await page.waitForTimeout(400);
 
     // Verify empty state display
-    const emptyNotice = page.locator("text=NO TARGETS FOUND");
+    const emptyNotice = page.getByText('No machines match').first();
     await expect(emptyNotice).toBeVisible();
 
     // Verify reset filters recovery button
-    const resetBtn = page.locator("[data-testid='reset-filters-btn']");
+    const resetBtn = page.getByRole('button', { name: 'Reset filters', exact: true });
     await expect(resetBtn).toBeVisible();
     await resetBtn.click();
     await page.waitForTimeout(400);
@@ -289,7 +289,7 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
 
     // Header variable inputs
     const lhostInput = page.locator('#unified-lhost');
-    const rhostInput = page.locator('#unified-rhost');
+    const rhostInput = page.locator('#unified-target-ip');
     const lportInput = page.locator('#unified-lport');
 
     await expect(lhostInput).toBeVisible();
@@ -301,9 +301,22 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
     await page.waitForTimeout(100);
     await expect(lportInput).toHaveValue('4444');
 
+    // Stopwatch controls render once a target is engaged; engage the first match
+    await page.getByRole('button', { name: 'Engage target', exact: true }).click();
+    await page.getByPlaceholder('Search target name or IP...').fill('RootMe');
+    await page.locator('header button:has-text("RootMe")').first().click();
+    await page.waitForTimeout(300);
+
+    // Engaging a target without a live IP opens the "Assign spawned target IP" modal; dismiss it
+    const assignIpDialog = page.getByRole('heading', { name: /Assign spawned target IP/i });
+    if (await assignIpDialog.isVisible()) {
+      await page.keyboard.press('Escape');
+      await expect(assignIpDialog).not.toBeVisible();
+    }
+
     // Stopwatch timer controls
-    const timerToggle = page.locator("[data-testid='timer-start-pause']");
-    const timerReset = page.locator("[data-testid='timer-reset']");
+    const timerToggle = page.locator("button[title$='Stopwatch']").first();
+    const timerReset = page.locator("button[title='Reset Stopwatch']");
     await expect(timerToggle).toBeVisible();
     await expect(timerReset).toBeVisible();
 

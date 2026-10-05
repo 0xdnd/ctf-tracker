@@ -135,7 +135,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
           {/* Header */}
           <div className="text-[10px] text-muted px-2 py-0.5 font-semibold border-b border-subtle flex items-center justify-between">
             <span>Theme presets</span>
-            <span className="text-secondary text-[10px] font-medium">{THEME_OPTIONS.length} THEMES</span>
+            <span className="text-secondary text-[10px] font-medium">{THEME_OPTIONS.length} themes</span>
           </div>
 
           {/* Theme List */}

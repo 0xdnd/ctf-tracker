@@ -44,7 +44,7 @@ const THEME_PRESETS: ThemeCardInfo[] = [
     id: 'obsidian',
     name: 'Obsidian Dark / Zinc',
     tagline: 'Cold zinc dark and clean zinc slate',
-    badge: 'ZINC DARK',
+    badge: 'Zinc dark',
     darkAccentHex: 'rgb(14 165 233)',
     lightAccentHex: 'rgb(2 132 199)',
     darkCardHex: 'rgb(18 18 21)',
@@ -55,7 +55,7 @@ const THEME_PRESETS: ThemeCardInfo[] = [
     id: 'monolith',
     name: 'Clean Monolith',
     tagline: 'Architectural off-white and crisp graphite',
-    badge: 'MONOLITH',
+    badge: 'Monolith',
     darkAccentHex: 'rgb(56 189 248)',
     lightAccentHex: 'rgb(2 132 199)',
     darkCardHex: 'rgb(39 39 42)',
@@ -196,7 +196,7 @@ export const SettingsModal: React.FC = () => {
                   <span>Theme presets</span>
                 </span>
                 <span className="text-[10px] text-muted font-semibold">
-                  3 CANONICAL THEMES
+                  3 canonical themes
                 </span>
               </div>
 

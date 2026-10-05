@@ -85,7 +85,7 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(normalizeThemePreset('unknown-theme')).toBe('obsidian');
     });
 
-    it('ThemePresetDropdown badge displays "3 THEMES" and renders exactly 3 theme choices', () => {
+    it('ThemePresetDropdown badge displays "3 themes" and renders exactly 3 theme choices', () => {
       render(
         <MemoryRouter>
           <ThemeProvider>
@@ -98,8 +98,8 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       const triggerBtn = screen.getByRole('button', { name: /Obsidian Dark \/ Zinc/i });
       fireEvent.click(triggerBtn);
 
-      // Badge must display "3 THEMES"
-      expect(screen.getByText('3 THEMES')).toBeInTheDocument();
+      // Badge must display "3 themes"
+      expect(screen.getByText('3 themes')).toBeInTheDocument();
 
       // Check all 3 themes are present
       expect(screen.getAllByText('Obsidian Dark / Zinc').length).toBeGreaterThanOrEqual(1);
@@ -122,10 +122,10 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
 
       const triggerBtn = screen.getByRole('button', { name: /Obsidian Dark \/ Zinc/i });
       fireEvent.click(triggerBtn);
-      expect(screen.getByText('3 THEMES')).toBeInTheDocument();
+      expect(screen.getByText('3 themes')).toBeInTheDocument();
 
       fireEvent.keyDown(document, { key: 'Escape' });
-      expect(screen.queryByText('3 THEMES')).toBeNull();
+      expect(screen.queryByText('3 themes')).toBeNull();
     });
 
     it('SettingsModal displays the identical 3 themes with matching metadata and dual swatches', () => {
@@ -140,7 +140,7 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       );
 
       // Header indicates 3 canonical themes
-      expect(screen.getByText('3 CANONICAL THEMES')).toBeInTheDocument();
+      expect(screen.getByText('3 canonical themes')).toBeInTheDocument();
 
       // Rendered options in SettingsModal
       expect(screen.getByText('Obsidian Dark / Zinc')).toBeInTheDocument();
@@ -148,8 +148,8 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(screen.getByText('Hack The Box')).toBeInTheDocument();
 
       // Badges
-      expect(screen.getByText('ZINC DARK')).toBeInTheDocument();
-      expect(screen.getByText('MONOLITH')).toBeInTheDocument();
+      expect(screen.getByText('Zinc dark')).toBeInTheDocument();
+      expect(screen.getByText('Monolith')).toBeInTheDocument();
       expect(screen.getByText('HTB OLED')).toBeInTheDocument();
 
       // Removed presets are not shown

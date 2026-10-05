@@ -449,7 +449,7 @@ const MainAppContent: React.FC = () => {
         <main
           ref={setScrollElement}
           className={`flex-1 overflow-y-auto min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
-            isPopout ? 'p-0 pb-0' : 'p-3 pb-24 sm:p-4 md:p-6 md:pb-6'
+            isPopout ? 'p-0 pb-0' : 'p-3 pb-24 sm:p-4 md:p-6 md:pb-12'
           } ${
             focusMode ? 'max-w-7xl mx-auto w-full' : ''
           }`}
