@@ -77,7 +77,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             <div
               key={tabId}
               onClick={() => setActiveTab(tabId)}
-              className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium cursor-pointer transition-colors border flex-shrink-0 max-w-[160px] sm:max-w-[200px] ${
+              className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors border flex-shrink-0 max-w-[160px] sm:max-w-[200px] ${
                 isActive
                   ? 'text-accent border-transparent'
                   : 'bg-transparent text-secondary border-transparent hover:bg-surface-hover hover:text-primary'
@@ -90,7 +90,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   animate={{ opacity: 1 }}
                   transition={TACTICAL_SPRING}
                   aria-hidden="true"
-                  className="absolute inset-0 rounded-md bg-surface-card border border-accent/50 shadow-xs pointer-events-none"
+                  className="absolute inset-0 rounded-md bg-surface-card border border-accent/50 pointer-events-none"
                 />
               )}
               <FileText className={`relative w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-accent' : 'text-muted'}`} />
@@ -136,7 +136,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search field notes & guides..."
-                  className="w-full bg-transparent text-xs text-primary placeholder-muted focus:outline-none font-mono"
+                  className="w-full bg-transparent text-xs text-primary placeholder-muted focus:outline-none"
                 />
                 {searchQuery && (
                   <button aria-label="Clear search"
@@ -161,7 +161,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                         setIsSearchOpen(false);
                         setSearchQuery('');
                       }}
-                      className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs font-mono cursor-pointer ${
+                      className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
                         isAlreadyOpen
                           ? 'bg-accent-muted text-accent'
                           : 'hover:bg-surface-sunken text-secondary'
@@ -178,7 +178,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   );
                 })}
                 {filteredNotes.length === 0 && (
-                  <div className="text-center py-3 text-muted text-xs font-mono">
+                  <div className="text-center py-3 text-muted text-xs">
                     No notes found
                   </div>
                 )}
@@ -193,7 +193,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
         <button
           type="button"
           onClick={closeAllTabs}
-          className="px-1.5 py-1 rounded-md text-[10px] font-mono text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-colors flex-shrink-0 cursor-pointer ml-1"
+          className="px-1.5 py-1 rounded-md text-[10px] text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-colors flex-shrink-0 cursor-pointer ml-1"
           title="Close All Tabs"
         >
           Close All

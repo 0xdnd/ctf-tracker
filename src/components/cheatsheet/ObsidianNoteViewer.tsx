@@ -499,7 +499,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsLeft}
-          className="p-1 rounded hover:bg-accent-muted text-cyber-muted hover:text-primary transition-colors flex-shrink-0"
+          className="p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-colors flex-shrink-0"
           title="Scroll tabs left"
           aria-label="Scroll tabs left"
         >
@@ -544,10 +544,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   e.preventDefault();
                   togglePinTab(tab.id);
                 }}
-                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 h-8 rounded-lg text-xs font-mono border cursor-pointer transition-colors max-w-[200px] sm:max-w-[240px] flex-shrink-0 ${
+                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 h-8 rounded-lg text-xs border cursor-pointer transition-colors max-w-[200px] sm:max-w-[240px] flex-shrink-0 ${
                   isActive
-                    ? 'bg-accent-muted border-accent text-primary font-semibold shadow-md ring-1 ring-accent'
-                    : 'bg-surface-sunken border-subtle text-cyber-muted hover:text-secondary hover:bg-accent-muted hover:border-subtle'
+                    ? 'bg-accent-muted border-accent text-primary font-semibold ring-1 ring-accent'
+                    : 'bg-surface-sunken border-subtle text-muted hover:text-secondary hover:bg-accent-muted hover:border-subtle'
                 }`}
                 title={`${tab.titleEn || tab.title} (${tab.category})${isPinned ? ' [Pinned]' : ''}`}
               >
@@ -593,7 +593,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       if (soundEnabled) playCyberSound('click');
                       handleCloseSpecificTab(tab.id);
                     }}
-                    className="p-0.5 rounded opacity-60 group-hover:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-cyber-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
+                    className="p-0.5 rounded opacity-60 group-hover:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
                     title="Close tab (Alt+W)"
                     aria-label={`Close tab ${tab.titleEn || tab.title}`}
                   >
@@ -609,7 +609,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsRight}
-          className="p-1 rounded hover:bg-accent-muted text-cyber-muted hover:text-primary transition-colors flex-shrink-0"
+          className="p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-colors flex-shrink-0"
           title="Scroll tabs right"
           aria-label="Scroll tabs right"
         >
@@ -622,7 +622,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             type="button"
             data-testid="new-tab-button"
             onClick={() => setIsPickerOpen((prev) => !prev)}
-            className="h-8 px-2.5 rounded-lg bg-accent-muted hover:bg-accent-muted border border-accent text-accent hover:text-primary transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 text-xs font-mono cursor-pointer flex-shrink-0 shadow-sm"
+            className="h-8 px-2.5 rounded-lg bg-accent-muted hover:bg-accent-muted border border-accent text-accent hover:text-primary transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 text-xs cursor-pointer flex-shrink-0"
             title="Open new tab (Ctrl+T / Alt+T)"
             aria-label="Open note in new tab"
           >
@@ -638,17 +638,17 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               className="absolute right-0 sm:left-0 top-full mt-1.5 w-72 sm:w-96 max-h-80 bg-cyber-card border border-accent rounded-xl shadow-2xl z-[100] overflow-hidden flex flex-col p-2 space-y-2 backdrop-blur-xl animate-fadeIn"
             >
               <div className="flex items-center justify-between px-2 pt-1 border-b border-subtle pb-1.5">
-                <span className="text-[11px] font-mono font-semibold text-accent flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-accent flex items-center gap-1.5">
                   <BookOpen className="w-3 h-3 text-accent" />
                   FIELD MANUAL QUICK PICKER
                 </span>
-                <span className="text-[10px] font-mono text-cyber-muted">
+                <span className="text-[10px] text-muted">
                   Esc to close
                 </span>
               </div>
 
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-cyber-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   ref={pickerInputRef}
                   type="text"
@@ -670,13 +670,13 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                     }
                   }}
                   placeholder="Search manual notes (e.g. nmap, privesc, ad)..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle focus:border-accent focus:outline-none text-xs font-mono text-secondary placeholder:text-cyber-muted/60"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle focus:border-accent focus:outline-none text-xs text-secondary placeholder:text-muted/60"
                 />
               </div>
 
               <div className="overflow-y-auto max-h-56 space-y-1 pr-1 scrollbar-thin">
                 {filteredPickerNotes.length === 0 ? (
-                  <div className="py-4 text-center text-xs font-mono text-cyber-muted">
+                  <div className="py-4 text-center text-xs text-muted">
                     No field notes match "{pickerSearch}"
                   </div>
                 ) : (
@@ -697,18 +697,18 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                           }
                           setIsPickerOpen(false);
                         }}
-                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs font-mono hover:bg-accent-muted hover:text-primary transition-colors border border-transparent hover:border-accent cursor-pointer"
+                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs hover:bg-accent-muted hover:text-primary transition-colors border border-transparent hover:border-accent cursor-pointer"
                       >
                         <div className="truncate flex-1">
                           <div className="font-semibold text-secondary truncate">
                             {n.titleEn || n.title}
                           </div>
-                          <div className="text-[10px] text-cyber-muted truncate">
+                          <div className="text-[10px] text-muted truncate">
                             {n.category} {n.subCategory ? `› ${n.subCategory}` : ''}
                           </div>
                         </div>
                         {isOpen ? (
-                          <span className="text-[10px] font-semibold text-cyber-cyan bg-accent-muted border border-subtle px-1.5 py-0.5 rounded flex-shrink-0">
+                          <span className="text-[10px] font-semibold text-callout-info-fg bg-accent-muted border border-subtle px-1.5 py-0.5 rounded flex-shrink-0">
                             Open
                           </span>
                         ) : (
@@ -726,7 +726,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         {/* Right tab strip controls */}
         <div 
           dir="ltr"
-          className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 text-[10px] font-mono text-cyber-muted flex-shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 text-[10px] text-muted flex-shrink-0"
         >
           {/* Quick-Tabs Drawer / Popover Toggle */}
           <div className="relative" ref={tabsDrawerRef}>
@@ -734,9 +734,9 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="toggle-tabs-drawer"
               onClick={() => setIsTabsDrawerOpen((prev) => !prev)}
-              className={`h-7 px-2.5 rounded-lg border text-xs font-mono font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-7 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isTabsDrawerOpen
-                  ? 'bg-accent-muted border-accent text-primary shadow-md'
+                  ? 'bg-accent-muted border-accent text-primary'
                   : 'bg-accent-muted hover:bg-accent-muted border-subtle hover:border-accent text-accent hover:text-primary'
               }`}
               title="View and navigate all open tabs vertically"
@@ -753,7 +753,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 max-h-80 bg-cyber-card border border-accent rounded-xl shadow-2xl z-[110] overflow-hidden flex flex-col p-2 space-y-2 backdrop-blur-xl animate-fadeIn"
               >
                 <div className="flex items-center justify-between px-2 pt-1 border-b border-subtle pb-1.5">
-                  <span className="text-[11px] font-mono font-semibold text-accent flex items-center gap-1.5">
+                  <span className="text-[11px] font-semibold text-accent flex items-center gap-1.5">
                     <Layers className="w-3 h-3 text-accent" />
                     ACTIVE NOTE TABS ({safeOpenNotes.length})
                   </span>
@@ -780,7 +780,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                         className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border transition-colors ${
                           isActive
                             ? 'bg-accent-muted border-accent text-primary font-semibold'
-                            : 'bg-surface-sunken border-subtle text-cyber-muted hover:text-secondary hover:bg-accent-muted'
+                            : 'bg-surface-sunken border-subtle text-muted hover:text-secondary hover:bg-accent-muted'
                         }`}
                       >
                         <button
@@ -804,7 +804,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                             type="button"
                             onClick={() => togglePinTab(tab.id)}
                             className={`p-1 rounded hover:bg-surface-card ${
-                              isPinned ? 'text-accent' : 'text-cyber-muted'
+                              isPinned ? 'text-accent' : 'text-muted'
                             }`}
                             title={isPinned ? 'Unpin tab' : 'Pin tab'}
                           >
@@ -821,7 +821,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                                   handleCloseSpecificTab(tab.id);
                                 }
                               }}
-                              className="p-1 rounded text-cyber-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg"
+                              className="p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg"
                               title="Close tab"
                             >
                               <X className="w-3 h-3" />
@@ -836,7 +836,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             )}
           </div>
 
-          <span className="hidden xl:inline text-cyber-muted/70">
+          <span className="hidden xl:inline text-muted/70">
             Alt+1..9 switch • Alt+W close
           </span>
           {safeOpenNotes.length > 1 && onCloseAllTabs && (
@@ -855,33 +855,33 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
 
       {/* Top Header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-cyber-bg/95 border-b border-subtle flex-shrink-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono truncate max-w-sm sm:max-w-md lg:max-w-xl min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs truncate max-w-sm sm:max-w-md lg:max-w-xl min-w-0">
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-accent-muted border border-accent text-accent font-semibold flex-shrink-0">
             <BookOpen className="w-3.5 h-3.5 text-accent" />
-            <span className="hidden sm:inline">OFFENSIVE FIELD MANUAL</span>
-            <span className="sm:hidden">MANUAL</span>
+            <span className="hidden sm:inline">Field manual</span>
+            <span className="sm:hidden">Manual</span>
           </div>
-          <span className="text-cyber-muted flex-shrink-0">/</span>
-          <span className="text-cyber-muted truncate">{note.category}</span>
+          <span className="text-muted flex-shrink-0">/</span>
+          <span className="text-muted truncate">{note.category}</span>
           {note.subCategory && (
             <>
-              <span className="text-cyber-muted flex-shrink-0">/</span>
+              <span className="text-muted flex-shrink-0">/</span>
               <span className="text-accent truncate hidden md:inline">{note.subCategory}</span>
             </>
           )}
-          <span className="text-cyber-muted flex-shrink-0">/</span>
+          <span className="text-muted flex-shrink-0">/</span>
           <span className="text-primary font-semibold truncate">{note.titleEn || note.title}</span>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Reading / Split / Raw Toggle */}
-          <div className="hidden sm:flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px] font-mono">
+          <div className="hidden sm:flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
             <button
               type="button"
               onClick={() => setViewMode('reading')}
               className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
                 viewMode === 'reading'
-                  ? 'bg-accent text-primary font-semibold shadow-sm'
+                  ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
               )}
               title="Obsidian rich formatted reading mode"
@@ -893,7 +893,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               onClick={() => setViewMode('split')}
               className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
                 viewMode === 'split'
-                  ? 'bg-accent text-primary font-semibold shadow-sm'
+                  ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
               )}
               title="Split side-by-side editor and live preview"
@@ -905,7 +905,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               onClick={() => setViewMode('raw')}
               className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
                 viewMode === 'raw'
-                  ? 'bg-accent text-primary font-semibold shadow-sm'
+                  ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
               )}
               title="View raw Obsidian markdown"
@@ -915,14 +915,14 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           </div>
 
           {/* Language Toggle */}
-          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px] font-mono">
+          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
             <button
               type="button"
               data-testid="modal-lang-en"
               onClick={() => setLangMode('en')}
               className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
                 langMode === 'en'
-                  ? 'bg-accent text-primary font-semibold shadow-sm'
+                  ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
               )}
               title="English technical playbook only"
@@ -935,7 +935,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               onClick={() => setLangMode('he')}
               className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
                 langMode === 'he'
-                  ? 'bg-accent text-primary font-semibold shadow-sm'
+                  ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
               )}
               title="רשימות אישיות בעברית בלבד"
@@ -945,13 +945,13 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           </div>
 
           {/* Reader Font Size Scaling (A- / A+) */}
-          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px] font-mono">
+          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
             <button
               type="button"
               data-testid="decrease-font-size-button"
               onClick={handleDecreaseFontSize}
               disabled={fontSize === 'sm'}
-              className="px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-cyber-muted transition-colors cursor-pointer"
+              className="px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-colors cursor-pointer"
               title="Decrease note font size"
               aria-label="Decrease note font size"
             >
@@ -968,7 +968,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               data-testid="increase-font-size-button"
               onClick={handleIncreaseFontSize}
               disabled={fontSize === 'xl'}
-              className="px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-cyber-muted transition-colors cursor-pointer"
+              className="px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-colors cursor-pointer"
               title="Increase note font size"
               aria-label="Increase note font size"
             >
@@ -986,7 +986,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             >
               {copiedId === 'all-cmds-' + note.id ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-cyber-emerald" />
+                  <Check className="w-3.5 h-3.5 text-callout-success-fg" />
                   <span>Copied!</span>
                 </>
               ) : (
@@ -1008,12 +1008,12 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           <button
             type="button"
             onClick={handleCopyRawMarkdown}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-cyber-muted hover:text-primary hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-primary hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
             title="Copy raw markdown to paste into your Obsidian vault"
           >
             {copiedId === 'raw-md-' + note.id ? (
               <>
-                <Check className="w-3.5 h-3.5 text-cyber-emerald" />
+                <Check className="w-3.5 h-3.5 text-callout-success-fg" />
                 <span>MD Copied</span>
               </>
             ) : (
@@ -1036,8 +1036,8 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 }}
                 className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-colors cursor-pointer ${
                   isSplitView && splitOrientation === 'horizontal'
-                    ? 'bg-accent-muted border-accent text-accent shadow-sm'
-                    : 'bg-surface-sunken border-cyber-border text-cyber-muted hover:text-accent hover:border-accent'
+                    ? 'bg-accent-muted border-accent text-accent'
+                    : 'bg-surface-sunken border-cyber-border text-muted hover:text-accent hover:border-accent'
                 }`}
                 title={isSplitView ? "Close Split View" : "Split Workspace Horizontally"}
                 aria-label="Split Workspace Horizontally"
@@ -1055,8 +1055,8 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 }}
                 className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-colors cursor-pointer ${
                   isSplitView && splitOrientation === 'vertical'
-                    ? 'bg-accent-muted border-accent text-accent shadow-sm'
-                    : 'bg-surface-sunken border-cyber-border text-cyber-muted hover:text-accent hover:border-accent'
+                    ? 'bg-accent-muted border-accent text-accent'
+                    : 'bg-surface-sunken border-cyber-border text-muted hover:text-accent hover:border-accent'
                 }`}
                 title={isSplitView ? "Close Split View" : "Split Workspace Vertically"}
                 aria-label="Split Workspace Vertically"
@@ -1096,7 +1096,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               if (soundEnabled) playCyberSound('click');
               onClose();
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
             title="Dock to all pages (Stays open while navigating between pages)"
             aria-label="Dock to all pages"
           >
@@ -1113,7 +1113,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 if (soundEnabled) playCyberSound('click');
                 onToggleDisplayMode();
               }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
               title={displayMode === 'docked' ? "Float in Modal (Alt+M)" : "Dock Side-by-Side in Page (Alt+M)"}
               aria-label={displayMode === 'docked' ? "Float in Modal" : "Dock Side-by-Side in Page"}
             >
@@ -1136,7 +1136,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             type="button"
             data-testid="toggle-maximize-button"
             onClick={handleToggleMaximize}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
             title={effectiveMaximized ? "Restore view (Alt+F)" : "Maximize full-width workspace (Alt+F)"}
             aria-label={effectiveMaximized ? "Restore view" : "Maximize workspace"}
           >
@@ -1166,7 +1166,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 window.open(popoutUrl, `ZeroBoxFieldManual_${note.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
               }
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-cyber-muted hover:text-accent hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-accent hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
             title="Pop out note into standalone window"
             aria-label="Open in standalone window"
           >
@@ -1189,7 +1189,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   onDeleteNote(note.id, title);
                 }
               }}
-              className="p-1.5 rounded hover:bg-callout-danger-bg text-cyber-muted hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-colors cursor-pointer"
+              className="p-1.5 rounded hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-colors cursor-pointer"
               title="Delete custom note"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -1199,7 +1199,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-accent-muted text-cyber-muted hover:text-primary transition-colors cursor-pointer"
+            className="p-1 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-colors cursor-pointer"
             title="Close viewer (Escape)"
             aria-label="Close viewer"
           >

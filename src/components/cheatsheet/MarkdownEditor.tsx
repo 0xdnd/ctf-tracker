@@ -195,7 +195,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   return (
-    <div className={`flex flex-col rounded-xl border border-strong bg-surface-sunken overflow-hidden font-mono shadow-md machined-edge ${className}`}>
+    <div className={`flex flex-col rounded-xl border border-strong bg-surface-sunken overflow-hidden machined-edge ${className}`}>
       
       {/* 1. Technical Formatting Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-1 p-1.5 px-2 bg-surface-sunken border-b border-strong select-none text-xs">
@@ -482,7 +482,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               }}
               className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold transition-colors active:scale-[0.97] cursor-pointer ${
                 showSplitPreview
-                  ? 'bg-accent-muted text-accent border border-accent shadow-xs'
+                  ? 'bg-accent-muted text-accent border border-accent'
                   : 'bg-surface-sunken hover:bg-surface-hover text-secondary border border-strong'
               }`}
               title="Toggle Dual-Pane Split Preview"
@@ -509,7 +509,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <button
             type="button"
             onClick={handleManualSave}
-            className="flex items-center gap-1 px-2 py-1 rounded-md bg-cyber-cyan/15 hover:bg-cyber-cyan/25 border border-cyber-cyan/40 text-accent text-xs font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-accent-muted hover:bg-callout-info-bg border border-callout-info-border text-accent text-xs font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
             title="Save Note Now (Ctrl+S)"
             aria-label="Save Note Now"
           >
@@ -531,15 +531,15 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               data-testid="markdown-editor-textarea"
               placeholder="Type or paste Markdown notes here... (Obsidian callouts, wikilinks, code blocks supported)"
               style={{ minHeight }}
-              className="w-full h-full p-3.5 bg-surface-sunken text-primary placeholder-muted text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 selection:bg-cyber-cyan/30 border border-subtle rounded-lg"
+              className="w-full h-full p-3.5 bg-surface-sunken text-primary placeholder-muted text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-accent selection:bg-callout-info-bg border border-subtle rounded-lg"
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
             />
             <div className="rounded-lg border border-subtle bg-surface-sunken p-4 overflow-y-auto max-h-[700px] machined-edge">
-              <div className="text-[10px] font-mono font-semibold text-accent mb-2.5 pb-1.5 border-b border-subtle flex items-center justify-between">
-                <span className="tracking-wider uppercase">MARKDOWN PREVIEW</span>
-                <span className="text-[9px] text-callout-success-fg flex items-center gap-1 font-mono">
+              <div className="text-[10px] font-semibold text-accent mb-2.5 pb-1.5 border-b border-subtle flex items-center justify-between">
+                <span className="">MARKDOWN PREVIEW</span>
+                <span className="text-[9px] text-callout-success-fg flex items-center gap-1">
                   ✓ DOMPurify Neutralized
                 </span>
               </div>
@@ -559,7 +559,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             data-testid="markdown-editor-textarea"
             placeholder="Type or paste Markdown notes here... (Obsidian callouts, wikilinks, code blocks supported)"
             style={{ minHeight }}
-            className="w-full h-full p-4 bg-transparent text-primary placeholder-muted text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-cyber-cyan/50 selection:bg-cyber-cyan/30"
+            className="w-full h-full p-4 bg-transparent text-primary placeholder-muted text-xs sm:text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-1 focus:ring-accent selection:bg-callout-info-bg"
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
@@ -568,7 +568,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       </div>
 
       {/* 3. Footer Statistics Bar */}
-      <div className="flex items-center justify-between px-3 py-1 bg-surface-sunken border-t border-strong text-[10px] text-muted font-mono">
+      <div className="flex items-center justify-between px-3 py-1 bg-surface-sunken border-t border-strong text-[10px] text-muted font-mono tabular-nums">
         <div className="flex items-center gap-3">
           <span>{stats.lines} lines</span>
           <span>{stats.words} words</span>

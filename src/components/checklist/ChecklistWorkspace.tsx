@@ -220,21 +220,21 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   ];
 
   return (
-    <div className="space-y-4 font-mono text-xs text-cyber-text">
+    <div className="space-y-4 text-xs text-primary">
       
       {/* SECTION 1: TOP TACTICAL BREADCRUMB & PROGRESS HUD */}
-      <div className="p-3.5 rounded-2xl border border-subtle bg-surface-card machined-edge shadow-xs space-y-3">
+      <div className="p-3.5 rounded-2xl border border-subtle bg-surface-card machined-edge space-y-3">
         
         {/* Breadcrumb Pill */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-2.5">
           <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-callout-info-fg animate-spin-slow" />
+            <Compass className="w-4 h-4 text-muted" />
             <span className="text-[10px] text-muted font-semibold ">
-              Tactical objective:
+              Current objective:
             </span>
             {currentBreadcrumb ? (
               <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <span className="text-callout-info-fg ">{currentBreadcrumb.phaseTitle}</span>
+                <span className="text-secondary ">{currentBreadcrumb.phaseTitle}</span>
                 <span className="text-muted">➔</span>
                 <span className="text-callout-warn-fg">{currentBreadcrumb.subcatTitle}</span>
                 <span className="text-muted">➔</span>
@@ -251,7 +251,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportMarkdown}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-card border border-subtle hover:border-callout-info-border text-secondary text-[11px] transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary text-[11px] transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               title="Copy Obsidian / GitBook formatted Markdown checklist"
             >
               {copiedMarkdown ? (
@@ -261,7 +261,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                 </>
               ) : (
                 <>
-                  <Copy className="w-3 h-3 text-callout-info-fg " />
+                  <Copy className="w-3 h-3 text-muted " />
                   <span>Copy Markdown</span>
                 </>
               )}
@@ -318,7 +318,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
           <div className="flex items-center justify-between text-[10px] text-muted font-mono tabular-nums pt-0.5">
             <span>Completed: <strong className="text-callout-success-fg">{stats.completed}</strong></span>
-            <span>In Progress: <strong className="text-callout-info-fg">{stats.inProgress}</strong></span>
+            <span>In Progress: <strong className="text-secondary">{stats.inProgress}</strong></span>
             <span>Pending: <strong className="text-callout-warn-fg">{stats.activeTotal - stats.completed - stats.inProgress}</strong></span>
             <span>N/A: <strong className="text-muted">{stats.na}</strong></span>
           </div>
@@ -331,7 +331,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-3.5 rounded-2xl border border-callout-warn-border bg-callout-warn-bg shadow-xs flex flex-wrap items-center justify-between gap-3"
+          className="p-3.5 rounded-2xl border border-callout-warn-border bg-callout-warn-bg flex flex-wrap items-center justify-between gap-3"
         >
           <div className="flex items-start gap-2.5 max-w-xl">
             <AlertTriangle className="w-5 h-5 text-callout-warn-fg flex-shrink-0 mt-0.5 animate-bounce" />
@@ -353,7 +353,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                   if (soundEnabled) playCyberSound('root');
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-callout-warn-fg text-surface-base font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-callout-warn-fg text-surface-base font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
             >
               <span>Dead-End Fallback:</span>
               <span className="underline truncate max-w-[180px]">
@@ -365,14 +365,14 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
       )}
 
       {/* SECTION 3: OPEN PORTS PROFILER & SERVICE BRANCH INJECTOR */}
-      <div className="p-3.5 rounded-2xl border border-subtle bg-surface-card machined-edge space-y-2.5 shadow-xs">
+      <div className="p-3.5 rounded-2xl border border-subtle bg-surface-card machined-edge space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-callout-info-fg " />
+            <Terminal className="w-4 h-4 text-muted " />
             <span className="font-semibold text-primary text-xs ">
-              Dynamic service branching & open ports
+              Service branching & open ports
             </span>
-            <span className="text-[10px] text-muted font-mono">
+            <span className="text-[10px] text-muted tabular-nums">
               ({openPorts.length} detected ports)
             </span>
           </div>
@@ -380,7 +380,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
           {/* Import Nmap Scan Button */}
           <button
             onClick={() => setNmapModalOpen(true)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-card border border-callout-info-border text-callout-info-fg hover:bg-callout-info-fg hover:text-surface-base text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-card border border-subtle text-secondary hover:bg-accent hover:text-on-accent text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
           >
             <FileCode className="w-3.5 h-3.5" />
             <span>Import Nmap Scan</span>
@@ -411,7 +411,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                 }}
                 className={`px-2.5 py-1 rounded-md text-[10px] font-semibold border transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                   hasAny
-                    ? 'bg-callout-info-bg text-callout-info-fg border-callout-info-border'
+                    ? 'bg-surface-sunken text-secondary border-subtle'
                     : 'bg-surface-card border-subtle text-muted hover:text-primary'
                 }`}
               >
@@ -431,7 +431,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
             openPorts.map((p) => (
               <span
                 key={p}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card border border-subtle text-callout-success-fg font-semibold text-xs group shadow-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card border border-subtle text-callout-success-fg font-semibold text-xs group"
               >
                 <span>Port {p}</span>
                 <button
@@ -457,7 +457,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               value={customPortInput}
               onChange={(e) => setCustomPortInput(e.target.value)}
               placeholder="+ Port..."
-              className="font-mono tabular-nums w-28 bg-surface-card px-2.5 py-1 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-callout-info-border shadow-xs"
+              className="font-mono tabular-nums w-28 bg-surface-card px-2.5 py-1 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-accent"
             />
             <button
               type="submit"
@@ -491,7 +491,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
           return (
             <div
               key={phase.id}
-              className="rounded-2xl border border-subtle bg-surface-card overflow-hidden shadow-xs transition-[box-shadow,background-color,border-color,color]"
+              className="rounded-2xl border border-subtle bg-surface-card overflow-hidden transition-[box-shadow,background-color,border-color,color]"
             >
               {/* Phase Header Accordion Trigger */}
               <button
@@ -501,11 +501,11 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-elevated border border-subtle text-callout-info-fg font-semibold text-xs">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-elevated border border-subtle text-secondary font-semibold text-xs">
                     0{phase.phaseNumber}
                   </div>
                   <div>
-                    <div className="font-semibold text-primary text-xs sm:text-sm tracking-wide flex items-center gap-2">
+                    <div className="font-semibold text-primary text-xs sm:text-sm flex items-center gap-2">
                       <span>{phase.title}</span>
                       {phasePct === 100 && (
                         <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-success-bg border border-callout-success-border text-callout-success-fg font-semibold">
@@ -552,10 +552,10 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                     {phase.subcategories.map((subcat) => (
                       <div key={subcat.id} className="space-y-2">
                         {/* Subcategory Header */}
-                        <div className="flex items-center justify-between border-b border-subtle/70 pb-1 text-[11px] font-semibold text-cyber-cyan ">
+                        <div className="flex items-center justify-between border-b border-subtle/70 pb-1 text-[11px] font-semibold text-secondary">
                           <span>{subcat.title}</span>
                           {subcat.serviceBranch && subcat.serviceBranch !== 'universal' && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan">
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-accent-muted border border-subtle text-secondary">
                               {subcat.serviceBranch}
                             </span>
                           )}
@@ -574,12 +574,12 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                 key={item.id}
                                 className={`p-3 rounded-lg border transition-colors ${
                                   isCurrentActive
-                                    ? 'bg-surface-card border-callout-info-border ring-1 ring-callout-info-border shadow-xs'
+                                    ? 'bg-surface-card border-subtle ring-1 ring-accent'
                                     : status === 'done'
                                     ? 'bg-surface-card border-callout-success-border'
                                     : status === 'na'
                                     ? 'bg-surface-elevated border-subtle opacity-60'
-                                    : 'bg-surface-card border-subtle hover:border-subtle shadow-xs'
+                                    : 'bg-surface-card border-subtle hover:border-subtle'
                                 }`}
                               >
                                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -604,7 +604,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                       {status === 'done' ? (
                                         <CheckCircle2 className="w-4 h-4 text-callout-success-fg" />
                                       ) : status === 'in_progress' ? (
-                                        <Clock className="w-4 h-4 text-callout-info-fg animate-spin-slow" />
+                                        <Clock className="w-4 h-4 text-muted" />
                                       ) : status === 'na' ? (
                                         <MinusCircle className="w-4 h-4 text-muted" />
                                       ) : (
@@ -642,7 +642,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                         onClick={() => handleStatusClick(item.id, 'todo')}
                                         className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                                           status === 'todo'
-                                            ? 'bg-surface-card text-primary font-semibold border border-subtle shadow-xs'
+                                            ? 'bg-surface-card text-primary font-semibold border border-subtle'
                                             : 'text-muted hover:text-primary'
                                         }`}
                                       >
@@ -652,7 +652,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                         onClick={() => handleStatusClick(item.id, 'in_progress')}
                                         className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                                           status === 'in_progress'
-                                            ? 'bg-callout-info-bg text-callout-info-fg font-semibold border border-callout-info-border shadow-xs'
+                                            ? 'bg-surface-sunken text-secondary font-semibold border border-subtle'
                                             : 'text-muted hover:text-primary'
                                         }`}
                                       >
@@ -662,7 +662,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                         onClick={() => handleStatusClick(item.id, 'done')}
                                         className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                                           status === 'done'
-                                            ? 'bg-callout-success-bg text-callout-success-fg font-semibold border border-callout-success-border shadow-xs'
+                                            ? 'bg-callout-success-bg text-callout-success-fg font-semibold border border-callout-success-border'
                                             : 'text-muted hover:text-primary'
                                         }`}
                                       >
@@ -672,7 +672,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                         onClick={() => handleStatusClick(item.id, 'na')}
                                         className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                                           status === 'na'
-                                            ? 'bg-surface-hover text-secondary font-semibold shadow-xs'
+                                            ? 'bg-surface-hover text-secondary font-semibold'
                                             : 'text-muted hover:text-primary'
                                         }`}
                                       >
@@ -702,12 +702,12 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                 {/* Command Snippet Preview */}
                                 {item.commandSnippet && (
                                   <div className="mt-2 flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-card border border-subtle text-[11px] font-mono">
-                                    <span className="truncate text-callout-info-fg select-all">
+                                    <span className="truncate text-primary select-all">
                                       {interpolateCommand(item.commandSnippet, globalVars)}
                                     </span>
                                     <button
                                       onClick={() => handleCopySnippet(item.commandSnippet!, item.id)}
-                                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-elevated border border-subtle text-muted hover:text-primary flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
+                                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-elevated border border-subtle text-muted hover:text-primary flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
                                       title="Copy interpolated command"
                                     >
                                       {copiedItemId === item.id ? (
@@ -738,7 +738,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                         setChecklistItemNotes(machine.id, item.id, e.target.value)
                                       }
                                       placeholder="Record discovered credentials, parameters, or scan snippets for this task..."
-                                      className="w-full bg-surface-card p-2.5 rounded-lg border border-subtle text-primary text-[11px] font-mono focus:outline-none focus:border-callout-info-border resize-none shadow-xs"
+                                      className="w-full bg-surface-card p-2.5 rounded-lg border border-subtle text-primary text-[11px] focus:outline-none focus:border-accent resize-none"
                                     />
                                   </div>
                                 )}
@@ -758,11 +758,11 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
       {/* MODAL: IMPORT NMAP SCAN RESULTS */}
       {nmapModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in font-mono">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
           <div className="w-full max-w-xl rounded-2xl border border-subtle bg-surface-card shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-subtle pb-2.5">
               <div className="flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-callout-info-fg " />
+                <FileCode className="w-4 h-4 text-muted " />
                 <h3 className="font-semibold text-primary text-sm">Import Nmap scan output</h3>
               </div>
               <button
@@ -785,7 +785,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               value={nmapInputText}
               onChange={(e) => setNmapInputText(e.target.value)}
               placeholder={`22/tcp   open  ssh     OpenSSH 8.2p1\n80/tcp    http    Apache httpd 2.4.41\n445/tcp   microsoft-ds\n1433/tcp  ms-sql-s`}
-              className="w-full bg-surface-card p-3 rounded-lg border border-subtle text-primary text-xs font-mono focus:outline-none focus:border-callout-info-border resize-none shadow-xs"
+              className="w-full bg-surface-card p-3 rounded-lg border border-subtle text-primary text-xs font-mono focus:outline-none focus:border-accent resize-none"
             />
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-subtle">
@@ -798,7 +798,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               <button
                 onClick={handleApplyNmapScan}
                 disabled={!nmapInputText.trim()}
-                className="px-4 py-2 rounded-lg bg-callout-success-fg text-surface-base font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-accent text-on-accent font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] disabled:opacity-50"
               >
                 Extract Ports & Update Checklist
               </button>

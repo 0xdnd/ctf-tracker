@@ -118,13 +118,13 @@ export const PersistentNotesWorkspace: React.FC = () => {
         <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0 select-none">
           {/* Left Title & Status Indicator */}
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs font-mono font-semibold text-primary tracking-wider flex items-center gap-1.5 ">
+            <span className="w-2 h-2 rounded-full bg-accent" />
+            <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-accent" />
               <span>Notes Workspace</span>
             </span>
             {isPinned && (
-              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-md bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
+              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-md bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                 PINNED
               </span>
             )}
@@ -133,7 +133,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
           {/* Right Action Tools */}
           <div className="flex items-center gap-1">
             {/* Tri-Mode View Switcher (Read | Split | Raw) */}
-            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px] font-mono">
+            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
               <button
                 type="button"
                 onClick={() => setViewMode('reading')}
@@ -176,7 +176,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="px-2 py-1 rounded-md text-[10px] font-mono font-semibold hover:bg-surface-hover text-secondary hover:text-primary transition-colors cursor-pointer border border-transparent hover:border-subtle"
+              className="px-2 py-1 rounded-md text-[10px] font-semibold hover:bg-surface-hover text-secondary hover:text-primary transition-colors cursor-pointer border border-transparent hover:border-subtle"
               title="Toggle English / Hebrew"
             >
               {language === 'en' ? 'EN' : 'עב'}
@@ -261,7 +261,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               );
             })
           ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted space-y-3 font-mono">
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted space-y-3">
               <Layers className="w-10 h-10 text-secondary" />
               <div className="text-sm font-semibold text-secondary">
                 No note selected
@@ -287,7 +287,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
         {/* Mobile Drag Header */}
         <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-accent" />
             <span className="text-xs font-semibold text-primary truncate max-w-[150px]">
               {activeNote?.title || 'Field Notes'}
             </span>
