@@ -20,33 +20,34 @@ export const CyberBadge: React.FC<CyberBadgeProps> = ({
   className = '',
   ...props
 }) => {
+  // Compact, consistent heights: xs 16px, sm (default) 20px, md 24px. Sentence case, no glow.
   const sizeClasses = {
-    xs: 'text-[9px] px-1.5 py-0.5 rounded-[4px] gap-1',
-    sm: 'text-[10px] px-2 py-0.5 rounded-[4px] gap-1',
-    md: 'text-[11px] px-2.5 py-0.5 rounded-[6px] gap-1.5',
+    xs: 'h-4 text-[11px] leading-none px-1 rounded gap-1',
+    sm: 'h-5 text-xs leading-none px-1.5 rounded gap-1',
+    md: 'h-6 text-xs leading-none px-2 rounded gap-1.5',
   }[size];
 
   const variantClasses = {
-    neutral: 'bg-surface-sunken/80 dark:bg-surface-sunken border border-border-subtle text-text-secondary font-medium',
-    accent: 'bg-accent/10 border border-accent/30 text-accent font-semibold',
-    success: 'bg-emerald-500/10 border border-emerald-500/30 text-callout-success-fg font-semibold',
-    warning: 'bg-amber-500/10 border border-amber-500/30 text-callout-warn-fg font-semibold',
-    danger: 'bg-rose-500/10 border border-rose-500/30 text-callout-danger-fg font-semibold',
-    info: 'bg-sky-500/10 border border-sky-500/30 text-callout-info-fg font-semibold',
+    neutral: 'bg-surface-sunken border-subtle text-secondary font-medium',
+    accent: 'bg-accent-muted border-accent/30 text-accent font-medium',
+    success: 'bg-callout-success-bg border-callout-success-border text-callout-success-fg font-medium',
+    warning: 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg font-medium',
+    danger: 'bg-callout-danger-bg border-callout-danger-border text-callout-danger-fg font-medium',
+    info: 'bg-callout-info-bg border-callout-info-border text-callout-info-fg font-medium',
   }[variant];
 
   const defaultDotColor = {
-    neutral: 'bg-slate-400 dark:bg-zinc-500',
+    neutral: 'bg-current opacity-60',
     accent: 'bg-accent',
-    success: 'bg-emerald-500',
-    warning: 'bg-amber-500',
-    danger: 'bg-rose-500',
-    info: 'bg-sky-500',
+    success: 'bg-callout-success-fg',
+    warning: 'bg-callout-warn-fg',
+    danger: 'bg-callout-danger-fg',
+    info: 'bg-callout-info-fg',
   }[variant];
 
   return (
     <span
-      className={`inline-flex items-center border select-none transition-colors ${mono ? 'font-mono tabular-nums' : 'font-sans'} ${sizeClasses} ${variantClasses} ${className}`}
+      className={`inline-flex items-center border select-none whitespace-nowrap transition-colors ${mono ? 'font-mono tabular-nums' : 'font-sans'} ${sizeClasses} ${variantClasses} ${className}`}
       {...props}
     >
       {dot && (

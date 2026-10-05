@@ -100,18 +100,18 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
 
   const sizeClass =
     size === 'xs'
-      ? 'text-[9px] px-2 py-0.5 rounded-md'
-      : 'text-[10px] px-2.5 py-0.5 rounded-md';
+      ? 'h-4 text-[11px] px-1 rounded'
+      : 'h-5 text-xs px-1.5 rounded';
 
   const hardwareSizeClass =
     size === 'xs'
-      ? 'text-[9px] px-1.5 py-0.5'
-      : 'text-[10px] px-2 py-0.5';
+      ? 'h-4 text-[11px] px-1'
+      : 'h-5 text-xs px-1.5';
 
   if (variant === 'hardware') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-[3px] border border-subtle bg-surface-sunken text-secondary font-mono text-[10px] tracking-wider uppercase select-none cursor-default font-medium ${hardwareSizeClass} ${className}`}
+        className={`inline-flex items-center gap-1 rounded border border-subtle bg-surface-sunken text-secondary font-sans select-none cursor-default font-medium ${hardwareSizeClass} ${className}`}
         title={`Primary Vector: ${primary} • All Categories: ${categories.join(', ')}`}
       >
         {showIcon && <span className="flex-shrink-0">{getIcon()}</span>}
@@ -122,7 +122,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = React.memo(({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 font-mono font-bold tracking-tight border uppercase ${badgeColor} ${sizeClass} ${className}`}
+      className={`inline-flex items-center gap-1 font-sans font-medium border ${badgeColor} ${sizeClass} ${className}`}
       title={`Primary Vector: ${primary} • All Categories: ${categories.join(', ')}`}
     >
       {showIcon && getIcon()}

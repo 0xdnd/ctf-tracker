@@ -332,7 +332,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               <tbody className="divide-y divide-cyber-border/40">
                 {activeServices.map((svc) => (
                   <tr key={`${svc.port}-${svc.protocol}`} className="hover:bg-cyber-bg/50 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-callout-info-fg whitespace-nowrap">
+                    <td className="py-2.5 px-3 font-mono tabular-nums font-bold text-callout-info-fg whitespace-nowrap">
                       {svc.port}/{svc.protocol}
                     </td>
                     <td className="py-2.5 px-3">

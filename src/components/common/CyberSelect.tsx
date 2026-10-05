@@ -197,33 +197,33 @@ export function CyberSelect<T extends string = string>({
 
   // Size styling
   const sizeClasses = {
-    xs: variant === 'hardware' ? 'px-2 py-0.5 text-[10px] gap-1.5 rounded-sm' : 'px-2.5 py-1 text-[11px] gap-1.5 rounded-sm',
-    sm: variant === 'hardware' ? 'px-2.5 py-1 text-xs gap-2 rounded-sm' : 'px-2.5 py-1 text-xs gap-2 rounded-md',
-    md: variant === 'hardware' ? 'px-3 py-1.5 text-xs gap-2.5 rounded-sm' : 'px-3 py-2 text-xs gap-2.5 rounded-md',
+    xs: 'h-6 px-2 text-xs gap-1.5 rounded-sm',
+    sm: 'h-7 px-2.5 text-xs gap-2 rounded-md',
+    md: 'h-8 px-3 text-[13px] gap-2 rounded-md',
   }[size];
 
   // Variant styling for trigger
   const variantClasses = {
     default:
-      'bg-cyber-bg border-cyber-border text-cyber-text hover:border-cyber-borderGlow hover:bg-cyber-card/60 focus:border-cyber-cyan',
+      'bg-surface-base border-subtle text-primary hover:border-strong hover:bg-surface-hover focus:border-accent',
     card:
-      'bg-cyber-card border-cyber-border text-cyber-text hover:border-cyber-borderGlow hover:bg-cyber-card/80 focus:border-cyber-cyan',
+      'bg-surface-card border-subtle text-primary hover:border-strong hover:bg-surface-hover focus:border-accent',
     emerald:
-      'bg-cyber-bg border-cyber-border text-white hover:border-cyber-emerald/50 focus:border-cyber-emerald',
+      'bg-surface-base border-subtle text-callout-success-fg hover:border-callout-success-border focus:border-callout-success-fg',
     cyan:
-      'bg-cyber-bg border-cyber-border text-cyber-cyan hover:border-cyber-cyan focus:border-cyber-cyan',
+      'bg-surface-base border-subtle text-accent hover:border-accent focus:border-accent',
     amber:
-      'bg-cyber-bg border-cyber-border text-cyber-amber hover:border-cyber-amber focus:border-cyber-amber',
+      'bg-surface-base border-subtle text-callout-warn-fg hover:border-callout-warn-border focus:border-callout-warn-fg',
     transparent:
-      'bg-transparent border-transparent text-cyber-text hover:bg-cyber-bg/50 focus:border-cyber-cyan',
+      'bg-transparent border-transparent text-primary hover:bg-surface-hover focus:border-accent',
     hardware:
-      'bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[10px] uppercase tracking-wider hover:border-zinc-400 dark:hover:border-zinc-700 focus:border-accent focus:ring-1 focus:ring-accent/30 active:scale-[0.97]',
+      'bg-surface-sunken border-subtle text-secondary hover:border-strong focus:border-accent focus:ring-1 focus:ring-accent/30 active:scale-[0.97]',
   }[variant];
 
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block text-left font-mono ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
+      className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={handleKeyDown}
     >
       {/* Hidden input for HTML form submission compatibility */}
@@ -233,7 +233,7 @@ export function CyberSelect<T extends string = string>({
       {label && (
         <label
           htmlFor={id}
-          className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold text-[10px]"
+          className="block text-muted mb-1 font-medium text-xs"
         >
           {label}
         </label>
@@ -262,8 +262,8 @@ export function CyberSelect<T extends string = string>({
                 if (soundEnabled) playCyberSound('click');
               }
             }}
-            className={`w-full flex items-center justify-between border font-semibold transition-[box-shadow,background-color,border-color,color] duration-150 focus:outline-none ${variant === 'hardware' ? 'focus:ring-1 focus:ring-accent/40' : 'focus:ring-1 focus:ring-cyber-cyan/40'} active:scale-[0.97] select-none ${sizeClasses} ${variantClasses} ${
-              isOpen ? (variant === 'hardware' ? 'border-accent ring-1 ring-accent/40' : 'border-cyber-cyan shadow-glow-cyan/20 ring-1 ring-cyber-cyan/30') : ''
+            className={`w-full flex items-center justify-between border font-medium transition-[box-shadow,background-color,border-color,color] duration-150 focus:outline-none focus:ring-1 focus:ring-accent/40 active:scale-[0.97] select-none ${sizeClasses} ${variantClasses} ${
+              isOpen ? 'border-accent ring-1 ring-accent/40' : ''
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
           >
             <span className="flex items-center gap-2 truncate">
@@ -282,14 +282,14 @@ export function CyberSelect<T extends string = string>({
 
               {/* Label Text */}
               <span className="truncate">
-                {selectedOption ? selectedOption.label : <span className="text-cyber-muted">{placeholder}</span>}
+                {selectedOption ? selectedOption.label : <span className="text-muted">{placeholder}</span>}
               </span>
             </span>
 
             {/* Chevron Indicator */}
             <ChevronDown
-              className={`w-3.5 h-3.5 text-cyber-muted flex-shrink-0 transition-transform duration-200 ml-1.5 ${
-                isOpen ? (variant === 'hardware' ? 'rotate-180 text-[#0ea5e9]' : 'rotate-180 text-cyber-cyan') : ''
+              className={`w-3.5 h-3.5 text-muted flex-shrink-0 transition-transform duration-200 ml-1.5 ${
+                isOpen ? 'rotate-180 text-accent' : ''
               }`}
             />
           </button>
@@ -309,17 +309,17 @@ export function CyberSelect<T extends string = string>({
             aria-label={ariaLabel || label || placeholder}
             className={`absolute z-[100] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'} min-w-[180px] w-max max-w-xs ${
               variant === 'hardware'
-                ? 'rounded-[4px] border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 shadow-xl machined-edge font-mono'
-                : 'rounded-xl border border-cyber-border bg-cyber-card shadow-2xl text-cyber-text'
+                ? 'rounded-lg border border-subtle bg-surface-elevated text-primary shadow-lg machined-edge'
+                : 'rounded-xl border border-subtle bg-surface-elevated shadow-lg machined-edge text-primary'
             } p-1.5 text-xs ${
               align === 'right' ? 'right-0' : 'left-0'
             } ${menuClassName}`}
           >
             {/* Search Filter Header (when searchable or > 8 options) */}
             {isSearchable && (
-              <div className={`px-1.5 pt-1 pb-1.5 border-b ${variant === 'hardware' ? 'border-zinc-200 dark:border-zinc-800' : 'border-slate-200/80 dark:border-cyber-border/70'} mb-1`}>
+              <div className={`px-1.5 pt-1 pb-1.5 border-b border-subtle mb-1`}>
                 <div className="relative flex items-center">
-                  <Search className="w-3 h-3 text-tertiary dark:text-cyber-muted absolute left-2 pointer-events-none" />
+                  <Search className="w-3 h-3 text-tertiary absolute left-2 pointer-events-none" />
                   <input
                     ref={searchInputRef}
                     id={`${id || 'cyber-select'}-search-input`}
@@ -330,10 +330,8 @@ export function CyberSelect<T extends string = string>({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={searchPlaceholder}
                     className={`w-full ${
-                      variant === 'hardware'
-                        ? 'bg-zinc-50 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-800 rounded-[3px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono focus:border-[#0ea5e9]'
-                        : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border/80 rounded-md text-slate-900 dark:text-cyber-text placeholder-slate-400 dark:placeholder-cyber-muted focus:border-cyan-500 dark:focus:border-cyber-cyan'
-                    } pl-7 pr-6 py-1 border text-[11px] focus:outline-none`}
+                      'bg-surface-sunken border-subtle rounded-md text-primary placeholder:text-tertiary focus:border-accent'
+                    } pl-7 pr-6 py-1 border text-xs focus:outline-none`}
                     onClick={(e) => e.stopPropagation()}
                   />
                   {searchQuery && (
@@ -344,7 +342,7 @@ export function CyberSelect<T extends string = string>({
                         setSearchQuery('');
                         searchInputRef.current?.focus();
                       }}
-                      className="absolute right-1.5 text-tertiary dark:text-cyber-muted hover:text-slate-800 dark:hover:text-cyber-text p-0.5"
+                      className="absolute right-1.5 text-tertiary hover:text-primary p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -359,7 +357,7 @@ export function CyberSelect<T extends string = string>({
               className="max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin pr-0.5"
             >
               {filteredOptions.length === 0 ? (
-                <div className="py-3 px-2 text-center text-tertiary dark:text-cyber-muted text-[11px]">
+                <div className="py-3 px-2 text-center text-tertiary text-xs">
                   No matching options found
                 </div>
               ) : (
@@ -376,18 +374,12 @@ export function CyberSelect<T extends string = string>({
                       disabled={opt.disabled}
                       onClick={() => handleSelect(opt.value)}
                       onMouseEnter={() => setHighlightedIndex(idx)}
-                      className={`w-full px-2.5 py-1.5 ${variant === 'hardware' ? 'rounded-[2px]' : 'rounded-lg'} flex items-center justify-between text-left transition-colors duration-100 active:scale-[0.98] ${
+                      className={`w-full px-2.5 py-1.5 rounded-md flex items-center justify-between text-left transition-colors duration-100 active:scale-[0.98] ${
                         isSelected
-                          ? variant === 'hardware'
-                            ? 'bg-zinc-200 dark:bg-zinc-900 text-[#0ea5e9] font-bold border border-[#0ea5e9]/40 shadow-xs'
-                            : 'bg-cyber-cyan/15 text-slate-900 dark:text-white font-bold border border-cyber-cyan/40 shadow-sm'
+                          ? 'bg-accent-muted text-primary font-medium'
                           : isHighlighted
-                          ? variant === 'hardware'
-                            ? 'bg-zinc-100 dark:bg-zinc-900/80 text-zinc-900 dark:text-zinc-100'
-                            : 'bg-slate-100 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text'
-                          : variant === 'hardware'
-                          ? 'text-zinc-600 dark:text-tertiary hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100'
-                          : 'text-slate-600 dark:text-cyber-muted hover:bg-slate-100 dark:hover:bg-cyber-bg hover:text-slate-900 dark:hover:text-cyber-text'
+                          ? 'bg-surface-hover text-primary'
+                          : 'text-secondary hover:bg-surface-hover hover:text-primary'
                       } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center gap-2 truncate pr-2">
@@ -407,7 +399,7 @@ export function CyberSelect<T extends string = string>({
                         <div className="truncate">
                           <div className="truncate">{opt.label}</div>
                           {opt.description && (
-                            <div className="text-[10px] text-tertiary dark:text-cyber-muted font-normal truncate">
+                            <div className="text-xs text-tertiary font-normal truncate">
                               {opt.description}
                             </div>
                           )}
@@ -418,7 +410,7 @@ export function CyberSelect<T extends string = string>({
                         {opt.badge && <span>{opt.badge}</span>}
                         {isSelected && (
                           <Check
-                            className={`w-4 h-4 ${variant === 'hardware' ? 'text-[#0ea5e9]' : 'text-cyber-cyan'} flex-shrink-0`}
+                            className="w-4 h-4 text-accent flex-shrink-0"
                           />
                         )}
                       </div>
@@ -547,32 +539,32 @@ export function CyberMultiSelect<T extends string = string>({
   };
 
   const sizeClasses = {
-    xs: variant === 'hardware' ? 'px-2 py-0.5 text-[10px] gap-1.5 rounded-sm' : 'px-2 py-0.5 text-[11px] gap-1.5 rounded-sm',
-    sm: variant === 'hardware' ? 'px-2.5 py-1 text-xs gap-2 rounded-sm' : 'px-2.5 py-1 text-xs gap-2 rounded-md',
-    md: variant === 'hardware' ? 'px-3 py-1.5 text-xs gap-2.5 rounded-sm' : 'px-3 py-2 text-xs gap-2.5 rounded-md',
+    xs: 'h-6 px-2 text-xs gap-1.5 rounded-sm',
+    sm: 'h-7 px-2.5 text-xs gap-2 rounded-md',
+    md: 'h-8 px-3 text-[13px] gap-2 rounded-md',
   }[size];
 
   const variantClasses = {
     default:
-      'bg-cyber-bg border-cyber-border text-cyber-text hover:border-cyber-borderGlow hover:bg-cyber-card/60 focus:border-cyber-cyan',
+      'bg-surface-base border-subtle text-primary hover:border-strong hover:bg-surface-hover focus:border-accent',
     card:
-      'bg-cyber-card border-cyber-border text-cyber-text hover:border-cyber-borderGlow hover:bg-cyber-card/80 focus:border-cyber-cyan',
+      'bg-surface-card border-subtle text-primary hover:border-strong hover:bg-surface-hover focus:border-accent',
     emerald:
-      'bg-cyber-bg border-cyber-border text-white hover:border-cyber-emerald/50 focus:border-cyber-emerald',
+      'bg-surface-base border-subtle text-callout-success-fg hover:border-callout-success-border focus:border-callout-success-fg',
     cyan:
-      'bg-cyber-bg border-cyber-border text-cyber-cyan hover:border-cyber-cyan focus:border-cyber-cyan',
+      'bg-surface-base border-subtle text-accent hover:border-accent focus:border-accent',
     amber:
-      'bg-cyber-bg border-cyber-border text-cyber-amber hover:border-cyber-amber focus:border-cyber-amber',
+      'bg-surface-base border-subtle text-callout-warn-fg hover:border-callout-warn-border focus:border-callout-warn-fg',
     transparent:
-      'bg-transparent border-transparent text-cyber-text hover:bg-cyber-bg/50 focus:border-cyber-cyan',
+      'bg-transparent border-transparent text-primary hover:bg-surface-hover focus:border-accent',
     hardware:
-      'bg-zinc-100 dark:bg-zinc-950/80 border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[10px] uppercase tracking-wider hover:border-zinc-400 dark:hover:border-zinc-700 focus:border-accent focus:ring-1 focus:ring-accent/30 active:scale-[0.97]',
+      'bg-surface-sunken border-subtle text-secondary hover:border-strong focus:border-accent focus:ring-1 focus:ring-accent/30 active:scale-[0.97]',
   }[variant];
 
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block text-left font-mono ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
+      className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -583,7 +575,7 @@ export function CyberMultiSelect<T extends string = string>({
       {name && <input type="hidden" name={name} value={selectedValues.join(',')} />}
 
       {label && (
-        <label htmlFor={id} className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold text-[10px]">
+        <label htmlFor={id} className="block text-muted mb-1 font-medium text-xs">
           {label}
         </label>
       )}
@@ -615,18 +607,18 @@ export function CyberMultiSelect<T extends string = string>({
                 if (soundEnabled) playCyberSound('click');
               }
             }}
-            className={`w-full flex items-center justify-between border font-semibold transition-[box-shadow,background-color,border-color,color] duration-150 focus:outline-none ${variant === 'hardware' ? 'focus:ring-1 focus:ring-accent/40' : 'focus:ring-1 focus:ring-cyber-cyan/40'} active:scale-[0.97] select-none ${sizeClasses} ${variantClasses} ${
-              isOpen ? (variant === 'hardware' ? 'border-accent ring-1 ring-accent/40' : 'border-cyber-cyan shadow-glow-cyan/20 ring-1 ring-cyber-cyan/30') : ''
+            className={`w-full flex items-center justify-between border font-medium transition-[box-shadow,background-color,border-color,color] duration-150 focus:outline-none focus:ring-1 focus:ring-accent/40 active:scale-[0.97] select-none ${sizeClasses} ${variantClasses} ${
+              isOpen ? 'border-accent ring-1 ring-accent/40' : ''
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
           >
             <span className="flex items-center gap-1.5 truncate">
               <span className="truncate">
                 {selectedValues.length === 0 ? (
-                  <span className="text-cyber-muted">{placeholder}</span>
+                  <span className="text-muted">{placeholder}</span>
                 ) : selectedValues.length === 1 ? (
-                  <span className={variant === 'hardware' ? 'text-accent font-bold' : 'text-cyber-cyan font-bold'}>{selectedValues[0]}</span>
+                  <span className="text-accent font-medium">{selectedValues[0]}</span>
                 ) : (
-                  <span className={variant === 'hardware' ? 'text-accent font-bold' : 'text-cyber-cyan font-bold'}>
+                  <span className="text-accent font-medium">
                     {placeholder} ({selectedValues.length})
                   </span>
                 )}
@@ -635,11 +627,11 @@ export function CyberMultiSelect<T extends string = string>({
 
             <div className="flex items-center gap-1 ml-1.5 flex-shrink-0">
               {selectedValues.length > 0 && (
-                <span className={`w-1.5 h-1.5 rounded-full ${variant === 'hardware' ? 'bg-accent' : 'bg-cyber-cyan'} animate-pulse`} />
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
               )}
               <ChevronDown
-                className={`w-3.5 h-3.5 text-cyber-muted transition-transform duration-200 ${
-                  isOpen ? (variant === 'hardware' ? 'rotate-180 text-accent' : 'rotate-180 text-cyber-cyan') : ''
+                className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${
+                  isOpen ? 'rotate-180 text-accent' : ''
                 }`}
               />
             </div>
@@ -659,15 +651,15 @@ export function CyberMultiSelect<T extends string = string>({
             aria-label={ariaLabel || label || placeholder}
             className={`absolute z-[100] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'} min-w-[200px] w-max max-w-xs ${
               variant === 'hardware'
-                ? 'rounded-[4px] border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 shadow-xl machined-edge font-mono'
-                : 'rounded-xl border border-cyber-border bg-cyber-card shadow-xl text-cyber-text'
+                ? 'rounded-lg border border-subtle bg-surface-elevated text-primary shadow-lg machined-edge'
+                : 'rounded-xl border border-subtle bg-surface-elevated shadow-lg machined-edge text-primary'
             } p-1 text-xs ${
               align === 'right' ? 'right-0' : 'left-0'
             } ${menuClassName}`}
           >
-            <div className="px-1 pt-0.5 pb-1.5 border-b border-slate-200/80 dark:border-cyber-border/70 mb-1 space-y-1.5">
+            <div className="px-1 pt-0.5 pb-1.5 border-b border-subtle mb-1 space-y-1.5">
               <div className="relative flex items-center">
-                <Search className="w-3 h-3 text-tertiary dark:text-cyber-muted absolute left-2 pointer-events-none" />
+                <Search className="w-3 h-3 text-tertiary absolute left-2 pointer-events-none" />
                 <input
                   ref={searchInputRef}
                   id={`${id || 'cyber-multiselect'}-search-input`}
@@ -678,10 +670,8 @@ export function CyberMultiSelect<T extends string = string>({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={searchPlaceholder}
                   className={`w-full ${
-                    variant === 'hardware'
-                      ? 'bg-zinc-50 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-800 rounded-[3px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono focus:border-[#0ea5e9]'
-                      : 'bg-cyber-bg pl-7 pr-6 py-1 rounded-md border border-cyber-border/80 text-[11px] text-cyber-text placeholder-cyber-muted focus:border-cyber-cyan'
-                  } pl-7 pr-6 py-1 border text-[11px] focus:outline-none`}
+                    'bg-surface-sunken border-subtle rounded-md text-primary placeholder:text-tertiary focus:border-accent'
+                  } pl-7 pr-6 py-1 border text-xs focus:outline-none`}
                   onClick={(e) => e.stopPropagation()}
                 />
                 {searchQuery && (
@@ -692,7 +682,7 @@ export function CyberMultiSelect<T extends string = string>({
                       setSearchQuery('');
                       searchInputRef.current?.focus();
                     }}
-                    className="absolute right-1.5 text-cyber-muted hover:text-cyber-text p-0.5"
+                    className="absolute right-1.5 text-tertiary hover:text-primary p-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -700,14 +690,14 @@ export function CyberMultiSelect<T extends string = string>({
               </div>
 
               {selectedValues.length > 0 && (
-                <div className="flex items-center justify-between px-1 text-[10px]">
-                  <span className={variant === 'hardware' ? 'text-[#0ea5e9] font-bold font-mono' : 'text-cyber-cyan font-bold'}>
+                <div className="flex items-center justify-between px-1 text-xs">
+                  <span className="text-accent font-medium">
                     {selectedValues.length} selected
                   </span>
                   <button
                     type="button"
                     onClick={handleClearAll}
-                    className="text-callout-danger-fg hover:underline font-bold transition-colors font-mono text-[10px] uppercase"
+                    className="text-callout-danger-fg hover:underline font-medium transition-colors text-xs"
                   >
                     Clear All
                   </button>
@@ -717,7 +707,7 @@ export function CyberMultiSelect<T extends string = string>({
 
             <div className="max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin pr-0.5">
               {filteredOptions.length === 0 ? (
-                <div className="py-3 px-2 text-center text-cyber-muted text-[11px]">
+                <div className="py-3 px-2 text-center text-tertiary text-xs">
                   No matching tags found
                 </div>
               ) : (
@@ -731,27 +721,19 @@ export function CyberMultiSelect<T extends string = string>({
                       role="option"
                       aria-selected={isSelected}
                       onClick={() => toggleOption(opt.value)}
-                      className={`w-full px-2.5 py-1.5 ${variant === 'hardware' ? 'rounded-[2px]' : 'rounded-lg'} flex items-center justify-between text-left transition-colors duration-100 cursor-pointer ${
+                      className={`w-full px-2.5 py-1.5 rounded-md flex items-center justify-between text-left transition-colors duration-100 cursor-pointer ${
                         isSelected
-                          ? variant === 'hardware'
-                            ? 'bg-zinc-200 dark:bg-zinc-900 text-[#0ea5e9] font-bold border border-[#0ea5e9]/40'
-                            : 'bg-cyber-cyan/15 text-cyber-cyan font-bold border border-cyber-cyan/30'
-                          : variant === 'hardware'
-                          ? 'text-zinc-600 dark:text-tertiary hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100'
-                          : 'text-cyber-muted hover:bg-cyber-bg hover:text-cyber-text'
+                          ? 'bg-accent-muted text-primary font-medium'
+                          : 'text-secondary hover:bg-surface-hover hover:text-primary'
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate pr-2">
                         {/* Checkbox Box */}
                         <div
-                          className={`w-3.5 h-3.5 ${variant === 'hardware' ? 'rounded-[2px]' : 'rounded'} flex items-center justify-center border transition-colors ${
+                          className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${
                             isSelected
-                              ? variant === 'hardware'
-                                ? 'bg-[#0ea5e9] border-[#0ea5e9] text-black'
-                                : 'bg-cyber-cyan border-cyber-cyan text-black'
-                              : variant === 'hardware'
-                              ? 'border-zinc-400 dark:border-zinc-700 bg-white dark:bg-zinc-900'
-                              : 'border-cyber-border bg-cyber-bg'
+                              ? 'bg-accent border-accent text-on-accent'
+                              : 'border-strong bg-surface-sunken'
                           }`}
                         >
                           {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}

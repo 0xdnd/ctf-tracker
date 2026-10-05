@@ -48,9 +48,9 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
   // md: 36px height, 8px radius (rounded-md)
   // lg: 42px height, 10px radius (rounded-lg)
   const sizeClasses: Record<CyberInputSize, string> = {
-    xs: 'h-6 text-[11px] px-2 rounded-sm',
-    sm: 'h-7.5 text-xs px-2.5 rounded-md',
-    md: 'h-9 text-xs px-3 rounded-md',
+    xs: 'h-6 text-xs px-2 rounded-sm',
+    sm: 'h-7 text-xs px-2.5 rounded-md',
+    md: 'h-8 text-[13px] px-3 rounded-md',
     lg: 'h-10 text-sm px-3.5 rounded-lg',
   };
 
@@ -63,20 +63,14 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
 
   const variantClasses: Record<CyberInputVariant, string> = {
     default:
-      'bg-slate-50 dark:bg-surface-sunken ' +
-      'border-slate-300 dark:border-border-subtle ' +
-      'text-slate-900 dark:text-text-primary ' +
-      'placeholder:text-tertiary dark:placeholder:text-text-muted/70',
+      'bg-surface-sunken border-subtle hover:border-strong text-primary ' +
+      'placeholder:text-tertiary',
     elevated:
-      'bg-white dark:bg-surface-elevated ' +
-      'border-slate-300 dark:border-border-subtle ' +
-      'text-slate-900 dark:text-text-primary ' +
-      'placeholder:text-tertiary dark:placeholder:text-text-muted/70 ' +
-      'shadow-xs',
+      'bg-surface-elevated border-subtle hover:border-strong text-primary ' +
+      'placeholder:text-tertiary',
     ghost:
-      'bg-transparent border-transparent hover:bg-slate-100 dark:hover:bg-surface-sunken ' +
-      'text-slate-900 dark:text-text-primary ' +
-      'placeholder:text-tertiary dark:placeholder:text-text-muted/70',
+      'bg-transparent border-transparent hover:bg-surface-hover text-primary ' +
+      'placeholder:text-tertiary',
   };
 
   const hasValue = value !== undefined && value !== null && String(value).length > 0;
@@ -87,7 +81,7 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
       {label && (
         <label
           htmlFor={id}
-          className="block text-[11px] font-semibold text-slate-700 dark:text-text-secondary select-none"
+          className="block text-xs font-medium text-secondary select-none"
         >
           {label}
         </label>
@@ -96,7 +90,7 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
       {/* Input Container */}
       <div className="relative flex items-center w-full">
         {iconLeft && (
-          <div className="absolute left-2.5 flex items-center pointer-events-none text-tertiary dark:text-text-muted">
+          <div className="absolute left-2.5 flex items-center pointer-events-none text-tertiary">
             {iconLeft}
           </div>
         )}
@@ -111,11 +105,11 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : hint ? hintId : undefined}
-          className={`w-full border font-normal transition-all duration-150 ` +
+          className={`w-full border font-normal transition-[border-color,box-shadow,background-color] duration-150 ` +
             `focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent ` +
             `disabled:opacity-50 disabled:cursor-not-allowed ` +
             `${mono ? 'font-mono tabular-nums' : 'font-sans'} ` +
-            `${error ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30' : ''} ` +
+            `${error ? 'border-callout-danger-border focus:border-callout-danger-fg focus:ring-callout-danger-fg/30' : ''} ` +
             `${iconLeft ? 'pl-8' : ''} ` +
             `${(clearable && hasValue) || iconRight ? 'pr-8' : ''} ` +
             `${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
@@ -128,12 +122,12 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
             type="button"
             onClick={onClear}
             aria-label="Clear input"
-            className="absolute right-2 p-0.5 text-tertiary hover:text-slate-700 dark:text-text-muted dark:hover:text-text-primary rounded transition-colors active:scale-95 cursor-pointer"
+            className="absolute right-2 p-0.5 text-tertiary hover:text-primary rounded transition-colors active:scale-95 cursor-pointer"
           >
             <X className={iconSizes[size]} />
           </button>
         ) : iconRight ? (
-          <div className="absolute right-2.5 flex items-center pointer-events-none text-tertiary dark:text-text-muted">
+          <div className="absolute right-2.5 flex items-center pointer-events-none text-tertiary">
             {iconRight}
           </div>
         ) : null}
@@ -141,11 +135,11 @@ export const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(({
 
       {/* Error or Hint Message */}
       {error ? (
-        <p id={errorId} role="alert" className="text-[11px] font-medium text-callout-danger-fg">
+        <p id={errorId} role="alert" className="text-xs font-medium text-callout-danger-fg">
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[11px] text-tertiary dark:text-text-muted">
+        <p id={hintId} className="text-xs text-tertiary">
           {hint}
         </p>
       ) : null}

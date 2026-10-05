@@ -26,29 +26,30 @@ export const StatusBadge: React.FC<StatusBadgeProps> = React.memo(({
   const getLabel = () => {
     switch (normalized) {
       case 'recon':
-        return 'RECON';
+        return 'Recon';
       case 'foothold':
-        return 'FOOTHOLD';
+        return 'Foothold';
       case 'root':
       case 'pwned':
-        return 'PWNED';
+        return 'Pwned';
       case 'completed':
-        return 'COMPLETED';
+        return 'Completed';
       case 'backlog':
       default:
-        return 'BACKLOG';
+        return 'Backlog';
     }
   };
 
+  // Fixed width + height so card layouts never jitter when status changes (h-5 / h-6 / h-7).
   const sizeClasses = {
-    xs: 'w-[74px] min-w-[74px] h-[20px] text-[9px]',
-    sm: 'w-[78px] min-w-[78px] h-[22px] text-[10px]',
-    md: 'w-[84px] min-w-[84px] h-[24px] text-xs',
+    xs: 'w-[74px] min-w-[74px] h-5 text-xs',
+    sm: 'w-[78px] min-w-[78px] h-6 text-xs',
+    md: 'w-[84px] min-w-[84px] h-7 text-sm',
   }[size];
 
   return (
     <span
-      className={`inline-flex items-center justify-center text-center font-mono font-bold tracking-wider uppercase tabular-nums rounded-[4px] border select-none transition-colors ${sizeClasses} ${getStyle()} ${className}`}
+      className={`inline-flex items-center justify-center text-center font-sans font-medium tabular-nums rounded border select-none whitespace-nowrap transition-colors ${sizeClasses} ${getStyle()} ${className}`}
       title={`Target Status: ${getLabel()}`}
     >
       {getLabel()}

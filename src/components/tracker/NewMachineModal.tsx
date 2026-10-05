@@ -151,7 +151,7 @@ export const NewMachineModal: React.FC = () => {
                 value={ip}
                 onChange={(e) => setIp(e.target.value)}
                 placeholder="10.10.10.x"
-                className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald"
+                className="font-mono tabular-nums w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald"
               />
             </div>
 

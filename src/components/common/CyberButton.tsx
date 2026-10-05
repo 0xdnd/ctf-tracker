@@ -53,13 +53,13 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
   // Concentric Radii & Sizing Matrix:
   // xs: 24px height, 6px radius (rounded-sm)
   // sm: 28px height, 8px radius (rounded-md)
-  // md: 34px height, 8px radius (rounded-md)
+  // md: 32px height, 8px radius (rounded-md)
   // lg: 40px height, 10px radius (rounded-lg)
   const sizeClasses: Record<CyberButtonSize, string> = {
-    xs: 'h-6 px-2 text-[10px] gap-1 rounded-sm',
+    xs: 'h-6 px-2 text-xs gap-1 rounded-sm',
     sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md',
-    md: 'h-8.5 px-3 py-1.5 text-xs gap-2 rounded-md',
-    lg: 'h-10 px-4 py-2 text-sm gap-2.5 rounded-lg',
+    md: 'h-8 px-3 text-[13px] gap-1.5 rounded-md',
+    lg: 'h-10 px-4 text-sm gap-2 rounded-lg',
   };
 
   const iconSizes: Record<CyberButtonSize, string> = {
@@ -79,7 +79,7 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
 
     primary:
       'bg-accent hover:brightness-105 active:brightness-95 ' +
-      'text-on-accent font-bold ' +
+      'text-on-accent font-medium ' +
       'border border-accent shadow-xs',
 
     secondary:
@@ -91,7 +91,7 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
     danger:
       'bg-callout-danger-bg hover:brightness-95 active:brightness-90 ' +
       'border border-callout-danger-border ' +
-      'text-callout-danger-fg font-semibold',
+      'text-callout-danger-fg font-medium',
 
     ghost:
       'bg-transparent hover:bg-surface-hover ' +
@@ -106,7 +106,7 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
     hardware:
       'bg-surface-sunken hover:bg-surface-hover ' +
       'border border-border-subtle hover:border-border-strong ' +
-      'text-text-secondary font-mono text-[10px] tracking-wider uppercase ' +
+      'text-text-secondary ' +
       'machined-edge',
   };
 
@@ -117,8 +117,8 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
       disabled={disabled || isLoading}
       aria-busy={isLoading}
       onClick={handleClick}
-      className={`inline-flex items-center justify-center font-medium select-none cursor-pointer transition-all duration-150 ` +
-        `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-surface-base ` +
+      className={`inline-flex items-center justify-center font-medium select-none cursor-pointer transition-[background-color,border-color,color,opacity,transform] duration-150 ` +
+        `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base ` +
         `active:scale-[0.97] ` +
         `disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed ` +
         `${sizeClasses[size]} ${variantClasses[variant]} ${className}`}

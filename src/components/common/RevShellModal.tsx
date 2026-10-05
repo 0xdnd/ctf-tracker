@@ -169,7 +169,7 @@ export const RevShellModal: React.FC = () => {
               value={globalVars.lhost || ''}
               onChange={(e) => setGlobalVars({ lhost: e.target.value })}
               placeholder="10.10.14.X"
-              className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
+              className="font-mono tabular-nums w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
             />
           </div>
           <div>
@@ -195,7 +195,7 @@ export const RevShellModal: React.FC = () => {
                 }
               }}
               placeholder="4444"
-              className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
+              className="font-mono tabular-nums w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs focus:border-cyan-500 focus:outline-none"
             />
           </div>
           <div>

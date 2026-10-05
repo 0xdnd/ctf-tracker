@@ -294,7 +294,7 @@ export const FloatingPayloadBar: React.FC = () => {
             <div className="flex items-center gap-1.5 text-xs font-bold text-callout-info-fg dark:text-cyber-cyan">
               <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-cyber-emerald animate-pulse" />
               <Zap className="w-3.5 h-3.5 text-callout-info-fg dark:text-cyber-cyan" />
-              <span>{lhost}:{lport}</span>
+              <span className="font-mono tabular-nums">{lhost}:{lport}</span>
               <button
                 type="button"
                 onClick={(e) => {

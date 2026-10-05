@@ -1057,7 +1057,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               aria-label="Attacker Host LHOST"
               value={globalVars.lhost}
               onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-              className="w-28 bg-surface-card px-2 py-1 rounded border border-strong text-primary text-xs font-semibold tabular-nums focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
+              className="font-mono w-28 bg-surface-card px-2 py-1 rounded border border-strong text-primary text-xs font-semibold tabular-nums focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
             />
           </div>
 
@@ -1070,7 +1070,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               aria-label="Attacker Port LPORT"
               value={globalVars.lport}
               onChange={(e) => setGlobalVars({ lport: e.target.value })}
-              className="w-16 bg-surface-card px-2 py-1 rounded border border-strong text-primary text-xs font-semibold tabular-nums focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
+              className="font-mono w-16 bg-surface-card px-2 py-1 rounded border border-strong text-primary text-xs font-semibold tabular-nums focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
             />
           </div>
 
@@ -1083,7 +1083,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               aria-label="Target IP Address"
               value={globalVars.targetIp}
               onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
-              className="w-28 bg-surface-card px-2 py-1 rounded border border-strong text-callout-success-fg font-semibold text-xs tabular-nums focus:outline-none focus:border-callout-success-border transition-[box-shadow,background-color,border-color,color] shadow-sm"
+              className="font-mono w-28 bg-surface-card px-2 py-1 rounded border border-strong text-callout-success-fg font-semibold text-xs tabular-nums focus:outline-none focus:border-callout-success-border transition-[box-shadow,background-color,border-color,color] shadow-sm"
             />
           </div>
 

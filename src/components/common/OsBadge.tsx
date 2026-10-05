@@ -77,9 +77,9 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
   variant = 'default',
 }) => {
   const sizeClasses = {
-    xs: 'px-1.5 py-0.5 text-[9px]',
-    sm: 'px-2 py-0.5 text-[10px]',
-    md: 'px-2.5 py-1 text-xs',
+    xs: 'h-4 px-1 text-[11px]',
+    sm: 'h-5 px-1.5 text-xs',
+    md: 'h-6 px-2 text-xs',
   };
 
   const iconSizes = {
@@ -88,12 +88,12 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
     md: 'w-3.5 h-3.5',
   };
 
-  const getHardwareTheme = () => `${getOsTone(os).badge} shadow-xs`;
+  const getHardwareTheme = () => `${getOsTone(os).badge}`;
 
   if (variant === 'hardware') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-[4px] border font-mono tabular-nums text-[10px] tracking-wider uppercase transition-colors select-none cursor-default font-semibold ${getHardwareTheme()} ${sizeClasses[size]} ${className}`}
+        className={`inline-flex items-center gap-1 rounded border font-sans tabular-nums transition-colors select-none cursor-default font-medium ${getHardwareTheme()} ${sizeClasses[size]} ${className}`}
         title={`Operating System: ${os || 'Unknown'}`}
       >
         <OsIcon os={os} className={`${iconSizes[size]} flex-shrink-0`} monochrome={true} />
@@ -102,11 +102,11 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
     );
   }
 
-  const getTheme = () => `${getOsTone(os).badge} shadow-xs`;
+  const getTheme = () => `${getOsTone(os).badge}`;
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md font-mono tabular-nums font-medium border ${getTheme()} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded font-sans tabular-nums font-medium border ${getTheme()} ${sizeClasses[size]} ${className}`}
       title={`Operating System: ${os || 'Unknown'}`}
     >
       <OsIcon os={os} className={iconSizes[size]} />

@@ -607,7 +607,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                       <span>USER ACCESS FLAG</span>
                       <span>{machine.userPwnedAt ? '✓ PWNED' : 'PENDING'}</span>
                     </div>
-                    <div className="p-2 rounded bg-slate-100 dark:bg-cyber-bg text-slate-700 dark:text-cyber-muted text-[11px] truncate tabular-nums">
+                    <div className="p-2 rounded bg-slate-100 dark:bg-cyber-bg text-slate-700 dark:text-cyber-muted text-[11px] font-mono truncate tabular-nums">
                       {machine.userFlag || (machine.userPwnedAt ? 'HTB{user_flag_verified}' : 'Not Captured')}
                     </div>
                   </div>
@@ -616,7 +616,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                       <span>ROOT / SYSTEM FLAG</span>
                       <span>{machine.rootPwnedAt ? '✓ ROOTED' : 'PENDING'}</span>
                     </div>
-                    <div className="p-2 rounded bg-slate-100 dark:bg-cyber-bg text-slate-700 dark:text-cyber-muted text-[11px] truncate tabular-nums">
+                    <div className="p-2 rounded bg-slate-100 dark:bg-cyber-bg text-slate-700 dark:text-cyber-muted text-[11px] font-mono truncate tabular-nums">
                       {machine.rootFlag || (machine.rootPwnedAt ? 'HTB{root_flag_verified}' : 'Not Captured')}
                     </div>
                   </div>

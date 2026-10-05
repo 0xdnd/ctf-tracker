@@ -8,14 +8,15 @@ describe('CyberBadge Primitive', () => {
     render(<CyberBadge>PWN-READY</CyberBadge>);
     const badge = screen.getByText('PWN-READY');
     expect(badge).toBeInTheDocument();
-    expect(badge.parentElement?.className).toContain('rounded-[4px]');
+    expect(badge.parentElement?.className).toContain('rounded');
+    expect(badge.parentElement?.className).toContain('h-5');
   });
 
   it('renders indicator dot with appropriate variant color', () => {
     const { container } = render(<CyberBadge variant="success" dot>ACTIVE</CyberBadge>);
     const dot = container.querySelector('span[aria-hidden="true"]');
     expect(dot).toBeInTheDocument();
-    expect(dot?.className).toContain('bg-emerald-500');
+    expect(dot?.className).toContain('bg-callout-success-fg');
   });
 
   it('applies tabular-nums when mono is true', () => {

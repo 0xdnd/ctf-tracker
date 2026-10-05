@@ -53,9 +53,9 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
   variant = 'default',
 }) => {
   const sizeClasses = {
-    sm: 'text-[9px] px-1.5 py-0.5 gap-1',
-    md: 'text-[11px] px-2 py-0.5 gap-1.5',
-    lg: 'text-xs px-2.5 py-1 gap-2',
+    sm: 'h-4 text-[11px] px-1 gap-1',
+    md: 'h-5 text-xs px-1.5 gap-1',
+    lg: 'h-6 text-xs px-2.5 gap-1.5',
   }[size];
 
   const iconSizeClasses = {
@@ -69,7 +69,7 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
 
     return (
       <span
-        className={`inline-flex items-center rounded-[4px] border font-mono tabular-nums text-[10px] tracking-wider uppercase transition-colors select-none cursor-default font-semibold ${hwTheme} ${sizeClasses} ${className}`}
+        className={`inline-flex items-center rounded border font-sans tabular-nums transition-colors select-none cursor-default font-medium ${hwTheme} ${sizeClasses} ${className}`}
       >
         <PlatformIcon platform={platform} className={`${iconSizeClasses} flex-shrink-0`} monochrome={true} />
         {showLabel && <span>{platform}</span>}
@@ -81,7 +81,7 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
 
   return (
     <span
-      className={`inline-flex items-center rounded-md border font-mono tabular-nums font-bold tracking-wider uppercase transition-colors select-none cursor-default ${sizeClasses} ${themeClasses} ${className}`}
+      className={`inline-flex items-center rounded border font-sans tabular-nums font-medium transition-colors select-none cursor-default ${sizeClasses} ${themeClasses} ${className}`}
     >
       <PlatformIcon platform={platform} className={`${iconSizeClasses} flex-shrink-0`} />
       {showLabel && <span>{platform}</span>}

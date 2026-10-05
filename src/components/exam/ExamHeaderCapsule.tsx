@@ -123,7 +123,7 @@ export const ExamHeaderCapsule: React.FC = () => {
         >
           {score.totalScore}
         </span>
-        <span className="text-[10px] text-muted">
+        <span className="text-[10px] text-muted font-mono tabular-nums">
           / {score.maxScore || 100} PTS
         </span>
       </div>

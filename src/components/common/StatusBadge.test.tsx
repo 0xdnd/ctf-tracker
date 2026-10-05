@@ -6,7 +6,7 @@ import { StatusBadge } from './StatusBadge';
 describe('StatusBadge Component (Zero Layout Shift Contract)', () => {
   it('renders Recon status with fixed width and tabular-nums', () => {
     const { container } = render(<StatusBadge status="recon" />);
-    expect(screen.getByText('RECON')).toBeInTheDocument();
+    expect(screen.getByText('Recon')).toBeInTheDocument();
     const badge = container.querySelector('span');
     expect(badge?.className).toContain('w-[74px]');
     expect(badge?.className).toContain('tabular-nums');
@@ -14,21 +14,21 @@ describe('StatusBadge Component (Zero Layout Shift Contract)', () => {
 
   it('renders Foothold status with matching fixed dimensions', () => {
     const { container } = render(<StatusBadge status="foothold" />);
-    expect(screen.getByText('FOOTHOLD')).toBeInTheDocument();
+    expect(screen.getByText('Foothold')).toBeInTheDocument();
     const badge = container.querySelector('span');
     expect(badge?.className).toContain('w-[74px]');
   });
 
   it('renders Pwned / Root status with exact dimensions', () => {
     const { container } = render(<StatusBadge status="root" />);
-    expect(screen.getByText('PWNED')).toBeInTheDocument();
+    expect(screen.getByText('Pwned')).toBeInTheDocument();
     const badge = container.querySelector('span');
     expect(badge?.className).toContain('w-[74px]');
   });
 
   it('renders Backlog status', () => {
     render(<StatusBadge status="backlog" />);
-    expect(screen.getByText('BACKLOG')).toBeInTheDocument();
+    expect(screen.getByText('Backlog')).toBeInTheDocument();
   });
 
   it('maps statuses onto semantic callout tokens', () => {

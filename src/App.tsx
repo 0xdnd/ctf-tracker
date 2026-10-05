@@ -283,7 +283,7 @@ const MainAppContent: React.FC = () => {
         height: 'calc(100vh / var(--app-zoom, 1))',
         maxHeight: 'calc(100vh / var(--app-zoom, 1))',
       }}
-      className="w-full overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-mono selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative"
+      className="w-full overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-sans selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative"
     >
       {/* Scroll Progress Bar */}
       <ScrollProgressBar />
