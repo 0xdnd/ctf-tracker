@@ -43,11 +43,11 @@ const ROLE_OPTIONS = [
 ];
 
 const ACCENT_COLORS = [
-  { id: 'emerald', name: 'Tactical Emerald', bg: 'bg-emerald-500', text: 'text-callout-success-fg', border: 'border-emerald-500/50' },
-  { id: 'cyan', name: 'Electric Cyan', bg: 'bg-cyan-500', text: 'text-callout-info-fg', border: 'border-cyan-500/50' },
-  { id: 'amber', name: 'Warning Amber', bg: 'bg-amber-500', text: 'text-callout-warn-fg', border: 'border-amber-500/50' },
-  { id: 'crimson', name: 'Red Team Crimson', bg: 'bg-rose-500', text: 'text-callout-danger-fg', border: 'border-rose-500/50' },
-  { id: 'purple', name: 'Domain Purple', bg: 'bg-purple-500', text: 'text-callout-tip-fg', border: 'border-purple-500/50' },
+  { id: 'emerald', name: 'Tactical Emerald', bg: 'bg-callout-success-fg', text: 'text-callout-success-fg', border: 'border-callout-success-border' },
+  { id: 'cyan', name: 'Electric Cyan', bg: 'bg-accent', text: 'text-accent', border: 'border-subtle' },
+  { id: 'amber', name: 'Warning Amber', bg: 'bg-callout-warn-fg', text: 'text-callout-warn-fg', border: 'border-callout-warn-border' },
+  { id: 'crimson', name: 'Red Team Crimson', bg: 'bg-callout-danger-fg', text: 'text-callout-danger-fg', border: 'border-callout-danger-border' },
+  { id: 'purple', name: 'Domain Purple', bg: 'bg-callout-tip-fg', text: 'text-callout-tip-fg', border: 'border-callout-tip-border' },
 ];
 
 export const OperatorProfileModal: React.FC = () => {
@@ -253,7 +253,7 @@ export const OperatorProfileModal: React.FC = () => {
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-md transition-opacity animate-in fade-in"
         onClick={() => setOperatorProfileModalOpen(false)}
       />
 
@@ -263,32 +263,32 @@ export const OperatorProfileModal: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label="Operator Identity and Profile Hub"
-        className="relative w-full max-w-2xl bg-white dark:bg-[#0c1222] border border-slate-300 dark:border-cyber-border rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] font-sans transition-[box-shadow,background-color,border-color,color] animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-2xl bg-surface-card border border-strong rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] font-sans transition-[box-shadow,background-color,border-color,color] animate-in zoom-in-95 duration-150"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-cyber-border/80 flex items-center justify-between bg-slate-50/80 dark:bg-cyber-card/60 backdrop-blur-sm">
+        <div className="px-5 py-4 border-b border-subtle flex items-center justify-between bg-surface-base backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-callout-info-fg dark:text-cyber-cyan shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-surface-sunken border border-subtle flex items-center justify-center text-accent">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold tracking-wide text-slate-900 dark:text-white">
-                  Operator Identity & Profiles
+                <h2 className="text-base font-semibold text-primary">
+                  Operator identity & profiles
                 </h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-callout-success-fg dark:text-cyber-emerald border border-emerald-500/30 font-mono">
-                  OFFLINE READY
+                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-surface-sunken text-secondary border border-subtle">
+                  Offline
                 </span>
               </div>
-              <p className="text-xs text-tertiary dark:text-cyber-muted">
-                100% offline project. Log in with your callsign, switch operators, or explore creator reference solves.
+              <p className="text-xs text-tertiary">
+                Everything stays on this device. Switch operators or explore the creator's reference solves.
               </p>
             </div>
           </div>
 
           <button aria-label="Close operator profiles"
             onClick={() => setOperatorProfileModalOpen(false)}
-            className="p-1.5 rounded-lg text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors"
+            className="p-1.5 max-sm:p-3 rounded-lg text-tertiary hover:text-primary hover:bg-surface-sunken transition-colors"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
@@ -297,21 +297,21 @@ export const OperatorProfileModal: React.FC = () => {
 
         {/* Active Operator Banner */}
         {user ? (
-          <div className="px-5 py-3 bg-gradient-to-r from-emerald-500/10 via-cyan-500/5 to-transparent border-b border-slate-200 dark:border-cyber-border/60 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-subtle flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
                 {user.avatarId ? (
                   <img
                     src={getAvatarSvgDataUri(user.avatarId)}
                     alt={user.callsign || user.name}
-                    className="w-10 h-10 rounded-xl bg-slate-900 border-2 border-emerald-500 p-0.5 object-contain shadow-sm"
+                    className="w-10 h-10 rounded-xl bg-surface-inverse border border-subtle p-0.5 object-contain"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-callout-success-fg dark:text-cyber-emerald font-bold text-sm shadow-sm font-mono">
+                  <div className="w-10 h-10 rounded-xl bg-surface-sunken border border-subtle flex items-center justify-center text-primary font-semibold text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0c1222]" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-callout-success-fg border-2 border-strong" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -329,14 +329,14 @@ export const OperatorProfileModal: React.FC = () => {
                             setIsEditingActiveCallsign(false);
                           }
                         }}
-                        className="px-2 py-0.5 text-xs font-mono font-bold rounded-lg border border-cyan-500 bg-white dark:bg-cyber-bg text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="px-2 py-0.5 text-xs font-medium rounded-lg border border-strong bg-surface-card text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                         autoFocus
                         placeholder="New Callsign"
                       />
                       <button aria-label="Save callsign"
                         type="button"
                         onClick={handleSaveActiveCallsign}
-                        className="p-1 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white transition-colors cursor-pointer"
+                        className="p-1 rounded-md bg-accent hover:brightness-105 text-on-accent transition-colors cursor-pointer"
                         title="Save Callsign (Enter)"
                       >
                         <Check className="w-3 h-3" />
@@ -344,7 +344,7 @@ export const OperatorProfileModal: React.FC = () => {
                       <button aria-label="Cancel rename"
                         type="button"
                         onClick={() => setIsEditingActiveCallsign(false)}
-                        className="p-1 rounded-md bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-tertiary hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                        className="p-1 rounded-md bg-surface-hover text-muted hover:bg-surface-hover transition-colors cursor-pointer"
                         title="Cancel (Esc)"
                       >
                         <X className="w-3 h-3" />
@@ -352,7 +352,7 @@ export const OperatorProfileModal: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      <span className="text-sm font-semibold text-primary">
                         {user.callsign || user.name}
                       </span>
                       <button aria-label="Quick-edit active callsign"
@@ -361,64 +361,64 @@ export const OperatorProfileModal: React.FC = () => {
                           setIsEditingActiveCallsign(true);
                           setActiveCallsignInput(user.callsign || user.name);
                         }}
-                        className="p-1 rounded-md text-tertiary hover:text-callout-info-fg dark:hover:text-cyber-cyan hover:bg-slate-200/50 dark:hover:bg-cyber-bg transition-colors cursor-pointer"
+                        className="p-1 rounded-md text-tertiary hover:text-accent hover:bg-surface-hover transition-colors cursor-pointer"
                         title="Quick-Edit Active Callsign"
                       >
                         <Edit3 className="w-3 h-3" />
                       </button>
-                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${gamification.currentRank.badgeColor} bg-black/30 border border-current font-mono`}>
-                        [{gamification.currentRank.tier}] {gamification.currentRank.title}
+                      <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${gamification.currentRank.badgeColor} bg-surface-inverse border border-current`}>
+                        {gamification.currentRank.tier} {gamification.currentRank.title}
                       </span>
                     </>
                   )}
                 </div>
-                <div className="text-xs text-tertiary dark:text-cyber-muted flex items-center gap-2">
+                <div className="text-xs text-tertiary flex items-center gap-2">
                   <span>{user.role || 'Tactical Operator'}</span>
                   <span>•</span>
-                  <span className="font-mono text-callout-info-fg dark:text-cyber-cyan font-bold">{gamification.totalXp.toLocaleString()} XP</span>
+                  <span className="font-mono tabular-nums text-secondary font-medium">{gamification.totalXp.toLocaleString()} XP</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 font-mono text-right">
+            <div className="flex items-center gap-3 text-right">
               <div>
-                <div className="text-sm font-bold text-callout-success-fg dark:text-cyber-emerald">
-                  {currentStats?.rooted || 0} Rooted
+                <div className="text-sm font-semibold text-primary">
+                  <span className="font-mono tabular-nums">{currentStats?.rooted || 0}</span> rooted
                 </div>
-                <div className="text-[10px] text-tertiary dark:text-cyber-muted">
-                  {gamification.unlockedCount} / 16 Trophies
+                <div className="text-[11px] text-tertiary">
+                  <span className="font-mono tabular-nums">{gamification.unlockedCount} / 16</span> trophies
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="px-5 py-3 bg-gradient-to-r from-cyan-500/10 via-slate-500/5 to-transparent border-b border-slate-200 dark:border-cyber-border/60 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-subtle flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border flex items-center justify-center text-slate-700 dark:text-cyber-muted font-bold text-xs shadow-sm font-mono">
+              <div className="w-10 h-10 rounded-full bg-surface-hover border border-strong flex items-center justify-center text-secondary font-semibold text-xs">
                 OP
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  <span className="text-sm font-semibold text-primary">
                     Local / Guest Operator
                   </span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-cyan-500/20 text-callout-info-fg dark:text-cyber-cyan border border-cyan-500/40">
-                    AIR-GAPPED
+                  <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-surface-sunken text-secondary border border-subtle">
+                    Air-gapped
                   </span>
                 </div>
-                <div className="text-xs text-tertiary dark:text-cyber-muted">
-                  Offline CTF workspace. Enter your callsign in "Login as New Operator" to save your personal profile.
+                <div className="text-xs text-tertiary">
+                  Offline CTF workspace. Create an operator under "New operator" to save your own profile.
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 font-mono text-right">
+            <div className="flex items-center gap-3 text-right">
               <div>
-                <div className="text-sm font-bold text-callout-success-fg dark:text-cyber-emerald">
-                  {currentRooted} Rooted
+                <div className="text-sm font-semibold text-primary">
+                  <span className="font-mono tabular-nums">{currentRooted}</span> rooted
                 </div>
-                <div className="text-[10px] text-tertiary dark:text-cyber-muted">
-                  {currentFootholds} Footholds
+                <div className="text-[11px] text-tertiary">
+                  <span className="font-mono tabular-nums">{currentFootholds}</span> footholds
                 </div>
               </div>
             </div>
@@ -426,25 +426,25 @@ export const OperatorProfileModal: React.FC = () => {
         )}
 
         {/* Offline Workspace Solves Lifecycle Banner */}
-        <div className="px-5 py-2.5 bg-slate-100/80 dark:bg-cyber-bg/70 border-b border-slate-200 dark:border-cyber-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+        <div className="px-5 py-2.5 bg-surface-sunken border-b border-subtle flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-callout-info-fg dark:text-cyber-cyan flex-shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-surface-card border border-subtle flex items-center justify-center text-muted flex-shrink-0">
               <RotateCcw className="w-3.5 h-3.5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">Workspace Solves:</span>
+                <span className="text-xs font-semibold text-primary">Workspace solves:</span>
                 {userSolvesReset ? (
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-500/15 text-callout-info-fg border border-blue-500/30 font-mono">
-                    Personal Practice (0 Solves)
+                  <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-surface-card text-secondary border border-subtle">
+                    Personal practice (0 solves)
                   </span>
                 ) : (
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/15 text-callout-tip-fg border border-purple-500/30 font-mono">
-                    Creator Showcase (63 Solves)
+                  <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-surface-card text-secondary border border-subtle">
+                    Creator showcase (63 solves)
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-tertiary dark:text-cyber-muted">
+              <p className="text-[11px] text-tertiary">
                 {userSolvesReset
                   ? 'Tracking your own progress from 0%. All 929 targets ready.'
                   : 'Daniel Dayan\'s solved machines are loaded as reference walkthroughs.'}
@@ -460,11 +460,11 @@ export const OperatorProfileModal: React.FC = () => {
                   restoreDanielSolves();
                   if (soundEnabled) playCyberSound('engage');
                 }}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-callout-tip-fg border border-purple-500/30 hover:bg-purple-500/25 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1 max-sm:py-2.5 rounded-lg text-xs font-medium bg-surface-card text-secondary border border-subtle hover:bg-surface-hover transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Load Daniel's 63 solved machines as a reference baseline"
               >
-                <Sparkles className="w-3.5 h-3.5 text-callout-tip-fg" />
-                <span>Load Reference Solves (63)</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Load reference solves (63)</span>
               </button>
             ) : (
               <button
@@ -481,50 +481,50 @@ export const OperatorProfileModal: React.FC = () => {
                     if (soundEnabled) playCyberSound('root');
                   }
                 }}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-500/15 text-callout-info-fg border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1 max-sm:py-2.5 rounded-lg text-xs font-medium bg-surface-card text-secondary border border-subtle hover:bg-surface-hover transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Start fresh at 0% to track your own CTF conquests"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-callout-info-fg" />
-                <span>Reset to My Solves (0)</span>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset to my solves (0)</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-slate-200 dark:border-cyber-border/60 bg-slate-100/60 dark:bg-cyber-bg/40 px-5 pt-2">
+        <div className="flex border-b border-subtle bg-surface-sunken px-3 sm:px-5 pt-2 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveTab('roster')}
-            className={`pb-2.5 px-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
-              activeTab === 'roster'
-                ? 'border-cyan-500 text-callout-info-fg dark:text-cyber-cyan'
-                : 'border-transparent text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-            }`}
+            className={`pb-2.5 px-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 ${
+ activeTab === 'roster'
+ ? 'border-accent text-primary'
+ : 'border-transparent text-tertiary hover:text-primary '
+ }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Operator Roster ({profiles.length})</span>
+            <span>Roster ({profiles.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('new')}
-            className={`pb-2.5 px-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
-              activeTab === 'new'
-                ? 'border-cyan-500 text-callout-info-fg dark:text-cyber-cyan'
-                : 'border-transparent text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-            }`}
+            className={`pb-2.5 px-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 ${
+ activeTab === 'new'
+ ? 'border-accent text-primary'
+ : 'border-transparent text-tertiary hover:text-primary '
+ }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Login as New Operator</span>
+            <span>New operator</span>
           </button>
           <button
             onClick={() => setActiveTab('trophies')}
-            className={`pb-2.5 px-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
-              activeTab === 'trophies'
-                ? 'border-cyan-500 text-callout-info-fg dark:text-cyber-cyan'
-                : 'border-transparent text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-            }`}
+            className={`pb-2.5 px-3 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 ${
+ activeTab === 'trophies'
+ ? 'border-accent text-primary'
+ : 'border-transparent text-tertiary hover:text-primary '
+ }`}
           >
             <Trophy className="w-3.5 h-3.5" />
-            <span>Trophy Case & Ranks ({gamification.unlockedCount}/16)</span>
+            <span>Trophies ({gamification.unlockedCount}/16)</span>
           </button>
         </div>
 
@@ -532,21 +532,21 @@ export const OperatorProfileModal: React.FC = () => {
         <div className="p-5 overflow-y-auto flex-1 space-y-4">
           {activeTab === 'roster' && (
             <div className="space-y-3">
-              <div className="text-xs text-tertiary dark:text-cyber-muted flex items-center justify-between">
+              <div className="text-xs text-tertiary flex items-center justify-between">
                 <span>Select an operator to switch workspaces immediately:</span>
-                <span className="font-mono text-[11px]">{profiles.length} Operator{profiles.length > 1 ? 's' : ''} Configured</span>
+                <span className="text-[11px]"><span className="font-mono tabular-nums">{profiles.length}</span> operator{profiles.length > 1 ? 's' : ''}</span>
               </div>
 
               {profiles.length === 0 && (
-                <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-cyber-border text-center space-y-2">
-                  <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-callout-info-fg dark:text-cyber-cyan flex items-center justify-center mx-auto">
+                <div className="p-4 rounded-xl border border-dashed border-strong text-center space-y-2">
+                  <div className="w-8 h-8 rounded-full bg-surface-sunken text-muted flex items-center justify-center mx-auto">
                     <User className="w-4 h-4" />
                   </div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                  <div className="text-xs font-semibold text-secondary">
                     No custom profiles created yet
                   </div>
-                  <p className="text-[11px] text-tertiary dark:text-cyber-muted max-w-sm mx-auto">
-                    You are operating in local storage. Create your own named operator profile to track your solves, or explore Daniel's creator reference profile below.
+                  <p className="text-[11px] text-tertiary max-w-sm mx-auto">
+                    Progress is stored locally. Create a named operator to track your solves, or explore Daniel's reference profile below.
                   </p>
                 </div>
               )}
@@ -561,10 +561,10 @@ export const OperatorProfileModal: React.FC = () => {
                     <div
                       key={p.id}
                       className={`p-3 rounded-xl border transition-colors flex flex-col justify-between ${
-                        isActive
-                          ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/50 dark:border-cyber-emerald/50 shadow-sm'
-                          : 'bg-slate-50 dark:bg-cyber-card/60 hover:bg-slate-100 dark:hover:bg-cyber-card border-slate-200 dark:border-cyber-border'
-                      }`}
+ isActive
+ ? 'bg-accent-muted border-accent'
+ : 'bg-surface-base hover:bg-surface-sunken border-subtle'
+ }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -573,15 +573,15 @@ export const OperatorProfileModal: React.FC = () => {
                               src={getAvatarSvgDataUri(p.avatarId)}
                               alt={p.name}
                               className={`w-8 h-8 rounded-lg p-0.5 object-contain flex-shrink-0 border ${
-                                isActive ? 'border-emerald-500 bg-slate-900' : 'border-slate-300 dark:border-cyber-border bg-slate-100 dark:bg-cyber-bg'
-                              }`}
+ isActive ? 'border-accent bg-surface-inverse' : 'border-strong bg-surface-sunken'
+ }`}
                             />
                           ) : (
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs font-mono flex-shrink-0 ${
-                              isActive
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-slate-200 dark:bg-cyber-bg text-slate-700 dark:text-slate-300'
-                            }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs flex-shrink-0 ${
+ isActive
+ ? 'bg-accent text-on-accent'
+ : 'bg-surface-hover text-secondary'
+ }`}>
                               {p.name.charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -601,14 +601,14 @@ export const OperatorProfileModal: React.FC = () => {
                                       setEditingProfileId(null);
                                     }
                                   }}
-                                  className="px-2 py-0.5 text-xs rounded border border-cyan-500 bg-white dark:bg-cyber-bg text-slate-900 dark:text-white font-mono focus:outline-none"
+                                  className="px-2 py-0.5 text-xs rounded border border-strong bg-surface-card text-primary focus:outline-none focus:border-accent"
                                   autoFocus
                                   placeholder="Callsign"
                                 />
                                 <button aria-label="Save callsign"
                                   type="button"
                                   onClick={() => handleSaveRename(p.id)}
-                                  className="p-1 rounded bg-cyan-500 text-white hover:bg-cyan-600 transition-colors cursor-pointer"
+                                  className="p-1 rounded bg-accent text-on-accent hover:brightness-105 transition-colors cursor-pointer"
                                   title="Save Callsign (Enter)"
                                 >
                                   <Check className="w-3 h-3" />
@@ -616,7 +616,7 @@ export const OperatorProfileModal: React.FC = () => {
                                 <button aria-label="Cancel rename"
                                   type="button"
                                   onClick={() => setEditingProfileId(null)}
-                                  className="p-1 rounded bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-tertiary hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                                  className="p-1 rounded bg-surface-hover text-muted hover:bg-surface-hover transition-colors cursor-pointer"
                                   title="Cancel (Esc)"
                                 >
                                   <X className="w-3 h-3" />
@@ -624,15 +624,15 @@ export const OperatorProfileModal: React.FC = () => {
                               </div>
                             ) : (
                               <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                                <span className="font-semibold text-xs text-primary truncate">
                                   {p.callsign || p.name}
                                 </span>
                                 {isActive && (
-                                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                  <span className="w-2 h-2 rounded-full bg-accent" aria-hidden="true" />
                                 )}
                               </div>
                             )}
-                            <div className="text-[10px] text-tertiary dark:text-cyber-muted truncate">
+                            <div className="text-[11px] text-tertiary truncate">
                               {p.role || 'Tactical Operator'}
                             </div>
                           </div>
@@ -645,7 +645,7 @@ export const OperatorProfileModal: React.FC = () => {
                                 setEditingProfileId(p.id);
                                 setEditingName(p.name);
                               }}
-                              className="p-1 rounded text-tertiary hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                              className="p-1 rounded text-tertiary hover:text-muted transition-colors"
                               title="Rename Call-sign"
                             >
                               <Edit3 className="w-3 h-3" />
@@ -663,20 +663,20 @@ export const OperatorProfileModal: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-cyber-border/40 flex items-center justify-between text-xs">
-                        <div className="font-mono text-[11px] text-slate-600 dark:text-zinc-300">
-                          <span className="font-bold text-callout-success-fg dark:text-cyber-emerald">{stats.rooted}</span> Rooted · <span className="text-callout-warn-fg">{stats.footholds}</span> Footholds
+                      <div className="mt-3 pt-2.5 border-t border-subtle flex items-center justify-between text-xs">
+                        <div className="text-[11px] text-muted">
+                          <span className="font-mono tabular-nums font-semibold text-primary">{stats.rooted}</span> rooted · <span className="font-mono tabular-nums text-secondary">{stats.footholds}</span> footholds
                         </div>
 
                         {isActive ? (
-                          <span className="text-[10px] font-bold text-callout-success-fg dark:text-cyber-emerald flex items-center gap-1">
+                          <span className="text-[11px] font-medium text-accent flex items-center gap-1">
                             <Check className="w-3 h-3 stroke-[2.5]" />
                             <span>Active</span>
                           </span>
                         ) : (
                           <button
                             onClick={() => handleSwitchOperator(p.id)}
-                            className="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-200 hover:bg-accent hover:text-on-accent dark:bg-cyber-bg transition-colors flex items-center gap-1"
+                            className="px-2 py-1 max-sm:py-2.5 rounded-lg text-xs font-medium bg-surface-hover hover:bg-surface-hover text-secondary hover:text-primary transition-colors flex items-center gap-1"
                           >
                             <span>Switch</span>
                             <ArrowRight className="w-3 h-3" />
@@ -689,33 +689,33 @@ export const OperatorProfileModal: React.FC = () => {
 
                 {/* Creator Showcase Reference Profile Card */}
                 {!profiles.some((p) => p.id === 'usr_daniel' || p.name.toLowerCase() === 'daniel') && (
-                  <div className="p-3 rounded-xl border border-purple-500/40 bg-purple-500/5 dark:bg-purple-950/20 flex flex-col justify-between">
+                  <div className="p-3 rounded-xl border border-subtle bg-surface-sunken flex flex-col justify-between">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <img
                           src={getAvatarSvgDataUri('terminal-sentinel')}
                           alt="Daniel Dayan"
-                          className="w-8 h-8 rounded-lg bg-purple-950/40 border border-purple-500/50 p-0.5 object-contain flex-shrink-0"
+                          className="w-8 h-8 rounded-lg bg-surface-sunken border border-subtle p-0.5 object-contain flex-shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                            <span className="font-semibold text-xs text-primary truncate">
                               Daniel Dayan
                             </span>
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-callout-tip-fg border border-purple-500/40">
-                              CREATOR SHOWCASE
+                            <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken text-secondary border border-subtle">
+                              Creator showcase
                             </span>
                           </div>
-                          <div className="text-[10px] text-tertiary dark:text-cyber-muted truncate">
-                            Lead Pentester · 63 Verified Solves
+                          <div className="text-[11px] text-tertiary truncate">
+                            Lead pentester, 63 verified solves
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-purple-500/20 flex items-center justify-between text-xs">
-                      <div className="font-mono text-[11px] text-callout-tip-fg">
-                        <span className="font-bold">63</span> Rooted Machines
+                    <div className="mt-3 pt-2.5 border-t border-subtle flex items-center justify-between text-xs">
+                      <div className="text-[11px] text-secondary">
+                        <span className="font-mono tabular-nums font-semibold">63</span> rooted machines
                       </div>
 
                       <button
@@ -724,10 +724,10 @@ export const OperatorProfileModal: React.FC = () => {
                           await restoreDanielSolves();
                           if (soundEnabled) playCyberSound('engage');
                         }}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-500/15 hover:bg-purple-500 hover:text-primary dark:bg-purple-900/30 dark:hover:bg-purple-500 text-callout-tip-fg border border-purple-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 max-sm:py-2.5 rounded-lg text-xs font-medium bg-surface-card hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        <Sparkles className="w-3 h-3 text-callout-tip-fg" />
-                        <span>Explore Showcase</span>
+                        <Sparkles className="w-3 h-3 text-secondary" />
+                        <span>Explore showcase</span>
                       </button>
                     </div>
                   </div>
@@ -737,10 +737,10 @@ export const OperatorProfileModal: React.FC = () => {
               <div className="pt-2">
                 <button
                   onClick={() => setActiveTab('new')}
-                  className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-cyber-border/80 hover:border-cyan-500 dark:hover:border-cyber-cyan text-slate-600 dark:text-cyber-muted hover:text-callout-info-fg dark:hover:text-cyber-cyan text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 max-sm:py-3.5 rounded-xl border border-dashed border-strong hover:border-accent text-muted hover:text-primary text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>+ Log in as a Different / New Operator</span>
+                  <span>Log in as a different operator</span>
                 </button>
               </div>
             </div>
@@ -749,14 +749,14 @@ export const OperatorProfileModal: React.FC = () => {
           {activeTab === 'new' && (
             <form onSubmit={handleCreateOrLogin} className="space-y-4">
               {errorMsg && (
-                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-callout-danger-fg text-xs">
+                <div className="p-2.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border text-callout-danger-fg text-xs">
                   {errorMsg}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">
-                  Operator Name or Callsign <span className="text-callout-danger-fg">*</span>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Operator name or callsign <span className="text-callout-danger-fg">*</span>
                 </label>
                 <input
                   ref={inputRef}
@@ -765,19 +765,19 @@ export const OperatorProfileModal: React.FC = () => {
                   value={operatorName}
                   onChange={(e) => setOperatorName(e.target.value)}
                   placeholder="e.g. Sarah, Alex, GhostNinja"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-cyber-bg border border-slate-300 dark:border-cyber-border text-slate-900 dark:text-white text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:focus:ring-cyber-cyan transition-[box-shadow,background-color,border-color,color]"
+                  className="w-full px-3 py-2 max-sm:py-3 rounded-xl bg-surface-base border border-strong text-primary text-sm font-medium focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 transition-[box-shadow,background-color,border-color,color]"
                   required
                 />
-                <span className="text-[10px] text-tertiary dark:text-cyber-muted mt-0.5 block">
+                <span className="text-[11px] text-tertiary mt-0.5 block">
                   Entering an existing callsign logs directly into that operator's saved progress.
                 </span>
               </div>
 
               {/* Tactical Avatar Preset Matrix */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1.5 flex items-center justify-between">
-                  <span>Tactical Avatar Preset</span>
-                  <span className="text-[11px] font-mono text-callout-info-fg dark:text-cyber-cyan">
+                <label className="block text-xs font-medium text-secondary mb-1.5 flex items-center justify-between">
+                  <span>Avatar</span>
+                  <span className="text-[11px] text-muted">
                     {CYBER_AVATAR_PRESETS.find(p => p.id === selectedAvatarId)?.name || 'Glitch Skull'}
                   </span>
                 </label>
@@ -790,10 +790,10 @@ export const OperatorProfileModal: React.FC = () => {
                         type="button"
                         onClick={() => setSelectedAvatarId(avatar.id)}
                         className={`group relative p-1.5 rounded-xl border flex flex-col items-center gap-1 transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-cyan-500/20 border-cyan-500 shadow-md ring-2 ring-cyan-500/50 scale-105'
-                            : 'bg-slate-50 dark:bg-cyber-bg/80 border-slate-200 dark:border-cyber-border hover:border-cyan-500/50'
-                        }`}
+ isSelected
+ ? 'bg-surface-sunken border-subtle ring-2 ring-accent scale-105'
+ : 'bg-surface-base border-subtle hover:border-accent'
+ }`}
                         title={`${avatar.name}: ${avatar.description}`}
                       >
                         <img
@@ -801,11 +801,11 @@ export const OperatorProfileModal: React.FC = () => {
                           alt={avatar.name}
                           className="w-10 h-10 object-contain rounded-lg p-0.5 transition-transform group-hover:scale-105"
                         />
-                        <span className="text-[9px] font-mono font-medium truncate w-full text-center text-slate-600 dark:text-zinc-300">
+                        <span className="text-[11px] font-medium truncate w-full text-center text-muted">
                           {avatar.name.split(' ')[0]}
                         </span>
                         {isSelected && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 text-white flex items-center justify-center shadow">
+                          <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-on-accent flex items-center justify-center shadow">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                           </div>
                         )}
@@ -816,8 +816,8 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">
-                  Tactical Role / Specialization
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Role
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {ROLE_OPTIONS.map((r) => {
@@ -828,10 +828,10 @@ export const OperatorProfileModal: React.FC = () => {
                         type="button"
                         onClick={() => setSelectedRole(r.id)}
                         className={`p-2 rounded-lg text-left text-xs font-medium border transition-colors flex items-center gap-2 ${
-                          isSelected
-                            ? 'bg-cyan-500/15 border-cyan-500 text-callout-info-fg dark:text-cyber-cyan font-bold'
-                            : 'bg-slate-50 dark:bg-cyber-card border-slate-200 dark:border-cyber-border text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-slate-700'
-                        }`}
+ isSelected
+ ? 'bg-accent-muted border-accent text-primary font-semibold'
+ : 'bg-surface-base border-subtle text-secondary hover:border-strong '
+ }`}
                       >
                         <r.icon className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="truncate">{r.label}</span>
@@ -842,8 +842,8 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">
-                  Callsign Theme Accent
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Accent color
                 </label>
                 <div className="flex items-center gap-2">
                   {ACCENT_COLORS.map((c) => (
@@ -852,67 +852,67 @@ export const OperatorProfileModal: React.FC = () => {
                       type="button"
                       onClick={() => setSelectedColor(c.id)}
                       className={`w-7 h-7 rounded-lg ${c.bg} flex items-center justify-center transition-transform ${
-                        selectedColor === c.id ? 'ring-2 ring-offset-2 ring-white scale-110' : 'opacity-80 hover:opacity-100'
-                      }`}
+ selectedColor === c.id ? 'ring-2 ring-offset-2 ring-offset-surface-card ring-accent scale-110' : 'opacity-80 hover:opacity-100'
+ }`}
                       title={c.name}
                     >
-                      {selectedColor === c.id && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                      {selectedColor === c.id && <Check className="w-3.5 h-3.5 text-primary stroke-[3]" />}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">
-                  Workspace Initialization (For New Operators)
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Workspace for new operators
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div
                     onClick={() => setWorkspaceMode('fresh')}
                     className={`p-3 rounded-xl border cursor-pointer transition-colors ${
-                      workspaceMode === 'fresh'
-                        ? 'bg-cyan-500/10 border-cyan-500 dark:border-cyber-cyan'
-                        : 'bg-slate-50 dark:bg-cyber-card border-slate-200 dark:border-cyber-border opacity-70 hover:opacity-100'
-                    }`}
+ workspaceMode === 'fresh'
+ ? 'bg-surface-sunken border-subtle '
+ : 'bg-surface-base border-subtle opacity-70 hover:opacity-100'
+ }`}
                   >
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
-                      <span>🌟 Fresh Clean Slate</span>
-                      <span className="text-[9px] px-1 rounded bg-emerald-500/20 text-callout-success-fg dark:text-cyber-emerald">Recommended</span>
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-primary">
+                      <span>Fresh start</span>
+                      <span className="text-[11px] px-1 rounded bg-surface-card text-secondary border border-subtle">Recommended</span>
                     </div>
-                    <p className="text-[11px] text-tertiary dark:text-cyber-muted mt-1 leading-snug">
-                      929 targets loaded with 0 solved machines. Clean flags and notes for a fresh CTF journey.
+                    <p className="text-[11px] text-tertiary mt-1 leading-snug">
+                      All 929 targets loaded with 0 solves and empty flags and notes.
                     </p>
                   </div>
 
                   <div
                     onClick={() => setWorkspaceMode('clone')}
                     className={`p-3 rounded-xl border cursor-pointer transition-colors ${
-                      workspaceMode === 'clone'
-                        ? 'bg-cyan-500/10 border-cyan-500 dark:border-cyber-cyan'
-                        : 'bg-slate-50 dark:bg-cyber-card border-slate-200 dark:border-cyber-border opacity-70 hover:opacity-100'
-                    }`}
+ workspaceMode === 'clone'
+ ? 'bg-surface-sunken border-subtle '
+ : 'bg-surface-base border-subtle opacity-70 hover:opacity-100'
+ }`}
                   >
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
-                      <span>📋 Fork Current Progress</span>
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-primary">
+                      <span>Copy current progress</span>
                     </div>
-                    <p className="text-[11px] text-tertiary dark:text-cyber-muted mt-1 leading-snug">
-                      Clone active machines, solved flags, and notes to continue collaborating or testing.
+                    <p className="text-[11px] text-tertiary mt-1 leading-snug">
+                      Copies your machines, flags and notes into the new operator.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-cyber-border/60">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
                 <button
                   type="button"
                   onClick={() => setActiveTab('roster')}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-cyber-muted hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors"
+                  className="px-4 py-2 max-sm:py-3 rounded-xl text-xs font-medium text-muted hover:bg-surface-sunken transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-accent hover:bg-accent-hover text-on-accent transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-md"
+                  className="px-5 py-2 max-sm:py-3 rounded-xl text-xs font-medium bg-accent hover:bg-accent-hover text-on-accent transition-[background-color,border-color,color,transform] active:scale-[0.97] flex items-center gap-1.5"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Log in as {operatorName.trim() || 'Operator'}</span>
@@ -924,56 +924,56 @@ export const OperatorProfileModal: React.FC = () => {
           {activeTab === 'trophies' && (
             <div className="space-y-4">
               {/* Rank Progression Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 border border-slate-700/60 text-white shadow-lg relative overflow-hidden">
+              <div className="p-4 rounded-2xl border border-inverse bg-surface-inverse text-on-inverse relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative z-10">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-slate-800/90 border border-cyan-500/50 flex items-center justify-center text-2xl shadow-inner font-mono">
-                      🏆
+                    <div className="w-12 h-12 rounded-xl bg-surface-inverse-elevated border border-inverse flex items-center justify-center text-on-inverse">
+                      <Trophy className="w-6 h-6" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono tracking-wider text-callout-info-fg font-bold uppercase">
-                          OPERATOR STATUS
+                        <span className="text-xs text-on-inverse-muted font-medium">
+                          Operator status
                         </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${gamification.currentRank.badgeColor} bg-black/40 border border-current font-mono`}>
-                          [{gamification.currentRank.tier}]
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${gamification.currentRank.badgeColor} bg-surface-inverse border border-current`}>
+                          {gamification.currentRank.tier}
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-white tracking-wide">
+                      <h3 className="text-base font-semibold text-on-inverse">
                         {gamification.currentRank.title}
                       </h3>
-                      <p className="text-[11px] text-tertiary">
+                      <p className="text-[11px] text-on-inverse-muted">
                         {gamification.currentRank.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-left sm:text-right font-mono">
-                    <div className="text-xs text-tertiary uppercase tracking-wider">Total Experience</div>
-                    <div className="text-xl font-black text-callout-info-fg">
-                      {gamification.totalXp.toLocaleString()} <span className="text-xs text-callout-info-fg font-semibold">XP</span>
+                  <div className="text-left sm:text-right">
+                    <div className="text-xs text-on-inverse-muted">Total experience</div>
+                    <div className="text-xl font-semibold text-on-inverse font-mono tabular-nums">
+                      {gamification.totalXp.toLocaleString()} <span className="text-xs text-on-inverse-muted font-medium">XP</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Progress to Next Rank */}
-                <div className="mt-4 pt-3 border-t border-slate-700/60">
-                  <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                    <span className="text-tertiary">
-                      {gamification.nextRank ? `Next: [${gamification.nextRank.tier}] ${gamification.nextRank.title}` : 'Max Tactical Rank Achieved!'}
+                <div className="mt-4 pt-3 border-t border-inverse">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-on-inverse-muted">
+                      {gamification.nextRank ? `Next: ${gamification.nextRank.tier} ${gamification.nextRank.title}` : 'Top rank reached'}
                     </span>
-                    <span className="text-callout-info-fg font-bold">
+                    <span className="text-on-inverse font-medium font-mono tabular-nums">
                       {gamification.nextRank ? `${gamification.rankProgressPct}%` : '100%'}
                     </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden border border-slate-700/50">
+                  <div className="w-full h-2 rounded-full bg-surface-inverse-elevated overflow-hidden border border-inverse">
                     <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-colors duration-500 ease-out"
+                      className="h-full bg-accent transition-[width] duration-500 ease-out"
                       style={{ width: `${gamification.rankProgressPct}%` }}
                     />
                   </div>
                   {gamification.nextRank && (
-                    <div className="text-[10px] text-tertiary mt-1 flex justify-between font-mono">
+                    <div className="text-[11px] text-on-inverse-muted mt-1 flex justify-between font-mono tabular-nums">
                       <span>{gamification.currentRank.minXp.toLocaleString()} XP</span>
                       <span>{gamification.nextRank.minXp.toLocaleString()} XP</span>
                     </div>
@@ -983,27 +983,27 @@ export const OperatorProfileModal: React.FC = () => {
 
               {/* Tactical Stats Quick Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Rooted Targets</div>
-                  <div className="text-base font-bold text-callout-success-fg dark:text-cyber-emerald font-mono">
+                <div className="p-2.5 rounded-xl bg-surface-base border border-subtle text-center">
+                  <div className="text-xs text-muted">Rooted targets</div>
+                  <div className="text-base font-semibold text-primary font-mono tabular-nums">
                     {gamification.stats.rootedMachines}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Flags Captured</div>
-                  <div className="text-base font-bold text-callout-info-fg dark:text-cyber-cyan font-mono">
+                <div className="p-2.5 rounded-xl bg-surface-base border border-subtle text-center">
+                  <div className="text-xs text-muted">Flags captured</div>
+                  <div className="text-base font-semibold text-primary font-mono tabular-nums">
                     {gamification.stats.totalFlags}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Nmap Scans</div>
-                  <div className="text-base font-bold text-callout-warn-fg font-mono">
+                <div className="p-2.5 rounded-xl bg-surface-base border border-subtle text-center">
+                  <div className="text-xs text-muted">Nmap scans</div>
+                  <div className="text-base font-semibold text-primary font-mono tabular-nums">
                     {gamification.stats.nmapScansCount}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-cyber-card/60 border border-slate-200 dark:border-cyber-border text-center">
-                  <div className="text-[10px] font-mono text-tertiary dark:text-cyber-muted uppercase">Trophies Unlocked</div>
-                  <div className="text-base font-bold text-callout-tip-fg font-mono">
+                <div className="p-2.5 rounded-xl bg-surface-base border border-subtle text-center">
+                  <div className="text-xs text-muted">Trophies unlocked</div>
+                  <div className="text-base font-semibold text-primary font-mono tabular-nums">
                     {gamification.unlockedCount} / 16
                   </div>
                 </div>
@@ -1015,11 +1015,11 @@ export const OperatorProfileModal: React.FC = () => {
                   <button
                     key={cat}
                     onClick={() => setTrophyCategoryFilter(cat)}
-                    className={`px-2.5 py-1 rounded-lg font-mono text-[11px] font-bold uppercase transition-colors whitespace-nowrap cursor-pointer ${
-                      trophyCategoryFilter === cat
-                        ? 'bg-accent text-on-accent shadow-sm'
-                        : 'bg-slate-100 dark:bg-cyber-card text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary border border-slate-200 dark:border-cyber-border'
-                    }`}
+                    className={`px-2.5 py-1 max-sm:py-2.5 rounded-lg text-xs font-medium capitalize transition-colors whitespace-nowrap cursor-pointer flex-shrink-0 ${
+ trophyCategoryFilter === cat
+ ? 'bg-accent text-on-accent '
+ : 'bg-surface-sunken text-muted hover:text-primary border border-subtle '
+ }`}
                   >
                     {cat}
                   </button>
@@ -1033,10 +1033,10 @@ export const OperatorProfileModal: React.FC = () => {
                   .map((trophy) => {
                     const isUnlocked = trophy.unlocked;
                     const rarityColors: Record<string, string> = {
-                      common: 'text-slate-300 border-slate-400/30 bg-slate-400/10',
-                      rare: 'text-callout-info-fg border-sky-400/30 bg-sky-400/10',
-                      epic: 'text-callout-tip-fg border-purple-400/40 bg-purple-400/10',
-                      legendary: 'text-callout-warn-fg border-amber-400/40 bg-amber-400/10',
+                      common: 'text-secondary border-strong bg-surface-hover',
+                      rare: 'text-secondary border-subtle bg-surface-sunken',
+                      epic: 'text-secondary border-subtle bg-surface-sunken',
+                      legendary: 'text-callout-warn-fg border-callout-warn-border bg-callout-warn-bg',
                     };
                     const badgeClass = rarityColors[trophy.definition.rarity] || rarityColors.common;
 
@@ -1044,41 +1044,41 @@ export const OperatorProfileModal: React.FC = () => {
                       <div
                         key={trophy.definition.id}
                         className={`p-3 rounded-xl border transition-colors flex flex-col justify-between ${
-                          isUnlocked
-                            ? 'bg-slate-900/60 dark:bg-cyber-card border-cyan-500/40 shadow-sm'
-                            : 'bg-slate-100/50 dark:bg-cyber-bg/40 border-slate-200/80 dark:border-cyber-border/40 opacity-70'
-                        }`}
+ isUnlocked
+ ? 'bg-surface-card border-subtle'
+ : 'bg-surface-sunken border-subtle opacity-70'
+ }`}
                       >
                         <div className="flex items-start gap-2.5">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 border ${
-                            isUnlocked
-                              ? 'bg-slate-800 border-cyan-500/50 shadow-inner'
-                              : 'bg-slate-200 dark:bg-cyber-bg border-slate-300 dark:border-cyber-border grayscale opacity-60'
-                          }`}>
-                            <Award className="w-5 h-5 text-callout-info-fg" />
+ isUnlocked
+ ? 'bg-surface-sunken border-subtle'
+ : 'bg-surface-hover border-strong grayscale opacity-60'
+ }`}>
+                            <Award className="w-5 h-5 text-secondary" />
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-xs font-bold ${isUnlocked ? 'text-slate-900 dark:text-white' : 'text-tertiary'}`}>
+                              <span className={`text-xs font-semibold ${isUnlocked ? 'text-primary ' : 'text-tertiary'}`}>
                                 {trophy.definition.title}
                               </span>
-                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase border ${badgeClass}`}>
+                              <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium capitalize border ${badgeClass}`}>
                                 {trophy.definition.rarity}
                               </span>
                             </div>
-                            <p className="text-[11px] text-tertiary dark:text-cyber-muted mt-0.5 line-clamp-2">
+                            <p className="text-[11px] text-tertiary mt-0.5 line-clamp-2">
                               {trophy.definition.description}
                             </p>
                           </div>
                         </div>
 
-                        <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-cyber-border/40 flex items-center justify-between text-xs">
-                          <div className="font-mono text-[10px]">
+                        <div className="mt-2.5 pt-2 border-t border-subtle flex items-center justify-between text-xs">
+                          <div className="text-[11px]">
                             {isUnlocked ? (
-                              <span className="text-callout-success-fg font-bold flex items-center gap-1">
+                              <span className="text-callout-success-fg font-semibold flex items-center gap-1">
                                 <Check className="w-3 h-3 stroke-[2.5]" />
-                                <span>UNLOCKED {trophy.unlockedAt ? new Date(trophy.unlockedAt).toLocaleDateString() : ''}</span>
+                                <span>Unlocked {trophy.unlockedAt ? new Date(trophy.unlockedAt).toLocaleDateString() : ''}</span>
                               </span>
                             ) : (
                               <span className="text-tertiary flex items-center gap-1">
@@ -1088,15 +1088,15 @@ export const OperatorProfileModal: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="font-mono font-bold text-[11px] text-callout-info-fg dark:text-cyber-cyan">
+                          <div className="font-mono tabular-nums font-medium text-[11px] text-secondary">
                             +{trophy.definition.xpReward} XP
                           </div>
                         </div>
 
                         {!isUnlocked && trophy.targetCount > 1 && (
-                          <div className="w-full h-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden mt-1.5">
+                          <div className="w-full h-1 rounded-full bg-surface-hover overflow-hidden mt-1.5">
                             <div
-                              className="h-full bg-cyan-500"
+                              className="h-full bg-accent"
                               style={{ width: `${trophy.progress}%` }}
                             />
                           </div>
@@ -1109,10 +1109,10 @@ export const OperatorProfileModal: React.FC = () => {
           )}
 
           {/* Air-gapped security note */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-cyber-bg/70 border border-slate-200 dark:border-cyber-border/50 text-[11px] text-tertiary dark:text-cyber-muted flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-surface-base border border-subtle text-[11px] text-tertiary flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-callout-success-fg flex-shrink-0" />
             <span>
-              <strong>Zero-Egress Isolation:</strong> All operator profiles and machine progress are partitioned in your local browser storage. Zero data is transmitted to external servers.
+              <strong className="font-medium">Nothing leaves this device.</strong> Operator profiles and machine progress live in local browser storage.
             </span>
           </div>
         </div>

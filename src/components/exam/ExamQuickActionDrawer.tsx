@@ -197,7 +197,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
       {/* Backdrop with click-to-dismiss */}
       <div
         data-testid="exam-drawer-backdrop"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-surface-inverse/60 backdrop-blur-sm"
         onClick={() => setQuickDrawerOpen(false)}
       />
 
@@ -216,12 +216,12 @@ export const ExamQuickActionDrawer: React.FC = () => {
           {/* 1. Header Bar */}
           <div className="p-4 border-b border-subtle bg-surface-sunken flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-surface-card text-secondary border border-subtle">
+              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-card text-secondary border border-subtle">
                 {track}
               </span>
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold tracking-tight text-primary truncate">
-                  MISSION QUICK ACTIONS
+                  Mission quick actions
                 </h2>
                 <div className="flex items-center gap-2 text-xs text-muted">
                   <span className="flex items-center gap-1 font-mono font-medium tabular-nums text-accent">
@@ -231,8 +231,8 @@ export const ExamQuickActionDrawer: React.FC = () => {
                   <span>•</span>
                   <span
                     className={`font-mono font-medium tabular-nums ${
-                      isPassing ? 'text-callout-success-fg' : 'text-callout-warn-fg'
-                    }`}
+ isPassing ? 'text-callout-success-fg' : 'text-callout-warn-fg'
+ }`}
                   >
                     {score.totalScore} / {score.maxScore || 100} PTS
                   </span>
@@ -279,10 +279,10 @@ export const ExamQuickActionDrawer: React.FC = () => {
               <div
                 data-testid="exam-drawer-feedback"
                 className={`p-3 rounded-lg border text-xs flex items-start gap-2 ${
-                  submissionFeedback.type === 'success'
-                    ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
-                    : 'bg-callout-danger-bg border-callout-danger-border text-callout-danger-fg'
-                }`}
+ submissionFeedback.type === 'success'
+ ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
+ : 'bg-callout-danger-bg border-callout-danger-border text-callout-danger-fg'
+ }`}
               >
                 {submissionFeedback.type === 'success' ? (
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -296,10 +296,10 @@ export const ExamQuickActionDrawer: React.FC = () => {
             {/* 2. Rapid Flag Submission Tool */}
             <div className="p-3.5 rounded-xl bg-surface-sunken border border-subtle space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold tracking-wide text-accent flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-accent flex items-center gap-1.5">
                   <Flag className="w-3 h-3" /> Rapid Flag Submission
                 </span>
-                <span className="text-[10px] text-muted">
+                <span className="text-[11px] text-muted">
                   {score.isPassing ? 'Passing criteria met!' : `${score.pointsNeeded} pts needed to pass`}
                 </span>
               </div>
@@ -308,7 +308,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
                 {/* Target Box Selector */}
                 <div>
                   <label className="block text-[11px] text-muted mb-1">
-                    Select Target Box
+                    Select target box
                   </label>
                   <select
                     data-testid="exam-drawer-box-select"
@@ -331,10 +331,10 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     data-testid="exam-drawer-flag-type-user"
                     onClick={() => setSelectedFlagType('user')}
                     className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-[background-color,border-color,color] flex items-center justify-center gap-1.5 ${
-                      selectedFlagType === 'user'
-                        ? 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border'
-                        : 'bg-surface-card text-muted border-subtle hover:border-strong'
-                    }`}
+ selectedFlagType === 'user'
+ ? 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border'
+ : 'bg-surface-card text-muted border-subtle hover:border-strong'
+ }`}
                   >
                     <Flag className="w-3 h-3" />
                     <span>User Flag ({selectedBox?.userPoints || 10} pts)</span>
@@ -346,10 +346,10 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     data-testid="exam-drawer-flag-type-root"
                     onClick={() => setSelectedFlagType('root')}
                     className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-[background-color,border-color,color] flex items-center justify-center gap-1.5 ${
-                      selectedFlagType === 'root'
-                        ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
-                        : 'bg-surface-card text-muted border-subtle hover:border-strong'
-                    }`}
+ selectedFlagType === 'root'
+ ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
+ : 'bg-surface-card text-muted border-subtle hover:border-strong'
+ }`}
                   >
                     <Shield className="w-3 h-3" />
                     <span>Root / Sys ({selectedBox?.rootPoints || 10} pts)</span>
@@ -366,11 +366,11 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     {flagInput.trim().length > 0 && (
                       <span
                         data-testid="exam-flag-format-badge"
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                          flagValidation.valid
-                            ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                            : 'bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border'
-                        }`}
+                        className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+ flagValidation.valid
+ ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+ : 'bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border'
+ }`}
                       >
                         {flagValidation.valid ? `✓ ${flagValidation.label}` : '⚠ Format unrecognized'}
                       </span>
@@ -402,12 +402,12 @@ export const ExamQuickActionDrawer: React.FC = () => {
             {/* 3. Bio-Break & Endurance Controls */}
             <div className="p-3.5 rounded-xl bg-surface-sunken border border-subtle space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold tracking-wide text-callout-warn-fg flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-callout-warn-fg flex items-center gap-1.5">
                   <Coffee className="w-3 h-3" /> Operator Bio-Break Manager
                 </span>
                 {activeBreak.isActive && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border motion-safe:animate-pulse">
-                    BREAK RUNNING
+                  <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border motion-safe:animate-pulse">
+                    Break running
                   </span>
                 )}
               </div>
@@ -435,7 +435,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-surface-card hover:bg-surface-hover text-callout-warn-fg border border-callout-warn-border transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    <span>Conclude / Cancel Break</span>
+                    <span>End or cancel break</span>
                   </button>
                 </div>
               ) : (
@@ -446,8 +446,8 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     onClick={() => startBreak('bio')}
                     className="p-2 rounded-lg bg-surface-card border border-subtle hover:border-accent hover:bg-surface-hover text-center transition-[transform,background-color,border-color,color] active:scale-[0.97] group"
                   >
-                    <div className="text-[10px] text-muted group-hover:text-accent font-medium">15m Quick</div>
-                    <div className="text-xs font-semibold text-primary mt-0.5">Bio Break</div>
+                    <div className="text-[11px] text-muted group-hover:text-accent font-medium">15m Quick</div>
+                    <div className="text-xs font-semibold text-primary mt-0.5">Bio break</div>
                   </button>
 
                   <button
@@ -456,8 +456,8 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     onClick={() => startBreak('food')}
                     className="p-2 rounded-lg bg-surface-card border border-subtle hover:border-accent hover:bg-surface-hover text-center transition-[transform,background-color,border-color,color] active:scale-[0.97] group"
                   >
-                    <div className="text-[10px] text-muted group-hover:text-accent font-medium">30m Meal</div>
-                    <div className="text-xs font-semibold text-primary mt-0.5">Food Break</div>
+                    <div className="text-[11px] text-muted group-hover:text-accent font-medium">30m Meal</div>
+                    <div className="text-xs font-semibold text-primary mt-0.5">Food break</div>
                   </button>
 
                   <button
@@ -466,8 +466,8 @@ export const ExamQuickActionDrawer: React.FC = () => {
                     onClick={() => startBreak('rest')}
                     className="p-2 rounded-lg bg-surface-card border border-subtle hover:border-accent hover:bg-surface-hover text-center transition-[transform,background-color,border-color,color] active:scale-[0.97] group"
                   >
-                    <div className="text-[10px] text-muted group-hover:text-accent font-medium">2h Rest</div>
-                    <div className="text-xs font-semibold text-primary mt-0.5">Sleep Block</div>
+                    <div className="text-[11px] text-muted group-hover:text-accent font-medium">2h Rest</div>
+                    <div className="text-xs font-semibold text-primary mt-0.5">Sleep block</div>
                   </button>
                 </div>
               )}
@@ -475,7 +475,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
 
             {/* 4. Quick Milestone Logger */}
             <div className="p-3.5 rounded-xl bg-surface-sunken border border-subtle space-y-3">
-              <span className="text-[11px] font-semibold tracking-wide text-secondary flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-secondary flex items-center gap-1.5">
                 <Terminal className="w-3 h-3" /> Quick Milestone Logger
               </span>
 
@@ -545,7 +545,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
               {/* Recent Milestones Timeline List */}
               <div className="space-y-1.5 max-h-36 overflow-y-auto pt-1">
                 {milestones.length === 0 ? (
-                  <p className="text-[10px] text-muted text-center py-1">
+                  <p className="text-[11px] text-muted text-center py-1">
                     No milestones logged yet.
                   </p>
                 ) : (
@@ -557,10 +557,10 @@ export const ExamQuickActionDrawer: React.FC = () => {
                       <div
                         key={m.id}
                         data-testid="exam-drawer-milestone-item"
-                        className="p-1.5 rounded bg-surface-card border border-subtle text-[10px] flex items-start justify-between gap-2"
+                        className="p-1.5 rounded bg-surface-card border border-subtle text-[11px] flex items-start justify-between gap-2"
                       >
                         <span className="text-secondary leading-snug">{m.notes}</span>
-                        <span className="text-muted font-mono tabular-nums text-[10px] flex-shrink-0">
+                        <span className="text-muted font-mono tabular-nums text-[11px] flex-shrink-0">
                           {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -571,7 +571,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
 
             {/* 5. Exam Targets Mini Matrix */}
             <div className="p-3.5 rounded-xl bg-surface-sunken border border-subtle space-y-2">
-              <span className="text-[11px] font-semibold tracking-wide text-muted">
+              <span className="text-[11px] font-semibold text-muted">
                 Target Inventory Matrix ({boxes.length} Boxes)
               </span>
 
@@ -584,7 +584,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
                   >
                     <div className="min-w-0 pr-2">
                       <div className="font-semibold text-primary truncate">{b.name}</div>
-                      <div className="text-[10px] text-muted font-mono tabular-nums">{b.ip} • {b.type}</div>
+                      <div className="text-[11px] text-muted font-mono tabular-nums">{b.ip} • {b.type}</div>
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -592,11 +592,11 @@ export const ExamQuickActionDrawer: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => togglePwn(b.id, 'user')}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-[background-color,border-color,color] ${
-                            b.userPwned
-                              ? 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border'
-                              : 'bg-surface-sunken text-muted border-subtle hover:text-primary'
-                          }`}
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border transition-[background-color,border-color,color] ${
+ b.userPwned
+ ? 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border'
+ : 'bg-surface-sunken text-muted border-subtle hover:text-primary'
+ }`}
                           title="Toggle User Flag"
                         >
                           USER
@@ -607,11 +607,11 @@ export const ExamQuickActionDrawer: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => togglePwn(b.id, 'root')}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-[background-color,border-color,color] ${
-                            b.rootPwned
-                              ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
-                              : 'bg-surface-sunken text-muted border-subtle hover:text-primary'
-                          }`}
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border transition-[background-color,border-color,color] ${
+ b.rootPwned
+ ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
+ : 'bg-surface-sunken text-muted border-subtle hover:text-primary'
+ }`}
                           title="Toggle Root Flag"
                         >
                           ROOT
@@ -626,7 +626,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
 
           {/* Drawer Footer */}
           <div className="p-3 border-t border-subtle bg-surface-sunken flex items-center justify-between text-xs">
-            <span className="text-[10px] text-muted">
+            <span className="text-[11px] text-muted">
               Press <kbd className="px-1 py-0.5 rounded bg-surface-card border border-subtle text-secondary font-mono">Alt+E</kbd> or <kbd className="px-1 py-0.5 rounded bg-surface-card border border-subtle text-secondary font-mono">Esc</kbd> to toggle
             </span>
 
@@ -635,7 +635,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
               onClick={handleNavigateToExam}
               className="text-xs font-semibold text-accent hover:text-primary flex items-center gap-1 transition-colors"
             >
-              <span>Full Simulator</span>
+              <span>Full simulator</span>
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>

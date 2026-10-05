@@ -88,7 +88,7 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/60 backdrop-blur-xs font-sans">
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -96,18 +96,18 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0, transition: MODAL_ASYMMETRIC_TRANSITION.enter }}
             exit={{ opacity: 0, scale: 0.96, y: 8, transition: MODAL_ASYMMETRIC_TRANSITION.exit }}
-            className="w-full max-w-lg rounded-2xl border border-border-subtle bg-surface-elevated p-6 shadow-2xl space-y-4 machined-edge"
+            className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border border-subtle bg-surface-elevated p-6 shadow-2xl space-y-4 machined-edge"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-              <div className="flex items-center gap-2 font-bold text-text-primary text-sm" id="add-loot-title">
+            <div className="flex items-center justify-between border-b border-subtle pb-3">
+              <div className="flex items-center gap-2 font-semibold text-primary text-base tracking-[-0.01em]" id="add-loot-title">
                 <Database className="w-4 h-4 text-accent" />
-                <span>LOG NEW EVIDENCE & LOOT</span>
+                <span>Log new evidence</span>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1 rounded-md text-text-muted hover:text-text-primary active:scale-[0.97] transition-colors cursor-pointer"
+                className="p-2 rounded-md text-muted hover:text-primary active:scale-[0.97] transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
@@ -115,18 +115,18 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} className="space-y-4 text-sm">
               {/* Target Selector */}
               <div>
-                <label className="block text-[11px] font-medium text-text-secondary mb-1">
-                  TARGET MACHINE
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Target machine
                 </label>
                 <select
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-base border border-border-subtle text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-sans"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-base border border-subtle text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 font-sans"
                 >
-                  <option value="">Global / Unscoped Loot</option>
+                  <option value="">Global (no target)</option>
                   {machines.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name} ({m.ip || 'No IP'}) — {m.platform}
@@ -138,41 +138,41 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
               {/* Category & Username Grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-text-secondary mb-1">
-                    CATEGORY
+                  <label className="block text-xs font-medium text-secondary mb-1">
+                    Category
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as EvidenceCategory)}
-                    className="w-full px-3 py-2 rounded-lg bg-surface-base border border-border-subtle text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-sans"
+                    className="w-full px-3 py-2 rounded-lg bg-surface-base border border-subtle text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 font-sans"
                   >
-                    <option value="password">Password (Plaintext)</option>
+                    <option value="password">Password (plaintext)</option>
                     <option value="hash">Hash (NTLM, SHA, bcrypt)</option>
-                    <option value="ssh_key">SSH Private Key</option>
-                    <option value="token">Token / API Key / Secret</option>
-                    <option value="flag">CTF Flag Proof</option>
-                    <option value="service">Discovered Service Endpoint</option>
+                    <option value="ssh_key">SSH private key</option>
+                    <option value="token">Token, API key or secret</option>
+                    <option value="flag">CTF flag proof</option>
+                    <option value="service">Discovered service endpoint</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-text-secondary mb-1">
-                    USERNAME / IDENTITY
+                  <label className="block text-xs font-medium text-secondary mb-1">
+                    Username or identity
                   </label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. Administrator, root"
-                    className="w-full px-3 py-2 rounded-lg bg-surface-base border border-border-subtle text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-sans"
+                    className="w-full px-3 py-2 rounded-lg bg-surface-base border border-subtle text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 font-sans"
                   />
                 </div>
               </div>
 
               {/* Secret Textarea */}
               <div>
-                <label className="block text-[11px] font-medium text-text-secondary mb-1">
-                  SECRET VALUE / KEY <span className="text-callout-danger-fg">*</span>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Secret value or key <span className="text-callout-danger-fg">*</span>
                 </label>
                 <textarea
                   required
@@ -180,36 +180,36 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
                   value={secret}
                   onChange={(e) => setSecret(e.target.value)}
                   placeholder="Paste password, hash string, or SSH private key..."
-                  className="w-full p-2.5 rounded-lg bg-surface-base border border-border-subtle text-text-primary font-mono text-xs tabular-nums focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+                  className="w-full p-2.5 rounded-lg bg-surface-base border border-subtle text-primary font-mono text-xs tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 resize-none"
                 />
               </div>
 
               {/* Tactical Notes */}
               <div>
-                <label className="block text-[11px] font-medium text-text-secondary mb-1">
-                  TACTICAL NOTES & CONTEXT
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Notes and context
                 </label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Dumped via Mimikatz sekurlsa::logonpasswords"
-                  className="w-full px-3 py-2 rounded-lg bg-surface-base border border-border-subtle text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-sans"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-base border border-subtle text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 font-sans"
                 />
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-subtle">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-subtle">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-lg border border-border-subtle text-text-secondary font-medium hover:bg-surface-hover active:scale-[0.97] transition-all cursor-pointer"
+                  className="px-4 py-2 max-sm:py-3 rounded-lg border border-subtle text-secondary font-medium hover:bg-surface-hover active:scale-[0.97] transition-interactive cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-cyber-emerald text-slate-950 font-semibold hover:bg-emerald-400 active:scale-[0.97] transition-all cursor-pointer shadow-xs"
+                  className="px-4 py-2 max-sm:py-3 rounded-lg bg-accent text-on-accent font-medium hover:brightness-105 active:scale-[0.97] transition-interactive cursor-pointer shadow-xs"
                 >
                   Save to Vault
                 </button>

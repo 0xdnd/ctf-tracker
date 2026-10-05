@@ -157,27 +157,27 @@ export const UserMenu: React.FC = () => {
   };
 
   return (
-    <div ref={menuRef} className="relative font-mono text-xs flex-shrink-0">
-      {/* Header Button Group: 1-Click Save + Profile / Local Operator Badge */}
-      <div className="flex items-center gap-1.5 bg-cyber-card/90 border border-cyber-border rounded-xl p-1 shadow-sm flex-shrink-0">
+    <div ref={menuRef} className="relative font-sans text-xs flex-shrink-0">
+      {/* Header button group: quick save + profile */}
+      <div className="flex items-center gap-1.5 bg-surface-card border border-subtle rounded-xl p-1 flex-shrink-0">
         {/* Instant 1-Click Quick Save Button */}
         <button
           onClick={handleQuickSave}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition-[box-shadow,background-color,border-color,color] ${
-            justSaved
-              ? 'bg-cyber-emerald text-black shadow-glow-emerald/40'
-              : 'bg-cyber-bg border border-cyber-border text-cyber-emerald hover:border-cyber-emerald/60 hover:bg-cyber-emerald/10'
-          }`}
+          className={`flex items-center gap-1.5 px-2.5 py-1 max-sm:py-2.5 rounded-lg font-medium transition-[background-color,border-color,color] active:scale-[0.97] ${
+ justSaved
+ ? 'bg-accent text-on-accent'
+ : 'bg-surface-card border border-subtle text-secondary hover:border-strong hover:bg-surface-hover'
+ }`}
           title="Click to save all progress instantly to browser storage" aria-label="Save all progress"
         >
           {justSaved ? (
             <>
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="text-[11px]">Saved!</span>
+              <span className="text-[11px]">Saved</span>
             </>
           ) : (
             <>
-              <Save className="w-3.5 h-3.5 text-cyber-emerald" />
+              <Save className="w-3.5 h-3.5" />
               <span className="text-[11px] hidden sm:inline">Save</span>
             </>
           )}
@@ -186,98 +186,98 @@ export const UserMenu: React.FC = () => {
         {/* Profile / Local Operator Dropdown Trigger */}
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-cyber-bg transition-colors group cursor-pointer"
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-surface-hover transition-colors group cursor-pointer"
           title={isAuthenticated && user ? `Operator: ${activeName} (${user.role || 'Tactical Operator'})` : 'Local Mode: Offline & Zero Cloud Egress'}
         >
           {user?.avatarId ? (
             <img
               src={getAvatarSvgDataUri(user.avatarId)}
               alt={activeName}
-              className="w-5 h-5 rounded-md object-contain border border-cyber-emerald/60 p-0.5 bg-slate-900 flex-shrink-0"
+              className="w-5 h-5 rounded-md object-contain border border-subtle p-0.5 bg-surface-inverse flex-shrink-0"
             />
           ) : isAuthenticated && user?.avatarUrl ? (
             <img
               src={user.avatarUrl}
               alt={activeName}
-              className="w-5 h-5 rounded-full border border-cyber-emerald/60 object-cover flex-shrink-0"
+              className="w-5 h-5 rounded-full border border-subtle object-cover flex-shrink-0"
             />
           ) : isAuthenticated && user ? (
-            <div className="w-5 h-5 rounded-full bg-cyber-emerald/20 border border-cyber-emerald flex items-center justify-center text-[9px] font-bold text-cyber-emerald flex-shrink-0">
+            <div className="w-5 h-5 rounded-full bg-surface-sunken border border-subtle flex items-center justify-center text-[11px] font-semibold text-primary flex-shrink-0">
               {activeName.charAt(0).toUpperCase()}
             </div>
           ) : (
-            <div className="w-5 h-5 rounded-full bg-cyber-cyan/15 border border-cyber-cyan/50 flex items-center justify-center text-cyber-cyan flex-shrink-0">
+            <div className="w-5 h-5 rounded-full bg-surface-sunken border border-subtle flex items-center justify-center text-muted flex-shrink-0">
               <User className="w-3 h-3" />
             </div>
           )}
 
-          <span className="font-bold text-slate-900 dark:text-white text-xs max-w-[80px] sm:max-w-[110px] truncate group-hover:text-cyber-cyan transition-colors">
+          <span className="font-semibold text-primary text-xs max-w-[80px] sm:max-w-[110px] truncate transition-colors">
             {activeName}
           </span>
 
-          <span className={`px-1 py-0.2 rounded text-[9px] font-bold font-mono ${gamification.currentRank.badgeColor} bg-black/40 border border-current`}>
-            [{gamification.currentRank.tier}]
+          <span className={`px-1 py-0.5 rounded text-[11px] font-semibold font-mono ${gamification.currentRank.badgeColor} bg-surface-inverse border border-current`}>
+            {gamification.currentRank.tier}
           </span>
 
-          <ChevronDown className="w-3 h-3 text-cyber-muted group-hover:text-slate-900 dark:group-hover:text-primary transition-transform" />
+          <ChevronDown className="w-3 h-3 text-muted group-hover:text-primary transition-transform" />
         </button>
       </div>
 
       {/* Control Station Dropdown */}
       {dropdownOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-80 p-3.5 rounded-2xl bg-cyber-card border border-cyber-border shadow-2xl z-50 space-y-3 backdrop-blur-md"
+          className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] p-3.5 rounded-2xl bg-surface-elevated border border-subtle shadow-2xl z-50 space-y-3"
           onMouseLeave={() => setDropdownOpen(false)}
         >
           {/* User Status Header */}
-          <div className="flex items-center justify-between pb-2.5 border-b border-cyber-border/70">
+          <div className="flex items-center justify-between pb-2.5 border-b border-subtle">
             <div className="flex items-center gap-2.5 min-w-0">
               {user?.avatarId ? (
                 <img
                   src={getAvatarSvgDataUri(user.avatarId)}
                   alt={activeName}
-                  className="w-10 h-10 rounded-xl border border-cyber-border bg-slate-900 p-1 object-contain shadow-sm flex-shrink-0"
+                  className="w-10 h-10 rounded-xl border border-subtle bg-surface-inverse p-1 object-contain flex-shrink-0"
                 />
               ) : isAuthenticated && user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={activeName}
-                  className="w-10 h-10 rounded-xl border border-cyber-border object-cover flex-shrink-0"
+                  className="w-10 h-10 rounded-xl border border-subtle object-cover flex-shrink-0"
                 />
               ) : isAuthenticated && user ? (
-                <div className="w-10 h-10 rounded-xl bg-cyber-bg border border-cyber-border flex items-center justify-center text-sm font-bold text-cyber-emerald font-mono flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-surface-card border border-subtle flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
                   {activeName.charAt(0).toUpperCase()}
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-xl bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-cyan flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-surface-sunken border border-subtle flex items-center justify-center text-muted flex-shrink-0">
                   <HardDrive className="w-5 h-5" />
                 </div>
               )}
 
               <div className="min-w-0 flex-1">
-                <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1.5">
+                <div className="font-semibold text-primary text-sm truncate flex items-center gap-1.5">
                   <span>{activeName}</span>
                 </div>
-                <div className="text-[10px] text-cyber-muted truncate flex items-center gap-1">
-                  <span className={`font-mono font-bold ${gamification.currentRank.badgeColor}`}>
-                    [{gamification.currentRank.tier}] {gamification.currentRank.title}
+                <div className="text-[11px] text-muted truncate flex items-center gap-1">
+                  <span className={`font-semibold ${gamification.currentRank.badgeColor}`}>
+                    {gamification.currentRank.tier} {gamification.currentRank.title}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-1 font-mono text-[10px]">
-                  <span className="text-callout-info-fg font-bold">
+                <div className="flex items-center gap-1.5 mt-1 font-mono text-[11px]">
+                  <span className="text-secondary font-medium">
                     {gamification.totalXp.toLocaleString()} XP
                   </span>
-                  <span className="text-cyber-muted">•</span>
-                  <span className="text-callout-tip-fg font-bold">
-                    {gamification.unlockedCount}/16 🏆
+                  <span className="text-muted">•</span>
+                  <span className="text-secondary font-medium">
+                    {gamification.unlockedCount}/16 trophies
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="text-right">
-              <div className="text-xs font-bold text-cyber-emerald">{rootedCount} / {totalCount}</div>
-              <div className="text-[9px] text-cyber-muted uppercase">Pwned</div>
+              <div className="text-xs font-semibold text-primary font-mono tabular-nums">{rootedCount} / {totalCount}</div>
+              <div className="text-[11px] text-muted">Pwned</div>
             </div>
           </div>
 
@@ -287,20 +287,20 @@ export const UserMenu: React.FC = () => {
               setDropdownOpen(false);
               useAuthStore.getState().setOperatorProfileModalOpen(true);
             }}
-            className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-cyan-500/60 cursor-pointer transition-colors group"
+            className="p-2.5 rounded-xl bg-surface-inverse border border-inverse hover:border-strong cursor-pointer transition-colors group"
           >
-            <div className="flex items-center justify-between text-xs font-mono mb-1">
-              <span className="text-tertiary group-hover:text-callout-info-fg flex items-center gap-1 font-bold">
-                <Trophy className="w-3.5 h-3.5 text-callout-warn-fg" />
-                <span>Trophy Case & Ranks</span>
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="text-on-inverse-muted group-hover:text-on-inverse flex items-center gap-1 font-medium">
+                <Trophy className="w-3.5 h-3.5" />
+                <span>Trophies and ranks</span>
               </span>
-              <span className="text-callout-info-fg font-bold">
-                {gamification.nextRank ? `${gamification.rankProgressPct}%` : 'MAX'}
+              <span className="text-on-inverse font-medium font-mono tabular-nums">
+                {gamification.nextRank ? `${gamification.rankProgressPct}%` : 'Max'}
               </span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-surface-inverse-elevated overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-colors duration-300"
+                className="h-full bg-accent transition-[width] duration-300"
                 style={{ width: `${gamification.rankProgressPct}%` }}
               />
             </div>
@@ -309,21 +309,17 @@ export const UserMenu: React.FC = () => {
           {/* 1-Click Large Save Button */}
           <button
             onClick={handleQuickSave}
-            className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-2 shadow-md ${
-              justSaved
-                ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
-                : 'bg-cyber-emerald hover:bg-cyber-emerald/90 text-black shadow-glow-emerald/20'
-            }`}
+            className={`w-full py-2.5 px-3 rounded-xl font-medium text-xs transition-[background-color,border-color,color,transform] active:scale-[0.97] flex items-center justify-center gap-2 bg-accent text-on-accent hover:brightness-105`}
           >
             {justSaved ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>SAVED TO BROWSER STORAGE!</span>
+                <span>Saved to browser storage</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>1-CLICK SAVE PROGRESS</span>
+                <span>Save progress</span>
               </>
             )}
           </button>
@@ -332,30 +328,29 @@ export const UserMenu: React.FC = () => {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleExportBackup}
-              className="p-2 rounded-xl bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-slate-900 dark:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              className="p-2 max-sm:py-3 rounded-xl bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
               title="Download backup file"
             >
-              <Download className="w-3.5 h-3.5 text-cyber-cyan" />
-              <span>Export Backup</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>Export backup</span>
             </button>
 
             <button
               onClick={handleImportBackup}
-              className="p-2 rounded-xl bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-slate-900 dark:text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              className="p-2 max-sm:py-3 rounded-xl bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
               title="Upload backup file"
             >
-              <Upload className="w-3.5 h-3.5 text-callout-tip-fg" />
-              <span>Import Backup</span>
+              <Upload className="w-3.5 h-3.5" />
+              <span>Import backup</span>
             </button>
           </div>
 
           {/* Operator & Creator Showcase */}
-          <div className="p-2.5 rounded-xl bg-gradient-to-r from-cyber-emerald/10 via-cyber-card to-cyber-cyan/10 border border-cyber-emerald/40 space-y-2">
+          <div className="p-2.5 rounded-xl bg-surface-sunken border border-subtle space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="w-2 h-2 rounded-full bg-cyber-emerald animate-pulse" />
-                <span className="text-[10px] uppercase font-bold text-slate-900 dark:text-white tracking-wider truncate">
-                  BUILT BY DANIEL DAYAN
+                <span className="text-xs font-medium text-secondary truncate">
+                  Built by Daniel Dayan
                 </span>
               </div>
               <button
@@ -363,9 +358,9 @@ export const UserMenu: React.FC = () => {
                   setDropdownOpen(false);
                   setOperatorModalOpen(true);
                 }}
-                className="text-[9px] font-bold text-cyber-emerald hover:underline"
+                className="text-xs font-medium text-accent hover:underline"
               >
-                DOSSIER ↗
+                Dossier
               </button>
             </div>
 
@@ -374,41 +369,41 @@ export const UserMenu: React.FC = () => {
                 href={CREATOR_PROFILE_LINKS.portfolio}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-cyber-emerald/20 hover:bg-cyber-emerald/30 text-cyber-emerald hover:text-primary border border-cyber-emerald/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-surface-card hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-[background-color,border-color,color] text-xs font-medium"
                 title="Daniel Dayan's Official Portfolio"
               >
                 <Globe className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">PORTFOLIO</span>
+                <span className="truncate">Portfolio</span>
               </a>
               <a
                 href={CREATOR_PROFILE_LINKS.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#0077B5]/20 hover:bg-[#0077B5]/30 text-[#0077B5] hover:text-primary border border-[#0077B5]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-surface-card hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-[background-color,border-color,color] text-xs font-medium"
                 title="Daniel Dayan LinkedIn Profile"
               >
                 <svg className="w-3 h-3 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.7a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2Z"/></svg>
-                <span className="truncate">LINKEDIN</span>
+                <span className="truncate">LinkedIn</span>
               </a>
               <a
                 href={CREATOR_PROFILE_LINKS.coffee}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[#FFDD00]/20 hover:bg-[#FFDD00]/30 text-[#FFDD00] hover:text-primary border border-[#FFDD00]/50 transition-[box-shadow,background-color,border-color,color] text-[10px] font-bold shadow-sm"
+                className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-surface-card hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-[background-color,border-color,color] text-xs font-medium"
                 title="Buy Daniel Dayan a Coffee (buymeacoffee.com/0xdnd)"
               >
                 <Coffee className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">COFFEE</span>
+                <span className="truncate">Coffee</span>
               </a>
             </div>
           </div>
 
           {/* Operator Profile Management & Sign Out */}
-          <div className="pt-2 border-t border-cyber-border/70 space-y-2">
+          <div className="pt-2 border-t border-subtle space-y-2">
             <div>
-              <div className="text-[10px] text-cyber-muted mb-1.5 flex items-center justify-between">
-                <span>OPERATOR PROFILE:</span>
-                <span className="text-[9px] text-cyber-emerald">LOCAL OFFLINE</span>
+              <div className="text-[11px] text-muted mb-1.5 flex items-center justify-between">
+                <span>Operator profile</span>
+                <span className="text-[11px] text-muted">Local, offline</span>
               </div>
               <button
                 onClick={() => {
@@ -416,11 +411,11 @@ export const UserMenu: React.FC = () => {
                   useAuthStore.getState().setOperatorProfileModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-cyber-bg hover:bg-cyber-card border border-cyber-border font-bold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md group text-slate-900 dark:text-white"
+                className="w-full flex items-center justify-center gap-2 py-2 max-sm:py-3 px-3 rounded-xl bg-surface-card hover:bg-surface-hover border border-subtle font-medium text-xs transition-[background-color,border-color,color] group text-primary"
                 title="Switch or create local operator profiles"
               >
-                <User className="w-3.5 h-3.5 text-cyber-emerald" />
-                <span>Switch / Manage Profiles</span>
+                <User className="w-3.5 h-3.5" />
+                <span>Switch or manage profiles</span>
               </button>
             </div>
 
@@ -430,10 +425,10 @@ export const UserMenu: React.FC = () => {
                   logout();
                   setDropdownOpen(false);
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-cyber-crimson/15 hover:bg-cyber-crimson border border-cyber-crimson/30 hover:border-cyber-crimson text-cyber-crimson hover:text-primary font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2 max-sm:py-3 px-3 rounded-xl bg-callout-danger-bg hover:brightness-110 border border-callout-danger-border text-callout-danger-fg font-medium text-xs transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>SIGN OUT TO GUEST</span>
+                <span>Sign out to guest</span>
               </button>
             )}
 
@@ -444,19 +439,19 @@ export const UserMenu: React.FC = () => {
                   setSettingsModalOpen(true);
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-1.5 max-sm:py-3 px-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-muted hover:text-primary text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
                 title="Open Operator Settings"
               >
-                <Settings className="w-3 h-3 text-cyber-cyan" />
+                <Settings className="w-3 h-3" />
                 <span>Settings</span>
               </button>
 
               <button
                 onClick={handleReset}
-                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-1.5 max-sm:py-3 px-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-muted hover:text-primary text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
                 title="Reset all target progress"
               >
-                <RotateCcw className="w-3 h-3 text-cyber-amber" />
+                <RotateCcw className="w-3 h-3" />
                 <span>Reset CTF</span>
               </button>
             </div>

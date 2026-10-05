@@ -64,10 +64,10 @@ describe('EvidenceVaultPage component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('EVIDENCE & LOOT VAULT')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Evidence vault' })).toBeInTheDocument();
     // Verify KPI counters exist
-    expect(screen.getByText('TOTAL ARTIFACTS')).toBeInTheDocument();
-    expect(screen.getByText('PROVED FLAGS')).toBeInTheDocument();
+    expect(screen.getByText('Total artifacts')).toBeInTheDocument();
+    expect(screen.getByText('Flags captured')).toBeInTheDocument();
   });
 
   it('aggregates flags and extracted credentials from store machines', () => {
@@ -112,14 +112,14 @@ describe('EvidenceVaultPage component', () => {
     expect(maskedElements.length).toBeGreaterThan(0);
 
     // Click "Reveal All" button
-    const revealAllBtn = screen.getByRole('button', { name: /REVEAL ALL/i });
+    const revealAllBtn = screen.getByRole('button', { name: /Reveal all/i });
     fireEvent.click(revealAllBtn);
 
     // Secret should now be visible
     expect(screen.getByText('c81e728d9d4c2f636f067f89cc14862c')).toBeInTheDocument();
 
     // Click "Mask All" button
-    const maskAllBtn = screen.getByRole('button', { name: /MASK ALL/i });
+    const maskAllBtn = screen.getByRole('button', { name: /Mask all/i });
     fireEvent.click(maskAllBtn);
 
     // Secret should be masked again
@@ -134,10 +134,10 @@ describe('EvidenceVaultPage component', () => {
     );
 
     // Open add modal
-    const logBtn = screen.getByRole('button', { name: /LOG EVIDENCE/i });
+    const logBtn = screen.getByRole('button', { name: /Log evidence/i });
     fireEvent.click(logBtn);
 
-    expect(screen.getByText('LOG NEW EVIDENCE & LOOT')).toBeInTheDocument();
+    expect(screen.getByText('Log new evidence')).toBeInTheDocument();
 
     // Fill form
     const usernameInput = screen.getByPlaceholderText(/e\.g\. Administrator/i);
@@ -152,7 +152,7 @@ describe('EvidenceVaultPage component', () => {
 
     // Modal closes and item appears
     await waitFor(() => {
-      expect(screen.queryByText('LOG NEW EVIDENCE & LOOT')).not.toBeInTheDocument();
+      expect(screen.queryByText('Log new evidence')).not.toBeInTheDocument();
     });
 
     expect(screen.getByText('backup_admin')).toBeInTheDocument();

@@ -237,7 +237,7 @@ export const ExamBurndownChart: React.FC<ExamBurndownChartProps> = ({
       </svg>
 
       {/* Legend: identity never relies on color alone */}
-      <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted" aria-label="Chart legend">
+      <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted" aria-label="Chart legend">
         <li className="flex items-center gap-1.5"><LegendSwatch color={COLOR.accent} /><span>Actual score</span></li>
         <li className="flex items-center gap-1.5"><LegendSwatch color={COLOR.muted} dashed /><span>Ideal pace</span></li>
         <li className="flex items-center gap-1.5"><LegendSwatch color={COLOR.success} /><span>Pass threshold</span></li>

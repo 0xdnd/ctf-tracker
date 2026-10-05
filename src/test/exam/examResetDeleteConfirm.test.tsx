@@ -74,13 +74,13 @@ describe('exam destructive actions require confirmation', () => {
           <ConfirmDialog />
         </MemoryRouter>,
       );
-      fireEvent.click(screen.getByText('Start New Simulation'));
+      fireEvent.click(screen.getByText('Start new simulation'));
       await screen.findByRole('alertdialog');
       fireEvent.click(screen.getByText('Cancel'));
       await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
       expect(useExamStore.getState().status).toBe('completed');
 
-      fireEvent.click(screen.getByText('Start New Simulation'));
+      fireEvent.click(screen.getByText('Start new simulation'));
       await screen.findByRole('alertdialog');
       fireEvent.click(screen.getByRole('button', { name: 'Reset exam' }));
       await waitFor(() => expect(useExamStore.getState().status).toBe('idle'));

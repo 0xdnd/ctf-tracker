@@ -1,34 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Key, 
-  Flag, 
-  Server, 
-  Terminal, 
-  Eye, 
-  EyeOff, 
-  Copy, 
-  Check, 
-  Trash2, 
-  ShieldCheck, 
-  Crosshair, 
-  Layers, 
-  Clock, 
-  Lock, 
-  Unlock,
-  Radio,
-  Search,
-  ChevronRight,
-  Sparkles,
-  Zap
-} from 'lucide-react';
+import { Key, Server, Terminal, Eye, EyeOff, Copy, Check, Trash2, ShieldCheck, Layers, Clock } from 'lucide-react';
 import { 
   VaultEvidenceItem, 
-  EvidenceCategory, 
   formatIsoTimestamp 
 } from '../../pages/EvidenceVaultPage';
-import { PlatformBadge } from '../common/PlatformBadge';
-import { EditableIpBadge } from '../common/EditableIpBadge';
+import { CyberBadge } from '../common/CyberBadge';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 
 export interface LootTimelineProps {
@@ -60,9 +36,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 1,
     name: 'Reconnaissance & Attack Surface',
     subtitle: 'Discovered services, open ports, software banners & CVE candidates',
-    accentColor: 'text-callout-info-fg',
-    borderAccent: 'border-sky-500/30',
-    badgeBg: 'bg-sky-500/10 text-callout-info-fg border-sky-500/30',
+    accentColor: 'text-muted',
+    borderAccent: 'border-subtle',
+    badgeBg: 'bg-surface-sunken text-secondary border-subtle',
     icon: Server,
   },
   {
@@ -70,9 +46,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 2,
     name: 'Initial Foothold & Access',
     subtitle: 'User proof flags, compromised web passwords & application credentials',
-    accentColor: 'text-callout-warn-fg',
-    borderAccent: 'border-amber-500/30',
-    badgeBg: 'bg-amber-500/10 text-callout-warn-fg border-amber-500/30',
+    accentColor: 'text-muted',
+    borderAccent: 'border-subtle',
+    badgeBg: 'bg-surface-sunken text-secondary border-subtle',
     icon: Key,
   },
   {
@@ -80,9 +56,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 3,
     name: 'Lateral Movement & Pivoting',
     subtitle: 'SSH private keys, internal tokens, Kerberos tickets & routing relays',
-    accentColor: 'text-callout-info-fg',
-    borderAccent: 'border-cyan-500/30',
-    badgeBg: 'bg-cyan-500/10 text-callout-info-fg border-cyan-500/30',
+    accentColor: 'text-muted',
+    borderAccent: 'border-subtle',
+    badgeBg: 'bg-surface-sunken text-secondary border-subtle',
     icon: Terminal,
   },
   {
@@ -90,9 +66,9 @@ const PHASES: KillChainPhase[] = [
     phaseNum: 4,
     name: 'Privilege Escalation & Root Pwn',
     subtitle: 'Root/System flags, extracted password hashes & administrative proofs',
-    accentColor: 'text-callout-success-fg',
-    borderAccent: 'border-emerald-500/30',
-    badgeBg: 'bg-emerald-500/10 text-callout-success-fg border-emerald-500/30',
+    accentColor: 'text-muted',
+    borderAccent: 'border-subtle',
+    badgeBg: 'bg-surface-sunken text-secondary border-subtle',
     icon: ShieldCheck,
   },
 ];
@@ -187,46 +163,44 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
   return (
     <div className="space-y-5" data-testid="loot-timeline-view">
       {/* Control Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-surface-card border border-subtle machined-edge">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex items-center p-1 rounded-xl bg-surface-base border border-subtle machined-edge">
+          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle">
             <button
               type="button"
               onClick={() => handleGroupingToggle('phase')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-[0.97] cursor-pointer ${
-                groupingMode === 'phase'
-                  ? 'bg-cyber-emerald text-black shadow-xs'
-                  : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
-              }`}
+              className={`flex items-center gap-1.5 px-3 h-8 max-sm:h-11 rounded-md text-xs font-medium transition-interactive active:scale-[0.97] cursor-pointer ${
+ groupingMode === 'phase'
+ ? 'bg-surface-card text-primary shadow-xs' : 'text-muted hover:text-primary'
+ }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>KILL-CHAIN PHASES</span>
+              <span>Kill-chain phases</span>
             </button>
             <button
               type="button"
               onClick={() => handleGroupingToggle('chronological')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-[0.97] cursor-pointer ${
-                groupingMode === 'chronological'
-                  ? 'bg-cyber-emerald text-black shadow-xs'
-                  : 'text-tertiary hover:text-slate-900 dark:hover:text-primary'
-              }`}
+              className={`flex items-center gap-1.5 px-3 h-8 max-sm:h-11 rounded-md text-xs font-medium transition-interactive active:scale-[0.97] cursor-pointer ${
+ groupingMode === 'chronological'
+ ? 'bg-surface-card text-primary shadow-xs' : 'text-muted hover:text-primary'
+ }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>CHRONOLOGICAL STREAM</span>
+              <span>Chronological stream</span>
             </button>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-[10px] uppercase font-bold text-tertiary tracking-wider">
-            FILTER TARGET:
+          <label className="text-xs font-medium text-muted">
+            Target
           </label>
           <select
             value={filterTarget}
             onChange={(e) => setFilterTarget(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-surface-base border border-subtle text-slate-900 dark:text-white text-xs font-mono focus:outline-hidden focus:border-cyber-cyan cursor-pointer"
+            className="px-2.5 h-8 max-sm:h-11 rounded-lg bg-surface-card border border-subtle text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus:border-accent cursor-pointer"
           >
-            <option value="all">All Targets ({items.length} items)</option>
+            <option value="all">All targets ({items.length} items)</option>
             {targetOptions.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -237,11 +211,11 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
       </div>
 
       {filteredItems.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl border border-dashed border-subtle bg-surface-card/40 machined-edge">
-          <ShieldCheck className="w-10 h-10 text-tertiary mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Zero Artifacts in Selected Scope</h3>
+        <div className="p-12 text-center rounded-2xl border border-dashed border-subtle">
+          <ShieldCheck className="w-10 h-10 text-dim mx-auto mb-3" />
+          <h3 className="text-sm font-semibold text-primary">No artifacts in this scope</h3>
           <p className="text-xs text-tertiary mt-1">
-            Log flags, extracted credentials, or run recon scans to populate the loot timeline.
+            Log a flag or credential, or import a scan, to populate the timeline.
           </p>
         </div>
       ) : groupingMode === 'phase' ? (
@@ -254,27 +228,27 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
             return (
               <div 
                 key={phase.id} 
-                className="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-subtle bg-surface-card/60 machined-edge"
+                className="space-y-3.5 sm:p-5 sm:rounded-2xl sm:border sm:border-subtle sm:bg-surface-card/60"
               >
                 {/* Phase Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-subtle">
                   <div className="flex items-center gap-2.5">
-                    <div className={`p-2 rounded-xl border ${phase.badgeBg} machined-edge flex items-center justify-center`}>
+                    <div className={`p-2 rounded-lg border ${phase.badgeBg} flex items-center justify-center`}>
                       <PhaseIcon className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${phase.accentColor}`}>
-                          PHASE 0{phase.phaseNum}
+                        <span className={`text-xs font-medium ${phase.accentColor}`}>
+                          Phase {phase.phaseNum}
                         </span>
-                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                        <h2 className="text-sm sm:text-base font-semibold text-primary">
                           {phase.name}
                         </h2>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-surface-base border border-subtle text-slate-600 dark:text-zinc-300 font-bold tabular-nums">
+                        <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle text-muted font-medium tabular-nums">
                           {phaseItems.length}
                         </span>
                       </div>
-                      <p className="text-[11px] text-tertiary mt-0.5">
+                      <p className="text-xs text-muted mt-0.5">
                         {phase.subtitle}
                       </p>
                     </div>
@@ -307,7 +281,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
         </div>
       ) : (
         /* ================= Chronological Stream View ================= */
-        <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-cyber-emerald before:via-cyan-500 before:to-purple-500">
+        <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-px before:bg-surface-hover">
           {chronologicalItems.map((item, index) => {
             const isRevealed = Boolean(revealedIds[item.id]);
             const isCopied = copiedId === item.id;
@@ -317,8 +291,8 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
             return (
               <div key={item.id} className="relative group">
                 {/* Timeline node bullet */}
-                <div className="absolute -left-6 sm:-left-8 top-4 -translate-x-1/2 w-4 h-4 rounded-full bg-slate-900 border-2 border-cyber-emerald flex items-center justify-center shadow-xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-cyber-emerald animate-pulse" />
+                <div className="absolute -left-6 sm:-left-8 top-4 -translate-x-1/2 w-4 h-4 rounded-full bg-surface-card border-2 border-strong flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                 </div>
 
                 <TimelineCard
@@ -329,7 +303,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
                   onCopy={() => onCopy(item.secret, item.id)}
                   onDelete={item.isCustom && onDeleteCustom ? () => onDeleteCustom(item.id) : undefined}
                   showTimestamp
-                  phaseTag={`Phase ${phaseMeta.phaseNum}: ${phaseMeta.name.split(' ')[0]}`}
+                  phaseTag={`Phase ${phaseMeta.phaseNum}`}
                 />
               </div>
             );
@@ -361,68 +335,46 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
   showTimestamp = true,
   phaseTag,
 }) => {
-  const isFlag = item.category === 'flag';
   const isService = item.category === 'service';
-  const isHash = item.category === 'hash';
 
-  const categoryColor = useMemo(() => {
-    switch (item.category) {
-      case 'flag':
-        return 'border-emerald-500/40 bg-emerald-500/5 text-callout-success-fg';
-      case 'password':
-        return 'border-amber-500/40 bg-amber-500/5 text-callout-warn-fg';
-      case 'hash':
-        return 'border-purple-500/40 bg-purple-500/5 text-callout-tip-fg';
-      case 'ssh_key':
-        return 'border-cyan-500/40 bg-cyan-500/5 text-callout-info-fg';
-      case 'token':
-        return 'border-blue-500/40 bg-blue-500/5 text-callout-info-fg';
-      case 'service':
-        return 'border-slate-500/40 bg-slate-500/5 text-tertiary';
-      default:
-        return 'border-subtle bg-surface-base text-tertiary';
-    }
-  }, [item.category]);
+  const categoryVariant: 'success' | 'warning' | 'info' | 'neutral' =
+    item.category === 'flag' ? 'success' : item.category === 'password' ? 'warning' : item.category === 'ssh_key' || item.category === 'token' ? 'info' : 'neutral';
 
   return (
-    <div className="p-3.5 sm:p-4 rounded-2xl bg-surface-card border border-subtle hover:border-slate-400 dark:hover:border-zinc-700 transition-colors shadow-xs machined-edge space-y-2.5">
+    <div className="group p-3.5 sm:p-4 rounded-2xl bg-surface-card border border-subtle hover:border-strong transition-colors machined-edge space-y-2.5">
       {/* Header: Target Name, IP, Type, and Tag */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-bold uppercase tracking-wider ${categoryColor}`}>
-              {item.typeLabel}
-            </span>
+            <CyberBadge variant={categoryVariant} size="sm">{item.typeLabel}</CyberBadge>
             {phaseTag && (
-              <span className="text-[10px] font-mono text-tertiary">
-                · {phaseTag}
+              <span className="text-xs text-muted">
+                {phaseTag}
               </span>
             )}
             {item.isCustom && (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-callout-tip-fg border border-purple-500/30 font-bold uppercase">
-                Custom Loot
-              </span>
+              <CyberBadge variant="warning" size="xs">Custom</CyberBadge>
             )}
           </div>
 
           <div className="flex items-baseline gap-2 mt-1">
-            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+            <h4 className="text-xs font-semibold text-primary truncate">
               {item.targetName}
             </h4>
-            <span className="text-[11px] font-mono text-tertiary tabular-nums">
+            <span className="text-xs font-mono text-muted tabular-nums">
               {item.targetIp}
             </span>
           </div>
         </div>
 
         {/* Action Buttons: Mask/Reveal, Copy, Delete */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 [@media(hover:hover)_and_(min-width:640px)]:opacity-0 [@media(hover:hover)_and_(min-width:640px)]:group-hover:opacity-100 [@media(hover:hover)_and_(min-width:640px)]:group-focus-within:opacity-100 transition-opacity">
           {!isService && (
             <button
               type="button"
               onClick={onToggleReveal}
-              className="p-1.5 rounded-lg text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-surface-base transition-colors active:scale-[0.97] cursor-pointer"
-              title={isRevealed ? 'Mask Secret' : 'Reveal Secret'}
+              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
+              title={isRevealed ? 'Mask secret' : 'Reveal secret'}
               aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
             >
               {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -432,17 +384,17 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
           <button
             type="button"
             onClick={onCopy}
-            className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
-              isCopied
-                ? 'bg-cyber-emerald text-black px-2'
-                : 'text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-surface-base'
-            }`}
-            title="Copy Secret to Clipboard"
+            className={`p-1.5 max-sm:p-3 rounded-lg text-xs font-medium transition-interactive flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
+ isCopied
+ ? 'bg-callout-success-bg text-callout-success-fg px-2'
+ : 'text-muted hover:text-primary hover:bg-surface-hover'
+ }`}
+            title="Copy secret to clipboard"
           >
             {isCopied ? (
               <>
                 <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="text-[10px]">COPIED</span>
+                <span className="text-xs">Copied</span>
               </>
             ) : (
               <Copy className="w-3.5 h-3.5" />
@@ -453,8 +405,8 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onDelete}
-              className="p-1.5 rounded-lg text-tertiary hover:text-callout-danger-fg hover:bg-rose-500/10 transition-colors active:scale-[0.97] cursor-pointer"
-              title="Delete Custom Loot"
+              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
+              title="Delete custom loot"
               aria-label="Delete custom loot"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -464,20 +416,20 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
       </div>
 
       {/* Secret Display Box */}
-      <div className="p-2.5 rounded-xl bg-surface-base border border-subtle font-mono text-xs flex items-center justify-between gap-2 machined-edge">
+      <div className="p-2.5 rounded-xl bg-surface-sunken border border-subtle text-xs flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold text-tertiary uppercase tracking-wider mb-0.5">
-            IDENTITY / USER: <strong className="text-slate-700 dark:text-zinc-200">{item.username}</strong>
+          <div className="text-xs text-muted mb-0.5">
+            User: <strong className="font-medium text-secondary">{item.username}</strong>
           </div>
-          <div className="truncate select-all text-slate-900 dark:text-white">
+          <div className="truncate select-all text-primary font-mono">
             {isService ? (
-              <span className="text-slate-700 dark:text-zinc-300 font-mono tabular-nums">{item.secret}</span>
+              <span className="text-secondary font-mono tabular-nums">{item.secret}</span>
             ) : isRevealed ? (
-              <span className={`tabular-nums ${isFlag ? 'text-cyber-emerald font-bold' : isHash ? 'text-callout-tip-fg font-bold' : 'text-callout-warn-fg font-bold'}`}>
+              <span className="font-mono tabular-nums font-medium text-primary">
                 {item.secret}
               </span>
             ) : (
-              <span className="text-tertiary tracking-widest select-none">
+              <span className="font-mono text-muted select-none">
                 ••••••••••••••••••••
               </span>
             )}
@@ -486,12 +438,12 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
       </div>
 
       {/* Footer Notes and Discovery Timestamp */}
-      <div className="flex items-center justify-between text-[10px] text-tertiary font-mono pt-1">
-        <span className="truncate max-w-[260px] text-tertiary" title={item.notes}>
+      <div className="flex items-center justify-between gap-3 text-xs text-muted pt-1">
+        <span className="truncate max-w-[260px] text-muted" title={item.notes}>
           {item.notes}
         </span>
         {showTimestamp && (
-          <span className="shrink-0 tabular-nums text-tertiary">
+          <span className="shrink-0 font-mono tabular-nums text-muted">
             {formatIsoTimestamp(item.discoveredAt)}
           </span>
         )}

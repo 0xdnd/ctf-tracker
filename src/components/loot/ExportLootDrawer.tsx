@@ -173,15 +173,15 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-card/90 backdrop-blur-sm machined-edge">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-accent/15 border border-accent/40 text-accent">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-sunken border border-subtle text-secondary">
                 <Database className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  EVIDENCE VAULT EXPORTER
+                <h3 className="text-sm font-semibold text-primary">
+                  Export evidence
                 </h3>
                 <p className="text-[11px] text-muted">
-                  Package target artifacts into portable reports & tables
+                  Package artifacts as portable reports and tables
                 </p>
               </div>
             </div>
@@ -189,8 +189,8 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
-              title="Close Drawer (Esc)"
+              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
+              title="Close (Esc)"
             >
               <X className="w-5 h-5" />
             </button>
@@ -200,22 +200,22 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
             {/* Scope Selection Box */}
             <div className="p-3 rounded-xl bg-surface-sunken border border-subtle space-y-2 machined-edge">
-              <div className="text-[10px] uppercase font-bold text-muted flex items-center gap-1.5">
+              <div className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-accent" />
-                <span>EXPORT SCOPE</span>
+                <span>Export scope</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setExportScope('all')}
-                  className={`p-2 rounded-lg text-xs font-semibold border transition-all active:scale-[0.97] cursor-pointer text-left ${
-                    exportScope === 'all'
-                      ? 'bg-accent/15 border-accent text-accent shadow-xs'
-                      : 'bg-surface-card border-subtle text-secondary hover:text-primary'
-                  }`}
+                  className={`p-2 rounded-lg text-xs font-semibold border transition-interactive active:scale-[0.97] cursor-pointer text-left ${
+ exportScope === 'all'
+ ? 'bg-accent/15 border-accent text-accent shadow-xs'
+ : 'bg-surface-card border-subtle text-secondary hover:text-primary'
+ }`}
                 >
-                  <div className="font-bold">All Artifacts</div>
-                  <div className="text-[10px] font-mono tabular-nums opacity-75 mt-0.5">
+                  <div className="font-semibold">All artifacts</div>
+                  <div className="text-[11px] font-mono tabular-nums opacity-75 mt-0.5">
                     {items.length} records
                   </div>
                 </button>
@@ -223,14 +223,14 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => setExportScope('filtered')}
-                  className={`p-2 rounded-lg text-xs font-semibold border transition-all active:scale-[0.97] cursor-pointer text-left ${
-                    exportScope === 'filtered'
-                      ? 'bg-accent/15 border-accent text-accent shadow-xs'
-                      : 'bg-surface-card border-subtle text-secondary hover:text-primary'
-                  }`}
+                  className={`p-2 rounded-lg text-xs font-semibold border transition-interactive active:scale-[0.97] cursor-pointer text-left ${
+ exportScope === 'filtered'
+ ? 'bg-accent/15 border-accent text-accent shadow-xs'
+ : 'bg-surface-card border-subtle text-secondary hover:text-primary'
+ }`}
                 >
-                  <div className="font-bold">Filtered Scope</div>
-                  <div className="text-[10px] font-mono tabular-nums opacity-75 mt-0.5">
+                  <div className="font-semibold">Filtered scope</div>
+                  <div className="text-[11px] font-mono tabular-nums opacity-75 mt-0.5">
                     {filteredItems.length} records
                   </div>
                 </button>
@@ -241,11 +241,11 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <div className="p-3.5 rounded-xl bg-surface-card border border-subtle space-y-2.5 machined-edge">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-callout-success-fg">
+                  <div className="p-2 rounded-lg bg-surface-sunken border border-subtle text-secondary">
                     <FileJson className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-primary">JSON Package (.json)</h4>
+                    <h4 className="text-xs font-semibold text-primary">JSON package (.json)</h4>
                     <p className="text-[11px] text-muted">Complete ZeroBox vault schema</p>
                   </div>
                 </div>
@@ -254,15 +254,15 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownload('json')}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-callout-success-fg hover:bg-emerald-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="flex-1 py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-elevated border border-strong text-primary hover:bg-surface-hover font-semibold text-xs transition-interactive flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download .JSON</span>
+                  <span>Download JSON</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCopy('json')}
-                  className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-semibold text-xs transition-interactive flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedFormat === 'json' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedFormat === 'json' ? 'Copied' : 'Copy'}</span>
@@ -274,12 +274,12 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <div className="p-3.5 rounded-xl bg-surface-card border border-subtle space-y-2.5 machined-edge">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-sky-500/15 border border-sky-500/40 text-callout-info-fg">
+                  <div className="p-2 rounded-lg bg-surface-sunken border border-subtle text-secondary">
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-primary">CSV Spreadsheet (.csv)</h4>
-                    <p className="text-[11px] text-muted">RFC 4180 format for Excel / Sheets</p>
+                    <h4 className="text-xs font-semibold text-primary">CSV spreadsheet (.csv)</h4>
+                    <p className="text-[11px] text-muted">RFC 4180, opens in Excel or Sheets</p>
                   </div>
                 </div>
               </div>
@@ -287,15 +287,15 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownload('csv')}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-sky-500/20 border border-sky-500/50 text-callout-info-fg hover:bg-accent hover:text-on-accent font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="flex-1 py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-elevated border border-strong text-primary hover:bg-surface-hover font-semibold text-xs transition-interactive flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download .CSV</span>
+                  <span>Download CSV</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCopy('csv')}
-                  className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-semibold text-xs transition-interactive flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedFormat === 'csv' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedFormat === 'csv' ? 'Copied' : 'Copy'}</span>
@@ -307,12 +307,12 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <div className="p-3.5 rounded-xl bg-surface-card border border-subtle space-y-2.5 machined-edge">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-purple-500/15 border border-purple-500/40 text-callout-tip-fg">
+                  <div className="p-2 rounded-lg bg-surface-sunken border border-subtle text-secondary">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-primary">Markdown Pentest Table (.md)</h4>
-                    <p className="text-[11px] text-muted">Formatted for Obsidian / GitBook / Writeups</p>
+                    <h4 className="text-xs font-semibold text-primary">Markdown table (.md)</h4>
+                    <p className="text-[11px] text-muted">For Obsidian, GitBook and writeups</p>
                   </div>
                 </div>
               </div>
@@ -320,15 +320,15 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownload('markdown')}
-                  className="flex-1 py-1.5 px-3 rounded-lg bg-purple-500/20 border border-purple-500/50 text-callout-tip-fg hover:bg-purple-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="flex-1 py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-elevated border border-strong text-primary hover:bg-surface-hover font-semibold text-xs transition-interactive flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download .MD</span>
+                  <span>Download Markdown</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCopy('markdown')}
-                  className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
+                  className="py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-semibold text-xs transition-interactive flex items-center justify-center gap-1.5 active:scale-[0.97] cursor-pointer"
                 >
                   {copiedFormat === 'markdown' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedFormat === 'markdown' ? 'Copied' : 'Copy'}</span>
@@ -342,7 +342,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-bold transition-colors active:scale-[0.97] cursor-pointer"
+              className="px-4 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-semibold transition-colors active:scale-[0.97] cursor-pointer"
             >
               Done
             </button>

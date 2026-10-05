@@ -30,7 +30,10 @@ import { sanitizeFilename } from '../../utils/workspaceStorage';
 import { PentestReportModal } from './PentestReportModal';
 import { CPTS_NOTES, CptsNoteEntry, searchCptsNotes, getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
 import { PlatformIcon } from '../common/PlatformBadge';
-import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { CyberSelect } from '../common/CyberSelect';
+import { PageHeader } from '../common/PageHeader';
+import type { OverflowItem } from '../common/PageHeader';
+import { CyberButton } from '../common/CyberButton';
 export const renderInlineMarkdown = (text: string, keyPrefix: string | number): React.ReactNode => {
   if (!text) return text;
 
@@ -54,10 +57,10 @@ export const renderInlineMarkdown = (text: string, keyPrefix: string | number): 
       return (
         <span
           key={subKey}
-          className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-cyber-purple/15 border border-cyber-purple/30 text-cyber-purple font-mono text-[11px] font-semibold mx-0.5"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary text-[11px] font-medium mx-0.5"
           title={`Wikilink: ${target.trim()}`}
         >
-          <BookOpen className="w-2.5 h-2.5 text-cyber-purple inline" />
+          <BookOpen className="w-2.5 h-2.5 inline" />
           {alias ? alias.trim() : target.trim()}
         </span>
       );
@@ -68,7 +71,7 @@ export const renderInlineMarkdown = (text: string, keyPrefix: string | number): 
       return (
         <code
           key={subKey}
-          className="px-1.5 py-0.5 rounded bg-cyber-bg border border-cyber-border font-mono text-[11px] text-cyber-cyan font-semibold mx-0.5"
+          className="px-1.5 py-0.5 rounded bg-surface-card border border-subtle font-mono text-[11px] text-primary mx-0.5"
         >
           {part.slice(1, -1)}
         </code>
@@ -96,7 +99,7 @@ export const renderInlineMarkdown = (text: string, keyPrefix: string | number): 
           href={linkMatch[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-cyber-cyan hover:underline inline-flex items-center gap-0.5 font-medium"
+          className="text-accent hover:underline inline-flex items-center gap-0.5 font-medium"
         >
           {linkMatch[1]}
         </a>
@@ -143,9 +146,9 @@ const renderMarkdownPreview = (text: string) => {
       if (line.trim() === '---') {
         inFrontmatter = false;
         elements.push(
-          <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-cyber-bg border border-cyber-cyan/30 text-[11px] font-mono text-cyber-cyan/90 space-y-0.5">
-            <div className="text-[10px] uppercase font-semibold text-cyber-muted mb-1 flex items-center gap-1">
-              <FolderGit2 className="w-3 h-3 text-cyber-cyan" /> Obsidian / GitBook YAML frontmatter
+          <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-surface-sunken border border-subtle text-[11px] font-mono text-secondary space-y-0.5">
+            <div className="text-[11px] font-semibold text-muted mb-1 flex items-center gap-1">
+              <FolderGit2 className="w-3 h-3" /> YAML frontmatter
             </div>
             {frontmatterLines.map((fl, fIdx) => (
               <div key={fIdx}>{fl}</div>
@@ -167,14 +170,14 @@ const renderMarkdownPreview = (text: string) => {
       } else {
         inCodeBlock = false;
         elements.push(
-          <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-cyber-border bg-cyber-code">
+          <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-inverse bg-surface-inverse">
             {codeBlockLang && (
-              <div className="bg-cyber-bg/80 px-3 py-1 text-[10px] text-cyber-muted font-mono uppercase border-b border-cyber-border flex items-center justify-between">
+              <div className="bg-surface-inverse-elevated px-3 py-1 text-[11px] text-on-inverse-muted font-mono border-b border-inverse flex items-center justify-between">
                 <span>{codeBlockLang}</span>
                 <Code className="w-3 h-3" />
               </div>
             )}
-            <pre tabIndex={0} aria-label={codeBlockLang ? `${codeBlockLang} code block` : 'Code block'} className="p-3 text-xs text-cyber-emerald font-mono overflow-x-auto whitespace-pre-wrap">
+            <pre tabIndex={0} aria-label={codeBlockLang ? `${codeBlockLang} code block` : 'Code block'} className="p-3 text-xs text-on-inverse font-mono overflow-x-auto whitespace-pre-wrap">
               {codeBlockLines.join('\n')}
             </pre>
           </div>
@@ -191,27 +194,27 @@ const renderMarkdownPreview = (text: string) => {
     // Headings
     if (line.startsWith('# ')) {
       elements.push(
-        <h1 key={idx} className="text-xl font-semibold text-primary mt-4 mb-2 pb-1 border-b border-cyber-border">
+        <h1 key={idx} className="text-xl font-semibold text-primary mt-4 mb-2 pb-1 border-b border-subtle">
           {renderLineWithWikilinks(line.replace('# ', ''), idx)}
         </h1>
       );
     } else if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={idx} className="text-base font-semibold text-cyber-cyan mt-4 mb-1.5 flex items-center gap-2">
+        <h2 key={idx} className="text-base font-semibold text-primary mt-4 mb-1.5 flex items-center gap-2">
           {renderLineWithWikilinks(line.replace('## ', ''), idx)}
         </h2>
       );
     } else if (line.startsWith('### ')) {
       elements.push(
-        <h3 key={idx} className="text-sm font-semibold text-cyber-text mt-3 mb-1">
+        <h3 key={idx} className="text-sm font-semibold text-primary mt-3 mb-1">
           {renderLineWithWikilinks(line.replace('### ', ''), idx)}
         </h3>
       );
     } else if (line.startsWith('---')) {
-      elements.push(<hr key={idx} className="my-3 border-cyber-border" />);
+      elements.push(<hr key={idx} className="my-3 border-subtle" />);
     } else if (line.startsWith('- ')) {
       elements.push(
-        <li key={idx} className="ml-4 text-xs text-cyber-text list-disc my-0.5">
+        <li key={idx} className="ml-4 text-xs text-primary list-disc my-0.5">
           {renderLineWithWikilinks(line.replace('- ', ''), idx)}
         </li>
       );
@@ -219,7 +222,7 @@ const renderMarkdownPreview = (text: string) => {
       elements.push(<div key={idx} className="h-2" />);
     } else {
       elements.push(
-        <p key={idx} className="text-xs text-cyber-text leading-relaxed font-sans">
+        <p key={idx} className="text-xs text-primary leading-relaxed font-sans">
           {renderLineWithWikilinks(line, idx)}
         </p>
       );
@@ -266,26 +269,23 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
 
   return (
     <div
-      className={`flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden shadow-lg transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
+      className={`flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
       style={{ contain: 'content' }}
     >
       <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
         <span className="font-semibold text-primary flex items-center gap-2">
-          <Eye className="w-4 h-4 text-cyber-emerald" /> Live rendered preview
+          <Eye className="w-4 h-4 text-muted" /> Preview
         </span>
         <div className="flex items-center gap-2">
           {isStale && (
-            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/30 animate-pulse">
-              Syncing AST...
+            <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-card text-muted border border-subtle">
+              Syncing
             </span>
           )}
-          <span className="text-[10px] text-cyber-emerald font-semibold flex items-center gap-1">
-            <BookOpen className="w-3 h-3" /> Obsidian preview
-          </span>
         </div>
       </div>
 
-      <div tabIndex={0} role="region" aria-label="Rendered markdown preview" className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-cyber-card/40">
+      <div tabIndex={0} role="region" aria-label="Rendered markdown preview" className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-surface-card">
         {renderedPreview}
       </div>
     </div>
@@ -568,32 +568,135 @@ cat /root/root.txt
   };
 
 
-  return (
-    <div className="space-y-4 w-full font-mono">
-      {/* Studio Header Bar */}
-      <div className="p-4 rounded-xl border border-subtle bg-surface-card machined-edge-subtle shadow-md flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-cyber-cyan/40 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-cyber-cyan" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-primary flex items-center gap-2">
-              Embedded Writeup Studio
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30">
-                Obsidian &amp; GitBook ready
-              </span>
-            </h1>
-            <p className="text-xs text-secondary mt-0.5">
-              Dual-pane live editor with automated pentest template generation, frontmatter, and single-click .md export.
-            </p>
-          </div>
-        </div>
+  const appendOfficialIntel = () => {
+    if (!selectedMachine || !selectedMachine.officialWalkthrough) return;
+    const injection = `\n\n---\n\n## Official Hack The Box walkthrough\n${selectedMachine.officialWalkthrough}\n`;
+    const updated = editorContent + injection;
+    setEditorContent(updated);
+    updateMachine(selectedMachine.id, { writeupMarkdown: updated });
+    if (soundEnabled) playCyberSound('engage');
+  };
 
-        {/* Machine Selector & Export Actions */}
+  const overflowItems: OverflowItem[] = [
+    {
+      id: 'field-manual',
+      label: cptsDrawerOpen ? 'Hide field manual' : `Field manual (${matchingNotes.length})`,
+      icon: <BookOpen className="w-3.5 h-3.5" />,
+      onSelect: () => setCptsDrawerOpen((prev) => !prev),
+    },
+    {
+      id: 'executive-report',
+      label: 'Executive report',
+      icon: <Printer className="w-3.5 h-3.5" />,
+      onSelect: () => setReportModalOpen(true),
+    },
+    {
+      id: 'copy-raw',
+      label: 'Copy raw Markdown',
+      icon: <Copy className="w-3.5 h-3.5" />,
+      onSelect: handleCopyMarkdown,
+    },
+    {
+      id: 'export-md',
+      label: 'Export .md',
+      icon: <Download className="w-3.5 h-3.5" />,
+      onSelect: handleDownloadMarkdown,
+    },
+    ...(selectedMachine?.officialWalkthrough
+      ? [
+          {
+            id: 'official-intel',
+            label: 'Append official HTB walkthrough',
+            icon: <Sparkles className="w-3.5 h-3.5" />,
+            onSelect: appendOfficialIntel,
+          } as OverflowItem,
+        ]
+      : []),
+    {
+      id: 'reset-template',
+      label: 'Reset to template',
+      icon: <RotateCcw className="w-3.5 h-3.5" />,
+      onSelect: handleResetToTemplate,
+      danger: true,
+    },
+  ];
+
+  const toolbarBtn =
+    'flex items-center gap-1.5 px-3 h-8 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]';
+
+  return (
+    <div className="space-y-4 w-full font-sans">
+      <PageHeader
+        title="Writeup studio"
+        description="Write in Markdown with a live preview. Exports to Obsidian and GitBook."
+        icon={<FileText />}
+        primaryAction={
+          <CyberButton
+            variant="primary"
+            size="md"
+            className="max-sm:h-11 max-sm:flex-1"
+            onClick={handleDownloadHtml}
+            title="Export a self-contained HTML writeup with one-click Print to PDF"
+            iconLeft={<Globe className="w-3.5 h-3.5" />}
+          >
+            Export HTML
+          </CyberButton>
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={handleCopyMarkdown}
+              className={toolbarBtn}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-callout-success-fg" />
+                  <span className="text-callout-success-fg">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy raw</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCptsDrawerOpen((prev) => !prev)}
+              aria-pressed={cptsDrawerOpen}
+              className={`${toolbarBtn} ${cptsDrawerOpen ? 'border-accent text-primary' : ''}`}
+              title="Toggle the field manual quick reference"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Field manual (<span className="tabular-nums">{matchingNotes.length}</span>)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setReportModalOpen(true)}
+              className={toolbarBtn}
+              title="Generate a print-ready executive penetration testing report"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Executive report</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadMarkdown}
+              className={toolbarBtn}
+              title="Export raw Markdown (.md) for Obsidian or GitBook"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export .md</span>
+            </button>
+          </>
+        }
+        overflow={overflowItems}
+      >
+        {/* Machine selector + official walkthrough shortcut: one row */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Machine Dropdown */}
-          <div className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 rounded-lg border border-strong">
-            <span className="text-[10px] uppercase font-semibold text-muted">Target Box:</span>
+          <div className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 max-sm:py-2 rounded-lg border border-subtle max-sm:w-full">
+            <span className="text-xs font-medium text-muted flex-shrink-0">Target</span>
             <CyberSelect
               value={selectedMachine?.id || ''}
               onChange={setWriteupMachineId}
@@ -607,96 +710,24 @@ cat /root/root.txt
               searchPlaceholder="Search box by name, IP..."
               variant="transparent"
               size="xs"
-              triggerClassName="py-0 px-1 border-none bg-transparent hover:bg-transparent max-w-[210px]"
+              triggerClassName="py-0 px-1 border-none bg-transparent hover:bg-transparent max-w-[210px] max-sm:max-w-none"
               soundEnabled={soundEnabled}
             />
           </div>
 
-          <button
-            onClick={handleResetToTemplate}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-strong text-secondary hover:text-primary text-xs transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
-            title="Reset to fresh pentest template"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset Template</span>
-          </button>
-
-          <button
-            onClick={handleCopyMarkdown}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-card border border-strong hover:border-cyber-cyan text-primary text-xs font-semibold transition-[transform,border-color,background-color] cursor-pointer active:scale-[0.97]"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-cyber-emerald" />
-                <span className="text-cyber-emerald">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy Raw</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={() => setCptsDrawerOpen(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] shadow-sm cursor-pointer active:scale-[0.97] ${
-              cptsDrawerOpen
-                ? 'bg-cyber-purple text-black border-cyber-purple shadow-cyber-purple/30'
-                : 'bg-cyber-purple/10 border-cyber-purple/40 text-cyber-purple hover:bg-cyber-purple/20 hover:text-primary'
-            }`}
-            title="Toggle Field Manual Quick Reference Drawer"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Field Manual (<span className="tabular-nums">{matchingNotes.length}</span>)</span>
-          </button>
-
-          <button
-            onClick={() => setReportModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-card border border-strong hover:border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 text-xs font-semibold transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
-            title="Generate print-ready Executive Penetration Testing Report"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Executive Report</span>
-          </button>
-
           {Boolean(selectedMachine?.officialWalkthrough) && (
             <button
-              onClick={() => {
-                if (!selectedMachine.officialWalkthrough) return;
-                const injection = `\n\n---\n\n## 🛡️ Official Hack The Box Walkthrough & Intelligence\n${selectedMachine.officialWalkthrough}\n`;
-                const updated = editorContent + injection;
-                setEditorContent(updated);
-                updateMachine(selectedMachine.id, { writeupMarkdown: updated });
-                if (soundEnabled) playCyberSound('engage');
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald/15 border border-cyber-emerald/40 hover:border-cyber-emerald text-cyber-emerald hover:bg-cyber-emerald hover:text-black text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] cursor-pointer active:scale-[0.97] shadow-sm"
-              title="Append official Hack The Box Walkthrough & Intelligence to this writeup"
+              type="button"
+              onClick={appendOfficialIntel}
+              className={`${toolbarBtn} max-sm:hidden`}
+              title="Append the official Hack The Box walkthrough to this writeup"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>+ Official HTB Intel</span>
+              <span>Append HTB walkthrough</span>
             </button>
           )}
-
-          <button
-            onClick={handleDownloadMarkdown}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-card border border-strong hover:border-cyber-emerald text-cyber-emerald font-semibold text-xs hover:bg-cyber-emerald/10 transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
-            title="Export raw Markdown (.md) formatted for Obsidian or GitBook"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export .md</span>
-          </button>
-
-          <button
-            onClick={handleDownloadHtml}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-emerald text-black font-semibold text-xs hover:bg-cyber-emerald/85 transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
-            title="Export self-contained, air-gapped HTML writeup report with 1-click Print to PDF"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>Export HTML</span>
-          </button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Field Manual Quick Reference Drawer */}
       <AnimatePresence initial={false}>
@@ -706,14 +737,14 @@ cat /root/root.txt
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0, transition: TACTICAL_SPRING }}
           exit={{ opacity: 0, y: -8, transition: { duration: 0.14, ease: 'easeOut' } }}
-          className="p-4 rounded-xl border border-cyber-purple/30 bg-surface-elevated machined-edge-subtle shadow-2xl space-y-3 font-mono">
-          <div className="flex items-center justify-between border-b border-cyber-purple/20 pb-2.5">
+          className="p-4 rounded-xl border border-subtle bg-surface-elevated machined-edge-subtle space-y-3 font-sans">
+          <div className="flex items-center justify-between border-b border-subtle pb-2.5">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-cyber-purple" />
-              <span className="font-semibold text-primary text-xs tracking-wider">
-                Tactical intel // quick reference &amp; insert
+              <BookOpen className="w-4 h-4 text-muted" />
+              <span className="font-semibold text-primary text-xs">
+                Field manual quick reference
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyber-purple/20 text-cyber-purple font-mono tabular-nums">
+              <span className="text-xs px-2 py-0.5 rounded bg-surface-sunken text-muted border border-subtle font-mono tabular-nums">
                 {matchingNotes.length} matches (max 20)
               </span>
             </div>
@@ -721,7 +752,7 @@ cat /root/root.txt
             <button aria-label="Close quick reference"
               type="button"
               onClick={() => setCptsDrawerOpen(false)}
-              className="p-1 rounded text-muted hover:text-primary cursor-pointer active:scale-[0.97]"
+              className="p-1 max-sm:p-3 rounded text-muted hover:text-primary cursor-pointer active:scale-[0.97]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -737,8 +768,8 @@ cat /root/root.txt
               aria-label="Search field manual notes and commands"
               value={cptsSearch}
               onChange={(e) => setCptsSearch(e.target.value)}
-              placeholder="Search field manual notes & commands (e.g. kerberoast, suid, lfi, bloodhound)..."
-              className="w-full bg-surface-sunken border border-strong rounded-lg pl-8 pr-3 py-1.5 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-cyber-purple"
+              placeholder="Search notes and commands (kerberoast, suid, lfi, bloodhound)..."
+              className="w-full bg-surface-sunken border border-strong rounded-lg pl-8 pr-3 py-1.5 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent"
             />
           </div>
 
@@ -752,36 +783,36 @@ cat /root/root.txt
               matchingNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="p-3 rounded-lg bg-surface-sunken border border-subtle hover:border-cyber-purple/50 transition-colors space-y-2 flex flex-col justify-between"
+                  className="p-3 rounded-lg bg-surface-sunken border border-subtle hover:border-strong transition-colors space-y-2 flex flex-col justify-between"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="font-semibold text-primary text-xs truncate" title={note.title}>
                         {note.title}
                       </span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-purple/15 text-cyber-purple border border-cyber-purple/30 flex-shrink-0 font-mono">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-card text-muted border border-subtle flex-shrink-0">
                         {note.difficulty}
                       </span>
                     </div>
-                    <div className="text-[10px] text-muted line-clamp-2">
+                    <div className="text-[11px] text-muted line-clamp-2">
                       {note.summary || note.subCategory}
                     </div>
                   </div>
 
                   {note.commands && note.commands.length > 0 && (
-                    <div className="p-1.5 rounded bg-black/50 border border-white/5 font-mono text-[10px] text-cyber-cyan truncate">
+                    <div className="p-1.5 rounded bg-surface-inverse border border-inverse font-mono text-[11px] text-on-inverse truncate">
                       {interpolateCommand(note.commands[0], { ...globalVars, targetIp: selectedMachine?.ip || globalVars.targetIp })}
                     </div>
                   )}
 
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-subtle">
-                    <span className="text-[9px] text-muted font-mono truncate">
+                    <span className="text-[11px] text-muted truncate">
                       {note.category}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleInsertNote(note)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-purple/20 hover:bg-cyber-purple hover:text-black border border-cyber-purple/40 text-cyber-purple text-[10px] font-semibold transition-colors cursor-pointer active:scale-[0.97]"
+                      className="flex items-center gap-1 px-2.5 py-1 max-sm:py-2.5 rounded bg-surface-card hover:bg-surface-hover border border-subtle text-secondary hover:text-primary text-xs font-medium transition-colors cursor-pointer active:scale-[0.97]"
                       title="Insert this note and commands into active writeup"
                     >
                       <Plus className="w-3 h-3" />
@@ -797,15 +828,15 @@ cat /root/root.txt
       </AnimatePresence>
 
       {/* Dual-Pane Editor Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch min-h-[calc(100vh-250px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch lg:min-h-[calc(100vh-250px)]">
         
         {/* Left Pane: Raw Markdown Editor */}
-        <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden shadow-lg" style={{ contain: 'content' }}>
+        <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden" style={{ contain: 'content' }}>
           <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
             <span className="font-semibold text-primary flex items-center gap-2">
-              <Code className="w-4 h-4 text-cyber-cyan" /> Raw markdown (YAML &amp; body)
+              <Code className="w-4 h-4 text-muted" /> Markdown
             </span>
-            <span className="text-[10px] text-muted font-mono tabular-nums">
+            <span className="text-[11px] text-muted font-mono tabular-nums">
               {telemetry.chars} chars · {telemetry.lines} lines
             </span>
           </div>
@@ -818,7 +849,7 @@ cat /root/root.txt
             onChange={handleEditorChange}
             onBlur={flushDebouncedSave}
             placeholder="Write your penetration testing report or paste notes here..."
-            className="flex-1 w-full p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
+            className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
             spellCheck={false}
           />
         </div>
@@ -831,7 +862,7 @@ cat /root/root.txt
       {/* Footer Telemetry Strip */}
       <div
         data-testid="writeup-telemetry"
-        className="flex items-center justify-end gap-4 px-4 py-2 rounded-lg border border-subtle bg-surface-sunken text-[10px] text-muted font-mono tabular-nums"
+        className="flex items-center justify-end gap-4 px-4 py-2 rounded-lg border border-subtle bg-surface-sunken text-[11px] text-muted font-mono tabular-nums"
       >
         <span data-testid="writeup-telemetry-chars">{telemetry.chars} chars</span>
         <span data-testid="writeup-telemetry-words">{telemetry.words} words</span>
