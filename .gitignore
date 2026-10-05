@@ -102,3 +102,7 @@ scripts/*.py
 reports/
 playwright-report/
 test-results/
+
+# Local AI / dev notes (not published)
+CLAUDE.md
+dev/
