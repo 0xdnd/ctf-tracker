@@ -5,12 +5,12 @@ import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 
 const STAGE_OPTIONS: CyberSelectOption[] = [
-  { value: '0 — Methodology', label: '0 — Methodology', color: '#64748B' },
-  { value: '1 — Enumeration', label: '1 — Enumeration', color: '#06B6D4' },
-  { value: '2 — Foothold', label: '2 — Foothold', color: '#F59E0B' },
-  { value: '3 — PrivEsc', label: '3 — PrivEsc', color: '#EF4444' },
-  { value: '4 — Lateral Movement', label: '4 — Lateral Movement', color: '#A855F7' },
-  { value: '5 — Active Directory', label: '5 — Active Directory', color: '#EC4899' },
+  { value: '0 — Methodology', label: '0 — Methodology', color: 'rgb(var(--text-tertiary))' },
+  { value: '1 — Enumeration', label: '1 — Enumeration', color: 'rgb(var(--cat-1-fg))' },
+  { value: '2 — Foothold', label: '2 — Foothold', color: 'rgb(var(--cat-3-fg))' },
+  { value: '3 — PrivEsc', label: '3 — PrivEsc', color: 'rgb(var(--cat-5-fg))' },
+  { value: '4 — Lateral Movement', label: '4 — Lateral Movement', color: 'rgb(var(--cat-2-fg))' },
+  { value: '5 — Active Directory', label: '5 — Active Directory', color: 'rgb(var(--cat-4-fg))' },
 ];
 
 export interface NewCptsNoteModalProps {
@@ -104,25 +104,25 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-mono">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl border border-purple-500/50 bg-cyber-card shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl border border-subtle bg-surface-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-purple-900/40 p-4 bg-purple-950/30">
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-sunken">
           <div className="flex items-center gap-2.5">
-            <BookOpen className="w-5 h-5 text-callout-tip-fg" />
+            <BookOpen className="w-5 h-5 text-muted" />
             <div>
-              <h3 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                <span>CREATE CUSTOM FIELD MANUAL NOTE</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-900/60 border border-purple-500/40 text-callout-tip-fg">
+              <h3 className="text-base font-semibold text-primary flex items-center gap-2">
+                <span>New field manual note</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary">
                   OBSIDIAN COMPATIBLE
                 </span>
               </h3>
-              <p className="text-[11px] text-cyber-muted">
+              <p className="text-[11px] text-muted">
                 Create a new note into any directory depth with commands and bilingual summaries.
               </p>
             </div>
@@ -130,7 +130,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded bg-cyber-bg text-cyber-muted hover:text-primary border border-cyber-border transition-colors"
+            className="p-1.5 rounded bg-surface-sunken text-muted hover:text-primary border border-subtle transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -141,7 +141,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Titles: EN & HE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-callout-tip-fg font-bold uppercase tracking-wider mb-1 text-[11px]">
+              <label className="block text-secondary font-semibold mb-1 text-[11px]">
                 Note Title (English) *
               </label>
               <input
@@ -153,12 +153,12 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 value={titleEn}
                 onChange={(e) => setTitleEn(e.target.value)}
                 placeholder="e.g. Kerberoasting via Rubeus & Impacket"
-                className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-purple-400 transition-colors"
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-callout-tip-fg font-bold uppercase tracking-wider mb-1 text-[11px]">
+              <label className="block text-secondary font-semibold mb-1 text-[11px]">
                 Note Title (Hebrew - אופציונלי)
               </label>
               <input
@@ -170,22 +170,22 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 value={titleHe}
                 onChange={(e) => setTitleHe(e.target.value)}
                 placeholder="למשל: מתקפת קרברוסטינג ופיצוח טיקטים"
-                className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-purple-400 font-sans transition-colors"
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent font-sans transition-colors"
               />
             </div>
           </div>
 
           {/* Directory & Path Selection */}
-          <div className="space-y-1.5 p-3 rounded-lg bg-cyber-bg/70 border border-cyber-border">
+          <div className="space-y-1.5 p-3 rounded-lg bg-surface-sunken/70 border border-subtle">
             <div className="flex items-center justify-between">
-              <label className="block text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Folder className="w-3.5 h-3.5 text-callout-tip-fg" />
+              <label className="block text-primary font-semibold text-[11px] flex items-center gap-1.5">
+                <Folder className="w-3.5 h-3.5 text-muted" />
                 <span>Target Directory / Sub-folder Depth</span>
               </label>
               <button
                 type="button"
                 onClick={() => setUseCustomDir(!useCustomDir)}
-                className="text-[10px] text-callout-tip-fg hover:text-callout-tip-fg underline font-semibold"
+                className="text-[10px] text-callout-info-fg hover:text-callout-info-fg underline font-semibold"
               >
                 {useCustomDir ? '← Choose Existing Directory' : '+ Create New Sub-directory'}
               </button>
@@ -201,9 +201,9 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                   value={customDir}
                   onChange={(e) => setCustomDir(e.target.value)}
                   placeholder="e.g. 03 Offensive Exploitation/01 Linux Exploitation/05 Kernel Exploits"
-                  className="w-full bg-cyber-card px-3 py-2 rounded-lg border border-purple-500/40 text-white text-xs focus:outline-none focus:border-purple-400 font-mono"
+                  className="w-full bg-surface-card px-3 py-2 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-accent font-mono"
                 />
-                <span className="text-[10px] text-cyber-muted block mt-1">
+                <span className="text-[10px] text-muted block mt-1">
                   Use slashes (/) to create nested sub-folders and sub-sub-folders.
                 </span>
               </div>
@@ -214,13 +214,13 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 options={existingDirectories.map((dir) => ({
                   value: dir,
                   label: dir,
-                  icon: <Folder className="w-3.5 h-3.5 text-callout-tip-fg" />,
+                  icon: <Folder className="w-3.5 h-3.5 text-muted" />,
                 }))}
                 searchable
                 searchPlaceholder="Search folder paths..."
                 variant="card"
                 className="w-full"
-                triggerClassName="w-full bg-cyber-card border-cyber-border focus:border-purple-400"
+                triggerClassName="w-full bg-surface-card border-subtle focus:border-accent"
               />
             )}
           </div>
@@ -228,7 +228,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Attack Stage, Tools, Tags */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-cyber-muted font-bold uppercase tracking-wider mb-1 text-[10px]">
+              <label className="block text-muted font-semibold mb-1 text-[10px]">
                 Offensive Stage
               </label>
               <CyberSelect
@@ -238,12 +238,12 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 variant="default"
                 size="xs"
                 className="w-full"
-                triggerClassName="w-full bg-cyber-bg border-cyber-border focus:border-purple-400"
+                triggerClassName="w-full bg-surface-sunken border-subtle focus:border-accent"
               />
             </div>
 
             <div>
-              <label className="block text-cyber-muted font-bold uppercase tracking-wider mb-1 text-[10px]">
+              <label className="block text-muted font-semibold mb-1 text-[10px]">
                 Tools (comma-separated)
               </label>
               <input
@@ -254,12 +254,12 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 value={tools}
                 onChange={(e) => setTools(e.target.value)}
                 placeholder="e.g. impacket, mimikatz, hashcat"
-                className="w-full bg-cyber-bg px-2.5 py-1.5 rounded-lg border border-cyber-border text-white text-xs focus:outline-none focus:border-purple-400"
+                className="w-full bg-surface-sunken px-2.5 py-1.5 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-accent"
               />
             </div>
 
             <div>
-              <label className="block text-cyber-muted font-bold uppercase tracking-wider mb-1 text-[10px]">
+              <label className="block text-muted font-semibold mb-1 text-[10px]">
                 Tags (comma-separated)
               </label>
               <input
@@ -270,7 +270,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="e.g. kerberos, tgs, offline-crack"
-                className="w-full bg-cyber-bg px-2.5 py-1.5 rounded-lg border border-cyber-border text-white text-xs focus:outline-none focus:border-purple-400"
+                className="w-full bg-surface-sunken px-2.5 py-1.5 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-accent"
               />
             </div>
           </div>
@@ -278,12 +278,12 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Commands Textarea */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="block text-callout-tip-fg font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
+              <label className="block text-secondary font-semibold text-[11px] flex items-center gap-1.5">
+                <Terminal className="w-3.5 h-3.5 text-muted" />
                 <span>Commands & Payloads (One per line)</span>
               </label>
-              <span className="text-[10px] text-cyber-muted">
-                Supports &#123;TARGET_IP&#125;, &#123;LHOST&#125;, &#123;LPORT&#125;
+              <span className="text-[10px] text-muted">
+                Supports &#x7B;TARGET_IP&#x7D;, &#x7B;LHOST&#x7D;, &#x7B;LPORT&#x7D;
               </span>
             </div>
             <textarea
@@ -294,14 +294,14 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
               value={rawCommands}
               onChange={(e) => setRawCommands(e.target.value)}
               placeholder="GetUserSPNs.py {DOMAIN}/{USER}:{PASSWORD} -dc-ip {TARGET_IP} -request&#10;hashcat -m 13100 hashes.txt /usr/share/wordlists/rockyou.txt"
-              className="w-full bg-cyber-code p-3 rounded-lg border border-cyber-border text-cyber-cyan text-xs font-mono focus:outline-none focus:border-purple-400 resize-y"
+              className="w-full bg-surface-inverse text-on-inverse p-3 rounded-lg border border-subtle text-secondary text-xs font-mono focus:outline-none focus:border-accent resize-y"
             />
           </div>
 
           {/* Summaries: English & Hebrew */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-cyber-muted font-bold uppercase tracking-wider mb-1 text-[10px]">
+              <label className="block text-muted font-semibold mb-1 text-[10px]">
                 Practical Objective (English Summary)
               </label>
               <textarea
@@ -312,12 +312,12 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 value={enSummary}
                 onChange={(e) => setEnSummary(e.target.value)}
                 placeholder="Brief explanation of what this technique does and key flags..."
-                className="w-full bg-cyber-bg p-2 rounded-lg border border-cyber-border text-white text-xs focus:outline-none focus:border-purple-400 resize-none"
+                className="w-full bg-surface-sunken p-2 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-accent resize-none"
               />
             </div>
 
             <div>
-              <label className="block text-cyber-muted font-bold uppercase tracking-wider mb-1 text-[10px]">
+              <label className="block text-muted font-semibold mb-1 text-[10px]">
                 מטרה מעשית (תקציר בעברית)
               </label>
               <textarea
@@ -329,14 +329,14 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
                 value={heSummary}
                 onChange={(e) => setHeSummary(e.target.value)}
                 placeholder="הסבר קצר על הטכניקה, אופן השימוש ודגשים מעשיים..."
-                className="w-full bg-cyber-bg p-2 rounded-lg border border-cyber-border text-white text-xs focus:outline-none focus:border-purple-400 font-sans resize-none"
+                className="w-full bg-surface-sunken p-2 rounded-lg border border-subtle text-primary text-xs focus:outline-none focus:border-accent font-sans resize-none"
               />
             </div>
           </div>
 
           {/* Full Markdown (Optional) */}
           <div>
-            <label className="block text-cyber-muted font-bold uppercase tracking-wider mb-1 text-[10px]">
+            <label className="block text-muted font-semibold mb-1 text-[10px]">
               Full Obsidian Markdown Content (Optional)
             </label>
             <textarea
@@ -347,24 +347,23 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
               value={markdownContent}
               onChange={(e) => setMarkdownContent(e.target.value)}
               placeholder="Detailed methodology notes, markdown tables, code walkthroughs, etc."
-              className="w-full bg-cyber-bg p-2.5 rounded-lg border border-cyber-border text-white text-xs font-mono focus:outline-none focus:border-purple-400 resize-y"
+              className="w-full bg-surface-sunken p-2.5 rounded-lg border border-subtle text-primary text-xs font-mono focus:outline-none focus:border-accent resize-y"
             />
           </div>
 
           {/* Actions Footer */}
-          <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-cyber-border">
+          <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-subtle">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary transition-colors"
+              className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary transition-colors"
             >
               Cancel
             </button>
             <motion.button
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold transition-[box-shadow,background-color,border-color,color] shadow-md shadow-purple-600/30 flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 rounded-lg bg-accent hover:brightness-105 text-on-accent font-semibold transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Save Field Note</span>

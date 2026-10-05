@@ -1,21 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Terminal,
   Copy,
   Check,
   Download,
   Search,
-  Zap,
-  Shield,
-  FileCode,
   Plus,
   Minus,
   X,
-  Code2,
-  ExternalLink,
-  ChevronDown,
-  Sparkles
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
@@ -224,17 +216,22 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
     if (soundEnabled) playCyberSound('export');
   };
 
+  const segWrap = 'inline-flex items-center gap-0.5 rounded-lg border border-subtle bg-surface-sunken p-0.5';
+  const segBtn =
+    'inline-flex h-7 flex-shrink-0 items-center justify-center whitespace-nowrap rounded-md px-2.5 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-9';
+  const segOn = 'bg-surface-card text-primary shadow-xs';
+  const segOff = 'text-muted hover:text-primary';
+  const quickBtn =
+    'inline-flex h-8 items-center rounded-lg border border-subtle bg-surface-sunken px-2.5 font-mono tabular-nums text-xs text-secondary transition-[transform,background-color,color] hover:bg-surface-hover hover:text-primary active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11';
+
   return (
-    <div className="space-y-3 font-mono text-xs">
-      {/* 1. ATTACKER CONFIGURATION RIBBON */}
-      <div className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border/80 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        {/* LHOST Configuration */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-callout-info-fg dark:text-cyber-cyan uppercase tracking-wider flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5 text-callout-info-fg dark:text-cyber-cyan" />
-            LHOST:
-          </span>
-          <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 px-2 shadow-inner focus-within:border-cyan-500 dark:focus-within:border-cyber-cyan focus-within:ring-1 focus-within:ring-cyan-500/30 transition-colors">
+    <div className="space-y-4 text-xs">
+      {/* 1. Attacker configuration */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-subtle pb-4">
+        {/* LHOST */}
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="revshell-lhost-input" className="text-xs font-medium text-muted">LHOST</label>
+          <div className="inline-flex h-8 items-center rounded-lg border border-subtle bg-surface-sunken px-2 transition-colors focus-within:border-accent [@media(pointer:coarse)]:h-11">
             <input
               type="text"
               id="revshell-lhost-input"
@@ -243,7 +240,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               value={lhost}
               onChange={(e) => setLhost(e.target.value)}
               placeholder="10.10.14.x"
-              className="w-32 h-7 bg-transparent text-slate-900 dark:text-white text-xs font-mono font-bold focus:outline-none placeholder-slate-400 dark:placeholder-slate-600"
+              className="h-7 w-32 bg-transparent font-mono tabular-nums text-xs text-primary placeholder:text-muted focus:outline-none"
               title="Attacker IP / Tun0 interface IP"
             />
           </div>
@@ -254,10 +251,10 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                 setLhost(targetIp);
                 if (soundEnabled) playCyberSound('toggle');
               }}
-              className="h-8 px-2.5 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-callout-info-fg dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className={quickBtn}
               title="Set to Active Target IP"
             >
-              TARGET
+              Target
             </button>
           )}
           <button
@@ -266,27 +263,24 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               setLhost('127.0.0.1');
               if (soundEnabled) playCyberSound('toggle');
             }}
-            className="h-8 px-2 flex items-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/80 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 hover:text-callout-info-fg dark:hover:text-cyber-cyan transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className={quickBtn}
             title="Set to localhost"
           >
             127.0.0.1
           </button>
         </div>
 
-        {/* LPORT Configuration */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-callout-success-fg dark:text-cyber-emerald uppercase tracking-wider">
-            LPORT:
-          </span>
-          {/* Precision Stepper Capsule */}
-          <div className="inline-flex items-center h-8 rounded-lg bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 p-0.5 shadow-inner focus-within:border-emerald-500 dark:focus-within:border-cyber-emerald focus-within:ring-1 focus-within:ring-emerald-500/30 transition-colors">
+        {/* LPORT */}
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="revshell-lport-input" className="text-xs font-medium text-muted">LPORT</label>
+          <div className="inline-flex h-8 items-center rounded-lg border border-subtle bg-surface-sunken p-0.5 transition-colors focus-within:border-accent [@media(pointer:coarse)]:h-11">
             <button aria-label="Decrease port"
               type="button"
               onClick={() => handlePortStep(-1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-[transform,background-color,color] hover:bg-surface-card hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-9 [@media(pointer:coarse)]:w-9"
               title="Decrease port (-1)"
             >
-              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Minus className="h-3.5 w-3.5" />
             </button>
             <input
               type="text"
@@ -296,20 +290,19 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
               value={lport}
               onChange={(e) => setLport(e.target.value)}
               placeholder="4444"
-              className="w-14 h-7 text-center bg-transparent text-callout-success-fg dark:text-cyber-emerald text-xs font-mono font-bold tracking-wider focus:outline-none selection:bg-emerald-500/30"
+              className="h-7 w-14 bg-transparent text-center font-mono tabular-nums text-xs text-primary focus:outline-none"
             />
             <button aria-label="Increase port"
               type="button"
               onClick={() => handlePortStep(1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-[transform,background-color,color] hover:bg-surface-card hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-9 [@media(pointer:coarse)]:w-9"
               title="Increase port (+1)"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          {/* Quick Port Channel Chips */}
-          <div className="hidden sm:inline-flex items-center gap-1 p-0.5 rounded-lg bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80">
+          <div className={`hidden sm:inline-flex ${segWrap}`}>
             {COMMON_PORTS.map((p) => {
               const isActive = lport === p;
               return (
@@ -320,11 +313,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                     setLport(p);
                     if (soundEnabled) playCyberSound('toggle');
                   }}
-                  className={`h-7 px-2.5 flex items-center justify-center rounded-md text-[11px] font-mono font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
-                    isActive
-                      ? 'bg-emerald-600 dark:bg-cyber-emerald text-white dark:text-slate-950'
-                      : 'text-slate-600 dark:text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800/80'
-                  }`}
+                  className={`${segBtn} font-mono tabular-nums ${isActive ? segOn : segOff}`}
                 >
                   {p}
                 </button>
@@ -333,73 +322,69 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
           </div>
         </div>
 
-        {/* Shell Binary Selector */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-callout-tip-fg uppercase tracking-wider font-mono">
-            SHELL:
-          </span>
-          <div className="inline-flex items-center gap-1 p-0.5 rounded-lg bg-slate-100/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80">
-            {['/bin/bash', '/bin/sh', 'powershell', 'cmd.exe'].map((bin) => {
-              const isActive = shellBinary === bin;
-              return (
-                <button
-                  key={bin}
-                  type="button"
-                  onClick={() => {
-                    setShellBinary(bin);
-                    if (soundEnabled) playCyberSound('toggle');
-                  }}
-                  className={`h-7 px-2.5 flex items-center rounded-md text-[11px] font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
-                    isActive
-                      ? 'bg-purple-600 dark:bg-cyber-purple text-white dark:text-slate-950 font-bold'
-                      : 'text-slate-600 dark:text-tertiary hover:text-slate-900 dark:hover:text-primary hover:bg-white dark:hover:bg-slate-800/80 font-medium'
-                  }`}
-                >
-                  {bin.replace('/bin/', '')}
-                </button>
-              );
-            })}
+        {/* Shell binary */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted">Shell</span>
+          <div className="-mx-1 max-w-full overflow-x-auto no-scrollbar px-1">
+            <div className={segWrap}>
+              {['/bin/bash', '/bin/sh', 'powershell', 'cmd.exe'].map((bin) => {
+                const isActive = shellBinary === bin;
+                return (
+                  <button
+                    key={bin}
+                    type="button"
+                    onClick={() => {
+                      setShellBinary(bin);
+                      if (soundEnabled) playCyberSound('toggle');
+                    }}
+                    className={`${segBtn} font-mono ${isActive ? segOn : segOff}`}
+                  >
+                    {bin.replace('/bin/', '')}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. PLATFORM FILTERS & REAL-TIME SEARCH */}
+      {/* 2. Platform filters and search */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {/* Category / Platform Pills */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full scrollbar-none">
-          {(
-            [
-              { id: 'All', label: 'All', count: ALL_SHELL_ITEMS.length },
-              { id: 'Linux', label: '🐧 Linux' },
-              { id: 'Windows', label: '🪟 Windows' },
-              { id: 'Web', label: '🌐 Web/PHP' },
-              { id: 'PentestMonkey', label: '🐒 PentestMonkey' },
-              { id: 'MSFVenom', label: '💣 MSFVenom' },
-              { id: 'HoaxShell', label: '🛡️ HoaxShell' },
-              { id: 'TTY', label: '📟 TTY' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setPlatformFilter(tab.id);
-                if (soundEnabled) playCyberSound('toggle');
-              }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-[box-shadow,background-color,border-color,color] ${
-                platformFilter === tab.id
-                  ? 'bg-accent text-on-accent shadow-glow-cyan/20 font-bold'
-                  : 'bg-cyber-card hover:bg-cyber-border border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-              }`}
-            >
-              {tab.label}
-              {'count' in tab && <span className="ml-1 opacity-70">({tab.count})</span>}
-            </button>
-          ))}
+        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:max-w-full sm:px-0">
+          <div className="flex min-w-max items-center gap-1">
+            {(
+              [
+                { id: 'All', label: 'All', count: ALL_SHELL_ITEMS.length },
+                { id: 'Linux', label: 'Linux' },
+                { id: 'Windows', label: 'Windows' },
+                { id: 'Web', label: 'Web/PHP' },
+                { id: 'PentestMonkey', label: 'PentestMonkey' },
+                { id: 'MSFVenom', label: 'MSFVenom' },
+                { id: 'HoaxShell', label: 'HoaxShell' },
+                { id: 'TTY', label: 'TTY' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setPlatformFilter(tab.id);
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`inline-flex min-h-8 flex-shrink-0 items-center whitespace-nowrap rounded-md border px-2.5 text-xs font-medium transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                  platformFilter === tab.id
+                    ? 'border-accent bg-accent-muted text-primary'
+                    : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                }`}
+              >
+                {tab.label}
+                {'count' in tab && <span className="ml-1 tabular-nums text-muted">({tab.count})</span>}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Compact Search Input */}
-        <div className="relative flex-1 sm:max-w-xs min-w-[200px]">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-cyber-muted" />
+        <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
           <input
             type="text"
             id="revshell-search-input"
@@ -408,24 +393,24 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Filter ${filteredShells.length} payloads...`}
-            className="w-full pl-8 pr-7 py-1 rounded-lg bg-cyber-card border border-cyber-border text-xs text-slate-900 dark:text-white placeholder-cyber-muted focus:border-cyber-cyan focus:outline-none"
+            className="h-8 w-full rounded-lg border border-subtle bg-surface-card pl-8 pr-8 text-xs text-primary placeholder:text-muted transition-colors focus:border-accent focus:outline-none [@media(pointer:coarse)]:h-11"
           />
           {searchQuery && (
             <button aria-label="Clear filter"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-cyber-muted hover:text-slate-900 dark:hover:text-primary"
+              className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center text-muted hover:text-primary"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* 3. MINIMALIST PAYLOAD SELECTOR CHIPS */}
-      <div className="p-2 rounded-xl bg-cyber-card/60 border border-cyber-border/70 max-h-36 overflow-y-auto scrollbar-thin">
+      {/* 3. Payload selector chips */}
+      <div className="max-h-36 overflow-y-auto scrollbar-thin">
         <div className="flex flex-wrap gap-1.5">
           {filteredShells.length === 0 ? (
-            <div className="text-cyber-muted text-xs p-2">No reverse shells matched your query.</div>
+            <div className="p-2 text-xs text-muted">No reverse shells matched your query.</div>
           ) : (
             filteredShells.map((shell) => {
               const isSelected = shell.id === selectedShellId;
@@ -436,24 +421,17 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                     setSelectedShellId(shell.id);
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className={`px-2 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5 ${
+                  aria-pressed={isSelected}
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
                     isSelected
-                      ? 'bg-emerald-500 dark:bg-cyber-emerald text-black font-bold shadow-sm'
-                      : 'bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-card border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-slate-300 hover:text-slate-950 dark:hover:text-primary'
+                      ? 'border-accent bg-accent-muted font-medium text-primary'
+                      : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
                   }`}
                   title={`${shell.name} (${shell.language}) - ${shell.platform}`}
                 >
                   <span>{shell.name}</span>
                   {shell.isFullScript && (
-                    <span
-                      className={`text-[9px] px-1 py-0.2 rounded uppercase font-semibold ${
-                        isSelected
-                          ? 'bg-black/20 text-black'
-                          : 'bg-purple-100 dark:bg-purple-950/60 text-callout-tip-fg border border-purple-300 dark:border-purple-800/40'
-                      }`}
-                    >
-                      FILE
-                    </span>
+                    <span className="rounded px-1 text-[11px] font-medium text-muted">File</span>
                   )}
                 </button>
               );
@@ -462,60 +440,46 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
         </div>
       </div>
 
-      {/* 4. HERO PAYLOAD TERMINAL BOX */}
-      <div className="rounded-xl bg-white dark:bg-cyber-card border border-cyan-400/50 dark:border-cyber-cyan/40 shadow-lg overflow-hidden">
-        {/* Terminal Header & Controls */}
-        <div className="px-3.5 py-2 bg-slate-100 dark:bg-cyber-bg/95 border-b border-slate-200 dark:border-cyber-border flex flex-wrap items-center justify-between gap-2">
-          {/* Active Shell Badge */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-cyber-cyan animate-pulse" />
-            <span className="font-bold text-slate-900 dark:text-white text-xs truncate">
-              {activeShell.name}
-            </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-100 dark:bg-cyber-cyan/10 border border-cyan-300 dark:border-cyber-cyan/30 text-callout-info-fg dark:text-cyber-cyan font-bold">
+      {/* 4. Payload terminal: the one intentionally dark panel */}
+      <div className="overflow-hidden rounded-xl border border-subtle">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-subtle bg-surface-sunken px-3.5 py-2.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-xs font-semibold text-primary">{activeShell.name}</span>
+            <span className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary">
               {activeShell.platform}
             </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-cyber-purple/10 border border-purple-300 dark:border-cyber-purple/30 text-callout-tip-fg dark:text-cyber-purple font-mono">
+            <span className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary">
               {activeShell.language}
             </span>
             {activeShell.notes && (
-              <span className="text-[10px] text-slate-600 dark:text-cyber-muted truncate hidden md:inline">
+              <span className="hidden truncate text-[11px] text-muted md:inline">
                 ({activeShell.notes})
               </span>
             )}
           </div>
 
-          {/* Encodings, Wrappers & Actions */}
-          <div className="flex items-center gap-2">
-            {/* Encoding Switcher */}
-            <div className="flex items-center gap-0.5 bg-slate-200/70 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border rounded-lg p-0.5">
-              <span className="text-[9px] font-mono font-bold text-slate-600 dark:text-cyber-muted uppercase px-1 hidden sm:inline select-none">
-                ENC:
-              </span>
-              {(['RAW', 'URL', 'BASE64', 'BASH_B64', 'PS_ENC'] as EncodingType[]).map((enc) => (
-                <button
-                  key={enc}
-                  onClick={() => {
-                    setEncoding(enc);
-                    if (soundEnabled) playCyberSound('toggle');
-                  }}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
-                    encoding === enc
-                      ? 'bg-cyber-cyan text-black font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                  }`}
-                  title={`Encode payload with ${enc.replace('_', ' ')}`}
-                >
-                  {enc.replace('_', ' ')}
-                </button>
-              ))}
+          <div className="flex min-w-0 max-w-full items-center gap-2">
+            <div className="max-w-full overflow-x-auto no-scrollbar">
+              <div className={segWrap}>
+                <span className="hidden select-none px-1 text-[11px] text-muted sm:inline">Encoding</span>
+                {(['RAW', 'URL', 'BASE64', 'BASH_B64', 'PS_ENC'] as EncodingType[]).map((enc) => (
+                  <button
+                    key={enc}
+                    onClick={() => {
+                      setEncoding(enc);
+                      if (soundEnabled) playCyberSound('toggle');
+                    }}
+                    className={`${segBtn} font-mono ${encoding === enc ? segOn : segOff}`}
+                    title={`Encode payload with ${enc.replace('_', ' ')}`}
+                  >
+                    {enc.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Optional Wrapper */}
-            <div className="hidden lg:flex items-center gap-0.5 bg-slate-200/70 dark:bg-cyber-card border border-slate-300 dark:border-cyber-border rounded-lg p-0.5">
-              <span className="text-[9px] font-mono font-bold text-slate-600 dark:text-cyber-muted uppercase px-1 select-none">
-                WRAP:
-              </span>
+            <div className={`hidden lg:inline-flex ${segWrap}`}>
+              <span className="select-none px-1 text-[11px] text-muted">Wrap</span>
               {(['none', 'bash -c', 'cmd /c'] as CommandWrapper[]).map((w) => (
                 <button
                   key={w}
@@ -523,104 +487,96 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
                     setWrapper(w);
                     if (soundEnabled) playCyberSound('toggle');
                   }}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
-                    wrapper === w
-                      ? 'bg-purple-700 dark:bg-purple-800 text-white font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
-                  }`}
+                  className={`${segBtn} font-mono ${wrapper === w ? segOn : segOff}`}
                   title={w === 'none' ? 'Direct execution without shell wrapper' : `Wrap payload in ${w}`}
                 >
-                  {w === 'none' ? 'DIRECT' : w}
+                  {w === 'none' ? 'Direct' : w}
                 </button>
               ))}
             </div>
 
-            {/* Download File Button (if applicable) */}
             {(activeShell.isFullScript || activeShell.extension) && (
               <button
                 onClick={handleDownload}
-                className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-border border border-slate-300 dark:border-cyber-border text-slate-800 dark:text-white text-xs font-bold flex items-center gap-1 transition-colors"
+                className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-2.5 text-xs font-medium text-primary transition-[transform,background-color] hover:bg-surface-hover active:scale-[0.97] [@media(pointer:coarse)]:h-11"
                 title={`Download as ${activeShell.extension || '.sh'} file`}
               >
-                <Download className="w-3.5 h-3.5 text-cyber-cyan" />
+                <Download className="h-3.5 w-3.5 text-muted" />
                 <span className="hidden sm:inline">Save {activeShell.extension}</span>
               </button>
             )}
 
-            {/* 1-Click Copy Payload Button */}
             <button
               onClick={handleCopyPayload}
-              className={`px-3 py-1 rounded-lg font-bold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm ${
+              className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] [@media(pointer:coarse)]:h-11 ${
                 copiedPayload
-                  ? 'bg-cyber-emerald text-black shadow-glow-emerald/30'
-                  : 'bg-cyber-cyan hover:bg-cyber-cyan/90 text-black shadow-glow-cyan/20'
+                  ? 'border border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                  : 'border border-accent bg-accent text-on-accent hover:brightness-105'
               }`}
             >
               {copiedPayload ? (
                 <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>COPIED!</span>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>COPY PAYLOAD</span>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy payload</span>
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Code Content Box - Permanent Dark Terminal for crisp hacker syntax in both themes */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800 font-mono text-xs overflow-x-auto max-h-72 scrollbar-thin machined-edge">
+        <div className="max-h-72 overflow-x-auto bg-surface-inverse p-3.5 font-mono text-xs text-on-inverse scrollbar-thin">
           <pre className="whitespace-pre-wrap break-all leading-relaxed select-all">
-            <SyntaxHighlightedCommand command={resolvedPayload} />
+            <SyntaxHighlightedCommand command={resolvedPayload} className="!bg-transparent !p-0" />
           </pre>
         </div>
       </div>
 
-      {/* 5. COMPACT LISTENER COMMAND STRIP */}
-      <div className="p-2.5 rounded-xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyber-border flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Terminal className="w-4 h-4 text-callout-success-fg dark:text-cyber-emerald flex-shrink-0" />
-          <span className="text-[11px] font-bold text-callout-success-fg dark:text-cyber-emerald uppercase">LISTENER:</span>
+      {/* 5. Listener */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="flex-shrink-0 text-xs font-medium text-muted">Listener</span>
 
-          {/* Listener selector pills */}
-          <div className="flex items-center gap-1 overflow-x-auto max-w-md scrollbar-none">
-            {LISTENER_TYPES.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => {
-                  setListenerType(l.id);
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono whitespace-nowrap transition-colors ${
-                  listenerType === l.id
-                    ? 'bg-emerald-100 dark:bg-cyber-emerald/20 text-callout-success-fg dark:text-cyber-emerald border border-emerald-300 dark:border-cyber-emerald/60 font-bold'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-card text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary border border-slate-200 dark:border-cyber-border'
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
+          <div className="-mx-1 max-w-full overflow-x-auto no-scrollbar px-1">
+            <div className="flex items-center gap-1">
+              {LISTENER_TYPES.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    setListenerType(l.id);
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  className={`inline-flex min-h-7 flex-shrink-0 items-center whitespace-nowrap rounded-md border px-2 font-mono text-xs transition-colors cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                    listenerType === l.id
+                      ? 'border-accent bg-accent-muted font-medium text-primary'
+                      : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Listener Command Preview & Copy */}
-        <div className="flex items-center gap-2">
-          <code className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-xs select-all">
-            <SyntaxHighlightedCommand command={listenerCommand} />
+        <div className="flex min-w-0 items-center gap-2">
+          <code className="min-w-0 overflow-x-auto rounded-md bg-surface-inverse px-2.5 py-1.5 text-xs text-on-inverse select-all">
+            <SyntaxHighlightedCommand command={listenerCommand} className="!bg-transparent !p-0" />
           </code>
           <button aria-label="Copy listener command"
             onClick={handleCopyListener}
-            className={`p-1.5 rounded-lg border transition-colors ${
+            className={`inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border transition-[transform,background-color,color] active:scale-[0.97] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 ${
               copiedListener
-                ? 'bg-cyber-emerald text-black border-cyber-emerald'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-bg dark:hover:bg-cyber-border text-slate-700 dark:text-white border-slate-300 dark:border-cyber-border'
+                ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
             }`}
             title="Copy listener command"
           >
-            {copiedListener ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {copiedListener ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
         </div>
       </div>

@@ -319,7 +319,7 @@ export const ReconAutomationModal: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md font-mono"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
       onClick={() => setReconAutomationModalOpen(false)}
     >
       <motion.div
@@ -327,25 +327,25 @@ export const ReconAutomationModal: React.FC = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98, y: 8 }}
         transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full sm:max-w-5xl h-full sm:h-[92vh] max-h-none sm:max-h-[860px] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden relative z-10"
+        className="w-full sm:max-w-5xl h-full sm:h-[92vh] max-h-none sm:max-h-[860px] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-subtle bg-surface-card shadow-2xl overflow-hidden relative z-10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-cyber-border bg-cyber-bg">
+        <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-subtle bg-surface-sunken">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-cyan">
+            <div className="w-8 h-8 rounded-lg bg-surface-card border border-subtle flex items-center justify-center text-secondary">
               <Zap className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-white tracking-wide">
+                <h2 className="text-sm font-semibold text-primary">
                   ZEROBOX TACTICAL AUTOMATION HUB
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-cyber-cyan font-bold">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-card border border-subtle text-secondary font-semibold">
                   MULTI-FORMAT SCAN & PAYLOAD CRAFTER
                 </span>
               </div>
-              <p className="text-[11px] text-cyber-muted">
+              <p className="text-[11px] text-muted">
                 Multi-format scan ingestion (XML, Nmap, Grepable, Rustscan), freeze-guarded auto-apply, and real-time bypass encoders.
               </p>
             </div>
@@ -353,16 +353,16 @@ export const ReconAutomationModal: React.FC = () => {
 
           <button
             onClick={() => setReconAutomationModalOpen(false)}
-            className="p-1.5 rounded-lg border border-cyber-border bg-cyber-bg text-cyber-muted hover:text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="p-1.5 rounded-lg border border-subtle bg-surface-sunken text-muted hover:text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Target Machine Selection Bar */}
-        <div className="flex-shrink-0 px-4 py-2.5 bg-cyber-bg border-b border-cyber-border flex items-center justify-between gap-4 flex-wrap text-xs">
+        <div className="flex-shrink-0 px-4 py-2.5 bg-surface-sunken border-b border-subtle flex items-center justify-between gap-4 flex-wrap text-xs">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-cyber-muted uppercase text-[10px] font-bold">TARGET WORKSPACE:</span>
+            <span className="text-muted text-[10px] font-semibold">Target workspace</span>
             <CyberSelect
               value={targetMachineId}
               onChange={setTargetMachineId}
@@ -376,13 +376,13 @@ export const ReconAutomationModal: React.FC = () => {
               searchPlaceholder="Search machine workspace..."
               variant="card"
               size="xs"
-              triggerClassName="py-1 px-2.5 bg-cyber-card border-cyber-border font-bold text-white max-w-[280px]"
+              triggerClassName="py-1 px-2.5 bg-surface-card border-subtle font-semibold text-primary max-w-[280px]"
             />
 
             {isTargetFrozen && (
-              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-amber-950/40 border border-amber-600/50 text-callout-warn-fg font-semibold">
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-callout-warn-bg border border-callout-warn-border text-callout-warn-fg font-semibold">
                 <Lock className="w-3 h-3 text-callout-warn-fg" />
-                <span>SOLVE FROZEN (IMMUTABLE)</span>
+                <span>Solve frozen</span>
               </span>
             )}
           </div>
@@ -391,23 +391,23 @@ export const ReconAutomationModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <PlatformBadge platform={targetMachine.platform} size="sm" />
               <OsBadge os={targetMachine.os} size="xs" />
-              <span className="text-cyber-muted text-[11px] font-mono">{targetMachine.ip}</span>
+              <span className="text-muted text-[11px] font-mono tabular-nums">{targetMachine.ip}</span>
             </div>
           )}
         </div>
 
         {/* Auto-detected Target Match Prompt */}
         {autoMatchedTarget && (
-          <div className="flex-shrink-0 px-4 py-2 bg-cyber-cyan/10 border-b border-cyber-cyan/30 flex items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-cyber-cyan">
-              <Radio className="w-4 h-4 animate-ping text-cyber-cyan" />
+          <div className="flex-shrink-0 px-4 py-2 bg-accent-muted border-b border-subtle flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-secondary">
+              <Radio className="w-4 h-4 text-muted" />
               <span>
-                Detected IP <strong className="text-white font-mono">{parsedResults?.detectedIp}</strong> matches catalog target <strong className="text-white">{autoMatchedTarget.name}</strong> ({autoMatchedTarget.platform})
+                Detected IP <strong className="text-primary font-mono tabular-nums">{parsedResults?.detectedIp}</strong> matches catalog target <strong className="text-primary">{autoMatchedTarget.name}</strong> ({autoMatchedTarget.platform})
               </span>
             </div>
             <button
               onClick={() => setTargetMachineId(autoMatchedTarget.id)}
-              className="px-2.5 py-1 rounded-lg bg-cyber-cyan text-black font-bold text-xs hover:brightness-110 active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] shadow-sm flex items-center gap-1"
+              className="px-2.5 py-1 rounded-lg bg-accent text-on-accent font-semibold text-xs hover:brightness-110 active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1"
             >
               <span>Switch to {autoMatchedTarget.name}</span>
               <ArrowRight className="w-3 h-3" />
@@ -416,19 +416,19 @@ export const ReconAutomationModal: React.FC = () => {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex-shrink-0 flex items-center border-b border-cyber-border bg-cyber-card px-4 pt-2 gap-2 text-xs">
+        <div className="flex-shrink-0 flex items-center border-b border-subtle bg-surface-card px-4 pt-2 gap-2 text-xs">
           <button
             onClick={() => setActiveTab('parser')}
-            className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
+            className={`px-3 py-2 border-b-2 font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'parser'
-                ? 'border-cyber-cyan text-cyber-cyan bg-cyber-cyan/5'
-                : 'border-transparent text-cyber-muted hover:text-primary'
+                ? 'border-subtle text-secondary bg-accent-muted'
+                : 'border-transparent text-muted hover:text-primary'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>SCAN & NMAP IMPORTER</span>
+            <span>Nmap importer</span>
             {parsedResults && parsedResults.ports.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyber-cyan/20 text-cyber-cyan font-bold">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-surface-sunken text-secondary font-semibold">
                 {parsedResults.ports.length} ports
               </span>
             )}
@@ -436,29 +436,29 @@ export const ReconAutomationModal: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('payloads')}
-            className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
+            className={`px-3 py-2 border-b-2 font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'payloads'
-                ? 'border-cyber-emerald text-cyber-emerald bg-cyber-emerald/5'
-                : 'border-transparent text-cyber-muted hover:text-primary'
+                ? 'border-callout-success-border text-callout-success-fg bg-callout-success-bg'
+                : 'border-transparent text-muted hover:text-primary'
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
-            <span>TACTICAL PAYLOAD CRAFTER</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyber-emerald/20 text-cyber-emerald font-bold">
+            <span>Payload crafter</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-callout-success-bg text-callout-success-fg font-semibold">
               {tacticalPayloads.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('rules')}
-            className={`px-3 py-2 border-b-2 font-bold transition-colors flex items-center gap-2 ${
+            className={`px-3 py-2 border-b-2 font-semibold transition-colors flex items-center gap-2 ${
               activeTab === 'rules'
-                ? 'border-purple-400 text-callout-tip-fg bg-purple-950/20'
-                : 'border-transparent text-cyber-muted hover:text-primary'
+                ? 'border-subtle text-secondary bg-surface-sunken'
+                : 'border-transparent text-muted hover:text-primary'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>EXPLOIT RULE ADVISOR</span>
+            <span>Exploit advisor</span>
           </button>
         </div>
 
@@ -470,28 +470,28 @@ export const ReconAutomationModal: React.FC = () => {
               {/* Controls bar */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-bold text-cyber-muted uppercase">LOAD SAMPLES:</span>
+                  <span className="text-[10px] font-semibold text-muted">Load samples</span>
                   <button
                     onClick={() => setScanText(SAMPLE_LINUX_SCAN)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-cyber-cyan hover:border-cyber-cyan active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-surface-sunken border border-subtle text-secondary hover:border-strong active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Linux Lame
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_WINDOWS_AD_SCAN)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-callout-info-fg hover:border-blue-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-surface-sunken border border-subtle text-secondary hover:border-strong active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Windows AD
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_NMAP_XML)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-callout-success-fg hover:border-emerald-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-surface-sunken border border-subtle text-callout-success-fg hover:border-callout-success-border active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <FileCode className="w-3 h-3" /> Nmap XML
                   </button>
                   <button
                     onClick={() => setScanText(SAMPLE_RUSTSCAN)}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-callout-warn-fg hover:border-orange-400 active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
+                    className="px-2.5 py-1 rounded-md bg-surface-sunken border border-subtle text-callout-warn-fg hover:border-callout-warn-border active:scale-[0.98] text-[11px] transition-[transform,background-color,border-color,color] flex items-center gap-1 font-semibold"
                   >
                     <Sparkles className="w-3 h-3" /> Rustscan
                   </button>
@@ -510,15 +510,15 @@ export const ReconAutomationModal: React.FC = () => {
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-white hover:border-cyber-cyan active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
+                    className="px-2.5 py-1 rounded-md bg-surface-sunken border border-subtle text-primary hover:border-strong active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
                   >
-                    <Upload className="w-3 h-3 text-cyber-cyan" /> Upload Scan
+                    <Upload className="w-3 h-3 text-muted" /> Upload Scan
                   </button>
 
                   {scanText && (
                     <button
                       onClick={() => setScanText('')}
-                      className="text-cyber-muted hover:text-cyber-crimson active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color] ml-1"
+                      className="text-muted hover:text-callout-danger-fg active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color] ml-1"
                     >
                       <RotateCcw className="w-3 h-3" /> Clear
                     </button>
@@ -533,7 +533,7 @@ export const ReconAutomationModal: React.FC = () => {
                 onDrop={handleDrop}
                 className={`relative rounded-xl transition-colors ${
                   isDragging 
-                    ? 'ring-2 ring-cyber-cyan bg-cyber-cyan/10' 
+                    ? 'ring-2 ring-accent bg-accent-muted' 
                     : ''
                 }`}
               >
@@ -545,14 +545,14 @@ export const ReconAutomationModal: React.FC = () => {
                   onChange={(e) => setScanText(e.target.value)}
                   placeholder="Paste or drag-and-drop raw scan logs here... Supports Nmap XML, Standard Nmap (.nmap), Grepable (.gnmap), Rustscan, and raw port lists."
                   rows={6}
-                  className="w-full bg-cyber-bg px-3.5 py-2.5 rounded-xl border border-cyber-border text-cyber-emerald font-mono text-xs focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-inner leading-relaxed"
+                  className="w-full bg-surface-sunken px-3.5 py-2.5 rounded-xl border border-subtle text-primary font-mono text-xs focus:outline-none focus:border-accent transition-[box-shadow,background-color,border-color,color] shadow-inner leading-relaxed"
                 />
 
                 {isDragging && (
                   <div className="absolute inset-0 bg-black/75 backdrop-blur-sm rounded-xl flex items-center justify-center pointer-events-none">
-                    <div className="text-center text-cyber-cyan space-y-1">
+                    <div className="text-center text-secondary space-y-1">
                       <Upload className="w-8 h-8 mx-auto animate-bounce" />
-                      <p className="font-bold text-sm">Drop scan file (.xml, .nmap, .gnmap, .txt) to parse</p>
+                      <p className="font-semibold text-sm">Drop scan file (.xml, .nmap, .gnmap, .txt) to parse</p>
                     </div>
                   </div>
                 )}
@@ -560,56 +560,56 @@ export const ReconAutomationModal: React.FC = () => {
 
               {/* Format Badge & Metadata Bar */}
               {parsedResults && (
-                <div className="flex items-center justify-between gap-2 flex-wrap px-3 py-2 rounded-lg bg-cyber-bg border border-cyber-border text-[11px]">
+                <div className="flex items-center justify-between gap-2 flex-wrap px-3 py-2 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-cyber-muted font-bold">DETECTED FORMAT:</span>
-                    <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
+                    <span className="text-muted font-semibold">Detected format</span>
+                    <span className={`px-2 py-0.5 rounded font-semibold text-[10px] ${
                       parsedResults.format === 'nmap-xml'
-                        ? 'bg-emerald-950/60 border border-emerald-500/60 text-callout-success-fg'
+                        ? 'bg-callout-success-bg border border-callout-success-border text-callout-success-fg'
                         : parsedResults.format === 'rustscan'
-                        ? 'bg-orange-950/60 border border-orange-500/60 text-callout-warn-fg'
+                        ? 'bg-callout-warn-bg border border-callout-warn-border text-callout-warn-fg'
                         : parsedResults.format === 'gnmap'
-                        ? 'bg-purple-950/60 border border-purple-500/60 text-callout-tip-fg'
-                        : 'bg-cyber-cyan/15 border border-cyber-cyan/50 text-cyber-cyan'
+                        ? 'bg-surface-sunken border border-subtle text-secondary'
+                        : 'bg-accent-muted border border-subtle text-secondary'
                     }`}>
                       {parsedResults.format}
                     </span>
 
                     {parsedResults.detectedIp && (
-                      <span className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-white font-mono">
+                      <span className="px-2 py-0.5 rounded bg-surface-card border border-subtle text-primary font-mono">
                         IP: {parsedResults.detectedIp}
                       </span>
                     )}
 
                     {parsedResults.detectedHost && (
-                      <span className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-white">
+                      <span className="px-2 py-0.5 rounded bg-surface-card border border-subtle text-primary">
                         HOST: {parsedResults.detectedHost}
                       </span>
                     )}
 
                     {parsedResults.detectedOs && (
-                      <span className="px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-white">
+                      <span className="px-2 py-0.5 rounded bg-surface-card border border-subtle text-primary">
                         OS: {parsedResults.detectedOs}
                       </span>
                     )}
                   </div>
 
-                  <span className="text-cyber-muted">
-                    Found <strong className="text-white font-bold">{parsedResults.ports.length}</strong> open ports
+                  <span className="text-muted">
+                    Found <strong className="text-primary font-semibold">{parsedResults.ports.length}</strong> open ports
                   </span>
                 </div>
               )}
 
               {/* Frozen Solve Banner Warning */}
               {isTargetFrozen && parsedResults && (
-                <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/50 flex items-start gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-callout-warn-bg border border-callout-warn-border flex items-start gap-3 text-xs">
                   <AlertTriangle className="w-5 h-5 text-callout-warn-fg flex-shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <div className="font-bold text-callout-warn-fg">
-                      TARGET IS COMPLETED // MODIFICATION FROZEN
+                    <div className="font-semibold text-callout-warn-fg">
+                      Target completed. Editing is locked.
                     </div>
                     <p className="text-callout-warn-fg leading-relaxed text-[11px]">
-                      Target <strong className="text-white font-semibold">{targetMachine?.name}</strong> is one of Daniel Dayan's 63 completed solves. 
+                      Target <strong className="text-primary font-semibold">{targetMachine?.name}</strong> is one of Daniel Dayan's 63 completed solves. 
                       Solve statuses, flags, and checklist milestones are strictly frozen to preserve operational integrity. 
                       To apply this scan, please select an in-progress or backlog target from the dropdown above.
                     </p>
@@ -622,15 +622,15 @@ export const ReconAutomationModal: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-xl border border-cyber-cyan/30 bg-cyber-bg/70 space-y-3.5 shadow-lg"
+                  className="p-4 rounded-xl border border-subtle bg-surface-sunken/70 space-y-3.5"
                 >
-                  <div className="flex items-center justify-between border-b border-cyber-border/80 pb-2.5 flex-wrap gap-2">
+                  <div className="flex items-center justify-between border-b border-subtle/80 pb-2.5 flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-sm">
+                      <span className="font-semibold text-primary text-sm">
                         DISCOVERED OPEN SERVICES ({parsedResults.ports.length})
                       </span>
                       {parsedResults.detectedOs && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-cyber-card border border-cyber-border text-cyber-muted">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-surface-card border border-subtle text-muted">
                           OS: {parsedResults.detectedOs}
                         </span>
                       )}
@@ -641,18 +641,18 @@ export const ReconAutomationModal: React.FC = () => {
                       disabled={isTargetFrozen || parsedResults.ports.length === 0}
                       onClick={handleApplyToMachine}
                       title={isTargetFrozen ? "Target is marked completed. Select an in-progress target." : undefined}
-                      className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm ${
+                      className={`px-3 py-1.5 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-[box-shadow,background-color,border-color,color] ${
                         isTargetFrozen
-                          ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed opacity-60'
+                          ? 'bg-surface-elevated text-muted border border-strong cursor-not-allowed opacity-60'
                           : appliedSuccess
-                          ? 'bg-cyber-emerald text-black shadow-glow-emerald active:scale-[0.98]'
-                          : 'bg-cyber-cyan text-black hover:brightness-110 active:brightness-95 active:scale-[0.98] shadow-glow-cyan'
+                          ? 'bg-callout-success-fg text-on-accent active:scale-[0.98]'
+                          : 'bg-accent text-on-accent hover:brightness-110 active:brightness-95 active:scale-[0.98]'
                       }`}
                     >
                       {isTargetFrozen ? (
                         <>
                           <Lock className="w-3.5 h-3.5 text-tertiary" />
-                          <span>FROZEN // SOLVE COMPLETED</span>
+                          <span>Solve completed</span>
                         </>
                       ) : appliedSuccess ? (
                         <>
@@ -673,23 +673,23 @@ export const ReconAutomationModal: React.FC = () => {
                     {parsedResults.ports.map((p) => (
                       <div
                         key={p.port}
-                        className="p-2.5 rounded-lg bg-cyber-card border border-cyber-border/70 flex items-start justify-between gap-3 hover:border-cyber-cyan/40 transition-colors"
+                        className="p-2.5 rounded-lg bg-surface-card border border-subtle/70 flex items-start justify-between gap-3 hover:border-strong transition-colors"
                       >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-cyber-cyan text-sm font-mono">
+                            <span className="font-semibold text-secondary text-sm">
                               {p.port}/{p.protocol}
                             </span>
-                            <span className="px-1.5 py-0.2 rounded bg-cyber-bg border border-cyber-border font-bold text-[10px] text-white uppercase">
+                            <span className="px-1.5 py-0.2 rounded bg-surface-sunken border border-subtle font-semibold text-[10px] text-primary">
                               {p.service}
                             </span>
-                            <span className="text-cyber-muted text-xs">
+                            <span className="text-muted text-xs">
                               {p.version}
                             </span>
                           </div>
 
                           {p.cveNotes && (
-                            <div className="text-[11px] text-cyber-crimson font-semibold flex items-center gap-1.5">
+                            <div className="text-[11px] text-callout-danger-fg font-semibold flex items-center gap-1.5">
                               <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0" />
                               <span>{p.cveNotes}</span>
                             </div>
@@ -701,7 +701,7 @@ export const ReconAutomationModal: React.FC = () => {
                           {p.suggestedTools.map((tool) => (
                             <span
                               key={tool}
-                              className="text-[9px] px-2 py-0.5 rounded bg-cyber-bg border border-cyber-border text-cyber-cyan font-mono"
+                              className="text-[9px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary"
                             >
                               {tool}
                             </span>
@@ -719,10 +719,10 @@ export const ReconAutomationModal: React.FC = () => {
           {activeTab === 'payloads' && (
             <div className="space-y-4">
               {/* Listener & Target HUD Bar */}
-              <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border flex items-center justify-between flex-wrap gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-surface-sunken border border-subtle flex items-center justify-between flex-wrap gap-3 text-xs">
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="text-cyber-muted text-[10px] uppercase font-bold">LHOST (TUN0):</span>
+                    <span className="text-muted text-[10px] font-semibold">LHOST (TUN0):</span>
                     <input
                       id="recon-lhost-input"
                       name="recon-lhost"
@@ -731,12 +731,12 @@ export const ReconAutomationModal: React.FC = () => {
                       value={globalVars.lhost}
                       onChange={(e) => setGlobalVars({ lhost: e.target.value })}
                       placeholder="10.10.14.X"
-                      className="w-28 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-callout-success-fg dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
+                      className="w-28 px-2 py-1 rounded bg-surface-card border border-strong text-primary font-mono tabular-nums font-medium text-xs focus:outline-none focus:border-accent"
                     />
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-tertiary dark:text-cyber-muted text-[10px] uppercase font-bold">LPORT:</span>
+                    <span className="text-tertiary text-[10px] font-semibold">LPORT:</span>
                     <input
                       id="recon-lport-input"
                       name="recon-lport"
@@ -757,31 +757,31 @@ export const ReconAutomationModal: React.FC = () => {
                         }
                       }}
                       placeholder="4444"
-                      className="w-16 px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-callout-success-fg dark:text-cyber-emerald font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 dark:focus:border-cyber-emerald"
+                      className="w-16 px-2 py-1 rounded bg-surface-card border border-strong text-primary font-mono tabular-nums font-medium text-xs focus:outline-none focus:border-accent"
                     />
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-tertiary dark:text-cyber-muted text-[10px] uppercase font-bold">TARGET IP:</span>
-                    <span className="px-2 py-1 rounded bg-white dark:bg-cyber-card border border-slate-300 dark:border-cyber-border text-cyber-cyan font-mono font-bold text-xs">
+                    <span className="text-tertiary text-[10px] font-semibold">Target IP</span>
+                    <span className="px-2 py-1 rounded bg-surface-card border border-strong text-secondary font-mono tabular-nums font-medium text-xs">
                       {payloadTargetIp}
                     </span>
                   </div>
                 </div>
 
-                <span className="text-[10px] text-cyber-muted">
+                <span className="text-[10px] text-muted">
                   Parameters automatically interpolated in real time
                 </span>
               </div>
 
               {/* Bypass Encoder Matrix Pills */}
-              <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-2">
+              <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-cyber-muted uppercase flex items-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-cyber-cyan" />
+                  <span className="text-[10px] font-semibold text-muted flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-muted" />
                     REAL-TIME BYPASS ENCODER MATRIX:
                   </span>
-                  <span className="text-[10px] text-cyber-cyan font-semibold">
+                  <span className="text-[10px] text-secondary font-semibold">
                     Active: {ENCODER_OPTIONS.find(e => e.id === selectedEncoder)?.label}
                   </span>
                 </div>
@@ -797,10 +797,10 @@ export const ReconAutomationModal: React.FC = () => {
                           if (soundEnabled) playCyberSound('click');
                         }}
                         title={enc.description}
-                        className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-[transform,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.98] ${
+                        className={`px-2.5 py-1 rounded-md text-xs font-medium transition-[transform,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.97] ${
                           isSelected
-                            ? 'bg-cyber-emerald text-black shadow-glow-emerald/30 border border-cyber-emerald'
-                            : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary hover:border-cyber-borderGlow'
+                            ? 'bg-callout-success-fg text-on-accent border border-callout-success-border'
+                            : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-cyber-borderGlow'
                         }`}
                       >
                         <span>{enc.badge}</span>
@@ -818,24 +818,24 @@ export const ReconAutomationModal: React.FC = () => {
                     <button
                       key={cat}
                       onClick={() => setPayloadCategory(cat)}
-                      className={`px-3 py-1 rounded-md text-xs font-bold transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
+                      className={`px-3 py-1 rounded-md text-xs font-semibold transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
                         payloadCategory === cat
-                          ? 'bg-cyber-cyan/15 border border-cyber-cyan text-cyber-cyan shadow-sm'
-                          : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary'
+                          ? 'bg-accent-muted border border-subtle text-secondary'
+                          : 'bg-surface-sunken border border-subtle text-muted hover:text-primary'
                       }`}
                     >
                       {cat === 'all' && 'ALL PAYLOADS'}
-                      {cat === 'revshell' && 'REVERSE SHELLS'}
+                      {cat === 'revshell' && 'Reverse shells'}
                       {cat === 'web' && 'WEB INJECTION'}
-                      {cat === 'msfvenom' && 'MSFVENOM'}
-                      {cat === 'ad' && 'ACTIVE DIRECTORY'}
-                      {cat === 'privesc' && 'PRIVESC'}
+                      {cat === 'msfvenom' && 'MSFVenom'}
+                      {cat === 'ad' && 'Active Directory'}
+                      {cat === 'privesc' && 'PrivEsc'}
                     </button>
                   ))}
                 </div>
 
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-cyber-muted" />
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
                   <input
                     id="recon-payload-search-input"
                     name="recon-payload-search"
@@ -844,7 +844,7 @@ export const ReconAutomationModal: React.FC = () => {
                     value={payloadSearch}
                     onChange={(e) => setPayloadSearch(e.target.value)}
                     placeholder="Search payloads..."
-                    className="pl-8 pr-3 py-1 rounded bg-cyber-bg border border-cyber-border text-white text-xs w-44 sm:w-56 focus:outline-none focus:border-cyber-cyan"
+                    className="pl-8 pr-3 py-1 rounded bg-surface-sunken border border-subtle text-primary text-xs w-44 sm:w-56 focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -859,20 +859,20 @@ export const ReconAutomationModal: React.FC = () => {
                   return (
                     <div
                       key={item.id}
-                      className="p-3.5 rounded-xl border border-cyber-border bg-cyber-card space-y-2.5 shadow-sm hover:border-cyber-borderGlow transition-colors"
+                      className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-2.5 hover:border-cyber-borderGlow transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-white text-xs">{item.title}</span>
-                          <span className="text-[9px] px-2 py-0.5 rounded bg-cyber-bg border border-cyber-border text-cyber-cyan font-bold">
+                          <span className="font-semibold text-primary text-xs">{item.title}</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary font-semibold">
                             {item.subCategory}
                           </span>
-                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
+                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
                             item.os === 'Windows'
-                              ? 'text-callout-info-fg bg-blue-950/40 border border-blue-800/40'
+                              ? 'text-secondary bg-surface-sunken border border-subtle'
                               : item.os === 'Linux'
-                              ? 'text-cyber-emerald bg-emerald-950/40 border border-emerald-800/40'
-                              : 'text-callout-tip-fg bg-purple-950/40 border border-purple-800/40'
+                              ? 'text-callout-success-fg bg-callout-success-bg border border-callout-success-border'
+                              : 'text-secondary bg-surface-sunken border border-subtle'
                           }`}>
                             {item.os}
                           </span>
@@ -881,12 +881,12 @@ export const ReconAutomationModal: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => copyPayload(rawCmd, item.id + '-raw')}
-                            className="px-2.5 py-1 rounded-md bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary hover:border-cyber-cyan active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
+                            className="px-2.5 py-1 rounded-md bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong active:scale-[0.98] text-[11px] flex items-center gap-1 transition-[transform,background-color,border-color,color]"
                           >
                             {copiedPayloadKey === item.id + '-raw' ? (
                               <>
-                                <Check className="w-3 h-3 text-cyber-emerald" />
-                                <span className="text-cyber-emerald font-bold">COPIED RAW</span>
+                                <Check className="w-3 h-3 text-callout-success-fg" />
+                                <span className="text-callout-success-fg font-semibold">COPIED RAW</span>
                               </>
                             ) : (
                               <>
@@ -898,10 +898,10 @@ export const ReconAutomationModal: React.FC = () => {
 
                           <button
                             onClick={() => copyPayload(encodedCmd, item.id + '-enc')}
-                            className={`px-3 py-1 rounded-md text-[11px] flex items-center gap-1.5 transition-[transform,background-color,border-color,color] font-bold active:scale-[0.98] ${
+                            className={`px-3 py-1 rounded-md text-[11px] flex items-center gap-1.5 transition-[transform,background-color,border-color,color] font-semibold active:scale-[0.98] ${
                               copiedPayloadKey === item.id + '-enc'
-                                ? 'bg-cyber-emerald text-black shadow-glow-emerald'
-                                : 'bg-cyber-cyan/15 border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan hover:text-black shadow-sm'
+                                ? 'bg-callout-success-fg text-on-accent'
+                                : 'bg-accent-muted border border-subtle text-secondary hover:bg-accent hover:text-on-accent'
                             }`}
                           >
                             {copiedPayloadKey === item.id + '-enc' ? (
@@ -921,11 +921,11 @@ export const ReconAutomationModal: React.FC = () => {
                         </div>
                       </div>
 
-                      <p className="text-[11px] text-cyber-muted leading-relaxed">
+                      <p className="text-[11px] text-muted leading-relaxed">
                         {item.description}
                       </p>
 
-                      <div className="p-2.5 rounded-lg bg-cyber-bg border border-cyber-border/70 text-cyber-emerald font-mono text-[11px] overflow-x-auto whitespace-pre-wrap break-all shadow-inner">
+                      <div className="p-2.5 rounded-lg bg-surface-inverse text-on-inverse font-mono tabular-nums text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
                         {encodedCmd}
                       </div>
                     </div>
@@ -933,7 +933,7 @@ export const ReconAutomationModal: React.FC = () => {
                 })}
 
                 {filteredPayloads.length === 0 && (
-                  <div className="p-8 text-center text-cyber-muted rounded-xl bg-cyber-bg border border-cyber-border">
+                  <div className="p-8 text-center text-muted rounded-xl bg-surface-sunken border border-subtle">
                     No tactical payloads match your query "{payloadSearch}".
                   </div>
                 )}
@@ -944,73 +944,73 @@ export const ReconAutomationModal: React.FC = () => {
           {/* TAB 3: EXPLOIT RULE ADVISOR */}
           {activeTab === 'rules' && (
             <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border text-xs space-y-1">
-                <div className="font-bold text-white flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-cyber-amber" />
-                  <span>AUTOMATED EXPLOIT HEURISTICS & RULES</span>
+              <div className="p-3 rounded-xl bg-surface-sunken border border-subtle text-xs space-y-1">
+                <div className="font-semibold text-primary flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-callout-warn-fg" />
+                  <span>Exploit heuristics</span>
                 </div>
-                <p className="text-cyber-muted text-[11px]">
+                <p className="text-muted text-[11px]">
                   These automatic heuristics map discovered ports and daemons directly to tactical exploitation avenues.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">FTP Anonymous / Backdoor</span>
-                    <span className="text-[10px] text-cyber-emerald font-mono">PORT 21</span>
+                    <span className="font-semibold text-primary text-xs">FTP Anonymous / Backdoor</span>
+                    <span className="text-[10px] text-muted font-mono tabular-nums">PORT 21</span>
                   </div>
-                  <p className="text-[11px] text-cyber-muted">
+                  <p className="text-[11px] text-muted">
                     Attempts anonymous:anonymous login. Flags vsftpd 2.3.4 smiley trigger.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">Apache Path Traversal</span>
-                    <span className="text-[10px] text-cyber-emerald font-mono">PORT 80/443</span>
+                    <span className="font-semibold text-primary text-xs">Apache Path Traversal</span>
+                    <span className="text-[10px] text-muted font-mono tabular-nums">PORT 80/443</span>
                   </div>
-                  <p className="text-[11px] text-cyber-muted">
+                  <p className="text-[11px] text-muted">
                     Flags Apache 2.4.49 / 2.4.50 for CVE-2021-41773 traversal tests with curl.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">SMB EternalBlue / Null Session</span>
-                    <span className="text-[10px] text-cyber-emerald font-mono">PORT 445</span>
+                    <span className="font-semibold text-primary text-xs">SMB EternalBlue / Null Session</span>
+                    <span className="text-[10px] text-muted font-mono tabular-nums">PORT 445</span>
                   </div>
-                  <p className="text-[11px] text-cyber-muted">
+                  <p className="text-[11px] text-muted">
                     Executes SMB anonymous IPC$ checks and flags MS17-010 on Windows Server 2008/2012.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">Kerberoasting / AS-REP Roasting</span>
-                    <span className="text-[10px] text-cyber-emerald font-mono">PORT 88</span>
+                    <span className="font-semibold text-primary text-xs">Kerberoasting / AS-REP Roasting</span>
+                    <span className="text-[10px] text-muted font-mono tabular-nums">PORT 88</span>
                   </div>
-                  <p className="text-[11px] text-cyber-muted">
+                  <p className="text-[11px] text-muted">
                     Automates kerbrute user enumeration and Impacket GetNPUsers hash dumping.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">WinRM Remote Shell</span>
-                    <span className="text-[10px] text-cyber-emerald font-mono">PORT 5985/5986</span>
+                    <span className="font-semibold text-primary text-xs">WinRM Remote Shell</span>
+                    <span className="text-[10px] text-muted font-mono tabular-nums">PORT 5985/5986</span>
                   </div>
-                  <p className="text-[11px] text-cyber-muted">
+                  <p className="text-[11px] text-muted">
                     Instant evil-winrm interactive PowerShell session using captured credentials or hashes.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-cyber-card border border-cyber-border space-y-1.5">
+                <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">MSSQL xp_cmdshell</span>
-                    <span className="text-[10px] text-cyber-emerald font-mono">PORT 1433</span>
+                    <span className="font-semibold text-primary text-xs">MSSQL xp_cmdshell</span>
+                    <span className="text-[10px] text-muted font-mono tabular-nums">PORT 1433</span>
                   </div>
-                  <p className="text-[11px] text-cyber-muted">
+                  <p className="text-[11px] text-muted">
                     Tests mssqlclient.py connection, linked database servers, and xp_cmdshell command execution.
                   </p>
                 </div>
@@ -1020,14 +1020,14 @@ export const ReconAutomationModal: React.FC = () => {
         </div>
 
         {/* Modal Footer */}
-        <div className="flex-shrink-0 p-3 px-4 border-t border-cyber-border bg-cyber-bg flex items-center justify-between text-xs">
-          <span className="text-[11px] text-cyber-muted">
-            Press <kbd className="px-1.5 py-0.5 rounded-md bg-cyber-card border border-cyber-border text-white">ESC</kbd> to close
+        <div className="flex-shrink-0 p-3 px-4 border-t border-subtle bg-surface-sunken flex items-center justify-between text-xs">
+          <span className="text-[11px] text-muted">
+            Press <kbd className="px-1.5 py-0.5 rounded-md bg-surface-card border border-subtle text-primary">ESC</kbd> to close
           </span>
 
           <button
             onClick={() => setReconAutomationModalOpen(false)}
-            className="px-4 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-white hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="px-4 py-1.5 rounded-lg bg-surface-card border border-subtle text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             Close
           </button>

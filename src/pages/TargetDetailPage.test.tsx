@@ -51,10 +51,10 @@ describe('TargetDetailPage slug matching', () => {
     );
 
     expect(screen.getByText('Included')).toBeInTheDocument();
-    expect(screen.queryByText('TARGET NOT FOUND')).not.toBeInTheDocument();
+    expect(screen.queryByText('Target not found')).not.toBeInTheDocument();
   });
 
-  it('shows TARGET NOT FOUND for completely unknown machine', () => {
+  it('shows Target not found for completely unknown machine', () => {
     render(
       <MemoryRouter initialEntries={['/target/non-existent-box']}>
         <Routes>
@@ -63,10 +63,10 @@ describe('TargetDetailPage slug matching', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('TARGET NOT FOUND')).toBeInTheDocument();
+    expect(screen.getByText('Target not found')).toBeInTheDocument();
   });
 
-  it('switches to RECON & ATTACK SURFACE tab and displays dropzone', async () => {
+  it('switches to Recon tab and displays dropzone', async () => {
     const { fireEvent } = await import('@testing-library/react');
     render(
       <MemoryRouter initialEntries={['/target/htb-included']}>
@@ -76,7 +76,7 @@ describe('TargetDetailPage slug matching', () => {
       </MemoryRouter>
     );
 
-    const reconTabBtn = screen.getByRole('button', { name: /RECON & ATTACK SURFACE/i });
+    const reconTabBtn = screen.getByRole('button', { name: /^Recon$/ });
     expect(reconTabBtn).toBeInTheDocument();
 
     fireEvent.click(reconTabBtn);
@@ -118,10 +118,10 @@ describe('TargetDetailPage slug matching', () => {
       </MemoryRouter>
     );
 
-    const overviewTabBtn = screen.getByRole('button', { name: /FLAGS VAULT & INTEL OVERVIEW/i });
+    const overviewTabBtn = screen.getByRole('button', { name: /Flags & intel/i });
     fireEvent.click(overviewTabBtn);
 
-    expect(screen.getByText(/DISCOVERED ATTACK SURFACE \(2 PORTS\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Attack surface \(2 ports\)/i)).toBeInTheDocument();
     expect(screen.getByText('80/tcp')).toBeInTheDocument();
     expect(screen.getByText('69/udp')).toBeInTheDocument();
   });

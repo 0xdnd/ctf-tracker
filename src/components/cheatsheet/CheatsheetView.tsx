@@ -64,6 +64,9 @@ import { CptsTreeItem } from './CptsTreeItem';
 import { NewCptsNoteModal } from './NewCptsNoteModal';
 import { ReverseShellGenerator } from './ReverseShellGenerator';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { PageHeader } from '../common/PageHeader';
+import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
+import { CyberButton } from '../common/CyberButton';
 import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 
@@ -899,266 +902,275 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     return (
       <div 
         data-testid="standalone-popout-window"
-        className="fixed inset-0 w-full h-full min-h-screen bg-surface-sunken font-mono z-[99999] overflow-hidden flex flex-col"
+        className="fixed inset-0 w-full h-full min-h-screen bg-surface-sunken z-[99999] overflow-hidden flex flex-col"
       >
         {renderWorkspacePanes('popout')}
       </div>
     );
   }
 
+  const switchBase =
+    'inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11';
+  const varInputBase =
+    'h-9 w-full rounded-md border border-subtle bg-surface-sunken px-2 font-mono text-xs tabular-nums text-primary transition-colors focus:border-accent focus:outline-none sm:h-8';
+  const catBase =
+    'flex min-h-11 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-left text-[13px] transition-colors select-none cursor-pointer lg:min-h-8 lg:w-full';
+  const catOn = 'border-accent bg-accent-muted font-medium text-primary lg:border-transparent lg:bg-surface-hover';
+  const catOff = 'border-subtle text-secondary hover:bg-surface-hover hover:text-primary lg:border-transparent';
+
   return (
-    <div className="space-y-6 w-full font-mono pb-12">
-      {/* Top Banner & Dynamic Variable Tuning Station */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={TACTICAL_SPRING}
-        className="p-4 rounded-xl border border-subtle bg-surface-card dark:backdrop-blur-md machined-edge-subtle shadow-md flex flex-wrap items-center justify-between gap-4"
+    <div className="w-full space-y-5 pb-12 text-sm">
+      <PageHeader
+        title={viewMode === 'cpts-manual' ? 'Field manual' : 'Snippets & payloads'}
+        icon={viewMode === 'cpts-manual' ? <BookOpen /> : <Terminal />}
+        description={
+          viewMode === 'tactical'
+            ? 'Commands and reverse shells with your LHOST, LPORT and target filled in.'
+            : allActiveNotes.length > 0
+            ? `Private local vault with ${allActiveNotes.length} notes. Nothing leaves this device.`
+            : 'Private, local-first notes. Import your Obsidian vault to read playbooks and run commands offline.'
+        }
+        primaryAction={
+          viewMode === 'tactical' ? (
+            <CyberButton
+              variant="primary"
+              size="md"
+              iconLeft={<Plus className="h-3.5 w-3.5" />}
+              onClick={() => setIsNewModalOpen(true)}
+              className="[@media(pointer:coarse)]:h-11"
+            >
+              Add snippet
+            </CyberButton>
+          ) : (
+            <CyberButton
+              variant="primary"
+              size="md"
+              iconLeft={<Upload className="h-3.5 w-3.5" />}
+              title="Import or manage your local private offensive field notes vault (IndexedDB)"
+              onClick={() => {
+                if (soundEnabled) playCyberSound('click');
+                setNotesImportModalOpen(true);
+              }}
+              className="[@media(pointer:coarse)]:h-11"
+            >
+              {userNotes.length > 0 ? `Vault (${userNotes.length})` : 'Import notes'}
+            </CyberButton>
+          )
+        }
+        overflow={
+          viewMode === 'tactical'
+            ? [
+                {
+                  id: 'import-vault',
+                  label: 'Import vault',
+                  icon: <Upload className="h-4 w-4" />,
+                  onSelect: () => {
+                    if (soundEnabled) playCyberSound('click');
+                    setNotesImportModalOpen(true);
+                  },
+                },
+              ]
+            : [
+                {
+                  id: 'new-note',
+                  label: 'New note',
+                  icon: <Plus className="h-4 w-4" />,
+                  onSelect: () => {
+                    setNewNoteInitialDir(undefined);
+                    setIsNewCptsModalOpen(true);
+                  },
+                },
+                {
+                  id: 'add-snippet',
+                  label: 'Add snippet',
+                  icon: <Terminal className="h-4 w-4" />,
+                  onSelect: () => setIsNewModalOpen(true),
+                },
+              ]
+        }
       >
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-lg font-semibold text-primary tracking-wider flex items-center gap-2 select-none">
-              {viewMode === 'cpts-manual' ? (
-                <>
-                  <BookOpen className="w-5 h-5 text-accent" />
-                  <span>OFFENSIVE FIELD MANUAL & OBSIDIAN VAULT</span>
-                </>
-              ) : (
-                <>
-                  <Terminal className="w-5 h-5 text-callout-info-fg" />
-                  <span>DYNAMIC TACTICAL SNIPPETS & PAYLOAD LAB</span>
-                </>
-              )}
-            </h1>
-
-            {/* Mode Switcher / Tactical Pill */}
-            {viewMode === 'tactical' ? (
-              <div className="flex items-center gap-2 select-none">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-cyber-cyan/30 bg-cyber-cyan/10 text-cyber-cyan font-mono font-semibold text-xs shadow-sm">
-                  <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
-                  <span>Tactical Snippets</span>
-                  <span className="px-1.5 py-0.2 rounded bg-cyber-cyan/20 text-cyber-cyan text-[10px] font-semibold tabular-nums">
-                    {cheatsheets.length}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode('cpts-manual');
-                    navigate('/field-manual');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-accent/30 bg-accent/10 hover:bg-accent/20 text-accent text-xs font-semibold transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
-                  title="Switch to Obsidian Field Manual"
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-accent" />
-                  <span>Field Manual Vault →</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (soundEnabled) playCyberSound('click');
-                    setNotesImportModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-accent/40 bg-accent-muted hover:bg-accent-muted text-accent text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] shadow-sm cursor-pointer active:scale-[0.97]"
-                  title="Import your Obsidian Vault (.ZIP or folder)"
-                >
-                  <Upload className="w-3.5 h-3.5 text-accent" />
-                  <span>Import Vault</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode('tactical');
-                    setSearchQuery('');
-                  }}
-                  className="px-3 py-1 rounded font-semibold transition-[transform,color] flex items-center gap-1.5 text-muted hover:text-primary cursor-pointer active:scale-[0.97]"
-                >
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>Tactical Snippets (<span className="tabular-nums">{cheatsheets.length}</span>)</span>
-                </button>
-                <div className="px-3 py-1 rounded font-semibold flex items-center gap-1.5 bg-accent text-on-accent shadow-md shadow-accent/40">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Offensive Field Manual (<span className="tabular-nums">{allActiveNotes.length}</span>)</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (soundEnabled) playCyberSound('click');
-                    setNotesImportModalOpen(true);
-                  }}
-                  className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent/40 transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-[0.97]"
-                  title="Import or manage your local private offensive field notes vault (IndexedDB)"
-                >
-                  <Upload className="w-3 h-3 text-accent" />
-                  <span>{userNotes.length > 0 ? `Vault (${userNotes.length})` : 'Import Notes'}</span>
-                </button>
-
-                {(userNotes.length > 0 || allActiveNotes.length > 0) && (
-                  <button
-                    type="button"
-                    data-testid="header-delete-notes-btn"
-                    onClick={handleWipeVaultConfirm}
-                    className={`px-2.5 py-1 text-xs font-mono font-medium rounded transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm border cursor-pointer active:scale-[0.97] ${
-                      confirmWipeVault
-                        ? 'bg-callout-danger-bg text-callout-danger-fg border-callout-danger-border font-semibold animate-pulse'
-                        : 'bg-callout-danger-bg hover:bg-callout-danger-bg text-callout-danger-fg border-callout-danger-border hover:border-callout-danger-border'
-                    }`}
-                    title={
-                      confirmWipeVault
-                        ? 'Click again to permanently wipe and delete all notes from local vault'
-                        : 'Delete / Wipe all notes from vault'
-                    }
-                  >
-                    <Trash2 className="w-3 h-3 text-callout-danger-fg" />
-                    <span>
-                      {confirmWipeVault
-                        ? `Confirm Delete (${allActiveNotes.length || userNotes.length})?`
-                        : `Delete (${allActiveNotes.length || userNotes.length})`}
-                    </span>
-                  </button>
+        <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0">
+          <div className="flex min-w-max items-center gap-3 sm:min-w-0 sm:flex-wrap">
+            <div
+              role="group"
+              aria-label="Library"
+              className="inline-flex items-center gap-0.5 rounded-lg border border-subtle bg-surface-sunken p-0.5"
+            >
+              <button
+                type="button"
+                aria-pressed={viewMode === 'tactical'}
+                onClick={() => {
+                  if (viewMode === 'tactical') return;
+                  setViewMode('tactical');
+                  setSearchQuery('');
+                }}
+                className={`${switchBase} ${
+                  viewMode === 'tactical'
+                    ? 'bg-surface-card text-primary'
+                    : 'text-muted hover:text-primary'
+                }`}
+              >
+                <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Snippets</span>
+                <span className="tabular-nums text-muted">{cheatsheets.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={viewMode === 'cpts-manual'}
+                onClick={() => {
+                  if (viewMode === 'cpts-manual') return;
+                  setViewMode('cpts-manual');
+                  navigate('/field-manual');
+                }}
+                title="Switch to Obsidian Field Manual"
+                className={`${switchBase} ${
+                  viewMode === 'cpts-manual'
+                    ? 'bg-surface-card text-primary'
+                    : 'text-muted hover:text-primary'
+                }`}
+              >
+                <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Field manual</span>
+                {viewMode === 'cpts-manual' && (
+                  <span className="tabular-nums text-muted">{allActiveNotes.length}</span>
                 )}
-
-                {deletedNoteIds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleRestoreDeletedNotes}
-                    className="px-2.5 py-1 text-xs font-mono font-medium rounded bg-callout-warn-bg hover:bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border hover:border-callout-warn-border transition-[transform,box-shadow,background-color,border-color,color] flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-[0.97]"
-                    title="Restore deleted notes back to vault"
-                  >
-                    <RotateCcw className="w-3 h-3 text-callout-warn-fg" />
-                    <span>Restore ({deletedNoteIds.length})</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <p className="text-xs text-muted">
-            {viewMode === 'tactical'
-              ? 'Real-time parameter injection across network scanning, web exploitation, Active Directory, and reverse shells.'
-              : allActiveNotes.length > 0
-              ? `Private local vault active (${allActiveNotes.length} notes) with dynamic parameter injection and Obsidian Markdown reading view.`
-              : 'Private local-first field manual. Import your Obsidian vault JSON to access playbooks and commands with 0 network leakage.'}
-          </p>
-        </div>
-
-        {/* Global Parameter Quick Tuning */}
-        <div className="flex flex-wrap items-center gap-2 bg-surface-card p-1.5 px-3 rounded-lg border border-subtle text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted text-[10px]">LHOST:</span>
-            <input
-              type="text"
-              id="cheatsheet-lhost-input"
-              name="cheatsheet-lhost"
-              aria-label="Attacker Host LHOST"
-              value={globalVars.lhost}
-              onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-              className="font-mono w-28 bg-surface-card px-2 py-1 rounded border border-strong text-primary text-xs font-semibold tabular-nums focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted text-[10px]">LPORT:</span>
-            <input
-              type="text"
-              id="cheatsheet-lport-input"
-              name="cheatsheet-lport"
-              aria-label="Attacker Port LPORT"
-              value={globalVars.lport}
-              onChange={(e) => setGlobalVars({ lport: e.target.value })}
-              className="font-mono w-16 bg-surface-card px-2 py-1 rounded border border-strong text-primary text-xs font-semibold tabular-nums focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted text-[10px]">TARGET:</span>
-            <input
-              type="text"
-              id="cheatsheet-target-input"
-              name="cheatsheet-target"
-              aria-label="Target IP Address"
-              value={globalVars.targetIp}
-              onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
-              className="font-mono w-28 bg-surface-card px-2 py-1 rounded border border-strong text-callout-success-fg font-semibold text-xs tabular-nums focus:outline-none focus:border-callout-success-border transition-[box-shadow,background-color,border-color,color] shadow-sm"
-            />
-          </div>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => setIsNewModalOpen(true)}
-            className="flex items-center gap-1 px-3 py-1 rounded bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan hover:text-black font-semibold transition-[box-shadow,background-color,border-color,color] ml-1 shadow-glow-cyan/20 cursor-pointer active:scale-[0.97]"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add Snippet
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* Main Cheatsheet Workspace: Sidebar Categories + Commands Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
-        
-        {/* Left Column: Categories & Filters */}
-        <div className="space-y-3">
-          <div className="p-3 rounded-xl border border-subtle bg-surface-card shadow-md space-y-1 overflow-hidden">
-            <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted flex items-center justify-between select-none">
-              <span>{viewMode === 'tactical' ? 'TACTICAL CATEGORIES' : 'FIELD MANUAL CATEGORIES'}</span>
-              <span className="text-cyber-cyan font-mono font-semibold">{viewMode === 'tactical' ? cheatsheets.length : CPTS_NOTES.length}</span>
+              </button>
             </div>
 
-            {viewMode === 'tactical' ? (
-              <>
+            {viewMode === 'cpts-manual' && (userNotes.length > 0 || allActiveNotes.length > 0) && (
+              <button
+                type="button"
+                data-testid="header-delete-notes-btn"
+                onClick={handleWipeVaultConfirm}
+                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                  confirmWipeVault
+                    ? 'border border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg'
+                    : 'text-muted hover:bg-callout-danger-bg hover:text-callout-danger-fg'
+                }`}
+                title={
+                  confirmWipeVault
+                    ? 'Click again to permanently wipe and delete all notes from local vault'
+                    : 'Delete / Wipe all notes from vault'
+                }
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>
+                  {confirmWipeVault
+                    ? `Confirm Delete (${allActiveNotes.length || userNotes.length})?`
+                    : `Delete (${allActiveNotes.length || userNotes.length})`}
+                </span>
+              </button>
+            )}
+
+            {viewMode === 'cpts-manual' && deletedNoteIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleRestoreDeletedNotes}
+                className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-xs font-medium text-callout-warn-fg transition-[transform,background-color] hover:bg-callout-warn-bg active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                title="Restore deleted notes back to vault"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Restore ({deletedNoteIds.length})</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </PageHeader>
+
+      {/* Parameter injection: LHOST / LPORT / target */}
+      <div className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-end gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+        <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lhost-input">
+          <span>LHOST</span>
+          <input
+            type="text"
+            id="cheatsheet-lhost-input"
+            name="cheatsheet-lhost"
+            aria-label="Attacker Host LHOST"
+            value={globalVars.lhost}
+            onChange={(e) => setGlobalVars({ lhost: e.target.value })}
+            className={`${varInputBase} sm:w-32`}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lport-input">
+          <span>LPORT</span>
+          <input
+            type="text"
+            id="cheatsheet-lport-input"
+            name="cheatsheet-lport"
+            aria-label="Attacker Port LPORT"
+            value={globalVars.lport}
+            onChange={(e) => setGlobalVars({ lport: e.target.value })}
+            className={`${varInputBase} sm:w-20`}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-target-input">
+          <span>TARGET</span>
+          <input
+            type="text"
+            id="cheatsheet-target-input"
+            name="cheatsheet-target"
+            aria-label="Target IP Address"
+            value={globalVars.targetIp}
+            onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
+            className={`${varInputBase} sm:w-32`}
+          />
+        </label>
+      </div>
+
+      {/* Main workspace: categories + commands panel */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-4">
+
+        {/* Left column: categories */}
+        <div className={viewMode === 'tactical' ? 'space-y-1' : 'space-y-1 overflow-hidden rounded-xl border border-subtle bg-surface-card p-2'}>
+          <div className={`items-center justify-between px-2 py-1 text-xs font-medium text-muted select-none ${viewMode === 'tactical' ? 'hidden lg:flex' : 'flex'}`}>
+            <span>Categories</span>
+            <span className="tabular-nums">{viewMode === 'tactical' ? cheatsheets.length : CPTS_NOTES.length}</span>
+          </div>
+
+          {viewMode === 'tactical' ? (
+            <>
+              <div className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
                 {CHEATSHEET_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
-                    <motion.button
-                      whileHover={{ x: 3 }}
-                      whileTap={{ scale: 0.98 }}
+                    <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors text-left relative select-none ${
-                        isSelected
-                          ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/40 font-semibold shadow-sm'
-                          : 'text-secondary hover:text-primary hover:bg-surface-elevated border border-transparent'
-                      }`}
+                      aria-pressed={isSelected}
+                      className={`${catBase} ${isSelected ? catOn : catOff}`}
                     >
                       <span className="truncate">{cat.name}</span>
-                    </motion.button>
+                    </button>
                   );
                 })}
 
-                <div className="pt-2 border-t border-subtle space-y-1">
-                  <motion.button
-                    whileHover={{ x: 3 }}
-                    whileTap={{ scale: 0.98 }}
+                <div className="flex flex-shrink-0 lg:mt-1 lg:border-t lg:border-subtle lg:pt-2">
+                  <button
                     onClick={() => setSelectedCategory('starred')}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors text-left select-none ${
-                      selectedCategory === 'starred'
-                        ? 'bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold shadow-sm'
-                        : 'text-secondary hover:text-primary hover:bg-surface-elevated border border-transparent'
-                    }`}
+                    aria-pressed={selectedCategory === 'starred'}
+                    className={`${catBase} ${selectedCategory === 'starred' ? catOn : catOff}`}
                   >
-                    <Star className="w-3.5 h-3.5 text-callout-warn-fg fill-callout-warn-fg/20" />
+                    <Star className="h-3.5 w-3.5 text-callout-warn-fg" aria-hidden="true" />
                     <span>Starred Snippets</span>
-                  </motion.button>
+                  </button>
                 </div>
-              </>
+              </div>
+            </>
             ) : (
               <>
                 {/* CPTS Field Manual Tree Explorer Header & Actions */}
                 <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-accent/40">
-                  <span className="text-[10px] text-accent font-semibold tracking-wider flex items-center gap-1.5 flex-shrink-0">
-                    <FolderOpen className="w-3.5 h-3.5 text-accent" />
-                    <span>TREE EXPLORER</span>
+                  <span className="text-xs text-secondary font-medium flex items-center gap-1.5 flex-shrink-0">
+                    <FolderOpen className="w-3.5 h-3.5 text-muted" />
+                    <span>Explorer</span>
                   </span>
                   <div className="flex items-center gap-1 flex-wrap">
                     <button
                       type="button"
                       onClick={handleExpandAllTreeFolders}
-                      className="px-1.5 py-0.5 rounded bg-surface-elevated hover:bg-accent-muted text-accent border border-strong text-[9px] font-mono hover:text-accent transition-colors cursor-pointer"
+                      className="px-1.5 py-0.5 rounded bg-surface-elevated hover:bg-accent-muted text-secondary border border-subtle text-[11px] hover:text-primary transition-colors cursor-pointer"
                       title="Expand all nested folders"
                     >
                       + All
@@ -1166,7 +1178,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <button
                       type="button"
                       onClick={handleCollapseAllTreeFolders}
-                      className="px-1.5 py-0.5 rounded bg-surface-elevated hover:bg-accent-muted text-accent border border-strong text-[9px] font-mono hover:text-accent transition-colors cursor-pointer"
+                      className="px-1.5 py-0.5 rounded bg-surface-elevated hover:bg-accent-muted text-secondary border border-subtle text-[11px] hover:text-primary transition-colors cursor-pointer"
                       title="Collapse all folders"
                     >
                       - All
@@ -1174,7 +1186,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <button
                       type="button"
                       onClick={() => setIsNewCptsModalOpen(true)}
-                      className="px-2 py-0.5 rounded bg-accent hover:bg-accent-hover text-on-accent border border-accent text-[10px] font-semibold transition-[box-shadow,background-color,border-color,color] flex items-center gap-1 cursor-pointer flex-shrink-0 shadow-sm"
+                      className="px-2 py-0.5 rounded bg-accent hover:bg-accent-hover text-on-accent border border-accent text-[10px] font-semibold transition-[box-shadow,background-color,border-color,color] flex items-center gap-1 cursor-pointer flex-shrink-0"
                       title="Create custom field manual note"
                     >
                       <Plus className="w-3 h-3" />
@@ -1185,7 +1197,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
                 {/* "All Notes" Root Item */}
                 <motion.button
-                  whileHover={{ x: 3 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setSelectedTreePath(null);
@@ -1195,7 +1206,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   }}
                   className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
                     selectedTreePath === null && selectedCptsCategory === 'ALL'
-                      ? 'bg-accent-muted text-accent border border-accent/40 font-semibold shadow-md'
+                      ? 'bg-accent-muted text-accent border border-accent/40 font-semibold'
                       : 'text-secondary hover:text-accent hover:bg-surface-elevated border border-transparent'
                   }`}
                 >
@@ -1203,7 +1214,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <BookOpen className="w-3.5 h-3.5 text-accent" />
                     <span>All Field Notes</span>
                   </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-hover border border-strong text-primary">
+                  <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-hover border border-strong text-primary">
                     {allActiveNotes.length}
                   </span>
                 </motion.button>
@@ -1237,7 +1248,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             if (soundEnabled) playCyberSound('click');
                             setNotesImportModalOpen(true);
                           }}
-                          className="w-full py-1.5 px-2.5 rounded bg-accent hover:bg-accent-hover text-on-accent font-semibold text-[10px] transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                          className="w-full py-1.5 px-2.5 rounded bg-accent hover:bg-accent-hover text-on-accent font-semibold text-[10px] transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <FolderOpen className="w-3 h-3" />
                           <span>Import Notes Directory</span>
@@ -1249,7 +1260,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             setIsNewCptsModalOpen(true);
                             if (soundEnabled) playCyberSound('click');
                           }}
-                          className="w-full py-1.5 px-2.5 rounded bg-surface-card hover:bg-accent-muted text-accent border border-accent/40 text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="w-full py-1.5 px-2.5 rounded bg-surface-card hover:bg-surface-hover text-accent border border-accent/40 text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                           <span>Create Custom Note</span>
@@ -1291,22 +1302,21 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     }}
                     className="w-full px-3 py-2 rounded-lg border border-subtle text-muted hover:text-primary hover:bg-surface-sunken text-xs flex items-center gap-2 transition-colors cursor-pointer"
                   >
-                    <Terminal className="w-3.5 h-3.5 text-cyber-cyan" />
-                    <span>← Back to Tactical Snippets</span>
+                    <Terminal className="w-3.5 h-3.5 text-muted" />
+                    <span>← Back to snippets</span>
                   </button>
                 </div>
               </>
             )}
-          </div>
         </div>
 
-        {/* Right Column: Dynamic Cheatsheet & Reverse Shell Builder OR CPTS Field Manual */}
+        {/* Right column: commands panel or field manual */}
         <div className="lg:col-span-3 space-y-4">
           
           {/* SEARCH & REVSHELL SWITCHER */}
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
               <input
                 type="text"
                 id="cheatsheet-search-input"
@@ -1324,12 +1334,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     ? `Search ${allActiveNotes.length} field manual notes, tags, summaries, and commands (e.g. kerberoast, suid, bloodhound)...`
                     : 'Search field manual notes and commands...'
                 }
-                className="w-full pl-9 pr-4 py-2 bg-surface-card border border-strong rounded-lg text-xs text-primary placeholder:text-muted focus:outline-none focus:border-cyber-cyan transition-[box-shadow,background-color,border-color,color] shadow-sm"
+                className="h-11 w-full rounded-lg border border-subtle bg-surface-card pl-9 pr-9 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none sm:h-9"
               />
               {searchQuery && (
                 <button aria-label="Clear search"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-muted hover:text-primary"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center text-xs text-muted hover:text-primary"
                 >
                   ✕
                 </button>
@@ -1363,18 +1373,17 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: '-30px' }}
                         transition={{ ...TACTICAL_SPRING, delay: CASCADE_STAGGER_DELAY(idx) }}
-                        whileHover={{ y: -2 }}
-                        className="cyber-snippet-contain p-3.5 rounded-xl border border-subtle bg-surface-card hover:border-cyber-cyan/40 hover:shadow-glow-cyan/15 transition-[box-shadow,background-color,border-color,color] shadow-sm group"
+                        className="cyber-snippet-contain p-3.5 rounded-xl border border-subtle bg-surface-card hover:border-strong transition-colors group"
                       >
                         {/* Snippet Header */}
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-primary text-sm group-hover:text-cyber-cyan transition-colors">
+                              <span className="font-semibold text-primary text-sm">
                                 {cmd.title}
                               </span>
                               {cmd.isCustom && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-purple/10 border border-cyber-purple/30 text-cyber-purple font-semibold">
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-surface-sunken border border-subtle text-secondary font-semibold">
                                   CUSTOM
                                 </span>
                               )}
@@ -1389,22 +1398,20 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
                           <div className="flex items-center gap-1.5">
                             <motion.button aria-label="Star snippet"
-                              whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => toggleStarCommand(cmd.id)}
-                              className="p-1 rounded text-muted hover:text-cyber-amber transition-colors"
+                              className="p-1 rounded text-muted hover:text-callout-warn-fg transition-colors"
                               title="Bookmark / Star Snippet"
                             >
                               <Star
                                 className={`w-3.5 h-3.5 ${
-                                  cmd.isStarred ? 'fill-cyber-amber text-cyber-amber' : ''
+                                  cmd.isStarred ? 'fill-current text-callout-warn-fg' : ''
                                 }`}
                               />
                             </motion.button>
 
                             {cmd.isCustom && (
                               <motion.button
-                                whileHover={{ scale: 1.15 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={async () => {
                                   if (await confirmAction({ title: 'Delete this custom snippet?', body: 'This custom command will be permanently removed.', confirmLabel: 'Delete snippet', tone: 'danger' })) {
@@ -1421,16 +1428,16 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
                             <button
                               onClick={() => handleCopy(interpolated, cmd.id)}
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] ${
                                 isCopied
-                                  ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
-                                  : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-cyber-cyan'
+                                  ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+                                  : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
                               }`}
                             >
                               {isCopied ? (
                                 <>
-                                  <Check className="w-3 h-3 text-cyber-emerald" />
-                                  <span className="text-cyber-emerald">Copied!</span>
+                                  <Check className="w-3 h-3 text-callout-success-fg" />
+                                  <span className="text-callout-success-fg">Copied!</span>
                                 </>
                               ) : (
                                 <>
@@ -1444,8 +1451,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
                         {/* Rendered Command Code Box */}
                         <div className="relative">
-                          <pre className="p-3 rounded-lg bg-cyber-code border border-subtle text-xs text-white overflow-x-auto whitespace-pre-wrap break-all font-mono select-all">
-                            {interpolated}
+                          <pre className="p-3 rounded-lg bg-surface-inverse text-xs text-on-inverse overflow-x-auto whitespace-pre-wrap break-all font-mono tabular-nums select-all">
+                            {interpolated.includes('\n') ? (
+                              interpolated
+                            ) : (
+                              <SyntaxHighlightedCommand command={interpolated} className="!bg-transparent !p-0 !rounded-none" />
+                            )}
                           </pre>
                         </div>
 
@@ -1455,7 +1466,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             {cmd.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="text-[9px] px-1.5 py-0.2 rounded bg-surface-sunken border border-subtle text-cyber-cyan"
+                                className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary"
                               >
                                 #{tag}
                               </span>
@@ -1474,23 +1485,23 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           {viewMode === 'cpts-manual' && (
             <div className="space-y-4">
               {/* Field Manual HUD Header with Jump Dropdown, Layout Mode, and Bilingual Switcher */}
-              <div className="p-3.5 rounded-xl border border-accent/40 bg-accent-muted space-y-3 text-xs">
+              <div className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-3 text-xs">
                 {/* HUD Top Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <BookOpen className="w-4 h-4 text-accent" />
-                    <span className="text-primary font-semibold tracking-wide">
-                      OFFENSIVE FIELD MANUAL & CHEATS
+                    <span className="text-primary font-semibold">
+                      Field manual notes
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted text-accent font-mono">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted text-accent">
                       {selectedCptsCategory === 'ALL'
                         ? allActiveNotes.length > 0
-                          ? `ALL NOTES (${allActiveNotes.length})`
-                          : 'VAULT EMPTY (0 NOTES)'
-                        : selectedCptsCategory.toUpperCase()}
+                          ? `All notes (${allActiveNotes.length})`
+                          : 'Vault empty'
+                        : selectedCptsCategory}
                     </span>
                     {selectedCptsSubCategory !== 'ALL' && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent font-mono flex items-center gap-1">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent flex items-center gap-1">
                         <span>📁 {selectedCptsSubCategory}</span>
                         <button aria-label="Clear subcategory filter"
                           type="button"
@@ -1511,7 +1522,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       <button
                         type="button"
                         onClick={() => setJumpDropdownOpen((prev) => !prev)}
-                        className="px-2.5 py-1 rounded-lg bg-surface-card border border-accent/40 text-accent hover:text-accent hover:border-accent/40 text-xs flex items-center gap-1.5 font-semibold transition-[box-shadow,background-color,border-color,color] shadow-sm"
+                        className="px-2.5 py-1 rounded-lg bg-surface-card border border-accent/40 text-accent hover:text-accent hover:border-accent/40 text-xs flex items-center gap-1.5 font-semibold transition-[box-shadow,background-color,border-color,color]"
                         title="Quick search and jump to any note directly"
                       >
                         <Search className="w-3.5 h-3.5 text-accent" />
@@ -1525,7 +1536,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             className="fixed inset-0 z-40"
                             onClick={() => setJumpDropdownOpen(false)}
                           />
-                          <div className="absolute right-0 top-full mt-1.5 w-80 max-h-96 rounded-xl border border-accent/50 bg-surface-card/95 backdrop-blur-md shadow-2xl p-2 z-50 space-y-2 animate-fade-in font-mono">
+                          <div className="absolute right-0 top-full mt-1.5 w-80 max-h-96 rounded-xl border border-accent/50 bg-surface-card/95 backdrop-blur-md shadow-2xl p-2 z-50 space-y-2 animate-fade-in">
                             <input
                               id="cpts-jump-search-input"
                               name="cpts-jump-search"
@@ -1570,7 +1581,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                          <span className="text-primary text-xs font-semibold group-hover:text-accent truncate flex-1">
                                            {note.titleEn || note.title}
                                          </span>
-                                         <span className="text-[9px] font-mono px-1 rounded bg-surface-sunken text-accent flex-shrink-0">
+                                         <span className="text-[9px] px-1 rounded bg-surface-sunken text-accent flex-shrink-0">
                                            {note.category.split(' ')[0]}
                                          </span>
                                        </div>
@@ -1581,7 +1592,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                      <button
                                        type="button"
                                        onClick={() => handleJumpToNote(note)}
-                                       className="px-2 py-1 rounded bg-surface-sunken border border-accent/30 text-accent hover:text-primary hover:bg-accent/60 text-[10px] font-mono flex-shrink-0 cursor-pointer"
+                                       className="px-2 py-1 rounded bg-surface-sunken border border-accent/30 text-accent hover:text-primary hover:bg-accent/60 text-[10px] flex-shrink-0 cursor-pointer"
                                        title="Scroll to note in page"
                                      >
                                        Jump
@@ -1608,7 +1619,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                           cptsSortOrder === 'number'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Sort notes strictly by numerical sequence (00.01 to 06.xx) flat across all folders"
@@ -1625,7 +1636,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                           cptsSortOrder === 'topic'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Group and filter by topic folders"
@@ -1642,7 +1653,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                           cptsSortOrder === 'title'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Sort notes alphabetically by title"
@@ -1659,7 +1670,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         onClick={() => setCptsDisplayLayout('cards')}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
                           cptsDisplayLayout === 'cards'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Detailed cards view with expanded summaries and code blocks"
@@ -1672,7 +1683,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         onClick={() => setCptsDisplayLayout('quick-index')}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
                           cptsDisplayLayout === 'quick-index'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Ultra-compact terminal index table - view 50+ notes without scrolling"
@@ -1685,7 +1696,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         onClick={() => setCptsDisplayLayout('grouped')}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
                           cptsDisplayLayout === 'grouped'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Grouped by Obsidian topic folders"
@@ -1706,12 +1717,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                           noteViewerMode === 'docked'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title={noteViewerMode === 'docked' ? "Docked side-by-side mode active · Click to switch to floating modal" : "Floating modal mode active · Click to switch to docked side-by-side"}
                       >
-                        <PanelRight className="w-3.5 h-3.5 text-callout-info-fg" />
+                        <PanelRight className="w-3.5 h-3.5 text-muted" />
                         <span className="hidden md:inline">{noteViewerMode === 'docked' ? 'Docked Pane' : 'Floating Modal'}</span>
                       </button>
                     </div>
@@ -1727,7 +1738,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                           cptsLangMode === 'en'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="English notes only"
@@ -1743,7 +1754,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                           cptsLangMode === 'he'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="עברית בלבד"
@@ -1759,7 +1770,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         onClick={() => setNotesTextDirection('auto')}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors ${
                           notesTextDirection === 'auto'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Auto direction based on language"
@@ -1771,7 +1782,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         onClick={() => setNotesTextDirection('ltr')}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors ${
                           notesTextDirection === 'ltr'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Force Left-to-Right layout"
@@ -1783,7 +1794,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         onClick={() => setNotesTextDirection('rtl')}
                         className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors ${
                           notesTextDirection === 'rtl'
-                            ? 'bg-accent text-on-accent shadow-md shadow-accent/40'
+                            ? 'bg-accent text-on-accent'
                             : 'text-secondary hover:text-primary'
                         }`}
                         title="Force Right-to-Left layout (עברית)"
@@ -1817,9 +1828,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 {activeCategoryTopicGroups.length > 0 && (
                   <div className="space-y-1.5 pt-1 border-t border-accent/30">
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                      <span className="text-[10px] text-accent font-semibold tracking-wider flex-shrink-0 flex items-center gap-1">
+                      <span className="text-[10px] text-accent font-semibold flex-shrink-0 flex items-center gap-1">
                         <Filter className="w-3 h-3" />
-                        <span>TOPICS:</span>
+                        <span>Topics</span>
                       </span>
                       <button
                         type="button"
@@ -1829,7 +1840,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         }}
                         className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
                           selectedCptsSubCategory === 'ALL'
-                            ? 'bg-accent text-on-accent shadow-sm'
+                            ? 'bg-accent text-on-accent'
                             : 'bg-surface-elevated border border-strong text-secondary hover:text-primary'
                         }`}
                       >
@@ -1847,7 +1858,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             }}
                             className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors flex items-center gap-1.5 ${
                               isGroupActive
-                                ? 'bg-accent text-on-accent shadow-md shadow-accent/40 border border-accent/40'
+                                ? 'bg-accent text-on-accent border border-accent/40'
                                 : 'bg-surface-elevated border border-strong text-secondary hover:text-accent hover:border-accent/40'
                             }`}
                           >
@@ -1863,7 +1874,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     {/* Sub-Topic Leaf Pills */}
                     {selectedCptsSubCategory !== 'ALL' && activeTopicLeaves.length > 1 && (
                       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pl-6 scrollbar-thin">
-                        <span className="text-[9px] text-muted font-mono flex-shrink-0">
+                        <span className="text-[9px] text-muted flex-shrink-0">
                           SUB-LEAVES:
                         </span>
                         {activeTopicLeaves.map((leaf) => (
@@ -1874,7 +1885,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               setSelectedCptsSubCategory(leaf.leaf);
                               setCptsLimit(30);
                             }}
-                            className="px-2 py-0.2 rounded text-[10px] font-mono bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:border-accent/40 transition-colors flex-shrink-0"
+                            className="px-2 py-0.2 rounded text-[10px] bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:border-accent/40 transition-colors flex-shrink-0"
                           >
                             {leaf.leaf} ({leaf.count})
                           </button>
@@ -1885,9 +1896,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 )}
 
                 {/* Telemetry Count */}
-                <div className="flex items-center justify-between text-[11px] text-muted font-mono pt-1">
+                <div className="flex items-center justify-between text-[11px] text-muted font-mono tabular-nums pt-1">
                   <div>
-                    Showing <strong className="text-accent">{visibleCptsNotes.length}</strong> of <strong className="text-primary">{filteredCptsNotes.length}</strong> notes (<strong className="text-cyber-cyan">{totalCptsCommands}</strong> total commands)
+                    Showing <strong className="text-accent">{visibleCptsNotes.length}</strong> of <strong className="text-primary">{filteredCptsNotes.length}</strong> notes (<strong className="text-secondary">{totalCptsCommands}</strong> total commands)
                   </div>
                   {cptsDisplayLayout === 'quick-index' && (
                     <span className="text-accent text-[10px]">
@@ -1903,17 +1914,17 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 <div className={`w-full ${activeObsidianNote && noteViewerMode === 'docked' ? (isDockedMaximized ? 'hidden' : 'lg:w-[48%] xl:w-[42%] min-w-0') : 'w-full'} space-y-4`}>
                   {/* VIEW RENDERER 1: QUICK INDEX TABLE MODE (High-Density Anti-Scroll Table) */}
                   {cptsDisplayLayout === 'quick-index' && (
-                <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden shadow-lg">
+                <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs font-mono">
-                      <thead className="bg-surface-sunken/95 border-b border-subtle text-muted text-[10px] tracking-wider sticky top-0 z-10 backdrop-blur">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-surface-sunken/95 border-b border-subtle text-muted text-[10px] sticky top-0 z-10 backdrop-blur">
                         <tr>
                           <th className="py-2.5 px-3 w-12 text-center">#</th>
-                          <th className="py-2.5 px-3 w-48">TOPIC / FOLDER</th>
-                          <th className="py-2.5 px-3">TITLE / OBJECTIVE</th>
-                          <th className="py-2.5 px-3 w-28 text-center">STAGE / LEVEL</th>
-                          <th className="py-2.5 px-3 w-32 text-center">COMMANDS</th>
-                          <th className="py-2.5 px-3 w-28 text-right pr-4">ACTIONS</th>
+                          <th className="py-2.5 px-3 w-48">Topic / folder</th>
+                          <th className="py-2.5 px-3">Title / objective</th>
+                          <th className="py-2.5 px-3 w-28 text-center">Stage / level</th>
+                          <th className="py-2.5 px-3 w-32 text-center">Commands</th>
+                          <th className="py-2.5 px-3 w-28 text-right pr-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-subtle/40">
@@ -1931,7 +1942,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     if (soundEnabled) playCyberSound('click');
                                     setNotesImportModalOpen(true);
                                   }}
-                                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-on-accent font-semibold rounded-lg text-xs font-mono inline-flex items-center gap-2 transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-md"
+                                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-on-accent font-semibold rounded-lg text-xs inline-flex items-center gap-2 transition-[box-shadow,background-color,border-color,color] cursor-pointer"
                                 >
                                   <Upload className="w-3.5 h-3.5" />
                                   <span>Import Notes Vault (.json)</span>
@@ -1965,12 +1976,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   }`}
                                 >
                                   {/* Sequential Index */}
-                                  <td className="py-2.5 px-3 text-center text-muted text-[11px] font-mono">
+                                  <td className="py-2.5 px-3 text-center text-muted text-[11px] font-mono tabular-nums">
                                     {String(idx + 1).padStart(2, '0')}
                                   </td>
 
                                   {/* Topic Folder */}
-                                  <td className="py-2.5 px-3 font-mono">
+                                  <td className="py-2.5 px-3">
                                     <div
                                       className="text-[11px] text-accent font-semibold truncate max-w-[180px]"
                                       title={note.subCategory || group}
@@ -2004,7 +2015,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                             : note.titleEn || note.title}
                                         </span>
                                         {formatNoteNumberBadge(note) && (
-                                          <span className="text-[9px] px-1 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-mono font-semibold">
+                                          <span className="text-[9px] px-1 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold">
                                             #{formatNoteNumberBadge(note)}
                                           </span>
                                         )}
@@ -2025,7 +2036,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   {/* Stage / Difficulty */}
                                   <td className="py-2.5 px-3 text-center">
                                     {note.stage ? (
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-callout-info-bg text-callout-info-fg border border-callout-info-border">
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle">
                                         {note.stage}
                                       </span>
                                     ) : (
@@ -2045,7 +2056,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                         }
                                         className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors inline-flex items-center gap-1 ${
                                           isRowExpanded
-                                            ? 'bg-accent text-on-accent shadow-sm'
+                                            ? 'bg-accent text-on-accent'
                                             : 'bg-accent-muted border border-accent/40 text-accent hover:bg-accent-muted'
                                         }`}
                                       >
@@ -2080,14 +2091,14 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                           onClick={() => handleCopyAllNoteCommands(note)}
                                           className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer ${
                                             copiedId === `all-${note.id}`
-                                              ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
+                                              ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
                                               : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-accent/40'
                                           }`}
                                           title="Copy all commands in note"
                                         >
                                           {copiedId === `all-${note.id}` ? (
                                             <>
-                                              <Check className="w-3 h-3 text-cyber-emerald" />
+                                              <Check className="w-3 h-3 text-callout-success-fg" />
                                               <span>Copied</span>
                                             </>
                                           ) : (
@@ -2115,8 +2126,8 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   <tr className="bg-surface-sunken border-y border-accent/40">
                                     <td colSpan={6} className="p-3 pl-10 pr-4 space-y-2">
                                       <div className="flex items-center justify-between text-[10px] text-accent font-semibold border-b border-accent/30 pb-1">
-                                        <span>COMMANDS FOR: {note.titleEn || note.title}</span>
-                                        <span>{note.commands.length} EXECUTABLES</span>
+                                        <span>Commands for {note.titleEn || note.title}</span>
+                                        <span>{note.commands.length} commands</span>
                                       </div>
                                       <div className="space-y-1.5" dir="ltr">
                                         {note.commands.map((cmd, cIdx) => {
@@ -2126,9 +2137,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                           return (
                                             <div
                                               key={cIdx}
-                                              className="flex items-center justify-between gap-2 p-1.5 px-2 rounded bg-cyber-code border border-accent/30 text-xs font-mono"
+                                              className="flex items-center justify-between gap-2 p-1.5 px-2 rounded-md bg-surface-inverse text-on-inverse text-xs font-mono tabular-nums"
                                             >
-                                              <pre className="text-cyber-cyan overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all">
+                                              <pre className="text-on-inverse overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all">
                                                 {interpolated}
                                               </pre>
                                               <button
@@ -2136,12 +2147,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                                 onClick={() => handleCopy(interpolated, cmdId)}
                                                 className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 transition-colors ${
                                                   isCopied
-                                                    ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
-                                                    : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-cyber-cyan'
+                                                    ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+                                                    : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
                                                 }`}
                                               >
                                                 {isCopied ? (
-                                                  <Check className="w-2.5 h-2.5 text-cyber-emerald" />
+                                                  <Check className="w-2.5 h-2.5 text-callout-success-fg" />
                                                 ) : (
                                                   <Copy className="w-2.5 h-2.5" />
                                                 )}
@@ -2168,12 +2179,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               {cptsDisplayLayout === 'grouped' && (
                 <div className="space-y-4">
                   {allActiveNotes.length === 0 ? (
-                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-subtle bg-surface-card/60 space-y-3 max-w-lg mx-auto my-4 shadow-xs">
-                      <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center mx-auto text-cyber-cyan shadow-xs">
+                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-subtle bg-surface-card/60 space-y-3 max-w-lg mx-auto my-4">
+                      <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center mx-auto text-secondary">
                         <BookOpen className="w-4 h-4" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-cyber-text tracking-wide font-mono">
+                        <h3 className="text-sm font-semibold text-primary">
                           Private Local-First Field Manual Vault
                         </h3>
                         <p className="text-xs text-muted font-normal leading-relaxed">
@@ -2187,14 +2198,14 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             if (soundEnabled) playCyberSound('click');
                             setNotesImportModalOpen(true);
                           }}
-                          className="px-4 py-2 bg-cyber-cyan hover:opacity-90 text-black font-semibold rounded-lg text-xs font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer shadow-xs"
+                          className="px-4 py-2 bg-accent hover:opacity-90 text-on-accent font-semibold rounded-lg text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer"
                         >
                           <Upload className="w-3.5 h-3.5" />
                           <span>Import Your Notes Vault (.json)</span>
                         </button>
                       </div>
-                      <div className="text-[10px] text-muted font-mono flex items-center justify-center gap-1.5 pt-0.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-cyber-emerald" />
+                      <div className="text-[10px] text-muted flex items-center justify-center gap-1.5 pt-0.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" />
                         <span>IndexedDB Browser Sandbox · 0 Network Calls · 0 Data Leakage</span>
                       </div>
                     </div>
@@ -2208,7 +2219,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       return (
                         <div
                           key={grp.group}
-                          className="rounded-xl border border-accent/30 bg-surface-card overflow-hidden shadow-md"
+                          className="rounded-xl border border-accent/30 bg-surface-card overflow-hidden"
                         >
                           <button
                             type="button"
@@ -2224,11 +2235,11 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 <ChevronDown className="w-4 h-4 text-accent" />
                               )}
                               <span className="font-semibold text-primary text-sm">📁 {grp.group}</span>
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-hover border border-accent/40 text-accent">
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-surface-hover border border-accent/40 text-accent">
                                 {grp.count} notes
                               </span>
                             </div>
-                            <span className="text-[11px] text-muted font-mono">
+                            <span className="text-[11px] text-muted">
                               {isCollapsed ? 'Click to expand' : 'Click to collapse'}
                             </span>
                           </button>
@@ -2255,7 +2266,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     key={note.id}
                                     id={`cpts-note-${note.id}`}
                                     dir={isRtlCard ? 'rtl' : 'ltr'}
-                                    className={`p-3.5 rounded-xl border border-subtle bg-surface-sunken/40 hover:border-accent/50 hover:shadow-lg transition-[box-shadow,background-color,border-color,color] space-y-2.5 group ${
+                                    className={`p-3.5 rounded-xl border border-subtle bg-surface-sunken/40 hover:border-accent/50 transition-[box-shadow,background-color,border-color,color] space-y-2.5 group ${
                                       isRtlCard ? 'text-right' : 'text-left'
                                     } ${isHighlighted ? 'ring-2 ring-accent bg-accent/30' : ''}`}
                                   >
@@ -2331,7 +2342,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                           return (
                                             <div
                                               key={cIdx}
-                                              className="p-1.5 px-2 rounded bg-cyber-code border border-subtle text-xs font-mono text-cyber-cyan truncate select-all"
+                                              className="p-1.5 px-2 rounded-md bg-surface-inverse text-on-inverse text-xs font-mono tabular-nums truncate select-all"
                                             >
                                               {interpolated}
                                             </div>
@@ -2355,12 +2366,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               {cptsDisplayLayout === 'cards' && (
                 <div className="space-y-3">
                   {allActiveNotes.length === 0 ? (
-                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-subtle bg-surface-card/60 space-y-3 max-w-lg mx-auto my-4 shadow-xs">
-                      <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center mx-auto text-cyber-cyan shadow-xs">
+                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-subtle bg-surface-card/60 space-y-3 max-w-lg mx-auto my-4">
+                      <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center mx-auto text-secondary">
                         <BookOpen className="w-4 h-4" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-cyber-text tracking-wide font-mono">
+                        <h3 className="text-sm font-semibold text-primary">
                           Private Local-First Field Manual Vault
                         </h3>
                         <p className="text-xs text-muted font-normal leading-relaxed">
@@ -2374,14 +2385,14 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             if (soundEnabled) playCyberSound('click');
                             setNotesImportModalOpen(true);
                           }}
-                          className="px-4 py-2 bg-cyber-cyan hover:opacity-90 text-black font-semibold rounded-lg text-xs font-mono transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer shadow-xs"
+                          className="px-4 py-2 bg-accent hover:opacity-90 text-on-accent font-semibold rounded-lg text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer"
                         >
                           <Upload className="w-3.5 h-3.5" />
                           <span>Import Your Notes Vault (.json)</span>
                         </button>
                       </div>
-                      <div className="text-[10px] text-muted font-mono flex items-center justify-center gap-1.5 pt-0.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-cyber-emerald" />
+                      <div className="text-[10px] text-muted flex items-center justify-center gap-1.5 pt-0.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" />
                         <span>IndexedDB Browser Sandbox · 0 Network Calls · 0 Data Leakage</span>
                       </div>
                     </div>
@@ -2410,7 +2421,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                           transition={{ ...TACTICAL_SPRING, delay: CASCADE_STAGGER_DELAY(noteIdx) }}
                           id={`cpts-note-${note.id}`}
                           dir={isRtlCard ? 'rtl' : 'ltr'}
-                          className={`p-4 rounded-xl border border-subtle bg-surface-card hover:border-accent/50 hover:shadow-lg transition-[box-shadow,background-color,border-color,color] space-y-3 group ${
+                          className={`p-4 rounded-xl border border-subtle bg-surface-card hover:border-accent/50 transition-[box-shadow,background-color,border-color,color] space-y-3 group ${
                             isRtlCard ? 'text-right' : 'text-left'
                           } ${isHighlighted ? 'ring-2 ring-accent bg-accent/30' : ''}`}
                         >
@@ -2432,7 +2443,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     <BookOpen className="w-3.5 h-3.5 text-accent flex-shrink-0" />
                                     <span>{note.titleHe || note.title}</span>
                                     {formatNoteNumberBadge(note) && (
-                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-mono font-semibold">
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold">
                                         #{formatNoteNumberBadge(note)}
                                       </span>
                                     )}
@@ -2452,7 +2463,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     <BookOpen className="w-3.5 h-3.5 text-accent flex-shrink-0" />
                                     <span>{note.titleEn || note.title}</span>
                                     {formatNoteNumberBadge(note) && (
-                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-mono font-semibold">
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold">
                                         #{formatNoteNumberBadge(note)}
                                       </span>
                                     )}
@@ -2463,26 +2474,26 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               {/* Badges: Stage, Category, SubCategory Topic, Difficulty, Tools */}
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {note.stage && (
-                                  <span className="text-[9px] px-2 py-0.5 rounded bg-callout-info-bg text-callout-info-fg border border-callout-info-border font-mono font-semibold">
+                                  <span className="text-[9px] px-2 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle font-semibold">
                                     🎯 Stage: {note.stage}
                                   </span>
                                 )}
-                                <span className="text-[9px] px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/40 font-mono">
+                                <span className="text-[9px] px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/40">
                                   {note.category}
                                 </span>
                                 {note.subCategory && (
-                                  <span className="text-[9px] px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/40 font-mono">
+                                  <span className="text-[9px] px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/40">
                                     📁 {parseSubCategory(note.subCategory).group}
                                   </span>
                                 )}
-                                <span className="text-[9px] px-2 py-0.5 rounded bg-surface-elevated border border-strong text-secondary font-mono">
+                                <span className="text-[9px] px-2 py-0.5 rounded bg-surface-elevated border border-strong text-secondary">
                                   {note.difficulty}
                                 </span>
                                 {note.tools &&
                                   note.tools.map((t) => (
                                     <span
                                       key={t}
-                                      className="text-[9px] px-1.5 py-0.5 rounded bg-callout-success-bg text-callout-success-fg border border-callout-success-border font-mono"
+                                      className="text-[9px] px-1.5 py-0.5 rounded bg-callout-success-bg text-callout-success-fg border border-callout-success-border"
                                     >
                                       🔧 {t}
                                     </span>
@@ -2506,7 +2517,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   {note.tags.map((t) => (
                                     <span
                                       key={t}
-                                      className="text-[9px] px-1.5 py-0.2 rounded bg-surface-sunken border border-subtle text-cyber-cyan"
+                                      className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary"
                                     >
                                       #{t}
                                     </span>
@@ -2523,7 +2534,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   if (soundEnabled) playCyberSound('click');
                                   setActiveObsidianNote(note);
                                 }}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:bg-accent-muted hover:border-accent/40 transition-[box-shadow,background-color,border-color,color] cursor-pointer shadow-sm"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:bg-accent-muted hover:border-accent/40 transition-[box-shadow,background-color,border-color,color] cursor-pointer"
                                 title="Open full authentic Obsidian personal note"
                               >
                                 <BookOpen className="w-3.5 h-3.5 text-accent" />
@@ -2533,16 +2544,16 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 <button
                                   type="button"
                                   onClick={() => handleCopyAllNoteCommands(note)}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer shadow-xs ${
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
                                     copiedId === `all-${note.id}`
-                                      ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
+                                      ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
                                       : 'bg-surface-elevated border border-strong text-accent hover:border-accent/40 hover:text-accent'
                                   }`}
                                   title="Copy all commands in this note to clipboard"
                                 >
                                   {copiedId === `all-${note.id}` ? (
                                     <>
-                                      <Check className="w-3.5 h-3.5 text-cyber-emerald" />
+                                      <Check className="w-3.5 h-3.5 text-callout-success-fg" />
                                       <span>All Copied!</span>
                                     </>
                                   ) : (
@@ -2575,23 +2586,23 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 return (
                                   <div
                                     key={cIdx}
-                                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-cyber-code border border-subtle group-hover:border-accent/40 text-xs font-mono"
+                                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-inverse text-on-inverse text-xs font-mono tabular-nums"
                                   >
-                                    <pre className="text-cyber-cyan overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all" title={interpolated}>
+                                    <pre className="text-on-inverse overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all" title={interpolated}>
                                       {interpolated}
                                     </pre>
                                     <button
                                       type="button"
                                       onClick={() => handleCopy(interpolated, cmdId)}
-                                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
+                                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] ${
                                         isCopied
-                                          ? 'bg-cyber-emerald/20 text-cyber-emerald border border-cyber-emerald'
-                                          : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-cyber-cyan'
+                                          ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
+                                          : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
                                       }`}
                                     >
                                       {isCopied ? (
                                         <>
-                                          <Check className="w-3 h-3 text-cyber-emerald" />
+                                          <Check className="w-3 h-3 text-callout-success-fg" />
                                           <span>Copied!</span>
                                         </>
                                       ) : (
@@ -2640,17 +2651,17 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   <button
                     type="button"
                     onClick={() => setCptsLimit((prev) => prev + 30)}
-                    className="px-5 py-2 rounded-lg bg-accent/20 border border-accent/50 hover:bg-accent-hover hover:text-on-accent text-accent font-semibold text-xs transition-[box-shadow,background-color,border-color,color] shadow-md flex items-center gap-2"
+                    className="px-5 py-2 rounded-lg bg-accent/20 border border-accent/50 hover:bg-accent-hover hover:text-on-accent text-accent font-semibold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center gap-2"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>LOAD NEXT 30 NOTES ({filteredCptsNotes.length - visibleCptsNotes.length} REMAINING)</span>
+                    <span>Load next 30 notes ({filteredCptsNotes.length - visibleCptsNotes.length} remaining)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCptsLimit(filteredCptsNotes.length)}
-                    className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle hover:border-white text-muted hover:text-primary text-xs font-semibold transition-colors"
+                    className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle hover:border-subtle text-muted hover:text-primary text-xs font-semibold transition-colors"
                   >
-                    SHOW ALL ({filteredCptsNotes.length})
+                    Show all ({filteredCptsNotes.length})
                   </button>
                 </div>
               )}
@@ -2681,12 +2692,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             className="w-full max-w-lg rounded-2xl border border-subtle bg-surface-card shadow-2xl p-6 space-y-4"
           >
             <h3 className="text-base font-semibold text-primary flex items-center gap-2">
-              <Code className="w-4 h-4 text-cyber-cyan" /> ADD CUSTOM EXPLOITATION SNIPPET
+              <Code className="w-4 h-4 text-muted" /> Add custom snippet
             </h3>
 
             <form onSubmit={handleCreateCustom} className="space-y-3 text-xs">
               <div>
-                <label htmlFor="custom-snippet-title" className="block text-muted tracking-wider mb-1 font-semibold">
+                <label htmlFor="custom-snippet-title" className="block text-muted mb-1 font-semibold">
                   Command Title *
                 </label>
                 <input
@@ -2697,12 +2708,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. Chamilo LMS RCE Exploit"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
                 />
               </div>
 
               <div>
-                <label htmlFor="custom-snippet-category" className="block text-muted tracking-wider mb-1 font-semibold">
+                <label htmlFor="custom-snippet-category" className="block text-muted mb-1 font-semibold">
                   Category
                 </label>
                 <CyberSelect
@@ -2719,7 +2730,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               </div>
 
               <div>
-                <label htmlFor="custom-snippet-desc" className="block text-muted tracking-wider mb-1 font-semibold">
+                <label htmlFor="custom-snippet-desc" className="block text-muted mb-1 font-semibold">
                   Description
                 </label>
                 <input
@@ -2729,13 +2740,13 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="Brief note on exploit parameters..."
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
                 />
               </div>
 
               <div>
-                <label htmlFor="custom-snippet-template" className="block text-muted tracking-wider mb-1 font-semibold">
-                  Command Template (Supports &#123;TARGET_IP&#125;, &#123;LHOST&#125;, &#123;LPORT&#125;) *
+                <label htmlFor="custom-snippet-template" className="block text-muted mb-1 font-semibold">
+                  Command Template (Supports &#x7B;TARGET_IP&#x7D;, &#x7B;LHOST&#x7D;, &#x7B;LPORT&#x7D;) *
                 </label>
                 <textarea
                   id="custom-snippet-template"
@@ -2745,12 +2756,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   value={newTemplate}
                   onChange={(e) => setNewTemplate(e.target.value)}
                   placeholder="python3 exploit.py -t {TARGET_IP} -l {LHOST} -p {LPORT}"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-cyber-cyan font-mono resize-none"
+                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent font-mono resize-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="custom-snippet-tags" className="block text-muted tracking-wider mb-1 font-semibold">
+                <label htmlFor="custom-snippet-tags" className="block text-muted mb-1 font-semibold">
                   Tags (Comma-separated)
                 </label>
                 <input
@@ -2760,7 +2771,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   value={newTags}
                   onChange={(e) => setNewTags(e.target.value)}
                   placeholder="rce, python, cve-2023-xxxx"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
                 />
               </div>
 
@@ -2774,7 +2785,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-cyber-cyan text-black font-semibold text-xs hover:bg-cyber-cyan/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
+                  className="px-4 py-2 rounded-lg bg-accent text-on-accent font-semibold text-xs hover:bg-accent/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
                 >
                   Save Snippet
                 </button>

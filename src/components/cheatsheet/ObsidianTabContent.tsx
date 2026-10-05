@@ -205,7 +205,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 onNavigateToNote(targetId);
               }
             }}
-            className="inline-flex items-center gap-1 font-mono font-semibold text-accent rounded-sm underline underline-offset-2 decoration-accent/50 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            className="inline-flex items-center gap-1 font-semibold text-accent rounded-sm underline underline-offset-2 decoration-accent/50 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             title={`Open note: ${res.label}${anchor ? ' #' + anchor : ''}`}
           >
             <LinkIcon className="w-3 h-3 text-accent/70 inline flex-shrink-0" />
@@ -226,7 +226,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 onNavigateToNote(targetRaw);
               }
             }}
-            className="inline-flex items-center gap-1 font-mono font-medium text-accent rounded-sm underline underline-offset-2 decoration-accent/40 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            className="inline-flex items-center gap-1 font-medium text-accent rounded-sm underline underline-offset-2 decoration-accent/40 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             title={`Search field manual for: ${targetRaw}`}
           >
             <Search className="w-2.5 h-2.5 opacity-70 inline flex-shrink-0 text-accent" />
@@ -251,15 +251,15 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       ? openCallouts[idx] 
       : !callout.isFoldedByDefault;
 
-    let icon = <Info className="w-4 h-4 text-callout-info-fg" />;
+    let icon = <Info className="w-4 h-4 text-muted" />;
     let variant = 'callout-info';
-    let borderColor = 'border-callout-info-border';
-    let bgColor = 'bg-callout-info-bg';
-    let titleColor = 'text-callout-info-fg';
+    let borderColor = 'border-subtle';
+    let bgColor = 'bg-surface-sunken';
+    let titleColor = 'text-secondary';
 
     const VARIANTS = {
-      info: { variant: 'callout-info', border: 'border-callout-info-border', bg: 'bg-callout-info-bg', fg: 'text-callout-info-fg' },
-      tip: { variant: 'callout-tip', border: 'border-callout-tip-border', bg: 'bg-callout-tip-bg', fg: 'text-callout-tip-fg' },
+      info: { variant: 'callout-info', border: 'border-subtle', bg: 'bg-surface-sunken', fg: 'text-secondary' },
+      tip: { variant: 'callout-tip', border: 'border-subtle', bg: 'bg-surface-sunken', fg: 'text-secondary' },
       warn: { variant: 'callout-warn', border: 'border-callout-warn-border', bg: 'bg-callout-warn-bg', fg: 'text-callout-warn-fg' },
       danger: { variant: 'callout-danger', border: 'border-callout-danger-border', bg: 'bg-callout-danger-bg', fg: 'text-callout-danger-fg' },
       success: { variant: 'callout-success', border: 'border-callout-success-border', bg: 'bg-callout-success-bg', fg: 'text-callout-success-fg' },
@@ -273,7 +273,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
 
     switch (callout.type) {
       case 'tip':
-        icon = <Lightbulb className="w-4 h-4 text-callout-tip-fg" />;
+        icon = <Lightbulb className="w-4 h-4 text-muted" />;
         setVariant('tip');
         break;
       case 'warning':
@@ -296,7 +296,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
         titleColor = 'text-secondary';
         break;
       case 'question':
-        icon = <HelpCircle className="w-4 h-4 text-callout-info-fg" />;
+        icon = <HelpCircle className="w-4 h-4 text-muted" />;
         setVariant('info');
         break;
       case 'success':
@@ -319,7 +319,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           }`}
           dir={isRtl ? 'rtl' : 'ltr'}
         >
-          <div className={`flex items-center gap-2 font-mono font-semibold ${fontSize === 'xl' || fontSize === 'lg' ? 'text-sm' : 'text-xs'}`}>
+          <div className={`flex items-center gap-2 font-semibold ${fontSize === 'xl' || fontSize === 'lg' ? 'text-sm' : 'text-xs'}`}>
             {icon}
             <span className={titleColor}>{callout.title}</span>
           </div>
@@ -364,33 +364,33 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       elements.push(
         <div
           key={`code-block-${idx}`}
-          className="my-3 rounded-xl border border-accent/40 bg-cyber-code overflow-hidden shadow-md group"
+          className="my-3 rounded-xl border border-subtle bg-surface-inverse text-on-inverse overflow-hidden group"
         >
-          <div className="flex items-center justify-between px-3 py-1.5 bg-surface-sunken border-b border-accent/30 text-[11px] font-mono text-muted">
-            <span className="flex items-center gap-1.5 text-accent font-semibold uppercase">
-              <Terminal className="w-3 h-3 text-accent" />
-              <span>{codeLanguage || 'COMMAND / SCRIPT'}</span>
+          <div className="flex items-center justify-between px-3 py-1.5 bg-surface-inverse-elevated text-[11px] text-on-inverse-muted">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Terminal className="w-3 h-3" />
+              <span>{codeLanguage || 'Command / script'}</span>
             </span>
             <button
               type="button"
               onClick={() => handleCopyText(`code-${idx}`, interpCode)}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-accent-muted hover:bg-accent-muted border border-accent/50 text-accent hover:text-primary transition-colors cursor-pointer text-[10px]"
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-on-inverse-muted hover:bg-surface-inverse hover:text-on-inverse transition-colors cursor-pointer text-[11px]"
               title="Copy interpolated code"
             >
               {isCopied ? (
                 <>
-                  <Check className="w-3 h-3 text-cyber-emerald" />
-                  <span>COPIED</span>
+                  <Check className="w-3 h-3 text-syntax-string" />
+                  <span>Copied</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3 h-3" />
-                  <span>COPY</span>
+                  <span>Copy</span>
                 </>
               )}
             </button>
           </div>
-          <pre className={`p-3.5 ${sizeClasses.code} font-mono text-callout-success-fg overflow-x-auto select-all selection:bg-accent-muted selection:text-primary leading-relaxed`}>
+          <pre className={`p-3.5 ${sizeClasses.code} font-mono tabular-nums text-on-inverse overflow-x-auto select-all selection:bg-accent-muted selection:text-primary leading-relaxed`}>
             {interpCode}
           </pre>
         </div>
@@ -409,8 +409,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       const headers = headerRow.split('|').filter(c => c.trim()).map(c => c.trim());
 
       elements.push(
-        <div key={`table-${idx}`} className="my-4 overflow-x-auto rounded-xl border border-accent/40 bg-surface-sunken shadow-md">
-          <table className={`w-full ${sizeClasses.table} text-left font-mono`}>
+        <div key={`table-${idx}`} className="my-4 overflow-x-auto rounded-xl border border-accent/40 bg-surface-sunken">
+          <table className={`w-full ${sizeClasses.table} text-left`}>
             <thead className="bg-accent-muted text-accent border-b border-accent/50">
               <tr>
                 {headers.map((h, hIdx) => (
@@ -656,8 +656,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
     <div className="space-y-6">
       {/* Table of Contents / Outline Chips */}
       {parsed.tableOfContents && parsed.tableOfContents.length > 1 && (
-        <div className="sticky top-0 z-20 flex items-center gap-1.5 p-2 px-3 rounded-xl bg-surface-sunken backdrop-blur-md border border-strong shadow-lg overflow-x-auto scrollbar-thin text-xs my-2">
-          <div className="flex items-center gap-1 text-[11px] font-mono text-accent font-semibold pr-1 border-r border-strong flex-shrink-0">
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 p-2 px-3 rounded-xl bg-surface-sunken backdrop-blur-md border border-strong overflow-x-auto scrollbar-thin text-xs my-2">
+          <div className="flex items-center gap-1 text-[11px] text-accent font-semibold pr-1 border-r border-strong flex-shrink-0">
             <List className="w-3.5 h-3.5 text-accent" />
             <span>OUTLINE:</span>
           </div>
@@ -676,7 +676,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                     if (soundEnabled) playCyberSound('click');
                   }
                 }}
-                className="px-2.5 py-1 rounded bg-surface-hover hover:bg-surface-hover border border-strong text-primary hover:text-black text-xs font-mono flex-shrink-0 transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded bg-surface-hover hover:bg-surface-hover border border-strong text-primary hover:text-on-accent text-xs flex-shrink-0 transition-colors cursor-pointer"
               >
                 {toc.text}
               </button>
@@ -701,7 +701,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       {/* Obsidian Backlinks Footer */}
       {backlinks.length > 0 && (
         <div className="mt-8 pt-4 border-t border-accent/30">
-          <div className="flex items-center gap-2 mb-3 text-xs font-mono font-semibold text-accent">
+          <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-accent">
             <LinkIcon className="w-3.5 h-3.5" />
             <span>OBSIDIAN BACKLINKS ({backlinks.length} REFERENCES)</span>
           </div>
@@ -719,10 +719,10 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 }}
                 className="p-2 rounded-xl bg-accent-muted hover:bg-accent-muted border border-accent/30 hover:border-accent text-left transition-colors cursor-pointer group"
               >
-                <div className="text-xs font-mono font-semibold text-accent group-hover:text-accent truncate">
+                <div className="text-xs font-semibold text-accent group-hover:text-accent truncate">
                   {b.titleEn || b.title}
                 </div>
-                <div className="text-[10px] font-mono text-muted truncate">
+                <div className="text-[10px] text-muted truncate">
                   {b.category} {b.subCategory ? `› ${b.subCategory}` : ''}
                 </div>
               </button>
@@ -740,11 +740,11 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       className={`p-4 sm:p-6 lg:p-8 pb-36 space-y-6 ${isMaximized ? 'max-w-full px-6 sm:px-12' : 'max-w-6xl'} mx-auto w-full select-text transition-colors duration-150`}
     >
       {/* Title & Metadata Banner */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-cyber-card border border-accent/20 shadow-md space-y-3">
+      <div className="p-4 sm:p-5 rounded-2xl bg-surface-card border border-accent/20 space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1
             className={`${sizeClasses.bannerTitle} font-semibold text-primary tracking-tight flex items-center gap-2 ${
-              langMode === 'he' ? 'font-sans text-right' : 'font-mono text-left'
+              langMode === 'he' ? 'font-sans text-right' : 'font-sans text-left'
             }`}
             dir={langMode === 'he' ? 'rtl' : 'ltr'}
           >
@@ -752,16 +752,16 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
             <span>{langMode === 'he' ? (note.titleHe || note.title) : (note.titleEn || note.title)}</span>
           </h1>
 
-          <div className="flex items-center gap-1.5 flex-wrap text-[10px] font-mono">
+          <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
             {note.stage && (
-              <span className="px-2 py-0.5 rounded font-semibold bg-callout-info-bg text-accent border border-accent/30">
+              <span className="px-2 py-0.5 rounded font-semibold bg-surface-sunken text-accent border border-accent/30">
                 Stage: {note.stage}
               </span>
             )}
             <span className="px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/30">
               {note.difficulty || 'Core'}
             </span>
-            <span className="px-2 py-0.5 rounded bg-cyber-bg border border-cyber-border text-muted">
+            <span className="px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-muted">
               {note.noteType || 'Field Manual'}
             </span>
             {note.dateModified && (
@@ -777,7 +777,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                   onViewModeChange('split');
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-colors flex items-center gap-1 cursor-pointer"
+                className="px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-colors flex items-center gap-1 cursor-pointer"
                 title="Switch to Split Edit View"
               >
                 <Edit3 className="w-2.5 h-2.5" />
@@ -795,7 +795,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 {note.tags.map((t) => (
                   <span
                     key={t}
-                    className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent font-mono"
+                    className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent"
                   >
                     #{t}
                   </span>
@@ -804,7 +804,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
             )}
             {note.tools && note.tools.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-mono text-muted">Tools:</span>
+                <span className="text-[10px] text-muted">Tools:</span>
                 {note.tools.map((tool) => (
                   <span
                     key={tool}
@@ -845,8 +845,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               minHeight="600px"
             />
           </div>
-          <div className="min-w-0 rounded-xl border border-strong bg-surface-card p-4 sm:p-5 shadow-sm overflow-y-auto max-h-[850px] space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-subtle text-xs font-mono text-muted">
+          <div className="min-w-0 rounded-xl border border-strong bg-surface-card p-4 sm:p-5 overflow-y-auto max-h-[850px] space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-subtle text-xs text-muted">
               <span className="font-semibold flex items-center gap-1.5 text-accent">
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>LIVE PREVIEW</span>
