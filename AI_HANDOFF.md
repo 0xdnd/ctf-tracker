@@ -1,6 +1,6 @@
 # ZeroBox - AI Agent Handoff
 
-Audience: an AI coding agent with zero prior context. Everything below was derived from the source at commit `ee2bcc3` (branch `main`) unless marked **UNVERIFIED**. Paths are relative to this file (`docs/`), so `../src/...` is the repo's `src/`.
+Audience: an AI coding agent with zero prior context. Everything below was derived from the source at commit `ee2bcc3` (branch `main`) unless marked **UNVERIFIED**. Paths are relative to the repo root (e.g. `src/...`).
 
 ## Table of contents
 
@@ -27,7 +27,7 @@ Audience: an AI coding agent with zero prior context. Everything below was deriv
 - A multi-milestone "Refined Tactical Cockpit" redesign (Linear/Vercel restraint) is **complete: M1-M6 DONE** (M6 signed off at commit `7b9462b`), plus a full visual pass.
 - Before any change run: `npx tsc --noEmit`, `npm test -- --run`, `npm run build`, `python scripts/run_webapp_tests.py` (see [A8](#a8-testing-and-verification)).
 - Never drop persisted fields, never add network calls, use tokens not raw colors, no `layoutId` in route-level components (see [Part C](#part-c---how-to-continue)).
-- Existing docs: [CLAUDE.md](CLAUDE.md) (operational manual), [PROJECT.md](PROJECT.md) (blueprint; its milestone table is stale), [TEST_INFRA.md](TEST_INFRA.md), [AI_CONTEXT.md](AI_CONTEXT.md) (older orientation guide; some numbers are stale), [CLAUDE_HANDOFF_PROMPT.md](CLAUDE_HANDOFF_PROMPT.md) (older continuity prompt; stale, says M3 is next).
+- Existing docs: [CLAUDE.md](CLAUDE.md) (operational manual) (local-only, untracked - may not exist in a clone), [PROJECT.md](PROJECT.md) (blueprint; milestone table updated, M1-M6 DONE), [TEST_INFRA.md](TEST_INFRA.md), [AI_CONTEXT.md](AI_CONTEXT.md) (older orientation guide; some numbers are stale), [CLAUDE_HANDOFF_PROMPT.md](CLAUDE_HANDOFF_PROMPT.md) (older continuity prompt; stale, says M3 is next) (local-only, untracked - may not exist in a clone).
 
 ---
 
@@ -61,7 +61,7 @@ Audience: an AI coding agent with zero prior context. Everything below was deriv
 | Test | `vitest` ^5.0.0 + jsdom ^30, `@testing-library/*`, `fast-check` (property fuzzing), `@playwright/test` ^1.63.0, `axe-core` ^4.13.0, `lighthouse` ^13.5.0 |
 | Desktop | Tauri v2 (`@tauri-apps/cli`, `@tauri-apps/api`; Rust in [src-tauri/](src-tauri/), product `ZeroBox`, id `com.zerobox.tacticaltracker`) |
 
-npm scripts: `dev` (vite, port 3000), `test` (`vitest run`), `test:watch`, `test:e2e` (`python scripts/run_webapp_tests.py`), `build` (`tsc && vite build && node scripts/postbuild.cjs`), `preview`, `tauri`/`tauri:dev`/`tauri:build`, `lighthouse:a11y` (`node scripts/lighthouse_a11y.mjs`), `export-notes`/`index-notes` (`scripts/index-cpts-notes.cjs`), `share` (localtunnel - dev convenience only, not used by the app).
+npm scripts: `dev` (vite, port 3000), `test` (`vitest run`), `test:watch`, `test:e2e` (`python scripts/run_webapp_tests.py`), `build` (`tsc && vite build && node scripts/postbuild.cjs`), `preview`, `tauri`/`tauri:dev`/`tauri:build`, `lighthouse:a11y` (`node scripts/lighthouse_a11y.mjs`), `export-notes`/`index-notes` (`scripts/index-cpts-notes.cjs`, which is gitignored/local-only, so these two npm scripts fail in a clean clone), `share` (localtunnel - dev convenience only, not used by the app).
 
 ### Offline / zero-egress invariant
 
@@ -80,7 +80,7 @@ npm scripts: `dev` (vite, port 3000), `test` (`vitest run`), `test:watch`, `test
 
 ### Tauri
 
-- v2 desktop shell in [src-tauri/](src-tauri/) (`src/lib.rs`, `src/main.rs`, `tauri.conf.json` with `devUrl http://localhost:3000`, `frontendDist ../dist`). `useCtfStore` listens for the `tauri-app-close-requested` event to `flushProfileSave()`. [src/hooks/useDesktopUpdater.ts](src/hooks/useDesktopUpdater.ts) wraps the updater plugin. `updater.key` / `updater.key.pub` live in `src-tauri/` (treat the private key as a secret; do not print or move it).
+- v2 desktop shell in [src-tauri/](src-tauri/) (`src/lib.rs`, `src/main.rs`, `tauri.conf.json` with `devUrl http://localhost:3000`, `frontendDist ../dist`). `useCtfStore` listens for the `tauri-app-close-requested` event to `flushProfileSave()`. [src/hooks/useDesktopUpdater.ts](src/hooks/useDesktopUpdater.ts) wraps the updater plugin. `updater.key` / `updater.key.pub` live in `src-tauri/` (treat the private key as a secret; do not print or move it). The private `src-tauri/updater.key` is gitignored (`*.key`) and has never been committed (verified with `git ls-files` and `git log --all`); only the `.pub` is tracked.
 
 ---
 
@@ -89,13 +89,15 @@ npm scripts: `dev` (vite, port 3000), `test` (`vitest run`), `test:watch`, `test
 ```
 ctf-tracker/
   index.html                  CSP meta, theme boot, #root
-  CLAUDE.md PROJECT.md TEST_INFRA.md AI_CONTEXT.md CLAUDE_HANDOFF_PROMPT.md   existing docs
-  docs/AI_HANDOFF.md          this file
+  CLAUDE.md PROJECT.md TEST_INFRA.md AI_CONTEXT.md CLAUDE_HANDOFF_PROMPT.md   existing docs (CLAUDE.md and CLAUDE_HANDOFF_PROMPT.md are local-only/untracked)
+  AI_HANDOFF.md               this file (repo root; docs/ is gitignored)
   e2e/comprehensive-crawl.spec.ts   Playwright specs (7 tests, TC-01..TC-07)
   playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.js postcss.config.js tsconfig.json
   public/                     sw.js, manifest.webmanifest, icons, logos, robots.txt, llms.txt
   scripts/                    run_webapp_tests.py, axe_contrast_scan.py, lighthouse_a11y.mjs, postbuild.cjs,
                               index-cpts-notes.cjs, inspect_header_elements.py, test_header_viewports.py
+                              (the .cjs and the two other .py files are gitignored local-only scripts; scripts/*.py is ignored
+                              except run_webapp_tests.py and axe_contrast_scan.py)
   reports/                    axe-report.json, lighthouse/*.json (generated)
   plans/                      001..005 motion/transition plan docs (historical)
   src-tauri/                  Tauri v2 Rust shell
@@ -553,7 +555,7 @@ Co-located: `src/**/X.test.ts(x)` (store, data, hooks, utils, pages, some layout
 
 ## B1. Context and process
 
-- Goal: a multi-milestone redesign to a **"Refined Tactical Cockpit"** (Linear/Vercel restraint). Roadmap in [PROJECT.md](PROJECT.md): **M1** design system & shell, **M2** tracker & evidence vault (both done in earlier sessions), **M3** specialist views, **M4** analytics & exam cockpits, **M5** Nielsen heuristics + WCAG 2.1 AA, **M6** final verification. (PROJECT.md's table was updated to DONE for M3-M6; CLAUDE.md's "M3 NEXT UP" and CLAUDE_HANDOFF_PROMPT.md are user-owned and stale; M3-M6 are done.)
+- Goal: a multi-milestone redesign to a **"Refined Tactical Cockpit"** (Linear/Vercel restraint). Roadmap in [PROJECT.md](PROJECT.md): **M1** design system & shell, **M2** tracker & evidence vault (both done in earlier sessions), **M3** specialist views, **M4** analytics & exam cockpits, **M5** Nielsen heuristics + WCAG 2.1 AA, **M6** final verification. (PROJECT.md's table was updated to DONE for M3-M6; CLAUDE.md's "M3 NEXT UP" and CLAUDE_HANDOFF_PROMPT.md are local-only, user-owned and stale; M3-M6 are done.)
 - Process: an "architect" Claude session planned and verified; implementation was done by Claude Sonnet sub-agents (the Codex CLI was unavailable); a Fable reviewer agent gave plan verdicts and end-of-deliverable reviews before anything was called done.
 
 ## B2. Milestones
@@ -603,7 +605,7 @@ After M5 the user chose a full visual pass ("improve/add/remove whatever is best
 
 ## C1. Rules for the next agent
 
-Conventions from [CLAUDE.md](CLAUDE.md) (operational manual) plus the design brief essentials:
+Conventions from [CLAUDE.md](CLAUDE.md) (operational manual) (local-only, untracked - may not exist in a clone) plus the design brief essentials:
 
 1. **Tokens only.** Use semantic classes (`bg-surface-*`, `text-primary|secondary|muted|tertiary`, `border-subtle|strong|accent`, `text-on-accent`, `callout-*`, `cat-N-*`, `surface-inverse` + `syntax-*` for code). No raw hex / `bg-slate-*` / `text-white` in new UI (a few legacy `slate`/`cyber-*` usages remain; migrate opportunistically, do not mass-rewrite blindly). Never `hover:text-white`.
 2. **Typography:** sans for everything; `font-mono tabular-nums` only for telemetry (IPs, ports, MACs, hashes, commands, timers, counters). Weights normal/medium/semibold only.
@@ -619,7 +621,7 @@ Conventions from [CLAUDE.md](CLAUDE.md) (operational manual) plus the design bri
 12. **Keep shortcut tables in sync** (`useTacticalHotkeys` <-> `KeyboardShortcutsModal`).
 13. **Copy changes ripple into tests** (Testing Library case-sensitivity, Playwright selectors, `theme/` class-string tests).
 14. **Parallel work:** use worktrees + file allowlists; verify diff within allowlist before merging; never recursively delete a worktree's `node_modules` junction. This repo's operating model (per the user's global CLAUDE.md): the architect delegates implementation, names a reasoning effort per task, uses cheap read-only agents for exploration, verifies evidence before accepting a report, and gets a fable-advisor review before calling a deliverable done.
-15. Do not touch `src-tauri/updater.key` or commit secrets; `.gitignore` is managed by another lane at the time of writing.
+15. Do not touch `src-tauri/updater.key` or commit secrets.
 
 ## C2. Verification checklist (run before marking any step done)
 
@@ -645,7 +647,7 @@ M6 is **DONE at commit `7b9462b`**.
 - Lighthouse (new devDependency `lighthouse` ^13.5.0, `npm run lighthouse:a11y`): 9 routes (incl. `/target/thm-rootme`) x dark/light = 18 runs; accessibility 100 and best-practices 100 on all; performance 100 on 15, 99 tracker, 94 methodology-light; zero non-localhost requests.
 - Scripts versioned: `scripts/run_webapp_tests.py` and `scripts/axe_contrast_scan.py` via `.gitignore` exceptions (`scripts/*.py` otherwise still ignored); axe report -> `reports/axe-report.json` (`--out` / `AXE_REPORT_PATH`), `reports/` gitignored.
 - Earlier gates (at `ee2bcc3`): tsc 0, vitest 109/1987, build OK, E2E 12/12, Playwright 7/7, axe 0/0.
-- Remaining housekeeping (not blocking): the open items in C4; [CLAUDE.md](CLAUDE.md) and [CLAUDE_HANDOFF_PROMPT.md](CLAUDE_HANDOFF_PROMPT.md) are user-owned and still stale (see Appendix), as are the `zb_*` DB names, `rounded-2xl` size and `showToast` name in them.
+- Remaining housekeeping (not blocking): the open items in C4; [CLAUDE.md](CLAUDE.md) and [CLAUDE_HANDOFF_PROMPT.md](CLAUDE_HANDOFF_PROMPT.md) (both local-only, untracked) are user-owned and still stale (see Appendix), as are the `zb_*` DB names, `rounded-2xl` size and `showToast` name in them.
 
 ## C4. Open items with suggested approaches
 
@@ -664,8 +666,8 @@ M6 is **DONE at commit `7b9462b`**.
 
 ## C5. Quick orientation for a first task
 
-1. Read [CLAUDE.md](CLAUDE.md), then A3-A5 of this file.
-2. `git status` and `git log --oneline -15` to see what the scripts lane has landed.
+1. Read this file (A3-A5 first) and [PROJECT.md](PROJECT.md); then [CLAUDE.md](CLAUDE.md) if present (local-only, untracked).
+2. `git status` and `git log --oneline -15` to see the current state.
 3. Start the dev server (`npm run dev`, port 3000) and open `http://localhost:3000/#/tracker` (seed `localStorage.zerobox_onboarding_completed='true'` to skip the first-run modal).
 4. For UI work look at `PageHeader`, `CyberButton`, `categoryUtils`, and one restyled view (e.g. [src/components/tracker/KanbanBoard.tsx](src/components/tracker/KanbanBoard.tsx)) as style references.
 5. For data work start from `useCtfStore.flushProfileSave`, `mergeMachinesWithCatalog`, `indexedDbDeepStorage`.
