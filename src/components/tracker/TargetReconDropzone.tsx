@@ -176,22 +176,22 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner: Dropzone & Upload Header */}
-      <div className="p-4 sm:p-5 rounded-xl border border-cyber-border bg-cyber-bg/90 space-y-4">
+      <div className="p-4 sm:p-5 rounded-xl border border-subtle bg-surface-sunken/90 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-callout-info-fg">
+            <div className="w-8 h-8 rounded-lg bg-accent-muted border border-accent/30 flex items-center justify-center text-callout-info-fg">
               <Network className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                RECON ARTIFACT DROPZONE & SERVICE DISCOVERY
+              <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                Recon artifact dropzone &amp; service discovery
                 {activeServices.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-callout-success-fg border border-emerald-500/40">
-                    {activeServices.length} PORTS ACTIVE
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
+                    {activeServices.length} ports active
                   </span>
                 )}
               </h3>
-              <p className="text-[11px] text-cyber-muted">
+              <p className="text-xs text-muted">
                 Drop Nmap XML, GNMAP, Rustscan, or plain text scan outputs to automatically map target attack surface.
               </p>
             </div>
@@ -201,7 +201,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             <button
               type="button"
               onClick={() => setIsPasteMode(!isPasteMode)}
-              className="px-3 py-1.5 rounded-lg border border-cyber-border bg-cyber-card text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:border-cyber-cyan transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg border border-subtle bg-surface-card text-xs font-semibold text-secondary hover:text-primary hover:border-accent transition-colors flex items-center gap-1.5"
             >
               <Terminal className="w-3.5 h-3.5" />
               <span>{isPasteMode ? 'Switch to Dropzone' : 'Paste Scan Output'}</span>
@@ -210,10 +210,10 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             <button
               type="button"
               onClick={handleLoadSample}
-              className="px-3 py-1.5 rounded-lg border border-cyber-purple/40 bg-cyber-purple/10 text-xs font-semibold text-callout-tip-fg hover:bg-cyber-purple/20 transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg border border-callout-tip-border bg-callout-tip-bg text-xs font-semibold text-callout-tip-fg hover:bg-callout-tip-bg transition-colors flex items-center gap-1.5"
               title="Load sample Nmap scan for demonstration"
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyber-purple" />
+              <Sparkles className="w-3.5 h-3.5 text-callout-tip-fg" />
               <span>Sample Scan</span>
             </button>
 
@@ -221,7 +221,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               <button
                 type="button"
                 onClick={handleClearScan}
-                className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-callout-danger-fg hover:bg-rose-500/20 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg border border-callout-danger-border bg-callout-danger-bg text-xs font-semibold text-callout-danger-fg hover:bg-callout-danger-bg transition-colors flex items-center gap-1.5"
                 title="Clear current scan services"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -243,8 +243,8 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className={`p-5 sm:p-6 rounded-xl border-2 border-dashed transition-colors flex flex-col items-center justify-center text-center cursor-pointer ${
               isDragging
-                ? 'border-cyber-cyan bg-cyber-cyan/10'
-                : 'border-cyber-border hover:border-cyber-cyan/60 bg-cyber-card/40 hover:bg-cyber-card/70'
+                ? 'border-accent bg-accent-muted'
+                : 'border-subtle hover:border-accent/60 bg-surface-card/40 hover:bg-surface-card/70'
             }`}
           >
             <input
@@ -254,13 +254,13 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               onChange={handleFileInputChange}
               className="hidden"
             />
-            <div className="w-12 h-12 rounded-full bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-callout-info-fg mb-3">
+            <div className="w-12 h-12 rounded-full bg-accent-muted border border-accent/30 flex items-center justify-center text-callout-info-fg mb-3">
               <Upload className="w-6 h-6 animate-pulse" />
             </div>
-            <p className="text-xs font-bold text-slate-800 dark:text-white mb-1">
+            <p className="text-xs font-semibold text-secondary mb-1">
               Drag & Drop Scan File (.xml, .nmap, .gnmap, .txt)
             </p>
-            <p className="text-[11px] text-cyber-muted max-w-sm">
+            <p className="text-xs text-muted max-w-sm">
               Automatically parses open ports, detects vulnerable server versions, and suggests weaponized commands.
             </p>
           </div>
@@ -271,13 +271,13 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               value={pastedText}
               onChange={(e) => setPastedText(e.target.value)}
               placeholder="Paste raw Nmap, GNMAP, or Rustscan terminal text here..."
-              className="w-full bg-cyber-card p-3 rounded-lg border border-cyber-border text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-cyber-cyan resize-y"
+              className="w-full bg-surface-card p-3 rounded-lg border border-subtle text-primary text-xs font-mono focus:outline-none focus:border-accent resize-y"
             />
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setPastedText('')}
-                className="px-3 py-1.5 rounded-lg border border-cyber-border text-xs text-cyber-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                className="px-3 py-1.5 rounded-lg border border-subtle text-xs text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               >
                 Clear Text
               </button>
@@ -285,7 +285,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                 type="button"
                 onClick={() => handleProcessScanText(pastedText)}
                 disabled={!pastedText.trim()}
-                className="px-4 py-1.5 rounded-lg bg-accent text-on-accent font-bold text-xs hover:bg-accent-hover transition-[transform,background-color,border-color,color] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-4 py-1.5 rounded-lg bg-accent text-on-accent font-semibold text-xs hover:bg-accent-hover transition-[transform,background-color,border-color,color] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>Parse & Apply Scan</span>
@@ -295,7 +295,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
         )}
 
         {appliedSuccess && (
-          <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-callout-success-fg text-xs flex items-center gap-2 animate-in fade-in">
+          <div className="p-2.5 rounded-lg bg-callout-success-bg border border-callout-success-border text-callout-success-fg text-xs flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 text-callout-success-fg" />
             <span>Scan successfully analyzed! Ports, services, and attack vectors applied to target.</span>
           </div>
@@ -304,56 +304,56 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
 
       {/* Attack Surface & Ports Table */}
       {activeServices.length > 0 ? (
-        <div className="rounded-xl border border-cyber-border bg-cyber-card overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-cyber-border bg-cyber-bg/60 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-white">
+        <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden shadow-sm">
+          <div className="px-4 py-3 border-b border-subtle bg-surface-sunken/60 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold text-secondary">
               <ShieldAlert className="w-4 h-4 text-callout-info-fg" />
-              <span>DISCOVERED SERVICES & EXPLOIT INTELLIGENCE ({activeServices.length})</span>
+              <span>Discovered services &amp; exploit intelligence ({activeServices.length})</span>
             </div>
             {machine.scanSummary && (
-              <span className="text-[11px] text-cyber-muted font-mono">
+              <span className="text-xs text-muted">
                 {machine.scanSummary}
               </span>
             )}
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-cyber-bg/40 text-cyber-muted text-[10px] uppercase tracking-wider border-b border-cyber-border">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface-sunken/40 text-muted text-xs border-b border-subtle">
                 <tr>
                   <th className="py-2.5 px-3">Port</th>
                   <th className="py-2.5 px-3">State</th>
                   <th className="py-2.5 px-3">Service</th>
                   <th className="py-2.5 px-4">Version & Intel</th>
                   <th className="py-2.5 px-3">Known Exploits / CVE</th>
-                  <th className="py-2.5 px-4 text-right">Tactical Tools</th>
+                  <th className="py-2.5 px-4 text-right">Suggested tools</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-cyber-border/40">
+              <tbody className="divide-y divide-subtle/40">
                 {activeServices.map((svc) => (
-                  <tr key={`${svc.port}-${svc.protocol}`} className="hover:bg-cyber-bg/50 transition-colors">
-                    <td className="py-2.5 px-3 font-mono tabular-nums font-bold text-callout-info-fg whitespace-nowrap">
+                  <tr key={`${svc.port}-${svc.protocol}`} className="hover:bg-surface-sunken/50 transition-colors">
+                    <td className="py-2.5 px-3 font-mono tabular-nums font-semibold text-callout-info-fg whitespace-nowrap">
                       {svc.port}/{svc.protocol}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-callout-success-fg border border-emerald-500/30">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
                         {svc.state}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200">
+                    <td className="py-2.5 px-3 font-semibold text-secondary">
                       {svc.service}
                     </td>
-                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
-                      {svc.version || <span className="text-cyber-muted italic">Unknown</span>}
+                    <td className="py-2.5 px-4 text-muted">
+                      {svc.version || <span className="text-muted">Unknown</span>}
                     </td>
                     <td className="py-2.5 px-3">
                       {svc.cveNotes ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-callout-danger-fg border border-rose-500/40 inline-flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-callout-danger-bg text-callout-danger-fg border border-callout-danger-border inline-flex items-center gap-1">
                           <AlertTriangle className="w-2.5 h-2.5" />
                           {svc.cveNotes}
                         </span>
                       ) : (
-                        <span className="text-cyber-muted text-[11px]">-</span>
+                        <span className="text-muted text-xs">-</span>
                       )}
                     </td>
                     <td className="py-2.5 px-4 text-right whitespace-nowrap">
@@ -364,12 +364,12 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                               key={tool}
                               type="button"
                               onClick={() => handleCopyCommand(tool)}
-                              className="px-2 py-1 rounded bg-cyber-bg border border-cyber-border/80 text-[10px] font-mono text-cyber-muted hover:text-callout-info-fg hover:border-cyber-cyan transition-colors flex items-center gap-1"
+                              className="px-2 py-1 rounded bg-surface-sunken border border-subtle/80 text-xs font-mono text-muted hover:text-callout-info-fg hover:border-accent transition-colors flex items-center gap-1"
                               title={`Click to copy: ${tool}`}
                             >
                               <span>{tool.split(' ')[0]}</span>
                               {copiedTool === tool ? (
-                                <Check className="w-2.5 h-2.5 text-cyber-emerald" />
+                                <Check className="w-2.5 h-2.5 text-callout-success-fg" />
                               ) : (
                                 <Copy className="w-2.5 h-2.5 opacity-60" />
                               )}
@@ -377,7 +377,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                           ))}
                         </div>
                       ) : (
-                        <span className="text-cyber-muted text-[11px]">-</span>
+                        <span className="text-muted text-xs">-</span>
                       )}
                     </td>
                   </tr>
@@ -387,10 +387,10 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-xl border border-cyber-border bg-cyber-card text-center space-y-2">
-          <FileCode className="w-8 h-8 text-cyber-muted mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">No Services Yet Logged</h4>
-          <p className="text-[11px] text-cyber-muted max-w-sm mx-auto">
+        <div className="p-8 rounded-xl border border-subtle bg-surface-card text-center space-y-2">
+          <FileCode className="w-8 h-8 text-muted mx-auto" />
+          <h4 className="text-xs font-semibold text-secondary">No Services Yet Logged</h4>
+          <p className="text-xs text-muted max-w-sm mx-auto">
             Upload your Nmap XML or GNMAP scan file above, or click "Sample Scan" to load demonstration port data.
           </p>
         </div>

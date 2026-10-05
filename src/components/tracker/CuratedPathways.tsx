@@ -131,46 +131,46 @@ export const CuratedPathways: React.FC = () => {
   const flagshipTrackIds = ['tjnull-oscp', 'cpts-path', 'cwee-web', 'ippsec-vault', 'crto-ad'];
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 font-mono text-xs shadow-sm overflow-hidden transition-[box-shadow,background-color,border-color,color]">
+    <div className="rounded-xl border border-subtle bg-surface-card text-xs overflow-hidden transition-[box-shadow,background-color,border-color,color]">
       {/* Collapsed Micro-Bar */}
       <div className="flex flex-wrap items-center justify-between px-3 py-1.5 gap-2">
         {/* Left: Primary/Combined Track Progress Indicator */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 flex-wrap">
           <div className="flex items-center gap-1.5 text-callout-info-fg flex-shrink-0">
             <Target className="w-3.5 h-3.5" />
-            <span className="text-[10px] uppercase font-bold tracking-wider text-tertiary dark:text-cyber-muted hidden sm:inline">
-              TARGET TRACK:
+            <span className="text-xs font-semibold text-tertiary hidden sm:inline">
+              Target track
             </span>
           </div>
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className={`flex items-center gap-2 truncate text-left transition-colors ${
-              activeTrackIds.length > 0 ? 'text-callout-info-fg font-bold' : 'text-slate-800 dark:text-cyber-text hover:text-callout-info-fg'
+              activeTrackIds.length > 0 ? 'text-callout-info-fg font-semibold' : 'text-secondary hover:text-callout-info-fg'
             }`}
             title="Click to view all available certification & curated tracks"
           >
-            <span className="font-bold text-xs truncate flex items-center gap-1">
+            <span className="font-semibold text-xs truncate flex items-center gap-1">
               {combinedActiveStats.label}
               {activeTrackIds.length > 1 && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyber-cyan/20 text-callout-info-fg border border-cyber-cyan/40">
+                <span className="text-xs px-1.5 py-0.2 rounded bg-accent-muted text-callout-info-fg border border-accent/40">
                   UNION
                 </span>
               )}
             </span>
-            <span className="text-[10px] text-tertiary dark:text-cyber-muted font-mono flex-shrink-0">
+            <span className="text-xs text-tertiary font-mono tabular-nums flex-shrink-0">
               {combinedActiveStats.stats.rooted}/{combinedActiveStats.stats.total}
             </span>
           </button>
 
           {/* Micro Progress Bar */}
-          <div className="w-20 sm:w-28 bg-slate-200 dark:bg-cyber-bg h-1.5 rounded-full overflow-hidden flex-shrink-0 border border-slate-300/60 dark:border-cyber-border/70">
+          <div className="w-20 sm:w-28 bg-surface-hover h-1.5 rounded-full overflow-hidden flex-shrink-0 border border-strong/60">
             <div
-              className="h-full bg-cyber-cyan transition-colors duration-300"
+              className="h-full bg-accent transition-colors duration-300"
               style={{ width: `${combinedActiveStats.stats.percent}%` }}
             />
           </div>
-          <span className="text-[10px] font-bold text-callout-info-fg font-mono flex-shrink-0">
+          <span className="text-xs font-semibold text-accent font-mono tabular-nums flex-shrink-0">
             {combinedActiveStats.stats.percent}%
           </span>
 
@@ -189,10 +189,10 @@ export const CuratedPathways: React.FC = () => {
                     e.stopPropagation();
                     handleToggleTrack(id);
                   }}
-                  className={`px-2 py-0.5 rounded text-[10px] border transition-colors flex items-center gap-1 font-sans ${
+                  className={`px-2 py-0.5 rounded text-xs border transition-colors flex items-center gap-1 font-sans ${
                     isActive
-                      ? 'bg-cyber-cyan/20 border-cyber-cyan text-callout-info-fg font-bold shadow-sm'
-                      : 'bg-slate-100 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300'
+                      ? 'bg-accent-muted border-accent text-callout-info-fg font-semibold shadow-sm'
+                      : 'bg-surface-sunken border-subtle text-muted hover:text-primary hover:border-strong'
                   }`}
                   title={`${isActive ? 'Remove' : 'Add'} ${track.name}`}
                 >
@@ -209,7 +209,7 @@ export const CuratedPathways: React.FC = () => {
           {activeTrackIds.length > 0 && (
             <button
               onClick={handleClearAllTracks}
-              className="text-[10px] text-tertiary dark:text-cyber-muted hover:text-callout-danger-fg dark:hover:text-callout-danger-fg hover:underline px-1 flex items-center gap-0.5 transition-colors"
+              className="text-xs text-tertiary hover:text-callout-danger-fg hover:underline px-1 flex items-center gap-0.5 transition-colors"
               title="Reset track filter to all machines"
             >
               <X className="w-3 h-3" />
@@ -222,7 +222,7 @@ export const CuratedPathways: React.FC = () => {
               setIsExpanded(!isExpanded);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="p-1 px-2 rounded-md bg-slate-100 dark:bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary flex items-center gap-1 text-[10px] transition-colors"
+            className="p-1 px-2 rounded-md bg-surface-sunken hover:bg-surface-hover border border-subtle text-secondary hover:text-primary flex items-center gap-1 text-xs transition-colors"
             title={isExpanded ? 'Collapse tracks matrix' : `Expand all ${PRACTICE_TRACKS.length} tactical tracks`}
           >
             <Layers className="w-3 h-3 text-callout-info-fg" />
@@ -234,17 +234,17 @@ export const CuratedPathways: React.FC = () => {
 
       {/* Expanded Multi-Track Selection Grid */}
       {isExpanded && (
-        <div className="p-3 border-t border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/90 space-y-2.5 animate-in fade-in duration-150">
-          <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-cyber-muted px-1 flex-wrap gap-2">
+        <div className="p-3 border-t border-subtle bg-surface-sunken space-y-2.5 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between text-xs text-muted px-1 flex-wrap gap-2">
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-callout-info-fg" />
-              <strong className="text-slate-800 dark:text-white">Multi-Track Selection:</strong> Select one or more tracks to combine their target pools.
+              <strong className="text-secondary">Multi-Track Selection:</strong> Select one or more tracks to combine their target pools.
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleSelectAllTracks}
-                className="text-[10px] text-callout-info-fg hover:underline font-semibold"
+                className="text-xs text-callout-info-fg hover:underline font-semibold"
               >
                 Select All
               </button>
@@ -252,7 +252,7 @@ export const CuratedPathways: React.FC = () => {
               <button
                 type="button"
                 onClick={handleClearAllTracks}
-                className="text-[10px] text-tertiary hover:text-slate-800 dark:hover:text-primary hover:underline"
+                className="text-xs text-tertiary hover:text-secondary hover:underline"
               >
                 Deselect All
               </button>
@@ -270,39 +270,39 @@ export const CuratedPathways: React.FC = () => {
                   onClick={() => handleToggleTrack(track.id)}
                   className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-colors relative group ${
                     active
-                      ? 'bg-cyber-cyan/15 border-cyber-cyan text-slate-900 dark:text-white shadow-sm ring-1 ring-cyber-cyan/50 font-bold'
-                      : 'bg-white dark:bg-cyber-card/90 border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-text hover:border-slate-300 dark:hover:border-cyber-borderGlow hover:bg-slate-50 dark:hover:bg-cyber-cardHover'
+                      ? 'bg-accent-muted border-accent text-primary shadow-sm ring-1 ring-accent/50 font-semibold'
+                      : 'bg-surface-card border-subtle text-secondary hover:border-strong hover:bg-surface-sunken'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-1 mb-1.5">
                     <div className="min-w-0 pr-1">
-                      <span className="font-bold text-xs block leading-snug truncate">
+                      <span className="font-semibold text-xs block leading-snug truncate">
                         {track.shortName || track.name}
                       </span>
-                      <span className="text-[10px] text-tertiary dark:text-cyber-muted capitalize block">
+                      <span className="text-xs text-tertiary capitalize block">
                         {track.category}
                       </span>
                     </div>
 
                     <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
                       active
-                        ? 'bg-cyber-cyan border-cyber-cyan text-black'
-                        : 'border-slate-300 dark:border-slate-700 group-hover:border-cyber-cyan'
+                        ? 'bg-accent border-accent text-on-accent'
+                        : 'border-strong group-hover:border-accent'
                     }`}>
                       {active && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
                   </div>
 
-                  <div className="w-full bg-slate-200 dark:bg-cyber-bg h-1.5 rounded-full overflow-hidden my-1 border border-slate-300/40 dark:border-cyber-border/60">
+                  <div className="w-full bg-surface-hover h-1.5 rounded-full overflow-hidden my-1 border border-strong/40">
                     <div
-                      className="h-full bg-cyber-cyan transition-colors duration-300"
+                      className="h-full bg-accent transition-colors duration-300"
                       style={{ width: `${stats.percent}%` }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-tertiary dark:text-cyber-muted mt-0.5 font-mono">
+                  <div className="flex items-center justify-between text-xs text-tertiary mt-0.5 font-mono tabular-nums">
                     <span>{stats.rooted}/{stats.total} pwned</span>
-                    <span className="text-callout-info-fg font-bold">{stats.percent}%</span>
+                    <span className="text-callout-info-fg font-semibold">{stats.percent}%</span>
                   </div>
                 </button>
               );

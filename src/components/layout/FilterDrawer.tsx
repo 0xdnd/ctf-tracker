@@ -28,6 +28,7 @@ import {
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
+import { Platform, Difficulty, OperatingSystem } from '../../types';
 import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine, matchesCategory, matchesDomain, isActiveDirectory } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
@@ -84,47 +85,81 @@ const VULNERABILITY_OPTIONS: CyberSelectOption<string>[] = [
   { value: 'Misconfiguration', label: 'Security Misconfiguration' },
 ];
 
+const PLATFORM_FILTER_OPTIONS: { value: Platform | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'All' },
+  { value: 'HTB', label: 'HTB' },
+  { value: 'THM', label: 'THM' },
+  { value: 'Custom', label: 'Custom' },
+];
+
+const OS_FILTER_OPTIONS: { value: 'ALL' | OperatingSystem; label: string }[] = [
+  { value: 'ALL', label: 'All' },
+  { value: 'Linux', label: 'Linux' },
+  { value: 'Windows', label: 'Windows' },
+  { value: 'BSD', label: 'BSD' },
+  { value: 'Android', label: 'Android' },
+  { value: 'macOS', label: 'macOS' },
+  { value: 'Other', label: 'Other' },
+];
+
+const DIFFICULTY_FILTER_OPTIONS: { value: Difficulty | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'All' },
+  { value: 'Very Easy', label: 'Very Easy' },
+  { value: 'Easy', label: 'Easy' },
+  { value: 'Medium', label: 'Medium' },
+  { value: 'Hard', label: 'Hard' },
+  { value: 'Insane', label: 'Insane' },
+];
+
+const FilterChip: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={active}
+    className={`h-7 px-2.5 rounded-lg text-xs font-medium border transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 ${
+      active
+        ? 'border-accent bg-accent-muted text-accent'
+        : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+    }`}
+  >
+    {children}
+  </button>
+);
+
 const AccordionSection: React.FC<{
   title: string;
   subtitle?: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   sectionKey: string;
   isOpen: boolean;
   onToggle: (key: string) => void;
   badgeCount?: number;
   badgeContent?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ title, subtitle, icon, sectionKey, isOpen, onToggle, badgeCount, badgeContent, children }) => (
-  <div className="border border-slate-200/80 dark:border-cyber-border/70 rounded-xl overflow-hidden bg-white/80 dark:bg-cyber-card/60 backdrop-blur-sm shadow-sm transition-[box-shadow,background-color,border-color,color] hover:border-slate-300 dark:hover:border-cyber-borderGlow">
+}> = ({ title, subtitle, sectionKey, isOpen, onToggle, badgeCount, badgeContent, children }) => (
+  <div className="border-t border-subtle pt-3">
     <button
       type="button"
       onClick={() => onToggle(sectionKey)}
       aria-expanded={isOpen}
-      className="w-full flex items-center justify-between p-3 bg-slate-50/70 dark:bg-cyber-cardHover/40 hover:bg-slate-100/80 dark:hover:bg-cyber-cardHover/80 transition-colors text-left group"
+      className="w-full flex items-center justify-between gap-2 py-1.5 text-left group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer [@media(pointer:coarse)]:min-h-11"
     >
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className="shrink-0 p-1.5 rounded-lg bg-slate-100 dark:bg-cyber-bg border border-slate-200/60 dark:border-cyber-border/60 group-hover:border-cyan-500/40 transition-colors">
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-wide font-sans">{title}</span>
-            {badgeCount !== undefined && badgeCount > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-callout-info-fg dark:text-cyber-cyan font-bold border border-cyan-500/40 font-mono leading-none">
-                {badgeCount}
-              </span>
-            )}
-            {badgeContent}
-          </div>
-          {subtitle && (
-            <div className="text-[11px] text-tertiary dark:text-cyber-muted truncate font-sans mt-0.5">
-              {subtitle}
-            </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-primary font-sans">{title}</span>
+          {badgeCount !== undefined && badgeCount > 0 && (
+            <span className="text-xs px-1.5 h-5 inline-flex items-center rounded bg-accent-muted text-accent font-medium tabular-nums border border-accent/30">
+              {badgeCount}
+            </span>
           )}
+          {badgeContent}
         </div>
+        {subtitle && (
+          <div className="text-xs text-tertiary truncate font-sans mt-0.5">{subtitle}</div>
+        )}
       </div>
-      <div className="p-1 rounded text-tertiary dark:text-cyber-muted group-hover:text-slate-700 dark:group-hover:text-primary transition-transform duration-200">
-        {isOpen ? <ChevronDown className="w-4 h-4 text-callout-info-fg dark:text-cyber-cyan" /> : <ChevronRight className="w-4 h-4" />}
+      <div className="text-tertiary group-hover:text-primary transition-colors">
+        {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </div>
     </button>
     <AnimatePresence initial={false}>
@@ -132,11 +167,11 @@ const AccordionSection: React.FC<{
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          exit={{ height: 0, opacity: 0, transition: { duration: 0.12, ease: 'easeOut' } }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="overflow-hidden"
         >
-          <div className="p-3.5 space-y-3.5 border-t border-slate-200/70 dark:border-cyber-border/50 bg-white/50 dark:bg-cyber-bg/40 font-sans text-xs">
+          <div className="pt-3 pb-1 space-y-3.5 font-sans text-xs">
             {children}
           </div>
         </motion.div>
@@ -176,6 +211,7 @@ export const FilterDrawer: React.FC = () => {
   const [drawerDomain, setDrawerDomain] = useState<VulnDomainId>('all');
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    target: true,
     status: true,
     tracks: false,
     domains: false,
@@ -511,6 +547,14 @@ export const FilterDrawer: React.FC = () => {
   }, [filters, activeTrackIds, drawerDomain]);
 
   // Subtitle previews for headers
+  const targetSubtitle = useMemo(() => {
+    const parts: string[] = [];
+    if (filters.selectedPlatform && filters.selectedPlatform !== 'ALL') parts.push(filters.selectedPlatform);
+    if (filters.selectedOs && filters.selectedOs !== 'ALL') parts.push(filters.selectedOs);
+    if (filters.selectedDifficulty && filters.selectedDifficulty !== 'ALL') parts.push(filters.selectedDifficulty);
+    return parts.length > 0 ? parts.join(' · ') : 'All platforms, systems and difficulties';
+  }, [filters.selectedPlatform, filters.selectedOs, filters.selectedDifficulty]);
+
   const statusSubtitle = useMemo(() => {
     const parts: string[] = [];
     if (filters.selectedStatus && filters.selectedStatus !== 'ALL') {
@@ -562,7 +606,7 @@ export const FilterDrawer: React.FC = () => {
     <div className="fixed inset-0 z-[100]">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        className="absolute inset-0 bg-surface-inverse/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={() => setFilterDrawerOpen(false)}
       />
       
@@ -572,33 +616,28 @@ export const FilterDrawer: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label="Advanced filters drawer"
-        className="absolute inset-y-0 right-0 w-full max-w-[420px] sm:max-w-[460px] bg-slate-50/95 dark:bg-[#080d19]/95 backdrop-blur-xl border-l border-slate-200 dark:border-cyber-border shadow-2xl flex flex-col transform transition-transform will-change-transform animate-in slide-in-from-right duration-200"
+        className="absolute inset-y-0 right-0 w-full max-w-[420px] sm:max-w-[460px] bg-surface-card border-l border-subtle shadow-2xl flex flex-col will-change-transform animate-in slide-in-from-right duration-200"
         style={{ transform: 'translate3d(0, 0, 0)', contain: 'layout paint' }}
       >
         
         {/* Drawer Header */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90 backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 dark:bg-cyber-cyan/10 border border-cyan-500/30 flex items-center justify-center text-callout-info-fg dark:text-cyber-cyan shadow-sm">
-              <SlidersHorizontal className="w-4 h-4" />
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-subtle bg-surface-card">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-base text-primary font-sans tracking-tight">
+                Advanced Filters
+              </h2>
+              {activeFilterList.length > 0 && (
+                <span className="px-1.5 h-5 inline-flex items-center rounded text-xs font-medium tabular-nums bg-accent-muted text-accent border border-accent/30">
+                  {activeFilterList.length} active
+                </span>
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-sm tracking-wide text-slate-900 dark:text-white font-sans">
-                  Advanced Filters
-                </h2>
-                {activeFilterList.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-cyan-500/20 text-callout-info-fg dark:text-cyber-cyan border border-cyan-500/40 font-mono">
-                    {activeFilterList.length} Active
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] text-tertiary dark:text-cyber-muted font-sans">
-                Fine-tune targets, certifications & vectors
-              </div>
+            <div className="text-xs text-tertiary font-sans">
+              Narrow targets by platform, OS, difficulty and more
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {activeFilterList.length > 0 && (
               <button
                 type="button"
@@ -606,7 +645,7 @@ export const FilterDrawer: React.FC = () => {
                   resetFilters();
                   if (soundEnabled) playCyberSound('toggle');
                 }}
-                className="text-[11px] text-callout-danger-fg hover:text-callout-danger-fg font-bold px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-xs text-muted hover:text-primary font-medium px-2 h-8 rounded-lg hover:bg-surface-hover flex items-center gap-1 transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
                 title="Reset all active filters"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -615,7 +654,7 @@ export const FilterDrawer: React.FC = () => {
             )}
             <button
               onClick={() => setFilterDrawerOpen(false)}
-              className="p-1.5 rounded-lg text-tertiary dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-cyber-bg transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-cyber-cyan cursor-pointer"
+              className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-tertiary hover:text-primary hover:bg-surface-hover transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer active:scale-[0.97] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11"
               title="Close Drawer (Esc)"
               aria-label="Close filter drawer"
             >
@@ -625,186 +664,174 @@ export const FilterDrawer: React.FC = () => {
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-20 custom-scrollbar">
-          
-          {/* Target Match Counter HUD Banner */}
-          <div className="p-3 rounded-xl bg-slate-900/90 dark:bg-cyber-card border border-slate-700 dark:border-cyber-border shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 dark:bg-cyber-cyan/15 border border-cyan-500/40 dark:border-cyber-cyan/30 flex items-center justify-center text-cyan-400 dark:text-cyber-cyan shrink-0">
-                <Target className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
-                  <span className="text-cyber-cyan text-sm">{matchingMachinesCount}</span>
-                  <span className="text-slate-400 font-normal">/</span>
-                  <span>{machines.length} TARGETS</span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-sans">
-                  {matchingMachinesCount === machines.length
-                    ? 'All targets currently visible'
-                    : `${Math.round((matchingMachinesCount / (machines.length || 1)) * 100)}% pass criteria`}
-                </div>
-              </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20 custom-scrollbar">
+
+          {/* Match count */}
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-sm text-secondary font-sans">
+              <span className="font-mono tabular-nums font-semibold text-primary">{matchingMachinesCount}</span>
+              <span className="text-muted"> of </span>
+              <span className="font-mono tabular-nums">{machines.length}</span>
+              <span className="text-muted"> targets match</span>
             </div>
-            {activeFilterList.length > 0 && (
-              <button
-                onClick={() => {
-                  resetFilters();
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-2 py-1 rounded bg-rose-500/10 border border-rose-500/30 flex items-center gap-1 transition-colors hover:bg-rose-500/20 cursor-pointer"
-                title="Reset all filters"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Clear
-              </button>
-            )}
           </div>
 
-          {/* Active Filter Chips Ribbon */}
+          {/* Active filter chips */}
           {activeFilterList.length > 0 && (
-            <div className="p-3 rounded-xl bg-cyan-950/20 dark:bg-cyber-card border border-cyan-500/30 dark:border-cyber-border space-y-2">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-callout-info-fg dark:text-cyber-cyan flex items-center gap-1.5 font-sans">
-                  <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
-                  Active Filters ({activeFilterList.length})
-                </span>
-                <span className="text-[10px] text-tertiary font-sans">Click to remove</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
-                {activeFilterList.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-500/10 dark:bg-cyber-cyan/15 text-callout-info-fg dark:text-cyber-cyan border border-cyan-500/30 dark:border-cyber-cyan/30 transition-colors"
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar" aria-label="Active filters">
+              {activeFilterList.map((item, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 h-6 pl-2 pr-1 rounded-md text-xs font-medium bg-surface-sunken text-secondary border border-subtle"
+                >
+                  <span className="truncate max-w-[180px]">{item.label}</span>
+                  <button
+                    aria-label="Remove filter"
+                    type="button"
+                    onClick={item.onRemove}
+                    className="inline-flex items-center justify-center w-4 h-4 rounded text-tertiary hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+                    title="Remove filter"
                   >
-                    <span className="truncate max-w-[180px]">{item.label}</span>
-                    <button aria-label="Remove filter"
-                      type="button"
-                      onClick={item.onRemove}
-                      className="hover:text-primary p-0.5 rounded transition-colors cursor-pointer"
-                      title="Remove filter"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
             </div>
           )}
 
-          {/* Quick Presets Bar */}
-          <div className="p-3 rounded-xl bg-slate-100/70 dark:bg-cyber-card/40 border border-slate-200/80 dark:border-cyber-border/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-tertiary dark:text-cyber-muted flex items-center gap-1.5 font-mono">
-                <Zap className="w-3 h-3 text-callout-warn-fg" />
-                1-Click Tactical Presets
-              </div>
-              <span className="text-[10px] text-tertiary dark:text-cyber-muted font-sans">Quick Focus</span>
-            </div>
+          {/* Quick presets */}
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-muted font-sans">Quick presets</div>
             <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setFilters({ selectedCert: 'OSCP', selectedStatus: 'UNCOMPLETED' });
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
-                  filters.selectedCert === 'OSCP' && filters.selectedStatus === 'UNCOMPLETED'
-                    ? 'bg-amber-500/20 text-callout-warn-fg border-amber-500/50 shadow-sm'
-                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-callout-warn-fg border-amber-500/30'
-                }`}
-                title="Filter for unsolved OSCP machines"
-              >
-                <GraduationCap className="w-3 h-3" />
-                <span>OSCP Sprint</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilters({ selectedVulnCategory: 'Active Directory', excludeActiveDirectory: false });
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
-                  filters.selectedVulnCategory === 'Active Directory' && !filters.excludeActiveDirectory
-                    ? 'bg-blue-500/20 text-callout-info-fg border-blue-500/50 shadow-sm'
-                    : 'bg-blue-500/10 hover:bg-blue-500/20 text-callout-info-fg border-blue-500/30'
-                }`}
-                title="Filter for Active Directory lab environments"
-              >
-                <Key className="w-3 h-3" />
-                <span>Active Directory</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilters({ selectedAreaOfInterest: 'Web Application', selectedVulnCategory: 'ALL' });
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
-                  filters.selectedAreaOfInterest === 'Web Application'
-                    ? 'bg-cyan-500/20 dark:bg-cyber-cyan/20 text-callout-info-fg dark:text-cyber-cyan border-cyan-500/50 dark:border-cyber-cyan shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-cyber-card dark:hover:bg-cyber-cardHover text-slate-700 dark:text-cyber-muted border-slate-200 dark:border-cyber-border'
-                }`}
-                title="Filter for Web Application exploits"
-              >
-                <Globe className="w-3 h-3" />
-                <span>Web Exploits</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilters({ selectedDifficulty: 'Easy', selectedStatus: 'UNCOMPLETED' });
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
-                  filters.selectedDifficulty === 'Easy' && filters.selectedStatus === 'UNCOMPLETED'
-                    ? 'bg-emerald-500/20 text-callout-success-fg border-emerald-500/50 shadow-sm'
-                    : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-callout-success-fg border-emerald-500/30'
-                }`}
-                title="Filter for Easy uncompleted machines"
-              >
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Easy Unsolved</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilters({ selectedStatus: 'COMPLETED' });
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
-                  filters.selectedStatus === 'COMPLETED'
-                    ? 'bg-purple-500/20 text-callout-tip-fg border-purple-500/50 shadow-sm'
-                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-callout-tip-fg border-purple-500/30'
-                }`}
-                title="Filter for Completed and Pwned solves"
-              >
-                <Award className="w-3 h-3" />
-                <span>Completed Solves</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFilters({ selectedTracks: ['cpts-windows'], selectedTrack: 'cpts-windows' });
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
-                  activeTrackIds.includes('cpts-windows')
-                    ? 'bg-indigo-500/20 text-callout-tip-fg border-indigo-500/50 shadow-sm'
-                    : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-callout-tip-fg border-indigo-500/30'
-                }`}
-                title="Filter for CPTS Windows track"
-              >
-                <span>CPTS Win</span>
-              </button>
+              {([
+                {
+                  label: 'OSCP Sprint',
+                  title: 'Filter for unsolved OSCP machines',
+                  active: filters.selectedCert === 'OSCP' && filters.selectedStatus === 'UNCOMPLETED',
+                  apply: () => setFilters({ selectedCert: 'OSCP', selectedStatus: 'UNCOMPLETED' }),
+                },
+                {
+                  label: 'Active Directory',
+                  title: 'Filter for Active Directory lab environments',
+                  active: filters.selectedVulnCategory === 'Active Directory' && !filters.excludeActiveDirectory,
+                  apply: () => setFilters({ selectedVulnCategory: 'Active Directory', excludeActiveDirectory: false }),
+                },
+                {
+                  label: 'Web Exploits',
+                  title: 'Filter for Web Application exploits',
+                  active: filters.selectedAreaOfInterest === 'Web Application',
+                  apply: () => setFilters({ selectedAreaOfInterest: 'Web Application', selectedVulnCategory: 'ALL' }),
+                },
+                {
+                  label: 'Easy Unsolved',
+                  title: 'Filter for Easy uncompleted machines',
+                  active: filters.selectedDifficulty === 'Easy' && filters.selectedStatus === 'UNCOMPLETED',
+                  apply: () => setFilters({ selectedDifficulty: 'Easy', selectedStatus: 'UNCOMPLETED' }),
+                },
+                {
+                  label: 'Completed Solves',
+                  title: 'Filter for Completed and Pwned solves',
+                  active: filters.selectedStatus === 'COMPLETED',
+                  apply: () => setFilters({ selectedStatus: 'COMPLETED' }),
+                },
+                {
+                  label: 'CPTS Win',
+                  title: 'Filter for CPTS Windows track',
+                  active: activeTrackIds.includes('cpts-windows'),
+                  apply: () => setFilters({ selectedTracks: ['cpts-windows'], selectedTrack: 'cpts-windows' }),
+                },
+              ]).map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    preset.apply();
+                    if (soundEnabled) playCyberSound('toggle');
+                  }}
+                  aria-pressed={preset.active}
+                  className={`h-7 px-2.5 rounded-lg text-xs font-medium border transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 ${
+                    preset.active
+                      ? 'border-accent bg-accent-muted text-accent'
+                      : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                  }`}
+                  title={preset.title}
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* Section 0: Platform, OS & difficulty (moved here from the toolbar) */}
+          <AccordionSection
+            title="Platform, OS & Difficulty"
+            subtitle={targetSubtitle}
+            icon={<Layers className="w-4 h-4" />}
+            sectionKey="target"
+            isOpen={openSections.target}
+            onToggle={toggleSection}
+            badgeCount={(filters.selectedPlatform !== 'ALL' ? 1 : 0) + (filters.selectedOs && filters.selectedOs !== 'ALL' ? 1 : 0) + (filters.selectedDifficulty !== 'ALL' ? 1 : 0)}
+          >
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-secondary">Platform</div>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Platform">
+                  {PLATFORM_FILTER_OPTIONS.map((opt) => (
+                    <FilterChip
+                      key={opt.value}
+                      active={filters.selectedPlatform === opt.value}
+                      onClick={() => {
+                        setFilters({ selectedPlatform: opt.value });
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                    >
+                      {opt.label}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-secondary">Operating system</div>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Operating system">
+                  {OS_FILTER_OPTIONS.map((opt) => (
+                    <FilterChip
+                      key={opt.value}
+                      active={(filters.selectedOs || 'ALL') === opt.value}
+                      onClick={() => {
+                        setFilters({ selectedOs: opt.value });
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                    >
+                      {opt.label}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-secondary">Difficulty</div>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Difficulty">
+                  {DIFFICULTY_FILTER_OPTIONS.map((opt) => (
+                    <FilterChip
+                      key={opt.value}
+                      active={filters.selectedDifficulty === opt.value}
+                      onClick={() => {
+                        setFilters({ selectedDifficulty: opt.value });
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                    >
+                      {opt.label}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AccordionSection>
 
           {/* Section 1: Status & Completion */}
           <AccordionSection
             title="Status & Certification Scopes"
             subtitle={statusSubtitle}
-            icon={<CheckCircle2 className="w-4 h-4 text-callout-success-fg" />}
+            icon={<CheckCircle2 className="w-4 h-4 text-accent" />}
             sectionKey="status"
             isOpen={openSections.status}
             onToggle={toggleSection}
@@ -812,7 +839,7 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] text-slate-700 dark:text-slate-300 font-bold block">Target Completion Status</label>
+                <label className="text-xs text-secondary font-semibold block">Target Completion Status</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {STATUS_OPTIONS.map((st) => {
                     const isSelected = (filters.selectedStatus || 'ALL') === st.value;
@@ -826,20 +853,20 @@ export const FilterDrawer: React.FC = () => {
                         }}
                         className={`px-3 py-2 rounded-lg text-xs font-semibold border flex items-center justify-between transition-colors ${
                           isSelected
-                            ? 'border-emerald-500/60 bg-emerald-500/15 text-callout-success-fg shadow-sm'
-                            : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300 dark:hover:border-cyber-border'
+                            ? 'border-accent bg-accent-muted text-accent shadow-sm'
+                            : 'border-subtle text-muted hover:text-primary hover:border-strong'
                         }`}
                       >
                         <span>{st.label}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-callout-success-fg" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-accent" />}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-cyber-border/60">
-                <label className="text-[11px] text-slate-700 dark:text-slate-300 font-bold block">Certification Scopes</label>
+              <div className="space-y-1.5 pt-2 border-t border-subtle">
+                <label className="text-xs text-secondary font-semibold block">Certification Scopes</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {CERT_OPTIONS.map((cert) => {
                     const isSelected = filters.selectedCert === cert;
@@ -851,10 +878,10 @@ export const FilterDrawer: React.FC = () => {
                           setFilters({ selectedCert: cert });
                           if (soundEnabled) playCyberSound('toggle');
                         }}
-                        className={`py-1.5 rounded-lg text-xs font-bold border transition-colors text-center ${
+                        className={`py-1.5 rounded-lg text-xs font-semibold border transition-colors text-center ${
                           isSelected
-                            ? 'border-purple-500/60 bg-purple-500/15 text-callout-tip-fg shadow-sm'
-                            : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300 dark:hover:border-cyber-border'
+                            ? 'border-accent bg-accent-muted text-accent shadow-sm'
+                            : 'border-subtle text-muted hover:text-primary hover:border-strong'
                         }`}
                       >
                         {cert}
@@ -864,18 +891,18 @@ export const FilterDrawer: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-cyber-border/60">
+              <div className="pt-2 border-t border-subtle">
                 <label className="flex items-center justify-between cursor-pointer group py-1">
                   <div>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-callout-info-fg dark:group-hover:text-cyber-cyan transition-colors">
+                    <span className="text-xs font-semibold text-secondary group-hover:text-accent transition-colors">
                       Exclude Active Directory
                     </span>
-                    <span className="block text-[10px] text-tertiary dark:text-cyber-muted">
+                    <span className="block text-xs text-tertiary">
                       Hide domains, Kerberos, and forest lab boxes
                     </span>
                   </div>
-                  <div className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${filters.excludeActiveDirectory ? 'bg-cyan-500 dark:bg-cyber-cyan' : 'bg-slate-200 dark:bg-cyber-bg'}`}>
-                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${filters.excludeActiveDirectory ? 'translate-x-4' : 'translate-x-0 bg-slate-400 dark:bg-slate-600'}`} />
+                  <div className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${filters.excludeActiveDirectory ? 'bg-accent' : 'bg-surface-hover'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-surface-card transition-transform ${filters.excludeActiveDirectory ? 'translate-x-4' : 'translate-x-0 bg-surface-hover'}`} />
                   </div>
                   <input
                     type="checkbox"
@@ -906,14 +933,14 @@ export const FilterDrawer: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSelectAllTracks}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300 dark:hover:border-cyber-border transition-colors text-center"
+                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-subtle text-xs font-semibold text-muted hover:text-primary hover:border-strong transition-colors text-center"
                 >
                   Select All
                 </button>
                 <button
                   type="button"
                   onClick={handleClearTracks}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-cyber-border/70 text-[11px] font-bold text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary hover:border-slate-300 dark:hover:border-cyber-border transition-colors text-center"
+                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-subtle text-xs font-semibold text-muted hover:text-primary hover:border-strong transition-colors text-center"
                 >
                   Clear Tracks
                 </button>
@@ -921,23 +948,23 @@ export const FilterDrawer: React.FC = () => {
 
               {/* Track Search */}
               <div className="relative">
-                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-tertiary dark:text-cyber-muted" />
+                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-tertiary" />
                 <input
                   type="text"
                   placeholder="Search curated tracks..."
                   value={trackSearchTerm}
                   onChange={(e) => setTrackSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded-lg text-xs text-slate-700 dark:text-cyber-text focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+                  className="w-full pl-8 pr-7 py-1.5 bg-surface-sunken border border-subtle rounded-lg text-xs text-secondary focus:outline-none focus:border-accent"
                 />
                 {trackSearchTerm && (
                   <button aria-label="Clear track search" onClick={() => setTrackSearchTerm('')} className="absolute right-2 top-2">
-                    <X className="w-3.5 h-3.5 text-tertiary hover:text-slate-600 dark:hover:text-primary" />
+                    <X className="w-3.5 h-3.5 text-tertiary hover:text-muted" />
                   </button>
                 )}
               </div>
 
               {/* Track List */}
-              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 border border-slate-200 dark:border-cyber-border rounded-xl p-1.5 bg-slate-50/50 dark:bg-cyber-bg/50 custom-scrollbar">
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 border border-subtle rounded-xl p-1.5 bg-surface-sunken/50 custom-scrollbar">
                 {displayedTracks.map((track) => {
                   const isSelected = activeTrackIds.includes(track.id);
                   const count = trackCounts[track.id] || 0;
@@ -948,19 +975,19 @@ export const FilterDrawer: React.FC = () => {
                       onClick={() => handleToggleTrack(track.id)}
                       className={`w-full px-3 py-2 rounded-lg border text-left flex items-center justify-between transition-colors ${
                         isSelected
-                          ? 'border-cyan-500/50 dark:border-cyber-cyan/50 bg-cyan-50/80 dark:bg-cyber-cyan/15 text-callout-info-fg dark:text-cyber-cyan font-bold shadow-sm'
-                          : 'border-transparent hover:bg-slate-100 dark:hover:bg-cyber-cardHover text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
+                          ? 'border-accent/50 bg-accent-muted text-accent font-semibold shadow-sm'
+                          : 'border-transparent hover:bg-surface-sunken text-muted hover:text-primary'
                       }`}
                     >
                       <div className="min-w-0 pr-2">
                         <div className="truncate text-xs">{track.name}</div>
-                        <div className="text-[10px] text-tertiary dark:text-cyber-muted truncate font-normal">{track.description}</div>
+                        <div className="text-xs text-tertiary truncate font-normal">{track.description}</div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-normal bg-slate-200/60 dark:bg-cyber-bg text-slate-600 dark:text-cyber-muted">
+                        <span className="text-xs px-1.5 py-0.5 rounded font-mono font-normal bg-surface-hover/60 text-muted">
                           {count}
                         </span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-callout-info-fg dark:text-cyber-cyan" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-accent" />}
                       </div>
                     </button>
                   );
@@ -973,7 +1000,7 @@ export const FilterDrawer: React.FC = () => {
           <AccordionSection
             title="Vulnerability Domains"
             subtitle={domainsSubtitle}
-            icon={<ShieldAlert className="w-4 h-4 text-callout-tip-fg" />}
+            icon={<ShieldAlert className="w-4 h-4 text-accent" />}
             sectionKey="domains"
             isOpen={openSections.domains}
             onToggle={toggleSection}
@@ -989,10 +1016,10 @@ export const FilterDrawer: React.FC = () => {
                       key={domain.id}
                       type="button"
                       onClick={() => setDrawerDomain(domain.id as VulnDomainId)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border flex items-center gap-1.5 transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
                         isActive 
-                          ? 'bg-purple-500/15 border-purple-500/50 text-callout-tip-fg shadow-sm' 
-                          : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-borderGlow'
+                          ? 'bg-accent-muted border-accent text-accent shadow-sm' 
+                          : 'bg-surface-sunken border-subtle text-muted hover:border-strong'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -1008,12 +1035,12 @@ export const FilterDrawer: React.FC = () => {
                   onClick={() => setFilters({ selectedVulnCategory: 'ALL' })}
                   className={`px-2.5 py-1.5 rounded-lg text-xs border transition-colors text-left flex items-center justify-between ${
                     !filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL'
-                      ? 'bg-purple-500/15 border-purple-500/50 text-callout-tip-fg font-bold'
-                      : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
+                      ? 'bg-accent-muted border-accent text-accent font-semibold'
+                      : 'border-subtle text-muted hover:text-primary'
                   }`}
                 >
                   <span>All Categories</span>
-                  {(!filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL') && <Check className="w-3 h-3 text-callout-tip-fg" />}
+                  {(!filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL') && <Check className="w-3 h-3 text-accent" />}
                 </button>
                 {displayedCategories.map(cat => {
                   const isActive = filters.selectedVulnCategory === cat.id;
@@ -1025,12 +1052,12 @@ export const FilterDrawer: React.FC = () => {
                       onClick={() => setFilters({ selectedVulnCategory: cat.id })}
                       className={`px-2.5 py-1.5 rounded-lg text-xs border transition-colors text-left flex items-center justify-between ${
                         isActive
-                          ? 'bg-purple-500/15 border-purple-500/50 text-callout-tip-fg font-bold shadow-sm'
-                          : 'border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-primary'
+                          ? 'bg-accent-muted border-accent text-accent font-semibold shadow-sm'
+                          : 'border-subtle text-muted hover:text-primary'
                       }`}
                     >
                       <span className="truncate pr-1">{cat.label}</span>
-                      <span className="text-[10px] font-mono opacity-70 shrink-0">({count})</span>
+                      <span className="text-xs font-mono opacity-70 shrink-0">({count})</span>
                     </button>
                   );
                 })}
@@ -1042,7 +1069,7 @@ export const FilterDrawer: React.FC = () => {
           <AccordionSection
             title="Specialized & Tactical Filters"
             subtitle={specializedSubtitle}
-            icon={<Layers className="w-4 h-4 text-callout-warn-fg" />}
+            icon={<Layers className="w-4 h-4 text-accent" />}
             sectionKey="specialized"
             isOpen={openSections.specialized}
             onToggle={toggleSection}
@@ -1050,7 +1077,7 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-3.5">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">Target Language / Stack</label>
+                <label className="text-xs font-semibold text-secondary block mb-1">Target Language / Stack</label>
                 <CyberSelect
                   value={filters.selectedLanguage || 'ALL'}
                   onChange={(val) => {
@@ -1066,7 +1093,7 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">Area of Security Focus</label>
+                <label className="text-xs font-semibold text-secondary block mb-1">Area of Security Focus</label>
                 <CyberSelect
                   value={filters.selectedAreaOfInterest || 'ALL'}
                   onChange={(val) => {
@@ -1082,7 +1109,7 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">Specific Vulnerability Vector</label>
+                <label className="text-xs font-semibold text-secondary block mb-1">Specific Vulnerability Vector</label>
                 <CyberSelect
                   value={filters.selectedVulnCategory || 'ALL'}
                   onChange={(val) => {
@@ -1098,7 +1125,7 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">OS-Specific Technique</label>
+                <label className="text-xs font-semibold text-secondary block mb-1">OS-Specific Technique</label>
                 <CyberSelect
                   value={filters.selectedTechnique || 'ALL'}
                   onChange={(val) => {
@@ -1119,7 +1146,7 @@ export const FilterDrawer: React.FC = () => {
           <AccordionSection
             title="Tags & Keywords"
             subtitle={tagsSubtitle}
-            icon={<Tag className="w-4 h-4 text-callout-info-fg" />}
+            icon={<Tag className="w-4 h-4 text-accent" />}
             sectionKey="tags"
             isOpen={openSections.tags}
             onToggle={toggleSection}
@@ -1127,17 +1154,17 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-3">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-tertiary dark:text-cyber-muted" />
+                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-tertiary" />
                 <input
                   type="text"
                   placeholder="Search tags (sqli, cve, privesc)..."
                   value={tagSearchTerm}
                   onChange={(e) => setTagSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-cyber-bg border border-slate-200 dark:border-cyber-border rounded-lg text-xs text-slate-700 dark:text-cyber-text focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan"
+                  className="w-full pl-8 pr-7 py-1.5 bg-surface-sunken border border-subtle rounded-lg text-xs text-secondary focus:outline-none focus:border-accent"
                 />
                 {tagSearchTerm && (
                   <button aria-label="Clear tag search" onClick={() => setTagSearchTerm('')} className="absolute right-2 top-2">
-                    <X className="w-3.5 h-3.5 text-tertiary hover:text-slate-600 dark:hover:text-primary" />
+                    <X className="w-3.5 h-3.5 text-tertiary hover:text-muted" />
                   </button>
                 )}
               </div>
@@ -1145,14 +1172,14 @@ export const FilterDrawer: React.FC = () => {
               {/* Pinned Selected Tags */}
               {filters.selectedTags.length > 0 && (
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-tertiary dark:text-cyber-muted">Selected Tags</span>
+                  <span className="text-xs font-semibold text-tertiary">Selected Tags</span>
                   <div className="flex flex-wrap gap-1">
                     {filters.selectedTags.map((tag) => (
                       <button
                         key={tag}
                         type="button"
                         onClick={() => handleTagToggle(tag)}
-                        className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-500/20 text-callout-info-fg border border-cyan-500/40 flex items-center gap-1 transition-colors hover:bg-rose-500/20 hover:text-callout-danger-fg hover:border-rose-500/40 group"
+                        className="px-2 py-0.5 rounded-md text-xs font-medium bg-accent-muted text-accent border border-accent/40 flex items-center gap-1 transition-colors hover:bg-callout-danger-bg hover:text-callout-danger-fg hover:border-callout-danger-border group"
                         title="Click to remove tag"
                       >
                         <span>#{tag}</span>
@@ -1165,7 +1192,7 @@ export const FilterDrawer: React.FC = () => {
               
               <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                 {displayedTags.length === 0 ? (
-                  <div className="text-[11px] text-tertiary dark:text-cyber-muted py-4 text-center w-full">No matching tags found</div>
+                  <div className="text-xs text-tertiary py-4 text-center w-full">No matching tags found</div>
                 ) : (
                   displayedTags.map((t) => {
                     const isSelected = filters.selectedTags.includes(t);
@@ -1175,14 +1202,14 @@ export const FilterDrawer: React.FC = () => {
                         key={t}
                         type="button"
                         onClick={() => handleTagToggle(t)}
-                        className={`px-2 py-0.5 rounded-md text-[11px] transition-colors border flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded-md text-xs transition-colors border flex items-center gap-1 ${
                           isSelected
-                            ? 'bg-cyan-500/25 border-cyan-500/60 text-callout-info-fg font-bold shadow-sm'
-                            : 'bg-slate-50 dark:bg-cyber-bg border-slate-200 dark:border-cyber-border/70 text-slate-600 dark:text-cyber-muted hover:border-slate-300 dark:hover:border-cyber-border hover:text-slate-900 dark:hover:text-primary'
+                            ? 'bg-accent-muted border-accent/60 text-accent font-semibold shadow-sm'
+                            : 'bg-surface-sunken border-subtle text-muted hover:border-strong hover:text-primary'
                         }`}
                       >
                         <span>#{t}</span>
-                        <span className="text-[9px] opacity-60 font-mono">({count})</span>
+                        <span className="text-xs opacity-60 font-mono">({count})</span>
                       </button>
                     );
                   })
@@ -1194,7 +1221,7 @@ export const FilterDrawer: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-3.5 border-t border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/95 flex items-center justify-between gap-3 mt-auto shrink-0 z-10 shadow-[0_-4px_15px_rgba(0,0,0,0.12)] backdrop-blur-md">
+        <div className="p-3.5 border-t border-subtle bg-surface-card flex items-center justify-between gap-3 mt-auto shrink-0 z-10">
           <button
             type="button"
             onClick={() => {
@@ -1202,10 +1229,10 @@ export const FilterDrawer: React.FC = () => {
               if (soundEnabled) playCyberSound('click');
             }}
             disabled={activeFilterList.length === 0}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors border ${
               activeFilterList.length > 0
-                ? 'border-rose-500/40 bg-rose-500/10 text-callout-danger-fg hover:bg-rose-500/20 shadow-sm cursor-pointer'
-                : 'border-transparent text-tertiary dark:text-slate-600 opacity-40 cursor-not-allowed'
+                ? 'border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg hover:bg-callout-danger-bg shadow-sm cursor-pointer'
+                : 'border-transparent text-tertiary opacity-40 cursor-not-allowed'
             }`}
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -1218,7 +1245,7 @@ export const FilterDrawer: React.FC = () => {
               setFilterDrawerOpen(false);
               if (soundEnabled) playCyberSound('click');
             }}
-            className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold bg-cyber-cyan hover:opacity-90 text-black transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
+            className="flex-1 flex justify-center items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-accent hover:bg-accent-hover text-on-accent transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Show {matchingMachinesCount} Targets</span>
