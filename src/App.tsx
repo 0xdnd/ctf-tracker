@@ -273,6 +273,16 @@ const MainAppContent: React.FC = () => {
     }
   }, [location.pathname, setActiveTab]);
 
+  // Close slide-over drawers when navigating between routes
+  const prevPathRef = useRef(location.pathname);
+  useEffect(() => {
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      useCtfStore.getState().setSnippetsDrawerOpen(false);
+      useExamStore.getState().setQuickDrawerOpen(false);
+    }
+  }, [location.pathname]);
+
   if (!isHydrated) {
     return <CyberRouteLoader />;
   }
@@ -469,7 +479,9 @@ const MainAppContent: React.FC = () => {
                     <Route path="/" element={<Navigate to="/tracker" replace />} />
                     <Route path="/tracker" element={<TrackerView />} />
                     <Route path="/target/:id" element={<TargetDetailPage />} />
+                    <Route path="/target/:id/focus" element={<TargetDetailPage />} />
                     <Route path="/targets/:id" element={<TargetDetailPage />} />
+                    <Route path="/targets/:id/focus" element={<TargetDetailPage />} />
                     <Route path="/methodology" element={<MethodologyPage />} />
                     <Route path="/cheatsheets" element={<CheatsheetView />} />
                     <Route path="/cheatsheet" element={<CheatsheetView />} />

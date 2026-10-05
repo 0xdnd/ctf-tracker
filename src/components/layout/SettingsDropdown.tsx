@@ -21,6 +21,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
+import { useLocation } from 'react-router-dom';
 import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
 
 export const SettingsDropdown: React.FC = () => {
@@ -62,18 +63,33 @@ export const SettingsDropdown: React.FC = () => {
     }))
   );
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
+
+  // Close dropdown on route change
+  const location = useLocation();
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const handleJsonImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -133,7 +149,7 @@ export const SettingsDropdown: React.FC = () => {
       />
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1.5 w-64 p-2 rounded-xl bg-surface-elevated border border-subtle shadow-xl z-50 text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100 machined-edge">
+        <div className="fixed right-3 sm:right-4 top-[54px] w-64 p-2 rounded-xl bg-surface-elevated border border-subtle shadow-xl z-[60] text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100 machined-edge">
           <div className="px-2 py-1 text-[11px] font-medium text-muted flex items-center justify-between border-b border-subtle pb-1.5">
             <span>Preferences and tools</span>
             {unexportedChangesCount > 0 && (

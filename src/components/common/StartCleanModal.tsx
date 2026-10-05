@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Database, CheckCircle2, Terminal, ArrowRight } from 'lucide-react';
+import { Shield, Database, CheckCircle2, Terminal, ArrowRight, X } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound } from '../../utils/helpers';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -72,6 +72,18 @@ export const StartCleanModal: React.FC<StartCleanModalProps> = ({ isOpen, onClos
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem('zerobox_onboarding_completed', 'true');
+              onClose();
+            }}
+            className="p-1.5 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+            aria-label="Close setup modal"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Modal Body */}

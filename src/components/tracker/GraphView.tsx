@@ -554,23 +554,23 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       {/* Row 1: Header (OS Icon, Machine Name, Status Beacon) */}
       {/* OS Vector Icon */}
       <g transform={`translate(${cardX + 10}, ${cardY + 8})`}>
-        {node.os === 'Linux' ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#FCC624">
+        {node.os?.toLowerCase() === 'linux' ? (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="#F97316">
             <path d={LINUX_TUX_PATH} />
           </svg>
-        ) : node.os === 'Windows' ? (
+        ) : node.os?.toLowerCase() === 'windows' ? (
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#00A4EF">
             <path d={WINDOWS_PATH} />
           </svg>
-        ) : node.os === 'macOS' ? (
+        ) : node.os?.toLowerCase() === 'macos' ? (
           <svg viewBox="0 0 24 24" width="16" height="16" fill={tokens.textPrimary}>
             <path d={MACOS_PATH} />
           </svg>
-        ) : node.os === 'Android' ? (
+        ) : node.os?.toLowerCase() === 'android' ? (
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#3DDC84">
             <path d={ANDROID_PATH} />
           </svg>
-        ) : node.os === 'BSD' ? (
+        ) : node.os?.toLowerCase() === 'bsd' ? (
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#E11D48">
             <path d={BSD_PATH} />
           </svg>

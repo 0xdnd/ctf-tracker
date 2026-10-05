@@ -329,7 +329,7 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'action-revshell',
+        id: 'action-revshell-forge',
         label: 'Reverse shell forge (payloads and listener)',
         icon: Terminal,
         colorClass: 'text-muted',
@@ -351,7 +351,7 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'action-vault',
+        id: 'action-vault-view',
         label: 'Evidence and loot vault',
         icon: Database,
         colorClass: 'text-muted',
@@ -363,7 +363,7 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'action-exam',
+        id: 'action-exam-view',
         label: '24h Exam Simulator (OSCP / CPTS)',
         icon: Radio,
         colorClass: 'text-muted',

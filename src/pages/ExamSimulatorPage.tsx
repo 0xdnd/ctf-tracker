@@ -937,6 +937,8 @@ export const ExamSimulatorPage: React.FC = () => {
     const isExpanded = expandedBoxId === box.id;
     const isFullyPwned =
       (box.userPoints === 0 || box.userPwned) && (box.rootPoints === 0 || box.rootPwned);
+    const effectiveProofTab: 'user' | 'root' =
+      box.userPoints === 0 ? 'root' : box.rootPoints === 0 ? 'user' : activeProofTab;
 
     return (
       <div
@@ -1036,10 +1038,10 @@ export const ExamSimulatorPage: React.FC = () => {
                     type="button"
                     onClick={() => setActiveProofTab('user')}
                     className={`flex-1 py-1 max-sm:py-3 px-2 rounded-lg text-xs font-medium border transition-interactive active:scale-[0.97] ${
- activeProofTab === 'user'
- ? 'bg-accent-muted border-accent text-accent'
- : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
- }`}
+                      effectiveProofTab === 'user'
+                        ? 'bg-accent-muted border-accent text-accent'
+                        : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
+                    }`}
                   >
                     User Evidence ({box.userProof.flagText ? '✓' : '○'})
                   </button>
@@ -1050,10 +1052,10 @@ export const ExamSimulatorPage: React.FC = () => {
                     type="button"
                     onClick={() => setActiveProofTab('root')}
                     className={`flex-1 py-1 max-sm:py-3 px-2 rounded-lg text-xs font-medium border transition-interactive active:scale-[0.97] ${
- activeProofTab === 'root'
- ? 'bg-accent-muted border-accent text-accent'
- : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
- }`}
+                      effectiveProofTab === 'root'
+                        ? 'bg-accent-muted border-accent text-accent'
+                        : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
+                    }`}
                   >
                     Root Evidence ({box.rootProof.flagText ? '✓' : '○'})
                   </button>
@@ -1063,7 +1065,7 @@ export const ExamSimulatorPage: React.FC = () => {
               {/* Render Evidence Dropzone for selected tab */}
               <ExamEvidenceDropzone
                 box={box}
-                flagType={activeProofTab}
+                flagType={effectiveProofTab}
               />
             </motion.div>
           )}

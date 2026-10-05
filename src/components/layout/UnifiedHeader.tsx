@@ -125,6 +125,7 @@ export const UnifiedHeader: React.FC = () => {
   const routeName = useMemo(() => {
     const p = location.pathname;
     if (p.startsWith('/tracker')) return 'Labs / Targets';
+    if (p.startsWith('/vault') || p.startsWith('/evidence') || p.startsWith('/loot')) return 'Evidence Vault';
     if (p.startsWith('/cheatsheets') || p.startsWith('/notes') || p.startsWith('/cpts') || p.startsWith('/field-manual')) return 'Field Manual';
     if (p.startsWith('/writeup')) return 'Writeup Studio';
     if (p.startsWith('/analytics')) return 'Analytics';
@@ -371,7 +372,7 @@ export const UnifiedHeader: React.FC = () => {
 
         {/* Target selector popover */}
         {targetDropdownOpen && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-2.5 rounded-xl bg-surface-elevated border border-subtle shadow-xl machined-edge z-50 text-xs space-y-2">
+          <div className="fixed left-1/2 -translate-x-1/2 top-[54px] w-72 p-2.5 rounded-xl bg-surface-elevated border border-subtle shadow-xl machined-edge z-[60] text-xs space-y-2">
             <div className="text-[11px] text-muted px-1 font-medium flex items-center justify-between">
               <span>Engage target</span>
               <span className="text-secondary font-mono tabular-nums">{machines.length} total</span>
@@ -430,7 +431,7 @@ export const UnifiedHeader: React.FC = () => {
       </div>
 
       {/* 3. Right: telemetry, tools, theme, operator */}
-      <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0" data-tauri-drag-region="false">
         {/* Deploy box (secondary, icon-only) */}
         <button
           onClick={() => {
@@ -599,7 +600,7 @@ export const UnifiedHeader: React.FC = () => {
             setRevShellModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className={`hidden md:flex ${ghostBtn}`}
+          className={`hidden xl:flex ${ghostBtn}`}
           title="Open Rapid Reverse Shell Crafter (Alt+P)"
           aria-label="RevShell - Open Rapid Reverse Shell Crafter"
         >
@@ -613,7 +614,7 @@ export const UnifiedHeader: React.FC = () => {
             setSnippetsDrawerOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className={`hidden md:flex ${ghostBtn}`}
+          className={`hidden xl:flex ${ghostBtn}`}
           title="Open Snippets Drawer (Alt+S)"
           aria-label="Snippets - Open Tactical Snippets Drawer"
         >

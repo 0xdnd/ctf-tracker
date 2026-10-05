@@ -14,6 +14,7 @@ import {
   Layers, 
   ExternalLink, 
   PanelRight, 
+  PanelLeft,
   Maximize2,
   Minimize2,
   Columns,
@@ -68,6 +69,9 @@ export interface ObsidianNoteViewerProps {
   paneId?: string;
   isPaneActive?: boolean;
   onFocusPane?: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+  onSwitchToCards?: () => void;
 }
 
 export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
@@ -96,6 +100,9 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   paneId,
   isPaneActive = true,
   onFocusPane,
+  isSidebarOpen = true,
+  onToggleSidebar,
+  onSwitchToCards,
 }) => {
   const [viewMode, setViewMode] = useState<ObsidianViewMode>('reading');
   const [langMode, setLangMode] = useState<ObsidianNoteLanguage>(defaultLanguage);
@@ -210,14 +217,26 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     });
   }, [safeOpenNotes, pinnedTabIds]);
 
-  // Auto-scroll active tab into view whenever note changes
+  // Auto-scroll active tab horizontally into view inside tab strip without jumping outer page
   useEffect(() => {
-    if (activeTabElementRef.current && typeof activeTabElementRef.current.scrollIntoView === 'function') {
-      activeTabElementRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
+    if (tabStripScrollRef.current && activeTabElementRef.current) {
+      const container = tabStripScrollRef.current;
+      const tab = activeTabElementRef.current;
+      const tabLeft = tab.offsetLeft;
+      const tabRight = tabLeft + tab.offsetWidth;
+      if (tabLeft < container.scrollLeft) {
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({ left: Math.max(0, tabLeft - 12), behavior: 'smooth' });
+        } else {
+          container.scrollLeft = Math.max(0, tabLeft - 12);
+        }
+      } else if (tabRight > container.scrollLeft + container.clientWidth) {
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({ left: tabRight - container.clientWidth + 12, behavior: 'smooth' });
+        } else {
+          container.scrollLeft = tabRight - container.clientWidth + 12;
+        }
+      }
     }
   }, [note.id]);
 
@@ -344,6 +363,8 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         return;
       }
 
+
+
       // 3. Close active tab: Alt+W or Ctrl+Shift+W (or Ctrl+W / Cmd+W)
       if (
         (e.altKey && e.key.toLowerCase() === 'w') ||
@@ -418,7 +439,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [note.id, safeOpenNotes, onSelectNote, onClose, isPickerOpen, isTabsDrawerOpen, handleCloseSpecificTab, handleToggleMaximize]);
+  }, [note.id, safeOpenNotes, onSelectNote, onClose, isPickerOpen, isTabsDrawerOpen, handleCloseSpecificTab, handleToggleMaximize, onToggleSidebar]);
 
   // Universal Link Interception Capture Handler
   const handleContainerLinkClick = useCallback((e: React.MouseEvent) => {
@@ -495,6 +516,23 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         dir="ltr"
         className="flex items-center justify-between px-3 h-10 min-h-[40px] bg-surface-elevated border-b border-subtle select-none flex-shrink-0 overflow-hidden"
       >
+        {/* Toggle Sidebar Button (Obsidian style) */}
+        {onToggleSidebar && (
+          <button
+            type="button"
+            data-testid="toggle-sidebar-button"
+            onClick={() => {
+              if (soundEnabled) playCyberSound('click');
+              onToggleSidebar();
+            }}
+            className="p-1 mr-1.5 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-colors flex-shrink-0 cursor-pointer"
+            title={isSidebarOpen ? "Collapse sidebar (Ctrl+B)" : "Expand sidebar (Ctrl+B)"}
+            aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <PanelLeft className={`w-4 h-4 ${isSidebarOpen ? 'text-accent' : 'text-muted'}`} />
+          </button>
+        )}
+
         {/* Left scroll chevron */}
         <button
           type="button"

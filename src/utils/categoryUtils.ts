@@ -102,7 +102,7 @@ export const PLATFORM_CAT_INDEX: Record<string, CatIndex> = {
 };
 
 export const OS_CAT_INDEX: Record<string, CatIndex> = {
-  Linux: 7,
+  Linux: 4,
   Windows: 1,
   macOS: 2,
   BSD: 5,
@@ -140,8 +140,17 @@ export function getPlatformTone(platform?: string): BadgeTone {
 }
 
 export function getOsTone(os?: string): BadgeTone {
-  const idx = os ? OS_CAT_INDEX[os] : undefined;
-  return idx ? CAT_TONES[idx] : NEUTRAL_TONE;
+  if (!os) return NEUTRAL_TONE;
+  const directIdx = OS_CAT_INDEX[os];
+  if (directIdx) return CAT_TONES[directIdx];
+
+  const lower = os.trim().toLowerCase();
+  for (const [key, idx] of Object.entries(OS_CAT_INDEX)) {
+    if (key.toLowerCase() === lower) {
+      return CAT_TONES[idx];
+    }
+  }
+  return NEUTRAL_TONE;
 }
 
 export function getDifficultyTone(difficulty?: string): BadgeTone {

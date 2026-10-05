@@ -217,6 +217,15 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
           <p className="text-xs text-tertiary mt-1">
             Log a flag or credential, or import a scan, to populate the timeline.
           </p>
+          {filterTarget !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setFilterTarget('all')}
+              className="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-card hover:bg-surface-hover text-primary border border-subtle cursor-pointer transition-colors"
+            >
+              Show all targets
+            </button>
+          )}
         </div>
       ) : groupingMode === 'phase' ? (
         /* ================= Phase View ================= */

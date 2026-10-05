@@ -682,8 +682,9 @@ describe('Milestone 2: Visual Attack Graph & Pivot Topology Canvas Engine', () =
       expect(screen.queryByTestId('attack-node-box-windows-foothold')).toBeNull();
       expect(screen.queryByTestId('attack-node-box-macos-unsolved')).toBeNull();
 
-      // Sau should remain at exact same coordinate
+      // Sau should remain at exact same coordinate and render orange #F97316 Linux icon
       const sauCardAfter = screen.getByTestId('attack-node-box-linux-root');
+      expect(sauCardAfter.querySelector('svg[fill="#F97316"]')).toBeInTheDocument();
       const rectAfter = sauCardAfter.querySelector('rect[width="180"][height="84"]');
       expect(rectAfter?.getAttribute('x')).toBe(xBefore);
       expect(rectAfter?.getAttribute('y')).toBe(yBefore);

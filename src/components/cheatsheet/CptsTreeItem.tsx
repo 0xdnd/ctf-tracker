@@ -13,6 +13,7 @@ export interface CptsTreeItemProps {
   onDeleteNote?: (noteId: string, noteTitle: string) => void;
   onAddNoteToFolder?: (folderPath: string) => void;
   cptsLangMode?: 'en' | 'he';
+  activeNoteId?: string | null;
 }
 
 export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
@@ -26,6 +27,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
   onDeleteNote,
   onAddNoteToFolder,
   cptsLangMode = 'en',
+  activeNoteId,
 }) => {
   const isExpanded = Boolean(expandedFolders[node.id]);
   const isFolder = node.isFolder;
@@ -68,7 +70,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
             ) : (
               <Folder className="w-3.5 h-3.5 text-muted flex-shrink-0" />
             )}
-            <span className="truncate text-[11px] group-hover:text-primary">
+            <span className="truncate text-xs sm:text-[13px] font-medium group-hover:text-primary">
               {node.name}
             </span>
           </div>
@@ -110,6 +112,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                 onDeleteNote={onDeleteNote}
                 onAddNoteToFolder={onAddNoteToFolder}
                 cptsLangMode={cptsLangMode}
+                activeNoteId={activeNoteId}
               />
             ))}
           </div>
@@ -123,21 +126,29 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
   if (!note) return null;
 
   const noteTitle = cptsLangMode === 'he' && note.titleHe ? note.titleHe : (node.name || note.titleEn || note.title);
+  const isActive = activeNoteId === note.id;
 
   return (
     <div
+      id={`cpts-note-${note.id}`}
       data-tree-type="note"
       data-note-id={note.id}
-      className="flex items-center justify-between py-1 px-1.5 rounded-md text-xs transition-colors text-secondary hover:text-primary hover:bg-surface-hover group border border-transparent hover:border-strong"
+      onClick={() => onSelectNote(note)}
+      className={`flex items-center justify-between py-1.5 px-2 rounded-lg text-xs sm:text-[13px] transition-colors group border cursor-pointer ${
+        isActive
+          ? 'bg-accent/15 text-accent font-semibold border-accent/40 shadow-xs ring-1 ring-accent/30'
+          : 'text-secondary hover:text-primary hover:bg-surface-hover border-transparent hover:border-subtle'
+      }`}
       title={noteTitle}
     >
       <button
         type="button"
         onClick={() => onSelectNote(note)}
-        className="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1 pl-4 text-left cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        title={`Open Obsidian Note: ${noteTitle}`}
+        className="flex items-center gap-2 truncate flex-1 min-w-0 pr-1 pl-2 text-left cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <FileText className="w-3.5 h-3.5 text-tertiary group-hover:text-muted flex-shrink-0 transition-colors" />
-        <span className="truncate text-[11px] group-hover:text-primary">
+        <FileText className={`w-3.5 h-3.5 ${isActive ? 'text-accent' : 'text-muted group-hover:text-primary'} flex-shrink-0 transition-colors`} />
+        <span className={`truncate text-xs sm:text-[13px] ${isActive ? 'text-accent font-semibold' : 'group-hover:text-primary'}`}>
           {noteTitle}
         </span>
       </button>

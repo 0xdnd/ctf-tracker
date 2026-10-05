@@ -867,15 +867,7 @@ export const ReconAutomationModal: React.FC = () => {
                           <span className="text-[9px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary font-semibold">
                             {item.subCategory}
                           </span>
-                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
-                            item.os === 'Windows'
-                              ? 'text-secondary bg-surface-sunken border border-subtle'
-                              : item.os === 'Linux'
-                              ? 'text-callout-success-fg bg-callout-success-bg border border-callout-success-border'
-                              : 'text-secondary bg-surface-sunken border border-subtle'
-                          }`}>
-                            {item.os}
-                          </span>
+                          {item.os && <OsBadge os={item.os} size="xs" />}
                         </div>
 
                         <div className="flex items-center gap-2">

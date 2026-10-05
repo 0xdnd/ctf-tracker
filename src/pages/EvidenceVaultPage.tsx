@@ -361,13 +361,13 @@ export const EvidenceVaultPage: React.FC = () => {
 
   const activeFilterCount = selectedCategory !== 'all' ? 1 : 0;
 
-  const statTiles: { label: string; value: number }[] = [
-    { label: 'Total artifacts', value: metrics.total },
-    { label: 'Flags captured', value: metrics.flags },
-    { label: 'Passwords', value: metrics.passwords },
-    { label: 'Hashes', value: metrics.hashes },
-    { label: 'SSH keys', value: metrics.keys },
-    { label: 'Recon services', value: metrics.services },
+  const statTiles: { label: string; value: number; category: EvidenceCategory }[] = [
+    { label: 'Total artifacts', value: metrics.total, category: 'all' },
+    { label: 'Flags captured', value: metrics.flags, category: 'flag' },
+    { label: 'Passwords', value: metrics.passwords, category: 'password' },
+    { label: 'Hashes', value: metrics.hashes, category: 'hash' },
+    { label: 'SSH keys', value: metrics.keys, category: 'ssh_key' },
+    { label: 'Recon services', value: metrics.services, category: 'service' },
   ];
 
   const segBase =
@@ -441,14 +441,31 @@ export const EvidenceVaultPage: React.FC = () => {
         ]}
       />
 
-      {/* 2. Stat tiles: one neutral style, mono values, no per-tile hue */}
+      {/* 2. Stat tiles: clickable category filters */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {statTiles.map((tile) => (
-          <div key={tile.label} className="px-4 py-3 rounded-xl border border-subtle bg-surface-card machined-edge">
-            <div className="text-xs text-muted">{tile.label}</div>
-            <div className="mt-1 text-xl font-semibold text-primary font-mono tabular-nums">{tile.value}</div>
-          </div>
-        ))}
+        {statTiles.map((tile) => {
+          const isSelected = selectedCategory === tile.category;
+          return (
+            <button
+              key={tile.label}
+              type="button"
+              onClick={() => {
+                setSelectedCategory(tile.category);
+                if (soundEnabled) playCyberSound('click');
+              }}
+              className={`px-4 py-3 rounded-xl border text-left transition-interactive active:scale-[0.97] cursor-pointer machined-edge ${
+                isSelected
+                  ? 'border-accent bg-accent/10 shadow-xs'
+                  : 'border-subtle bg-surface-card hover:border-strong hover:bg-surface-hover/50'
+              }`}
+            >
+              <div className={`text-xs ${isSelected ? 'text-accent font-medium' : 'text-muted'}`}>{tile.label}</div>
+              <div className={`mt-1 text-xl font-semibold font-mono tabular-nums ${isSelected ? 'text-accent' : 'text-primary'}`}>
+                {tile.value}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* 3. Toolbar: one row on desktop; search + Filters at 390px */}
@@ -519,6 +536,9 @@ export const EvidenceVaultPage: React.FC = () => {
               aria-pressed={viewMode === 'timeline'}
               onClick={() => {
                 setViewMode('timeline');
+                if (selectedCategory !== 'all') {
+                  setSelectedCategory('all');
+                }
                 if (soundEnabled) playCyberSound('click');
               }}
               className={`${segBase} ${viewMode === 'timeline' ? 'bg-surface-card text-primary shadow-xs' : 'text-muted hover:text-primary'}`}
@@ -574,7 +594,12 @@ export const EvidenceVaultPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('timeline')}
+                onClick={() => {
+                  setViewMode('timeline');
+                  if (selectedCategory !== 'all') {
+                    setSelectedCategory('all');
+                  }
+                }}
                 aria-pressed={viewMode === 'timeline'}
                 className={`flex-1 h-11 rounded-lg text-sm font-medium cursor-pointer ${viewMode === 'timeline' ? 'bg-accent text-on-accent' : 'bg-surface-sunken text-secondary'}`}
               >
@@ -729,9 +754,25 @@ export const EvidenceVaultPage: React.FC = () => {
                       <Database className="w-8 h-8 mx-auto mb-2 text-dim" />
                       <div className="font-semibold text-sm text-secondary">No evidence matches these filters</div>
                       <div className="text-xs mt-1 mb-4">Capture a flag, import a scan, or log a credential by hand.</div>
-                      <CyberButton variant="primary" size="md" onClick={() => setIsAddModalOpen(true)} iconLeft={<Plus className="w-3.5 h-3.5" />}>
-                        Log evidence
-                      </CyberButton>
+                      <div className="flex items-center justify-center gap-2">
+                        {(selectedCategory !== 'all' || searchQuery || selectedPlatform !== 'all' || selectedTargetId !== 'all') && (
+                          <CyberButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => {
+                              setSelectedCategory('all');
+                              setSearchQuery('');
+                              setSelectedPlatform('all');
+                              setSelectedTargetId('all');
+                            }}
+                          >
+                            Reset filters
+                          </CyberButton>
+                        )}
+                        <CyberButton variant="primary" size="md" onClick={() => setIsAddModalOpen(true)} iconLeft={<Plus className="w-3.5 h-3.5" />}>
+                          Log evidence
+                        </CyberButton>
+                      </div>
                     </td>
                   </tr>
                 )}

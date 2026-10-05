@@ -33,6 +33,7 @@ import {
   ArrowUpDown,
   RotateCcw,
   PanelRight,
+  PanelLeft,
   SlidersHorizontal,
   Maximize2,
   ExternalLink
@@ -58,6 +59,7 @@ import {
   CptsSortOrder,
   sortNotesByNumber,
   formatNoteNumberBadge,
+  getAllCptsNotes,
 } from '../../utils/obsidianManualUtils';
 import { ObsidianNoteViewer } from './ObsidianNoteViewer';
 import { SplitOrientation } from '../../types/workspace';
@@ -142,14 +144,31 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     '01 Information Gathering & Recon': true,
   });
   const [selectedTreePath, setSelectedTreePath] = useState<string | null>(null);
-  const [expandedTreeFolders, setExpandedTreeFolders] = useState<Record<string, boolean>>({
-    'folder-00 _Methodology': true,
-    'folder-01 Information Gathering': true,
-    'folder-02 Pre-Exploitation': true,
-    'folder-03 Exploitation': true,
-    'folder-04 Post-Exploitation': true,
-    'folder-05 Lateral Movement': true,
-    'folder-06 NetExec': true,
+  const [expandedTreeFolders, setExpandedTreeFolders] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_obsidian_expanded_folders');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      'folder-00 _Methodology': true,
+      'folder-01 Information Gathering': true,
+      'folder-01 Information Gathering/01.1 Port Scanning': true,
+      'folder-02 Web & Application Enumeration': true,
+      'folder-02 Web & Application Enumeration/02.1 Directory & VHost Fuzzing': true,
+      'folder-03 Exploitation & Payloads': true,
+      'folder-03 Exploitation & Payloads/03.1 Web Attacks': true,
+      'folder-04 Linux Privilege Escalation': true,
+      'folder-04 Linux Privilege Escalation/04.1 Linux PrivEsc': true,
+      'folder-05 Windows & Active Directory': true,
+      'folder-05 Windows & Active Directory/05.1 Local PrivEsc': true,
+      'folder-05 Windows & Active Directory/05.2 Active Directory': true,
+      'folder-05 Windows & Active Directory/05.3 Kerberos Attacks': true,
+      'folder-06 Pivoting & Lateral Movement': true,
+      'folder-06 Pivoting & Lateral Movement/06.1 Network Pivoting': true,
+      'folder-07 Cryptography & Password Cracking': true,
+      'folder-08 File Transfers & Exfiltration': true,
+      'folder-09 Post-Exploitation & Shells': true,
+    };
   });
   const [isNewCptsModalOpen, setIsNewCptsModalOpen] = useState(false);
   const [newNoteInitialDir, setNewNoteInitialDir] = useState<string | undefined>(undefined);
@@ -171,24 +190,43 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [openObsidianNotes, setOpenObsidianNotes] = useState<CptsNoteEntry[]>(() => {
     try {
       const params = new URLSearchParams(location.search);
-      const noteParam = params.get('note');
+      let noteParam = params.get('note');
+      if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+        noteParam = hashParams.get('note');
+      }
       if (noteParam) {
         const found = getNoteById(noteParam);
         if (found) return [found];
       }
+      const saved = localStorage.getItem('zerobox_obsidian_open_tabs');
+      if (saved) {
+        const ids: string[] = JSON.parse(saved);
+        const notes = ids.map((id) => getNoteById(id)).filter((n): n is CptsNoteEntry => Boolean(n));
+        if (notes.length > 0) return notes;
+      }
     } catch {}
+    const all = getAllCptsNotes();
+    if (all.length > 0 && isManualRoute) return [all[0]];
     return [];
   });
   const [activeObsidianNoteId, setActiveObsidianNoteId] = useState<string | null>(() => {
     try {
       const params = new URLSearchParams(location.search);
-      const noteParam = params.get('note');
+      let noteParam = params.get('note');
+      if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+        noteParam = hashParams.get('note');
+      }
       if (noteParam) {
         const found = getNoteById(noteParam);
         if (found) return found.id;
       }
+      const saved = localStorage.getItem('zerobox_obsidian_active_tab');
+      if (saved) return saved;
     } catch {}
-    return null;
+    const all = getAllCptsNotes();
+    return isManualRoute && all.length > 0 ? all[0].id : null;
   });
 
   // Check if current view is a detached standalone pop-out window
@@ -216,6 +254,48 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     });
   }, []);
 
+  // Obsidian Field Manual Workspace Sidebar & Navigation State
+  const [isObsidianSidebarOpen, setIsObsidianSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('zerobox_obsidian_sidebar_open');
+      return saved !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleObsidianSidebar = useCallback(() => {
+    setIsObsidianSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('zerobox_obsidian_sidebar_open', String(next));
+      } catch {}
+      return next;
+    });
+    if (soundEnabled) playCyberSound('click');
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    if (viewMode !== 'cpts-manual') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.altKey) && (e.key === 'b' || e.key === 'B')) {
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        handleToggleObsidianSidebar();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewMode, handleToggleObsidianSidebar]);
+
+  const [obsidianNavView, setObsidianNavView] = useState<'files' | 'cards' | 'index'>('files');
+  const [treeSearchQuery, setTreeSearchQuery] = useState('');
+
   // Docked Note Viewer Maximize state
   const [isDockedMaximized, setIsDockedMaximized] = useState<boolean>(() => {
     try {
@@ -231,6 +311,11 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       try {
         localStorage.setItem('zerobox_docked_maximized', String(next));
       } catch {}
+      if (next) {
+        setIsObsidianSidebarOpen(false);
+      } else {
+        setIsObsidianSidebarOpen(true);
+      }
       return next;
     });
     if (soundEnabled) playCyberSound('click');
@@ -255,6 +340,15 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     });
     if (soundEnabled) playCyberSound('click');
   }, [soundEnabled]);
+
+  // Active Notes Pool (Reconciling user private notes, custom notes, and deleted notes)
+  const allActiveNotes = useMemo(() => {
+    const deletedSet = new Set(deletedNoteIds);
+    const source = userNotes && userNotes.length > 0 ? userNotes : CPTS_NOTES;
+    const baseline = source.filter((n) => !deletedSet.has(n.id));
+    const activeCustom = customNotes.filter((n) => !deletedSet.has(n.id));
+    return [...activeCustom, ...baseline];
+  }, [deletedNoteIds, customNotes, userNotes]);
 
   const activeObsidianNote = useMemo(() => {
     if (!activeObsidianNoteId) return null;
@@ -307,22 +401,47 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   }, [handleOpenObsidianNote, handleCloseAllObsidianTabs]);
 
+  // Persist open tabs and active tab to localStorage for seamless session resume
+  useEffect(() => {
+    try {
+      localStorage.setItem('zerobox_obsidian_open_tabs', JSON.stringify(openObsidianNotes.map((n) => n.id)));
+      if (activeObsidianNoteId) {
+        localStorage.setItem('zerobox_obsidian_active_tab', activeObsidianNoteId);
+      } else {
+        localStorage.removeItem('zerobox_obsidian_active_tab');
+      }
+    } catch {}
+  }, [openObsidianNotes, activeObsidianNoteId]);
+
   // Sync viewMode and activeObsidianNote when route or search query changes
   useEffect(() => {
-    if (defaultMode) {
-      setViewMode(defaultMode);
-    } else if (location.pathname.includes('note') || location.pathname.includes('manual') || location.search.includes('manual') || location.search.includes('cpts')) {
+    const isManualParam = location.pathname.includes('note') || 
+      location.pathname.includes('manual') || 
+      location.search.includes('manual') || 
+      location.search.includes('cpts') ||
+      (typeof window !== 'undefined' && (window.location.hash.includes('manual') || window.location.hash.includes('cpts')));
+
+    if (isManualParam) {
       setViewMode('cpts-manual');
+    } else if (defaultMode) {
+      setViewMode(defaultMode);
+    } else if (location.pathname.startsWith('/cheatsheets') || location.pathname === '/cheatsheet') {
+      setViewMode('tactical');
     }
 
-    // Check for direct note opening via query parameter, e.g. ?note=cpts-...
+    // Check for direct note opening via query parameter, e.g. ?note=cpts-... (supporting both search & hash)
     const params = new URLSearchParams(location.search);
-    const noteParam = params.get('note');
+    let noteParam = params.get('note');
+    if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
+      const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+      noteParam = hashParams.get('note');
+    }
     if (noteParam) {
       const found = getNoteById(noteParam, allActiveNotes.length > 0 ? allActiveNotes : undefined) || getNoteById(noteParam);
       if (found) {
         setActiveObsidianNote(found);
         setViewMode('cpts-manual');
+        setObsidianNavView('files');
       }
     }
 
@@ -331,7 +450,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       setSelectedCategory(catParam);
       setViewMode('tactical');
     }
-  }, [defaultMode, location.pathname, location.search]);
+  }, [defaultMode, location.pathname, location.search, allActiveNotes, setActiveObsidianNote]);
 
   // New Custom Command Form Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -401,18 +520,48 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     });
   }, [cheatsheets, selectedCategory, deferredSearchQuery]);
 
-  // Active Notes Pool (Reconciling user private notes, custom notes, and deleted notes)
-  const allActiveNotes = useMemo(() => {
-    const deletedSet = new Set(deletedNoteIds);
-    const source = userNotes && userNotes.length > 0 ? userNotes : CPTS_NOTES;
-    const baseline = source.filter((n) => !deletedSet.has(n.id));
-    const activeCustom = customNotes.filter((n) => !deletedSet.has(n.id));
-    return [...activeCustom, ...baseline];
-  }, [deletedNoteIds, customNotes, userNotes]);
+  // Hierarchical Directory Tree & Categories computed from active notes
+  const filteredTreeNotes = useMemo(() => {
+    if (!treeSearchQuery.trim()) return allActiveNotes;
+    const q = treeSearchQuery.toLowerCase().trim();
+    return allActiveNotes.filter((n) => {
+      return (
+        n.title.toLowerCase().includes(q) ||
+        (n.titleEn && n.titleEn.toLowerCase().includes(q)) ||
+        (n.titleHe && n.titleHe.toLowerCase().includes(q)) ||
+        n.category.toLowerCase().includes(q) ||
+        (n.subCategory && n.subCategory.toLowerCase().includes(q)) ||
+        (n.tags && n.tags.some((t) => t.toLowerCase().includes(q)))
+      );
+    });
+  }, [allActiveNotes, treeSearchQuery]);
 
-  // Hierarchical Directory Tree & Categories computed from all active notes
-  const cptsFileTree = useMemo(() => buildCptsFileTree(allActiveNotes), [allActiveNotes]);
+  const cptsFileTree = useMemo(() => buildCptsFileTree(filteredTreeNotes), [filteredTreeNotes]);
   const cptsCategories = useMemo(() => getCptsCategories(allActiveNotes), [allActiveNotes]);
+
+  // Persist expanded tree folders
+  useEffect(() => {
+    try {
+      localStorage.setItem('zerobox_obsidian_expanded_folders', JSON.stringify(expandedTreeFolders));
+    } catch {}
+  }, [expandedTreeFolders]);
+
+  // Auto-expand tree folders when a filter query is typed so matching files are immediately visible
+  useEffect(() => {
+    if (treeSearchQuery.trim()) {
+      const all: Record<string, boolean> = {};
+      const traverse = (nodes: CptsTreeNode[]) => {
+        for (const n of nodes) {
+          if (n.isFolder) {
+            all[n.id] = true;
+            traverse(n.children);
+          }
+        }
+      };
+      traverse(cptsFileTree);
+      setExpandedTreeFolders((prev) => ({ ...prev, ...all }));
+    }
+  }, [treeSearchQuery, cptsFileTree]);
 
   // List of all existing folder paths for new note modal
   const existingDirectories = useMemo(() => {
@@ -629,6 +778,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           paneId="pane-primary"
           isPaneActive={activePaneId === 'pane-primary'}
           onFocusPane={() => setActivePaneId('pane-primary')}
+          isSidebarOpen={isObsidianSidebarOpen}
+          onToggleSidebar={handleToggleObsidianSidebar}
+          onSwitchToCards={() => setObsidianNavView('cards')}
         />
       );
     }
@@ -666,6 +818,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             paneId="pane-primary"
             isPaneActive={activePaneId === 'pane-primary'}
             onFocusPane={() => setActivePaneId('pane-primary')}
+            isSidebarOpen={isObsidianSidebarOpen}
+            onToggleSidebar={handleToggleObsidianSidebar}
+            onSwitchToCards={() => setObsidianNavView('cards')}
           />
         </div>
         <div className={`${splitOrientation === 'horizontal' ? 'w-full md:w-1/2' : 'w-full h-1/2'} min-h-0 flex flex-col`}>
@@ -911,6 +1066,826 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     );
   }
 
+  // Obsidian Field Manual Master Workspace Renderer
+  const renderObsidianWorkspace = () => {
+    return (
+      <div className="w-full flex flex-col lg:flex-row items-stretch gap-3 min-h-[calc(100vh-10rem)] lg:h-[calc(100vh-10rem)]">
+        {/* Left Obsidian File Explorer Sidebar */}
+        <div 
+          className={`transition-[width,opacity] duration-200 flex-shrink-0 flex flex-col rounded-2xl border border-subtle bg-surface-card overflow-hidden shadow-sm lg:h-full ${
+            isObsidianSidebarOpen ? 'w-full lg:w-80 2xl:w-88' : 'hidden'
+          }`}
+        >
+          {/* Obsidian Vault Header */}
+          <div className="p-3 border-b border-subtle flex items-center justify-between gap-1.5 bg-surface-sunken/60">
+            <div className="flex items-center gap-2 min-w-0">
+              <BookOpen className="w-4 h-4 text-accent flex-shrink-0" />
+              <span className="font-semibold text-xs text-primary truncate">FIELD MANUAL</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent-muted text-accent font-semibold">
+                {allActiveNotes.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewNoteInitialDir(undefined);
+                  setIsNewCptsModalOpen(true);
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className="p-1 rounded hover:bg-surface-hover text-muted hover:text-accent transition-colors cursor-pointer"
+                title="Create new field note"
+                aria-label="Create new field note"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (soundEnabled) playCyberSound('click');
+                  setNotesImportModalOpen(true);
+                }}
+                className="p-1 rounded hover:bg-surface-hover text-muted hover:text-accent transition-colors cursor-pointer"
+                title="Import notes directory"
+                aria-label="Import notes directory"
+              >
+                <Upload className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleExpandAllTreeFolders}
+                className="px-1 py-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary text-[10.5px] font-mono transition-colors cursor-pointer"
+                title="Expand all folders"
+              >
+                +All
+              </button>
+              <button
+                type="button"
+                onClick={handleCollapseAllTreeFolders}
+                className="px-1 py-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary text-[10.5px] font-mono transition-colors cursor-pointer"
+                title="Collapse all folders"
+              >
+                -All
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleObsidianSidebar}
+                className="p-1 rounded hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
+                title="Collapse explorer (Ctrl+B)"
+                aria-label="Collapse explorer sidebar"
+              >
+                <PanelLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Real-Time Tree Filter */}
+          <div className="p-2 border-b border-subtle bg-surface-card">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={treeSearchQuery}
+                onChange={(e) => setTreeSearchQuery(e.target.value)}
+                placeholder="Search files & folders..."
+                className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent"
+              />
+              {treeSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setTreeSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-primary text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Views & Language Pill Switcher */}
+          <div className="px-2 py-1.5 border-b border-subtle flex items-center justify-between text-xs bg-surface-card">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setObsidianNavView('files')}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  obsidianNavView === 'files'
+                    ? 'bg-accent text-on-accent'
+                    : 'text-muted hover:text-primary hover:bg-surface-hover'
+                }`}
+                title="Obsidian Note Reader"
+              >
+                Notes
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setObsidianNavView('cards');
+                  setCptsDisplayLayout('cards');
+                }}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  obsidianNavView === 'cards' || (obsidianNavView !== 'files' && cptsDisplayLayout === 'cards')
+                    ? 'bg-accent text-on-accent'
+                    : 'text-muted hover:text-primary hover:bg-surface-hover'
+                }`}
+                title="Cards Gallery"
+              >
+                Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setObsidianNavView('index');
+                  setCptsDisplayLayout('quick-index');
+                }}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  obsidianNavView === 'index' || (obsidianNavView !== 'files' && cptsDisplayLayout === 'quick-index')
+                    ? 'bg-accent text-on-accent'
+                    : 'text-muted hover:text-primary hover:bg-surface-hover'
+                }`}
+                title="Quick Index Table"
+              >
+                Table
+              </button>
+            </div>
+
+            <div className="flex items-center gap-0.5 bg-surface-sunken p-0.5 rounded-md border border-subtle">
+              <button
+                type="button"
+                onClick={() => {
+                  if (soundEnabled) playCyberSound('click');
+                  setCptsLangMode('en');
+                }}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                  cptsLangMode === 'en' ? 'bg-accent text-on-accent' : 'text-muted hover:text-primary'
+                }`}
+                title="English Playbooks"
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (soundEnabled) playCyberSound('click');
+                  setCptsLangMode('he');
+                }}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                  cptsLangMode === 'he' ? 'bg-accent text-on-accent' : 'text-muted hover:text-primary'
+                }`}
+                title="עברית"
+              >
+                עב
+              </button>
+            </div>
+          </div>
+
+          {/* Tree Body */}
+          <div className="flex-1 min-h-[480px] overflow-y-auto p-2 space-y-0.5 scrollbar-thin">
+            {/* All Field Notes Root Item */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setSelectedTreePath(null);
+                setSelectedCptsCategory('ALL');
+                setSelectedCptsSubCategory('ALL');
+                setCptsLimit(30);
+              }}
+              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
+                selectedTreePath === null && selectedCptsCategory === 'ALL'
+                  ? 'bg-accent-muted text-accent border border-accent/40 font-semibold'
+                  : 'text-secondary hover:text-accent hover:bg-surface-hover border border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5 text-accent" />
+                <span className="font-medium">All Field Notes</span>
+              </div>
+              <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle">
+                {allActiveNotes.length}
+              </span>
+            </motion.button>
+
+            {/* Tree Items */}
+            {cptsFileTree.length === 0 ? (
+              <div className="p-4 rounded-lg bg-accent-muted border border-accent/40 text-center space-y-2.5 my-2">
+                <FolderOpen className="w-8 h-8 text-accent mx-auto" />
+                <div className="text-xs font-semibold text-primary">Vault Empty (0 Notes)</div>
+                <p className="text-[10px] text-secondary">
+                  Import your notes directory from disk or create a custom note.
+                </p>
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (soundEnabled) playCyberSound('click');
+                      setNotesImportModalOpen(true);
+                    }}
+                    className="w-full py-1.5 px-2.5 rounded bg-accent hover:bg-accent-hover text-on-accent font-semibold text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FolderOpen className="w-3 h-3" />
+                    <span>Import Notes Directory</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewNoteInitialDir(undefined);
+                      setIsNewCptsModalOpen(true);
+                      if (soundEnabled) playCyberSound('click');
+                    }}
+                    className="w-full py-1.5 px-2.5 rounded bg-surface-card hover:bg-surface-hover text-accent border border-accent/40 text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Create Custom Note</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              cptsFileTree.map((rootNode) => (
+                <CptsTreeItem
+                  key={rootNode.id}
+                  node={rootNode}
+                  depth={0}
+                  expandedFolders={expandedTreeFolders}
+                  onToggleFolder={handleToggleTreeFolder}
+                  selectedPath={selectedTreePath}
+                  onSelectFolder={handleSelectTreeFolder}
+                  onSelectNote={(note) => {
+                    if (soundEnabled) playCyberSound('click');
+                    setActiveObsidianNote(note);
+                    setObsidianNavView('files');
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setIsObsidianSidebarOpen(false);
+                    }
+                  }}
+                  onDeleteNote={handleDeleteNoteWithConfirm}
+                  onAddNoteToFolder={(folderPath) => {
+                    setNewNoteInitialDir(folderPath);
+                    setIsNewCptsModalOpen(true);
+                    if (soundEnabled) playCyberSound('click');
+                  }}
+                  cptsLangMode={cptsLangMode}
+                  activeNoteId={activeObsidianNote?.id}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="p-2 border-t border-subtle bg-surface-sunken/40 flex flex-col gap-1.5">
+            {deletedNoteIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleRestoreDeletedNotes}
+                className="w-full p-1.5 px-2 rounded-lg bg-callout-danger-bg border border-callout-danger-border/40 hover:bg-callout-danger-bg text-callout-danger-fg text-[10px] font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                title="Click to restore all deleted field notes"
+              >
+                <span>↺ {deletedNoteIds.length} Deleted Notes</span>
+                <span className="underline">Restore</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('tactical');
+                setSearchQuery('');
+                navigate('/cheatsheets');
+              }}
+              className="w-full px-2.5 py-1.5 rounded-lg border border-subtle text-muted hover:text-primary hover:bg-surface-card text-xs flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Terminal className="w-3.5 h-3.5 text-muted" />
+              <span>← Back to snippets</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Workspace Area (Obsidian Centerpiece) */}
+        <div className="flex-1 min-w-0 flex flex-col rounded-2xl border border-subtle bg-surface-card overflow-hidden shadow-sm lg:h-full">
+          {obsidianNavView === 'files' ? (
+            activeObsidianNote && noteViewerMode === 'docked' ? (
+              /* ACTIVE NOTE IN OBSIDIAN WORKSPACE (FULL WIDTH) */
+              <div 
+                data-testid="docked-note-viewer-pane"
+                className="w-full h-full min-h-[600px] flex-1 flex flex-col min-w-0 overflow-hidden"
+              >
+                {renderWorkspacePanes('docked')}
+              </div>
+            ) : activeObsidianNote && noteViewerMode === 'modal' ? (
+              <div 
+                className="w-full h-full min-h-[600px] flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 bg-surface-card"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-accent-muted border border-accent/40 flex items-center justify-center text-accent shadow-glow-sm">
+                  <Maximize2 className="w-8 h-8" />
+                </div>
+                <div className="space-y-1 max-w-md">
+                  <h3 className="text-base font-semibold text-primary">Note Floating in Modal</h3>
+                  <p className="text-xs text-muted">
+                    This note is open in a floating dialog. Press <kbd className="px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle font-mono text-[11px]">Alt+M</kbd> or click Dock in the dialog header to restore to workspace.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleViewerMode()}
+                  className="px-4 py-2 rounded-xl bg-accent text-on-accent text-xs font-semibold hover:bg-accent-hover transition-colors cursor-pointer"
+                >
+                  Dock Note to Workspace
+                </button>
+              </div>
+            ) : (
+              /* EMPTY OBSIDIAN WORKSPACE (NO ACTIVE NOTE) */
+              <div 
+                data-testid="empty-obsidian-workspace"
+                className="w-full h-full min-h-[600px] flex-1 flex flex-col items-center justify-center p-8 text-center space-y-5 bg-surface-card"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-accent-muted border border-accent/40 flex items-center justify-center text-accent shadow-glow-sm">
+                  <BookOpen className="w-8 h-8" />
+                </div>
+                <div className="space-y-1.5 max-w-md">
+                  <h3 className="text-base font-semibold text-primary">No Note Open</h3>
+                  <p className="text-xs text-muted leading-relaxed">
+                    Select a playbook from the Obsidian Vault Explorer on the left, or open a playbook to get started.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                  {allActiveNotes.length > 0 && (
+                    <button
+                      type="button"
+                      data-testid="empty-state-open-first-note"
+                      onClick={() => {
+                        if (soundEnabled) playCyberSound('click');
+                        setActiveObsidianNote(allActiveNotes[0]);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-accent text-on-accent text-xs font-semibold hover:bg-accent-hover transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Open First Playbook ({allActiveNotes[0].titleEn || allActiveNotes[0].title})</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (soundEnabled) playCyberSound('click');
+                      setObsidianNavView('cards');
+                      setCptsDisplayLayout('cards');
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover border border-subtle text-primary text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <LayoutList className="w-3.5 h-3.5 text-muted" />
+                    <span>Browse Cards Gallery</span>
+                  </button>
+                  {!isObsidianSidebarOpen && (
+                    <button
+                      type="button"
+                      onClick={handleToggleObsidianSidebar}
+                      className="px-3.5 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover border border-accent/40 text-accent text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <PanelLeft className="w-3.5 h-3.5" />
+                      <span>Open File Explorer (Ctrl+B)</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          ) : (
+            /* CARDS GALLERY / QUICK INDEX TABLE (FULL WIDTH) */
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto lg:h-full max-h-[calc(100vh-10rem)]">
+              {/* HUD Header Bar */}
+              <div className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      data-testid="hud-toggle-sidebar-button"
+                      onClick={handleToggleObsidianSidebar}
+                      className="p-1 mr-1 rounded-lg hover:bg-surface-hover text-muted hover:text-accent transition-colors flex-shrink-0 cursor-pointer"
+                      title={isObsidianSidebarOpen ? "Collapse explorer (Ctrl+B)" : "Expand explorer (Ctrl+B)"}
+                      aria-label={isObsidianSidebarOpen ? "Collapse explorer" : "Expand explorer"}
+                    >
+                      <PanelLeft className={`w-4 h-4 ${isObsidianSidebarOpen ? 'text-accent' : 'text-muted'}`} />
+                    </button>
+                    <BookOpen className="w-4 h-4 text-accent" />
+                    <span className="text-primary font-semibold">
+                      Field manual notes
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted text-accent font-semibold">
+                      {selectedCptsCategory === 'ALL'
+                        ? allActiveNotes.length > 0
+                          ? `All notes (${allActiveNotes.length})`
+                          : 'Vault empty'
+                        : selectedCptsCategory}
+                    </span>
+                    {selectedCptsSubCategory !== 'ALL' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent flex items-center gap-1 font-semibold">
+                        <span>📁 {selectedCptsSubCategory}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCptsSubCategory('ALL')}
+                          className="hover:text-primary text-accent ml-1 font-semibold"
+                          title="Clear subcategory filter"
+                          aria-label="Clear subcategory filter"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Jump to Note Combobox */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setJumpDropdownOpen((prev) => !prev)}
+                        className="px-2.5 py-1 rounded-lg bg-surface-card border border-accent/40 text-accent hover:text-accent text-xs flex items-center gap-1.5 font-semibold transition-colors"
+                        title="Quick search and jump to any note directly"
+                      >
+                        <Search className="w-3.5 h-3.5 text-accent" />
+                        <span>Jump to Note...</span>
+                        <ChevronDown className="w-3 h-3 text-accent" />
+                      </button>
+
+                      {jumpDropdownOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setJumpDropdownOpen(false)}
+                          />
+                          <div className="absolute right-0 top-full mt-1.5 w-80 max-h-96 rounded-xl border border-accent/50 bg-surface-card/95 backdrop-blur-md shadow-2xl p-2 z-50 space-y-2 animate-fade-in">
+                            <input
+                              id="cpts-jump-search-input"
+                              name="cpts-jump-search"
+                              aria-label="Type note name, tag, or tool"
+                              type="text"
+                              autoFocus
+                              value={jumpSearchQuery}
+                              onChange={(e) => setJumpSearchQuery(e.target.value)}
+                              placeholder="Type note name, tag, or tool..."
+                              className="w-full bg-surface-card px-2.5 py-1.5 rounded-lg border border-accent/40 text-primary text-xs focus:outline-none focus:border-accent"
+                            />
+                            <div className="max-h-72 overflow-y-auto space-y-1 divide-y divide-subtle/30">
+                              {(jumpSearchQuery.trim() ? allActiveNotes : filteredCptsNotes)
+                                .filter((n) => {
+                                  if (!jumpSearchQuery.trim()) return true;
+                                  const q = jumpSearchQuery.toLowerCase();
+                                  return (
+                                    n.title.toLowerCase().includes(q) ||
+                                    (n.titleEn && n.titleEn.toLowerCase().includes(q)) ||
+                                    (n.titleHe && n.titleHe.toLowerCase().includes(q)) ||
+                                    (n.subCategory && n.subCategory.toLowerCase().includes(q)) ||
+                                    (n.tools && n.tools.some((t) => t.toLowerCase().includes(q)))
+                                  );
+                                })
+                                .slice(0, 40)
+                                .map((note) => (
+                                  <div
+                                    key={note.id}
+                                    className="flex items-center gap-1 w-full rounded hover:bg-accent/40 transition-colors p-1 group"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setJumpDropdownOpen(false);
+                                        setActiveObsidianNote(note);
+                                        setObsidianNavView('files');
+                                        if (soundEnabled) playCyberSound('root');
+                                      }}
+                                      className="flex-1 text-left px-1.5 py-1 rounded transition-colors flex flex-col min-w-0 cursor-pointer"
+                                      title="Open full Obsidian note"
+                                    >
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span className="text-primary text-xs font-semibold group-hover:text-accent truncate flex-1">
+                                          {note.titleEn || note.title}
+                                        </span>
+                                        <span className="text-[9px] px-1 rounded bg-surface-sunken text-accent flex-shrink-0">
+                                          {note.category.split(' ')[0]}
+                                        </span>
+                                      </div>
+                                      <span className="text-[10px] text-muted truncate block">
+                                        {note.subCategory || note.category}
+                                      </span>
+                                    </button>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Sort Order Selector */}
+                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCptsSortOrder('number');
+                          setCptsLimit(30);
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                          cptsSortOrder === 'number'
+                            ? 'bg-accent text-on-accent'
+                            : 'text-secondary hover:text-primary'
+                        }`}
+                      >
+                        <Hash className="w-3.5 h-3.5" />
+                        <span>Number</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCptsSortOrder('topic');
+                          setCptsLimit(30);
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                          cptsSortOrder === 'topic'
+                            ? 'bg-accent text-on-accent'
+                            : 'text-secondary hover:text-primary'
+                        }`}
+                      >
+                        <Folder className="w-3.5 h-3.5" />
+                        <span>Topic</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCptsSortOrder('title');
+                          setCptsLimit(30);
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                          cptsSortOrder === 'title'
+                            ? 'bg-accent text-on-accent'
+                            : 'text-secondary hover:text-primary'
+                        }`}
+                      >
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                        <span>A → Z</span>
+                      </button>
+                    </div>
+
+                    {/* Display Layout Switcher */}
+                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setObsidianNavView('files');
+                          if (soundEnabled) playCyberSound('click');
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                          (obsidianNavView as string) === 'files'
+                            ? 'bg-accent text-on-accent'
+                            : 'text-secondary hover:text-primary'
+                        }`}
+                        title="Switch to Obsidian Note Reader"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Notes</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCptsDisplayLayout('cards');
+                          setObsidianNavView('cards');
+                          if (soundEnabled) playCyberSound('click');
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                          obsidianNavView === 'cards'
+                            ? 'bg-accent text-on-accent'
+                            : 'text-secondary hover:text-primary'
+                        }`}
+                      >
+                        <LayoutList className="w-3.5 h-3.5" />
+                        <span>Cards</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCptsDisplayLayout('quick-index');
+                          setObsidianNavView('index');
+                          if (soundEnabled) playCyberSound('click');
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+                          obsidianNavView === 'index'
+                            ? 'bg-accent text-on-accent'
+                            : 'text-secondary hover:text-primary'
+                        }`}
+                      >
+                        <Table className="w-3.5 h-3.5" />
+                        <span>Table</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Folder Filter Indicator */}
+                {selectedTreePath && (
+                  <div className="flex items-center justify-between p-2 px-3 rounded-lg bg-accent-muted border border-accent/40 text-xs">
+                    <div className="flex items-center gap-2 text-accent truncate">
+                      <FolderOpen className="w-4 h-4 text-accent flex-shrink-0" />
+                      <span className="truncate">
+                        Folder: <strong className="text-primary font-mono">{selectedTreePath.split('/').pop()?.replace(/^\d+[\s_.-]*/, '') || selectedTreePath}</strong> (<strong className="text-accent">{filteredCptsNotes.length} notes</strong>)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTreePath(null)}
+                      className="text-[10px] text-accent hover:text-accent underline font-semibold flex-shrink-0 cursor-pointer ml-2"
+                    >
+                      ✕ Clear Filter
+                    </button>
+                  </div>
+                )}
+
+                {/* Topic Filter Chips */}
+                {activeCategoryTopicGroups.length > 0 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin pt-1 border-t border-accent/20">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCptsSubCategory('ALL');
+                        setCptsLimit(30);
+                      }}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
+                        selectedCptsSubCategory === 'ALL'
+                          ? 'bg-accent text-on-accent'
+                          : 'bg-surface-elevated border border-subtle text-secondary hover:text-primary'
+                      }`}
+                    >
+                      ALL ({filteredCptsNotes.length})
+                    </button>
+                    {activeCategoryTopicGroups.map((tg) => {
+                      const isGroupActive = selectedCptsSubCategory === tg.group;
+                      return (
+                        <button
+                          key={tg.group}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCptsSubCategory(isGroupActive ? 'ALL' : tg.group);
+                            setCptsLimit(30);
+                          }}
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors flex items-center gap-1.5 ${
+                            isGroupActive
+                              ? 'bg-accent text-on-accent border border-accent/40'
+                              : 'bg-surface-elevated border border-subtle text-secondary hover:text-accent'
+                          }`}
+                        >
+                          <span>📁 {tg.group}</span>
+                          <span className={`text-[9px] px-1 rounded-full ${isGroupActive ? 'bg-accent text-on-accent' : 'bg-surface-hover text-accent'}`}>
+                            {tg.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* VIEW 1: QUICK INDEX TABLE */}
+              {(obsidianNavView === 'index' || cptsDisplayLayout === 'quick-index') ? (
+                <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-surface-sunken/95 border-b border-subtle text-muted text-[10px] sticky top-0 z-10 backdrop-blur">
+                        <tr>
+                          <th className="py-2.5 px-3 w-12 text-center">#</th>
+                          <th className="py-2.5 px-3 w-48">Topic / folder</th>
+                          <th className="py-2.5 px-3">Title / objective</th>
+                          <th className="py-2.5 px-3 w-28 text-center">Stage / level</th>
+                          <th className="py-2.5 px-3 w-32 text-center">Commands</th>
+                          <th className="py-2.5 px-3 w-28 text-right pr-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-subtle/40">
+                        {visibleCptsNotes.map((note, index) => {
+                          return (
+                            <tr 
+                              key={note.id}
+                              id={`cpts-note-${note.id}`}
+                              onClick={() => {
+                                setActiveObsidianNote(note);
+                                setObsidianNavView('files');
+                                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                                  setIsObsidianSidebarOpen(false);
+                                }
+                              }}
+                              className="hover:bg-accent-muted/40 transition-colors cursor-pointer group"
+                            >
+                              <td className="py-2 px-3 text-center font-mono text-[11px] text-muted">
+                                {formatNoteNumberBadge(note) || String(index + 1).padStart(2, '0')}
+                              </td>
+                              <td className="py-2 px-3 text-muted text-[11px] truncate max-w-48">
+                                {note.subCategory || note.category}
+                              </td>
+                              <td className="py-2 px-3 font-medium text-primary group-hover:text-accent">
+                                {note.titleEn || note.title}
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted">
+                                  {note.stage || 'General'}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3 text-center font-mono text-[11px] text-accent">
+                                {note.commands?.length || 0}
+                              </td>
+                              <td className="py-2 px-3 text-right pr-4">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveObsidianNote(note);
+                                    setObsidianNavView('files');
+                                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                                      setIsObsidianSidebarOpen(false);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 rounded bg-accent text-on-accent text-[11px] font-semibold hover:bg-accent-hover transition-colors"
+                                >
+                                  Open
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                /* VIEW 2: FULL-WIDTH CARDS GALLERY */
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {visibleCptsNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      id={`cpts-note-${note.id}`}
+                      onClick={() => {
+                        setActiveObsidianNote(note);
+                        setObsidianNavView('files');
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                          setIsObsidianSidebarOpen(false);
+                        }
+                      }}
+                      className="p-4 rounded-xl border border-subtle bg-surface-card hover:border-accent transition-colors cursor-pointer group flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-semibold text-sm text-primary group-hover:text-accent transition-colors">
+                            {note.titleEn || note.title}
+                          </h4>
+                          {formatNoteNumberBadge(note) && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle flex-shrink-0">
+                              #{formatNoteNumberBadge(note)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted line-clamp-2">
+                          {note.summary || 'Playbook documentation and operational commands.'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-subtle/50 text-[11px]">
+                        <span className="text-muted">
+                          📁 {note.subCategory || note.category.split(' ')[0]}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {note.commands && note.commands.length > 0 && (
+                            <span className="font-mono text-accent">
+                              {note.commands.length} cmds
+                            </span>
+                          )}
+                          <span className="px-2 py-0.5 rounded bg-accent/20 text-accent font-semibold group-hover:bg-accent group-hover:text-on-accent transition-colors">
+                            Read ›
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Sliced Pagination Controls */}
+              {visibleCptsNotes.length < filteredCptsNotes.length && (
+                <div className="p-4 rounded-xl border border-subtle bg-surface-card flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCptsLimit((prev) => prev + 30)}
+                    className="px-5 py-2 rounded-lg bg-accent/20 border border-accent/50 hover:bg-accent-hover hover:text-on-accent text-accent font-semibold text-xs transition-colors flex items-center gap-2"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Load next 30 notes ({filteredCptsNotes.length - visibleCptsNotes.length} remaining)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCptsLimit(filteredCptsNotes.length)}
+                    className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary text-xs font-semibold transition-colors"
+                  >
+                    Show all ({filteredCptsNotes.length})
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const switchBase =
     'inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11';
   const varInputBase =
@@ -921,17 +1896,16 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const catOff = 'border-subtle text-secondary hover:bg-surface-hover hover:text-primary lg:border-transparent';
 
   return (
-    <div className="w-full space-y-5 pb-12 text-sm">
+    <div className={`w-full ${viewMode === 'cpts-manual' ? 'space-y-3 pb-2' : 'space-y-5 pb-12'} text-sm`}>
       <PageHeader
         title={viewMode === 'cpts-manual' ? 'Field manual' : 'Snippets & payloads'}
         icon={viewMode === 'cpts-manual' ? <BookOpen /> : <Terminal />}
         description={
           viewMode === 'tactical'
             ? 'Commands and reverse shells with your LHOST, LPORT and target filled in.'
-            : allActiveNotes.length > 0
-            ? `Private local vault with ${allActiveNotes.length} notes. Nothing leaves this device.`
-            : 'Private, local-first notes. Import your Obsidian vault to read playbooks and run commands offline.'
+            : undefined
         }
+        className={viewMode === 'cpts-manual' ? 'mb-1' : ''}
         primaryAction={
           viewMode === 'tactical' ? (
             <CyberButton
@@ -1005,6 +1979,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   if (viewMode === 'tactical') return;
                   setViewMode('tactical');
                   setSearchQuery('');
+                  navigate('/cheatsheets');
                 }}
                 className={`${switchBase} ${
                   viewMode === 'tactical'
@@ -1079,60 +2054,62 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         </div>
       </PageHeader>
 
-      {/* Parameter injection: LHOST / LPORT / target */}
-      <div className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-end gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
-        <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lhost-input">
-          <span>LHOST</span>
-          <input
-            type="text"
-            id="cheatsheet-lhost-input"
-            name="cheatsheet-lhost"
-            aria-label="Attacker Host LHOST"
-            value={globalVars.lhost}
-            onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-            className={`${varInputBase} sm:w-32`}
-          />
-        </label>
+      {viewMode === 'cpts-manual' ? (
+        renderObsidianWorkspace()
+      ) : (
+        <>
+          {/* Parameter injection: LHOST / LPORT / target */}
+          <div className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-end gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+            <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lhost-input">
+              <span>LHOST</span>
+              <input
+                type="text"
+                id="cheatsheet-lhost-input"
+                name="cheatsheet-lhost"
+                aria-label="Attacker Host LHOST"
+                value={globalVars.lhost}
+                onChange={(e) => setGlobalVars({ lhost: e.target.value })}
+                className={`${varInputBase} sm:w-32`}
+              />
+            </label>
 
-        <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lport-input">
-          <span>LPORT</span>
-          <input
-            type="text"
-            id="cheatsheet-lport-input"
-            name="cheatsheet-lport"
-            aria-label="Attacker Port LPORT"
-            value={globalVars.lport}
-            onChange={(e) => setGlobalVars({ lport: e.target.value })}
-            className={`${varInputBase} sm:w-20`}
-          />
-        </label>
+            <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lport-input">
+              <span>LPORT</span>
+              <input
+                type="text"
+                id="cheatsheet-lport-input"
+                name="cheatsheet-lport"
+                aria-label="Attacker Port LPORT"
+                value={globalVars.lport}
+                onChange={(e) => setGlobalVars({ lport: e.target.value })}
+                className={`${varInputBase} sm:w-20`}
+              />
+            </label>
 
-        <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-target-input">
-          <span>TARGET</span>
-          <input
-            type="text"
-            id="cheatsheet-target-input"
-            name="cheatsheet-target"
-            aria-label="Target IP Address"
-            value={globalVars.targetIp}
-            onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
-            className={`${varInputBase} sm:w-32`}
-          />
-        </label>
-      </div>
-
-      {/* Main workspace: categories + commands panel */}
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-4">
-
-        {/* Left column: categories */}
-        <div className={viewMode === 'tactical' ? 'space-y-1' : 'space-y-1 overflow-hidden rounded-xl border border-subtle bg-surface-card p-2'}>
-          <div className={`items-center justify-between px-2 py-1 text-xs font-medium text-muted select-none ${viewMode === 'tactical' ? 'hidden lg:flex' : 'flex'}`}>
-            <span>Categories</span>
-            <span className="tabular-nums">{viewMode === 'tactical' ? cheatsheets.length : CPTS_NOTES.length}</span>
+            <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-target-input">
+              <span>TARGET</span>
+              <input
+                type="text"
+                id="cheatsheet-target-input"
+                name="cheatsheet-target"
+                aria-label="Target IP Address"
+                value={globalVars.targetIp}
+                onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
+                className={`${varInputBase} sm:w-32`}
+              />
+            </label>
           </div>
 
-          {viewMode === 'tactical' ? (
-            <>
+          {/* Main workspace: categories + commands panel */}
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-4">
+
+            {/* Left column: categories */}
+            <div className="space-y-1">
+              <div className="items-center justify-between px-2 py-1 text-xs font-medium text-muted select-none hidden lg:flex">
+                <span>Categories</span>
+                <span className="tabular-nums">{cheatsheets.length}</span>
+              </div>
+
               <div className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
                 {CHEATSHEET_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
@@ -1159,199 +2136,38 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   </button>
                 </div>
               </div>
-            </>
-            ) : (
-              <>
-                {/* CPTS Field Manual Tree Explorer Header & Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-accent/40">
-                  <span className="text-xs text-secondary font-medium flex items-center gap-1.5 flex-shrink-0">
-                    <FolderOpen className="w-3.5 h-3.5 text-muted" />
-                    <span>Explorer</span>
-                  </span>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleExpandAllTreeFolders}
-                      className="px-1.5 py-0.5 rounded bg-surface-elevated hover:bg-accent-muted text-secondary border border-subtle text-[11px] hover:text-primary transition-colors cursor-pointer"
-                      title="Expand all nested folders"
-                    >
-                      + All
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCollapseAllTreeFolders}
-                      className="px-1.5 py-0.5 rounded bg-surface-elevated hover:bg-accent-muted text-secondary border border-subtle text-[11px] hover:text-primary transition-colors cursor-pointer"
-                      title="Collapse all folders"
-                    >
-                      - All
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsNewCptsModalOpen(true)}
-                      className="px-2 py-0.5 rounded bg-accent hover:bg-accent-hover text-on-accent border border-accent text-[10px] font-semibold transition-[box-shadow,background-color,border-color,color] flex items-center gap-1 cursor-pointer flex-shrink-0"
-                      title="Create custom field manual note"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Note</span>
-                    </button>
-                  </div>
-                </div>
+            </div>
 
-                {/* "All Notes" Root Item */}
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setSelectedTreePath(null);
-                    setSelectedCptsCategory('ALL');
-                    setSelectedCptsSubCategory('ALL');
-                    setCptsLimit(30);
-                  }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                    selectedTreePath === null && selectedCptsCategory === 'ALL'
-                      ? 'bg-accent-muted text-accent border border-accent/40 font-semibold'
-                      : 'text-secondary hover:text-accent hover:bg-surface-elevated border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-3.5 h-3.5 text-accent" />
-                    <span>All Field Notes</span>
-                  </div>
-                  <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-hover border border-strong text-primary">
-                    {allActiveNotes.length}
-                  </span>
-                </motion.button>
-
-                {/* Restore Banner if any notes were deleted */}
-                {deletedNoteIds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleRestoreDeletedNotes}
-                    className="w-full p-1.5 px-2 rounded-lg bg-callout-danger-bg border border-callout-danger-border/40 hover:bg-callout-danger-bg text-callout-danger-fg text-[10px] font-semibold flex items-center justify-between transition-colors cursor-pointer"
-                    title="Click to restore all deleted field notes"
-                  >
-                    <span>↺ {deletedNoteIds.length} Deleted Notes</span>
-                    <span className="underline">Restore</span>
-                  </button>
-                )}
-
-                {/* Recursive Multi-Level Tree Explorer (Depths 1 to 6) */}
-                <div className="space-y-0.5 max-h-[65vh] overflow-y-auto pr-1 scrollbar-thin">
-                  {cptsFileTree.length === 0 ? (
-                    <div className="p-4 rounded-lg bg-accent-muted border border-accent/40 text-center space-y-2.5 my-2">
-                      <FolderOpen className="w-8 h-8 text-accent mx-auto" />
-                      <div className="text-xs font-semibold text-primary">Vault Empty (0 Notes)</div>
-                      <p className="text-[10px] text-secondary">
-                        Import your notes directory from disk or create a custom note.
-                      </p>
-                      <div className="flex flex-col gap-1.5 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (soundEnabled) playCyberSound('click');
-                            setNotesImportModalOpen(true);
-                          }}
-                          className="w-full py-1.5 px-2.5 rounded bg-accent hover:bg-accent-hover text-on-accent font-semibold text-[10px] transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <FolderOpen className="w-3 h-3" />
-                          <span>Import Notes Directory</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewNoteInitialDir(undefined);
-                            setIsNewCptsModalOpen(true);
-                            if (soundEnabled) playCyberSound('click');
-                          }}
-                          className="w-full py-1.5 px-2.5 rounded bg-surface-card hover:bg-surface-hover text-accent border border-accent/40 text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Create Custom Note</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    cptsFileTree.map((rootNode) => (
-                      <CptsTreeItem
-                        key={rootNode.id}
-                        node={rootNode}
-                        depth={0}
-                        expandedFolders={expandedTreeFolders}
-                        onToggleFolder={handleToggleTreeFolder}
-                        selectedPath={selectedTreePath}
-                        onSelectFolder={handleSelectTreeFolder}
-                        onSelectNote={(note) => {
-                          if (soundEnabled) playCyberSound('click');
-                          setActiveObsidianNote(note);
-                        }}
-                        onDeleteNote={handleDeleteNoteWithConfirm}
-                        onAddNoteToFolder={(folderPath) => {
-                          setNewNoteInitialDir(folderPath);
-                          setIsNewCptsModalOpen(true);
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        cptsLangMode={cptsLangMode}
-                      />
-                    ))
+            {/* Right column: commands panel */}
+            <div className="lg:col-span-3 space-y-4">
+              
+              {/* SEARCH */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                  <input
+                    type="text"
+                    id="cheatsheet-search-input"
+                    name="cheatsheet-search"
+                    aria-label="Search cheatsheets and field manual notes"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                    }}
+                    placeholder="Search commands, flags, tools (e.g. nmap, ffuf, bloodhound, impacket)..."
+                    className="h-11 w-full rounded-lg border border-subtle bg-surface-card pl-9 pr-9 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none sm:h-9"
+                  />
+                  {searchQuery && (
+                    <button aria-label="Clear search"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center text-xs text-muted hover:text-primary"
+                    >
+                      ✕
+                    </button>
                   )}
                 </div>
+              </div>
 
-                <div className="pt-2 border-t border-subtle">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setViewMode('tactical');
-                      setSearchQuery('');
-                    }}
-                    className="w-full px-3 py-2 rounded-lg border border-subtle text-muted hover:text-primary hover:bg-surface-sunken text-xs flex items-center gap-2 transition-colors cursor-pointer"
-                  >
-                    <Terminal className="w-3.5 h-3.5 text-muted" />
-                    <span>← Back to snippets</span>
-                  </button>
-                </div>
-              </>
-            )}
-        </div>
-
-        {/* Right column: commands panel or field manual */}
-        <div className="lg:col-span-3 space-y-4">
-          
-          {/* SEARCH & REVSHELL SWITCHER */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-              <input
-                type="text"
-                id="cheatsheet-search-input"
-                name="cheatsheet-search"
-                aria-label="Search cheatsheets and field manual notes"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCptsLimit(30);
-                }}
-                placeholder={
-                  viewMode === 'tactical'
-                    ? 'Search commands, flags, tools (e.g. nmap, ffuf, bloodhound, impacket)...'
-                    : allActiveNotes.length > 0
-                    ? `Search ${allActiveNotes.length} field manual notes, tags, summaries, and commands (e.g. kerberoast, suid, bloodhound)...`
-                    : 'Search field manual notes and commands...'
-                }
-                className="h-11 w-full rounded-lg border border-subtle bg-surface-card pl-9 pr-9 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none sm:h-9"
-              />
-              {searchQuery && (
-                <button aria-label="Clear search"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center text-xs text-muted hover:text-primary"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* VIEW MODE 1: TACTICAL CHEATSHEETS */}
-          {viewMode === 'tactical' && (
-            <>
               {/* DEDICATED REVERSE SHELL GENERATOR & PENTESTMONKEY ARSENAL */}
               {(selectedCategory === 'all' || selectedCategory === 'revshell') && !searchQuery && (
                 <ReverseShellGenerator />
@@ -1480,1227 +2296,10 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   })
                 )}
               </div>
-            </>
-          )}
-
-          {/* VIEW MODE 2: CPTS FIELD MANUAL (HIERARCHICAL TOPIC NAVIGATION & ANTI-SCROLL MODES) */}
-          {viewMode === 'cpts-manual' && (
-            <div className="space-y-4">
-              {/* Field Manual HUD Header with Jump Dropdown, Layout Mode, and Bilingual Switcher */}
-              <div className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-3 text-xs">
-                {/* HUD Top Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <BookOpen className="w-4 h-4 text-accent" />
-                    <span className="text-primary font-semibold">
-                      Field manual notes
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted text-accent">
-                      {selectedCptsCategory === 'ALL'
-                        ? allActiveNotes.length > 0
-                          ? `All notes (${allActiveNotes.length})`
-                          : 'Vault empty'
-                        : selectedCptsCategory}
-                    </span>
-                    {selectedCptsSubCategory !== 'ALL' && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent flex items-center gap-1">
-                        <span>📁 {selectedCptsSubCategory}</span>
-                        <button aria-label="Clear subcategory filter"
-                          type="button"
-                          onClick={() => setSelectedCptsSubCategory('ALL')}
-                          className="hover:text-accent text-accent ml-1 font-semibold"
-                          title="Clear subcategory filter"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Controls Capsule */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Jump to Note Combobox */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setJumpDropdownOpen((prev) => !prev)}
-                        className="px-2.5 py-1 rounded-lg bg-surface-card border border-accent/40 text-accent hover:text-accent hover:border-accent/40 text-xs flex items-center gap-1.5 font-semibold transition-[box-shadow,background-color,border-color,color]"
-                        title="Quick search and jump to any note directly"
-                      >
-                        <Search className="w-3.5 h-3.5 text-accent" />
-                        <span>Jump to Note...</span>
-                        <ChevronDown className="w-3 h-3 text-accent" />
-                      </button>
-
-                      {jumpDropdownOpen && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setJumpDropdownOpen(false)}
-                          />
-                          <div className="absolute right-0 top-full mt-1.5 w-80 max-h-96 rounded-xl border border-accent/50 bg-surface-card/95 backdrop-blur-md shadow-2xl p-2 z-50 space-y-2 animate-fade-in">
-                            <input
-                              id="cpts-jump-search-input"
-                              name="cpts-jump-search"
-                              aria-label="Type note name, tag, or tool"
-                              type="text"
-                              autoFocus
-                              value={jumpSearchQuery}
-                              onChange={(e) => setJumpSearchQuery(e.target.value)}
-                              placeholder="Type note name, tag, or tool..."
-                              className="w-full bg-surface-card px-2.5 py-1.5 rounded-lg border border-accent/40 text-primary text-xs focus:outline-none focus:border-accent/40"
-                            />
-                            <div className="max-h-72 overflow-y-auto space-y-1 divide-y divide-subtle/30">
-                              {(jumpSearchQuery.trim() ? allActiveNotes : filteredCptsNotes)
-                                .filter((n) => {
-                                  if (!jumpSearchQuery.trim()) return true;
-                                  const q = jumpSearchQuery.toLowerCase();
-                                  return (
-                                    n.title.toLowerCase().includes(q) ||
-                                    (n.titleEn && n.titleEn.toLowerCase().includes(q)) ||
-                                    (n.titleHe && n.titleHe.toLowerCase().includes(q)) ||
-                                    (n.subCategory && n.subCategory.toLowerCase().includes(q)) ||
-                                    (n.tools && n.tools.some((t) => t.toLowerCase().includes(q)))
-                                  );
-                                })
-                                 .slice(0, 40)
-                                 .map((note) => (
-                                   <div
-                                     key={note.id}
-                                     className="flex items-center gap-1 w-full rounded hover:bg-accent/40 transition-colors p-1 group"
-                                   >
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         setJumpDropdownOpen(false);
-                                         setActiveObsidianNote(note);
-                                         if (soundEnabled) playCyberSound('root');
-                                       }}
-                                       className="flex-1 text-left px-1.5 py-1 rounded transition-colors flex flex-col min-w-0 cursor-pointer"
-                                       title="Open full Obsidian note"
-                                     >
-                                       <div className="flex items-center justify-between gap-1">
-                                         <span className="text-primary text-xs font-semibold group-hover:text-accent truncate flex-1">
-                                           {note.titleEn || note.title}
-                                         </span>
-                                         <span className="text-[9px] px-1 rounded bg-surface-sunken text-accent flex-shrink-0">
-                                           {note.category.split(' ')[0]}
-                                         </span>
-                                       </div>
-                                       <span className="text-[10px] text-muted truncate block">
-                                         {note.subCategory || note.category}
-                                       </span>
-                                     </button>
-                                     <button
-                                       type="button"
-                                       onClick={() => handleJumpToNote(note)}
-                                       className="px-2 py-1 rounded bg-surface-sunken border border-accent/30 text-accent hover:text-primary hover:bg-accent/60 text-[10px] flex-shrink-0 cursor-pointer"
-                                       title="Scroll to note in page"
-                                     >
-                                       Jump
-                                     </button>
-                                   </div>
-                                 ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* View options disclosure: below sm only; desktop controls stay mounted */}
-                    <button
-                      type="button"
-                      aria-expanded={hudOptionsOpen}
-                      aria-controls="cpts-hud-view-options"
-                      onClick={() => setHudOptionsOpen((o) => !o)}
-                      className="sm:hidden flex items-center gap-1.5 px-3 h-11 rounded-lg bg-surface-card border border-subtle text-secondary text-xs font-medium active:scale-[0.97] cursor-pointer"
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>View options</span>
-                    </button>
-
-                    <div
-                      id="cpts-hud-view-options"
-                      className={hudOptionsOpen ? 'flex flex-wrap items-center gap-2 w-full sm:contents' : 'hidden sm:contents'}
-                    >
-                    {/* Sort Order Selector: Number Order / Topic / Title */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsSortOrder('number');
-                          setSelectedTreePath(null);
-                          setSelectedCptsCategory('ALL');
-                          setSelectedCptsSubCategory('ALL');
-                          setCptsLimit(30);
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-                          cptsSortOrder === 'number'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Sort notes strictly by numerical sequence (00.01 to 06.xx) flat across all folders"
-                      >
-                        <Hash className="w-3.5 h-3.5 text-callout-warn-fg" />
-                        <span>Number Order</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsSortOrder('topic');
-                          setCptsLimit(30);
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        className={`px-2 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          cptsSortOrder === 'topic'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Group and filter by topic folders"
-                      >
-                        <Folder className="w-3.5 h-3.5" />
-                        <span>By Topic</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsSortOrder('title');
-                          setCptsLimit(30);
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        className={`px-2 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          cptsSortOrder === 'title'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Sort notes alphabetically by title"
-                      >
-                        <ArrowUpDown className="w-3.5 h-3.5" />
-                        <span>A → Z</span>
-                      </button>
-                    </div>
-
-                    {/* Display Layout Switcher */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setCptsDisplayLayout('cards')}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
-                          cptsDisplayLayout === 'cards'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Detailed cards view with expanded summaries and code blocks"
-                      >
-                        <LayoutList className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Cards</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCptsDisplayLayout('quick-index')}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
-                          cptsDisplayLayout === 'quick-index'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Ultra-compact terminal index table - view 50+ notes without scrolling"
-                      >
-                        <Table className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Quick Index</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCptsDisplayLayout('grouped')}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
-                          cptsDisplayLayout === 'grouped'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Grouped by Obsidian topic folders"
-                      >
-                        <Folder className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Grouped</span>
-                      </button>
-                    </div>
-
-                    {/* Note Pane Docked / Modal layout toggle */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        data-testid="hud-toggle-dock-mode"
-                        onClick={() => {
-                          if (soundEnabled) playCyberSound('click');
-                          handleToggleViewerMode();
-                        }}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          noteViewerMode === 'docked'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title={noteViewerMode === 'docked' ? "Docked side-by-side mode active · Click to switch to floating modal" : "Floating modal mode active · Click to switch to docked side-by-side"}
-                      >
-                        <PanelRight className="w-3.5 h-3.5 text-muted" />
-                        <span className="hidden md:inline">{noteViewerMode === 'docked' ? 'Docked Pane' : 'Floating Modal'}</span>
-                      </button>
-                    </div>
-
-                    {/* 2-Way Language Selector: English or Hebrew */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        data-testid="cpts-lang-en"
-                        onClick={() => {
-                          if (soundEnabled) playCyberSound('click');
-                          setCptsLangMode('en');
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-                          cptsLangMode === 'en'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="English notes only"
-                      >
-                        <span>🇬🇧 EN</span>
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="cpts-lang-he"
-                        onClick={() => {
-                          if (soundEnabled) playCyberSound('click');
-                          setCptsLangMode('he');
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-                          cptsLangMode === 'he'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="עברית בלבד"
-                      >
-                        <span>🇮🇱 עב</span>
-                      </button>
-                    </div>
-
-                    {/* RTL / LTR Direction Selector */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setNotesTextDirection('auto')}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors ${
-                          notesTextDirection === 'auto'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Auto direction based on language"
-                      >
-                        <span>Auto</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNotesTextDirection('ltr')}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors ${
-                          notesTextDirection === 'ltr'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Force Left-to-Right layout"
-                      >
-                        <span>LTR ➔</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNotesTextDirection('rtl')}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold transition-colors ${
-                          notesTextDirection === 'rtl'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Force Right-to-Left layout (עברית)"
-                      >
-                        <span>⬅️ RTL</span>
-                      </button>
-                    </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Active Folder Filter Indicator */}
-                {selectedTreePath && (
-                  <div className="flex items-center justify-between p-2 px-3 rounded-lg bg-accent-muted border border-accent/40 text-xs">
-                    <div className="flex items-center gap-2 text-accent truncate">
-                      <FolderOpen className="w-4 h-4 text-accent flex-shrink-0" />
-                      <span className="truncate">
-                        Folder: <strong className="text-primary font-mono">{selectedTreePath.split('/').pop()?.replace(/^\d+[\s_.-]*/, '') || selectedTreePath}</strong> (<strong className="text-accent">{filteredCptsNotes.length} notes</strong>)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTreePath(null)}
-                      className="text-[10px] text-accent hover:text-accent underline font-semibold flex-shrink-0 cursor-pointer ml-2"
-                    >
-                      ✕ Clear Filter
-                    </button>
-                  </div>
-                )}
-
-                {/* Top Interactive Topic Filter Chips Bar */}
-                {activeCategoryTopicGroups.length > 0 && (
-                  <div className="space-y-1.5 pt-1 border-t border-accent/30">
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                      <span className="text-[10px] text-accent font-semibold flex-shrink-0 flex items-center gap-1">
-                        <Filter className="w-3 h-3" />
-                        <span>Topics</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCptsSubCategory('ALL');
-                          setCptsLimit(30);
-                        }}
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
-                          selectedCptsSubCategory === 'ALL'
-                            ? 'bg-accent text-on-accent'
-                            : 'bg-surface-elevated border border-strong text-secondary hover:text-primary'
-                        }`}
-                      >
-                        ALL ({filteredCptsNotes.length})
-                      </button>
-                      {activeCategoryTopicGroups.map((tg) => {
-                        const isGroupActive = selectedCptsSubCategory === tg.group;
-                        return (
-                          <button
-                            key={tg.group}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCptsSubCategory(isGroupActive ? 'ALL' : tg.group);
-                              setCptsLimit(30);
-                            }}
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors flex items-center gap-1.5 ${
-                              isGroupActive
-                                ? 'bg-accent text-on-accent border border-accent/40'
-                                : 'bg-surface-elevated border border-strong text-secondary hover:text-accent hover:border-accent/40'
-                            }`}
-                          >
-                            <span>📁 {tg.group}</span>
-                            <span className={`text-[9px] px-1 rounded-full ${isGroupActive ? 'bg-accent text-on-accent' : 'bg-surface-hover text-accent'}`}>
-                              {tg.count}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Sub-Topic Leaf Pills */}
-                    {selectedCptsSubCategory !== 'ALL' && activeTopicLeaves.length > 1 && (
-                      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pl-6 scrollbar-thin">
-                        <span className="text-[9px] text-muted flex-shrink-0">
-                          SUB-LEAVES:
-                        </span>
-                        {activeTopicLeaves.map((leaf) => (
-                          <button
-                            key={leaf.leaf}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCptsSubCategory(leaf.leaf);
-                              setCptsLimit(30);
-                            }}
-                            className="px-2 py-0.2 rounded text-[10px] bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:border-accent/40 transition-colors flex-shrink-0"
-                          >
-                            {leaf.leaf} ({leaf.count})
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Telemetry Count */}
-                <div className="flex items-center justify-between text-[11px] text-muted font-mono tabular-nums pt-1">
-                  <div>
-                    Showing <strong className="text-accent">{visibleCptsNotes.length}</strong> of <strong className="text-primary">{filteredCptsNotes.length}</strong> notes (<strong className="text-secondary">{totalCptsCommands}</strong> total commands)
-                  </div>
-                  {cptsDisplayLayout === 'quick-index' && (
-                    <span className="text-accent text-[10px]">
-                      ⚡ Terminal Quick Index Active · 1-Click Inline Command Expansion
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Main Content Area: Split View when Note is Docked, Full Width otherwise */}
-              <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
-                {/* Left Column: Index Table / Grouped List / Cards */}
-                <div className={`w-full ${activeObsidianNote && noteViewerMode === 'docked' ? (isDockedMaximized ? 'hidden' : 'lg:w-[48%] xl:w-[42%] min-w-0') : 'w-full'} space-y-4`}>
-                  {/* VIEW RENDERER 1: QUICK INDEX TABLE MODE (High-Density Anti-Scroll Table) */}
-                  {cptsDisplayLayout === 'quick-index' && (
-                <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-surface-sunken/95 border-b border-subtle text-muted text-[10px] sticky top-0 z-10 backdrop-blur">
-                        <tr>
-                          <th className="py-2.5 px-3 w-12 text-center">#</th>
-                          <th className="py-2.5 px-3 w-48">Topic / folder</th>
-                          <th className="py-2.5 px-3">Title / objective</th>
-                          <th className="py-2.5 px-3 w-28 text-center">Stage / level</th>
-                          <th className="py-2.5 px-3 w-32 text-center">Commands</th>
-                          <th className="py-2.5 px-3 w-28 text-right pr-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-subtle/40">
-                        {allActiveNotes.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="p-8 text-center">
-                              <div className="space-y-3 max-w-md mx-auto">
-                                <div className="text-primary font-semibold text-sm">Vault Empty (0 Notes Loaded)</div>
-                                <p className="text-secondary text-xs">
-                                  ZeroBox keeps notes 100% client-side in browser IndexedDB. Import your personal Obsidian notes JSON to populate this quick index.
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (soundEnabled) playCyberSound('click');
-                                    setNotesImportModalOpen(true);
-                                  }}
-                                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-on-accent font-semibold rounded-lg text-xs inline-flex items-center gap-2 transition-[box-shadow,background-color,border-color,color] cursor-pointer"
-                                >
-                                  <Upload className="w-3.5 h-3.5" />
-                                  <span>Import Notes Vault (.json)</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : visibleCptsNotes.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="p-8 text-center text-secondary text-xs">
-                              No field manual notes matching "{searchQuery}".
-                            </td>
-                          </tr>
-                        ) : (
-                          visibleCptsNotes.map((note, idx) => {
-                            const isRowExpanded = Boolean(expandedIndexRows[note.id]);
-                            const { group, leaf } = parseSubCategory(note.subCategory);
-                            const isHighlighted = highlightedNoteId === note.id;
-                            const isRtl = notesTextDirection === 'rtl' || (notesTextDirection === 'auto' && cptsLangMode === 'he');
-
-                            return (
-                              <React.Fragment key={note.id}>
-                                <tr
-                                  id={`cpts-note-${note.id}`}
-                                  className={`transition-colors hover:bg-accent/20 ${
-                                    isHighlighted
-                                      ? 'bg-accent/25 ring-1 ring-accent'
-                                      : idx % 2 === 0
-                                      ? 'bg-surface-card/50'
-                                      : 'bg-surface-sunken/30'
-                                  }`}
-                                >
-                                  {/* Sequential Index */}
-                                  <td className="py-2.5 px-3 text-center text-muted text-[11px] font-mono tabular-nums">
-                                    {String(idx + 1).padStart(2, '0')}
-                                  </td>
-
-                                  {/* Topic Folder */}
-                                  <td className="py-2.5 px-3">
-                                    <div
-                                      className="text-[11px] text-accent font-semibold truncate max-w-[180px]"
-                                      title={note.subCategory || group}
-                                    >
-                                      📁 {group}
-                                    </div>
-                                    {leaf && leaf !== group && (
-                                      <div className="text-[9px] text-muted truncate max-w-[180px]">
-                                        › {leaf}
-                                      </div>
-                                    )}
-                                  </td>
-
-                                  {/* Title & Objective */}
-                                  <td className="py-2.5 px-3">
-                                    <div dir={isRtl ? 'rtl' : 'ltr'} className={isRtl ? 'text-right' : 'text-left'}>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          if (soundEnabled) playCyberSound('click');
-                                          setActiveObsidianNote(note);
-                                        }}
-                                        className="font-semibold text-primary text-xs hover:text-accent transition-colors inline-flex items-center gap-1.5 cursor-pointer text-left"
-                                        title={cptsLangMode === 'he' ? "פתח הערה באובסידיאן" : "Open authentic Obsidian note"}
-                                        dir={cptsLangMode === 'he' ? 'rtl' : 'ltr'}
-                                      >
-                                        <BookOpen className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-                                        <span>
-                                          {cptsLangMode === 'he'
-                                            ? note.titleHe || note.title
-                                            : note.titleEn || note.title}
-                                        </span>
-                                        {formatNoteNumberBadge(note) && (
-                                          <span className="text-[9px] px-1 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold">
-                                            #{formatNoteNumberBadge(note)}
-                                          </span>
-                                        )}
-                                      </button>
-                                      <div
-                                        className={`text-[10px] text-muted truncate max-w-md mt-0.5 ${
-                                          cptsLangMode === 'he' ? 'font-sans text-right' : 'text-left'
-                                        }`}
-                                        dir={cptsLangMode === 'he' ? 'rtl' : 'ltr'}
-                                      >
-                                        {cptsLangMode === 'he'
-                                          ? note.heSummary || note.summary || note.subCategory
-                                          : note.enSummary || note.summary || note.subCategory}
-                                      </div>
-                                    </div>
-                                  </td>
-
-                                  {/* Stage / Difficulty */}
-                                  <td className="py-2.5 px-3 text-center">
-                                    {note.stage ? (
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle">
-                                        {note.stage}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-muted">
-                                        {note.difficulty || 'Core'}
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  {/* Commands Count & Inline Toggle */}
-                                  <td className="py-2.5 px-3 text-center">
-                                    {note.commands && note.commands.length > 0 ? (
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          setExpandedIndexRows((prev) => ({ ...prev, [note.id]: !prev[note.id] }))
-                                        }
-                                        className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors inline-flex items-center gap-1 ${
-                                          isRowExpanded
-                                            ? 'bg-accent text-on-accent'
-                                            : 'bg-accent-muted border border-accent/40 text-accent hover:bg-accent-muted'
-                                        }`}
-                                      >
-                                        <span>
-                                          {isRowExpanded ? '▴' : '▾'} {note.commands.length} cmd
-                                          {note.commands.length > 1 ? 's' : ''}
-                                        </span>
-                                      </button>
-                                    ) : (
-                                      <span className="text-muted text-[10px]">Doc only</span>
-                                    )}
-                                  </td>
-
-                                  {/* Quick Action: Open Note & Copy All */}
-                                  <td className="py-2.5 px-3 text-right pr-4">
-                                    <div className="flex items-center justify-end gap-1.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          if (soundEnabled) playCyberSound('click');
-                                          setActiveObsidianNote(note);
-                                        }}
-                                        className="px-2 py-1 rounded text-[10px] font-semibold bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:bg-accent-muted transition-colors inline-flex items-center gap-1 cursor-pointer"
-                                        title="Open Obsidian personal note"
-                                      >
-                                        <BookOpen className="w-2.5 h-2.5" />
-                                        <span>Note</span>
-                                      </button>
-                                      {note.commands && note.commands.length > 0 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleCopyAllNoteCommands(note)}
-                                          className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer ${
-                                            copiedId === `all-${note.id}`
-                                              ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                                              : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-accent/40'
-                                          }`}
-                                          title="Copy all commands in note"
-                                        >
-                                          {copiedId === `all-${note.id}` ? (
-                                            <>
-                                              <Check className="w-3 h-3 text-callout-success-fg" />
-                                              <span>Copied</span>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Copy className="w-3 h-3" />
-                                              <span>Copy All</span>
-                                            </>
-                                          )}
-                                        </button>
-                                      )}
-                                      <button aria-label="Delete field note"
-                                        type="button"
-                                        onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
-                                        className="p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors cursor-pointer"
-                                        title="Delete field note"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-
-                                {/* Inline Expanded Terminal Commands */}
-                                {isRowExpanded && note.commands && note.commands.length > 0 && (
-                                  <tr className="bg-surface-sunken border-y border-accent/40">
-                                    <td colSpan={6} className="p-3 pl-10 pr-4 space-y-2">
-                                      <div className="flex items-center justify-between text-[10px] text-accent font-semibold border-b border-accent/30 pb-1">
-                                        <span>Commands for {note.titleEn || note.title}</span>
-                                        <span>{note.commands.length} commands</span>
-                                      </div>
-                                      <div className="space-y-1.5" dir="ltr">
-                                        {note.commands.map((cmd, cIdx) => {
-                                          const interpolated = interpolateCommand(cmd, globalVars);
-                                          const cmdId = `${note.id}-${cIdx}`;
-                                          const isCopied = copiedId === cmdId;
-                                          return (
-                                            <div
-                                              key={cIdx}
-                                              className="flex items-center justify-between gap-2 p-1.5 px-2 rounded-md bg-surface-inverse text-on-inverse text-xs font-mono tabular-nums"
-                                            >
-                                              <pre className="text-on-inverse overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all">
-                                                {interpolated}
-                                              </pre>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleCopy(interpolated, cmdId)}
-                                                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 transition-colors ${
-                                                  isCopied
-                                                    ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                                                    : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
-                                                }`}
-                                              >
-                                                {isCopied ? (
-                                                  <Check className="w-2.5 h-2.5 text-callout-success-fg" />
-                                                ) : (
-                                                  <Copy className="w-2.5 h-2.5" />
-                                                )}
-                                                <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                                              </button>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </React.Fragment>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* VIEW RENDERER 2: GROUPED VIEW (Accordion Folders by Topic) */}
-              {cptsDisplayLayout === 'grouped' && (
-                <div className="space-y-4">
-                  {allActiveNotes.length === 0 ? (
-                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-subtle bg-surface-card/60 space-y-3 max-w-lg mx-auto my-4">
-                      <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center mx-auto text-secondary">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-primary">
-                          Private Local-First Field Manual Vault
-                        </h3>
-                        <p className="text-xs text-muted font-normal leading-relaxed">
-                          ZeroBox keeps notes 100% private. Notes are never bundled or published online. Import your personal Obsidian vault export to access your offensive playbooks, methodologies, and commands offline.
-                        </p>
-                      </div>
-                      <div className="pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (soundEnabled) playCyberSound('click');
-                            setNotesImportModalOpen(true);
-                          }}
-                          className="px-4 py-2 bg-accent hover:opacity-90 text-on-accent font-semibold rounded-lg text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Import Your Notes Vault (.json)</span>
-                        </button>
-                      </div>
-                      <div className="text-[10px] text-muted flex items-center justify-center gap-1.5 pt-0.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" />
-                        <span>IndexedDB Browser Sandbox · 0 Network Calls · 0 Data Leakage</span>
-                      </div>
-                    </div>
-                  ) : groupedCptsNotes.length === 0 ? (
-                    <div className="p-8 text-center rounded-xl border border-dashed border-accent/40 bg-accent-muted text-secondary text-xs">
-                      No field manual notes matching "{searchQuery}".
-                    </div>
-                  ) : (
-                    groupedCptsNotes.map((grp) => {
-                      const isCollapsed = Boolean(collapsedGroupSections[grp.group]);
-                      return (
-                        <div
-                          key={grp.group}
-                          className="rounded-xl border border-accent/30 bg-surface-card overflow-hidden"
-                        >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCollapsedGroupSections((prev) => ({ ...prev, [grp.group]: !prev[grp.group] }))
-                            }
-                            className="w-full p-3 bg-accent/30 hover:bg-accent/40 border-b border-accent/30 flex items-center justify-between text-xs transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              {isCollapsed ? (
-                                <ChevronRight className="w-4 h-4 text-accent" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-accent" />
-                              )}
-                              <span className="font-semibold text-primary text-sm">📁 {grp.group}</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-surface-hover border border-accent/40 text-accent">
-                                {grp.count} notes
-                              </span>
-                            </div>
-                            <span className="text-[11px] text-muted">
-                              {isCollapsed ? 'Click to expand' : 'Click to collapse'}
-                            </span>
-                          </button>
-
-                          {!isCollapsed && (
-                            <div className="p-3 space-y-3">
-                              {grp.notes.map((note) => {
-                                const isNoteExpanded = Boolean(expandedNotes[note.id]);
-                                const commandsToShow = isNoteExpanded
-                                  ? note.commands
-                                  : note.commands
-                                  ? note.commands.slice(0, 2)
-                                  : [];
-                                const extraCommandsCount = note.commands
-                                  ? Math.max(0, note.commands.length - 2)
-                                  : 0;
-                                const isRtlCard =
-                                  notesTextDirection === 'rtl' ||
-                                  (notesTextDirection === 'auto' && cptsLangMode === 'he');
-                                const isHighlighted = highlightedNoteId === note.id;
-
-                                return (
-                                  <div
-                                    key={note.id}
-                                    id={`cpts-note-${note.id}`}
-                                    dir={isRtlCard ? 'rtl' : 'ltr'}
-                                    className={`p-3.5 rounded-xl border border-subtle bg-surface-sunken/40 hover:border-accent/50 transition-[box-shadow,background-color,border-color,color] space-y-2.5 group ${
-                                      isRtlCard ? 'text-right' : 'text-left'
-                                    } ${isHighlighted ? 'ring-2 ring-accent bg-accent/30' : ''}`}
-                                  >
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="space-y-1 flex-1 min-w-0">
-                                         <button
-                                           type="button"
-                                           onClick={() => {
-                                             if (soundEnabled) playCyberSound('click');
-                                             setActiveObsidianNote(note);
-                                           }}
-                                            className="font-semibold text-primary text-xs group-hover:text-accent transition-colors cursor-pointer inline-flex items-center gap-1.5"
-                                            title={cptsLangMode === 'he' ? "פתח הערה באובסידיאן" : "Open authentic Obsidian note"}
-                                            dir={cptsLangMode === 'he' ? 'rtl' : 'ltr'}
-                                          >
-                                            <BookOpen className="w-3 h-3 text-accent flex-shrink-0" />
-                                            <span>
-                                              {cptsLangMode === 'he'
-                                                ? note.titleHe || note.title
-                                                : note.titleEn || note.title}
-                                            </span>
-                                          </button>
-                                          <p
-                                            className={`text-[11px] text-muted line-clamp-2 ${
-                                              cptsLangMode === 'he' ? 'font-sans text-right' : 'text-left'
-                                            }`}
-                                            dir={cptsLangMode === 'he' ? 'rtl' : 'ltr'}
-                                          >
-                                            {cptsLangMode === 'he'
-                                              ? note.heSummary || note.summary || note.subCategory
-                                              : note.enSummary || note.summary || note.subCategory}
-                                          </p>
-                                       </div>
-                                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                                         <button
-                                           type="button"
-                                           onClick={() => {
-                                             if (soundEnabled) playCyberSound('click');
-                                             setActiveObsidianNote(note);
-                                           }}
-                                           className="px-2 py-1 rounded text-[10px] font-semibold bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:bg-accent-muted transition-colors flex items-center gap-1 cursor-pointer"
-                                           title="Open Obsidian personal note"
-                                         >
-                                           <BookOpen className="w-2.5 h-2.5" />
-                                           <span>Note</span>
-                                         </button>
-                                         {note.commands && note.commands.length > 0 && (
-                                           <button
-                                             type="button"
-                                             onClick={() => handleCopyAllNoteCommands(note)}
-                                             className="px-2 py-1 rounded text-[10px] font-semibold bg-surface-elevated border border-strong text-accent hover:text-accent hover:border-accent/40 transition-colors flex items-center gap-1 cursor-pointer"
-                                           >
-                                             <Copy className="w-3 h-3" />
-                                             <span>Copy All ({note.commands.length})</span>
-                                           </button>
-                                         )}
-                                          <button aria-label="Delete field note"
-                                            type="button"
-                                            onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
-                                            className="p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg border border-subtle hover:border-callout-danger-border/50 transition-colors cursor-pointer"
-                                            title="Delete field note"
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </button>
-                                       </div>
-                                    </div>
-
-                                    {/* Commands preview */}
-                                    {commandsToShow && commandsToShow.length > 0 && (
-                                      <div className="space-y-1 pt-1 text-left" dir="ltr">
-                                        {commandsToShow.map((cmd, cIdx) => {
-                                          const interpolated = interpolateCommand(cmd, globalVars);
-                                          return (
-                                            <div
-                                              key={cIdx}
-                                              className="p-1.5 px-2 rounded-md bg-surface-inverse text-on-inverse text-xs font-mono tabular-nums truncate select-all"
-                                            >
-                                              {interpolated}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-
-              {/* VIEW RENDERER 3: DETAILED CARDS MODE (Default) */}
-              {cptsDisplayLayout === 'cards' && (
-                <div className="space-y-3">
-                  {allActiveNotes.length === 0 ? (
-                    <div className="p-5 sm:p-6 text-center rounded-xl border border-dashed border-subtle bg-surface-card/60 space-y-3 max-w-lg mx-auto my-4">
-                      <div className="w-10 h-10 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center mx-auto text-secondary">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-primary">
-                          Private Local-First Field Manual Vault
-                        </h3>
-                        <p className="text-xs text-muted font-normal leading-relaxed">
-                          ZeroBox keeps notes 100% private. Notes are never bundled or published online. Import your personal Obsidian vault export to access your offensive playbooks, methodologies, and commands offline.
-                        </p>
-                      </div>
-                      <div className="pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (soundEnabled) playCyberSound('click');
-                            setNotesImportModalOpen(true);
-                          }}
-                          className="px-4 py-2 bg-accent hover:opacity-90 text-on-accent font-semibold rounded-lg text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Import Your Notes Vault (.json)</span>
-                        </button>
-                      </div>
-                      <div className="text-[10px] text-muted flex items-center justify-center gap-1.5 pt-0.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-callout-success-fg" />
-                        <span>IndexedDB Browser Sandbox · 0 Network Calls · 0 Data Leakage</span>
-                      </div>
-                    </div>
-                  ) : visibleCptsNotes.length === 0 ? (
-                    <div className="p-8 text-center rounded-xl border border-dashed border-accent/40 bg-accent-muted text-secondary text-xs">
-                      No field manual notes matching "{searchQuery}".
-                    </div>
-                  ) : (
-                    visibleCptsNotes.map((note, noteIdx) => {
-                      const isNoteExpanded = Boolean(expandedNotes[note.id]);
-                      const commandsToShow = isNoteExpanded
-                        ? note.commands
-                        : note.commands
-                        ? note.commands.slice(0, 2)
-                        : [];
-                      const extraCommandsCount = note.commands ? Math.max(0, note.commands.length - 2) : 0;
-                      const isRtlCard =
-                        notesTextDirection === 'rtl' || (notesTextDirection === 'auto' && cptsLangMode === 'he');
-                      const isHighlighted = highlightedNoteId === note.id;
-
-                      return (
-                        <motion.div
-                          key={note.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ ...TACTICAL_SPRING, delay: CASCADE_STAGGER_DELAY(noteIdx) }}
-                          id={`cpts-note-${note.id}`}
-                          dir={isRtlCard ? 'rtl' : 'ltr'}
-                          className={`p-4 rounded-xl border border-subtle bg-surface-card hover:border-accent/50 transition-[box-shadow,background-color,border-color,color] space-y-3 group ${
-                            isRtlCard ? 'text-right' : 'text-left'
-                          } ${isHighlighted ? 'ring-2 ring-accent bg-accent/30' : ''}`}
-                        >
-                          {/* Note Header */}
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-2 flex-1 min-w-0">
-                              {/* Title based on cptsLangMode - ONLY ONE, NEVER BOTH */}
-                              {cptsLangMode === 'he' ? (
-                                <div className="text-right" dir="rtl">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (soundEnabled) playCyberSound('click');
-                                      setActiveObsidianNote(note);
-                                    }}
-                                    className="font-semibold text-primary text-sm group-hover:text-accent transition-colors font-sans cursor-pointer inline-flex items-center gap-1.5"
-                                    title="פתח רשימות אישיות מקיפות"
-                                  >
-                                    <BookOpen className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-                                    <span>{note.titleHe || note.title}</span>
-                                    {formatNoteNumberBadge(note) && (
-                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold">
-                                        #{formatNoteNumberBadge(note)}
-                                      </span>
-                                    )}
-                                  </button>
-                                </div>
-                              ) : (
-                                <div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (soundEnabled) playCyberSound('click');
-                                      setActiveObsidianNote(note);
-                                    }}
-                                    className="font-semibold text-primary text-sm group-hover:text-accent transition-colors text-left cursor-pointer inline-flex items-center gap-1.5"
-                                    title="Open authentic Obsidian note"
-                                  >
-                                    <BookOpen className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-                                    <span>{note.titleEn || note.title}</span>
-                                    {formatNoteNumberBadge(note) && (
-                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-semibold">
-                                        #{formatNoteNumberBadge(note)}
-                                      </span>
-                                    )}
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* Badges: Stage, Category, SubCategory Topic, Difficulty, Tools */}
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {note.stage && (
-                                  <span className="text-[9px] px-2 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle font-semibold">
-                                    🎯 Stage: {note.stage}
-                                  </span>
-                                )}
-                                <span className="text-[9px] px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/40">
-                                  {note.category}
-                                </span>
-                                {note.subCategory && (
-                                  <span className="text-[9px] px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/40">
-                                    📁 {parseSubCategory(note.subCategory).group}
-                                  </span>
-                                )}
-                                <span className="text-[9px] px-2 py-0.5 rounded bg-surface-elevated border border-strong text-secondary">
-                                  {note.difficulty}
-                                </span>
-                                {note.tools &&
-                                  note.tools.map((t) => (
-                                    <span
-                                      key={t}
-                                      className="text-[9px] px-1.5 py-0.5 rounded bg-callout-success-bg text-callout-success-fg border border-callout-success-border"
-                                    >
-                                      🔧 {t}
-                                    </span>
-                                  ))}
-                              </div>
-
-                              {/* Summaries based on cptsLangMode - ONLY ONE, NEVER BOTH */}
-                              {cptsLangMode === 'he' ? (
-                                <div className="text-[11px] text-accent leading-relaxed font-sans text-right" dir="rtl">
-                                  {note.heSummary || note.summary || note.subCategory}
-                                </div>
-                              ) : (
-                                <div className="text-[11px] text-secondary leading-relaxed font-sans text-left" dir="ltr">
-                                  {note.enSummary || note.summary || note.subCategory}
-                                </div>
-                              )}
-
-                              {/* Tags */}
-                              {note.tags && note.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1 pt-0.5">
-                                  {note.tags.map((t) => (
-                                    <span
-                                      key={t}
-                                      className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary"
-                                    >
-                                      #{t}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Actions: Open Obsidian Note & Copy All Commands */}
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (soundEnabled) playCyberSound('click');
-                                  setActiveObsidianNote(note);
-                                }}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-accent-muted border border-accent/40 text-accent hover:text-accent hover:bg-accent-muted hover:border-accent/40 transition-[box-shadow,background-color,border-color,color] cursor-pointer"
-                                title="Open full authentic Obsidian personal note"
-                              >
-                                <BookOpen className="w-3.5 h-3.5 text-accent" />
-                                <span>Open Note</span>
-                              </button>
-                              {note.commands && note.commands.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyAllNoteCommands(note)}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer ${
-                                    copiedId === `all-${note.id}`
-                                      ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                                      : 'bg-surface-elevated border border-strong text-accent hover:border-accent/40 hover:text-accent'
-                                  }`}
-                                  title="Copy all commands in this note to clipboard"
-                                >
-                                  {copiedId === `all-${note.id}` ? (
-                                    <>
-                                      <Check className="w-3.5 h-3.5 text-callout-success-fg" />
-                                      <span>All Copied!</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3.5 h-3.5" />
-                                      <span>Copy All ({note.commands.length})</span>
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                              <button aria-label="Delete field note"
-                                type="button"
-                                onClick={() => handleDeleteNoteWithConfirm(note.id, note.titleEn || note.title)}
-                                className="p-1.5 rounded-md text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg border border-subtle hover:border-callout-danger-border/50 transition-[transform,background-color,border-color,color] active:scale-[0.98] cursor-pointer"
-                                title="Delete field note"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Note Commands Container (Always LTR for code) */}
-                          {note.commands && note.commands.length > 0 && (
-                            <div className="space-y-2 pt-1 border-t border-subtle/60 text-left" dir="ltr">
-                              {commandsToShow.map((cmd, cIdx) => {
-                                const interpolated = interpolateCommand(cmd, globalVars);
-                                const cmdId = `${note.id}-${cIdx}`;
-                                const isCopied = copiedId === cmdId;
-
-                                return (
-                                  <div
-                                    key={cIdx}
-                                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-inverse text-on-inverse text-xs font-mono tabular-nums"
-                                  >
-                                    <pre className="text-on-inverse overflow-x-auto whitespace-pre-wrap break-all flex-1 select-all" title={interpolated}>
-                                      {interpolated}
-                                    </pre>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCopy(interpolated, cmdId)}
-                                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold flex-shrink-0 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] ${
-                                        isCopied
-                                          ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                                          : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
-                                      }`}
-                                    >
-                                      {isCopied ? (
-                                        <>
-                                          <Check className="w-3 h-3 text-callout-success-fg" />
-                                          <span>Copied!</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Copy className="w-3 h-3" />
-                                          <span>Copy</span>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                );
-                              })}
-
-                              {/* Expand / Collapse for notes with >2 commands */}
-                              {extraCommandsCount > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setExpandedNotes((prev) => ({ ...prev, [note.id]: !prev[note.id] }))}
-                                  className="text-[10px] text-accent hover:text-accent font-semibold flex items-center gap-1 pt-1"
-                                >
-                                  {isNoteExpanded ? (
-                                    <>
-                                      <ChevronUp className="w-3.5 h-3.5" />
-                                      <span>Collapse Extra Commands</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChevronDown className="w-3.5 h-3.5" />
-                                      <span>+ View {extraCommandsCount} more command{extraCommandsCount > 1 ? 's' : ''} from this note</span>
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </motion.div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-
-              {/* Sliced Pagination Controls */}
-              {visibleCptsNotes.length < filteredCptsNotes.length && (
-                <div className="p-4 rounded-xl border border-subtle bg-surface-card flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCptsLimit((prev) => prev + 30)}
-                    className="px-5 py-2 rounded-lg bg-accent/20 border border-accent/50 hover:bg-accent-hover hover:text-on-accent text-accent font-semibold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center gap-2"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Load next 30 notes ({filteredCptsNotes.length - visibleCptsNotes.length} remaining)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCptsLimit(filteredCptsNotes.length)}
-                    className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle hover:border-subtle text-muted hover:text-primary text-xs font-semibold transition-colors"
-                  >
-                    Show all ({filteredCptsNotes.length})
-                  </button>
-                </div>
-              )}
-                </div>
-
-                {/* Right Column: Docked Split Field Manual Note Viewer */}
-                {activeObsidianNote && noteViewerMode === 'docked' && (
-                  <div 
-                    data-testid="docked-note-viewer-pane"
-                    className={`w-full ${isDockedMaximized ? 'w-full' : 'lg:w-[52%] xl:w-[58%]'} lg:sticky lg:top-4 h-[75vh] lg:h-[calc(100vh-2.5rem)] min-w-0 flex flex-col`}
-                  >
-                    {renderWorkspacePanes('docked')}
-                  </div>
-                )}
-              </div>
             </div>
-          )}
-        </div>
-
-      </div>
+          </div>
+        </>
+      )}
 
       {/* New Custom Command Modal */}
       {isNewModalOpen && (

@@ -163,7 +163,7 @@ export const SnippetsDrawer: React.FC = () => {
             {[
               { id: 'all', label: `All (${cheatsheets.length})` },
               { id: 'starred', label: 'Starred' },
-              ...CHEATSHEET_CATEGORIES.map((cat) => ({ id: cat.id as string, label: cat.name })),
+              ...CHEATSHEET_CATEGORIES.filter((cat) => cat.id !== 'all').map((cat) => ({ id: cat.id as string, label: cat.name })),
             ].map((cat) => (
               <button
                 key={cat.id}

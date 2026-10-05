@@ -8,6 +8,8 @@ import {
   getCategoryDef,
   getDomainDef,
   clearClassificationCache,
+  getOsTone,
+  OS_CAT_INDEX,
 } from './categoryUtils';
 import { Machine } from '../types';
 
@@ -160,4 +162,31 @@ describe('categoryUtils - 25-Category Offensive Taxonomy', () => {
     expect(domainDef).toBeDefined();
     expect(domainDef?.label).toBe('Active Directory & Identity');
   });
+
+  it('maps Linux to orange categorical tone (cat-4)', () => {
+    expect(OS_CAT_INDEX.Linux).toBe(4);
+    const linuxTone = getOsTone('Linux');
+    expect(linuxTone.badge).toBe('bg-cat-4-bg text-cat-4-fg border-cat-4-border');
+    expect(linuxTone.text).toBe('text-cat-4-fg');
+    expect(linuxTone.bg).toBe('bg-cat-4-bg');
+    expect(linuxTone.border).toBe('border-cat-4-border');
+  });
+
+  it('supports case-insensitive and trimmed OS lookups for Linux and other systems', () => {
+    expect(getOsTone('linux').text).toBe('text-cat-4-fg');
+    expect(getOsTone('LINUX').text).toBe('text-cat-4-fg');
+    expect(getOsTone('  linux  ').text).toBe('text-cat-4-fg');
+    expect(getOsTone('windows').text).toBe('text-cat-1-fg');
+    expect(getOsTone('WINDOWS').text).toBe('text-cat-1-fg');
+  });
+
+  it('resolves OS tones for known systems and falls back to neutral for undefined/unknown', () => {
+    expect(getOsTone('Windows').text).toBe('text-cat-1-fg');
+    expect(getOsTone('macOS').text).toBe('text-cat-2-fg');
+    expect(getOsTone('BSD').text).toBe('text-cat-5-fg');
+    expect(getOsTone('Android').text).toBe('text-cat-6-fg');
+    expect(getOsTone('UnknownOS').text).toBe('text-secondary');
+    expect(getOsTone(undefined).text).toBe('text-secondary');
+  });
 });
+
