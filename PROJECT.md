@@ -66,11 +66,13 @@
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M1 | Design System & Foundation Overhaul | Features 1–7: Typography overhaul (sans body, mono telemetry), semantic tokens & Tailwind config, light mode hover contrast fix, concentric radii, dual-theme depth, motion tokens, Core Shell & UnifiedHeader | none | DONE |
-| M2 | Primary Operations Views Redesign | Features 8–13: Lab Tracker (`GridView`, `TableView`, `KanbanBoard`, `GraphView`, `GraphEdgeInspectorDrawer`, `MachineDetailModal`) & Evidence Vault (`EvidenceVaultPage`, `LootTimeline`) | M1 | IN_PROGRESS |
-| M3 | Field Manual, Writeup Studio & Methodology Redesign | Features 14–19: Attack Methodology (`MethodologyPage`, `ChecklistWorkspace`), Field Manual & Notes (`CheatsheetView`, `ObsidianNoteViewer`, `PersistentNotesWorkspace`), Writeup Studio (`WriteupStudio`, `PentestReportModal`) | M1 | PLANNED |
-| M4 | Specialist Cockpits Redesign (Analytics & Exam Simulator) | Features 20–23: Analytics View (`AnalyticsView`, accessible SVG radar, 7-day multi-row heatmap) & Exam Simulator (`ExamSimulatorPage`, SVG velocity burn-down chart, `ExamHeaderCapsule`, bio break, dropzone) | M1 | PLANNED |
-| M5 | Usability Heuristics & Accessibility Hardening | Features 24–25: Nielsen 10 Heuristics resolution (in-app toasts, skeleton loaders, error recovery), WCAG 2.1 AA audit & contrast calibration across all 3 presets in both modes, visible focus indicators | M2, M3, M4 | PLANNED |
-| M6 | Final E2E Verification, Visual Proof, Rubric Sign-off & Audit | Features 26–31: Full Vitest suite (880 tests) and E2E Playwright suite pass, live browser before/after screenshots in light/dark at 1440px/390px, Lighthouse score >= 95, heuristics report, independent sign-off, Forensic Integrity Audit | M5 | PLANNED |
+| M2 | Primary Operations Views Redesign | Features 8–13: Lab Tracker (`GridView`, `TableView`, `KanbanBoard`, `GraphView`, `GraphEdgeInspectorDrawer`, `MachineDetailModal`) & Evidence Vault (`EvidenceVaultPage`, `LootTimeline`) | M1 | DONE |
+| M3 | Field Manual, Writeup Studio & Methodology Redesign | Features 14–19: Attack Methodology (`MethodologyPage`, `ChecklistWorkspace`), Field Manual & Notes (`CheatsheetView`, `ObsidianNoteViewer`, `PersistentNotesWorkspace`), Writeup Studio (`WriteupStudio`, `PentestReportModal`) | M1 | DONE |
+| M4 | Specialist Cockpits Redesign (Analytics & Exam Simulator) | Features 20–23: Analytics View (`AnalyticsView`, accessible SVG radar, 7-day multi-row heatmap) & Exam Simulator (`ExamSimulatorPage`, SVG velocity burn-down chart, `ExamHeaderCapsule`, bio break, dropzone) | M1 | DONE |
+| M5 | Usability Heuristics & Accessibility Hardening | Features 24–25: Nielsen 10 Heuristics resolution (in-app toasts, skeleton loaders, error recovery), WCAG 2.1 AA audit & contrast calibration across all 3 presets in both modes, visible focus indicators | M2, M3, M4 | DONE |
+| M6 | Final E2E Verification, Visual Proof, Rubric Sign-off & Audit | Features 26–31: Full Vitest suite (880 tests) and E2E Playwright suite pass, live browser before/after screenshots in light/dark at 1440px/390px, Lighthouse score >= 95, heuristics report, independent sign-off, Forensic Integrity Audit | M5 | DONE (`7b9462b`; Lighthouse a11y 100 on 18 runs) |
+
+_Status note: M3-M5 landed in `a718aa9` / `93e22a7`; a full visual pass (tokens `88a362d`, wave 1 `2e64daf`, wave 2 lanes, polish/a11y `52b60cc`..`ee2bcc3`) followed before M6 sign-off. See `docs/AI_HANDOFF.md`._
 
 ## Interface Contracts
 ### Typography & Font Class Rules
