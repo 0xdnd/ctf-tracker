@@ -23,13 +23,18 @@ import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
 import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
-import { PlatformBadge } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
-import { CategoryBadge } from '../common/CategoryBadge';
+import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
-import { StatusBadge } from '../common/StatusBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
+
+/** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
+const REVEAL =
+  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150';
+
+const ICON_BTN =
+  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
 
 interface GridCardProps {
   machine: Machine;
@@ -107,46 +112,75 @@ const GridCard = React.memo<GridCardProps>(({
     reader.readAsText(file);
   };
 
+  const statusDot =
+    m.status === 'root' || m.status === 'completed'
+      ? 'bg-callout-success-fg'
+      : m.status === 'foothold'
+      ? 'bg-callout-warn-fg'
+      : m.status === 'recon'
+      ? 'bg-accent'
+      : 'bg-surface-hover border border-strong';
+
+  const statusLabel = m.status === 'root' ? 'Root pwned' : m.status.charAt(0).toUpperCase() + m.status.slice(1);
+
+  const flagBtn = (captured: boolean, tone: 'warn' | 'success') =>
+    `inline-flex h-6 items-center gap-1 rounded-md border px-2 font-mono text-xs font-medium tabular-nums transition-colors duration-150 active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 ${
+      captured
+        ? tone === 'warn'
+          ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
+          : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
+        : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
+    }`;
+
+  const metaBadges: React.ReactNode[] = [
+    <OsBadge key="os" os={m.os} size="xs" />,
+    <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
+    ...m.tags.map((t) => (
+      <span
+        key={`tag-${t}`}
+        className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
+      >
+        {t}
+      </span>
+    )),
+  ];
+
   return (
     <div
       onClick={() => onSelectMachine(m.id)}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`group cyber-card-contain rounded-xl border p-3.5 bg-surface-card hover:bg-surface-hover cursor-pointer flex flex-col justify-between relative overflow-hidden transition-all duration-150 surface-card-depth machined-edge active:scale-[0.97] ${
+      className={`group cyber-card-contain relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border bg-surface-card p-4 transition-interactive duration-150 surface-card-depth machined-edge hover:bg-surface-hover active:scale-[0.97] ${
         isActiveTarget
-          ? 'border-accent ring-1 ring-accent/40 shadow-xs bg-accent/[0.03]'
+          ? 'border-accent ring-1 ring-accent/40'
           : 'border-subtle hover:border-strong'
       }`}
     >
-      {/* Drag Over Visual HUD Overlay (Concentric Rounded-xl) */}
+      {/* Drag-over overlay */}
       {isDragOver && (
-        <div className="absolute inset-0 z-30 bg-surface-base/95 border-2 border-dashed border-accent rounded-xl flex flex-col items-center justify-center p-4 text-center font-mono animate-pulse pointer-events-none">
-          <Upload className="w-8 h-8 text-accent mb-2 animate-bounce" />
-          <span className="text-xs font-bold text-accent uppercase tracking-wider font-mono">
-            DROP SCAN FILE TO INGEST
-          </span>
-          <span className="text-[10px] text-muted font-mono mt-0.5">
-            .nmap, .gnmap, XML, or raw output
-          </span>
+        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-accent bg-surface-base/95 p-4 text-center">
+          <Upload className="mb-2 h-8 w-8 text-accent" />
+          <span className="text-sm font-semibold text-accent">Drop scan file to ingest</span>
+          <span className="mt-0.5 text-xs text-muted">.nmap, .gnmap, XML, or raw output</span>
         </div>
       )}
 
-      {/* Scan Intake Confirmation Toast */}
+      {/* Scan intake confirmation */}
       <AnimatePresence>
         {scanToast && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className={`absolute top-2 inset-x-2 z-20 px-2.5 py-1.5 rounded-[3px] text-[11px] font-mono font-bold flex items-center justify-between shadow-md ${
+            exit={{ opacity: 0, y: -8, transition: { duration: 0.12 } }}
+            className={`absolute inset-x-2 top-2 z-20 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs font-medium shadow-md ${
               scanToast.isError
-                ? 'bg-rose-950/95 border border-rose-500 text-callout-danger-fg'
-                : 'bg-zinc-900 border border-emerald-500 text-emerald-400'
+                ? 'bg-callout-danger-bg border-callout-danger-border text-callout-danger-fg'
+                : 'bg-surface-card border-callout-success-border text-callout-success-fg'
             }`}
           >
             <span className="flex items-center gap-1.5 truncate">
-              {scanToast.isError ? <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> : <Zap className="w-3.5 h-3.5 shrink-0" />}
+              {scanToast.isError ? <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> : <Zap className="h-3.5 w-3.5 shrink-0" />}
               {scanToast.message}
             </span>
           </motion.div>
@@ -154,87 +188,67 @@ const GridCard = React.memo<GridCardProps>(({
       </AnimatePresence>
 
       <div>
-        {/* De-Cluttered Header: Max 2 Primary Badges (Difficulty + OS) */}
-        <div className="flex items-center justify-between gap-1.5 mb-2.5">
-          <div className="flex items-center gap-1.5">
-            <OsBadge os={m.os} size="xs" variant="hardware" />
-          </div>
-          <DifficultyBadge difficulty={m.difficulty} size="xs" variant="hardware" />
-        </div>
-
-        {/* Machine Name & IP */}
-        <div className="mb-3">
-          <div className="text-base font-semibold font-sans text-primary group-hover:text-accent transition-colors flex items-center justify-between">
-            <span className="tracking-tight flex items-center gap-1.5 truncate">
-              <span className="truncate">{m.name}</span>
-              {m.isActive && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded-[2px] font-mono font-bold bg-amber-500/10 text-callout-warn-fg border border-amber-500/30 uppercase tracking-wider">
-                  ACTIVE
-                </span>
-              )}
-            </span>
-            {isActiveTarget && (
-              <span className="text-[10px] text-accent font-mono flex items-center gap-1 font-semibold flex-shrink-0">
-                <Crosshair className="w-3 h-3 animate-spin-slow text-accent" /> [ ENGAGED ]
+        {/* Name + status dot */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2 font-sans text-base font-semibold text-primary">
+            <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${statusDot}`} />
+            <span className="truncate">{m.name}</span>
+            {m.isActive && (
+              <span className="inline-flex h-5 shrink-0 items-center rounded border border-callout-warn-border bg-callout-warn-bg px-1.5 text-xs font-medium text-callout-warn-fg">
+                Active
               </span>
             )}
           </div>
-          <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" variant="hardware" className="mt-0.5 tabular-nums font-mono text-[11px]" />
+          {isActiveTarget && (
+            <span className="flex flex-shrink-0 items-center gap-1 text-xs font-medium text-accent">
+              <Crosshair className="h-3 w-3 text-accent" /> Engaged
+            </span>
+          )}
         </div>
 
-        {/* Calm Status Indicator (Subtle LED Dot + Label) & Tabular Time */}
-        <div className="flex items-center justify-between gap-2 p-2 px-2.5 rounded-md bg-surface-sunken/60 border border-subtle text-xs mb-2.5 machined-edge">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                m.status === 'root' || m.status === 'completed'
-                  ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]'
-                  : m.status === 'foothold'
-                  ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]'
-                  : m.status === 'recon'
-                  ? 'bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.4)]'
-                  : 'bg-zinc-400 dark:bg-zinc-600'
-              }`}
-            />
-            <span className="text-[10px] font-sans font-medium uppercase tracking-wider text-secondary">
-              {m.status === 'root' ? 'ROOT PWNED' : m.status.toUpperCase()}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 text-muted text-xs font-mono tabular-nums">
-            <Clock className="w-3 h-3 text-muted shrink-0" />
+        {/* IP (telemetry) + status label + time */}
+        <div className="mt-1 flex items-center justify-between gap-2 pl-4">
+          <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+          <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
+            <Clock className="h-3 w-3 shrink-0" />
             <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
           </div>
         </div>
+        <div className="mt-0.5 pl-4 text-xs text-muted font-sans">{statusLabel}</div>
 
-        {/* Hint Spoiler Peek / Active ToS Guard */}
+        {/* Max two badges, rest behind +N */}
+        <div className="mt-3 pl-4">
+          <BadgeOverflow badges={metaBadges} max={2} />
+        </div>
+
+        {/* Hint spoiler / Active ToS guard */}
         {m.isActive ? (
-          <div className="mb-3 px-2.5 py-1.5 rounded-[2px] border border-amber-500/30 bg-amber-500/10 text-callout-warn-fg text-[10px] font-mono flex items-center gap-1.5 machined-edge">
-            <Lock className="w-3 h-3 text-callout-warn-fg flex-shrink-0" />
-            <span>Active Lab · Writeups Prohibited (HTB ToS)</span>
+          <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-callout-warn-border bg-callout-warn-bg px-2.5 py-1.5 text-xs text-callout-warn-fg">
+            <Lock className="h-3 w-3 flex-shrink-0 text-callout-warn-fg" />
+            <span>Active lab · writeups prohibited (HTB ToS)</span>
           </div>
         ) : m.hint ? (
-          <div className="mb-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-muted uppercase font-semibold font-mono">Intel Hint</span>
+          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted">Intel hint</span>
               <button
                 type="button"
                 onClick={(e) => onToggleHint(e, m.id)}
-                className="text-[10px] font-mono text-muted hover:text-primary flex items-center gap-1 transition-colors cursor-pointer active:scale-[0.97]"
+                className="flex cursor-pointer items-center gap-1 text-xs text-muted transition-colors hover:text-primary active:scale-[0.97]"
                 title={isHintRevealed ? 'Hide Intel Hint' : 'Peek Intel Hint'}
                 aria-label={isHintRevealed ? `Hide intel hint for ${m.name}` : `Peek intel hint for ${m.name}`}
               >
-                {isHintRevealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                {isHintRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                 {isHintRevealed ? 'Hide' : 'Peek'}
               </button>
             </div>
             <AnimatePresence initial={false}>
-              <motion.div 
+              <motion.div
                 layout
-                className={`rounded-[2px] border text-[11px] font-mono leading-relaxed transition-colors duration-200 machined-edge ${
+                className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
                   isHintRevealed
-                    ? 'p-2.5 bg-surface-sunken border-subtle text-primary max-h-48 overflow-y-auto'
-                    : 'p-2 px-2.5 bg-surface-sunken/60 border-subtle text-muted select-none flex items-center justify-center cursor-pointer hover:border-strong hover:text-primary'
+                    ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
+                    : 'flex cursor-pointer select-none items-center justify-center border-subtle bg-surface-sunken/60 p-2 px-2.5 text-muted hover:border-strong hover:text-primary'
                 }`}
                 onClick={(e) => {
                   if (!isHintRevealed) onToggleHint(e, m.id);
@@ -243,9 +257,9 @@ const GridCard = React.memo<GridCardProps>(({
                 {isHintRevealed ? (
                   m.hint
                 ) : (
-                  <span className="flex items-center gap-1.5 text-[10px] font-mono tracking-wide">
-                    <Eye className="w-3 h-3 text-muted" />
-                    <span>Click to reveal tactical hint spoiler</span>
+                  <span className="flex items-center gap-1.5 text-xs">
+                    <Eye className="h-3 w-3 text-muted" />
+                    <span>Click to reveal hint</span>
                   </span>
                 )}
               </motion.div>
@@ -253,155 +267,131 @@ const GridCard = React.memo<GridCardProps>(({
           </div>
         ) : null}
 
-        {/* Open Ports Strip with Concentric Radii (rounded-[2px]) and Tabular Numerals */}
+        {/* Open ports (telemetry) */}
         {m.openPorts && m.openPorts.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap mb-2.5">
-            <span className="text-[9px] font-mono text-muted flex items-center gap-1">
-              <Radio className="w-2.5 h-2.5 text-accent" /> Ports:
+          <div className="mt-3 flex flex-wrap items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-muted">
+              <Radio className="h-3 w-3 text-muted" /> Ports
             </span>
             {m.openPorts.slice(0, 4).map((port) => (
               <span
                 key={port}
-                className="text-[9px] px-1.5 py-0.5 rounded-[2px] font-mono font-bold tabular-nums bg-surface-sunken border border-subtle text-secondary"
+                className="rounded border border-subtle bg-surface-sunken px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums text-secondary"
               >
                 {port}
               </span>
             ))}
             {m.openPorts.length > 4 && (
-              <span className="text-[9px] text-muted font-mono tabular-nums">+{m.openPorts.length - 4}</span>
-            )}
-          </div>
-        )}
-
-        {/* Streamlined Tags (monochromatic presentation) */}
-        {m.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {m.tags.slice(0, 2).map((t) => (
-              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded-[2px] bg-surface-sunken border border-subtle text-secondary font-mono uppercase tracking-wider font-medium">
-                {t}
-              </span>
-            ))}
-            {m.tags.length > 2 && (
-              <span className="text-[9px] text-muted self-center tabular-nums">+{m.tags.length - 2}</span>
+              <span className="font-mono text-xs tabular-nums text-muted">+{m.openPorts.length - 4}</span>
             )}
           </div>
         )}
       </div>
 
-      {/* Card Footer Actions with active:scale-[0.97] */}
-      <div className="pt-2.5 border-t border-subtle flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+      {/* Footer: flags + engage stay visible, utility actions reveal on hover/focus */}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-subtle pt-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onToggleUserFlag(m.id)}
-            className={`px-2 py-0.5 rounded-xs text-[10px] border font-mono font-bold flex items-center gap-1 transition-colors duration-150 active:scale-[0.97] cursor-pointer tabular-nums ${
-              hasUser
-                ? 'bg-amber-500/10 border-amber-500/50 text-callout-warn-fg shadow-xs'
-                : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
-            }`}
+            className={flagBtn(hasUser, 'warn')}
             title="Toggle User Flag"
             aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
           >
-            <Flag className="w-2.5 h-2.5" /> U
+            <Flag className="h-2.5 w-2.5" /> U
           </button>
           <button
             type="button"
             onClick={() => onToggleRootFlag(m.id, hasRoot)}
-            className={`px-2 py-0.5 rounded-xs text-[10px] border font-mono font-bold flex items-center gap-1 transition-colors duration-150 active:scale-[0.97] cursor-pointer tabular-nums ${
-              hasRoot
-                ? 'bg-emerald-500/10 border-emerald-500/50 text-callout-success-fg shadow-xs'
-                : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
-            }`}
+            className={flagBtn(hasRoot, 'success')}
             title="Toggle Root Flag"
             aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
           >
-            <Flag className="w-2.5 h-2.5" /> R
+            <Flag className="h-2.5 w-2.5" /> R
           </button>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
+          <div className={`flex items-center gap-0.5 ${REVEAL}`}>
+            <button
+              type="button"
+              onClick={() => onSelectMachine(m.id)}
+              className={ICON_BTN}
+              title="Attack Methodology Checklist"
+              aria-label={`Open attack methodology checklist for ${m.name}`}
+            >
+              <ListChecks className="h-3.5 w-3.5" />
+            </button>
+
+            <ShareLinkButton
+              path={`/target/${m.id}`}
+              title={m.name}
+              iconOnly
+              className={`${ICON_BTN} hover:text-accent`}
+            />
+
+            <button
+              type="button"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                onOpenDetail(m.id);
+              }}
+              className={ICON_BTN}
+              title="Open Dedicated Full-Page Mission"
+              aria-label={`Open dedicated mission dossier for ${m.name}`}
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                onOpenReport(m.id);
+              }}
+              className={`${ICON_BTN} hover:text-accent`}
+              title="Open Executive Pentest Pre-Report"
+              aria-label={`Open executive pentest pre-report for ${m.name}`}
+            >
+              <FileText className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                onOpenWriteup(m.id);
+              }}
+              className={`${ICON_BTN} hover:text-accent`}
+              title="Open Writeup"
+              aria-label={`Open writeup studio for ${m.name}`}
+            >
+              <FileText className="h-3.5 w-3.5" />
+            </button>
+
+            {Boolean(sanitizeExternalUrl(m.roomUrl)) && (
+              <a
+                href={sanitizeExternalUrl(m.roomUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={ICON_BTN}
+                title="Open Room Link"
+                aria-label={`Open external room link for ${m.name}`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => onEngageTarget(m.id)}
-            className={`p-1.5 rounded-xs border transition-colors duration-150 active:scale-[0.97] cursor-pointer ${
-              isActiveTarget
-                ? 'bg-accent/10 text-accent border-accent/50 shadow-xs'
-                : 'bg-surface-card border-subtle text-muted hover:text-primary hover:border-accent'
-            }`}
+            className={`${ICON_BTN} ${isActiveTarget ? 'bg-accent-muted text-accent' : 'hover:text-accent'}`}
             title="Engage Active Target"
             aria-label={isActiveTarget ? `Currently engaged target: ${m.name}` : `Engage target ${m.name} and start timer`}
           >
-            <Crosshair className="w-3.5 h-3.5" />
+            <Crosshair className="h-3.5 w-3.5" />
           </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectMachine(m.id)}
-            className="p-1.5 rounded-xs bg-surface-card border border-subtle text-muted hover:text-primary hover:border-accent transition-colors duration-150 active:scale-[0.97] cursor-pointer"
-            title="Attack Methodology Checklist"
-            aria-label={`Open attack methodology checklist for ${m.name}`}
-          >
-            <ListChecks className="w-3.5 h-3.5" />
-          </button>
-
-          <ShareLinkButton
-            path={`/target/${m.id}`}
-            title={m.name}
-            iconOnly
-            className="p-1.5 rounded-xs bg-surface-card border border-subtle text-muted hover:text-accent transition-colors active:scale-[0.97] cursor-pointer"
-          />
-
-          <button
-            type="button"
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              onOpenDetail(m.id);
-            }}
-            className="p-1.5 rounded-xs bg-surface-card border border-subtle text-muted hover:text-primary hover:border-accent transition-colors duration-150 active:scale-[0.97] cursor-pointer"
-            title="Open Dedicated Full-Page Mission"
-            aria-label={`Open dedicated mission dossier for ${m.name}`}
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              onOpenReport(m.id);
-            }}
-            className="p-1.5 rounded-xs bg-surface-card border border-subtle text-muted hover:text-accent hover:border-accent transition-colors duration-150 active:scale-[0.97] cursor-pointer"
-            title="Open Executive Pentest Pre-Report"
-            aria-label={`Open executive pentest pre-report for ${m.name}`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              onOpenWriteup(m.id);
-            }}
-            className="p-1.5 rounded-xs bg-surface-card border border-subtle text-muted hover:text-accent hover:border-accent transition-colors duration-150 active:scale-[0.97] cursor-pointer"
-            title="Open Writeup"
-            aria-label={`Open writeup studio for ${m.name}`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-          </button>
-
-          {Boolean(sanitizeExternalUrl(m.roomUrl)) && (
-            <a
-              href={sanitizeExternalUrl(m.roomUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 rounded-xs bg-surface-card border border-subtle text-muted hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer"
-              title="Open Room Link"
-              aria-label={`Open external room link for ${m.name}`}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
         </div>
       </div>
     </div>
@@ -518,9 +508,9 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
           <button
             type="button"
             onClick={() => setVisibleCount((prev) => prev + 32)}
-            className="px-6 py-2.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-bold text-xs uppercase tracking-wider transition-colors active:scale-[0.97] surface-card-depth machined-edge shadow-none font-mono cursor-pointer"
+            className="px-6 py-2.5 min-h-[44px] rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-medium text-sm transition-colors active:scale-[0.97] cursor-pointer"
           >
-            [ LOAD MORE TARGETS (+32) — {visibleCount} OF {filteredMachines.length} ]
+            Load more targets <span className="font-mono tabular-nums text-muted">({visibleCount} of {filteredMachines.length})</span>
           </button>
         </div>
       )}

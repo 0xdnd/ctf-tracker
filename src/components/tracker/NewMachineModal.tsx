@@ -24,11 +24,11 @@ const OS_OPTIONS: CyberSelectOption<OperatingSystem>[] = [
 ];
 
 const DIFFICULTY_OPTIONS: CyberSelectOption<Difficulty>[] = [
-  { value: 'Very Easy', label: 'Very Easy', color: '#06B6D4' },
-  { value: 'Easy', label: 'Easy', color: '#10B981' },
-  { value: 'Medium', label: 'Medium', color: '#F59E0B' },
-  { value: 'Hard', label: 'Hard', color: '#F43F5E' },
-  { value: 'Insane', label: 'Insane', color: '#A855F7' },
+  { value: 'Very Easy', label: 'Very Easy', color: 'rgb(var(--callout-info-fg))' },
+  { value: 'Easy', label: 'Easy', color: 'rgb(var(--callout-success-fg))' },
+  { value: 'Medium', label: 'Medium', color: 'rgb(var(--callout-warn-fg))' },
+  { value: 'Hard', label: 'Hard', color: 'rgb(var(--callout-danger-fg))' },
+  { value: 'Insane', label: 'Insane', color: 'rgb(var(--callout-tip-fg))' },
 ];
 
 export const NewMachineModal: React.FC = () => {
@@ -100,21 +100,21 @@ export const NewMachineModal: React.FC = () => {
 
   const modalContent = (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-surface-inverse/85 backdrop-blur-md animate-fade-in font-sans overflow-y-auto"
       onClick={() => setNewMachineModalOpen(false)}
     >
       <div 
-        className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-cyber-border bg-cyber-card shadow-2xl overflow-hidden my-auto"
+        className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-subtle bg-surface-card shadow-2xl overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-cyber-border p-4 bg-cyber-bg/95">
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-sunken/95">
           <div className="flex items-center gap-2">
-            <Server className="w-5 h-5 text-cyber-emerald" />
-            <h3 className="text-base font-bold text-white">DEPLOY NEW LAB TARGET</h3>
+            <Server className="w-5 h-5 text-callout-success-fg" />
+            <h3 className="text-base font-semibold text-primary">Add new target</h3>
           </div>
           <button aria-label="Close dialog"
             onClick={() => setNewMachineModalOpen(false)}
-            className="p-1.5 rounded-lg bg-cyber-bg text-cyber-muted hover:text-primary border border-cyber-border transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+            className="p-1.5 rounded-lg bg-surface-sunken text-muted hover:text-primary border border-subtle transition-[transform,background-color,border-color,color] active:scale-[0.98]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -122,7 +122,7 @@ export const NewMachineModal: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs scrollbar-thin">
           <div>
-            <label htmlFor="new-machine-name-input" className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+            <label htmlFor="new-machine-name-input" className="block text-muted mb-1 font-semibold">
               Machine / Room Name *
             </label>
             <input
@@ -134,13 +134,13 @@ export const NewMachineModal: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Blackfield, Lame, Kioptrix"
-              className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald"
+              className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="new-machine-ip-input" className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+              <label htmlFor="new-machine-ip-input" className="block text-muted mb-1 font-semibold">
                 Target IP
               </label>
               <input
@@ -151,12 +151,12 @@ export const NewMachineModal: React.FC = () => {
                 value={ip}
                 onChange={(e) => setIp(e.target.value)}
                 placeholder="10.10.10.x"
-                className="font-mono tabular-nums w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald"
+                className="font-mono tabular-nums w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
               />
             </div>
 
             <div>
-              <label className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-muted mb-1 font-semibold">
                 Platform
               </label>
               <CyberSelect<Platform>
@@ -166,7 +166,7 @@ export const NewMachineModal: React.FC = () => {
                 variant="emerald"
                 size="md"
                 className="w-full"
-                triggerClassName="w-full bg-cyber-bg"
+                triggerClassName="w-full bg-surface-sunken"
                 soundEnabled={soundEnabled}
               />
             </div>
@@ -174,7 +174,7 @@ export const NewMachineModal: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="flex items-center justify-between text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+              <label className="flex items-center justify-between text-muted mb-1 font-semibold">
                 <span>Operating System</span>
                 <OsBadge os={os} size="xs" />
               </label>
@@ -185,13 +185,13 @@ export const NewMachineModal: React.FC = () => {
                 variant="emerald"
                 size="md"
                 className="w-full"
-                triggerClassName="w-full bg-cyber-bg"
+                triggerClassName="w-full bg-surface-sunken"
                 soundEnabled={soundEnabled}
               />
             </div>
 
             <div>
-              <label className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+              <label className="block text-muted mb-1 font-semibold">
                 Difficulty Tier
               </label>
               <CyberSelect<Difficulty>
@@ -201,14 +201,14 @@ export const NewMachineModal: React.FC = () => {
                 variant="emerald"
                 size="md"
                 className="w-full"
-                triggerClassName="w-full bg-cyber-bg"
+                triggerClassName="w-full bg-surface-sunken"
                 soundEnabled={soundEnabled}
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="new-machine-tags-input" className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+            <label htmlFor="new-machine-tags-input" className="block text-muted mb-1 font-semibold">
               Attack Vectors / Tags (Comma-separated)
             </label>
             <input
@@ -219,24 +219,24 @@ export const NewMachineModal: React.FC = () => {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="SQLi, SUID, Kerberoasting, LinPEAS"
-              className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald"
+              className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
             />
           </div>
 
           {/* Active Lab ToS Safeguard Control */}
           <div className={`p-3 rounded-lg border transition-colors ${
             effectiveIsActive 
-              ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-callout-warn-fg' 
-              : 'border-slate-200 dark:border-cyber-border bg-slate-50 dark:bg-cyber-bg/50'
+              ? 'border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg' 
+              : 'border-subtle bg-surface-sunken'
           }`}>
             <label className="flex items-center justify-between cursor-pointer">
               <div className="flex items-center gap-2">
-                <Lock className={`w-4 h-4 ${effectiveIsActive ? 'text-callout-warn-fg' : 'text-tertiary dark:text-cyber-muted'}`} />
+                <Lock className={`w-4 h-4 ${effectiveIsActive ? 'text-callout-warn-fg' : 'text-tertiary'}`} />
                 <div>
-                  <span className="font-bold text-xs text-slate-900 dark:text-white block">
+                  <span className="font-semibold text-xs text-primary block">
                     Active Seasonal Lab (In-Season HTB / THM)
                   </span>
-                  <span className="text-[10px] text-tertiary dark:text-cyber-muted">
+                  <span className="text-xs text-tertiary">
                     {isKnownActive 
                       ? 'Known in-season HTB machine detected. ToS safeguards automatically engaged.'
                       : 'Mark if target is in-season / active to enforce spoiler & writeup locks.'}
@@ -249,18 +249,18 @@ export const NewMachineModal: React.FC = () => {
                 checked={effectiveIsActive}
                 disabled={isKnownActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 dark:border-cyber-border text-callout-warn-fg focus:ring-amber-500 bg-white dark:bg-cyber-card cursor-pointer"
+                className="w-4 h-4 rounded border-strong text-callout-warn-fg focus:ring-callout-warn-border bg-surface-card cursor-pointer"
               />
             </label>
             {effectiveIsActive && (
-              <p className="text-[11px] leading-relaxed pt-2 border-t border-amber-300/40 dark:border-amber-500/30 text-callout-warn-fg font-mono">
+              <p className="text-xs leading-relaxed pt-2 border-t border-callout-warn-border text-callout-warn-fg">
                 Active Lab Safe-Mode: Personal time, flags, notes, and checklist tracking are fully supported. Public writeup URLs and spoilers are locked out to comply with Hack The Box Terms of Service (AUP §8.2).
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="new-machine-url-input" className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+            <label htmlFor="new-machine-url-input" className="block text-muted mb-1 font-semibold">
               {effectiveIsActive ? 'Official Lab Room URL' : 'Lab Room / Writeup URL'}
             </label>
             <input
@@ -271,16 +271,16 @@ export const NewMachineModal: React.FC = () => {
               value={roomUrl}
               onChange={(e) => setRoomUrl(e.target.value)}
               placeholder={effectiveIsActive ? 'https://app.hackthebox.com/machines/...' : 'https://app.hackthebox.com/machines/...'}
-              className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald"
+              className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
             />
           </div>
 
           <div>
-            <label htmlFor="new-machine-hint-input" className="block text-cyber-muted uppercase tracking-wider mb-1 font-semibold">
+            <label htmlFor="new-machine-hint-input" className="block text-muted mb-1 font-semibold">
               Key Hint / Vulnerability Intel
             </label>
             {effectiveIsActive ? (
-              <div className="p-2.5 rounded-lg border border-dashed border-amber-300 dark:border-amber-500/40 bg-amber-500/5 text-callout-warn-fg text-[11px] font-mono flex items-center gap-2">
+              <div className="p-2.5 rounded-lg border border-dashed border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg text-xs flex items-center gap-2">
                 <Lock className="w-3.5 h-3.5 text-callout-warn-fg flex-shrink-0" />
                 <span>Intel hints and spoilers are locked for active labs per HTB Terms of Service (AUP §8.2).</span>
               </div>
@@ -293,22 +293,22 @@ export const NewMachineModal: React.FC = () => {
                 value={hint}
                 onChange={(e) => setHint(e.target.value)}
                 placeholder="Optional hint for when you get stuck..."
-                className="w-full bg-cyber-bg px-3 py-2 rounded-lg border border-cyber-border text-white focus:outline-none focus:border-cyber-emerald resize-none"
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border resize-none"
               />
             )}
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-cyber-border">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
             <button
               type="button"
               onClick={() => setNewMachineModalOpen(false)}
-              className="px-3.5 py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-cyber-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              className="px-3.5 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyber-emerald text-black font-bold text-xs hover:bg-cyber-emerald/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-callout-success-fg text-surface-base font-semibold text-xs hover:bg-callout-success-fg transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
             >
               <Plus className="w-4 h-4" /> Deploy Machine
             </button>

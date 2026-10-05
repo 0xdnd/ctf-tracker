@@ -12,17 +12,17 @@ import {
   Radio,
   Key,
   Zap,
-  Award
+  Award,
+  Plus
 } from 'lucide-react';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
-import { PlatformBadge } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
-import { CategoryBadge } from '../common/CategoryBadge';
+import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
 
@@ -49,77 +49,62 @@ interface LaneConfig {
   id: PipelineStatus;
   title: string;
   subtitle: string;
-  accentColor: string;
-  badgeClass: string;
-  borderClass: string;
+  dotClass: string;
   icon: React.ComponentType<{ className?: string }>;
-  emptyTitle: string;
-  emptySubtitle: string;
-  emptyHint: string;
+  emptyLine: string;
 }
 
 const LANES: LaneConfig[] = [
   {
     id: 'backlog',
-    title: 'BACKLOG',
-    subtitle: 'Queued & Scoped Labs',
-    accentColor: '#71717A',
-    badgeClass: 'text-tertiary bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800',
-    borderClass: 'border-zinc-200 dark:border-zinc-800',
+    title: 'Backlog',
+    subtitle: 'Queued and scoped labs',
+    dotClass: 'bg-surface-hover border border-strong',
     icon: Layers,
-    emptyTitle: 'BACKLOG EMPTY',
-    emptySubtitle: 'No queued machines in scope',
-    emptyHint: 'Select tracks or add custom targets from catalog',
+    emptyLine: 'No queued machines.',
   },
   {
     id: 'recon',
-    title: 'ACTIVE RECON',
-    subtitle: 'Port & Web Enumeration',
-    accentColor: '#0ea5e9',
-    badgeClass: 'text-[#0ea5e9] bg-[#0ea5e9]/10 border-[#0ea5e9]/30',
-    borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-[#0ea5e9]/40',
+    title: 'Active recon',
+    subtitle: 'Port and web enumeration',
+    dotClass: 'bg-accent',
     icon: Radio,
-    emptyTitle: 'RECON STAGE IDLE',
-    emptySubtitle: 'No targets undergoing active scanning',
-    emptyHint: 'Advance or drag a backlog target here to start recon',
+    emptyLine: 'Drag a target here to start recon.',
   },
   {
     id: 'foothold',
-    title: 'FOOTHOLD',
-    subtitle: 'User Shell / Initial Access',
-    accentColor: '#f59e0b',
-    badgeClass: 'text-callout-warn-fg bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30',
-    borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-amber-500/30',
+    title: 'Foothold',
+    subtitle: 'User shell and initial access',
+    dotClass: 'bg-callout-warn-fg',
     icon: Key,
-    emptyTitle: 'NO ACTIVE FOOTHOLDS',
-    emptySubtitle: 'Awaiting initial low-priv access',
-    emptyHint: 'Drag target here when user shell is secured',
+    emptyLine: 'Drag a target here once you have a user shell.',
   },
   {
     id: 'root',
-    title: 'SYSTEM PWNED',
-    subtitle: 'Root / System Flag Captured',
-    accentColor: '#10b981',
-    badgeClass: 'text-callout-success-fg bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30',
-    borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/30',
+    title: 'System pwned',
+    subtitle: 'Root flag captured',
+    dotClass: 'bg-callout-success-fg',
     icon: Zap,
-    emptyTitle: 'NO PENDING ROOT PWNS',
-    emptySubtitle: 'All privilege escalations complete',
-    emptyHint: 'Drag target here upon system flag capture',
+    emptyLine: 'Drag a target here after capturing root.',
   },
   {
     id: 'completed',
-    title: 'COMPLETED',
-    subtitle: 'Writeup Archived & Retired',
-    accentColor: '#8b5cf6',
-    badgeClass: 'text-callout-tip-fg bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30',
-    borderClass: 'border-zinc-200 dark:border-zinc-800 hover:border-purple-500/30',
+    title: 'Completed',
+    subtitle: 'Writeup archived and retired',
+    dotClass: 'bg-callout-tip-fg',
     icon: Award,
-    emptyTitle: 'NO ARCHIVED LABS',
-    emptySubtitle: 'Post-exploitation writeups archived here',
-    emptyHint: 'Move completed machines here to log writeups',
+    emptyLine: 'Move finished machines here to log writeups.',
   },
 ];
+
+const LANE_DOT_BY_STATUS: Record<string, string> = Object.fromEntries(LANES.map((l) => [l.id, l.dotClass]));
+
+/** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
+const REVEAL =
+  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150';
+
+const ICON_BTN =
+  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
 
 interface KanbanCardProps {
   machine: Machine;
@@ -158,6 +143,28 @@ const KanbanCard = React.memo<KanbanCardProps>(({
     zIndex: isDragging ? 999 : undefined,
   };
 
+  const flagChip = (captured: boolean, tone: 'warn' | 'success') =>
+    `inline-flex h-5 items-center gap-1 rounded px-1.5 font-mono text-xs font-medium tabular-nums transition-colors ${
+      captured
+        ? tone === 'warn'
+          ? 'bg-callout-warn-bg text-callout-warn-fg'
+          : 'bg-callout-success-bg text-callout-success-fg'
+        : 'bg-surface-sunken text-muted'
+    }`;
+
+  const metaBadges: React.ReactNode[] = [
+    <OsBadge key="os" os={m.os} size="xs" />,
+    <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
+    ...m.certifications.map((cert) => (
+      <span
+        key={cert}
+        className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
+      >
+        {cert}
+      </span>
+    )),
+  ];
+
   return (
     <div
       ref={setNodeRef}
@@ -165,140 +172,111 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       {...listeners}
       data-testid="kanban-card"
       onClick={() => onSelect(m.id)}
-      className={`group cyber-kanban-contain relative p-3 rounded-lg border transition-all duration-150 cursor-pointer surface-card-depth machined-edge active:scale-[0.97] ${
+      className={`group cyber-kanban-contain relative cursor-pointer rounded-lg border p-3 transition-interactive duration-150 surface-card-depth machined-edge active:scale-[0.97] ${
         isActiveTarget
-          ? 'bg-accent/[0.03] border-accent ring-1 ring-accent/40 shadow-xs'
-          : 'bg-surface-card border-subtle hover:border-strong hover:bg-surface-hover'
+          ? 'border-accent bg-accent-muted ring-1 ring-accent/40'
+          : 'border-subtle bg-surface-card hover:border-strong hover:bg-surface-hover'
       }`}
     >
-      {/* Top Badges: De-cluttered (Difficulty + OS) */}
-      <div className="flex items-center justify-between gap-1.5 mb-2">
-        <div className="flex items-center gap-1.5">
-          <OsBadge os={m.os} size="xs" variant="hardware" />
-        </div>
-        <DifficultyBadge difficulty={m.difficulty} size="xs" variant="hardware" className="shrink-0" />
-      </div>
-
-      {/* Machine Name & IP */}
-      <div className="flex items-start justify-between gap-2 mt-1">
-        <div className="min-w-0 flex-1">
-          {/* Primary keyboard/drag activator: the card wrapper stays non-interactive so
-              sibling controls are not nested inside a role="button" element. */}
-          <button
-            type="button"
-            ref={setActivatorNodeRef}
-            {...attributes}
-            className="block w-full text-left bg-transparent p-0 border-0 font-semibold text-sm leading-snug font-sans truncate transition-colors text-primary group-hover:text-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-xs"
-          >
-            {m.name}
-          </button>
-          <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" variant="hardware" className="mt-1 font-mono text-[11px] tabular-nums" />
-        </div>
-
-        {/* Active Target Engage Button */}
+      {/* Row 1: status dot, name, stage and engage controls */}
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className={`h-2 w-2 shrink-0 rounded-full ${LANE_DOT_BY_STATUS[m.status] ?? LANE_DOT_BY_STATUS.backlog}`}
+        />
+        {/* Primary keyboard/drag activator: the card wrapper stays non-interactive so
+            sibling controls are not nested inside a role="button" element. */}
         <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          className="block min-w-0 flex-1 cursor-pointer truncate rounded-xs border-0 bg-transparent p-0 text-left font-sans text-sm font-semibold leading-snug text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          {m.name}
+        </button>
+
+        <div className={`flex shrink-0 items-center gap-0.5 ${REVEAL}`}>
+          {prevLane && (
+            <button
+              type="button"
+              onClick={(e) => onRetreat(e, m, prevLane)}
+              className={ICON_BTN}
+              title={`Move back to ${prevLane}`}
+              aria-label={`Move ${m.name} back to ${prevLane}`}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {nextLane && (
+            <button
+              type="button"
+              onClick={(e) => onAdvance(e, m, nextLane)}
+              className={`${ICON_BTN} hover:text-accent`}
+              title={`Advance stage to ${nextLane}`}
+              aria-label={`Advance ${m.name} to ${nextLane}`}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
           onClick={(e) => onSetTarget(e, m.id)}
-          className={`p-1.5 rounded-xs transition-all active:scale-[0.97] flex-shrink-0 cursor-pointer ${
-            isActiveTarget
-              ? 'text-accent bg-accent/10 border border-accent/50 shadow-xs'
-              : 'text-muted hover:text-primary bg-surface-card hover:bg-surface-hover border border-subtle'
-          }`}
-          title={isActiveTarget ? 'Currently Engaged Target' : 'Engage Target & Start Timer'}
+          className={`${ICON_BTN} ${isActiveTarget ? 'text-accent' : REVEAL}`}
+          title={isActiveTarget ? 'Currently engaged target' : 'Engage target and start timer'}
           aria-label={isActiveTarget ? `Currently engaged target: ${m.name}` : `Engage target ${m.name} and start timer`}
         >
-          <Crosshair className={`w-4 h-4 ${isActiveTarget ? 'animate-spin-slow text-accent' : ''}`} />
+          <Crosshair className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Flags & Time Spent Pill */}
-      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-subtle text-xs">
-        <div className="flex items-center gap-1.5">
+      {/* Row 2: IP (telemetry) and time spent */}
+      <div className="mt-1 flex items-center justify-between gap-2 pl-4">
+        <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+        <div className={`flex items-center gap-1 font-mono text-xs tabular-nums text-muted ${REVEAL}`}>
+          <Clock className="h-3 w-3" />
+          <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+        </div>
+      </div>
+
+      {/* Row 3: max two badges (+N), flags and utility actions on hover */}
+      <div className="mt-2 flex items-center justify-between gap-2 pl-4">
+        <BadgeOverflow badges={metaBadges} max={2} />
+        <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
           <span
-            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-xs border text-[10px] font-bold font-mono transition-colors tabular-nums ${
-              hasUser
-                ? 'bg-amber-500/10 border-amber-500/50 text-callout-warn-fg shadow-xs'
-                : 'bg-surface-sunken border-subtle text-muted'
-            }`}
-            title={hasUser ? 'User Flag Captured (Initial Foothold)' : 'User Flag Pending (Foothold required)'}
+            className={flagChip(hasUser, 'warn')}
+            title={hasUser ? 'User flag captured (initial foothold)' : 'User flag pending (foothold required)'}
             aria-label={hasUser ? `User flag captured for ${m.name}` : `User flag pending for ${m.name}`}
           >
-            <Flag className="w-2.5 h-2.5" /> U
+            <Flag className="h-2.5 w-2.5" /> U
           </span>
           <span
-            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-xs border text-[10px] font-bold font-mono transition-colors tabular-nums ${
-              hasRoot
-                ? 'bg-emerald-500/10 border-emerald-500/50 text-callout-success-fg shadow-xs'
-                : 'bg-surface-sunken border-subtle text-muted'
-            }`}
-            title={hasRoot ? 'Root / System Flag Captured (PrivEsc complete)' : 'Root Flag Pending (Privilege escalation required)'}
+            className={flagChip(hasRoot, 'success')}
+            title={hasRoot ? 'Root flag captured (privesc complete)' : 'Root flag pending (privilege escalation required)'}
             aria-label={hasRoot ? `Root flag captured for ${m.name}` : `Root flag pending for ${m.name}`}
           >
-            <Flag className="w-2.5 h-2.5" /> R
+            <Flag className="h-2.5 w-2.5" /> R
           </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-muted">
           <ShareLinkButton
             path={`/target/${m.id}`}
             title={m.name}
             iconOnly
-            className="p-1 rounded-xs bg-surface-card hover:bg-surface-hover border border-subtle text-muted hover:text-accent transition-all active:scale-[0.97] cursor-pointer"
+            className={`${ICON_BTN} hover:text-accent`}
           />
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onOpenReport(m.id);
             }}
-            className="p-1 rounded-xs bg-surface-card hover:bg-surface-hover border border-subtle text-muted hover:text-accent transition-all active:scale-[0.97] cursor-pointer"
-            title="Open Pentest Pre-Report"
+            className={`${ICON_BTN} hover:text-accent`}
+            title="Open pentest pre-report"
             aria-label={`Open pentest pre-report for ${m.name}`}
           >
-            <FileText className="w-3 h-3" />
+            <FileText className="h-3 w-3" />
           </button>
-          <div className="flex items-center gap-1 font-mono text-[11px] tabular-nums text-muted">
-            <Clock className="w-3 h-3 text-muted" />
-            <span className="tabular-nums">{formatDurationHuman(m.timeSpentSeconds)}</span>
-          </div>
         </div>
-      </div>
-
-      {/* Certifications */}
-      {m.certifications.length > 0 && (
-        <div className="flex items-center gap-1 mt-2">
-          {m.certifications.map((cert) => (
-            <span
-              key={cert}
-              className="text-[9px] px-1.5 py-0.5 rounded-[2px] bg-surface-sunken border border-subtle text-secondary font-mono tracking-wider uppercase font-semibold"
-            >
-              {cert}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Quick Move Across Lanes Action Footer */}
-      <div className="flex items-center justify-between mt-2.5 pt-1.5 border-t border-subtle opacity-60 group-hover:opacity-100 transition-opacity">
-        {prevLane ? (
-          <button
-            onClick={(e) => onRetreat(e, m, prevLane)}
-            className="flex items-center gap-0.5 text-[10px] text-muted hover:text-primary transition-all active:scale-[0.97] cursor-pointer font-medium font-mono"
-            title={`Move back to ${prevLane}`}
-            aria-label={`Move ${m.name} back to ${prevLane}`}
-          >
-            <ChevronLeft className="w-3.5 h-3.5" /> Back
-          </button>
-        ) : <div />}
-
-        {nextLane ? (
-          <button
-            onClick={(e) => onAdvance(e, m, nextLane)}
-            className="flex items-center gap-0.5 text-[10px] text-accent hover:underline transition-all active:scale-[0.97] font-semibold ml-auto cursor-pointer font-mono"
-            title={`Advance stage to ${nextLane}`}
-            aria-label={`Advance ${m.name} to ${nextLane}`}
-          >
-            Advance <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        ) : <div />}
       </div>
     </div>
   );
@@ -347,6 +325,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
   };
 
   const LaneIcon = lane.icon;
+  const setNewMachineModalOpen = useCtfStore((st) => st.setNewMachineModalOpen);
 
   return (
     <div
@@ -359,19 +338,15 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         isMobileActive ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'
       } lg:h-[calc(100vh-270px)] lg:min-h-[480px]`}
     >
-      {/* Milled Hardware Rail Header */}
-      <div className="border-b border-subtle px-3 py-2 bg-surface-card/90 flex-shrink-0 flex items-center justify-between machined-edge font-sans">
+      {/* Lane header: sentence-case title, mono count */}
+      <div className="border-b border-subtle px-3 py-2.5 bg-surface-card/90 flex-shrink-0 flex items-center justify-between font-sans">
         <div className="flex items-center gap-2 min-w-0">
-          <div 
-            className="w-5 h-5 rounded-md flex items-center justify-center border text-xs flex-shrink-0 bg-surface-sunken border-subtle text-secondary"
-          >
-            <LaneIcon className="w-3 h-3" />
-          </div>
+          <LaneIcon className="w-3.5 h-3.5 shrink-0 text-muted" />
           <div className="min-w-0">
-            <div className="text-xs font-semibold tracking-wider text-primary truncate uppercase font-sans">
+            <div className="text-sm font-semibold text-primary truncate font-sans">
               {lane.title}
             </div>
-            <div className="text-[10px] text-muted truncate font-sans">{lane.subtitle}</div>
+            <div className="text-xs text-muted truncate font-sans">{lane.subtitle}</div>
           </div>
         </div>
 
@@ -379,15 +354,14 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
           {laneMachines.length > limit && (
             <button
               onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
-              className="text-[9px] px-1.5 py-0.5 rounded-xs bg-accent/10 text-accent border border-accent/30 font-bold hover:bg-accent/20 transition-colors active:scale-[0.97] cursor-pointer font-mono"
+              className="text-xs px-1.5 py-0.5 rounded bg-accent-muted text-accent border border-accent/30 font-medium hover:bg-accent/20 transition-colors active:scale-[0.97] cursor-pointer font-mono tabular-nums"
               title="Render all targets in this lane immediately"
             >
               All ({laneMachines.length})
             </button>
           )}
-          {/* Tabular hardware brackets: [ 866 ], [ 0 ], [ 57 ] */}
-          <span className="font-mono text-[11px] font-bold tracking-wider text-muted tabular-nums select-none">
-            [ {laneMachines.length} ]
+          <span className="font-mono text-xs font-medium text-muted tabular-nums select-none">
+            {laneMachines.length}
           </span>
         </div>
       </div>
@@ -422,20 +396,20 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
 
         {laneMachines.length > displayedMachines.length && (
           <div className="pt-2 pb-1 px-2 flex flex-col items-center gap-2 border-t border-subtle bg-surface-sunken/60 rounded-lg machined-edge">
-            <div className="text-[10px] text-muted font-mono">
-              Showing <span className="text-primary font-bold tabular-nums">{displayedMachines.length}</span> of <span className="text-accent font-bold tabular-nums">{laneMachines.length}</span> targets
+            <div className="text-xs text-muted font-sans">
+              Showing <span className="font-mono text-primary font-medium tabular-nums">{displayedMachines.length}</span> of <span className="font-mono text-primary font-medium tabular-nums">{laneMachines.length}</span> targets
             </div>
             <div className="flex items-center gap-2 w-full">
               <button
                 onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }))}
-                className="flex-1 py-1.5 px-2 rounded-xs bg-surface-card hover:bg-surface-hover border border-subtle hover:border-accent text-accent text-[11px] font-bold font-mono transition-colors flex items-center justify-center gap-1 active:scale-[0.97] cursor-pointer"
+                className="flex-1 py-1.5 px-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-accent text-accent text-xs font-medium transition-colors flex items-center justify-center gap-1 active:scale-[0.97] cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" /> Load +60 More
               </button>
               {laneMachines.length > limit + 60 && (
                 <button
                   onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 180) }))}
-                  className="py-1.5 px-3 rounded-xs bg-surface-card hover:bg-surface-hover border border-subtle text-secondary text-[10px] font-mono transition-colors font-semibold active:scale-[0.97] cursor-pointer"
+                  className="py-1.5 px-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary text-xs transition-colors font-medium active:scale-[0.97] cursor-pointer"
                   title="Expand by larger batch (up to +180) with DOM protection"
                 >
                   Load +180
@@ -446,23 +420,20 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         )}
 
         {laneMachines.length === 0 && (
-          <div className="group flex flex-col items-center justify-center p-6 text-center border border-dashed border-subtle rounded-lg min-h-[160px] bg-surface-sunken/40 transition-colors duration-200 machined-edge">
-            <div className="relative mb-2.5">
-              <div 
-                className="w-9 h-9 rounded-md flex items-center justify-center border border-subtle bg-surface-card text-muted shadow-xs"
+          <div className="flex flex-col items-center justify-center gap-2.5 p-6 text-center border border-dashed border-subtle rounded-lg min-h-[120px]">
+            <p className="text-sm text-muted font-sans max-w-[210px] leading-snug">
+              {lane.emptyLine}
+            </p>
+            {lane.id === 'backlog' && (
+              <button
+                type="button"
+                onClick={() => setNewMachineModalOpen(true)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-3 text-xs font-medium text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
               >
-                <LaneIcon className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-xs font-bold uppercase font-mono tracking-wider text-secondary transition-colors">
-              [ {lane.emptyTitle} ]
-            </div>
-            <div className="text-[10px] text-muted font-mono mt-1 max-w-[210px] leading-relaxed">
-              {lane.emptySubtitle}
-            </div>
-            <div className="text-[9px] font-mono text-muted mt-1.5 px-2 py-0.5 rounded-xs bg-surface-sunken border border-subtle">
-              {lane.emptyHint}
-            </div>
+                <Plus className="h-3.5 w-3.5" />
+                Add machine
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -582,9 +553,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       onDragStart={handleDragStart} 
       onDragEnd={handleDragEnd}
     >
-      <div className="w-full font-mono pb-8">
+      <div className="w-full pb-8">
       {/* 1. MOBILE RESPONSIVE STICKY LANE TABS (< lg) - Eliminates Nested Scroll Trap & Pinching */}
-      <div className="lg:hidden sticky top-0 z-20 bg-zinc-50/95 dark:bg-zinc-950/95 py-1.5 mb-2 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800">
+      <div className="lg:hidden sticky top-0 z-20 bg-surface-sunken/95 py-1.5 mb-2 backdrop-blur-md border-b border-subtle">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {visibleLanes.map((lane) => {
             const laneCount = filteredMachines.filter((m) => m.status === lane.id).length;
@@ -596,15 +567,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
                   setMobileActiveLane(lane.id);
                   if (soundEnabled) playCyberSound('toggle');
                 }}
-                className={`px-2.5 py-1.5 rounded-[3px] text-xs font-mono font-bold whitespace-nowrap flex items-center gap-1.5 transition-colors shadow-none active:scale-[0.97] machined-edge cursor-pointer ${
+                className={`px-3 py-1.5 min-h-[44px] rounded-lg text-sm font-medium whitespace-nowrap flex items-center gap-1.5 transition-colors active:scale-[0.97] cursor-pointer ${
                   isSelected
-                    ? 'bg-zinc-900 border border-[#0ea5e9] text-[#0ea5e9] dark:bg-zinc-900 dark:border-[#0ea5e9] dark:text-[#0ea5e9]'
-                    : 'bg-white dark:bg-zinc-900/80 text-tertiary border border-zinc-200 dark:border-zinc-800'
+                    ? 'bg-surface-card border border-accent text-accent'
+                    : 'bg-surface-card text-tertiary border border-subtle'
                 }`}
               >
                 <span>{lane.title}</span>
-                <span className="font-mono text-[10px] font-bold tabular-nums">
-                  [ {laneCount} ]
+                <span className="font-mono text-xs tabular-nums">
+                  {laneCount}
                 </span>
               </button>
             );
