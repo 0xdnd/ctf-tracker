@@ -1,31 +1,48 @@
 <div align="center">
 
-# ⚡ ZEROBOX // Tactical CTF Tracker v2.0
-### Advanced CTF Machine Tracking, Attack Lifecycle Management & Offensive Cheatsheet Dashboard
+<img src="public/logo-zerobox.png" alt="ZeroBox logo" width="120" />
+
+# ⚡ ZeroBox — The CTF Tracker Built for Hackers
+
+### Track every HTB & TryHackMe box, from recon to root, in one free, offline, keyboard-driven dashboard.
+
+**No signup. No backend. No tracking. Just open it and start hacking.**
+
+<br />
+
+[![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://0xdnd.github.io/ctf-tracker/)
 
 [![GitHub Stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=for-the-badge&color=F59E0B&logo=github)](https://github.com/0xdnd/ctf-tracker/stargazers)
-[![Open Tracker](https://img.shields.io/badge/-%20LAUNCH%20ZEROBOX%20-10B981?style=for-the-badge&labelColor=0B0F19)](https://0xdnd.github.io/ctf-tracker/)
+[![Machines](https://img.shields.io/badge/Machines-929-10B981?style=for-the-badge)](https://0xdnd.github.io/ctf-tracker/)
+[![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-130%2B-EF4444?style=for-the-badge)](https://0xdnd.github.io/ctf-tracker/)
+
 [![Live on GitHub Pages](https://img.shields.io/badge/Live_on-GitHub_Pages-181717?style=flat-square&logo=github)](https://0xdnd.github.io/ctf-tracker/)
 [![Creator](https://img.shields.io/badge/Creator-Daniel%20Dayan%20(@0xdnd)-10B981?style=flat-square&logo=github)](https://0xdnd.github.io/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Daniel%20Dayan-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/daniel-dayan-a66322352/)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Daniel%20Dayan-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/0xdnd)
 [![License](https://img.shields.io/badge/License-Non--Commercial%20(ZNSL--1.0)-F59E0B?style=flat-square&logo=shield)](LICENSE)
 
-*929 Machines (415 HTB Retired + 514 THM CTF) · Daniel Dayan's 55 Verified Solves · 100% HTB & THM ToS Compliant*
-
-<br />
-
-> ⭐️ **If you find ZeroBox useful, please consider giving it a star on GitHub! It helps support ongoing development and community features.** ⭐️
+**[🚀 Try it live](https://0xdnd.github.io/ctf-tracker/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)** · **[📝 Writeups](https://0xdnd.gitbook.io/thm-writeups/)**
 
 </div>
 
 ---
 
-## 🎯 Overview
+## 🤔 Why ZeroBox?
 
-**ZeroBox** is a high-performance, cybersecurity-themed dashboard engineered for penetration testers, security researchers, and CTF competitors targeting **Hack The Box (HTB)**, **TryHackMe (THM)**, and custom offline labs.
+Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across browser tabs, a Notion page, a text file of creds and a cheatsheet you keep re-typing IPs into. ZeroBox puts it all in one place:
 
-Built with an **offline-first architecture** (Zustand + LocalStorage/IndexedDB), zero backend dependency, and instantaneous command palette (`Ctrl+K`) navigation.
+| Instead of… | ZeroBox gives you… |
+|:---|:---|
+| 📋 A messy spreadsheet of boxes | **929 HTB & THM machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
+| 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
+| 🐚 Googling "python reverse shell" again | **130+ reverse shells** with matching listeners, one click to copy |
+| 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
+| 😰 Wondering if you're exam-ready | A **24h exam simulator** with OSCP/CPTS/CRTO-style scoring |
+
+> 🔒 **100% private:** everything lives in your browser (LocalStorage + IndexedDB). Nothing is ever sent anywhere.
+
+> ⭐ **If ZeroBox saves you time, please [star the repo](https://github.com/0xdnd/ctf-tracker/stargazers)** — it's the best way to help more hackers find it!
 
 ---
 
