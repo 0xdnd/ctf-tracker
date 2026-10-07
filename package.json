@@ -20,7 +20,7 @@
     "test:e2e": "python scripts/run_webapp_tests.py",
     "export-notes": "node scripts/index-cpts-notes.cjs",
     "index-notes": "node scripts/index-cpts-notes.cjs",
-    "build": "tsc && vite build && node scripts/postbuild.cjs && node scripts/prerender.cjs",
+    "build": "tsc && vite build && node scripts/postbuild.cjs && node scripts/prerender.cjs && node scripts/gen-content-pages.cjs",
     "build:tauri": "tsc && vite build --mode tauri && node scripts/postbuild.cjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
