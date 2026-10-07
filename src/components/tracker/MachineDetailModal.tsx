@@ -698,13 +698,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </div>
               )}
 
-              {/* Section 3: Official writeup link (HTB walkthrough text is not redistributed) */}
+              {/* Section 3: link to the machine's platform page */}
               {(() => {
-                const writeupHref = machine.officialPdf && /^https?:\/\//i.test(machine.officialPdf)
-                  ? machine.officialPdf
-                  : machine.roomUrl;
-                const safeHref = writeupHref ? sanitizeExternalUrl(writeupHref) : undefined;
+                const safeHref = machine.roomUrl ? sanitizeExternalUrl(machine.roomUrl) : undefined;
                 if (!safeHref) return null;
+                const platformName = machine.platform === 'HTB' ? 'Hack The Box' : machine.platform === 'THM' ? 'TryHackMe' : machine.platform;
                 return (
                   <div className="p-4 rounded-xl bg-surface-sunken/80 border border-subtle">
                     <a
@@ -713,7 +711,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-callout-tip-fg hover:underline"
                     >
-                      <FileText className="w-3.5 h-3.5" /> Official writeup on Hack The Box ↗
+                      <FileText className="w-3.5 h-3.5" /> View on {platformName} ↗
                     </a>
                   </div>
                 );
