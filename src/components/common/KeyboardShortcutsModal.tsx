@@ -25,6 +25,7 @@ const SHORTCUTS: ShortcutEntry[] = [
   { keys: ['Ctrl', 'P'], description: 'Generate pre-report PDF for active target', category: 'actions' },
   { keys: ['Alt', 'S'], description: 'Snippets and commands drawer (or Ctrl+Space)', category: 'actions' },
   { keys: ['Alt', 'E'], description: 'Toggle Exam Mission quick-action drawer', category: 'actions' },
+  { keys: ['Alt', 'N'], description: 'Toggle Field Notes Workspace sidecar', category: 'actions' },
   { keys: ['Alt', 'R'], description: 'Open Reverse Shell Crafter (or Alt+P / Ctrl+Shift+R)', category: 'actions' },
   { keys: ['Alt', 'O'], description: 'Open Operator Profile switcher (or Ctrl+Shift+O)', category: 'actions' },
   { keys: ['t'], description: 'Toggle active target stopwatch timer', category: 'actions' },

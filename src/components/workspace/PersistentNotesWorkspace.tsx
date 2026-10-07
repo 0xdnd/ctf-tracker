@@ -276,39 +276,85 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
       {/* ========================================================
           MOBILE SLIDE-UP BOTTOM SHEET (< 768px)
-          Large, spacious bottom sheet (75vh/88vh) with tabs and no full-screen takeover.
+          Large, spacious bottom sheet (75vh/88vh) with tabs, backdrop, and proper safe-area docking.
          ======================================================== */}
+      {/* Mobile Backdrop */}
+      <div
+        className="md:hidden fixed inset-0 z-30 bg-surface-inverse/50 backdrop-blur-xs transition-opacity duration-200"
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+      />
+
       <div
         aria-label="Mobile Notes Workspace"
-        className={`md:hidden fixed bottom-14 left-0 right-0 z-40 bg-surface-card border-t border-subtle shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-mono ${
+        className={`md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-surface-card border-t border-subtle shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-sans ${
           dockSize === 'expanded' ? 'h-[88vh]' : 'h-[75vh]'
         }`}
       >
         {/* Mobile Drag Header */}
         <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-xs font-semibold text-primary truncate max-w-[150px]">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+            <span className="text-xs font-semibold text-primary truncate max-w-[120px] sm:max-w-[180px]">
               {activeNote?.title || 'Field Notes'}
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* View Mode Switcher (Read | Split | Raw) */}
+            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
+              <button
+                type="button"
+                onClick={() => setViewMode('reading')}
+                className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                  viewMode === 'reading'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
+                }`}
+                title="Rich Reading View"
+              >
+                Read
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('raw')}
+                className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                  viewMode === 'raw'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
+                }`}
+                title="Raw Markdown Editor"
+              >
+                Raw
+              </button>
+            </div>
+
             {/* Height Expand/Collapse */}
             <button
               type="button"
               onClick={toggleDockSize}
-              className="p-1.5 rounded-md hover:bg-surface-hover text-secondary"
+              className="p-1.5 rounded-md hover:bg-surface-hover text-secondary cursor-pointer"
               title="Toggle Height"
             >
               {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Font Size Toggle */}
+            <button
+              type="button"
+              onClick={cycleFontSize}
+              className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
+              title={`Cycle font size (Current: ${fontSize.toUpperCase()})`}
+            >
+              <Type className="w-3.5 h-3.5" />
             </button>
 
             {/* Language Switch */}
             <button
               type="button"
               onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="px-2 py-1 rounded-md text-[10px] font-semibold bg-surface-hover text-primary"
+              className="px-2 py-1 rounded-md text-[10px] font-semibold bg-surface-hover text-primary cursor-pointer"
+              title="Toggle English / Hebrew"
             >
               {language === 'en' ? 'EN' : 'עב'}
             </button>
@@ -317,7 +363,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg"
+              className="p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg cursor-pointer"
               title="Close Workspace"
             >
               <X className="w-4 h-4" />

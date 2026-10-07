@@ -21,6 +21,7 @@ import {
   Database
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 
@@ -28,6 +29,10 @@ export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const { 
     activeTab, 
@@ -188,6 +193,43 @@ export const Sidebar: React.FC = () => {
             </motion.button>
           );
         })}
+
+        {/* Field Notes Workspace Sidecar Toggle Button */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => {
+            toggleNotesWorkspace();
+            if (soundEnabled) playCyberSound('click');
+          }}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            isNotesOpen
+              ? 'bg-surface-hover text-primary font-medium'
+              : 'text-secondary hover:text-primary hover:bg-surface-hover/70'
+          }`}
+          title={isNotesOpen ? 'Close Notes Workspace (Alt+N)' : 'Open Notes Workspace (Alt+N)'}
+          aria-label="Notes Workspace"
+        >
+          {isNotesOpen && (
+            <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />
+          )}
+          <div className="flex-shrink-0 relative">
+            <BookOpen className={`w-4 h-4 ${isNotesOpen ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
+            {openNotesCount > 0 && collapsed && (
+              <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-accent" />
+            )}
+          </div>
+
+          {!collapsed && (
+            <div className="flex-1 flex items-center justify-between min-w-0 text-left">
+              <span className="truncate mr-2">Notes Workspace</span>
+              {openNotesCount > 0 && (
+                <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
+                  {openNotesCount} active
+                </span>
+              )}
+            </div>
+          )}
+        </motion.button>
 
         {/* View switcher when in Tracker view */}
         {activeTab === 'tracker' && !collapsed && (

@@ -7,6 +7,7 @@ import { KeyboardShortcutsModal } from '../../components/common/KeyboardShortcut
 import { useCtfStore } from '../../store/useCtfStore';
 import { useExamStore } from '../../store/examStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -61,6 +62,7 @@ const HOTKEY_MAP: Record<string, Binding> = {
   'Ctrl+P': { init: { key: 'p', ctrlKey: true }, check: () => ctf().reportMachineId !== null },
   'Alt+S': { init: { key: 's', altKey: true }, check: () => ctf().snippetsDrawerOpen },
   'Alt+E': { init: { key: 'e', altKey: true }, check: () => useExamStore.getState().isQuickDrawerOpen },
+  'Alt+N': { init: { key: 'n', altKey: true }, check: () => useNotesWorkspaceStore.getState().isOpen },
   'Alt+R': { init: { key: 'r', altKey: true }, check: () => ctf().revShellModalOpen },
   'Alt+O': { init: { key: 'o', altKey: true }, check: () => useAuthStore.getState().operatorProfileModalOpen },
   t: { init: { key: 't' }, check: () => ctf().isTimerRunning },
@@ -105,6 +107,7 @@ const resetSlices = () => {
   });
   useExamStore.setState({ isQuickDrawerOpen: false });
   useAuthStore.setState({ operatorProfileModalOpen: false });
+  useNotesWorkspaceStore.setState({ isOpen: false });
 };
 
 describe('Keyboard shortcuts cheat sheet', () => {

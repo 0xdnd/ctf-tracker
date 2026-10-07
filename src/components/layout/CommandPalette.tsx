@@ -23,10 +23,13 @@ import {
   Copy,
   Settings,
   Users,
-  Keyboard
+  Keyboard,
+  Film,
+  BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { CREATOR_PROFILE_LINKS, safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 
@@ -53,6 +56,7 @@ export const CommandPalette: React.FC = () => {
     setFlexCardModalOpen,
     setShortcutsModalOpen,
     setSettingsModalOpen,
+    setShowcaseModalOpen,
     globalVars,
     activeTargetId,
     setSnippetsDrawerOpen,
@@ -74,6 +78,7 @@ export const CommandPalette: React.FC = () => {
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
+      setShowcaseModalOpen: s.setShowcaseModalOpen,
       globalVars: s.globalVars,
       activeTargetId: s.activeTargetId,
       setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
@@ -174,6 +179,17 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-notes-workspace',
+        label: 'Toggle Field Notes Workspace Sidecar (Alt+N)',
+        icon: BookOpen,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          useNotesWorkspaceStore.getState().toggleOpen();
+        },
+      },
+      {
         id: 'action-revshell',
         label: 'Open reverse shell generator',
         icon: Zap,
@@ -226,6 +242,17 @@ export const CommandPalette: React.FC = () => {
         execute: () => {
           setCommandPaletteOpen(false);
           setOperatorModalOpen(true);
+        },
+      },
+      {
+        id: 'action-showcase-video',
+        label: 'Watch ZeroBox Reel / Demo Video (Nano Banana AI 1080p)',
+        icon: Film,
+        colorClass: 'text-cyber-emerald',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setShowcaseModalOpen(true);
         },
       },
       {

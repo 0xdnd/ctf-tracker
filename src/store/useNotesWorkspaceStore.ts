@@ -57,8 +57,8 @@ export interface NotesWorkspaceState {
 export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
   persist(
     (set, get) => ({
-      openTabIds: ['00_methodology_pt'],
-      activeTabId: '00_methodology_pt',
+      openTabIds: ['01-recon-port-scanning'],
+      activeTabId: '01-recon-port-scanning',
       isOpen: false,
       isPinned: true,
       dockSize: 'normal',
@@ -130,15 +130,24 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
 
       toggleOpen: () => {
         set((state) => {
-          // If opening with no active tabs, default to methodology
-          if (!state.isOpen && state.openTabIds.length === 0) {
+          const all = [...(useCtfStore.getState().customNotes || []), ...getAllCptsNotes()];
+          const defaultId = all.find((n) => n.id === '01-recon-port-scanning')?.id || all[0]?.id || '01-recon-port-scanning';
+          const validTabIds = state.openTabIds.filter((id) => all.some((n) => n.id === id));
+
+          if (!state.isOpen && validTabIds.length === 0) {
             return {
               isOpen: true,
-              openTabIds: ['00_methodology_pt'],
-              activeTabId: '00_methodology_pt',
+              openTabIds: [defaultId],
+              activeTabId: defaultId,
             };
           }
-          return { isOpen: !state.isOpen };
+          return {
+            isOpen: !state.isOpen,
+            openTabIds: validTabIds.length > 0 ? validTabIds : [defaultId],
+            activeTabId: (state.activeTabId && all.some((n) => n.id === state.activeTabId))
+              ? state.activeTabId
+              : (validTabIds[0] || defaultId),
+          };
         });
       },
 
@@ -167,19 +176,23 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
 
       getActiveNote: () => {
         const state = get();
-        if (!state.activeTabId) return null;
-        // 1. Check custom notes in ctf store
         const customNotes = useCtfStore.getState().customNotes || [];
-        const customMatch = customNotes.find((n) => n.id === state.activeTabId);
-        if (customMatch) return customMatch;
+        const all = [...customNotes, ...getAllCptsNotes()];
 
-        // 2. Check built-in obsidian manual notes
-        const standardMatch = getNoteById(state.activeTabId);
-        if (standardMatch) return standardMatch;
+        // 1. Try currently active tab
+        if (state.activeTabId) {
+          const match = all.find((n) => n.id === state.activeTabId);
+          if (match) return match;
+        }
 
-        // 3. Fallback: check all notes
-        const all = getAllCptsNotes();
-        return all.find((n) => n.id === state.activeTabId) || null;
+        // 2. Try first valid open tab
+        for (const tabId of state.openTabIds) {
+          const match = all.find((n) => n.id === tabId);
+          if (match) return match;
+        }
+
+        // 3. Fallback: default note or first available note
+        return all.find((n) => n.id === '01-recon-port-scanning') || all[0] || null;
       },
 
       getOpenNotes: () => {
@@ -188,9 +201,16 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
         const all = [...custom, ...getAllCptsNotes()];
         const map = new Map(all.map((n) => [n.id, n]));
 
-        return state.openTabIds
+        const matched = state.openTabIds
           .map((id) => map.get(id))
           .filter((n): n is CptsNoteEntry => Boolean(n));
+
+        if (matched.length === 0 && all.length > 0) {
+          const fallback = map.get('01-recon-port-scanning') || all[0];
+          if (fallback) return [fallback];
+        }
+
+        return matched;
       },
     }),
     {
@@ -201,6 +221,19 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
         if (!validModes.includes(merged.viewMode)) {
           merged.viewMode = 'reading';
         }
+
+        // Auto-sanitize legacy invalid tab IDs (e.g. stale '00_methodology_pt')
+        const all = [...(useCtfStore.getState().customNotes || []), ...getAllCptsNotes()];
+        const validIds = new Set(all.map((n) => n.id));
+        const defaultId = all.find((n) => n.id === '01-recon-port-scanning')?.id || all[0]?.id || '01-recon-port-scanning';
+
+        const filteredTabs = (merged.openTabIds || []).filter((id) => validIds.has(id));
+        merged.openTabIds = filteredTabs.length > 0 ? filteredTabs : [defaultId];
+
+        if (!merged.activeTabId || !validIds.has(merged.activeTabId)) {
+          merged.activeTabId = merged.openTabIds[0] || defaultId;
+        }
+
         return merged;
       },
       partialize: (state) => ({

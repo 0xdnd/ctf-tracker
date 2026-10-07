@@ -42,6 +42,7 @@ const KeyboardShortcutsModal = lazy(() => import('./components/common/KeyboardSh
 const BackupModal = lazy(() => import('./components/backup/BackupModal').then(m => ({ default: m.BackupModal })));
 const ReconAutomationModal = lazy(() => import('./components/automation/ReconAutomationModal').then(m => ({ default: m.ReconAutomationModal })));
 const SettingsModal = lazy(() => import('./components/common/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const ZeroBoxShowcaseModal = lazy(() => import('./components/common/ZeroBoxShowcaseModal').then(m => ({ default: m.ZeroBoxShowcaseModal })));
 
 // Code-Split Route Modules (Zero-overhead on initial tracker load)
 const CheatsheetView = lazy(() => import('./components/cheatsheet/CheatsheetView').then(m => ({ default: m.CheatsheetView })));
@@ -97,6 +98,7 @@ const MainAppContent: React.FC = () => {
   const flexCardModalOpen = useCtfStore((s) => s.flexCardModalOpen);
   const shortcutsModalOpen = useCtfStore((s) => s.shortcutsModalOpen);
   const settingsModalOpen = useCtfStore((s) => s.settingsModalOpen);
+  const showcaseModalOpen = useCtfStore((s) => s.showcaseModalOpen);
   const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
   const operatorProfileModalOpen = useAuthStore((s) => s.operatorProfileModalOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
@@ -155,7 +157,8 @@ const MainAppContent: React.FC = () => {
           notesImportModalOpen ||
           flexCardModalOpen ||
           shortcutsModalOpen ||
-          settingsModalOpen
+          settingsModalOpen ||
+          showcaseModalOpen
         );
         if (!isAnyModalOpen) {
           setFocusMode(false);
@@ -378,6 +381,9 @@ const MainAppContent: React.FC = () => {
           </AnimatePresence>
           <AnimatePresence>
             {settingsModalOpen && <SettingsModal key="settings-modal" />}
+          </AnimatePresence>
+          <AnimatePresence>
+            {showcaseModalOpen && <ZeroBoxShowcaseModal key="showcase-modal" />}
           </AnimatePresence>
         </Suspense>
       </RouteErrorBoundary>

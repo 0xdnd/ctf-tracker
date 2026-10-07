@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../utils/helpers';
 import { generateObsidianVaultZip } from '../utils/obsidianVaultExporter';
@@ -170,6 +171,15 @@ export function useTacticalHotkeys() {
         e.preventDefault();
         e.stopPropagation();
         useExamStore.getState().toggleQuickDrawer();
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
+      // Alt+N: Toggle Field Notes Workspace Sidecar
+      if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        e.stopPropagation();
+        useNotesWorkspaceStore.getState().toggleOpen();
         if (soundEnabled) playCyberSound('toggle');
         return;
       }

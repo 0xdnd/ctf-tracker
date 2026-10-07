@@ -290,7 +290,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
     ctx.fillStyle = C.muted;
     ctx.font = `13px ${MONO}`;
-    ctx.fillText('0xdnd.github.io/ctf-tracker', W - 310, 535);
+    ctx.fillText('ctftracker.com', W - 180, 535);
 
     setRendering(false);
   };
@@ -332,14 +332,14 @@ export const OperatorFlexCardModal: React.FC = () => {
   };
 
   const handleShareLinkedIn = () => {
-    const text = encodeURIComponent('Tracking my offensive security machine solves, OSCP/CPTS prep, and penetration testing labs with ZeroBox by Daniel Dayan (@0xdnd)! Check it out: https://0xdnd.github.io/ctf-tracker/');
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://0xdnd.github.io/ctf-tracker/`, '_blank');
+    const text = encodeURIComponent('Tracking my offensive security machine solves, OSCP/CPTS prep, and penetration testing labs with ZeroBox by Daniel Dayan (@0xdnd)! Check it out: https://ctftracker.com/');
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://ctftracker.com/`, '_blank');
     if (soundEnabled) playCyberSound('click');
   };
 
   const handleShareTwitter = () => {
     const text = encodeURIComponent('Tracking my offensive security labs and CTF solves on ZeroBox by @0xdnd! Check out the open platform:');
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=https://0xdnd.github.io/ctf-tracker/`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=https://ctftracker.com/`, '_blank');
     if (soundEnabled) playCyberSound('click');
   };
 

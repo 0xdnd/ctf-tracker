@@ -18,7 +18,8 @@ import {
   ShieldAlert,
   Search,
   Copy,
-  Check
+  Check,
+  BookOpen
 } from 'lucide-react';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
@@ -28,6 +29,7 @@ import { SettingsDropdown } from './SettingsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 
 const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
   const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
@@ -84,6 +86,10 @@ export const UnifiedHeader: React.FC = () => {
 
   const user = useAuthStore((s) => s.user);
   const setOperatorProfileModalOpen = useAuthStore((s) => s.setOperatorProfileModalOpen);
+
+  const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const operatorRootedCount = useMemo(() => {
     return machines.filter((m) => m.status === 'root' || m.status === 'completed').length;
@@ -620,6 +626,27 @@ export const UnifiedHeader: React.FC = () => {
         >
           <Terminal className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="hidden 2xl:inline">Snippets</span>
+        </button>
+
+        {/* Field Notes Workspace Sidecar */}
+        <button
+          onClick={() => {
+            toggleNotesWorkspace();
+            if (soundEnabled) playCyberSound('click');
+          }}
+          className={`hidden xl:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary' : ''}`}
+          title="Toggle Notes Workspace Sidecar (Alt+N)"
+          aria-label="Toggle Field Notes Sidecar"
+        >
+          <div className="relative flex items-center justify-center">
+            <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+            {openNotesCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 min-w-[12px] h-3 text-center text-[9px] leading-[12px] px-0.5 rounded-full bg-accent text-on-accent font-medium tabular-nums">
+                {openNotesCount}
+              </span>
+            )}
+          </div>
+          <span className="hidden 2xl:inline">Notes</span>
         </button>
 
         {/* Command palette trigger */}

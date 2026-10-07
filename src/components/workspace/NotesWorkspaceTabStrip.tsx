@@ -112,7 +112,10 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             </div>
           );
         })}
+      </div>
 
+      {/* Tab Strip Controls (New Tab + Close All) */}
+      <div className="flex items-center gap-1 flex-shrink-0 pl-1">
         {/* New Tab Button */}
         <div className="relative" ref={searchContainerRef}>
           <button
@@ -127,7 +130,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
 
           {/* Quick Search Dropdown */}
           {isSearchOpen && (
-            <div className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl bg-surface-card border border-strong shadow-2xl p-2.5 z-50 space-y-2">
+            <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl bg-surface-card border border-strong shadow-2xl p-2.5 z-50 space-y-2 max-w-[calc(100vw-1.5rem)]">
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface-sunken border border-subtle">
                 <Search className="w-3.5 h-3.5 text-muted flex-shrink-0" />
                 <input
@@ -186,19 +189,19 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Tab Strip Right Actions: Close All */}
-      {openTabIds.length > 1 && (
-        <button
-          type="button"
-          onClick={closeAllTabs}
-          className="px-1.5 py-1 rounded-md text-[10px] text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-colors flex-shrink-0 cursor-pointer ml-1"
-          title="Close All Tabs"
-        >
-          Close All
-        </button>
-      )}
+        {/* Tab Strip Right Actions: Close All */}
+        {openTabIds.length > 1 && (
+          <button
+            type="button"
+            onClick={closeAllTabs}
+            className="px-1.5 py-1 rounded-md text-[10px] text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-colors flex-shrink-0 cursor-pointer"
+            title="Close All Tabs"
+          >
+            Close All
+          </button>
+        )}
+      </div>
     </div>
   );
 };
