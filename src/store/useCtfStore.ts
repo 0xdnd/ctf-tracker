@@ -107,11 +107,11 @@ export function applyThemePreset(preset: ThemePreset | string) {
     // Synchronize browser tab favicon with active theme preset
     try {
       const faviconMap: Record<string, string> = {
-        obsidian: './logo-zerobox.png',
-        monolith: './logo-zerobox.png',
-        htb: './logo-htb.png',
+        obsidian: `${import.meta.env.BASE_URL}logo-zerobox.png`,
+        monolith: `${import.meta.env.BASE_URL}logo-zerobox.png`,
+        htb: `${import.meta.env.BASE_URL}logo-htb.png`,
       };
-      const iconPath = faviconMap[normalizedPreset] || './logo-zerobox.png';
+      const iconPath = faviconMap[normalizedPreset] || `${import.meta.env.BASE_URL}logo-zerobox.png`;
       const favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
       favicons.forEach(el => {
         el.href = iconPath;

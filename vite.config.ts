@@ -172,9 +172,15 @@ function localVaultPlugin() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Tauri desktop builds (`--mode tauri`) use hash routing + relative assets; web uses clean URLs at '/'.
+  const isTauri = mode === 'tauri';
+  return {
   plugins: [react(), localVaultPlugin()],
-  base: './',
+  base: isTauri ? './' : '/',
+  define: {
+    'import.meta.env.VITE_TARGET': JSON.stringify(isTauri ? 'tauri' : 'web'),
+  },
   resolve: {
     dedupe: ['react', 'react-dom', 'react-router-dom', 'zustand'],
   },
@@ -226,4 +232,5 @@ export default defineConfig({
       }
     }
   }
+  };
 });

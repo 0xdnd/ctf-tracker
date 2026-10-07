@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
@@ -86,6 +87,7 @@ const QUICK_DESIGN_TOKENS = [
 ];
 
 export const SettingsModal: React.FC = () => {
+  const navigate = useNavigate();
   const { 
     settingsModalOpen, 
     setSettingsModalOpen, 
@@ -328,7 +330,7 @@ export const SettingsModal: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setSettingsModalOpen(false);
-                    window.location.hash = '#/theme';
+                    navigate('/theme');
                     if (soundEnabled) playCyberSound('click');
                   }}
                   className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-strong text-primary font-medium text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"

@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Share2, Check } from 'lucide-react';
 import { playCyberSound } from '../../utils/helpers';
+import { isTauriTarget } from '../../utils/runtimeTarget';
 
 interface ShareLinkButtonProps {
   path: string;
@@ -26,8 +27,10 @@ export const ShareLinkButton: React.FC<ShareLinkButtonProps> = ({
     if (typeof window === 'undefined') return;
 
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    // Construct robust HashRouter URL for universal public sharing
-    const fullUrl = `${window.location.origin}${window.location.pathname}#${cleanPath}`;
+    // Web build uses clean URLs; the desktop (hash-routed) build keeps '#/path'
+    const fullUrl = isTauriTarget()
+      ? `${window.location.origin}${window.location.pathname}#${cleanPath}`
+      : `${window.location.origin}${cleanPath}`;
 
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {

@@ -416,9 +416,9 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
     it('verifies App.tsx root tree is wrapped by <MotionConfig reducedMotion="user">', () => {
       expect(appContent).toContain('<MotionConfig reducedMotion="user">');
       expect(appContent).toContain('</MotionConfig>');
-      // Verify MotionConfig wraps HashRouter
+      // Verify MotionConfig wraps the router
       const motionConfigIndex = appContent.indexOf('<MotionConfig reducedMotion="user">');
-      const hashRouterIndex = appContent.indexOf('<HashRouter>');
+      const hashRouterIndex = appContent.indexOf('<Router>');
       expect(motionConfigIndex).toBeGreaterThan(-1);
       expect(hashRouterIndex).toBeGreaterThan(motionConfigIndex);
     });

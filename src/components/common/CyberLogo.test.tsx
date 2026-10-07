@@ -17,7 +17,7 @@ describe('CyberLogo component', () => {
     const img = screen.getByRole('img');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - zerobox');
-    expect(img).toHaveAttribute('src', './logo-zerobox.png');
+    expect(img).toHaveAttribute('src', '/logo-zerobox.webp');
 
     const container = screen.getByTitle('ZeroBox (zerobox)');
     expect(container).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe('CyberLogo component', () => {
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - htb');
-    expect(img).toHaveAttribute('src', './logo-htb.png');
+    expect(img).toHaveAttribute('src', '/logo-htb.webp');
     expect(screen.getByTitle('ZeroBox (htb)').className).not.toContain('drop-shadow');
   });
 
@@ -38,7 +38,7 @@ describe('CyberLogo component', () => {
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - midnight-blue');
-    expect(img).toHaveAttribute('src', './logo-midnight.png');
+    expect(img).toHaveAttribute('src', '/logo-midnight.webp');
   });
 
   it('renders the OLED logo when theme is oled', () => {
@@ -46,7 +46,7 @@ describe('CyberLogo component', () => {
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - oled');
-    expect(img).toHaveAttribute('src', './logo-oled.png');
+    expect(img).toHaveAttribute('src', '/logo-oled.webp');
   });
 
   it('reactively updates when store themePreset changes', () => {

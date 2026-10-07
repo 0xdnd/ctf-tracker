@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <title>ZEROBOX // Redirecting...</title>
     <script>
-      window.location.replace('../' + window.location.search + window.location.hash);
+      var h = window.location.hash;
+      var target = h.indexOf('#/') === 0 ? h.slice(1) : '/tracker/';
+      window.location.replace(target + (h.indexOf('#/') === 0 ? '' : window.location.search));
     </script>
   </head>
   <body style="background-color: #0B0F19; color: #10B981; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">

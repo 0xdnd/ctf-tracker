@@ -13,7 +13,12 @@ if (!fs.existsSync(distDir)) {
 const distIndex = path.join(distDir, 'index.html');
 const dist404 = path.join(distDir, '404.html');
 if (fs.existsSync(distIndex)) {
-  fs.copyFileSync(distIndex, dist404);
+  // The 404 copy is only an SPA fallback for deep links; keep it out of search indexes.
+  const html = fs.readFileSync(distIndex, 'utf8').replace(/\s*<link rel="canonical"[^>]*>/, '');
+  const noindex = '<meta name="robots" content="noindex">';
+  const html404 = html.includes('</head>') ? html.replace('</head>', `    ${noindex}
+  </head>`) : noindex + html;
+  fs.writeFileSync(dist404, html404, 'utf8');
 }
 
 // 2. Ensure .nojekyll exists in dist for GitHub Pages asset resolution
@@ -36,7 +41,11 @@ const iconFiles = [
   'logo-htb.png',
   'logo-midnight.png',
   'logo-oled.png',
-  'logo.png'
+  'logo.png',
+  'logo-zerobox.webp',
+  'logo-htb.webp',
+  'logo-midnight.webp',
+  'logo-oled.webp'
 ];
 
 const distAssetsDir = path.join(distDir, 'assets');

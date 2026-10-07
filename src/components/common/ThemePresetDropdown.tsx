@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Palette, ChevronDown, Check, Zap, Terminal, Moon, Sun } from 'lucide-react';
 import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useTheme } from '../../hooks/useTheme';
@@ -49,6 +49,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   
   const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
   const setThemePreset = useCtfStore((s) => s.setThemePreset);
@@ -229,7 +230,7 @@ export const ThemePresetDropdown: React.FC<ThemePresetDropdownProps> = ({ compac
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                window.location.hash = '#/theme';
+                navigate('/theme');
                 if (soundEnabled) playCyberSound('click');
               }}
               className="w-full py-1.5 px-2 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary font-medium text-[11px] flex items-center justify-center gap-1.5 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] cursor-pointer group"

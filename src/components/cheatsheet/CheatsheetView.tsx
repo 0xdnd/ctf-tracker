@@ -1,3 +1,4 @@
+import { isTauriTarget } from '../../utils/runtimeTarget';
 import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -768,7 +769,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           isMaximized={mode === 'docked' ? isDockedMaximized : isModalMaximized}
           onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : handleToggleModalMaximize}
           onPopoutWindow={() => {
-            const popoutUrl = `${window.location.origin}${window.location.pathname}#/field-manual?note=${activeObsidianNote.id}&popout=true`;
+            const popoutUrl = (isTauriTarget() ? `${window.location.origin}${window.location.pathname}#/field-manual?note=${activeObsidianNote.id}&popout=true` : `${window.location.origin}/field-manual?note=${activeObsidianNote.id}&popout=true`);
             window.open(popoutUrl, `ZeroBoxFieldManual_${activeObsidianNote.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
           }}
           isSplitView={isSplitView}

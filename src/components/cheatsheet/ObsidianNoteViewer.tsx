@@ -1,3 +1,4 @@
+import { isTauriTarget } from '../../utils/runtimeTarget';
 import { motion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
@@ -1200,7 +1201,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               if (onPopoutWindow) {
                 onPopoutWindow();
               } else {
-                const popoutUrl = `${window.location.origin}${window.location.pathname}#/field-manual?note=${note.id}&popout=true`;
+                const popoutUrl = (isTauriTarget() ? `${window.location.origin}${window.location.pathname}#/field-manual?note=${note.id}&popout=true` : `${window.location.origin}/field-manual?note=${note.id}&popout=true`);
                 window.open(popoutUrl, `ZeroBoxFieldManual_${note.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
               }
             }}

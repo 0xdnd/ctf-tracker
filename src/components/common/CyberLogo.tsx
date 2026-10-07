@@ -9,19 +9,19 @@ export interface CyberLogoProps {
 }
 
 const THEME_LOGO_MAP: Record<string, string> = {
-  obsidian: './logo-zerobox.png',
-  monolith: './logo-zerobox.png',
-  industrial: './logo-oled.png',
-  zerobox: './logo-zerobox.png',
-  neon: './logo-zerobox.png',
-  htb: './logo-htb.png',
-  'midnight-blue': './logo-midnight.png',
-  slate: './logo-midnight.png',
-  oled: './logo-oled.png',
-  light: './logo-zerobox.png',
+  obsidian: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  monolith: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  industrial: `${import.meta.env.BASE_URL}logo-oled.webp`,
+  zerobox: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  neon: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  htb: `${import.meta.env.BASE_URL}logo-htb.webp`,
+  'midnight-blue': `${import.meta.env.BASE_URL}logo-midnight.webp`,
+  slate: `${import.meta.env.BASE_URL}logo-midnight.webp`,
+  oled: `${import.meta.env.BASE_URL}logo-oled.webp`,
+  light: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
 };
 
-const DEFAULT_LOGO = './logo-zerobox.png';
+const DEFAULT_LOGO = `${import.meta.env.BASE_URL}logo-zerobox.webp`;
 
 export const CyberLogo: React.FC<CyberLogoProps> = ({ 
   size = 'lg', 

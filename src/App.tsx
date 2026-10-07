@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, Suspense, lazy, useMemo } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { UnifiedHeader } from './components/layout/UnifiedHeader';
 import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
@@ -27,6 +27,7 @@ import { StartCleanModal } from './components/common/StartCleanModal';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
 import { AlertTriangle, Database } from 'lucide-react';
+import { isTauriTarget } from './utils/runtimeTarget';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -482,7 +483,7 @@ const MainAppContent: React.FC = () => {
               <RouteErrorBoundary resetKey={location.pathname}>
                 <Suspense fallback={<CyberRouteLoader />}>
                   <Routes location={location} key={location.pathname}>
-                    <Route path="/" element={<Navigate to="/tracker" replace />} />
+                    <Route path="/" element={<Navigate to="/tracker/" replace />} />
                     <Route path="/tracker" element={<TrackerView />} />
                     <Route path="/target/:id" element={<TargetDetailPage />} />
                     <Route path="/target/:id/focus" element={<TargetDetailPage />} />
@@ -504,7 +505,7 @@ const MainAppContent: React.FC = () => {
                     <Route path="/vault" element={<EvidenceVaultPage />} />
                     <Route path="/evidence" element={<EvidenceVaultPage />} />
                     <Route path="/loot" element={<EvidenceVaultPage />} />
-                    <Route path="*" element={<Navigate to="/tracker" replace />} />
+                    <Route path="*" element={<Navigate to="/tracker/" replace />} />
                   </Routes>
                 </Suspense>
               </RouteErrorBoundary>
@@ -529,15 +530,17 @@ const MainAppContent: React.FC = () => {
 };
 
 export const App: React.FC = () => {
+  // Desktop (Tauri) keeps hash routing; the web build uses clean URLs.
+  const Router = isTauriTarget() ? HashRouter : BrowserRouter;
   return (
     <MotionConfig reducedMotion="user">
-      <HashRouter>
+      <Router>
         <ScrollProvider>
           <ThemeProvider>
             <MainAppContent />
           </ThemeProvider>
         </ScrollProvider>
-      </HashRouter>
+      </Router>
     </MotionConfig>
   );
 };

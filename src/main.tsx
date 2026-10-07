@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import './index.css';
+import { isTauriTarget } from './utils/runtimeTarget';
 
 // Register offline Service Worker only in production builds; clear any stale SW in DEV mode
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -17,10 +18,10 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         for (const key of keys) caches.delete(key);
       });
     }
-  } else {
+  } else if (!isTauriTarget()) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js', { scope: './' })
+        .register('/sw.js', { scope: '/' })
         .then((reg) => {
           reg.update().catch(() => {});
         })
