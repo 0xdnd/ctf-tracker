@@ -14,9 +14,10 @@
     <link rel="preload" as="image" href="./logo-zerobox.png" type="image/png" fetchpriority="high" />
     <link rel="canonical" href="https://ctftracker.com/" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ZeroBox — #1 Offline-First CTF Tracker & Tactical Cyber Operations Cockpit. Track 929+ Hack The Box and TryHackMe machines, attack methodologies, and OSCP/CPTS exam prep." />
+    <meta name="description" content="ZeroBox — #1 Offline-First CTF Tracker & OSCP Exam Simulator. Track 929+ Hack The Box & TryHackMe labs, dynamic reverse shell HUD, TJ_Null tracks & burndown timer. Free, no signup." />
+    <meta name="keywords" content="ctf tracker, oscp exam simulator, hack the box tracker, tryhackme room tracker, tj null list, cpts tracker, reverse shell generator, offensive security dashboard" />
     <meta name="theme-color" content="#0B0F19" />
-    <title>ZEROBOX — #1 CTF Tracker & Tactical Cyber Cockpit</title>
+    <title>ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]</title>
 
     <script>
       if (window.location.hostname === '0xdnd.github.io' && window.location.pathname.startsWith('/ctf-tracker')) {
@@ -24,10 +25,66 @@
       }
     </script>
 
+    <!-- Schema.org Structured Data (Googlebot Rich Snippets & Sitelinks) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://ctftracker.com/#webapp",
+          "name": "ZeroBox — Tactical Cybersecurity Lab & CTF Tracker",
+          "url": "https://ctftracker.com/",
+          "applicationCategory": "SecurityApplication",
+          "operatingSystem": "All",
+          "browserRequirements": "Requires JavaScript and modern browser",
+          "description": "Tactical operations cockpit for Hack The Box, TryHackMe, and OSCP/CPTS prep. Tracks 929+ labs with offline Kanban, dynamic reverse shell HUD, and 24h exam simulator.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "author": {
+            "@type": "Person",
+            "name": "Daniel Dayan",
+            "url": "https://github.com/0xdnd"
+          }
+        },
+        {
+          "@type": "ItemList",
+          "name": "ZeroBox Modules",
+          "itemListElement": [
+            {
+              "@type": "SiteNavigationElement",
+              "position": 1,
+              "name": "CTF & Lab Tracker",
+              "url": "https://ctftracker.com/#/tracker",
+              "description": "929 pre-loaded Hack The Box & TryHackMe machines organized by attack lifecycle."
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "position": 2,
+              "name": "Dynamic Cheatsheet & Reverse Shells",
+              "url": "https://ctftracker.com/#/cheatsheet",
+              "description": "130+ reverse shells with real-time LHOST and LPORT substitution."
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "position": 3,
+              "name": "24h Exam Simulator",
+              "url": "https://ctftracker.com/#/exam",
+              "description": "Realistic OSCP, CPTS, and CRTO exam burndown timer and scoring engine."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
     <!-- Open Graph / Facebook / LinkedIn / Discord -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://ctftracker.com/" />
-    <meta property="og:title" content="ZEROBOX — #1 CTF Tracker & Tactical Cyber Operations Cockpit" />
+    <meta property="og:title" content="ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]" />
     <meta property="og:description" content="Mission control dashboard for Hack The Box, TryHackMe, and exam prep (OSCP/CPTS/CRTP). Track 929+ targets, 16-phase attack methodologies, tactical payloads, and exam simulations." />
     <meta property="og:image" content="https://ctftracker.com/icon-512.png" />
     <meta property="og:image:width" content="512" />
@@ -36,7 +93,7 @@
     <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://ctftracker.com/" />
-    <meta name="twitter:title" content="ZEROBOX — #1 CTF Tracker & Tactical Cyber Operations Cockpit" />
+    <meta name="twitter:title" content="ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]" />
     <meta name="twitter:description" content="Mission control dashboard for Hack The Box, TryHackMe, and exam prep. Track 929+ targets, 16-phase attack methodologies, and interactive writeups." />
     <meta name="twitter:image" content="https://ctftracker.com/icon-512.png" />
 
