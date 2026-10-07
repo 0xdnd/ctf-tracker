@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo-zerobox.png" alt="ZeroBox logo" width="120" />
+<img src="public/logo-zerobox.webp" alt="ZeroBox logo" width="120" />
 
 # ⚡ ZeroBox — The CTF Tracker Built for Hackers
 
