@@ -1,4 +1,5 @@
 // Shared HTML layout + helpers for static content pages (CSS in dist/static.css, no JS).
+const { beaconTag, analyticsNote } = require('./site.cjs');
 const ORIGIN = 'https://ctftracker.com';
 
 const esc = (s) =>
@@ -11,6 +12,8 @@ const NAV = [
   ['/cheatsheet-library/', 'Cheatsheets'],
   ['/methodology-guide/', 'Methodology'],
   ['/revshells/', 'Reverse Shells'],
+  ['/oscp-like-machines/', 'OSCP-Like'],
+  ['/techniques/', 'Techniques'],
 ];
 
 function breadcrumbLd(crumbs) {
@@ -65,7 +68,7 @@ function renderPage(opts) {
   <meta name="twitter:title" content="${esc(opts.title)}" />
   <meta name="twitter:description" content="${desc}" />
   <meta name="twitter:image" content="${ORIGIN}/og.png" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self'; script-src 'self' https://static.cloudflareinsights.com; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com;" />
 ${ld}
 </head>
 <body>
@@ -80,11 +83,12 @@ ${ld}
 ${opts.body}
     </main>
     <footer>
-      <p><a href="/machines/">Machines</a><a href="/cheatsheet-library/">Cheatsheets</a><a href="/methodology-guide/">Methodology</a><a href="/revshells/">Reverse shells</a><a href="/cpts-notes/">CPTS notes</a><a href="/tracker/">Open ZeroBox</a><a href="https://github.com/0xdnd/ctf-tracker">GitHub</a></p>
+      <p><a href="/machines/">Machines</a><a href="/cheatsheet-library/">Cheatsheets</a><a href="/methodology-guide/">Methodology</a><a href="/revshells/">Reverse shells</a><a href="/oscp-like-machines/">OSCP-like machines</a><a href="/techniques/">Techniques</a><a href="/cpts-notes/">CPTS notes</a><a href="/tracker/">Open ZeroBox</a><a href="https://github.com/0xdnd/ctf-tracker">GitHub</a></p>
       <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
+      ${analyticsNote()}
     </footer>
   </div>
-</body>
+${beaconTag()}</body>
 </html>
 `;
 }

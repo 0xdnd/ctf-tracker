@@ -3,7 +3,8 @@
 // reverse shells, CPTS notes, plus dist/static.css and dist/sitemap.xml.
 const fs = require('fs');
 const path = require('path');
-const { getModel } = require('./lib/content-model.cjs');
+const { getModel, slugify } = require('./lib/content-model.cjs');
+const TECH = require('./lib/techniques.cjs');
 const { ORIGIN, esc, renderPage, STATIC_CSS } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
@@ -46,11 +47,11 @@ const dmField = (key) => (gitDate(SRC[key]) ? { dateModified: gitDate(SRC[key]) 
 const pages = []; // { loc, type, priority }
 const counts = {};
 
-function emit(type, urlPath, html, priority) {
+function emit(type, urlPath, html, priority, lastmodOverride) {
   const dir = path.join(distDir, urlPath.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8');
-  pages.push({ loc: urlPath, type, priority, lastmod: gitDate(SRC[TYPE_SRC[type]]) });
+  pages.push({ loc: urlPath, type, priority, lastmod: lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]) });
   counts[type] = (counts[type] || 0) + 1;
 }
 
@@ -93,6 +94,23 @@ function related(m) {
 }
 
 const wordCounts = [];
+// ---- Hub data (certification + technique groups), computed early so machine pages and the machines hub can link to them ----
+const CERT_MIN = 10;
+const TECH_MIN = 5;
+const certCountsAll = {};
+for (const m of model.machines) for (const c of m.certifications || []) certCountsAll[c] = (certCountsAll[c] || 0) + 1;
+const CERT_NAME = { 'HTB-Starting-Point': 'HTB Starting Point' };
+const certHubs = Object.entries(certCountsAll)
+  .filter(([, n]) => n >= CERT_MIN)
+  .sort((a, b) => b[1] - a[1])
+  .map(([cert]) => ({
+    cert,
+    name: CERT_NAME[cert] || cert,
+    slug: (cert === 'HTB-Starting-Point' ? slugify(cert) + '-machines' : slugify(cert) + '-like-machines'),
+    machines: model.machines.filter((m) => (m.certifications || []).includes(cert)),
+  }));
+const techGroups = TECH.GROUPS.map((g) => ({ ...g, machines: model.machines.filter((m) => TECH.matchesMachine(g, m)) })).filter((g) => g.machines.length >= TECH_MIN);
+const certFirst = certHubs.find((c) => c.cert === 'OSCP') || certHubs[0];
 const PLATFORM_NAME = { HTB: 'Hack The Box', THM: 'TryHackMe' };
 const DIFF_ORDER = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
 const mUrl = (m) => `/machines/${m.slug}/`;
@@ -103,6 +121,8 @@ const tagTargets = [
   ...model.phases.map((p) => ({ keys: [p.slug, p.shortTitle], href: `/methodology/${p.slug}/` })),
 ].map((x) => ({ ...x, keys: x.keys.map(normTag) }));
 function tagLink(t) {
+  const tech = techGroups.find((g) => TECH.matchesTag(g, t));
+  if (tech) return `<a class="tag" href="/techniques/${tech.slug}/">${esc(t)}</a>`;
   const n = normTag(t);
   const hit = tagTargets.find((x) => x.keys.includes(n));
   return hit ? `<a class="tag" href="${hit.href}">${esc(t)}</a>` : `<span class="tag">${esc(t)}</span>`;
@@ -190,6 +210,9 @@ for (const m of withPage) {
   const parts = [];
   parts.push(
     `<p class="lead">Browse ${model.machines.length} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
+  );
+  parts.push(
+    `<h2>Machine lists by certification and technique</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a></div>`
   );
   parts.push(`<div class="chips">${platforms.map((p) => `<a href="#${p.toLowerCase()}">${esc(PLATFORM_NAME[p] || p)} (${byPlatform[p].length})</a>`).join('')}</div>`);
   for (const p of platforms) {
@@ -471,6 +494,223 @@ emit(
     }),
     0.7
   );
+}
+
+// ===================== Certification + technique hubs =====================
+const hubWords = { cert: [], tech: [] };
+const wc = (html) => html.replace(/<(script|style)[\s\S]*?<\/\1>/g, ' ').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+const SAFE_ROOM = /^https:\/\/(www\.)?(app\.hackthebox\.com|tryhackme\.com)\//;
+const diffId = (d) => slugify(d);
+const platLabel = (list) => [...new Set(list.map((m) => m.platform))].sort().join(' & ');
+const osCounts = (list) => {
+  const c = {};
+  for (const m of list) c[m.os] = (c[m.os] || 0) + 1;
+  return Object.entries(c).sort((a, b) => b[1] - a[1]);
+};
+const nameCell = (m) =>
+  m.hasPage
+    ? `<a href="${mUrl(m)}">${esc(m.name)}</a>`
+    : SAFE_ROOM.test(m.roomUrl || '')
+      ? `<a href="${esc(m.roomUrl)}" rel="${ROOM_REL}">${esc(m.name)}</a>`
+      : esc(m.name);
+const orderMachines = (list) =>
+  [...list].sort((a, b) => DIFF_ORDER.indexOf(a.difficulty) - DIFF_ORDER.indexOf(b.difficulty) || (b.hasPage ? 1 : 0) - (a.hasPage ? 1 : 0) || a.name.localeCompare(b.name));
+
+// Machine tables grouped by difficulty, owner-solved first inside each group. Returns { html, ordered }.
+function machineSections(list) {
+  const ordered = orderMachines(list);
+  const diffs = DIFF_ORDER.filter((d) => ordered.some((m) => m.difficulty === d));
+  const jump = `<div class="chips">${diffs.map((d) => `<a href="#${diffId(d)}">${esc(d)} (${ordered.filter((m) => m.difficulty === d).length})</a>`).join('')}</div>`;
+  const tables = diffs
+    .map((d) => {
+      const rows = ordered.filter((m) => m.difficulty === d);
+      return (
+        `<h3 id="${diffId(d)}">${esc(d)} (${rows.length})</h3>` +
+        `<table class="list"><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th class="hide-sm">Tags</th></tr></thead><tbody>` +
+        rows
+          .map((m) => `<tr><td>${nameCell(m)}</td><td>${esc(m.platform)}</td><td>${esc(m.os)}</td><td class="hide-sm">${(m.tags || []).filter((t) => !GENERIC_TAGS.has(t.toLowerCase())).slice(0, 4).map(esc).join(', ')}</td></tr>`)
+          .join('') +
+        `</tbody></table>`
+      );
+    })
+    .join('\n');
+  return { jump, tables, ordered };
+}
+function itemListLd(name, url, ordered) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    url: ORIGIN + url,
+    numberOfItems: ordered.length,
+    itemListElement: ordered.slice(0, 100).map((m, i) => {
+      const u = m.hasPage ? ORIGIN + mUrl(m) : SAFE_ROOM.test(m.roomUrl || '') ? m.roomUrl : undefined;
+      return { '@type': 'ListItem', position: i + 1, name: m.name, ...(u ? { url: u } : {}) };
+    }),
+  };
+}
+const osLine = (list) => osCounts(list).map(([o, n]) => `${n} ${o}`).join(', ');
+const hubLastmod = gitDate(SRC.machines);
+const techLastmod = gitDate('scripts/lib/techniques.cjs') ? [hubLastmod, gitDate('scripts/lib/techniques.cjs')].filter(Boolean).sort().pop() : null;
+
+// ---- Certification hubs ----
+const CERT_INFO = {
+  OSCP: {
+    what: 'OSCP, the Offensive Security Certified Professional, is OffSec\'s hands-on penetration testing certification. The exam is a proctored practical of roughly 24 hours in which you compromise standalone machines and an Active Directory environment, followed by a written report.',
+    why: 'Good preparation means practising the same loop on many different targets: enumerate carefully, find a foothold, escalate, and document each step. Boxes with public exploits that need small edits, web footholds and classic Linux and Windows privilege escalation map closely to what the exam rewards.',
+  },
+  CRTO: {
+    what: 'CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team tradecraft rather than single box exploitation. The exam is practical and centres on operating a command and control framework against an Active Directory environment, including lateral movement and evasion.',
+    why: 'The Windows and Active Directory boxes here let you rehearse the underlying skills the course builds on: domain enumeration, credential abuse, delegation, Kerberos attacks and moving between hosts. Treat them as a way to understand the attacks before running them through a C2 framework.',
+  },
+  CPTS: {
+    what: 'CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a practical certification built around a multi-day exam in which you assess a realistic network and deliver a professional report. It covers enumeration, web attacks, Active Directory, pivoting and reporting.',
+    why: 'The machines below cover the breadth that the exam expects: web application flaws, service enumeration, Windows and Linux escalation, Active Directory and tunnelling. Because CPTS rewards thorough notes and clean reporting, use each box to practise documenting evidence as you go.',
+  },
+  'HTB-Starting-Point': {
+    what: 'HTB Starting Point is the guided beginner track on Hack The Box, organised into tiers that introduce core services, simple web flaws and first privilege escalations. It is not a certification, but it is the usual entry route before OSCP or CPTS style preparation.',
+    why: 'These machines are short and forgiving, so they are ideal for building the habit of scanning, enumerating each service and writing down what you learn. Finish a tier, then repeat the box without the guide to check that the process has stuck.',
+  },
+};
+for (const hub of certHubs) {
+  const { cert, name, machines } = hub;
+  const p = `/${hub.slug}/`;
+  const info = CERT_INFO[cert] || {
+    what: `${name} is a certification path covered by the machines listed on this page.`,
+    why: 'Working through varied boxes builds the enumeration and exploitation habits that practical exams reward.',
+  };
+  const isTrack = cert === 'HTB-Starting-Point';
+  const label = isTrack ? `${name} Machines` : `${name}-Like Machines`;
+  const plats = platLabel(machines);
+  const solved = machines.filter((m) => m.hasPage).length;
+  const { jump, tables, ordered } = machineSections(machines);
+  const intro = [
+    `<p class="lead">${esc(info.what)}</p>`,
+    `<p>The ${machines.length} machines on this page are tagged ${esc(name)} in the ZeroBox catalog and come from ${esc(plats)}. By operating system that is ${esc(osLine(machines))}. ${esc(info.why)}</p>`,
+    `<p>To use the list, start at the easiest group and work upward, spending real time on enumeration before looking at any help. After each box, write down the foothold, the escalation and what you would do faster next time. ${solved ? `${solved} of these are targets I solved myself, so they link to an attack path summary on this site; the others link to the official room. ` : 'Each machine links to its official room. '}Once you are comfortable, rehearse under pressure in the <a href="/exam/">exam simulator</a>, and follow the phase-by-phase <a href="/methodology-guide/">pentest methodology checklist</a> so you do not skip steps. You can also browse the <a href="/techniques/">technique hubs</a> to drill one skill at a time.</p>`,
+  ].join('\n');
+  const introWords = wc(intro);
+  if (introWords < 150 || introWords > 250) console.warn(`cert intro ${cert}: ${introWords} words (target 150-250)`);
+  const body = [
+    intro,
+    `<h2>Jump to difficulty</h2>${jump}`,
+    `<h2>${esc(name)} machine list by difficulty</h2>`,
+    tables,
+    `<div class="cta-box"><p><strong>Track your progress.</strong> ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+    `<h2>Related guides</h2><div class="chips"><a href="/exam/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
+    `<p class="note">Machines belong to ${esc(plats)}. ZeroBox is not affiliated with the platforms or certification bodies named here.</p>`,
+  ].join('\n');
+  hubWords.cert.push([cert, wc(body)]);
+  hub.url = p;
+  hub.title = `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`;
+  emit(
+    'cert-hub',
+    p,
+    renderPage({
+      path: p,
+      title: hub.title,
+      description: `${machines.length} ${plats} machines for ${name} preparation, grouped from ${ordered[0].difficulty} to ${ordered[ordered.length - 1].difficulty} with OS, platform and technique tags. Free list with links.`,
+      h1: `${label}: ${machines.length} boxes by difficulty`,
+      body,
+      crumbs: [['Home', '/'], ['Machines', '/machines/'], [label, p]],
+      ogType: 'website',
+      ld: [itemListLd(`${label} list`, p, ordered)],
+    }),
+    0.8,
+    hubLastmod
+  );
+}
+
+// ---- Technique hubs ----
+const cheatItemById = new Map(model.topics.flatMap((t) => t.items.map((i) => [i.id, i])));
+const phaseBySlug = new Map(model.phases.map((ph) => [ph.slug, ph]));
+const topicBySlug = new Map(model.topics.map((t) => [t.slug, t]));
+for (const g of techGroups) {
+  const p = `/techniques/${g.slug}/`;
+  const { jump, tables, ordered } = machineSections(g.machines);
+  const solved = g.machines.filter((m) => m.hasPage);
+  const items = (g.commandIds || []).map((id) => cheatItemById.get(id)).filter(Boolean);
+  const phase = g.methodologyPhase && phaseBySlug.get(g.methodologyPhase);
+  const topics = (g.cheatsheetTopics || []).map((s) => topicBySlug.get(s)).filter(Boolean);
+  const shared = (o) => o.machines.filter((m) => g.machines.includes(m)).length;
+  const relSlugs = (g.related || []).filter((s) => techGroups.some((o) => o.slug === s));
+  const relOthers = techGroups
+    .filter((o) => o !== g && !relSlugs.includes(o.slug))
+    .map((o) => [o, shared(o)])
+    .filter((e) => e[1] > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, Math.max(0, 5 - relSlugs.length))
+    .map((e) => e[0].slug);
+  const related = [...relSlugs, ...relOthers].map((s) => techGroups.find((o) => o.slug === s)).filter(Boolean);
+  const body = [
+    `<p class="lead">${esc(g.explainer)}</p>`,
+    items.length
+      ? `<h2>Key commands</h2><p class="note">Placeholders in braces, such as <code>{TARGET_IP}</code>, are values you fill in for your target.</p>` +
+        items.map((i) => `<h3>${esc(i.title)}</h3><p>${esc(i.description)}</p>${code(i.commandTemplate)}`).join('')
+      : '',
+    topics.length || phase
+      ? `<h2>Keep going</h2><ul>${phase ? `<li>Methodology: <a href="/methodology/${phase.slug}/">${esc(phase.title)}</a></li>` : ''}${topics.map((t) => `<li>Cheatsheet: <a href="/cheatsheets/${t.slug}/">${esc(t.name)}</a></li>`).join('')}${g.slug === 'command-injection' || g.slug === 'file-upload' ? '<li>Shells: <a href="/revshells/">Reverse shell one-liners</a></li>' : ''}</ul>`
+      : '',
+    `<h2>${esc(g.name)} machines (${g.machines.length})</h2>`,
+    `<p class="note">${solved.length ? `${solved.length} of these are machines I solved myself and are listed first within each difficulty. ` : ''}Machines are matched by their technique tags. ${esc(osLine(g.machines))}.</p>`,
+    jump,
+    tables,
+    related.length ? `<h2>Related techniques</h2><div class="chips">${related.map((o) => `<a href="/techniques/${o.slug}/">${esc(o.name)} (${o.machines.length})</a>`).join('')}<a href="/techniques/">All techniques</a></div>` : '',
+    `<div class="cta-box"><p><strong>Practise it, then track it.</strong> Log every box and the commands you used in ZeroBox. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+  ].join('\n');
+  hubWords.tech.push([g.slug, wc(body)]);
+  const plats = platLabel(g.machines);
+  emit(
+    'technique',
+    p,
+    renderPage({
+      path: p,
+      title: `${g.name}: ${g.machines.length} Practice Machines & Key Commands | ZeroBox`,
+      description: `${g.name} explained with key commands and ${g.machines.length} ${plats} practice machines grouped by difficulty, for OSCP, CPTS and CTF preparation.`,
+      h1: `${g.name}: practice machines and key commands`,
+      body,
+      crumbs: [['Home', '/'], ['Techniques', '/techniques/'], [g.name, p]],
+      ogType: 'article',
+      ld: [itemListLd(`${g.name} practice machines`, p, ordered)],
+    }),
+    0.7,
+    techLastmod
+  );
+}
+emit(
+  'technique-hub',
+  '/techniques/',
+  renderPage({
+    path: '/techniques/',
+    title: `Pentest Techniques: ${techGroups.length} Attack Topics with Practice Machines | ZeroBox`,
+    description: `${techGroups.length} penetration testing techniques, from Active Directory and SQL injection to privilege escalation and pivoting, each with key commands and matching HTB and THM machines.`,
+    h1: 'Pentest techniques with practice machines',
+    body: [
+      `<p class="lead">Pick a technique to see what it is, the commands that matter and the Hack The Box and TryHackMe machines that practise it. Counts show how many catalog machines carry a matching tag.</p>`,
+      `<div class="grid">${techGroups.map((g) => card(`/techniques/${g.slug}/`, g.name, `${g.machines.length} machines`)).join('')}</div>`,
+      `<h2>Certification machine lists</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/machines/">All machines</a></div>`,
+      `<div class="cta-box"><p>Track your practice offline. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+    ].join('\n'),
+    crumbs: [['Home', '/'], ['Techniques', '/techniques/']],
+    ogType: 'website',
+  }),
+  0.8,
+  techLastmod
+);
+
+// ---- Hub stats (build log) ----
+{
+  const tagFreq = {};
+  for (const m of model.machines) for (const t of m.tags || []) tagFreq[t.toLowerCase()] = (tagFreq[t.toLowerCase()] || 0) + 1;
+  console.log('top 40 tags:', Object.entries(tagFreq).sort((a, b) => b[1] - a[1]).slice(0, 40).map((e) => `${e[0]}:${e[1]}`).join(', '));
+  console.log('cert counts:', certCountsAll);
+  console.log('technique groups:', techGroups.map((g) => `${g.slug}:${g.machines.length}`).join(', '));
+  const stat = (arr) => {
+    const w = arr.map((x) => x[1]).sort((a, b) => a - b);
+    return `n ${w.length}, min ${w[0]}, median ${w[Math.floor(w.length / 2)]}, max ${w[w.length - 1]}`;
+  };
+  console.log('cert hub words:', stat(hubWords.cert));
+  console.log('technique page words:', stat(hubWords.tech));
 }
 
 // ===================== static.css, sitemap =====================

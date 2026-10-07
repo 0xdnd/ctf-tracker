@@ -27,7 +27,7 @@
   <meta name="twitter:description" content="Track Hack The Box and TryHackMe machines, use an OSCP cheatsheet and methodology checklist, and rehearse the 24h exam. Free, offline, no signup." />
   <meta name="twitter:image" content="https://ctftracker.com/og.png" />
 
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com;" />
 
   <script>
     // Installed PWA launches at / -> straight into the app.
@@ -144,6 +144,7 @@
         <a href="/tracker/">Open app</a>
       </p>
       <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.</p>
+      {{ANALYTICS_NOTE}}
     </footer>
   </div>
 

@@ -4,6 +4,7 @@
 // - dist/index.html : static landing page (no app JS), from scripts/templates/landing.html
 const fs = require('fs');
 const path = require('path');
+const { injectBeacon, analyticsNote } = require('./lib/site.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
@@ -205,17 +206,20 @@ const subs = {
     ['/revshells/', 'Reverse shell cheat sheet', `${model.shellCount} one-liners for Bash, Python, PHP, PowerShell and more.`],
     ['/methodology-guide/', 'Pentest methodology', `${model.phases.length} phases from host discovery to post-exploitation.`],
     ['/cheatsheet-library/', 'Cheatsheets by topic', `${model.topics.length} topics: recon, web, privesc, Active Directory, pivoting.`],
+    ['/oscp-like-machines/', 'OSCP-like machines', `${(model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length)} HTB and THM boxes for OSCP prep, grouped by difficulty.`],
+    ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation, pivoting and more, with commands and practice machines.'],
     ['/cpts-notes/', 'CPTS study notes', `${model.notes.length} short notes with commands.`],
   ].map(([h, t, d]) => `          <a class="card" href="${h}"><h3>${esc(t)}</h3><p>${esc(d)}</p></a>`).join('\n'),
   '{{FAQ_HTML}}': faqHtml,
   '{{FAQ_JSONLD}}': jsonLd(faqLd),
   '{{WEBAPP_JSONLD}}': jsonLd(webAppLd),
+  '{{ANALYTICS_NOTE}}': analyticsNote(),
   '{{SHOT_W}}': String(shotW),
   '{{SHOT_H}}': String(shotH),
 };
 for (const [k, v] of Object.entries(subs)) landing = landing.split(k).join(v);
 landing = landing.replace('<html lang="en">', '<html lang="en" data-zerobox-landing>');
 if (/\{\{[A-Z_]+\}\}/.test(landing)) throw new Error('prerender: unreplaced placeholder in landing template');
-fs.writeFileSync(path.join(distDir, 'index.html'), landing, 'utf8');
+fs.writeFileSync(path.join(distDir, 'index.html'), injectBeacon(landing), 'utf8');
 
 console.log(`✓ Prerender: app-shell.html, ${written} route pages, static landing page`);
