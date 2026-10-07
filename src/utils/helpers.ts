@@ -92,7 +92,7 @@ export function getUnresolvedTokens(template: string, vars: GlobalVariables): st
 
 let sharedCyberAudioCtx: AudioContext | null = null;
 
-export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'copy' | 'flag' | 'export' | 'shuffle' | 'engage') {
+export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'copy' | 'flag' | 'export' | 'shuffle' | 'engage' | 'alert') {
   if (typeof window === 'undefined') return;
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
@@ -152,6 +152,15 @@ export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'co
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
       osc.start(now);
       osc.stop(now + 0.15);
+    } else if (type === 'alert') {
+      // Descending two-tone error cue
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.setValueAtTime(220, now + 0.1);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.start(now);
+      osc.stop(now + 0.22);
     } else if (type === 'export' || type === 'shuffle') {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(500, now);
