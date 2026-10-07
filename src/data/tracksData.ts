@@ -123,7 +123,7 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
     accentColor: '#22D3EE',
     filterFn: (m) => 
       IPPSEC_NAMES.has(m.name.toLowerCase()) ||
-      `${m.name} ${m.tags?.join(' ')} ${m.hint || ''} ${m.officialSynopsis || ''} ${m.officialWalkthrough || ''}`.toLowerCase().includes('ippsec'),
+      `${m.name} ${m.tags?.join(' ')} ${m.hint || ''} ${m.officialSynopsis || ''}`.toLowerCase().includes('ippsec'),
   },
   {
     id: 'crto-ad',

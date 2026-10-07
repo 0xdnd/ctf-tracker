@@ -723,7 +723,7 @@ export const mergeMachinesWithCatalog = (
             skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
             officialPdf: catalogMachine.officialPdf || m.officialPdf,
             officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
-            officialWalkthrough: catalogMachine.officialWalkthrough || m.officialWalkthrough,
+            officialWalkthrough: undefined,
             tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
           });
@@ -756,7 +756,7 @@ export const mergeMachinesWithCatalog = (
             skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
             officialPdf: catalogMachine.officialPdf || m.officialPdf,
             officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
-            officialWalkthrough: catalogMachine.officialWalkthrough || m.officialWalkthrough,
+            officialWalkthrough: undefined,
             tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
           });

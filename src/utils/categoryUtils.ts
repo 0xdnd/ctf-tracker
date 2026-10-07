@@ -374,7 +374,6 @@ export function classifyMachine(m: Machine): ClassificationResult {
   const skillsStr = (m.skillsLearned || []).join(' ');
   const definitive = `${tagsStr} ${skillsStr}`;
   const synopsis = `${m.hint || ''} ${m.officialSynopsis || ''}`;
-  const walkthrough = m.officialWalkthrough || '';
 
   // Tiered heuristic detection
   for (const catDef of VULN_CATEGORIES) {
@@ -391,11 +390,6 @@ export function classifyMachine(m: Machine): ClassificationResult {
     // 2. Tier 2: Hint & Official Synopsis (High confidence)
     if (!matched && synopsis) {
       matched = patterns.some((p) => p.test(synopsis));
-    }
-
-    // 3. Tier 3: Walkthrough (Fallback only if present)
-    if (!matched && walkthrough) {
-      matched = patterns.some((p) => p.test(walkthrough));
     }
 
     if (matched) {

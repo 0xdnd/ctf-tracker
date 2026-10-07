@@ -129,7 +129,6 @@ export const MachineDetailModal: React.FC = () => {
   const [copiedUser, setCopiedUser] = useState(false);
   const [copiedRoot, setCopiedRoot] = useState(false);
   const [copiedReportMd, setCopiedReportMd] = useState(false);
-  const [copiedWalkthrough, setCopiedWalkthrough] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
   const [activeModalTab, setActiveModalTab] = useState<'overview' | 'checklist' | 'commands' | 'report' | 'walkthrough'>('overview');
@@ -461,7 +460,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               ) : null,
             },
             { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5" /> },
-            ...(!machine.isActive && Boolean(machine.officialSynopsis || machine.officialWalkthrough || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf)
+            ...(!machine.isActive && Boolean(machine.officialSynopsis || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf)
               ? [{ id: 'walkthrough', label: 'Official intel', icon: <BookOpen className="w-3.5 h-3.5" /> }]
               : []),
           ] as { id: typeof activeModalTab; label: string; icon: React.ReactNode; extra?: React.ReactNode }[]).map((tab) => (
@@ -657,22 +656,6 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {machine.officialWalkthrough && (
-                    <button
-                      onClick={async () => {
-                        if (machine.officialWalkthrough) {
-                          await safeCopyToClipboard(machine.officialWalkthrough);
-                          setCopiedWalkthrough(true);
-                          if (soundEnabled) playCyberSound('copy');
-                          setTimeout(() => setCopiedWalkthrough(false), 2000);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-card border border-subtle hover:border-callout-success-border text-secondary hover:text-primary text-xs transition-colors"
-                    >
-                      {copiedWalkthrough ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedWalkthrough ? 'Copied' : 'Copy Walkthrough'}</span>
-                    </button>
-                  )}
                   <button
                     onClick={handleOpenInWriteup}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-callout-success-bg border border-callout-success-border text-callout-success-fg hover:bg-callout-success-fg hover:text-primary font-semibold text-xs transition-[box-shadow,background-color,border-color,color] shadow-sm"
@@ -715,43 +698,26 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </div>
               )}
 
-              {/* Section 3: Full Structured Walkthrough */}
-              {machine.officialWalkthrough && (
-                <div className="p-4 rounded-xl bg-surface-sunken/80 border border-subtle space-y-3">
-                  <div className="text-xs font-semibold text-callout-tip-fg flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-callout-tip-fg" /> Exploitation walkthrough
+              {/* Section 3: Official writeup link (HTB walkthrough text is not redistributed) */}
+              {(() => {
+                const writeupHref = machine.officialPdf && /^https?:\/\//i.test(machine.officialPdf)
+                  ? machine.officialPdf
+                  : machine.roomUrl;
+                const safeHref = writeupHref ? sanitizeExternalUrl(writeupHref) : undefined;
+                if (!safeHref) return null;
+                return (
+                  <div className="p-4 rounded-xl bg-surface-sunken/80 border border-subtle">
+                    <a
+                      href={safeHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-callout-tip-fg hover:underline"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Official writeup on Hack The Box ↗
+                    </a>
                   </div>
-                  <div className="prose prose-invert max-w-none text-xs leading-relaxed text-secondary space-y-4 font-sans">
-                    {machine.officialWalkthrough.split('\n\n').map((paragraph, pIdx) => {
-                      if (paragraph.startsWith('### ')) {
-                        const title = paragraph.replace('### ', '');
-                        return (
-                          <div key={pIdx} className="pt-2 border-b border-subtle pb-1 text-sm font-semibold text-primary flex items-center gap-2">
-                            <span>{title}</span>
-                          </div>
-                        );
-                      }
-                      if (paragraph.startsWith('- ')) {
-                        const items = paragraph.split('\n');
-                        return (
-                          <ul key={pIdx} className="list-disc list-inside space-y-1 text-secondary">
-                            {items.map((it, itIdx) => (
-                              <li key={itIdx} className="text-primary">
-                                {it.replace(/^- \*\*(.*?)\*\*$/, '$1').replace(/^- /, '')}
-                              </li>
-                            ))}
-                          </ul>
-                        );
-                      }
-                      return (
-                        <p key={pIdx} className="text-secondary leading-relaxed bg-surface-card p-3 rounded-lg border border-subtle text-xs">
-                          {paragraph}
-                        </p>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
             )
           ) : (

@@ -568,15 +568,6 @@ cat /root/root.txt
   };
 
 
-  const appendOfficialIntel = () => {
-    if (!selectedMachine || !selectedMachine.officialWalkthrough) return;
-    const injection = `\n\n---\n\n## Official Hack The Box walkthrough\n${selectedMachine.officialWalkthrough}\n`;
-    const updated = editorContent + injection;
-    setEditorContent(updated);
-    updateMachine(selectedMachine.id, { writeupMarkdown: updated });
-    if (soundEnabled) playCyberSound('engage');
-  };
-
   const overflowItems: OverflowItem[] = [
     {
       id: 'field-manual',
@@ -602,16 +593,6 @@ cat /root/root.txt
       icon: <Download className="w-3.5 h-3.5" />,
       onSelect: handleDownloadMarkdown,
     },
-    ...(selectedMachine?.officialWalkthrough
-      ? [
-          {
-            id: 'official-intel',
-            label: 'Append official HTB walkthrough',
-            icon: <Sparkles className="w-3.5 h-3.5" />,
-            onSelect: appendOfficialIntel,
-          } as OverflowItem,
-        ]
-      : []),
     {
       id: 'reset-template',
       label: 'Reset to template',
@@ -715,17 +696,6 @@ cat /root/root.txt
             />
           </div>
 
-          {Boolean(selectedMachine?.officialWalkthrough) && (
-            <button
-              type="button"
-              onClick={appendOfficialIntel}
-              className={`${toolbarBtn} max-sm:hidden`}
-              title="Append the official Hack The Box walkthrough to this writeup"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Append HTB walkthrough</span>
-            </button>
-          )}
         </div>
       </PageHeader>
 
