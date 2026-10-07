@@ -1,0 +1,118 @@
+[
+  {
+    "path": "/tracker/",
+    "title": "CTF & HTB Machine Tracker — Kanban Board | ZeroBox",
+    "description": "Track Hack The Box and TryHackMe machines on a Kanban, table or grid board. Store IPs, notes and progress offline in your browser. Free, no account needed.",
+    "h1": "CTF and HTB machine tracker",
+    "intro": "Keep every Hack The Box, TryHackMe and lab target in one board instead of scattered notes. Move machines through your own workflow, record IPs and findings, and pick up where you left off, all stored locally in your browser.",
+    "bullets": [
+      "Kanban, table and grid views of your machines, with search and filters",
+      "Pre-loaded machine catalog for Hack The Box and TryHackMe",
+      "Per-machine detail with IP address, notes and status",
+      "Add your own custom targets for any CTF or lab",
+      "Works offline once loaded and stores data in your browser",
+      "One-click JSON backup and restore of the whole workspace"
+    ]
+  },
+  {
+    "path": "/methodology/",
+    "title": "Pentest Methodology Checklist — Attack Lifecycle | ZeroBox",
+    "description": "An eight-phase pentest methodology checklist with copyable commands that fill in your target and attacker values. Track progress per machine, free in the browser.",
+    "h1": "Pentest methodology checklist",
+    "intro": "A phase-by-phase attack lifecycle playbook for CTFs and OSCP-style labs. Commands are templates that insert your target IP and attacker values, so you can copy them straight into a terminal.",
+    "bullets": [
+      "Eight-phase attack lifecycle with checklist items per phase",
+      "Service branches so the checklist adapts to what you find on a target",
+      "Copyable commands with your target and attacker values interpolated",
+      "Checklist progress tracked per machine",
+      "Search across phases and commands",
+      "Export the full playbook as Markdown for Obsidian or GitBook"
+    ]
+  },
+  {
+    "path": "/cheatsheets/",
+    "title": "Interactive Cheatsheet Workspace — Variables & Snippets | ZeroBox",
+    "description": "Interactive pentest cheatsheet workspace: set LHOST, LPORT and target IP once and they fill into every snippet. Save your own commands. Free, runs offline.",
+    "h1": "Interactive cheatsheet workspace",
+    "intro": "A searchable library of pentest commands and reverse shell payloads. Set LHOST, LPORT and the target IP once and they are substituted into every snippet, so there is nothing to retype mid-exam.",
+    "bullets": [
+      "130+ Linux and Windows reverse shell payloads with listener commands",
+      "Dynamic variables: LHOST, LPORT and TARGET_IP injected into every command",
+      "Searchable snippet library organised by category",
+      "Add your own custom snippets",
+      "Copy to clipboard in one click",
+      "Works offline in the browser"
+    ]
+  },
+  {
+    "path": "/cpts-manual/",
+    "title": "CPTS Notes & Field Manual — Obsidian-Style Vault | ZeroBox",
+    "description": "A CPTS field manual and notes viewer with wikilinks, multi-tab docked notes and a private local vault. Import your own Obsidian notes. Free and offline.",
+    "h1": "CPTS notes and field manual",
+    "intro": "Read and search penetration testing notes in an Obsidian-style viewer. Open several notes in tabs, follow wikilinks, and keep your private notes in a local vault that never leaves your browser.",
+    "bullets": [
+      "Obsidian-style note viewer with wikilink navigation",
+      "Multi-tab docked notes workspace you can keep open beside other views",
+      "Import your own markdown notes into a private local vault",
+      "Full-text search across notes",
+      "Notes stored in your browser (IndexedDB), not on a server"
+    ]
+  },
+  {
+    "path": "/exam/",
+    "title": "OSCP Exam Simulator — 24h Timer & Report | ZeroBox",
+    "description": "Practice OSCP, CPTS and CRTO exams with a countdown timer, point scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
+    "h1": "OSCP exam simulator",
+    "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
+    "bullets": [
+      "OSCP (24h), CPTS (10 days) and CRTO (48h) exam tracks with their own durations",
+      "Countdown timer with pause, bio breaks and a burndown chart",
+      "Point scoring against the pass threshold, with optional bonus points",
+      "Flag format validation and evidence proof uploads",
+      "Pacing guidance based on time remaining",
+      "Export an exam report as Markdown"
+    ]
+  },
+  {
+    "path": "/writeup/",
+    "title": "Pentest Writeup Editor — Markdown & Report Export | ZeroBox",
+    "description": "Write CTF writeups and pentest reports in a dual-pane Markdown editor with live preview. Export to Obsidian or GitBook. Free, private, stored in your browser.",
+    "h1": "Writeup studio",
+    "intro": "A Markdown editor for CTF writeups and pentest reports with a live preview. Drafts stay in your browser and export as plain Markdown files.",
+    "bullets": [
+      "Dual-pane Markdown editor with live preview",
+      "Pentest report templates pre-filled with target data",
+      "Export as .md for Obsidian or GitBook",
+      "Local-only storage with no account required"
+    ]
+  },
+  {
+    "path": "/analytics/",
+    "title": "Pentest Skill Radar & Progress Analytics | ZeroBox",
+    "description": "See your hacking progress with a skill radar, 90-day activity heatmap, difficulty breakdown and solve-time benchmarks across your HTB and THM machines.",
+    "h1": "Analytics and skill radar",
+    "intro": "Turn your solved machines into a picture of where you are strong and where to practice next. Charts are computed from your own tracker data, locally.",
+    "bullets": [
+      "Skill radar across attack vectors such as web, Active Directory and privilege escalation",
+      "90-day activity heatmap",
+      "Progress by difficulty",
+      "Time benchmarks for how long machines take you",
+      "Computed in your browser from your tracker data"
+    ]
+  },
+  {
+    "path": "/vault/",
+    "title": "Pentest Evidence Vault — Credentials, Flags & Loot | ZeroBox",
+    "description": "Keep credentials, flags, hashes, SSH keys and tokens from every target in one searchable evidence vault with a loot timeline and export. Stored locally.",
+    "h1": "Evidence vault",
+    "intro": "Collect the credentials, flags, hashes, keys and recon findings you gather across targets in one place, and export them when it is time to write the report.",
+    "bullets": [
+      "Credentials, flags, hashes, SSH keys, tokens and services in one list",
+      "Filter by category and search across targets",
+      "Reveal or hide secrets, with one-click copy",
+      "Loot timeline and quick add for custom entries",
+      "Export drawer for reports",
+      "Stored in your browser, not on a server"
+    ]
+  }
+]

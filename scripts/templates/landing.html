@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator</title>
+  <meta name="description" content="Free offline CTF tracker: Kanban for Hack The Box and TryHackMe machines, OSCP cheatsheet with reverse shells, pentest methodology checklist and a 24h OSCP exam simulator." />
+  <meta name="theme-color" content="#0B0F19" />
+  <link rel="canonical" href="https://ctftracker.com/" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=12" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=12" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=12" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=12" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=12" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://ctftracker.com/" />
+  <meta property="og:title" content="ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator" />
+  <meta property="og:description" content="Track Hack The Box and TryHackMe machines, use an OSCP cheatsheet and methodology checklist, and rehearse the 24h exam. Free, offline, no signup." />
+  <meta property="og:image" content="https://ctftracker.com/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://ctftracker.com/" />
+  <meta name="twitter:title" content="ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator" />
+  <meta name="twitter:description" content="Track Hack The Box and TryHackMe machines, use an OSCP cheatsheet and methodology checklist, and rehearse the 24h exam. Free, offline, no signup." />
+  <meta name="twitter:image" content="https://ctftracker.com/og.png" />
+
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';" />
+
+  <script>
+    // Installed PWA launches at / -> straight into the app.
+    if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) location.replace('/tracker/');
+  </script>
+  <script>
+    if (window.location.hostname === '0xdnd.github.io' && window.location.pathname.startsWith('/ctf-tracker')) {
+      window.location.replace('https://ctftracker.com' + window.location.pathname.replace(/^\/ctf-tracker/, '') + window.location.search + window.location.hash);
+    }
+  </script>
+  <script>
+    // Legacy hash URLs (#/tracker) -> real navigation to /tracker (this page has no router).
+    (function () {
+      var l = window.location;
+      if (l.hash.indexOf('#/') === 0) l.replace('/' + l.hash.slice(2));
+    })();
+  </script>
+
+  <script type="application/ld+json">{{WEBAPP_JSONLD}}</script>
+  <script type="application/ld+json">{{FAQ_JSONLD}}</script>
+
+  <style>
+    :root { --bg:#0B0F19; --card:#121826; --line:#1f2a3d; --text:#e5e9f0; --muted:#9aa6b8; --accent:#10b981; --accent-ink:#04130d; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:var(--accent); }
+    .wrap { max-width:1040px; margin:0 auto; padding:0 20px; }
+    header.top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 0; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:700; color:var(--text); text-decoration:none; letter-spacing:.02em; }
+    .brand img { width:32px; height:32px; border-radius:6px; }
+    nav.top a { color:var(--muted); text-decoration:none; margin-left:16px; font-size:14px; }
+    nav.top a:hover { color:var(--text); }
+    .hero { padding:56px 0 40px; text-align:center; }
+    .hero h1 { font-size:clamp(28px,5vw,46px); line-height:1.15; margin:0 0 16px; letter-spacing:-.01em; }
+    .hero p.lead { max-width:680px; margin:0 auto 28px; color:var(--muted); font-size:clamp(16px,2.2vw,19px); }
+    .btn { display:inline-block; padding:13px 26px; border-radius:10px; background:var(--accent); color:var(--accent-ink); font-weight:700; text-decoration:none; }
+    .btn:hover { filter:brightness(1.1); }
+    .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line); margin-left:10px; }
+    .shot { margin:40px auto 0; max-width:960px; }
+    .shot img { width:100%; height:auto; border-radius:12px; border:1px solid var(--line); display:block; }
+    section { padding:44px 0; }
+    h2 { font-size:clamp(22px,3.5vw,30px); margin:0 0 8px; }
+    .sub { color:var(--muted); margin:0 0 24px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+    .card { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; text-decoration:none; color:var(--text); transition:border-color .15s; }
+    .card:hover { border-color:var(--accent); }
+    .card h3 { margin:0 0 6px; font-size:17px; }
+    .card p { margin:0; color:var(--muted); font-size:14px; }
+    details { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-bottom:10px; }
+    summary { cursor:pointer; font-weight:600; }
+    details p { margin:10px 0 0; color:var(--muted); }
+    footer { border-top:1px solid var(--line); padding:28px 0 40px; color:var(--muted); font-size:14px; }
+    footer a { margin-right:18px; }
+    a:focus-visible, summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" />ZeroBox</a>
+      <nav class="top" aria-label="Primary">
+        <a href="/machines/">Machines</a>
+        <a href="/cheatsheet-library/">Cheatsheets</a>
+        <a href="/methodology-guide/">Methodology</a>
+        <a href="/revshells/">Reverse shells</a>
+        <a href="/exam/">Exam simulator</a>
+        <a href="/tracker/">Open app</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="hero">
+        <h1>ZeroBox — free offline CTF tracker &amp; OSCP exam simulator</h1>
+        <p class="lead">Track Hack The Box and TryHackMe machines, keep an OSCP cheatsheet with reverse shells that fill in your LHOST and LPORT, follow a pentest methodology checklist, and rehearse the 24h exam. It runs in your browser and your data stays on your device.</p>
+        <a class="btn" href="/tracker/">Open the tracker</a>
+        <a class="btn ghost" href="#features">See features</a>
+        <div class="shot">
+          <img src="/images/screenshot.png" width="{{SHOT_W}}" height="{{SHOT_H}}" alt="ZeroBox Kanban board tracking Hack The Box and TryHackMe machines" />
+        </div>
+      </div>
+
+      <section id="features">
+        <h2>Everything for CTF and OSCP prep</h2>
+        <p class="sub">Eight tools in one workspace. Each opens straight into the app.</p>
+        <div class="grid">
+{{FEATURE_CARDS}}
+        </div>
+      </section>
+
+      <section id="guides">
+        <h2>Guides and references</h2>
+        <p class="sub">Free static references you can read without opening the app.</p>
+        <div class="grid">
+{{BROWSE_CARDS}}
+        </div>
+      </section>
+
+      <section id="faq">
+        <h2>Frequently asked questions</h2>
+        <p class="sub">The short answers.</p>
+{{FAQ_HTML}}
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        <a href="https://github.com/0xdnd/ctf-tracker">GitHub</a>
+        <a href="https://0xdnd.gitbook.io/thm-writeups/">Writeups on GitBook</a>
+        <a href="/machines/">Machines</a>
+        <a href="/revshells/">Reverse shells</a>
+        <a href="/methodology-guide/">Methodology</a>
+        <a href="/cheatsheet-library/">Cheatsheets</a>
+        <a href="/tracker/">Open app</a>
+      </p>
+      <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.</p>
+    </footer>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>

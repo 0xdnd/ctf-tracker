@@ -28,6 +28,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
 import { AlertTriangle, Database } from 'lucide-react';
 import { isTauriTarget } from './utils/runtimeTarget';
+import { useRouteMeta } from './hooks/useRouteMeta';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -84,6 +85,7 @@ const TimerController: React.FC = () => {
 const MainAppContent: React.FC = () => {
   const { setScrollElement } = useScrollActions();
   const location = useLocation();
+  useRouteMeta();
   const isPopout = useMemo(() => new URLSearchParams(location.search).get('popout') === 'true', [location.search]);
   const setActiveTab = useCtfStore((s) => s.setActiveTab);
   const selectedMachineId = useCtfStore((s) => s.selectedMachineId);
