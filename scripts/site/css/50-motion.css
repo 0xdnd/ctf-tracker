@@ -1,1 +1,23 @@
-/* 50-motion: CSS-only motion and reduced-motion rules (filled by T3) */
+/* 50-motion: CSS-only motion. No transition:all, no infinite loops, no opacity animation on the h1 or the LCP image. */
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+@keyframes hud-in{from{opacity:0;transform:translate(24px,12px)}}
+@keyframes fade{from{opacity:0}}
+@media(prefers-reduced-motion:no-preference){
+.hud{animation:hud-in 520ms var(--ease) 150ms backwards}
+.proof li{animation:rise 360ms var(--ease) backwards}
+.proof li:nth-child(2){animation-delay:50ms}
+.proof li:nth-child(3){animation-delay:100ms}
+.proof li:nth-child(4){animation-delay:150ms}
+.proof li:nth-child(5){animation-delay:200ms}
+@supports (animation-timeline:view()){
+.sec-head,.cell,.exam-grid>*,.privacy-grid>*,.mods,.guides,.faq,.closing-inner{animation:rise linear forwards;animation-timeline:view();animation-range:entry 0% entry 30%}
+}
+@supports (interpolate-size:allow-keywords) and selector(::details-content){
+.faq details{interpolate-size:allow-keywords}
+.faq details::details-content{block-size:0;overflow:hidden;transition:block-size 220ms var(--ease),content-visibility 220ms allow-discrete}
+.faq details[open]::details-content{block-size:auto}
+}
+}
+@media(prefers-reduced-motion:reduce){
+.hud,.proof li{animation:fade 150ms ease-out backwards}
+}

@@ -145,7 +145,7 @@ const CARD_DESC = {
 const cards = routes
   .map(
     (r) =>
-      `          <a class="card" href="${esc(r.path)}"><h3>${esc(NAV_LABEL[r.path] || r.h1)}</h3><p>${esc(CARD_DESC[r.path] || r.description)}</p></a>`
+      `          <a class="mod" href="${esc(r.path)}"><h3>${esc(NAV_LABEL[r.path] || r.h1)}</h3><p>${esc(CARD_DESC[r.path] || r.description)}</p></a>`
   )
   .join('\n');
 
@@ -201,18 +201,97 @@ if (fs.existsSync(shotSrc)) {
   console.warn('prerender: .github/assets/screenshot.png missing');
 }
 
+// ---- Landing images, proof strip and guide list (counts come from the content model, never hardcoded) ----
+// Landing screenshots: scripts/templates/landing-shots.json ([{name, alt, width, height, srcset:[{src,w}]}]) when present,
+// otherwise every slot falls back to /images/screenshot.png so the page works before and after the shots land.
+const SHOT_ALT = {
+  kanban: 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
+  table: 'ZeroBox machine table with sortable columns and bulk actions',
+  graph: 'ZeroBox attack graph linking hosts, services and credentials',
+  exam: 'ZeroBox exam simulator with countdown HUD and points burndown chart',
+  findings: 'ZeroBox findings table with CVSS 3.1 scores and evidence',
+};
+let shotList = [];
+try {
+  shotList = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8'));
+} catch (e) {
+  shotList = [];
+}
+const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
+const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
+const HERO_SIZES = '(min-width: 1200px) 640px, (min-width: 900px) 55vw, calc(100vw - 32px)';
+const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
+const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
+
+function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
+  const s = shotByName[name];
+  const real = hasShot(s);
+  const attrs = [
+    cls ? `class="${cls}"` : '',
+    `src="${esc(real ? srcOf(s) : '/images/screenshot.png')}"`,
+    real ? `srcset="${esc(srcsetOf(s))}"` : '',
+    real && sizes ? `sizes="${esc(sizes)}"` : '',
+    `width="${real ? s.width : shotW}"`,
+    `height="${real ? s.height : shotH}"`,
+    `alt="${esc(alt !== undefined ? alt : real && s.alt ? s.alt : SHOT_ALT[name])}"`,
+    eager ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"',
+  ].filter(Boolean);
+  return `<img ${attrs.join(' ')} />`;
+}
+
+function heroPreload() {
+  const s = shotByName.kanban;
+  if (hasShot(s)) {
+    return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
+  }
+  return '  <link rel="preload" as="image" href="/images/screenshot.png" fetchpriority="high" />';
+}
+
+const EXAM_TRACKS = ['OSCP', 'CPTS', 'CRTO', 'OSEP', 'CRTP'];
+const nf = new Intl.NumberFormat('en-US');
+const proofItem = (value, label) => `          <li><span class="num">${esc(value)}</span><span class="lbl">${esc(label)}</span></li>`;
+const proofStrip = [
+  proofItem(nf.format(model.machines.length), 'machines catalogued'),
+  proofItem(nf.format(model.shellCount), 'reverse shells'),
+  proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
+  proofItem('No account', 'required'),
+  `          <li><a class="num" href="https://github.com/0xdnd/ctf-tracker">GitHub</a><span class="lbl">full source is public</span></li>`,
+].join('\n');
+
+const { siteHeader, siteFooter, fontPreloadTags } = require('./lib/layout.cjs');
+
+// [href, title, description, count]; count is optional (a mono figure on the right).
+const GUIDES = [
+  ['/machines/', 'Machine writeups', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, nf.format(model.machines.length)],
+  ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', nf.format(model.shellCount)],
+  ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', String(model.phases.length)],
+  ['/cheatsheet-library/', 'Cheatsheets by topic', 'Recon, web, privesc, Active Directory, pivoting.', String(model.topics.length)],
+  ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', String(model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length)],
+  ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', ''],
+  ['/cpts-notes/', 'CPTS study notes', 'Short notes with commands.', String(model.notes.length)],
+];
+const guideList = GUIDES.map(
+  ([h, t, d, n]) =>
+    `          <li><a href="${h}"><span class="g-t">${esc(t)}</span><span class="g-d">${esc(d)}</span>${n ? `<span class="g-n">${esc(n)}</span>` : ''}</a></li>`
+).join('\n');
+
 let landing = fs.readFileSync(path.join(__dirname, 'templates', 'landing.html'), 'utf8');
 const subs = {
+  '{{CSS_HREF}}': CSS_HREF,
+  '{{FONT_PRELOAD}}': fontPreloadTags(),
+  '{{HERO_PRELOAD}}': heroPreload(),
+  '{{SITE_HEADER}}': siteHeader({ current: '/' }),
+  '{{SITE_FOOTER}}': siteFooter({ analyticsNote: analyticsNote() }),
+  '{{IMG_HERO}}': shotImg('kanban', { sizes: HERO_SIZES, eager: true }),
+  '{{IMG_HUD}}': shotImg('exam', { sizes: '(min-width: 1200px) 300px, 28vw', alt: '' }),
+  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width: 900px) 640px, calc(100vw - 32px)' }),
+  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width: 900px) 460px, calc(100vw - 32px)' }),
+  '{{IMG_FINDINGS}}': shotImg('findings', { sizes: '(min-width: 900px) 640px, calc(100vw - 32px)' }),
+  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width: 900px) 640px, calc(100vw - 32px)' }),
+  '{{PROOF_STRIP}}': proofStrip,
+  '{{TRACK_PILLS}}': EXAM_TRACKS.map((t) => `<li>${esc(t)}</li>`).join(''),
   '{{FEATURE_CARDS}}': cards,
-  '{{BROWSE_CARDS}}': [
-    ['/machines/', 'Machine writeups', `${model.machines.filter((m) => m.hasPage).length} solved HTB and THM attack paths, plus a directory of ${model.machines.length} machines.`],
-    ['/revshells/', 'Reverse shell cheat sheet', `${model.shellCount} one-liners for Bash, Python, PHP, PowerShell and more.`],
-    ['/methodology-guide/', 'Pentest methodology', `${model.phases.length} phases from host discovery to post-exploitation.`],
-    ['/cheatsheet-library/', 'Cheatsheets by topic', `${model.topics.length} topics: recon, web, privesc, Active Directory, pivoting.`],
-    ['/oscp-like-machines/', 'OSCP-like machines', `${(model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length)} HTB and THM boxes for OSCP prep, grouped by difficulty.`],
-    ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation, pivoting and more, with commands and practice machines.'],
-    ['/cpts-notes/', 'CPTS study notes', `${model.notes.length} short notes with commands.`],
-  ].map(([h, t, d]) => `          <a class="card" href="${h}"><h3>${esc(t)}</h3><p>${esc(d)}</p></a>`).join('\n'),
+  '{{BROWSE_CARDS}}': guideList,
   '{{FAQ_HTML}}': faqHtml,
   '{{FAQ_JSONLD}}': jsonLd(faqLd),
   '{{WEBAPP_JSONLD}}': jsonLd(webAppLd),

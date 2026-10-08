@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator</title>
   <meta name="description" content="Free offline CTF tracker: Kanban for Hack The Box and TryHackMe machines, OSCP cheatsheet with reverse shells, pentest methodology checklist and a 24h OSCP exam simulator." />
-  <meta name="theme-color" content="#0B0F19" />
+  <meta name="theme-color" content="#09090b" />
   <link rel="canonical" href="https://ctftracker.com/" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico?v=12" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=12" />
@@ -13,6 +13,9 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=12" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=12" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="{{CSS_HREF}}" />
+{{FONT_PRELOAD}}
+{{HERO_PRELOAD}}
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://ctftracker.com/" />
@@ -48,105 +51,165 @@
 
   <script type="application/ld+json">{{WEBAPP_JSONLD}}</script>
   <script type="application/ld+json">{{FAQ_JSONLD}}</script>
-
-  <style>
-    :root { --bg:#0B0F19; --card:#121826; --line:#1f2a3d; --text:#e5e9f0; --muted:#9aa6b8; --accent:#10b981; --accent-ink:#04130d; }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
-    a { color:var(--accent); }
-    .wrap { max-width:1040px; margin:0 auto; padding:0 20px; }
-    header.top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 0; }
-    .brand { display:flex; align-items:center; gap:10px; font-weight:700; color:var(--text); text-decoration:none; letter-spacing:.02em; }
-    .brand img { width:32px; height:32px; border-radius:6px; }
-    nav.top a { color:var(--muted); text-decoration:none; margin-left:16px; font-size:14px; }
-    nav.top a:hover { color:var(--text); }
-    .hero { padding:56px 0 40px; text-align:center; }
-    .hero h1 { font-size:clamp(28px,5vw,46px); line-height:1.15; margin:0 0 16px; letter-spacing:-.01em; }
-    .hero p.lead { max-width:680px; margin:0 auto 28px; color:var(--muted); font-size:clamp(16px,2.2vw,19px); }
-    .btn { display:inline-block; padding:13px 26px; border-radius:10px; background:var(--accent); color:var(--accent-ink); font-weight:700; text-decoration:none; }
-    .btn:hover { filter:brightness(1.1); }
-    .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line); margin-left:10px; }
-    .shot { margin:40px auto 0; max-width:960px; }
-    .shot img { width:100%; height:auto; border-radius:12px; border:1px solid var(--line); display:block; }
-    section { padding:44px 0; }
-    h2 { font-size:clamp(22px,3.5vw,30px); margin:0 0 8px; }
-    .sub { color:var(--muted); margin:0 0 24px; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
-    .card { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; text-decoration:none; color:var(--text); transition:border-color .15s; }
-    .card:hover { border-color:var(--accent); }
-    .card h3 { margin:0 0 6px; font-size:17px; }
-    .card p { margin:0; color:var(--muted); font-size:14px; }
-    details { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-bottom:10px; }
-    summary { cursor:pointer; font-weight:600; }
-    details p { margin:10px 0 0; color:var(--muted); }
-    footer { border-top:1px solid var(--line); padding:28px 0 40px; color:var(--muted); font-size:14px; }
-    footer a { margin-right:18px; }
-    a:focus-visible, summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  </style>
 </head>
-<body>
-  <div class="wrap">
-    <header class="top">
-      <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" />ZeroBox</a>
-      <nav class="top" aria-label="Primary">
-        <a href="/machines/">Machines</a>
-        <a href="/cheatsheet-library/">Cheatsheets</a>
-        <a href="/methodology-guide/">Methodology</a>
-        <a href="/revshells/">Reverse shells</a>
-        <a href="/exam/">Exam simulator</a>
-        <a href="/tracker/">Open app</a>
-      </nav>
-    </header>
+<body class="landing">
+{{SITE_HEADER}}
 
-    <main>
-      <div class="hero">
-        <h1>ZeroBox — free offline CTF tracker &amp; OSCP exam simulator</h1>
-        <p class="lead">Track Hack The Box and TryHackMe machines, keep an OSCP cheatsheet with reverse shells that fill in your LHOST and LPORT, follow a pentest methodology checklist, and rehearse the 24h exam. It runs in your browser and your data stays on your device.</p>
-        <a class="btn" href="/tracker/">Open the tracker</a>
-        <a class="btn ghost" href="#features">See features</a>
-        <div class="shot">
-          <img src="/images/screenshot.png" width="{{SHOT_W}}" height="{{SHOT_H}}" alt="ZeroBox Kanban board tracking Hack The Box and TryHackMe machines" />
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 id="hero-title" class="display">Free offline CTF tracker and OSCP exam simulator</h1>
+        <p class="lead">Track HTB and THM machines, rehearse OSCP, CPTS, CRTO, OSEP and CRTP exams. Your data stays in your browser.</p>
+        <div class="cta-row">
+          <a class="btn btn-lg" href="/tracker/">Open ZeroBox</a>
+          <a class="btn btn-secondary btn-lg" href="#exam">See the exam simulator</a>
         </div>
       </div>
+      <div class="hero-media">
+        <div class="frame">{{IMG_HERO}}</div>
+        <div class="frame hud">{{IMG_HUD}}</div>
+      </div>
+    </div>
+  </section>
 
-      <section id="features">
-        <h2>Everything for CTF and OSCP prep</h2>
-        <p class="sub">Eight tools in one workspace. Each opens straight into the app.</p>
-        <div class="grid">
-{{FEATURE_CARDS}}
-        </div>
-      </section>
-
-      <section id="guides">
-        <h2>Guides and references</h2>
-        <p class="sub">Free static references you can read without opening the app.</p>
-        <div class="grid">
-{{BROWSE_CARDS}}
-        </div>
-      </section>
-
-      <section id="faq">
-        <h2>Frequently asked questions</h2>
-        <p class="sub">The short answers.</p>
-{{FAQ_HTML}}
-      </section>
-    </main>
-
-    <footer>
-      <p>
-        <a href="https://github.com/0xdnd/ctf-tracker">GitHub</a>
-        <a href="https://0xdnd.gitbook.io/thm-writeups/">Writeups on GitBook</a>
-        <a href="/machines/">Machines</a>
-        <a href="/revshells/">Reverse shells</a>
-        <a href="/methodology-guide/">Methodology</a>
-        <a href="/cheatsheet-library/">Cheatsheets</a>
-        <a href="/tracker/">Open app</a>
-      </p>
-      <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.</p>
-      {{ANALYTICS_NOTE}}
-    </footer>
+  <div class="wrap">
+    <ul class="proof" aria-label="ZeroBox in numbers">
+{{PROOF_STRIP}}
+    </ul>
   </div>
+
+  <section class="sec" id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="features-title">One board per box, from nmap to report</h2>
+        <p>Commands, credentials, notes and status for every target live in one place, and none of it needs a login.</p>
+      </div>
+      <div class="bento">
+        <article class="cell c-graph">
+          <div class="cell-txt">
+            <h3>Attack graph</h3>
+            <p>Hosts, services and credentials as linked nodes. Auto-layout untangles a large network in one click, and undo reverses a bad move.</p>
+          </div>
+          <div class="frame">{{IMG_GRAPH}}</div>
+        </article>
+        <article class="cell c-table">
+          <div class="cell-txt">
+            <h3>Table with bulk actions</h3>
+            <p>Sort and filter the whole catalog, then select several machines and act on them together.</p>
+          </div>
+          <div class="frame">{{IMG_TABLE}}</div>
+        </article>
+        <article class="cell c-nmap">
+          <div class="cell-txt">
+            <h3>Multi-host nmap import</h3>
+            <p>Scan a subnet with <code>-oX</code> and import the XML. Each live host lands on the board with its open ports and services.</p>
+          </div>
+<pre class="code" tabindex="0"><code><span class="t-dim">$</span> nmap -sV -oX sweep.xml 10.129.14.0/28
+
+Nmap scan report for 10.129.14.17
+<span class="t-hi">22/tcp</span>   open  ssh     OpenSSH 8.2p1 Ubuntu
+<span class="t-hi">80/tcp</span>   open  http    Apache httpd 2.4.41
+<span class="t-hi">3306/tcp</span> open  mysql   MySQL 8.0.28
+
+Nmap scan report for 10.129.14.21
+<span class="t-hi">445/tcp</span>  open  smb     Samba smbd 4.6.2
+<span class="t-hi">5985/tcp</span> open  winrm   HTTPAPI 2.0
+
+<span class="t-dim"># 2 hosts up, 5 open ports, ready to import</span></code></pre>
+        </article>
+        <article class="cell c-vault">
+          <div class="cell-txt">
+            <h3>Evidence vault</h3>
+            <p>Credentials, flags and hashes from every target in one searchable place, with a hash-type identifier for the strings you cannot place.</p>
+          </div>
+          <div class="frame">{{IMG_FINDINGS}}</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="exam" aria-labelledby="exam-title">
+    <div class="wrap exam-grid">
+      <div class="exam-media frame">{{IMG_EXAM}}</div>
+      <div class="exam-copy">
+        <h2 id="exam-title">Rehearse the exam before you sit it</h2>
+        <p>A timed simulator with a live clock and a points burndown, so you see whether you are on pace while there is still time to change plan.</p>
+        <ul class="pills" aria-label="Exam tracks">{{TRACK_PILLS}}</ul>
+        <ul class="ticks">
+          <li><strong>Track-aware pacing.</strong> Hours and point targets follow the track you pick.</li>
+          <li><strong>Rabbit-hole warning.</strong> A nudge when one box is eating the clock.</li>
+          <li><strong>Proofs.</strong> Attach proof and screenshots to each box as you go.</li>
+          <li><strong>Findings with CVSS 3.1.</strong> Score each finding for the report.</li>
+          <li><strong>Zip submission bundle.</strong> Report, proofs and findings in one download.</li>
+        </ul>
+        <a class="btn btn-secondary" href="/exam/">Open ZeroBox</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="modules" aria-labelledby="modules-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="modules-title">Eight modules, one workspace</h2>
+      </div>
+      <div class="mods">
+{{FEATURE_CARDS}}
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="privacy" aria-labelledby="privacy-title">
+    <div class="wrap privacy-grid">
+      <div class="privacy-copy">
+        <h2 id="privacy-title">Your notes stay in your browser.</h2>
+        <p>In short: local storage only, no telemetry, optional encrypted backups.</p>
+        <p>The one network feature is separate: optional BYOK AI scan interpretation, off by default; it contacts api.anthropic.com only when you press send, after showing you the redacted payload.</p>
+      </div>
+      <dl class="facts-panel">
+        <div><dt>Stored in</dt><dd>LocalStorage and IndexedDB on your device. Clearing site data erases it.</dd></div>
+        <div><dt>Backups</dt><dd>JSON export and restore, with optional passphrase encryption.</dd></div>
+        <div><dt>AI scan interpretation</dt><dd>Bring your own key. Nothing is sent until you review the redacted payload and press send.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" id="guides" aria-labelledby="guides-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="guides-title">Guides and references</h2>
+        <p>Free static references you can read without opening the app.</p>
+      </div>
+      <ul class="guides">
+{{BROWSE_CARDS}}
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq-wrap">
+      <h2 id="faq-title">Frequently asked questions</h2>
+      <div class="faq">
+{{FAQ_HTML}}
+      </div>
+    </div>
+  </section>
+
+  <section class="closing" aria-labelledby="closing-title">
+    <div class="wrap closing-inner">
+      <div>
+        <h2 id="closing-title">Start your next box with a board.</h2>
+        <p>Free and offline, with the source public on GitHub. A Tauri desktop build is available from the GitHub repository.</p>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-lg" href="/tracker/">Open ZeroBox</a>
+        <a class="btn btn-secondary btn-lg" href="https://github.com/0xdnd/ctf-tracker">Desktop build on GitHub</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+{{SITE_FOOTER}}
 
   <script>
     if ('serviceWorker' in navigator) {
