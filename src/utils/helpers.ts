@@ -1,4 +1,3 @@
-import confetti from 'canvas-confetti';
 import { GlobalVariables } from '../types';
 
 export function formatSeconds(seconds: number): string {
@@ -194,12 +193,17 @@ export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'co
 }
 
 export function triggerRootCelebration() {
-  confetti({
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 },
-    colors: ['#10B981', '#06B6D4', '#EF4444', '#8B5CF6', '#F59E0B']
-  });
+  // Loaded on demand so canvas-confetti stays out of the entry preload graph.
+  import('canvas-confetti')
+    .then(({ default: confetti }) =>
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#10B981', '#06B6D4', '#EF4444', '#8B5CF6', '#F59E0B']
+      })
+    )
+    .catch(() => {});
 }
 
 export async function safeCopyToClipboard(text: string): Promise<boolean> {

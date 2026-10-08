@@ -53,6 +53,13 @@ function setTag(html, re, replacement, label) {
   return html.replace(re, () => replacement);
 }
 
+// The shell's #root holds only the boot splash (index.html). Route pages keep it after the SEO block.
+const SPLASH_RE = /<div id="boot-splash"[\s\S]*?<\/div>/;
+const ROOT_RE = /<div id="root">\s*<div id="boot-splash"[\s\S]*?<\/div>\s*<\/div>/;
+const splashMatch = shell.match(SPLASH_RE);
+if (!splashMatch) throw new Error('prerender: boot splash missing from shell');
+const splashHtml = splashMatch[0];
+
 const NAV_LABEL = {
   '/tracker/': 'CTF tracker',
   '/methodology/': 'Methodology',
@@ -65,7 +72,7 @@ const NAV_LABEL = {
 };
 
 const linkList = (items) =>
-  `<ul style="color:#cbd5e1;padding-left:20px;columns:2">${items.map(([h, l]) => `<li><a href="${esc(h)}" style="color:#10b981">${esc(l)}</a></li>`).join('')}</ul>`;
+  `<ul style="color:#f4f4f5;padding-left:20px;columns:2">${items.map(([h, l]) => `<li><a href="${esc(h)}" style="color:#0ea5e9">${esc(l)}</a></li>`).join('')}</ul>`;
 
 function exploreBlock(route) {
   const hubs = [
@@ -85,14 +92,14 @@ function exploreBlock(route) {
 function staticBlock(route) {
   const links = [{ path: '/', label: 'Home' }, ...routes.map((r) => ({ path: r.path, label: NAV_LABEL[r.path] || r.h1 }))]
     .filter((l) => l.path !== route.path)
-    .map((l) => `<a href="${esc(l.path)}" style="color:#10b981;margin-right:14px">${esc(l.label)}</a>`)
+    .map((l) => `<a href="${esc(l.path)}" style="color:#0ea5e9;margin-right:14px">${esc(l.label)}</a>`)
     .join('');
   return (
-    `<div data-prerender style="max-width:760px;margin:0 auto;padding:32px 20px;background:#0B0F19;color:#e5e9f0;` +
+    `<div data-prerender style="max-width:760px;margin:0 auto;padding:32px 20px;background:#09090b;color:#f4f4f5;` +
     `font:16px/1.6 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh">` +
     `<h1 style="font-size:30px;line-height:1.2;margin:0 0 12px">${esc(route.h1)}</h1>` +
-    `<p style="color:#9aa6b8">${esc(route.intro)}</p>` +
-    `<ul style="color:#cbd5e1;padding-left:20px">${route.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` +
+    `<p style="color:#a1a1aa">${esc(route.intro)}</p>` +
+    `<ul style="color:#f4f4f5;padding-left:20px">${route.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` +
     `<nav aria-label="ZeroBox sections" style="margin-top:24px;line-height:2">${links}</nav>` +
     exploreBlock(route) +
     `</div>`
@@ -113,7 +120,8 @@ for (const route of routes) {
   html = setTag(html, /<meta name="twitter:url"[^>]*>/, `<meta name="twitter:url" content="${url}" />`, 'twitter:url');
   html = setTag(html, /<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${esc(route.title)}" />`, 'twitter:title');
   html = setTag(html, /<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${esc(route.description)}" />`, 'twitter:description');
-  html = setTag(html, /<div id="root">\s*<\/div>/, `<div id="root">${staticBlock(route)}</div>`, '<div id="root">');
+  // Keep the boot splash (from index.html) after the SEO block: hidden for no-JS users, shown by CSS under .js.
+  html = setTag(html, ROOT_RE, `<div id="root">${staticBlock(route)}${splashHtml}</div>`, '<div id="root"> with boot splash');
 
   const outDir = path.join(distDir, route.path.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(outDir, { recursive: true });

@@ -6,7 +6,6 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../utils/helpers';
-import { generateObsidianVaultZip } from '../utils/obsidianVaultExporter';
 import { ViewMode } from '../types';
 
 export function useTacticalHotkeys() {
@@ -302,6 +301,7 @@ export function useTacticalHotkeys() {
           e.preventDefault();
           try {
             const currentStore = useCtfStore.getState();
+            const { generateObsidianVaultZip } = await import('../utils/obsidianVaultExporter');
             const zipBlob = await generateObsidianVaultZip(currentStore.machines, currentStore.cheatsheets);
             const url = URL.createObjectURL(zipBlob);
             const link = document.createElement('a');

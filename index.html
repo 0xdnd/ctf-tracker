@@ -19,6 +19,18 @@
     <meta name="theme-color" content="#0B0F19" />
     <title>ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]</title>
 
+    <script>document.documentElement.classList.add('js');</script>
+    <style>
+      /* Boot splash: JS users only, invisible for the first 300ms so fast loads never see it. React replaces #root children on mount. */
+      #boot-splash{display:none}
+      .js [data-prerender]{display:none}
+      .js #boot-splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#09090b;color:#a1a1aa;font:500 14px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em;opacity:0;animation:boot-splash-in .3s ease-out .3s forwards}
+      .js #boot-splash img{width:48px;height:48px;display:block}
+      @keyframes boot-splash-in{to{opacity:1}}
+      @keyframes boot-splash-show{to{opacity:1}}
+      @media (prefers-reduced-motion:reduce){.js #boot-splash{animation:boot-splash-show 0s linear .3s forwards}}
+    </style>
+
     <script>
       if (window.location.hostname === '0xdnd.github.io' && window.location.pathname.startsWith('/ctf-tracker')) {
         window.location.replace('https://ctftracker.com' + window.location.pathname.replace(/^\/ctf-tracker/, '') + window.location.search + window.location.hash);
@@ -88,7 +100,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss: https://api.anthropic.com; media-src 'self' data: blob:;" />
   </head>
   <body class="bg-cyber-bg text-cyber-text antialiased selection:bg-emerald-500 selection:text-black">
-    <div id="root"></div>
+    <div id="root"><div id="boot-splash" role="status"><img src="/icon-192.png" width="48" height="48" alt="" /><span>Loading ZeroBox</span></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

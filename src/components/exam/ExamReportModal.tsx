@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
 import { ExamFindingsEditor } from './ExamFindingsEditor';
-import { buildSubmissionBundle } from '../../utils/examSubmissionBundle';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useBoxesWithProofImages } from '../../hooks/useProofImage';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
@@ -244,6 +243,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   const handleDownloadBundle = async () => {
     setBundling(true);
     try {
+      // Loaded on demand: pulls in jszip, which must stay out of the entry preload graph.
+      const { buildSubmissionBundle } = await import('../../utils/examSubmissionBundle');
       const { data, missingImages } = await buildSubmissionBundle(effectiveSession, reportOptions);
       const blob = new Blob([data as BlobPart], { type: 'application/zip' });
       const url = URL.createObjectURL(blob);
