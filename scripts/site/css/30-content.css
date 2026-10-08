@@ -24,10 +24,14 @@ a.tag{color:var(--text-2)}
 .card{display:block;padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--text);text-decoration:none;transition:border-color .15s,background-color .15s}
 .card h3{margin:0 0 var(--s2);font-size:1.0625rem}
 .card p{margin:0;color:var(--muted);font-size:var(--fs-small);line-height:1.55}
-.cta-box{margin:var(--s6) 0;padding:var(--s5);border:1px solid var(--line-strong);border-radius:var(--r-lg);background:var(--card)}
-.cta-box p{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3)}
+.cta-box{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s4) var(--s5);margin:var(--s6) 0;padding:var(--s5);border:1px solid var(--line-strong);border-radius:var(--r-lg);background:var(--card)}
+.cta-text{flex:1 1 300px;min-width:0}
+.cta-text p{margin:0;max-width:60ch;color:var(--text-2)}
+.cta-text p+p{margin-top:var(--s1);color:var(--muted)}
+.cta-text strong{color:var(--text)}
+.cta-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s5)}
 .cta-box .btn{white-space:normal;text-align:center}
-.cta-box a:not(.btn){font-weight:600}
+.cta-box a:not(.btn):not(.link-arrow){font-weight:600}
 table{width:100%;margin:var(--s4) 0 var(--s6);border-collapse:collapse;font-size:.9375rem;font-variant-numeric:tabular-nums}
 th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 thead th{color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-bottom-color:var(--line-strong);white-space:nowrap}
@@ -40,6 +44,7 @@ table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
 th,td{padding:10px}
 .cta-box{padding:var(--s4)}
 }
+@media(max-width:479px){.cta-actions{flex-direction:column;align-items:stretch;width:100%;gap:var(--s2)}.cta-actions .btn{width:100%}.cta-actions .link-arrow{justify-content:center}}
 @media(hover:hover) and (pointer:fine){
 .chips a:hover{border-color:var(--accent);background:var(--hover);color:var(--text)}
 .card:hover{border-color:var(--line-strong);background:var(--elev)}

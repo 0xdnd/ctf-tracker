@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { getModel, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
-const { ORIGIN, esc, renderPage, STATIC_CSS } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, STATIC_CSS, ctaBox } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
@@ -154,11 +154,17 @@ for (const m of withPage) {
     ...stats,
     m.certifications && m.certifications.length ? ['Relevant for', m.certifications.join(', ')] : null,
   ].filter(Boolean);
-  const wLink = m.ownWriteup ? `<a class="btn" href="${esc(m.ownWriteup)}" rel="noopener">Read the full writeup</a>` : '';
-  const roomLink = m.roomUrl ? `<a href="${esc(m.roomUrl)}" rel="${ROOM_REL}">Open ${esc(m.name)} on ${esc(plat)}</a>` : '';
-  const body = [
+    const body = [
     `<p class="lead">${esc(m.name)} is a ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself. This page is my short attack path summary and the techniques it trains.</p>`,
-    wLink || roomLink ? `<div class="cta-box"><p>${wLink}${wLink && roomLink ? ' &nbsp; ' : ''}${roomLink}</p></div>` : '',
+    m.ownWriteup || m.roomUrl
+      ? ctaBox({
+          href: m.ownWriteup || m.roomUrl,
+          label: m.ownWriteup ? 'Read the full writeup' : `Open on ${plat}`,
+          icon: 'ext',
+          rel: m.ownWriteup ? 'noopener' : ROOM_REL,
+          ...(m.ownWriteup && m.roomUrl ? { linkHref: m.roomUrl, linkLabel: `Open ${m.name} on ${plat}`, linkRel: ROOM_REL } : {}),
+        })
+      : '',
     `<table class="facts"><tbody>${facts.map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</tbody></table>`,
     `<h2>Attack path summary</h2><p>${esc(summary)}</p>`,
     tagList.length ? `<h2>Techniques</h2><p>${tagList.map(tagLink).join(' ')}</p>` : '',
@@ -167,7 +173,7 @@ for (const m of withPage) {
           .map((r) => `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})</li>`)
           .join('')}</ul>`
       : '',
-    `<div class="cta-box"><p><strong>Track ${esc(m.name)} in ZeroBox.</strong> Log your progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.</p><p><a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+    ctaBox({ title: `Track ${esc(m.name)} in ZeroBox.`, body: 'Log your progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.', href: '/tracker/', label: 'Open tracker' }),
     `<p class="note">${esc(m.name)} belongs to ${esc(plat)}. This page contains only my own notes.</p>`,
   ].join('\n');
   wordCounts.push([m.name, body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length]);
@@ -244,7 +250,7 @@ for (const m of withPage) {
       );
     }
   }
-  parts.push(`<div class="cta-box"><p><strong>Track every box offline.</strong> ZeroBox gives you a Kanban board for all of these machines. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`);
+  parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
     title: 'HTB & TryHackMe Machines: Writeups & Attack Paths by OS and Difficulty | ZeroBox',
@@ -267,7 +273,7 @@ for (const t of model.topics) {
       (i) =>
         `<h2 id="${esc(i.id)}">${esc(i.title)}</h2><p>${esc(i.description)}</p>${code(i.commandTemplate)}${(i.tags || []).length ? `<p>${i.tags.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</p>` : ''}`
     ),
-    `<div class="cta-box"><p><strong>Use these commands with your values filled in.</strong> ZeroBox interpolates target IP, domain and credentials into every command. <a class="btn" href="/cheatsheets/">Open the cheatsheet</a></p></div>`,
+    ctaBox({ title: 'Use these commands with your values filled in.', body: 'ZeroBox interpolates target IP, domain and credentials into every command.', href: '/cheatsheets/', label: 'Open the cheatsheet' }),
     `<h2>More cheatsheets</h2><div class="chips">${model.topics.filter((o) => o !== t).map((o) => `<a href="/cheatsheets/${o.slug}/">${esc(o.name)}</a>`).join('')}<a href="/revshells/">Reverse shells</a></div>`,
   ].join('\n');
   emit(
@@ -295,7 +301,7 @@ emit(
     body: [
       `<p class="lead">Command cheatsheets for penetration testing labs and OSCP preparation, grouped by phase. Every command is a template you can adapt to your target.</p>`,
       `<div class="grid">${model.topics.map((t) => card(`/cheatsheets/${t.slug}/`, t.name, `${t.items.length} commands`)).join('')}${card('/revshells/', 'Reverse shells', `${model.shellCount} reverse, bind and TTY shell one-liners`)}</div>`,
-      `<div class="cta-box"><p>Prefer an interactive version? <a class="btn" href="/cheatsheets/">Open the cheatsheet in ZeroBox</a></p></div>`,
+      ctaBox({ body: 'Prefer an interactive version?', href: '/cheatsheets/', label: 'Open the cheatsheet' }),
     ].join('\n'),
     crumbs: [['Home', '/'], ['Cheatsheets', '/cheatsheet-library/']],
     ogType: 'website',
@@ -319,7 +325,7 @@ for (const ph of model.phases) {
           .join('')
     ),
     `<h2>All phases</h2><ol>${model.phases.map((o) => `<li>${o === ph ? `<strong>${esc(o.shortTitle)}</strong>` : `<a href="/methodology/${o.slug}/">${esc(o.shortTitle)}</a>`}</li>`).join('')}</ol>`,
-    `<div class="cta-box"><p><strong>Tick items off per machine.</strong> ZeroBox tracks checklist progress for every target. <a class="btn" href="/methodology/">Open the methodology checklist</a></p></div>`,
+    ctaBox({ title: 'Tick items off per machine.', body: 'ZeroBox tracks checklist progress for every target.', href: '/methodology/', label: 'Open the checklist' }),
   ].join('\n');
   emit(
     'methodology-phase',
@@ -346,7 +352,7 @@ emit(
     body: [
       `<p class="lead">A phase-by-phase attack lifecycle for CTFs and OSCP-style labs. Work through the phases in order, and branch by service when you find web, file sharing, database or remote access ports.</p>`,
       `<div class="grid">${model.phases.map((ph) => card(`/methodology/${ph.slug}/`, ph.title, `${ph.itemCount} items. ${ph.subtitle}`)).join('')}</div>`,
-      `<div class="cta-box"><p>Track progress per machine. <a class="btn" href="/methodology/">Open the checklist in ZeroBox</a></p></div>`,
+      ctaBox({ body: 'Track progress per machine.', href: '/methodology/', label: 'Open the checklist' }),
     ].join('\n'),
     crumbs: [['Home', '/'], ['Methodology', '/methodology-guide/']],
     ogType: 'website',
@@ -370,7 +376,7 @@ emit(
           )
           .join('')
     ),
-    `<div class="cta-box"><p><strong>Generate with your values filled in.</strong> The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell. <a class="btn" href="/cheatsheets/">Open the generator</a></p></div>`,
+    ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell.', href: '/cheatsheets/', label: 'Generate a shell' }),
   ].join('\n');
   emit(
     'revshells',
@@ -461,7 +467,7 @@ emit(
       n.tools && n.tools.length ? `<p>${n.tools.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</p>` : '',
       mdToHtml(n.rawMarkdown),
       `<h2>More CPTS notes</h2><ul>${model.notes.filter((o) => o !== n).map((o) => `<li><a href="/cpts-notes/${o.slug}/">${esc(o.title)}</a></li>`).join('')}</ul>`,
-      `<div class="cta-box"><p>Keep these notes in your own private vault. <a class="btn" href="/cpts-manual/">Open CPTS notes in ZeroBox</a></p></div>`,
+      ctaBox({ body: 'Keep these notes in your own private vault.', href: '/cpts-manual/', label: 'Open CPTS notes' }),
     ].join('\n');
     emit(
       'cpts-note',
@@ -596,7 +602,7 @@ for (const hub of certHubs) {
     `<h2>Jump to difficulty</h2>${jump}`,
     `<h2>${esc(name)} machine list by difficulty</h2>`,
     tables,
-    `<div class="cta-box"><p><strong>Track your progress.</strong> ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+    ctaBox({ title: 'Track your progress.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' }),
     `<h2>Related guides</h2><div class="chips"><a href="/exam/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
     `<p class="note">Machines belong to ${esc(plats)}. ZeroBox is not affiliated with the platforms or certification bodies named here.</p>`,
   ].join('\n');
@@ -656,7 +662,7 @@ for (const g of techGroups) {
     jump,
     tables,
     related.length ? `<h2>Related techniques</h2><div class="chips">${related.map((o) => `<a href="/techniques/${o.slug}/">${esc(o.name)} (${o.machines.length})</a>`).join('')}<a href="/techniques/">All techniques</a></div>` : '',
-    `<div class="cta-box"><p><strong>Practise it, then track it.</strong> Log every box and the commands you used in ZeroBox. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+    ctaBox({ title: 'Practise it, then track it.', body: 'Log every box and the commands you used in ZeroBox.', href: '/tracker/', label: 'Open tracker' }),
   ].join('\n');
   hubWords.tech.push([g.slug, wc(body)]);
   const plats = platLabel(g.machines);
@@ -689,7 +695,7 @@ emit(
       `<p class="lead">Pick a technique to see what it is, the commands that matter and the Hack The Box and TryHackMe machines that practise it. Counts show how many catalog machines carry a matching tag.</p>`,
       `<div class="grid">${techGroups.map((g) => card(`/techniques/${g.slug}/`, g.name, `${g.machines.length} machines`)).join('')}</div>`,
       `<h2>Certification machine lists</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/machines/">All machines</a></div>`,
-      `<div class="cta-box"><p>Track your practice offline. <a class="btn" href="/tracker/">Open ZeroBox</a></p></div>`,
+      ctaBox({ body: 'Track your practice offline.', href: '/tracker/', label: 'Open tracker' }),
     ].join('\n'),
     crumbs: [['Home', '/'], ['Techniques', '/techniques/']],
     ogType: 'website',

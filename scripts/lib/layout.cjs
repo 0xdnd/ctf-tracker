@@ -30,21 +30,47 @@ const NAV = [
   ['/exam/', 'Exam simulator'],
 ];
 
+const REPO = 'https://github.com/0xdnd/ctf-tracker';
+
 const FOOTER_LINKS = {
-  Explore: [
+  Guides: [
     ['/machines/', 'Machines'],
-    ['/cheatsheet-library/', 'Cheatsheets'],
-    ['/methodology-guide/', 'Methodology'],
-    ['/revshells/', 'Reverse shells'],
     ['/oscp-like-machines/', 'OSCP-like machines'],
     ['/techniques/', 'Techniques'],
     ['/cpts-notes/', 'CPTS notes'],
   ],
+  References: [
+    ['/cheatsheet-library/', 'Cheatsheets'],
+    ['/methodology-guide/', 'Methodology'],
+    ['/revshells/', 'Reverse shells'],
+  ],
   ZeroBox: [
-    ['/tracker/', 'Open ZeroBox'],
-    ['https://github.com/0xdnd/ctf-tracker', 'GitHub'],
+    ['/tracker/', 'Open tracker'],
+    ['/exam/', 'Exam simulator'],
+    [REPO, 'Source on GitHub'],
   ],
 };
+
+// Inline Tabler icons (stroke = currentColor, decorative). Presentation attributes only, so the content-page CSP (style-src 'self') is fine.
+const svgIcon = (cls, paths) =>
+  `<svg class="ico ${cls}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths}</svg>`;
+const ICON = {
+  arrow: svgIcon('ico-arrow', '<path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/>'),
+  ext: svgIcon('ico-ext', '<path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>'),
+};
+
+/**
+ * Content-page call-to-action. title/body are trusted HTML (callers escape); label is escaped here.
+ * Primary button goes to href (icon: 'arrow' into the app, 'ext' for off-site, '' for none).
+ * Optional secondary link-arrow (always an off-site link): linkHref/linkLabel/linkRel.
+ */
+function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', linkHref = '', linkLabel = '', linkRel = 'nofollow noopener' }) {
+  const text = [title ? `<p><strong>${title}</strong></p>` : '', body ? `<p>${body}</p>` : ''].filter(Boolean).join('');
+  const relAttr = rel ? ` rel="${esc(rel)}"` : '';
+  const btn = href ? `<a class="btn" href="${esc(href)}"${relAttr}>${esc(label)}${ICON[icon] || ''}</a>` : '';
+  const link = linkHref ? `<a class="link-arrow" href="${esc(linkHref)}" rel="${esc(linkRel)}">${esc(linkLabel)}${ICON.ext}</a>` : '';
+  return `<div class="cta-box">${text ? `<div class="cta-text">${text}</div>` : ''}<div class="cta-actions">${btn}${link}</div></div>`;
+}
 
 /** current: path of the page being rendered; exact match gets aria-current="page", a parent section gets "true". */
 function navLinks(current) {
@@ -62,9 +88,9 @@ function siteHeader({ current } = {}) {
   return `<a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
-    <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" />ZeroBox</a>
+    <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" /><span class="brand-name">ZeroBox</span></a>
     <nav class="nav-inline" aria-label="Primary">${links}</nav>
-    <a class="btn btn-sm" href="/tracker/">Open ZeroBox</a>
+    <a class="btn btn-sm" href="/tracker/">Open tracker</a>
     <details class="nav-menu">
       <summary>Menu</summary>
       <nav class="nav-panel" aria-label="Primary (menu)">${links}</nav>
@@ -78,14 +104,24 @@ function siteFooter({ analyticsNote: note } = {}) {
   const cols = Object.entries(FOOTER_LINKS)
     .map(
       ([h, links]) =>
-        `<div><h2>${esc(h)}</h2><ul>${links.map(([p, l]) => `<li><a href="${p}">${esc(l)}</a></li>`).join('')}</ul></div>`
+        `<div><h2>${esc(h)}</h2><ul>${links
+          .map(([p, l]) => {
+            const external = /^https?:/.test(p);
+            return `<li><a href="${p}"${external ? ' rel="noopener"' : ''}>${esc(l)}${external ? ICON.ext : ''}</a></li>`;
+          })
+          .join('')}</ul></div>`
     )
     .join('');
   const extra = note === undefined ? analyticsNote() : note;
   return `<footer class="site-footer">
   <div class="wrap">
-    <nav class="footer-nav" aria-label="Footer">${cols}</nav>
-    <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="/"><img src="/icon-192.png" width="28" height="28" alt="" aria-hidden="true" />ZeroBox</a>
+        <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer">${cols}</nav>
+    </div>
     ${extra}
   </div>
 </footer>`;
@@ -166,4 +202,4 @@ ${beaconTag()}</body>
 `;
 }
 
-module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, STATIC_CSS, CSS_HREF, NAV, siteHeader, siteFooter, fontPreloadTags };
+module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, STATIC_CSS, CSS_HREF, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO };

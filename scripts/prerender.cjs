@@ -212,12 +212,16 @@ if (fs.existsSync(shotSrc)) {
 // ---- Landing images, proof strip and guide list (counts come from the content model, never hardcoded) ----
 // Landing screenshots: scripts/templates/landing-shots.json ([{name, alt, width, height, srcset:[{src,w}]}]) when present,
 // otherwise every slot falls back to /images/screenshot.png so the page works before and after the shots land.
+// Slots: kanban (hero >=600px), kanban-m (hero <600px, optional), clock (hero overlay, optional; falls back to exam),
+// graph, table, vault, exam. Old and new manifests both work: a missing entry falls back, it never throws.
 const SHOT_ALT = {
   kanban: 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
+  'kanban-m': 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
+  clock: 'ZeroBox exam countdown clock',
   table: 'ZeroBox machine table with sortable columns and bulk actions',
   graph: 'ZeroBox attack graph linking hosts, services and credentials',
-  exam: 'ZeroBox exam simulator with countdown HUD and points burndown chart',
-  findings: 'ZeroBox findings table with CVSS 3.1 scores and evidence',
+  vault: 'ZeroBox evidence vault listing credentials, hashes and keys with secrets masked',
+  exam: 'ZeroBox exam simulator with score, countdown and points burndown chart',
 };
 let shotList = [];
 try {
@@ -227,7 +231,10 @@ try {
 }
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
 const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
-const HERO_SIZES = '(min-width: 1200px) 640px, (min-width: 900px) 55vw, calc(100vw - 32px)';
+const HERO_SIZES = '(min-width:1200px) 600px,(min-width:900px) 52vw,calc(100vw - 32px)';
+const HERO_M_SIZES = 'calc(100vw - 32px)';
+const HERO_MQ = '(min-width:600px)';
+const HERO_M_MQ = '(max-width:599px)';
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
@@ -239,6 +246,7 @@ function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
     `src="${esc(real ? srcOf(s) : '/images/screenshot.png')}"`,
     real ? `srcset="${esc(srcsetOf(s))}"` : '',
     real && sizes ? `sizes="${esc(sizes)}"` : '',
+    alt === '' ? 'aria-hidden="true"' : '',
     `width="${real ? s.width : shotW}"`,
     `height="${real ? s.height : shotH}"`,
     `alt="${esc(alt !== undefined ? alt : real && s.alt ? s.alt : SHOT_ALT[name])}"`,
@@ -247,26 +255,45 @@ function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
   return `<img ${attrs.join(' ')} />`;
 }
 
-function heroPreload() {
-  const s = shotByName.kanban;
-  if (hasShot(s)) {
-    return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
-  }
-  return '  <link rel="preload" as="image" href="/images/screenshot.png" fetchpriority="high" />';
+// Hero: a <picture> (kanban-m below 600px) when the mobile crop exists, otherwise the plain kanban image.
+const heroMobile = () => (hasShot(shotByName.kanban) && hasShot(shotByName['kanban-m']) ? shotByName['kanban-m'] : null);
+
+function heroPicture() {
+  const m = heroMobile();
+  const img = shotImg('kanban', { sizes: HERO_SIZES, eager: true });
+  if (!m) return img;
+  return `<picture><source media="${HERO_M_MQ}" srcset="${esc(srcsetOf(m))}" sizes="${esc(HERO_M_SIZES)}" width="${m.width}" height="${m.height}" />${img}</picture>`;
 }
 
-const EXAM_TRACKS = ['OSCP', 'CPTS', 'CRTO', 'OSEP', 'CRTP'];
+// One preload per <picture> source, each scoped by media so a phone never fetches the desktop crop.
+function heroPreload() {
+  const s = shotByName.kanban;
+  if (!hasShot(s)) return '  <link rel="preload" as="image" href="/images/screenshot.png" fetchpriority="high" />';
+  const m = heroMobile();
+  const link = (shot, sizes, media) =>
+    `  <link rel="preload" as="image"${media ? ` media="${media}"` : ''} imagesrcset="${esc(srcsetOf(shot))}" imagesizes="${esc(sizes)}" fetchpriority="high" />`;
+  return m ? [link(m, HERO_M_SIZES, HERO_M_MQ), link(s, HERO_SIZES, HERO_MQ)].join('\n') : link(s, HERO_SIZES);
+}
+
+// Hero overlay: the dedicated clock crop when present (eager, so it shows above the fold), else the exam shot as before.
+const heroHud = () =>
+  hasShot(shotByName.clock)
+    ? shotImg('clock', { sizes: '(min-width:1200px) 260px,(min-width:900px) 24vw,0px', eager: true })
+    : shotImg('exam', { sizes: '(min-width:1200px) 300px,28vw', alt: '', eager: true });
+
+const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO } = require('./lib/layout.cjs');
+// The repo publishes releases (checked with gh release list), so the desktop CTA goes straight to the latest one.
+const DESKTOP_HREF = REPO + '/releases/latest';
+
+const EXAM_TRACKS = ['OSCP','CPTS', 'CRTO', 'OSEP', 'CRTP'];
 const nf = new Intl.NumberFormat('en-US');
 const proofItem = (value, label) => `          <li><span class="num">${esc(value)}</span><span class="lbl">${esc(label)}</span></li>`;
 const proofStrip = [
   proofItem(nf.format(model.machines.length), 'machines catalogued'),
   proofItem(nf.format(model.shellCount), 'reverse shells'),
   proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
-  proofItem('No account', 'required'),
-  `          <li><a class="num" href="https://github.com/0xdnd/ctf-tracker">GitHub</a><span class="lbl">full source is public</span></li>`,
+  `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source on GitHub${ICON.ext}</a></li>`,
 ].join('\n');
-
-const { siteHeader, siteFooter, fontPreloadTags } = require('./lib/layout.cjs');
 
 // [href, title, description, count]; count is optional (a mono figure on the right).
 const GUIDES = [
@@ -290,12 +317,15 @@ const subs = {
   '{{HERO_PRELOAD}}': heroPreload(),
   '{{SITE_HEADER}}': siteHeader({ current: '/' }),
   '{{SITE_FOOTER}}': siteFooter({ analyticsNote: analyticsNote() }),
-  '{{IMG_HERO}}': shotImg('kanban', { sizes: HERO_SIZES, eager: true }),
-  '{{IMG_HUD}}': shotImg('exam', { sizes: '(min-width: 1200px) 300px, 28vw', alt: '' }),
-  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width: 900px) 640px, calc(100vw - 32px)' }),
-  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width: 900px) 460px, calc(100vw - 32px)' }),
-  '{{IMG_FINDINGS}}': shotImg('findings', { sizes: '(min-width: 900px) 640px, calc(100vw - 32px)' }),
-  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width: 900px) 640px, calc(100vw - 32px)' }),
+  '{{IMG_HERO}}': heroPicture(),
+  '{{IMG_HUD}}': heroHud(),
+  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1200px) 620px,(min-width:900px) 52vw,calc(100vw - 32px)' }),
+  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1200px) 440px,(min-width:900px) 38vw,calc(100vw - 32px)' }),
+  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1200px) 620px,(min-width:900px) 52vw,calc(100vw - 32px)' }),
+  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1200px) 620px,(min-width:900px) 56vw,calc(100vw - 32px)' }),
+  '{{ICON_ARROW}}': ICON.arrow,
+  '{{ICON_EXT}}': ICON.ext,
+  '{{DESKTOP_HREF}}': DESKTOP_HREF,
   '{{PROOF_STRIP}}': proofStrip,
   '{{TRACK_PILLS}}': EXAM_TRACKS.map((t) => `<li>${esc(t)}</li>`).join(''),
   '{{FEATURE_CARDS}}': cards,

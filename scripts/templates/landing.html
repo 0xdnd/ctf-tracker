@@ -62,8 +62,8 @@
         <h1 id="hero-title" class="display">Free offline CTF tracker and OSCP exam simulator</h1>
         <p class="lead">Track HTB and THM machines, rehearse OSCP, CPTS, CRTO, OSEP and CRTP exams. Your data stays in your browser.</p>
         <div class="cta-row">
-          <a class="btn btn-lg" href="/tracker/">Open ZeroBox</a>
-          <a class="btn btn-secondary btn-lg" href="#exam">See the exam simulator</a>
+          <a class="btn" href="/tracker/">Open tracker{{ICON_ARROW}}</a>
+          <a class="btn btn-secondary" href="/exam/">Start a mock exam{{ICON_ARROW}}</a>
         </div>
       </div>
       <div class="hero-media">
@@ -105,25 +105,25 @@
             <h3>Multi-host nmap import</h3>
             <p>Scan a subnet with <code>-oX</code> and import the XML. Each live host lands on the board with its open ports and services.</p>
           </div>
-<pre class="code" tabindex="0"><code><span class="t-dim">$</span> nmap -sV -oX sweep.xml 10.129.14.0/28
+<pre class="code" tabindex="0" role="region" aria-label="Example nmap sweep"><code><span class="t-dim">$</span> nmap -sV -oX sweep.xml 10.129.14.0/28
 
 Nmap scan report for 10.129.14.17
-<span class="t-hi">22/tcp</span>   open  ssh     OpenSSH 8.2p1 Ubuntu
-<span class="t-hi">80/tcp</span>   open  http    Apache httpd 2.4.41
+<span class="t-hi">22/tcp</span>   open  ssh     OpenSSH 8.2p1
+<span class="t-hi">80/tcp</span>   open  http    Apache 2.4.41
 <span class="t-hi">3306/tcp</span> open  mysql   MySQL 8.0.28
 
 Nmap scan report for 10.129.14.21
-<span class="t-hi">445/tcp</span>  open  smb     Samba smbd 4.6.2
-<span class="t-hi">5985/tcp</span> open  winrm   HTTPAPI 2.0
+<span class="t-hi">445/tcp</span>  open  smb     Samba 4.6.2
+<span class="t-hi">5985/tcp</span> open  winrm   WinRM
 
-<span class="t-dim"># 2 hosts up, 5 open ports, ready to import</span></code></pre>
+<span class="t-dim"># 2 hosts, 5 ports, ready to import</span></code></pre>
         </article>
         <article class="cell c-vault">
           <div class="cell-txt">
             <h3>Evidence vault</h3>
-            <p>Credentials, flags and hashes from every target in one searchable place, with a hash-type identifier for the strings you cannot place.</p>
+            <p>Credentials, hashes, keys and flags from every target in one searchable table. Secrets stay masked until you reveal them.</p>
           </div>
-          <div class="frame">{{IMG_FINDINGS}}</div>
+          <div class="frame">{{IMG_VAULT}}</div>
         </article>
       </div>
     </div>
@@ -143,7 +143,7 @@ Nmap scan report for 10.129.14.21
           <li><strong>Findings with CVSS 3.1.</strong> Score each finding for the report.</li>
           <li><strong>Zip submission bundle.</strong> Report, proofs and findings in one download.</li>
         </ul>
-        <a class="btn btn-secondary" href="/exam/">Open ZeroBox</a>
+        <a class="btn" href="/exam/">Start a mock exam{{ICON_ARROW}}</a>
       </div>
     </div>
   </section>
@@ -188,7 +188,10 @@ Nmap scan report for 10.129.14.21
 
   <section class="sec" id="faq" aria-labelledby="faq-title">
     <div class="wrap faq-wrap">
-      <h2 id="faq-title">Frequently asked questions</h2>
+      <div class="faq-aside">
+        <h2 id="faq-title">Frequently asked questions</h2>
+        <p>Something else? <a class="link-arrow" href="https://github.com/0xdnd/ctf-tracker/issues" rel="noopener">Ask on GitHub{{ICON_EXT}}</a></p>
+      </div>
       <div class="faq">
 {{FAQ_HTML}}
       </div>
@@ -199,11 +202,11 @@ Nmap scan report for 10.129.14.21
     <div class="wrap closing-inner">
       <div>
         <h2 id="closing-title">Start your next box with a board.</h2>
-        <p>Free and offline, with the source public on GitHub. A Tauri desktop build is available from the GitHub repository.</p>
+        <p>Free and offline, with the source public on GitHub. A desktop build is available from GitHub Releases.</p>
       </div>
       <div class="cta-row">
-        <a class="btn btn-lg" href="/tracker/">Open ZeroBox</a>
-        <a class="btn btn-secondary btn-lg" href="https://github.com/0xdnd/ctf-tracker">Desktop build on GitHub</a>
+        <a class="btn" href="/tracker/">Open tracker{{ICON_ARROW}}</a>
+        <a class="btn btn-secondary" href="{{DESKTOP_HREF}}" rel="noopener">Get the desktop app{{ICON_EXT}}</a>
       </div>
     </div>
   </section>
