@@ -26,6 +26,8 @@ const BASE = (process.env.LH_BASE_URL || 'http://localhost:4173').replace(/\/$/,
 const MIN_A11Y = Number(process.env.LH_MIN_A11Y || 95);
 
 const ROUTES = {
+  home: '/',
+  'machine-page': '/machines/htb-appointment/',
   tracker: '/tracker',
   'target-detail': '/target/thm-rootme',
   methodology: '/methodology',
