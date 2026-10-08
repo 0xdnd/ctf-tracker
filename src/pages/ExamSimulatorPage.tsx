@@ -50,7 +50,7 @@ import {
 import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
-import { buildBurndownSeries, resolveChartWindow } from '../utils/examBurndown';
+import { buildBurndownSeries, resolveChartWindow, persistChartExpiry, readPersistedChartExpiry } from '../utils/examBurndown';
 import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
@@ -188,7 +188,13 @@ export const ExamSimulatorPage: React.FC = () => {
   // window stays on the wall-clock axis (prior pause time included).
   const lastExpiresAtRef = useRef<number | null>(null);
   if (!startedAt) lastExpiresAtRef.current = null;
-  else if (examExpiresAt !== null) lastExpiresAtRef.current = examExpiresAt;
+  else if (examExpiresAt !== null) {
+    lastExpiresAtRef.current = examExpiresAt;
+    persistChartExpiry(startedAt, examExpiresAt);
+  } else if (lastExpiresAtRef.current === null) {
+    // Reloaded while paused: recover the expiry persisted before the pause.
+    lastExpiresAtRef.current = readPersistedChartExpiry(startedAt);
+  }
   const chartWindow = startedAt
     ? resolveChartWindow({
         startedAt,
