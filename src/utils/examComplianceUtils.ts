@@ -15,7 +15,10 @@ export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
 
 export interface ScreenshotProof {
   id: string;
-  dataUrl: string; // Base64 data:image/...
+  /** Inline Base64 data:image/... (legacy / fallback). Dropped once the bytes live in IndexedDB (see imageRef). */
+  dataUrl?: string;
+  /** Id of the image blob in IndexedDB; resolve via src/utils/examProofImages.ts. */
+  imageRef?: string;
   caption: string;
   commandUsed?: string;
   timestamp: string;

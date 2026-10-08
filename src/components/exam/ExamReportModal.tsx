@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useBoxesWithProofImages } from '../../hooks/useProofImage';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { sanitizeHtml } from '../../utils/securityUtils';
@@ -150,15 +151,22 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     includeRemediation,
   ]);
 
+  // Proof images live in IndexedDB; re-inline them as data URLs so the exported report embeds them
+  const { boxes: reportBoxes, resolving: resolvingProofImages } = useBoxesWithProofImages(
+    baseSession.boxes,
+    isOpen && includeScreenshots
+  );
+
   // Current session with user overrides
   const effectiveSession: ExamSessionState = useMemo(() => ({
     ...baseSession,
+    boxes: reportBoxes,
     track: selectedTrack,
     candidateName,
     candidateCallsign,
     osid,
     includeBonusPoints,
-  }), [baseSession, selectedTrack, candidateName, candidateCallsign, osid, includeBonusPoints]);
+  }), [baseSession, reportBoxes, selectedTrack, candidateName, candidateCallsign, osid, includeBonusPoints]);
 
   // Generated Markdown & HTML Preview
   const generatedMarkdown = useMemo(() => {
@@ -547,7 +555,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
         <div className="px-5 py-3.5 border-t border-subtle bg-surface-sunken flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted">
             <span className="w-2 h-2 rounded-full bg-callout-success-fg motion-safe:animate-pulse" />
-            <span className="text-[11px]">Offline export, nothing leaves this device</span>
+            <span className="text-[11px]">
+              {resolvingProofImages ? 'Loading proof images...' : 'Offline export, nothing leaves this device'}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -556,7 +566,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               type="button"
               data-testid="report-copy-markdown-btn"
               onClick={handleCopyMarkdown}
-              className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] ${
+              disabled={resolvingProofImages}
+              className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait ${
  copied
  ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
  : 'bg-surface-card hover:bg-surface-hover border-subtle text-primary'
@@ -571,7 +582,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               type="button"
               data-testid="report-download-md-btn"
               onClick={handleDownloadMarkdown}
-              className="px-3.5 py-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-primary text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97]"
+              disabled={resolvingProofImages}
+              className="px-3.5 py-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-primary text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
             >
               <Download className="w-3.5 h-3.5 text-accent" />
               <span>Download (.md)</span>
@@ -582,7 +594,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               type="button"
               data-testid="report-export-html-btn"
               onClick={handleExportHtml}
-              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97]"
+              disabled={resolvingProofImages}
+              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
             >
               <FileCode className="w-3.5 h-3.5 fill-current" />
               <span>Export HTML (.html)</span>

@@ -9,6 +9,8 @@
  * - Dual-clock bio-break management with audio cyber alarms
  * - Soak endurance invariant: 1Hz clock ticks NEVER trigger localStorage writes
  * - Passing status indicator: Passing / In Progress / Critical
+ * - Proof screenshots: image bytes live in IndexedDB (utils/examProofImages.ts); persisted state
+ *   keeps only ScreenshotProof.imageRef. Legacy inline Base64 is migrated on hydrate.
  */
 
 import { create } from 'zustand';
@@ -27,6 +29,7 @@ import {
   isDomainControllerBox,
 } from '../utils/examComplianceUtils';
 import { playCyberAlert } from '../utils/audioAlerts';
+import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
 
 let examAlertChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -219,6 +222,7 @@ export const useExamStore = create<ExamStore>()(
         const duration = trackConfig.durationSeconds;
         const expiresAt = now + duration * 1000;
         const boxes = generateExamTargetsForTrack(selectedTrack);
+        const previousBoxes = get().boxes;
 
         set({
           id: `exam_${now}_${Math.random().toString(36).substring(2, 7)}`,
@@ -246,6 +250,7 @@ export const useExamStore = create<ExamStore>()(
           ],
         });
 
+        purgeRemovedProofImages(previousBoxes, boxes);
         playCyberAlert('flag_captured');
       },
 
@@ -288,7 +293,10 @@ export const useExamStore = create<ExamStore>()(
 
       resetExam: (track) => {
         const targetTrack = track || get().track;
-        set(createInitialSession(targetTrack));
+        const previousBoxes = get().boxes;
+        const session = createInitialSession(targetTrack);
+        set(session);
+        purgeRemovedProofImages(previousBoxes, session.boxes);
         playCyberAlert('tick');
       },
 
@@ -297,13 +305,18 @@ export const useExamStore = create<ExamStore>()(
           console.warn('[ExamStore] Cannot switch track while an exam is actively running.');
           return;
         }
-        set(createInitialSession(track));
+        const previousBoxes = get().boxes;
+        const session = createInitialSession(track);
+        set(session);
+        purgeRemovedProofImages(previousBoxes, session.boxes);
       },
 
       shuffleTargets: () => {
         const currentTrack = get().track;
+        const previousBoxes = get().boxes;
         const newBoxes = generateExamTargetsForTrack(currentTrack);
         set({ boxes: newBoxes });
+        purgeRemovedProofImages(previousBoxes, newBoxes);
         playCyberAlert('tick');
       },
 
@@ -454,6 +467,7 @@ export const useExamStore = create<ExamStore>()(
       },
 
       updateProof: (boxId, flagType, proofUpdate) => {
+        const previousBoxes = get().boxes;
         set((state) => ({
           boxes: state.boxes.map((b) => {
             if (b.id !== boxId) return b;
@@ -467,6 +481,7 @@ export const useExamStore = create<ExamStore>()(
             };
           }),
         }));
+        if (proofUpdate.screenshots) purgeRemovedProofImages(previousBoxes, get().boxes);
       },
 
       addScreenshot: (boxId, flagType, screenshot) => {
@@ -490,6 +505,7 @@ export const useExamStore = create<ExamStore>()(
       },
 
       removeScreenshot: (boxId, flagType, screenshotId) => {
+        const previousBoxes = get().boxes;
         set((state) => ({
           boxes: state.boxes.map((b) => {
             if (b.id !== boxId) return b;
@@ -506,6 +522,7 @@ export const useExamStore = create<ExamStore>()(
             };
           }),
         }));
+        purgeRemovedProofImages(previousBoxes, get().boxes);
       },
 
       startBreak: (type, customMinutes) => {
@@ -744,6 +761,11 @@ export const useExamStore = create<ExamStore>()(
     {
       name: EXAM_STORAGE_KEY,
       storage: createJSONStorage(() => selectiveExamStorage),
+      // v1: ScreenshotProof gained optional `imageRef` (bytes in IndexedDB) and `dataUrl` became
+      // optional. The shape change is additive, so older payloads need no sync transformation;
+      // inline Base64 is moved to IndexedDB asynchronously after hydration.
+      version: 1,
+      migrate: (persistedState) => persistedState as ExamSessionState,
       // Crucial: Only persist discrete state mutations!
       // Exclude rapid transient in-memory properties so 1Hz ticks do not cause write amplification
       partialize: (state) => ({
@@ -781,8 +803,34 @@ export const useExamStore = create<ExamStore>()(
         if (state.activeBreak && state.activeBreak.isActive && state.activeBreak.expiresAt) {
           state.activeBreak.remainingSeconds = Math.max(0, Math.floor((state.activeBreak.expiresAt - now) / 1000));
         }
+        // Deferred: during synchronous hydration `useExamStore` is not assigned yet.
+        void Promise.resolve().then(() => migrateExamProofImages());
       },
     }
   )
 );
+
+let proofImageMigration: Promise<number> | null = null;
+
+/**
+ * Moves legacy inline Base64 proof screenshots into IndexedDB (idempotent, safe to call repeatedly).
+ * A screenshot's Base64 is replaced by its imageRef only after its IndexedDB write resolved; if the
+ * write fails the Base64 stays in the store. Resolves with the number of screenshots migrated.
+ */
+export function migrateExamProofImages(): Promise<number> {
+  if (!proofImageMigration) {
+    proofImageMigration = migrateLegacyProofImages(
+      () => useExamStore.getState().boxes,
+      (update) => useExamStore.setState((state) => ({ boxes: update(state.boxes) }))
+    )
+      .catch((err) => {
+        console.warn('[ExamStore] Proof image migration failed; inline Base64 kept:', err);
+        return 0;
+      })
+      .finally(() => {
+        proofImageMigration = null;
+      });
+  }
+  return proofImageMigration;
+}
 
