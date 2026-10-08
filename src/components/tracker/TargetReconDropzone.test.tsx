@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TargetReconDropzone } from './TargetReconDropzone';
 import { Machine } from '../../types';
+import { useCtfStore } from '../../store/useCtfStore';
 
 const confirmMock = vi.hoisted(() => vi.fn());
 vi.mock('../../store/useConfirmStore', () => ({
@@ -211,5 +212,96 @@ describe('TargetReconDropzone component', () => {
     await waitFor(() => expect(confirmMock).toHaveBeenCalledTimes(1));
     await Promise.resolve();
     expect(handleUpdate).not.toHaveBeenCalled();
+  });
+
+  describe('multi-host scans', () => {
+    const host = (ip: string, name: string, ports: Array<[number, string]>) => `
+  <host>
+    <address addr="${ip}" addrtype="ipv4"/>
+    <hostnames><hostname name="${name}"/></hostnames>
+    <os><osmatch name="Linux 5.4"/></os>
+    <ports>${ports
+      .map(([p, svc]) => `<port protocol="tcp" portid="${p}"><state state="open"/><service name="${svc}"/></port>`)
+      .join('')}</ports>
+  </host>`;
+    const threeHostXml = `<?xml version="1.0"?><nmaprun scanner="nmap">${host('10.0.0.1', 'alpha.lab', [[22, 'ssh'], [80, 'http']])}${host(
+      '10.0.0.2',
+      'bravo.lab',
+      [[445, 'microsoft-ds']]
+    )}${host('10.0.0.3', 'charlie.lab', [[21, 'ftp'], [3306, 'mysql']])}</nmaprun>`;
+
+    const pasteScan = (xml: string, onUpdate = vi.fn()) => {
+      render(<TargetReconDropzone machine={mockMachine} onUpdateMachine={onUpdate} />);
+      fireEvent.click(screen.getByRole('button', { name: /Paste Scan Output/i }));
+      fireEvent.change(screen.getByPlaceholderText(/Paste raw Nmap, GNMAP, or Rustscan/i), { target: { value: xml } });
+      fireEvent.click(screen.getByRole('button', { name: /Parse & Apply Scan/i }));
+      return onUpdate;
+    };
+
+    beforeEach(() => {
+      useCtfStore.setState({ machines: [] } as never);
+    });
+
+    it('lists all hosts and creates only the selected ones with their ports', () => {
+      const onUpdate = pasteScan(threeHostXml);
+
+      expect(onUpdate).not.toHaveBeenCalled();
+      expect(screen.getByText(/3 hosts found in this scan/i)).toBeInTheDocument();
+      expect(screen.getAllByRole('checkbox')).toHaveLength(4); // select-all + 3 hosts
+      expect(screen.getByRole('button', { name: /Create 3 targets/i })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /10\.0\.0\.2/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Create 2 targets/i }));
+
+      const created = useCtfStore.getState().machines;
+      expect(created).toHaveLength(2);
+      const alpha = created.find((m) => m.ip === '10.0.0.1')!;
+      const charlie = created.find((m) => m.ip === '10.0.0.3')!;
+      expect(created.find((m) => m.ip === '10.0.0.2')).toBeUndefined();
+      expect(alpha.name).toBe('alpha.lab');
+      expect(alpha.os).toBe('Linux');
+      expect(alpha.openPorts).toEqual([22, 80]);
+      expect(alpha.services?.map((svc) => svc.service)).toEqual(['ssh', 'http']);
+      expect(alpha.status).toBe('recon');
+      expect(charlie.openPorts).toEqual([21, 3306]);
+      expect(charlie.tags).toEqual(expect.arrayContaining(['ftp', 'mysql']));
+      expect(screen.getByRole('status')).toHaveTextContent('Created 2 targets');
+    });
+
+    it('select-all toggles every new host off and on', () => {
+      pasteScan(threeHostXml);
+      const selectAll = screen.getByRole('checkbox', { name: /Select all new hosts/i });
+      fireEvent.click(selectAll);
+      expect(screen.getByRole('button', { name: /Create 0 targets/i })).toBeDisabled();
+      fireEvent.click(selectAll);
+      expect(screen.getByRole('button', { name: /Create 3 targets/i })).toBeEnabled();
+    });
+
+    it('flags hosts whose IP already exists as a machine and does not recreate them', () => {
+      useCtfStore.setState({ machines: [{ ...mockMachine, id: 'existing-1', name: 'Existing Box', ip: '10.0.0.2' }] } as never);
+      pasteScan(threeHostXml);
+
+      expect(screen.getByText(/Already tracked as Existing Box/i)).toBeInTheDocument();
+      expect(screen.getByRole('checkbox', { name: /10\.0\.0\.2/ })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: /Create 2 targets/i }));
+
+      const machines = useCtfStore.getState().machines;
+      expect(machines).toHaveLength(3);
+      expect(machines.filter((m) => m.ip === '10.0.0.2')).toHaveLength(1);
+    });
+
+    it('can still apply the first host to the current target', () => {
+      const onUpdate = pasteScan(threeHostXml);
+      fireEvent.click(screen.getByRole('button', { name: /Apply first host to this target/i }));
+      expect(onUpdate).toHaveBeenCalledWith('htb-lame', expect.objectContaining({ openPorts: [22, 80] }));
+      expect(useCtfStore.getState().machines).toHaveLength(0);
+    });
+
+    it('leaves single-host behaviour unchanged (no host list, direct apply)', () => {
+      const single = `<?xml version="1.0"?><nmaprun>${host('10.0.0.9', 'solo.lab', [[22, 'ssh']])}</nmaprun>`;
+      const onUpdate = pasteScan(single);
+      expect(screen.queryByText(/hosts found in this scan/i)).not.toBeInTheDocument();
+      expect(onUpdate).toHaveBeenCalledWith('htb-lame', expect.objectContaining({ openPorts: [22] }));
+    });
   });
 });

@@ -52,4 +52,19 @@ describe('ChecklistWorkspace', () => {
     await waitFor(() => expect(confirmMock).toHaveBeenCalled());
     expect(reset).not.toHaveBeenCalled();
   });
+
+  it('imports open ports from pasted nmap text via the shared scan parser and merges them', () => {
+    const setPorts = vi.fn();
+    useCtfStore.setState({ setMachineOpenPorts: setPorts } as any);
+    render(<ChecklistWorkspace machine={machine} />);
+    fireEvent.click(screen.getByText('Import Nmap Scan'));
+    fireEvent.change(screen.getByLabelText('Paste Nmap scan stdout'), {
+      target: {
+        value:
+          'Nmap scan report for 10.10.10.5\nPORT    STATE  SERVICE\n22/tcp  open   ssh\n80/tcp  open   http\n81/tcp  closed unknown\n445/tcp open   microsoft-ds\n',
+      },
+    });
+    fireEvent.click(screen.getByText('Extract Ports & Update Checklist'));
+    expect(setPorts).toHaveBeenCalledWith('m-test', [22, 80, 445]);
+  });
 });

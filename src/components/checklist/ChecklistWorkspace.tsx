@@ -30,7 +30,7 @@ import { ChecklistItemStatus, ChecklistItem, MethodologyPhase } from '../../type
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { generateApplicablePhases, SERVICE_BRANCHES } from '../../data/methodologyFramework';
-import { parseNmapScanOutput } from '../../utils/nmapParser';
+import { detectAndParseScan } from '../../utils/scanParserUtils';
 import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter';
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
 import { interpolateCommand, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
@@ -153,7 +153,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
   const handleApplyNmapScan = () => {
     if (!nmapInputText.trim()) return;
-    const { ports } = parseNmapScanOutput(nmapInputText);
+    const ports = detectAndParseScan(nmapInputText)?.ports.map((p) => p.port) ?? [];
     if (ports.length > 0) {
       const merged = Array.from(new Set([...openPorts, ...ports])).sort((a, b) => a - b);
       setMachineOpenPorts(machine.id, merged);

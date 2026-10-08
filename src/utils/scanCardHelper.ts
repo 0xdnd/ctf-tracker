@@ -1,5 +1,5 @@
-import { Machine } from '../types';
-import { detectAndParseScan, ScanImportResult } from './scanParserUtils';
+import { Machine, OperatingSystem, TargetServicePort } from '../types';
+import { detectAndParseScan, ParsedHost, ParsedPort, ScanImportResult } from './scanParserUtils';
 
 export interface ScanApplyResult {
   updatedMachine: Partial<Machine>;
@@ -87,5 +87,82 @@ export function applyScanTextToMachine(
     format: parsed.format,
     detectedIp: parsed.detectedIp,
     detectedHost: parsed.detectedHost,
+  };
+}
+
+/** Maps parsed scan ports to the TargetServicePort shape stored on a machine. */
+export function toTargetServices(ports: ParsedPort[]): TargetServicePort[] {
+  return ports.map((p) => ({
+    port: p.port,
+    protocol: p.protocol as 'tcp' | 'udp',
+    state: p.state,
+    service: p.service,
+    version: p.version,
+    cveNotes: p.cveNotes,
+    suggestedTools: p.suggestedTools,
+  }));
+}
+
+/** Adds service-derived tags (smb, web, ftp, ...) that are not already present. */
+export function deriveServiceTags(existingTags: string[], services: { service: string }[]): string[] {
+  const tags = [...existingTags];
+  services.forEach((s) => {
+    const name = s.service.toLowerCase();
+    if (name.includes('smb') && !tags.includes('smb')) tags.push('smb');
+    if (name.includes('http') && !tags.includes('web')) tags.push('web');
+    if (name.includes('ftp') && !tags.includes('ftp')) tags.push('ftp');
+    if (name.includes('kerberos') && !tags.includes('kerberos')) tags.push('kerberos');
+    if (name.includes('ldap') && !tags.includes('active-directory')) tags.push('active-directory');
+    if (name.includes('mysql') && !tags.includes('mysql')) tags.push('mysql');
+  });
+  return tags;
+}
+
+/** Best-effort OS guess from the scan's OS string, falling back to service banners. */
+export function guessOperatingSystem(host: ParsedHost): OperatingSystem {
+  const haystack = host.os || host.ports.map((p) => p.version).join(' ');
+  if (/windows|microsoft/i.test(haystack)) return 'Windows';
+  if (/linux|unix|ubuntu|debian|centos|red hat|fedora/i.test(haystack)) return 'Linux';
+  if (/bsd/i.test(haystack)) return 'BSD';
+  if (/mac ?os|darwin/i.test(haystack)) return 'macOS';
+  if (/android/i.test(haystack)) return 'Android';
+  return 'Other';
+}
+
+export const hostAddress = (host: ParsedHost): string => (host.ip || host.hostname || '').trim();
+
+/** Normalised key used to detect an IP that is already tracked as a machine. */
+export const normalizeAddress = (addr: string | undefined): string => (addr || '').trim().toLowerCase();
+
+/**
+ * Builds the addCustomMachine payload for one host of a multi-host scan.
+ * `usedNames` guarantees unique machine names within a batch (names seed the machine id).
+ */
+export function buildMachineDraftFromHost(
+  host: ParsedHost,
+  format: string,
+  usedNames: Set<string>
+): Omit<Machine, 'id' | 'createdAt' | 'updatedAt'> {
+  const address = hostAddress(host);
+  let name = host.hostname || address || 'scanned-host';
+  if (usedNames.has(name.toLowerCase())) name = `${name} (${address || usedNames.size + 1})`;
+  usedNames.add(name.toLowerCase());
+
+  const services = toTargetServices(host.ports);
+  const openPorts = services.map((s) => s.port);
+
+  return {
+    name,
+    ip: address,
+    os: guessOperatingSystem(host),
+    platform: 'Custom',
+    difficulty: 'Medium',
+    status: services.length > 0 ? 'recon' : 'backlog',
+    tags: deriveServiceTags([], services),
+    certifications: [],
+    timeSpentSeconds: 0,
+    services,
+    openPorts,
+    scanSummary: `${format.toUpperCase()} · ${openPorts.length} Open Ports Discovered`,
   };
 }
