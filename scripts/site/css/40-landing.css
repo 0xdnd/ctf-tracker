@@ -73,7 +73,7 @@
 .hero{padding:var(--s8) 0 var(--s6)}
 .hero-grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--s7);align-items:center}
 .hero-media{margin-bottom:var(--s6)}
-.hud{display:block;position:absolute;left:-9%;bottom:-14%;width:clamp(200px,40%,260px)}
+.hud{display:block;position:absolute;left:-9%;bottom:-8%;width:clamp(200px,38%,300px)}
 .proof{grid-template-columns:repeat(4,minmax(0,1fr))}
 .bento{grid-template-columns:repeat(12,1fr)}
 .c-graph,.c-vault{grid-column:span 7}

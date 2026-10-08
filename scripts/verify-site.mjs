@@ -162,6 +162,7 @@ for (const v of variants) {
     viewport: { width: v.w, height: 900 }, colorScheme: v.scheme,
     reducedMotion: v.rm ? 'reduce' : 'no-preference',
   });
+  if (v.scheme === 'light') await ctx.addInitScript(() => { try { localStorage.setItem('zb-site-theme', 'light'); } catch {} });
   await ctx.addInitScript(() => {
     window.__csp = [];
     document.addEventListener('securitypolicyviolation', (e) =>

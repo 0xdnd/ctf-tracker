@@ -52,6 +52,7 @@ const BASE = `http://localhost:${PORT}`;
 const VIEW_TRACKER = { width: 1100, height: 760 };
 // Kanban lanes are 100vh-270px tall; 1040 wide makes the three lanes ~750 CSS px together.
 const VIEW_KANBAN = { width: 1040, height: 900 };
+const VIEW_APP = { width: 1440, height: 900 };
 const VIEW_EXAM = { width: 1024, height: 900 };
 const SCALE = 3;
 const T0 = new Date('2026-10-01T09:00:00Z');
@@ -69,6 +70,12 @@ const FORCE_CANVAS = args.has('--canvas');
 
 /** Shot names and alt text (the crop of every shot is computed in main()). */
 const SHOTS = {
+  app: {
+    alt: 'ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.',
+  },
+  burndown: {
+    alt: 'ZeroBox exam burn-down chart against the 70 point pass line.',
+  },
   kanban: {
     alt: 'ZeroBox kanban board with Backlog, Foothold and Completed lanes, each card showing the target IP, OS and difficulty badges.',
   },
@@ -544,6 +551,13 @@ async function main() {
       await setView(VIEW_TRACKER);
     }
 
+    // ---- app: the whole window (sidebar expanded, kanban, empty lanes hidden) ---------------
+    console.log('> app');
+    await setView(VIEW_APP);
+    await assertNoText(page, 'Drag a target here', { x: 0, y: 0, width: VIEW_APP.width, height: VIEW_APP.height });
+    await take('app', { x: 0, y: 0, width: VIEW_APP.width, height: VIEW_APP.height });
+    await setView(VIEW_TRACKER);
+
     // ---- table with bulk selection ----------------------------------------------------------
     console.log('> table');
     await viewBtn('Table').click();
@@ -729,7 +743,14 @@ async function main() {
         height: Math.min(Math.round((examW * 3) / 4), VIEW_EXAM.height - Math.floor(box.y - 8)),
       };
       await take('exam', clip);
-      // The hero overlay: just the countdown card.
+      // The hero overlay: just the burn-down card.
+      await take('burndown', {
+        x: Math.floor(burn.x - 2),
+        y: Math.floor(burn.y - 2),
+        width: Math.ceil(burn.width) + 4,
+        height: Math.ceil(burn.height) + 4,
+      });
+      // Countdown card (legacy overlay).
       await take('clock', {
         x: Math.floor(clock.x - 2),
         y: Math.floor(clock.y - 2),

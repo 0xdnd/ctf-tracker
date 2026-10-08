@@ -35,8 +35,8 @@ fs.writeFileSync(
 
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
-const { CSS_HREF } = require('./lib/layout.cjs');
-const staticShellAssets = [CSS_HREF, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
+const { CSS_HREF, THEME_SRC } = require('./lib/layout.cjs');
+const staticShellAssets = [CSS_HREF, THEME_SRC, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
 const shellAssets = [...new Set([...[...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]), ...staticShellAssets])];
 const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
@@ -222,6 +222,8 @@ if (fs.existsSync(shotSrc)) {
 // Slots: kanban (hero >=600px), kanban-m (hero <600px, optional), clock (hero overlay, optional; falls back to exam),
 // graph, table, vault, exam. Old and new manifests both work: a missing entry falls back, it never throws.
 const SHOT_ALT = {
+  app: 'ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.',
+  burndown: 'ZeroBox exam burn-down chart',
   kanban: 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
   'kanban-m': 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
   clock: 'ZeroBox exam countdown clock',
@@ -238,10 +240,7 @@ try {
 }
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
 const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
-const HERO_SIZES = '(min-width:1200px) 600px,(min-width:900px) 52vw,calc(100vw - 32px)';
-const HERO_M_SIZES = 'calc(100vw - 32px)';
-const HERO_MQ = '(min-width:600px)';
-const HERO_M_MQ = '(max-width:599px)';
+const HERO_SIZES = '(min-width:1200px) 640px,(min-width:900px) 55vw,calc(100vw - 32px)';
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
@@ -262,30 +261,22 @@ function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
   return `<img ${attrs.join(' ')} />`;
 }
 
-// Hero: a <picture> (kanban-m below 600px) when the mobile crop exists, otherwise the plain kanban image.
-const heroMobile = () => (hasShot(shotByName.kanban) && hasShot(shotByName['kanban-m']) ? shotByName['kanban-m'] : null);
-
+// Hero: the full app window (`app` shot) at every width, with the burn-down card overlapping its lower-left corner.
 function heroPicture() {
-  const m = heroMobile();
-  const img = shotImg('kanban', { sizes: HERO_SIZES, eager: true });
-  if (!m) return img;
-  return `<picture><source media="${HERO_M_MQ}" srcset="${esc(srcsetOf(m))}" sizes="${esc(HERO_M_SIZES)}" width="${m.width}" height="${m.height}" />${img}</picture>`;
+  return shotImg('app', { sizes: HERO_SIZES, eager: true });
 }
 
-// One preload per <picture> source, each scoped by media so a phone never fetches the desktop crop.
+// Single preload for the hero image.
 function heroPreload() {
-  const s = shotByName.kanban;
+  const s = shotByName.app;
   if (!hasShot(s)) return '  <link rel="preload" as="image" href="/images/screenshot.png" fetchpriority="high" />';
-  const m = heroMobile();
-  const link = (shot, sizes, media) =>
-    `  <link rel="preload" as="image"${media ? ` media="${media}"` : ''} imagesrcset="${esc(srcsetOf(shot))}" imagesizes="${esc(sizes)}" fetchpriority="high" />`;
-  return m ? [link(m, HERO_M_SIZES, HERO_M_MQ), link(s, HERO_SIZES, HERO_MQ)].join('\n') : link(s, HERO_SIZES);
+  return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
 }
 
-// Hero overlay: the dedicated clock crop when present (eager, so it shows above the fold), else the exam shot as before.
+// Hero overlay: the burn-down card (decorative, eager), else the exam shot.
 const heroHud = () =>
-  hasShot(shotByName.clock)
-    ? shotImg('clock', { sizes: '(min-width:1200px) 260px,(min-width:900px) 24vw,0px', eager: true })
+  hasShot(shotByName.burndown)
+    ? shotImg('burndown', { sizes: '(min-width:1200px) 300px,(min-width:900px) 24vw,0px', alt: '', eager: true })
     : shotImg('exam', { sizes: '(min-width:1200px) 300px,28vw', alt: '', eager: true });
 
 const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO } = require('./lib/layout.cjs');
@@ -340,6 +331,7 @@ const guideList = GUIDES.map(
 let landing = fs.readFileSync(path.join(__dirname, 'templates', 'landing.html'), 'utf8');
 const subs = {
   '{{CSS_HREF}}': CSS_HREF,
+  '{{THEME_SRC}}': THEME_SRC,
   '{{FONT_PRELOAD}}': fontPreloadTags(),
   '{{HERO_PRELOAD}}': heroPreload(),
   '{{SITE_HEADER}}': siteHeader({ current: '/' }),

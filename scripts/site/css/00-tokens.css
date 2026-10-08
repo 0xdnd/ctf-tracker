@@ -1,4 +1,4 @@
-/* 00-tokens: fonts and design tokens (dark default; 60-light.css overrides under prefers-color-scheme) */
+/* 00-tokens: fonts and design tokens (dark default; 60-light.css overrides under [data-theme=light]) */
 @font-face{font-family:"Inter Variable";font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/inter-latin-var.woff2) format("woff2")}
 @font-face{font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800;font-display:swap;src:url(/fonts/jetbrains-mono-latin-var.woff2) format("woff2")}
 @font-face{font-family:"Inter Fallback";src:local(Arial),local("Helvetica Neue"),local(Helvetica);size-adjust:107.64%;ascent-override:90.49%;descent-override:22.56%;line-gap-override:0%}

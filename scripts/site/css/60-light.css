@@ -1,7 +1,7 @@
-/* 60-light: prefers-color-scheme light variant. Tokens mirror the app's light theme (src/index.css: zinc surfaces, accent #0369a1).
+/* 60-light: manual light theme (:root[data-theme=light]). Tokens mirror the app's light theme (src/index.css: zinc surfaces, accent #0369a1).
    Code blocks and screenshot frames stay dark; every text/background and button pairing is AA (see report table). */
-@media(prefers-color-scheme:light){
-:root{
+/* Applied only when theme.js sets data-theme="light" (explicit user choice; dark is the default). */
+:root[data-theme="light"]{
 color-scheme:light;
 --bg:#fafafa;--card:#ffffff;--elev:#f4f4f5;--code:#0c0c0f;--hover:#e4e4e7;
 --line:#e4e4e7;--line-strong:#d4d4d8;
@@ -10,13 +10,12 @@ color-scheme:light;
 --focus:#0369a1;--link:#0369a1;--header-bg:rgb(250 250 250/.85);--ring-offset:var(--bg);
 --btn2-bg:#ffffff;--btn2-border:#8b8b94;--btn2-hover-bg:#f4f4f5;--btn2-hover-border:#52525b;
 }
-.cta-box,.closing,.cell,.card,.facts-panel{--ring-offset:var(--card)}
-::selection{background:rgb(3 105 161/.25)}
-.btn{box-shadow:inset 0 1px 0 rgb(255 255 255/.18),0 1px 2px rgb(9 9 11/.18)}
-.btn-secondary{box-shadow:0 1px 2px rgb(9 9 11/.08)}
+:root[data-theme="light"] .cta-box, :root[data-theme="light"] .closing, :root[data-theme="light"] .cell, :root[data-theme="light"] .card, :root[data-theme="light"] .facts-panel{--ring-offset:var(--card)}
+:root[data-theme="light"] ::selection{background:rgb(3 105 161/.25)}
+:root[data-theme="light"] .btn{box-shadow:inset 0 1px 0 rgb(255 255 255/.18),0 1px 2px rgb(9 9 11/.18)}
+:root[data-theme="light"] .btn-secondary{box-shadow:0 1px 2px rgb(9 9 11/.08)}
 /* Code stays dark: restore the dark token set inside code surfaces. */
-pre,.code{--text:#f4f4f5;--text-2:#e4e4e7;--faint:#87878f;--accent-hover:#38bdf8;--code:#0c0c0f;--line:#27272a}
+:root[data-theme="light"] pre,:root[data-theme="light"] .code{--text:#f4f4f5;--text-2:#e4e4e7;--faint:#87878f;--accent-hover:#38bdf8;--code:#0c0c0f;--line:#27272a}
 /* Screenshots are dark images: give the frames a visible edge on a light page. */
-.frame{background:#18181b;box-shadow:0 0 0 1px rgb(9 9 11/.28),0 24px 48px -24px rgb(9 9 11/.35)}
-.cell .frame{box-shadow:0 0 0 1px rgb(9 9 11/.28),0 12px 24px -14px rgb(9 9 11/.3)}
-}
+:root[data-theme="light"] .frame{background:#18181b;box-shadow:0 0 0 1px rgb(9 9 11/.28),0 24px 48px -24px rgb(9 9 11/.35)}
+:root[data-theme="light"] .cell .frame{box-shadow:0 0 0 1px rgb(9 9 11/.28),0 12px 24px -14px rgb(9 9 11/.3)}

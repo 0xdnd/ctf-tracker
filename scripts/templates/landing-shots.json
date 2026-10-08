@@ -1,5 +1,43 @@
 [
   {
+    "name": "app",
+    "alt": "ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.",
+    "width": 1600,
+    "height": 1000,
+    "cssWidth": 1440,
+    "srcset": [
+      {
+        "src": "/images/landing/app-2400.webp",
+        "w": 2400
+      },
+      {
+        "src": "/images/landing/app-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/app-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "burndown",
+    "alt": "ZeroBox exam burn-down chart against the 70 point pass line.",
+    "width": 1446,
+    "height": 732,
+    "cssWidth": 482,
+    "srcset": [
+      {
+        "src": "/images/landing/burndown-1446.webp",
+        "w": 1446
+      },
+      {
+        "src": "/images/landing/burndown-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
     "name": "kanban",
     "alt": "ZeroBox kanban board with Backlog, Foothold and Completed lanes, each card showing the target IP, OS and difficulty badges.",
     "width": 1600,

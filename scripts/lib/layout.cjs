@@ -15,6 +15,9 @@ const STATIC_CSS = CSS_FILES.map((f) => {
 }).join('');
 // Content-hashed href so a changed stylesheet is never served stale from the browser cache or the service worker.
 const CSS_HREF = '/static.css?v=' + crypto.createHash('sha1').update(STATIC_CSS).digest('hex').slice(0, 8);
+// Blocking theme bootstrap (public/theme.js). Hashed so a changed script is never served stale by the service worker.
+const THEME_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'theme.js'), 'utf8');
+const THEME_SRC = '/theme.js?v=' + crypto.createHash('sha1').update(THEME_JS).digest('hex').slice(0, 8);
 const FONT_PATHS = ['/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
 
 const esc = (s) =>
@@ -82,6 +85,10 @@ function navLinks(current) {
   }).join('');
 }
 
+const THEME_ICONS =
+  '<svg class="ico-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a6 6 0 0 0 9 9a9 9 0 1 1 -9 -9" /></svg>' +
+  '<svg class="ico-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" /></svg>';
+
 /** Sticky header. No inline styles (content-page CSP is style-src 'self'). Mobile menu is a <details>, no JS. */
 function siteHeader({ current } = {}) {
   const links = navLinks(current);
@@ -90,6 +97,7 @@ function siteHeader({ current } = {}) {
   <div class="wrap bar">
     <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" aria-hidden="true" /><span class="brand-name">ZeroBox</span></a>
     <nav class="nav-inline" aria-label="Primary">${links}</nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch to light theme">${THEME_ICONS}</button>
     <a class="btn btn-sm" href="/tracker/">Open tracker</a>
     <details class="nav-menu">
       <summary>Menu</summary>
@@ -259,6 +267,7 @@ function renderPage(opts) {
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=12" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=12" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <script src="${THEME_SRC}"></script>
   <link rel="stylesheet" href="${CSS_HREF}" />${opts.preloadFonts ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
@@ -292,4 +301,4 @@ ${beaconTag()}</body>
 `;
 }
 
-module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO };
+module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO };
