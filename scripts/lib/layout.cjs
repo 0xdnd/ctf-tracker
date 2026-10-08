@@ -140,10 +140,77 @@ function breadcrumbLd(crumbs) {
   };
 }
 
-function truncate(s, n) {
-  const t = String(s).replace(/\s+/g, ' ').trim();
-  return t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…';
+const MAX_TITLE = 60;
+const MAX_DESC = 155;
+const DANGLING = /\s+(?:and|or|with|for|the|of|to|a|an|in|on|at|by|from|plus|as|that|which)$/i;
+
+/** Sentence-aware shortener: always a complete sentence of at most n chars, never an ellipsis. */
+function truncate(s, n = MAX_DESC) {
+  const t = String(s).replace(/\s+/g, ' ').trim().replace(/…$/, '');
+  const fin = (x) => x.replace(/[\s,;:\-–—(]+$/, '').replace(/[.!?]*$/, '') + '.';
+  if (t.length <= n && /[.!?]$/.test(t)) return t;
+  if (t.length < n) return fin(t);
+  const head = t.slice(0, n);
+  // Prefer the last sentence boundary that keeps a reasonable amount of text.
+  const sentEnd = Math.max(head.lastIndexOf('. '), head.lastIndexOf('! '), head.lastIndexOf('? '));
+  if (sentEnd >= 70) return head.slice(0, sentEnd + 1);
+  if (/[.!?]$/.test(head) && t[n] === ' ') return head;
+  // Otherwise cut at the last clause or word boundary that leaves room for the final period.
+  let cut = t.slice(0, n - 1);
+  const clause = Math.max(cut.lastIndexOf(', '), cut.lastIndexOf('; '), cut.lastIndexOf(': '));
+  if (clause >= 70) cut = cut.slice(0, clause);
+  else if (t[n - 1] !== ' ') cut = cut.replace(/\s+\S*$/, '');
+  let prev;
+  do {
+    prev = cut;
+    cut = cut.replace(DANGLING, '');
+  } while (cut !== prev);
+  return fin(cut);
 }
+
+/** First candidate that fits in 60 chars; the last one is shortened at a word boundary if none fits. */
+function fitTitle(...candidates) {
+  const c = candidates.map((x) => String(x).replace(/\s+/g, ' ').trim()).filter(Boolean);
+  for (const x of c) if (x.length <= MAX_TITLE) return x;
+  let cut = c[c.length - 1].slice(0, MAX_TITLE).replace(/\s+\S*$/, '');
+  let prev;
+  do {
+    prev = cut;
+    cut = cut.replace(DANGLING, '').replace(/[\s,;:\-–—(|]+$/, '');
+  } while (cut !== prev);
+  return cut;
+}
+
+const ORG_ID = ORIGIN + '/#org';
+/** Organization (with logo and GitHub sameAs); referenced by @id elsewhere so it is only defined once per page. */
+const organizationLd = () => ({
+  '@type': 'Organization',
+  '@id': ORG_ID,
+  name: 'ZeroBox',
+  url: ORIGIN + '/',
+  logo: ORIGIN + '/icon-512.png',
+  sameAs: [REPO],
+});
+const websiteLd = () => ({
+  '@type': 'WebSite',
+  '@id': ORIGIN + '/#website',
+  name: 'ZeroBox',
+  url: ORIGIN + '/',
+  inLanguage: 'en',
+  publisher: { '@id': ORG_ID },
+});
+/** TechArticle with dateModified; a falsy dateModified is omitted. */
+const techArticleLd = ({ headline, url, description, dateModified, about }) => ({
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline,
+  url,
+  ...(description ? { description } : {}),
+  ...(dateModified ? { dateModified } : {}),
+  inLanguage: 'en',
+  ...(about && about.length ? { about } : {}),
+  publisher: { '@type': 'Organization', name: 'ZeroBox', url: ORIGIN + '/' },
+});
 
 /** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean } */
 function renderPage(opts) {
@@ -155,7 +222,7 @@ function renderPage(opts) {
   const crumbHtml = crumbs
     .map(([n, p], i) => (i === crumbs.length - 1 ? `<span aria-current="page">${esc(n)}</span>` : `<a href="${p}">${esc(n)}</a>`))
     .join(' <span class="sep">/</span> ');
-  const desc = esc(truncate(opts.description, 158));
+  const desc = esc(truncate(opts.description, MAX_DESC));
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -202,4 +269,4 @@ ${beaconTag()}</body>
 `;
 }
 
-module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, STATIC_CSS, CSS_HREF, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO };
+module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO };

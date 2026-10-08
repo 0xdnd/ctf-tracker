@@ -17,7 +17,7 @@
   {
     "path": "/methodology/",
     "title": "Pentest Methodology Checklist — Attack Lifecycle | ZeroBox",
-    "description": "An eight-phase pentest methodology checklist with copyable commands that fill in your target and attacker values. Track progress per machine, free in the browser.",
+    "description": "An eight-phase pentest methodology checklist with copyable commands that fill in your target values. Track progress per machine, free in the browser.",
     "h1": "Pentest methodology checklist",
     "intro": "A phase-by-phase attack lifecycle playbook for CTFs and OSCP-style labs. Commands are templates that insert your target IP and attacker values, so you can copy them straight into a terminal.",
     "bullets": [
@@ -31,7 +31,7 @@
   },
   {
     "path": "/cheatsheets/",
-    "title": "Interactive Cheatsheet Workspace — Variables & Snippets | ZeroBox",
+    "title": "Pentest Cheatsheet Workspace with Variables | ZeroBox",
     "description": "Interactive pentest cheatsheet workspace: set LHOST, LPORT and target IP once and they fill into every snippet. Save your own commands. Free, runs offline.",
     "h1": "Interactive cheatsheet workspace",
     "intro": "A searchable library of pentest commands and reverse shell payloads. Set LHOST, LPORT and the target IP once and they are substituted into every snippet, so there is nothing to retype mid-exam.",
@@ -61,7 +61,7 @@
   {
     "path": "/exam/",
     "title": "OSCP Exam Simulator — 24h Timer & Report | ZeroBox",
-    "description": "Practice OSCP, CPTS and CRTO exams with a countdown timer, point scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
+    "description": "Practice OSCP, CPTS and CRTO exams with a countdown timer, scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
     "bullets": [
@@ -76,7 +76,7 @@
   {
     "path": "/writeup/",
     "title": "Pentest Writeup Editor — Markdown & Report Export | ZeroBox",
-    "description": "Write CTF writeups and pentest reports in a dual-pane Markdown editor with live preview. Export to Obsidian or GitBook. Free, private, stored in your browser.",
+    "description": "Write CTF writeups and pentest reports in a dual-pane Markdown editor with live preview. Export to Obsidian or GitBook. Free and private.",
     "h1": "Writeup studio",
     "intro": "A Markdown editor for CTF writeups and pentest reports with a live preview. Drafts stay in your browser and export as plain Markdown files.",
     "bullets": [

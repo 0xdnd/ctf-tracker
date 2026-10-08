@@ -3,9 +3,9 @@
 // reverse shells, CPTS notes, plus dist/static.css and dist/sitemap.xml.
 const fs = require('fs');
 const path = require('path');
-const { getModel, slugify } = require('./lib/content-model.cjs');
+const { getModel, getGuides, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
-const { ORIGIN, esc, renderPage, STATIC_CSS, ctaBox } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, STATIC_CSS, ctaBox, fitTitle, techArticleLd } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
@@ -19,19 +19,23 @@ const model = getModel();
 const routes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
 const { execFileSync } = require('child_process');
 const lmCache = new Map();
-// Last git commit date of a source file (cached); undefined when git or history is unavailable.
+const BUILD_DATE = new Date().toISOString().slice(0, 10);
+const git = (args) => execFileSync('git', args, { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+// Date a source file last changed: the build date while it has uncommitted edits, otherwise its last git commit date
+// (cached). Falls back to the build date when git or history is unavailable, so a page never ships without a lastmod.
 function gitDate(rel) {
   if (!lmCache.has(rel)) {
     let v;
     try {
-      v = execFileSync('git', ['log', '-1', '--format=%cI', '--', rel], { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().slice(0, 10) || undefined;
+      v = git(['status', '--porcelain', '--', rel]) ? BUILD_DATE : git(['log', '-1', '--format=%cI', '--', rel]).slice(0, 10) || BUILD_DATE;
     } catch (e) {
-      v = undefined;
+      v = BUILD_DATE;
     }
     lmCache.set(rel, v);
   }
   return lmCache.get(rel);
 }
+const maxDate = (...ds) => ds.filter(Boolean).sort().pop();
 const SRC = {
   machines: 'src/data/machinesCatalog.ts',
   cheatsheet: 'src/data/cheatsheetsData.ts',
@@ -44,15 +48,35 @@ const TYPE_SRC = {
   'methodology-phase': 'methodology', 'methodology-hub': 'methodology', revshells: 'revshells', 'cpts-note': 'cpts', 'cpts-hub': 'cpts',
 };
 const dmField = (key) => (gitDate(SRC[key]) ? { dateModified: gitDate(SRC[key]) } : {});
-const pages = []; // { loc, type, priority }
+const pages = []; // { loc, type, lastmod }
 const counts = {};
+const seenMeta = { title: new Map(), description: new Map() };
 
+// priority stays in the signature for the callers but is no longer written anywhere (Google ignores it).
 function emit(type, urlPath, html, priority, lastmodOverride) {
   const dir = path.join(distDir, urlPath.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8');
+  for (const [k, re] of [['title', /<title>([^<]*)<\/title>/], ['description', /<meta name="description" content="([^"]*)"/]]) {
+    const v = (re.exec(html) || [])[1];
+    if (v && seenMeta[k].has(v)) console.warn(`DUPLICATE ${k}: ${urlPath} and ${seenMeta[k].get(v)}`);
+    else if (v) seenMeta[k].set(v, urlPath);
+  }
   pages.push({ loc: urlPath, type, priority, lastmod: lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]) });
   counts[type] = (counts[type] || 0) + 1;
+}
+
+// Prefix plus as many items as fit in a 155-char description, ending in a period.
+function listFit(prefix, items, max = 155) {
+  let out = prefix.replace(/\s+$/, ' ');
+  const used = [];
+  for (const it of items) {
+    const next = out + (used.length ? ', ' : '') + it;
+    if (next.length + 1 > max) continue;
+    out = next;
+    used.push(it);
+  }
+  return used.length ? out + '.' : prefix.replace(/[\s,]*including\s*$/, '.');
 }
 
 const card = (href, title, desc) =>
@@ -114,6 +138,24 @@ const certFirst = certHubs.find((c) => c.cert === 'OSCP') || certHubs[0];
 const PLATFORM_NAME = { HTB: 'Hack The Box', THM: 'TryHackMe' };
 const DIFF_ORDER = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
 const mUrl = (m) => `/machines/${m.slug}/`;
+const SAFE_ROOM = /^https:\/\/(www\.)?(app\.hackthebox\.com|tryhackme\.com)\//;
+
+// Guide pages (scripts/lib/guides.cjs); empty when the file is absent. Chips only render for guides that exist.
+const guides = getGuides();
+const guideByPath = new Map(guides.map((g) => [g.path, g]));
+const GUIDE_LABEL = {
+  '/oscp-exam-scoring-and-time-budget/': 'OSCP exam scoring and time budget',
+  '/tj-null-list/': 'TJ Null OSCP list',
+  '/oscp-report-template/': 'OSCP report template',
+  '/htb-progress-tracker/': 'HTB progress tracker',
+  '/cpts-exam-guide/': 'HTB CPTS exam guide',
+};
+const guideChips = (paths) => paths.filter((p) => guideByPath.has(p)).map((p) => `<a href="${p}">${esc(GUIDE_LABEL[p] || guideByPath.get(p).title)}</a>`).join('');
+// Guides that belong on a certification hub.
+const CERT_GUIDES = {
+  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/'],
+  CPTS: ['/cpts-exam-guide/'],
+};
 
 const normTag = (t) => String(t).toLowerCase().replace(/[-_]+/g, ' ').trim();
 const tagTargets = [
@@ -134,10 +176,45 @@ const fmtDur = (s) => {
 const fmtDate = (d) => (d ? String(d).slice(0, 10) : '');
 const ROOM_REL = 'nofollow noopener';
 
+// Meta description for a machine page: the hint's first sentence when it fits as a complete sentence, else a facts-based sentence.
+function machineDesc(m, summary, tagList) {
+  const kindWord = m.ownWriteup ? 'writeup' : 'attack path';
+  const first = String(summary).replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s+/)[0];
+  const lead = `${m.name} ${m.platform} ${kindWord}: `;
+  // A usable hint is a real sentence (not a stub like "Hack The Box Linux machine." or the generated "Solved ..." line).
+  if (first && first.length >= 45 && !/^Solved /.test(first) && !/[{}]/.test(first) && /[.!?]$/.test(first) && lead.length + first.length <= 155) return lead + first;
+  const techs = techGroups.filter((g) => (m.tags || []).some((t) => TECH.matchesTag(g, t))).slice(0, 3).map((g) => g.name);
+  const diff = m.difficulty.toLowerCase();
+  return `${m.name} is ${/^[aeiou]/.test(diff) ? 'an' : 'a'} ${diff} ${m.os} machine on ${m.platform}. ${techs.length ? `My ${kindWord} covers ${techs.join(', ')}.` : `Read my ${kindWord} and the techniques it trains.`}`;
+}
+
+// "Related" block on a machine page: its certification hubs and the technique hubs its tags match.
+function relatedHubs(m) {
+  const certLinks = (m.certifications || [])
+    .map((c) => certHubs.find((h) => h.cert === c))
+    .filter(Boolean)
+    .map((h) => `<li>${h.cert === 'HTB-Starting-Point' ? 'Track' : 'Certification'}: <a href="/${h.slug}/">${esc(h.name)} machines (${h.machines.length})</a></li>`);
+  const techLinks = techGroups
+    .map((g) => [g, (m.tags || []).filter((t) => TECH.matchesTag(g, t)).length])
+    .filter((e) => e[1] > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
+    .slice(0, 4)
+    .map(([g]) => `<li>Technique: <a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length} machines)</a></li>`);
+  const links = [...certLinks, ...techLinks, '<li>All machines: <a href="/machines/">Hack The Box and TryHackMe directory</a></li>'];
+  return `<h2>Related</h2><ul>${links.join('')}</ul>`;
+}
+
 for (const m of withPage) {
   const plat = PLATFORM_NAME[m.platform] || m.platform;
   const kind = m.ownWriteup ? 'Writeup & Attack Path' : 'Attack Path & Techniques';
-  const title = `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${kind} | ZeroBox`;
+  const kindShort = m.ownWriteup ? 'Writeup' : 'Attack Path';
+  const title = fitTitle(
+    `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${kind} | ZeroBox`,
+    `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${kindShort} | ZeroBox`,
+    `${m.name} (${m.platform} ${m.os}) ${kindShort} | ZeroBox`,
+    `${m.name} ${m.platform} ${kindShort} | ZeroBox`,
+    `${m.name} ${m.platform} ${kindShort}`
+  );
   const tagList = (m.tags || []).filter((t) => !GENERIC_TAGS.has(t.toLowerCase()));
   const rel = related(m);
   const summary = m.hint || `Solved ${m.difficulty.toLowerCase()} ${m.os} target covering ${tagList.slice(0, 4).join(', ') || 'core pentest techniques'}.`;
@@ -173,6 +250,7 @@ for (const m of withPage) {
           .map((r) => `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})</li>`)
           .join('')}</ul>`
       : '',
+    relatedHubs(m),
     ctaBox({ title: `Track ${esc(m.name)} in ZeroBox.`, body: 'Log your progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.', href: '/tracker/', label: 'Open tracker' }),
     `<p class="note">${esc(m.name)} belongs to ${esc(plat)}. This page contains only my own notes.</p>`,
   ].join('\n');
@@ -183,7 +261,7 @@ for (const m of withPage) {
     renderPage({
       path: mUrl(m),
       title,
-      description: `${m.name} ${m.platform} ${m.ownWriteup ? 'writeup' : 'attack path'}: ${summary}`,
+      description: machineDesc(m, summary, tagList),
       h1: m.ownWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`,
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [m.name, mUrl(m)]],
@@ -218,7 +296,7 @@ for (const m of withPage) {
     `<p class="lead">Browse ${model.machines.length} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
   );
   parts.push(
-    `<h2>Machine lists by certification and technique</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a></div>`
+    `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-progress-tracker/', '/tj-null-list/'])}</div>`
   );
   parts.push(`<div class="chips">${platforms.map((p) => `<a href="#${p.toLowerCase()}">${esc(PLATFORM_NAME[p] || p)} (${byPlatform[p].length})</a>`).join('')}</div>`);
   for (const p of platforms) {
@@ -253,12 +331,13 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: 'HTB & TryHackMe Machines: Writeups & Attack Paths by OS and Difficulty | ZeroBox',
-    description: `Directory of ${model.machines.length} Hack The Box and TryHackMe machines with writeups and attack paths for the solved ones, grouped by platform, OS and difficulty.`,
+    title: 'HTB & TryHackMe Machines by OS and Difficulty | ZeroBox',
+    description: `Directory of ${model.machines.length} Hack The Box and TryHackMe machines grouped by platform, OS and difficulty, with attack paths for the solved ones.`,
     h1: 'Hack The Box and TryHackMe machines',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
     ogType: 'website',
+    ld: [itemListLd('Solved Hack The Box and TryHackMe machines', '/machines/', [...withPage].sort((a, b) => a.name.localeCompare(b.name)))],
   });
   console.log(`machines hub size: ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB`);
   emit('machines-hub', '/machines/', html, 0.8);
@@ -281,8 +360,8 @@ for (const t of model.topics) {
     p,
     renderPage({
       path: p,
-      title: `${t.name} Cheatsheet: OSCP & CTF Commands | ZeroBox`,
-      description: `${t.name} cheatsheet with ${t.items.length} tested commands for OSCP, CPTS and CTF labs: ${t.items.slice(0, 3).map((i) => i.title).join(', ')} and more.`,
+      title: fitTitle(`${t.name} Cheatsheet: OSCP & CTF Commands | ZeroBox`, `${t.name} Cheatsheet: OSCP & CTF Commands`, `${t.name} Cheatsheet | ZeroBox`),
+      description: listFit(`${t.name} cheatsheet: ${t.items.length} tested commands for OSCP, CPTS and CTF labs, including `, t.items.map((i) => i.title)),
       h1: `${t.name} cheatsheet`,
       body,
       crumbs: [['Home', '/'], ['Cheatsheets', '/cheatsheet-library/'], [t.name, p]],
@@ -295,8 +374,8 @@ emit(
   '/cheatsheet-library/',
   renderPage({
     path: '/cheatsheet-library/',
-    title: 'Command Reference by Topic: Recon, Web, AD, Privesc | ZeroBox',
-    description: 'Free OSCP and CTF cheatsheets by topic: recon and port scanning, web fuzzing, exploitation, Linux and Windows privesc, Active Directory, pivoting and file transfers.',
+    title: 'Pentest Command Reference by Topic | ZeroBox',
+    description: 'Free OSCP and CTF cheatsheets by topic: recon, web fuzzing, exploitation, privesc, Active Directory, pivoting and file transfers.',
     h1: 'Pentest command reference by topic',
     body: [
       `<p class="lead">Command cheatsheets for penetration testing labs and OSCP preparation, grouped by phase. Every command is a template you can adapt to your target.</p>`,
@@ -332,11 +411,19 @@ for (const ph of model.phases) {
     p,
     renderPage({
       path: p,
-      title: `${ph.title}: Pentest Methodology Checklist | ZeroBox`,
-      description: `${ph.title} checklist: ${ph.description}`,
+      title: fitTitle(`${ph.title}: Pentest Methodology Checklist | ZeroBox`, `${ph.title} Checklist | ZeroBox`, `${ph.shortTitle} Methodology Checklist | ZeroBox`, ph.title),
+      description: `${ph.shortTitle} checklist with ${ph.itemCount} items and copyable commands for CTF and OSCP-style labs. ${ph.subtitle}.`,
       h1: ph.title,
       body,
       crumbs: [['Home', '/'], ['Methodology', '/methodology-guide/'], [ph.shortTitle, p]],
+      ld: [
+        techArticleLd({
+          headline: `${ph.title}: pentest methodology checklist`,
+          url: ORIGIN + p,
+          description: ph.description,
+          dateModified: gitDate(SRC.methodology),
+        }),
+      ],
     }),
     0.7
   );
@@ -346,7 +433,7 @@ emit(
   '/methodology-guide/',
   renderPage({
     path: '/methodology-guide/',
-    title: 'Pentest Methodology: Enumeration to Post-Exploitation Checklist | ZeroBox',
+    title: 'Pentest Methodology and Enumeration Checklist | ZeroBox',
     description: `An ${model.phases.length}-phase pentest methodology and enumeration checklist for OSCP and CTF labs, from host discovery to post-exploitation, with copyable commands.`,
     h1: 'Pentest methodology and enumeration checklist',
     body: [
@@ -383,7 +470,7 @@ emit(
     '/revshells/',
     renderPage({
       path: '/revshells/',
-      title: 'Reverse Shell One-Liners by Language: Bash, Python, PHP | ZeroBox',
+      title: 'Reverse Shell One-Liners: Bash, Python, PHP | ZeroBox',
       description: `OSCP reverse shell cheatsheet: ${model.shellCount} one-liners for Bash, Netcat, Python, PHP, PowerShell, Java, Perl and more, plus bind shells and TTY upgrades.`,
       h1: 'Reverse shell one-liners by language',
       body,
@@ -474,11 +561,25 @@ emit(
       p,
       renderPage({
         path: p,
-        title: `${n.title.replace(/^\d+\.\s*/, '')}: CPTS & OSCP Notes | ZeroBox`,
+        title: fitTitle(
+          `${n.title.replace(/^\d+\.\s*/, '')}: CPTS & OSCP Notes | ZeroBox`,
+          `${n.title.replace(/^\d+\.\s*/, '')}: CPTS Notes | ZeroBox`,
+          `${n.title.replace(/^\d+\.\s*/, '')} | ZeroBox`,
+          n.title.replace(/^\d+\.\s*/, '')
+        ),
         description: n.enSummary || n.summary,
         h1: n.title.replace(/^\d+\.\s*/, ''),
         body,
         crumbs: [['Home', '/'], ['CPTS notes', '/cpts-notes/'], [n.title.replace(/^\d+\.\s*/, ''), p]],
+        ld: [
+          techArticleLd({
+            headline: `${n.title.replace(/^\d+\.\s*/, '')}: CPTS and OSCP notes`,
+            url: ORIGIN + p,
+            description: n.enSummary || n.summary,
+            dateModified: gitDate(SRC.cpts),
+            about: (n.tools || []).slice(0, 6),
+          }),
+        ],
       }),
       0.6
     );
@@ -488,11 +589,12 @@ emit(
     '/cpts-notes/',
     renderPage({
       path: '/cpts-notes/',
-      title: 'CPTS & OSCP Study Notes: Recon, AD, Privesc, Pivoting | ZeroBox',
+      title: 'CPTS & OSCP Study Notes with Commands | ZeroBox',
       description: `${model.notes.length} concise CPTS and OSCP study notes with commands: recon, web exploitation, privilege escalation, Active Directory, Kerberos, pivoting and shells.`,
       h1: 'CPTS and OSCP study notes',
       body: [
         `<p class="lead">Short field-manual notes with the commands you need during a lab or exam.</p>`,
+        guideByPath.has('/cpts-exam-guide/') ? `<p>Preparing for the exam itself? Read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> for the format, pacing and reporting expectations.</p>` : '',
         `<div class="grid">${model.notes.map((n) => card(`/cpts-notes/${n.slug}/`, n.title, n.enSummary || n.summary)).join('')}</div>`,
       ].join('\n'),
       crumbs: [['Home', '/'], ['CPTS notes', '/cpts-notes/']],
@@ -505,7 +607,6 @@ emit(
 // ===================== Certification + technique hubs =====================
 const hubWords = { cert: [], tech: [] };
 const wc = (html) => html.replace(/<(script|style)[\s\S]*?<\/\1>/g, ' ').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
-const SAFE_ROOM = /^https:\/\/(www\.)?(app\.hackthebox\.com|tryhackme\.com)\//;
 const diffId = (d) => slugify(d);
 const platLabel = (list) => [...new Set(list.map((m) => m.platform))].sort().join(' & ');
 const osCounts = (list) => {
@@ -578,6 +679,13 @@ const CERT_INFO = {
     why: 'These machines are short and forgiving, so they are ideal for building the habit of scanning, enumerating each service and writing down what you learn. Finish a tier, then repeat the box without the guide to check that the process has stuck.',
   },
 };
+// One sentence under the intro that links the long-form guides relevant to a certification (empty when none exist).
+function guideNote(cert) {
+  const links = (CERT_GUIDES[cert] || []).filter((p) => guideByPath.has(p)).map((p) => `<a href="${p}">${esc(GUIDE_LABEL[p])}</a>`);
+  if (!links.length) return '';
+  const list = links.length > 1 ? `${links.slice(0, -1).join(', ')} and ${links[links.length - 1]}` : links[0];
+  return `<p>Read next: ${list}.</p>`;
+}
 for (const hub of certHubs) {
   const { cert, name, machines } = hub;
   const p = `/${hub.slug}/`;
@@ -599,23 +707,24 @@ for (const hub of certHubs) {
   if (introWords < 150 || introWords > 250) console.warn(`cert intro ${cert}: ${introWords} words (target 150-250)`);
   const body = [
     intro,
+    guideNote(cert),
     `<h2>Jump to difficulty</h2>${jump}`,
     `<h2>${esc(name)} machine list by difficulty</h2>`,
     tables,
     ctaBox({ title: 'Track your progress.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' }),
-    `<h2>Related guides</h2><div class="chips"><a href="/exam/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
+    `<h2>Related guides</h2><div class="chips">${guideChips(CERT_GUIDES[cert] || [])}<a href="/exam/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
     `<p class="note">Machines belong to ${esc(plats)}. ZeroBox is not affiliated with the platforms or certification bodies named here.</p>`,
   ].join('\n');
   hubWords.cert.push([cert, wc(body)]);
   hub.url = p;
-  hub.title = `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`;
+  hub.title = fitTitle(`${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
   emit(
     'cert-hub',
     p,
     renderPage({
       path: p,
       title: hub.title,
-      description: `${machines.length} ${plats} machines for ${name} preparation, grouped from ${ordered[0].difficulty} to ${ordered[ordered.length - 1].difficulty} with OS, platform and technique tags. Free list with links.`,
+      description: `${machines.length} ${plats} machines ${isTrack ? `on the ${name} track` : `for ${name} preparation`}, ${ordered[0].difficulty === ordered[ordered.length - 1].difficulty ? `all ${ordered[0].difficulty}` : `grouped from ${ordered[0].difficulty} to ${ordered[ordered.length - 1].difficulty}`} with OS, platform and technique tags. Free list with links.`,
       h1: `${label}: ${machines.length} boxes by difficulty`,
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [label, p]],
@@ -671,8 +780,8 @@ for (const g of techGroups) {
     p,
     renderPage({
       path: p,
-      title: `${g.name}: ${g.machines.length} Practice Machines & Key Commands | ZeroBox`,
-      description: `${g.name} explained with key commands and ${g.machines.length} ${plats} practice machines grouped by difficulty, for OSCP, CPTS and CTF preparation.`,
+      title: fitTitle(`${g.name}: ${g.machines.length} Practice Machines & Key Commands | ZeroBox`, `${g.name}: ${g.machines.length} Practice Machines | ZeroBox`, `${g.name}: Practice Machines | ZeroBox`, `${g.name} Practice Machines`),
+      description: `${g.name} explained with key commands and ${g.machines.length} ${plats} practice machines by difficulty, for OSCP, CPTS and CTF prep.`,
       h1: `${g.name}: practice machines and key commands`,
       body,
       crumbs: [['Home', '/'], ['Techniques', '/techniques/'], [g.name, p]],
@@ -688,8 +797,8 @@ emit(
   '/techniques/',
   renderPage({
     path: '/techniques/',
-    title: `Pentest Techniques: ${techGroups.length} Attack Topics with Practice Machines | ZeroBox`,
-    description: `${techGroups.length} penetration testing techniques, from Active Directory and SQL injection to privilege escalation and pivoting, each with key commands and matching HTB and THM machines.`,
+    title: `Pentest Techniques: ${techGroups.length} Topics with Practice Boxes | ZeroBox`,
+    description: `${techGroups.length} pentest techniques, from Active Directory and SQL injection to privesc and pivoting, each with key commands and matching HTB and THM boxes.`,
     h1: 'Pentest techniques with practice machines',
     body: [
       `<p class="lead">Pick a technique to see what it is, the commands that matter and the Hack The Box and TryHackMe machines that practise it. Counts show how many catalog machines carry a matching tag.</p>`,
@@ -719,18 +828,25 @@ emit(
   console.log('technique page words:', stat(hubWords.tech));
 }
 
+// ===================== Guides (scripts/lib/guides.cjs) =====================
+for (const g of guides) emit('guide', g.path, g.html, 0.7, g.lastmod || BUILD_DATE);
+
 // ===================== static.css, sitemap =====================
 fs.writeFileSync(path.join(distDir, 'static.css'), STATIC_CSS, 'utf8');
 
+// lastmod comes from the last git commit of each page's source (BUILD_DATE while that source has uncommitted edits).
+// <priority> and <changefreq> are deliberately omitted: Google ignores both.
 const staticUrls = [
-  { loc: '/', priority: '1.0', lastmod: gitDate('scripts/templates/landing.html') },
-  ...routes.map((r) => ({ loc: r.path, priority: r.path === '/tracker/' ? '0.9' : '0.7', lastmod: gitDate('src/seo/routeMeta.json') })),
+  { loc: '/', lastmod: maxDate(gitDate('scripts/templates/landing.html'), gitDate('scripts/prerender.cjs')) },
+  ...routes.map((r) => ({ loc: r.path, lastmod: gitDate('src/seo/routeMeta.json') })),
 ];
 const seen = new Set();
-const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, priority: p.priority.toFixed(1), lastmod: p.lastmod }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
+const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, lastmod: p.lastmod || BUILD_DATE }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
+const missing = all.filter((u) => !fs.existsSync(path.join(distDir, u.loc.replace(/^\/|\/$/g, ''), 'index.html')));
+if (missing.length) throw new Error('gen-content-pages: sitemap URLs without a file in dist: ' + missing.map((u) => u.loc).join(', '));
 const sitemap =
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-  all.map((u) => `  <url><loc>${ORIGIN}${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}<priority>${u.priority}</priority></url>`).join('\n') +
+  all.map((u) => `  <url><loc>${ORIGIN}${u.loc}</loc><lastmod>${u.lastmod}</lastmod></url>`).join('\n') +
   `\n</urlset>\n`;
 fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap, 'utf8');
 

@@ -10,7 +10,8 @@ const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const ORIGIN = 'https://ctftracker.com';
 const routes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
-const model = require('./lib/content-model.cjs').getModel();
+const { getModel, getGuides } = require('./lib/content-model.cjs');
+const model = getModel();
 
 const shellSrc = path.join(distDir, 'index.html');
 if (!fs.existsSync(shellSrc)) {
@@ -130,9 +131,12 @@ for (const route of routes) {
 }
 
 // ---- Landing page ----
+// One description for <meta name="description">, og:description and twitter:description (kept at 155 chars or fewer).
+const META_DESC = 'Free offline CTF tracker for HTB and THM with an OSCP exam simulator, CPTS and CRTO practice, cheatsheets and a pentest methodology checklist.';
+if (META_DESC.length > 155) throw new Error(`prerender: landing description is ${META_DESC.length} chars (max 155)`);
 const FAQ = [
   ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under a non-commercial license.'],
-  ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working without a connection. There is no backend and the app makes no outbound data requests.'],
+  ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working without a connection. There is no backend and no telemetry, and your data stays on your device. The only outbound request is the optional bring-your-own-key AI scan feature, which is off by default and sends data only when you press send.'],
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
   ['Can I use it for OSCP prep?', 'Yes. It includes a 24h OSCP exam simulator with scoring, pacing, breaks and evidence proofs, an OSCP cheatsheet with reverse shells, and a pentest methodology checklist. It is an independent tool and not affiliated with OffSec.'],
   ['Does it support Hack The Box and TryHackMe?', 'It ships with a catalog of Hack The Box and TryHackMe machines you can track, and you can add custom targets for any other CTF or lab. It does not connect to your HTB or THM account, so progress is entered by you.'],
@@ -165,9 +169,12 @@ const faqLd = {
   mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
+const { organizationLd, websiteLd } = require('./lib/layout.cjs');
 const webAppLd = {
   '@context': 'https://schema.org',
   '@graph': [
+    organizationLd(),
+    websiteLd(),
     {
       '@type': 'WebApplication',
       '@id': ORIGIN + '/#webapp',
@@ -305,6 +312,26 @@ const GUIDES = [
   ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', ''],
   ['/cpts-notes/', 'CPTS study notes', 'Short notes with commands.', String(model.notes.length)],
 ];
+// Long-form guides from scripts/lib/guides.cjs (none when the file is absent). Short card copy per path; the
+// guide's own description is the fallback for any guide added later.
+const GUIDE_CARD = {
+  '/oscp-exam-scoring-and-time-budget/': ['OSCP exam scoring and time budget', 'Point structure, passing combinations and an hour-by-hour 24h plan.'],
+  '/tj-null-list/': ['TJ Null OSCP list', 'What the list is, how to work it, and the HTB boxes from it you can track.'],
+  '/oscp-report-template/': ['OSCP report template', 'A Markdown report skeleton with a finding template and a CVSS 3.1 example.'],
+  '/htb-progress-tracker/': ['HTB and THM progress tracker', 'What the platforms do not track, and a workflow that fills the gap.'],
+  '/cpts-exam-guide/': ['HTB CPTS exam guide', 'Exam format, flags, passing requirement and a day-by-day pacing plan.'],
+};
+const guidePages = getGuides();
+for (const g of guidePages) {
+  const [t, d] = GUIDE_CARD[g.path] || [g.title, g.description];
+  GUIDES.push([g.path, t, d, '']);
+}
+const hasGuide = (p) => guidePages.some((g) => g.path === p);
+// One line in the exam section pointing at the scoring and report guides (empty when they are absent).
+const examGuides =
+  hasGuide('/oscp-exam-scoring-and-time-budget/') && hasGuide('/oscp-report-template/')
+    ? '        <p>Planning your 24 hours? Read the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget guide</a> and start your write-up from the <a href="/oscp-report-template/">OSCP report template</a>.</p>'
+    : '';
 const guideList = GUIDES.map(
   ([h, t, d, n]) =>
     `          <li><a href="${h}"><span class="g-t">${esc(t)}</span><span class="g-d">${esc(d)}</span>${n ? `<span class="g-n">${esc(n)}</span>` : ''}</a></li>`
@@ -330,6 +357,8 @@ const subs = {
   '{{TRACK_PILLS}}': EXAM_TRACKS.map((t) => `<li>${esc(t)}</li>`).join(''),
   '{{FEATURE_CARDS}}': cards,
   '{{BROWSE_CARDS}}': guideList,
+  '{{META_DESC}}': esc(META_DESC),
+  '{{EXAM_GUIDES}}': examGuides,
   '{{FAQ_HTML}}': faqHtml,
   '{{FAQ_JSONLD}}': jsonLd(faqLd),
   '{{WEBAPP_JSONLD}}': jsonLd(webAppLd),
