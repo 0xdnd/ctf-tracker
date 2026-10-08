@@ -21,6 +21,11 @@ function beaconTag() {
 function injectBeacon(html) {
   const tag = beaconTag();
   if (!tag || html.includes('static.cloudflareinsights.com/beacon.min.js')) return html;
+  html = html.replace(/(<meta http-equiv="Content-Security-Policy"[^>]*>)/, (m) => {
+    if (!m.includes('static.cloudflareinsights.com')) m = m.replace(/script-src ([^;"]*)/, 'script-src $1 https://static.cloudflareinsights.com');
+    if (!m.includes('https://cloudflareinsights.com')) m = m.replace(/connect-src ([^;"]*)/, 'connect-src $1 https://cloudflareinsights.com');
+    return m;
+  });
   return html.replace('</body>', `${tag}\n</body>`);
 }
 

@@ -48,3 +48,23 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Notify IndexNow
+        if: success()
+        continue-on-error: true
+        run: |
+          node -e '
+          (async () => {
+            const origin = "https://ctftracker.com";
+            const key = require("./src/seo/site.json").indexNowKey;
+            const xml = require("fs").readFileSync("dist/sitemap.xml", "utf8");
+            const urlList = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
+            if (!urlList.length) throw new Error("no urls in sitemap");
+            const res = await fetch("https://api.indexnow.org/indexnow", {
+              method: "POST",
+              headers: { "Content-Type": "application/json; charset=utf-8" },
+              body: JSON.stringify({ host: "ctftracker.com", key, keyLocation: origin + "/" + key + ".txt", urlList }),
+            });
+            console.log("IndexNow submitted " + urlList.length + " URLs, status " + res.status);
+          })().catch((e) => { console.error(e); process.exit(1); });
+          '

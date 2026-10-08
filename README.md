@@ -23,6 +23,8 @@
 
 <a href="https://ctftracker.com/"><img src=".github/assets/screenshot.png" alt="ZeroBox Kanban board tracking HTB and THM machines" width="900" /></a>
 
+<a href="https://ctftracker.com"><img src=".github/assets/demo.gif" alt="ZeroBox demo: browsing HTB targets, dragging a machine across the Kanban board to Root Pwned, and the reverse shell generator" width="800" /></a>
+
 **[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)** · **[📝 Writeups](https://0xdnd.gitbook.io/thm-writeups/)**
 
 </div>
@@ -73,6 +75,23 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ### 5. 📊 Analytics & ⏱️ Exam Simulator
 - **Skill radar** across Web, AD, Linux/Windows PrivEsc, Pivoting and more, plus a **90-day activity heatmap** and speed benchmarks.
 - **24h exam simulator** with OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a burn-down chart.
+
+---
+
+## 🧱 Tech Stack
+
+- **UI:** React 18 + TypeScript, built with Vite
+- **Routing:** react-router 7
+- **Styling:** Tailwind CSS
+- **State:** Zustand
+- **Desktop:** Tauri
+- **Testing:** Vitest
+
+---
+
+## 🤝 Contributing
+
+Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first, then open an issue using the [bug report or feature request templates](https://github.com/0xdnd/ctf-tracker/issues/new/choose).
 
 ---
 

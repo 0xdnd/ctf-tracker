@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { getModel, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
+const { injectBeacon } = require('./lib/site.cjs');
 const { ORIGIN, esc, renderPage, STATIC_CSS } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
@@ -50,7 +51,7 @@ const counts = {};
 function emit(type, urlPath, html, priority, lastmodOverride) {
   const dir = path.join(distDir, urlPath.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8');
+  fs.writeFileSync(path.join(dir, 'index.html'), injectBeacon(html), 'utf8');
   pages.push({ loc: urlPath, type, priority, lastmod: lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]) });
   counts[type] = (counts[type] || 0) + 1;
 }

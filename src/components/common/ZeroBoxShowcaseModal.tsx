@@ -145,7 +145,7 @@ export const ZeroBoxShowcaseModal: React.FC = () => {
           <video
             ref={videoRef}
             src={`${import.meta.env.BASE_URL}videos/zerobox-nanobanana-showcase-1080p.mp4`}
-            poster={`${import.meta.env.BASE_URL}images/nanobanana-act1-threatglobe.png`}
+            poster={`${import.meta.env.BASE_URL}images/nanobanana-act1-threatglobe.webp`}
             controls
             autoPlay
             playsInline

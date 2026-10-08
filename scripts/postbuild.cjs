@@ -57,7 +57,7 @@ iconFiles.forEach(file => {
   const srcPub = path.join(rootDir, 'public', file);
   if (fs.existsSync(srcPub)) {
     fs.copyFileSync(srcPub, path.join(distDir, file));
-    fs.copyFileSync(srcPub, path.join(distAssetsDir, file));
+    if (!['logo.png', 'icon-512.png'].includes(file)) fs.copyFileSync(srcPub, path.join(distAssetsDir, file));
   }
 });
 console.log('✓ Mirrored all icon and favicon variants into dist and dist/assets');
