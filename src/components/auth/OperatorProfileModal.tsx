@@ -11,19 +11,12 @@ import {
   Sparkles, 
   Terminal, 
   Target, 
-  Flag, 
   Layers, 
-  HardDrive, 
   ArrowRight,
-  RefreshCw,
   Award,
   RotateCcw,
   Trophy,
-  Lock,
-  Unlock,
-  Zap,
-  Crown
-} from 'lucide-react';
+  Lock} from 'lucide-react';
 import { useAuthStore, DEFAULT_DANIEL_PROFILE } from '../../store/useAuthStore';
 import { useCtfStore, safeLocalStorage, getProfileStorageKey } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
@@ -58,7 +51,6 @@ export const OperatorProfileModal: React.FC = () => {
     setOperatorProfileModalOpen,
     loginAsOperator,
     switchProfile,
-    renameProfile,
     updateProfile,
     deleteProfile,
     updateUserTrophies,

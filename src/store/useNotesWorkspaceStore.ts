@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CptsNoteEntry, getAllCptsNotes, getNoteById } from '../utils/obsidianManualUtils';
+import { CptsNoteEntry, getAllCptsNotes } from '../utils/obsidianManualUtils';
 import { useCtfStore } from './useCtfStore';
 
 export type DockSize = 'normal' | 'expanded';

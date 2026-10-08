@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Settings, 
-  Sun, 
-  Moon, 
   Volume2, 
   VolumeX, 
   ZoomIn, 
@@ -16,7 +14,6 @@ import {
   SlidersHorizontal,
   Users,
   Film,
-  Sparkles,
   BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';

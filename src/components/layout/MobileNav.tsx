@@ -41,7 +41,6 @@ export const MobileNav: React.FC = () => {
   const location = useLocation();
 
   const {
-    activeTab,
     setActiveTab,
     machines,
     reconAutomationModalOpen,

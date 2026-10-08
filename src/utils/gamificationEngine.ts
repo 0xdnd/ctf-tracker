@@ -3,10 +3,8 @@ import {
   OperatorRank, 
   TrophyDefinition, 
   EvaluatedTrophy, 
-  OperatorStatsSummary, 
   OperatorGamificationState 
 } from '../types/gamification';
-import { isDomainControllerBox, isActiveDirectoryBox } from './examComplianceUtils';
 
 export const OPERATOR_RANKS: OperatorRank[] = [
   {

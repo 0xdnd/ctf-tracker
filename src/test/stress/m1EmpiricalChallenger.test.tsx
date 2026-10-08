@@ -2,20 +2,18 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { MotionConfig, motion, useReducedMotion, useReducedMotionConfig, MotionConfigContext } from 'framer-motion';
+import { MotionConfig, useReducedMotionConfig, MotionConfigContext } from 'framer-motion';
 import fs from 'fs';
 import path from 'path';
 
 import { UnifiedHeader } from '../../components/layout/UnifiedHeader';
 import { CyberButton } from '../../components/common/CyberButton';
 import { CyberBadge } from '../../components/common/CyberBadge';
-import { CyberInput } from '../../components/common/CyberInput';
 import { PlatformBadge } from '../../components/common/PlatformBadge';
 import { DifficultyBadge } from '../../components/common/DifficultyBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { OsBadge } from '../../components/common/OsBadge';
 import { useCtfStore } from '../../store/useCtfStore';
-import { applyThemeToDOM, useTheme, ThemeProvider } from '../../hooks/useTheme';
+import { applyThemeToDOM, ThemeProvider } from '../../hooks/useTheme';
 import { Machine } from '../../types';
 
 // =============================================================================
@@ -178,7 +176,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
 
     it.each(presets)(
       'asserts WCAG 2.1 text contrast (primary >= 7:1 AAA, secondary >= 7:1 AAA, muted >= 4.5:1 AA) for $name ($mode)',
-      ({ name, mode, selector, fallbackSelector }) => {
+      ({ selector, fallbackSelector }) => {
         let vars: Record<string, string>;
         try {
           vars = extractThemeVariables(cssContent, selector);
@@ -400,8 +398,6 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       const t2 = '23:59:58';
       expect(t1.length).toBe(t2.length);
 
-      const ip1 = '10.10.10.1';
-      const ip2 = '10.10.10.254';
       // IP lengths vary between 7 and 15 chars, so target input fields must have fixed Tailwind widths (w-16 / xl:w-20)
       const inputClass = 'w-16 xl:w-20';
       expect(inputClass).toContain('w-16');
@@ -589,11 +585,11 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
     });
 
     it('asserts 1280px (xl) layout: Deploy Box, Scans Hub, and Command Palette are enabled with icon-only compact labels', () => {
-      const { container } = render(
-        <MemoryRouter>
-          <UnifiedHeader />
-        </MemoryRouter>
-      );
+      render(
+            <MemoryRouter>
+                <UnifiedHeader />
+            </MemoryRouter>
+        );
 
       const deployBtn = screen.getByLabelText(/Deploy Box/i);
       const scansBtn = screen.getByLabelText('Scans Hub');
@@ -649,11 +645,11 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
     });
 
     it('verifies safe physical separation barrier between Pentest Report and Disengage buttons', () => {
-      const { container } = render(
-        <MemoryRouter>
-          <UnifiedHeader />
-        </MemoryRouter>
-      );
+      render(
+            <MemoryRouter>
+                <UnifiedHeader />
+            </MemoryRouter>
+        );
 
       const reportBtn = screen.getByLabelText(/Pentest Report for ChallengerTarget/i);
       const disengageBtn = screen.getByLabelText('Disengage Active Target');

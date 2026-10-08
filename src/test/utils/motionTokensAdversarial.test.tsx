@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { useContext } from 'react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import {
   MotionConfig,
   MotionConfigContext,
@@ -14,7 +14,6 @@ import {
   CASCADE_STAGGER_DELAY,
   TACTILE_TAP_CLASS,
   TACTILE_WHILE_TAP,
-  MOTION_TRANSITIONS,
 } from '../../utils/motionTokens';
 import { App } from '../../App';
 

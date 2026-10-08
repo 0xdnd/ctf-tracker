@@ -3,16 +3,12 @@ import {
   X, 
   Plus, 
   FileText, 
-  Search, 
-  Trash2, 
-  Pin, 
-  Layers 
-} from 'lucide-react';
+  Search} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
-import { getAllCptsNotes, CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { getAllCptsNotes } from '../../utils/obsidianManualUtils';
 
 export const NotesWorkspaceTabStrip: React.FC = () => {
   const {

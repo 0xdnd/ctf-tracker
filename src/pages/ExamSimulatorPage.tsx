@@ -13,21 +13,15 @@ import {
   Flag, 
   Clock, 
   FileDown, 
-  CheckCircle2, 
   ChevronRight,
   ChevronDown,
   Terminal,
   Trophy,
   Coffee,
-  Sparkles,
   Zap,
   Target,
-  ArrowRight,
   User,
-  Shield,
   Layers,
-  HelpCircle,
-  ExternalLink,
   Flame,
   X
 } from 'lucide-react';
@@ -43,10 +37,7 @@ import {
   EXAM_TRACK_CONFIGS,
   calculateExamScore, 
   generateExamReportMarkdown,
-  validateFlagFormat,
-  isActiveDirectoryBox,
-  isDomainControllerBox
-} from '../utils/examComplianceUtils';
+  isActiveDirectoryBox} from '../utils/examComplianceUtils';
 import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
@@ -68,9 +59,7 @@ export const ExamSimulatorPage: React.FC = () => {
     examExpiresAt,
     totalDurationSeconds,
     timerPausedRemainingSeconds,
-    remainingSeconds,
     activeBreak,
-    breakHistory,
     milestones,
     scratchNotes,
     includeBonusPoints,
@@ -84,16 +73,13 @@ export const ExamSimulatorPage: React.FC = () => {
     resetExam,
     setTrack,
     shuffleTargets,
-    submitFlag,
     togglePwn,
     setCandidateInfo,
     setScratchNotes,
     setIncludeBonusPoints,
     getRemainingSeconds,
     getBreakRemainingSeconds,
-    getScore,
     getPassingStatus,
-    tick,
   } = useExamStore(
     useShallow((s) => ({
       id: s.id,

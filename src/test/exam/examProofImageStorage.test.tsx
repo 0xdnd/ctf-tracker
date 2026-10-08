@@ -14,7 +14,6 @@
  * is nothing to inline or restore there.
  */
 
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { ExamEvidenceDropzone } from '../../components/exam/ExamEvidenceDropzone';

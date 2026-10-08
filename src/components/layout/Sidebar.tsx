@@ -14,10 +14,7 @@ import {
   Radio,
   Compass,
   GraduationCap,
-  Share2,
   BookOpen,
-  ListTodo,
-  Palette,
   Database
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';

@@ -13,15 +13,12 @@ import {
   Upload, 
   RotateCcw, 
   LogOut, 
-  ShieldCheck, 
   Globe, 
   Coffee,
   HardDrive,
   User,
   Settings,
-  Trophy,
-  Award
-} from 'lucide-react';
+  Trophy} from 'lucide-react';
 import { getAvatarSvgDataUri } from '../../data/avatarPresets';
 import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
 

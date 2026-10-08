@@ -179,7 +179,7 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
 /**
  * Returns structured Strategic Remediation Plan (Short, Medium, and Long-Term).
  */
-export function getStrategicRemediation(track: ExamTrack): string {
+export function getStrategicRemediation(_track: ExamTrack): string {
   return `### 5.1 Immediate Short-Term Remediation (0 - 48 Hours)
 - **Credential Revocation & Force Rotation:** Immediately invalidate and rotate all compromised service account passwords, domain administrator credentials, and SSH keys identified during the assessment.
 - **Isolate Vulnerable Services:** Restrict exposed administrative panels, debug endpoints, and database ports from the public internet and untrusted subnets using strict firewall rules.

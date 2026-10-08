@@ -5,13 +5,8 @@ import {
   Pin, 
   Maximize2, 
   Minimize2, 
-  Languages, 
   Type, 
-  ExternalLink,
-  ChevronDown,
-  Layers,
-  Sparkles
-} from 'lucide-react';
+  Layers} from 'lucide-react';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -29,7 +24,6 @@ export const PersistentNotesWorkspace: React.FC = () => {
     fontSize,
     openTabIds,
     activeTabId,
-    toggleOpen,
     setIsOpen,
     togglePinned,
     toggleDockSize,
@@ -37,7 +31,6 @@ export const PersistentNotesWorkspace: React.FC = () => {
     setLanguage,
     setFontSize,
     openNote,
-    setActiveTab,
   } = useNotesWorkspaceStore(
     useShallow((s) => ({
       isOpen: s.isOpen,

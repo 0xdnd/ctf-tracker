@@ -15,10 +15,8 @@ import {
   CheckCircle2, 
   BookOpen, 
   Link as LinkIcon, 
-  ArrowRight, 
   Clock, 
   List, 
-  FileCode,
   Search,
   Edit3 
 } from 'lucide-react';
@@ -27,11 +25,9 @@ import {
   parseObsidianNote, 
   resolveWikilink, 
   getBacklinksForNote,
-  ObsidianCallout,
-  ObsidianChecklistItem
-} from '../../utils/obsidianManualUtils';
+  ObsidianCallout} from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
-import { sanitizeHtml, sanitizeSvg } from '../../utils/securityUtils';
+import { sanitizeSvg } from '../../utils/securityUtils';
 import { GlobalVariables } from '../../types';
 import { OpenNoteOptions } from '../../types/workspace';
 import { slugifyHeading } from '../../utils/workspaceLinkInterceptor';
@@ -55,7 +51,6 @@ export interface ObsidianTabContentProps {
 
 export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
   note,
-  isActive,
   globalVars,
   soundEnabled,
   onNavigateToNote,

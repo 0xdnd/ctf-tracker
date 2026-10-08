@@ -11,7 +11,6 @@ import {
   ShieldAlert, 
   Zap, 
   Network,
-  RotateCcw,
   CheckCircle2
 } from 'lucide-react';
 import { Machine, TargetServicePort } from '../../types';
@@ -62,7 +61,6 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
 
   // Existing machine services or local parsed state
   const activeServices: TargetServicePort[] = machine.services || [];
-  const openPortsList = machine.openPorts || activeServices.map((s) => s.port);
 
   const applyScanResult = useCallback((result: ScanImportResult, rawText: string) => {
     const mappedServices: TargetServicePort[] = toTargetServices(result.ports);

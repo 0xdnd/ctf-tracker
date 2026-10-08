@@ -1,5 +1,5 @@
 import { Machine } from '../types';
-import { MethodologyPhase, ChecklistItemStatus } from '../types/checklist';
+import { ChecklistItemStatus } from '../types/checklist';
 import { generateApplicablePhases } from '../data/methodologyFramework';
 
 export function exportChecklistToMarkdown(machine: Machine): string {

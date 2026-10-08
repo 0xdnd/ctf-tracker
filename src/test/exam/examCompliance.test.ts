@@ -10,7 +10,6 @@ import {
   validateFlagFormat,
   generateExamTargetsForTrack,
   EXAM_TRACK_CONFIGS,
-  ExamTrack,
   ExamBox,
   ExamTargetProof,
 } from '../../utils/examComplianceUtils';

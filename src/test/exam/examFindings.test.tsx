@@ -3,7 +3,6 @@
  * Structured findings: store CRUD + persistence, report Findings Summary, editor UI.
  */
 
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ExamFindingsEditor } from '../../components/exam/ExamFindingsEditor';

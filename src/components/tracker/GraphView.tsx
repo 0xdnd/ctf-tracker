@@ -1,26 +1,16 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ZoomIn, 
   ZoomOut, 
   RotateCcw, 
   Crosshair, 
-  Terminal, 
-  Shield, 
-  Cpu, 
-  Flag, 
-  ExternalLink,
-  Layers,
   X,
   Maximize2,
   Minimize2,
   Share2,
   Radio,
-  Server,
-  Compass,
   Focus,
-  Move,
   Network,
   Download,
   Undo2,
@@ -28,14 +18,14 @@ import {
   Workflow
 } from 'lucide-react';
 import { Machine, Platform, OperatingSystem, Difficulty } from '../../types';
-import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
-import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
+import { useCtfStore } from '../../store/useCtfStore';
+import { PlatformIcon } from '../common/PlatformBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { LINUX_TUX_PATH } from '../common/OsBadge';
 import { classifyMachine } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
-import { AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES, AttackGraphEdge } from '../../types/graph';
+import { AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
 import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
 import { computeAutoLayout } from '../../utils/graphAutoLayout';
@@ -815,7 +805,6 @@ export function computeCanvasDelta(
 // Primary Attack Graph Component (<GraphView>)
 // ---------------------------------------------------------------------------
 export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) => {
-  const navigate = useNavigate();
   const setActiveTarget = useCtfStore((s) => s.setActiveTarget);
   const setSelectedMachineId = useCtfStore((s) => s.setSelectedMachineId);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
@@ -823,7 +812,6 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // Zustand Store Slice for M1/M2 coordinate persistence & M3 edges
   const allMachines = useCtfStore((s) => s.machines);
   const graphNodePositions = useCtfStore((s) => s.graphNodePositions);
-  const resetGraphLayout = useCtfStore((s) => s.resetGraphLayout);
   const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
   const graphEdges = useCtfStore((s) => s.graphEdges);
   // Undo/redo: recorded replacements for the store's edge + node-position mutators

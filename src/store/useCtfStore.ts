@@ -57,7 +57,7 @@ import {
   triggerWorkspaceDownload, 
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
-import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
+import { saveWorkspaceToIdb } from '../utils/resilientStorage';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
@@ -2329,7 +2329,6 @@ export const useCtfStore = create<CtfStoreState>()(
         },
       })),
       migrate: (persistedState: any) => {
-        const currentState = useCtfStore?.getState() || {};
         const persisted = persistedState || {};
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';

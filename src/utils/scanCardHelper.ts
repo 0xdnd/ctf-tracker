@@ -1,5 +1,5 @@
 import { Machine, OperatingSystem, TargetServicePort } from '../types';
-import { detectAndParseScan, ParsedHost, ParsedPort, ScanImportResult } from './scanParserUtils';
+import { detectAndParseScan, ParsedHost, ParsedPort } from './scanParserUtils';
 
 export interface ScanApplyResult {
   updatedMachine: Partial<Machine>;

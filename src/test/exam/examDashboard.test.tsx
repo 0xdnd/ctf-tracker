@@ -27,7 +27,6 @@
  *   - Break cancellation and conclusion
  */
 
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, waitForElementToBeRemoved, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';

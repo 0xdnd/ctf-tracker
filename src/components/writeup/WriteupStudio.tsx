@@ -9,8 +9,6 @@ import {
   Copy, 
   Check, 
   RotateCcw, 
-  Sparkles, 
-  ExternalLink,
   Code,
   Eye,
   BookOpen,
@@ -24,7 +22,7 @@ import {
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
-import { playCyberSound, interpolateCommand, safeCopyToClipboard } from '../../utils/helpers';
+import { playCyberSound, interpolateCommand } from '../../utils/helpers';
 import { downloadWriteupHtml } from '../../utils/writeupHtmlExporter';
 import { sanitizeFilename } from '../../utils/workspaceStorage';
 import { PentestReportModal } from './PentestReportModal';
@@ -330,7 +328,6 @@ export const WriteupStudio: React.FC = () => {
   const [cptsDrawerOpen, setCptsDrawerOpen] = useState(false);
   const [cptsSearch, setCptsSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
   // Debounce search query by 150ms to maintain 120 FPS
   useEffect(() => {

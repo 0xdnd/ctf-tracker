@@ -1,5 +1,5 @@
 import { Machine } from '../types';
-import { MethodologyPhase, ChecklistItem } from '../types/checklist';
+import { ChecklistItem } from '../types/checklist';
 import { generateApplicablePhases } from '../data/methodologyFramework';
 import { RABBIT_HOLE_THRESHOLDS } from './rabbitHoleConfig';
 

@@ -8,7 +8,6 @@ import {
   ShieldAlert, 
   Plus, 
   Database, 
-  Palette, 
   FileText, 
   X, 
   ChevronRight, 
@@ -16,7 +15,6 @@ import {
   Sun,
   Compass, 
   Zap, 
-  Globe,
   Award,
   Radio,
   Crosshair,
@@ -31,7 +29,7 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
-import { CREATOR_PROFILE_LINKS, safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
+import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 
 interface PaletteItem {
   id: string;
@@ -58,7 +56,6 @@ export const CommandPalette: React.FC = () => {
     setSettingsModalOpen,
     setShowcaseModalOpen,
     globalVars,
-    activeTargetId,
     setSnippetsDrawerOpen,
     setRevShellModalOpen,
     soundEnabled,

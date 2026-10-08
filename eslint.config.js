@@ -20,7 +20,7 @@ export default tseslint.config(
     },
     plugins: { 'react-hooks': reactHooks },
     rules: {
-      'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       '@typescript-eslint/no-require-imports': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',

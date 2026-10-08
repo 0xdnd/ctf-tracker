@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Scale, 
   ShieldCheck, 
-  AlertTriangle, 
   CheckCircle2, 
   XCircle, 
   X, 
   ExternalLink, 
-  Globe, 
   Copy, 
   Check, 
   Terminal,
-  Lock,
   UserCheck,
   Coffee
 } from 'lucide-react';

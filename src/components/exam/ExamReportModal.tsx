@@ -9,13 +9,11 @@ import {
   FileCode,
   X,
   ShieldCheck,
-  AlertTriangle,
   Eye,
   Sliders,
   Calendar,
   User,
   Hash,
-  Sparkles,
   Archive,
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';

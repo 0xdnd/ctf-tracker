@@ -5,12 +5,7 @@ import {
   Copy, 
   Check, 
   Share2, 
-  Sparkles, 
-  ShieldCheck, 
-  Award, 
-  Terminal, 
-  ExternalLink 
-} from 'lucide-react';
+  Award} from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -51,7 +46,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
-  const [rendering, setRendering] = useState(false);
+  const [, setRendering] = useState(false);
 
   // Compute operator gamification
   const gamification = useMemo(() => {
@@ -67,7 +62,7 @@ export const OperatorFlexCardModal: React.FC = () => {
   const initials = callsign.slice(0, 2).toUpperCase();
 
   // Compute live operator metrics
-  const { totalMachines, rootedMachines, footholdMachines, totalPwned } = useMemo(() => {
+  const { totalMachines, totalPwned } = useMemo(() => {
     const total = machines.length;
     const rooted = machines.filter((m) => m.status === 'root' || m.status === 'completed');
     const foothold = machines.filter((m) => m.status === 'foothold');
@@ -332,7 +327,6 @@ export const OperatorFlexCardModal: React.FC = () => {
   };
 
   const handleShareLinkedIn = () => {
-    const text = encodeURIComponent('Tracking my offensive security machine solves, OSCP/CPTS prep, and penetration testing labs with ZeroBox by Daniel Dayan (@0xdnd)! Check it out: https://ctftracker.com/');
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://ctftracker.com/`, '_blank');
     if (soundEnabled) playCyberSound('click');
   };

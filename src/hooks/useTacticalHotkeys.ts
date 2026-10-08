@@ -29,7 +29,6 @@ export function useTacticalHotkeys() {
     setShortcutsModalOpen,
     setBackupModalOpen,
     setFlexCardModalOpen,
-    reportMachineId,
     setReportMachineId,
     setNotesImportModalOpen,
     setOperatorModalOpen,

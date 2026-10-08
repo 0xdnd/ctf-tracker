@@ -51,7 +51,6 @@ describe('examPacingUtils Dynamic Pacing & Rabbit Hole Engine', () => {
 
     it('reports BEHIND_SCHEDULE when required pace is drastically higher than current pace or > 15 pts/hr', () => {
       const now = Date.now();
-      const tenHoursMs = 10 * 3600 * 1000;
       const session = {
         examStartedAt: now - 14 * 3600 * 1000, // 14h elapsed
         examExpiresAt: now + 3 * 3600 * 1000, // 3h remaining

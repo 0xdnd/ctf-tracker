@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { 
   Camera, 
@@ -9,7 +9,6 @@ import {
   Terminal, 
   Network, 
   UploadCloud, 
-  FileImage, 
   ShieldCheck, 
   Check, 
   X,

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Difficulty, PipelineStatus } from '../types';
+import { PipelineStatus } from '../types';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../utils/helpers';
 import { PlatformBadge } from '../components/common/PlatformBadge';
@@ -56,7 +56,6 @@ export const TargetDetailPage: React.FC = () => {
     isTimerRunning,
     startTimer,
     pauseTimer,
-    resetTimer,
     soundEnabled,
     setWriteupMachineId,
     isCatalogLoaded,

@@ -117,7 +117,7 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   }
 }
 
-export function useThemeEngine(): ThemeContextValue {
+export function useThemeEngine(active = true): ThemeContextValue {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'dark';
     try {
@@ -139,12 +139,13 @@ export function useThemeEngine(): ThemeContextValue {
 
   // Apply initial theme on mount synchronously without animation
   useEffect(() => {
+    if (!active) return;
     applyThemeToDOM(effectiveTheme, false);
   }, []);
 
   // Listen for system theme preference changes
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    if (!active || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       const newSys = e.matches ? 'dark' : 'light';
@@ -160,7 +161,7 @@ export function useThemeEngine(): ThemeContextValue {
 
   // Listen for reduced motion preference changes
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    if (!active || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
@@ -316,9 +317,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
-  if (!context) {
-    return useThemeEngine();
-  }
-  return context;
+  // Always call the engine (rules of hooks); its side effects only run when no provider exists.
+  const standalone = useThemeEngine(context === null);
+  return context ?? standalone;
 }
 

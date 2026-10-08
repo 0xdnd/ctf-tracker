@@ -29,7 +29,7 @@ import {
   SERVICE_BRANCHES, 
   generateApplicablePhases 
 } from '../data/methodologyFramework';
-import { ServiceBranchType, MethodologyPhase, ChecklistItem } from '../types/checklist';
+import { ServiceBranchType } from '../types/checklist';
 import { interpolateCommand, playCyberSound } from '../utils/helpers';
 import { toast } from '../store/useToastStore';
 import { PlatformIcon } from '../components/common/PlatformBadge';
@@ -38,7 +38,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { useShallow } from 'zustand/react/shallow';
-import { TACTICAL_SPRING, TACTILE_TAP_CLASS, CASCADE_STAGGER_DELAY } from '../utils/motionTokens';
+import { TACTICAL_SPRING } from '../utils/motionTokens';
 import { SyntaxHighlightedCommand } from '../components/common/SyntaxHighlightedCommand';
 
 export const MethodologyPage: React.FC = () => {
