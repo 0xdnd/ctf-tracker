@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor, act, configure } from '@testing-library/react';
 import { webcrypto } from 'node:crypto';
 import { BackupModal } from '../../components/backup/BackupModal';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -52,7 +52,22 @@ const fillExportPassphrase = (value: string, confirm = value) => {
 
 const enableEncryption = () => fireEvent.click(screen.getByLabelText(/encrypt with passphrase/i));
 
+// PBKDF2 (600k iterations) can take several seconds when the whole suite is running in parallel,
+// so async queries/waitFor get a generous ceiling instead of the 1000ms default. Production crypto is untouched.
+configure({ asyncUtilTimeout: 45000 });
+
+// The component schedules UI timers (e.g. close modal 1.5s after a successful import). If one outlives its test it
+// closes the modal in a later test and causes "Unable to find a label" flakes, so clear any leftovers in afterEach.
+const realSetTimeout = globalThis.setTimeout;
+let pendingTimers: unknown[] = [];
+
 beforeEach(() => {
+  pendingTimers = [];
+  vi.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: TimerHandler, ms?: number, ...args: unknown[]) => {
+    const id: unknown = realSetTimeout(fn as () => void, ms, ...args);
+    if ((ms ?? 0) >= 1000) pendingTimers.push(id);
+    return id;
+  }) as typeof setTimeout);
   if (needsNodeCrypto) vi.stubGlobal('crypto', webcrypto);
 
   downloads = [];
@@ -80,6 +95,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  pendingTimers.forEach((id) => clearTimeout(id as never));
+  pendingTimers = [];
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   useCtfStore.setState({ backupModalOpen: false });

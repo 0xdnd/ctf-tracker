@@ -6,7 +6,7 @@
 .btn:active{transform:scale(.97)}
 .btn:focus-visible{outline:2px solid transparent;outline-offset:2px;box-shadow:0 0 0 2px var(--ring-offset),0 0 0 4px var(--focus)}
 .btn .ico{flex:none;width:16px;height:16px;transition:transform .15s var(--ease)}
-.btn-secondary{border-color:#3f3f46;background:#202026;color:var(--text);box-shadow:0 1px 2px rgb(0 0 0/.3)}
+.btn-secondary{border-color:var(--btn2-border);background:var(--btn2-bg);color:var(--text);box-shadow:0 1px 2px rgb(0 0 0/.3)}
 .btn-ghost{border-color:transparent;background:transparent;color:var(--text-2);box-shadow:none}
 .btn-sm{min-height:36px;padding:0 14px;font-size:.875rem}
 .btn[aria-disabled="true"],.btn:disabled{border-color:var(--line);background:var(--elev);color:var(--faint);box-shadow:none;pointer-events:none;cursor:not-allowed}
@@ -16,7 +16,7 @@
 .link-arrow:focus-visible{outline:2px solid transparent;box-shadow:0 0 0 2px var(--ring-offset),0 0 0 4px var(--focus)}
 @media(hover:hover) and (pointer:fine){
 .btn:hover{background:var(--accent-hover);color:var(--accent-ink)}
-.btn-secondary:hover{background:#2a2a31;border-color:#52525b;color:var(--text)}
+.btn-secondary:hover{background:var(--btn2-hover-bg);border-color:var(--btn2-hover-border);color:var(--text)}
 .btn-ghost:hover{background:var(--hover);color:var(--text)}
 .btn:hover .ico-arrow,.link-arrow:hover .ico-arrow{transform:translateX(2px)}
 .btn:hover .ico-ext,.link-arrow:hover .ico-ext{transform:translate(1px,-1px)}

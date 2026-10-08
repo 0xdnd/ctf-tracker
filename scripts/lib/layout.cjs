@@ -88,7 +88,7 @@ function siteHeader({ current } = {}) {
   return `<a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
-    <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" /><span class="brand-name">ZeroBox</span></a>
+    <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" aria-hidden="true" /><span class="brand-name">ZeroBox</span></a>
     <nav class="nav-inline" aria-label="Primary">${links}</nav>
     <a class="btn btn-sm" href="/tracker/">Open tracker</a>
     <details class="nav-menu">
@@ -213,6 +213,29 @@ const techArticleLd = ({ headline, url, description, dateModified, about }) => (
 });
 
 /** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean } */
+/** Make every <pre> keyboard-focusable (scrollable-region-focusable) and a labelled region, named after the nearest preceding heading. */
+function a11yPres(html) {
+  let last = '';
+  const seen = new Map();
+  const re = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>|<pre\b([^>]*)>/g;
+  return html.replace(re, (m, h, attrs) => {
+    if (h !== undefined) {
+      last = h.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+      return m;
+    }
+    let a = attrs;
+    if (!/\btabindex=/.test(a)) a += ' tabindex="0"';
+    if (!/\brole=/.test(a)) a += ' role="region"';
+    if (!/\baria-label(ledby)?=/.test(a)) {
+      const base = last ? 'Code example: ' + last : 'Code example';
+      const n = (seen.get(base) || 0) + 1; // labelled regions must be unique per page (axe landmark-unique)
+      seen.set(base, n);
+      a += ` aria-label="${esc(n > 1 ? base + ' (' + n + ')' : base)}"`;
+    }
+    return `<pre${a}>`;
+  });
+}
+
 function renderPage(opts) {
   const url = ORIGIN + opts.path;
   const crumbs = opts.crumbs || [['Home', '/']];
@@ -260,7 +283,7 @@ ${siteHeader({ current: opts.path })}
     <nav class="crumbs" aria-label="Breadcrumb">${crumbHtml}</nav>
     <main id="main">
       <h1>${esc(opts.h1)}</h1>
-${opts.body}
+${a11yPres(opts.body)}
     </main>
   </div>
 ${siteFooter({ analyticsNote: analyticsNote() })}

@@ -22,7 +22,7 @@ pre code{padding:0;border:0;background:none;color:inherit;font-size:inherit;over
 a.tag{color:var(--text-2)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:var(--s4);margin:var(--s4) 0 var(--s6)}
 .card{display:block;padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--text);text-decoration:none;transition:border-color .15s,background-color .15s}
-.card h3{margin:0 0 var(--s2);font-size:1.0625rem}
+.card h2,.card h3{margin:0 0 var(--s2);padding:0;border:0;font-size:1.0625rem;line-height:1.3;letter-spacing:-.01em}
 .card p{margin:0;color:var(--muted);font-size:var(--fs-small);line-height:1.55}
 .cta-box{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s4) var(--s5);margin:var(--s6) 0;padding:var(--s5);border:1px solid var(--line-strong);border-radius:var(--r-lg);background:var(--card)}
 .cta-text{flex:1 1 300px;min-width:0}

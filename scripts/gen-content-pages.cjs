@@ -80,7 +80,7 @@ function listFit(prefix, items, max = 155) {
 }
 
 const card = (href, title, desc) =>
-  `<a class="card" href="${href}"><h3>${esc(title)}</h3><p>${esc(desc)}</p></a>`;
+  `<a class="card" href="${href}"><h2>${esc(title)}</h2><p>${esc(desc)}</p></a>`;
 
 const code = (s) => `<pre><code>${esc(s)}</code></pre>`;
 const stripEmoji = (s) => s.replace(/[\p{Extended_Pictographic}️‍]/gu, '').replace(/\s+/g, ' ').trim();
