@@ -1,0 +1,137 @@
+[
+  {
+    "name": "kanban",
+    "alt": "ZeroBox kanban board with Backlog, Foothold and Completed lanes, each card showing the target IP, OS and difficulty badges.",
+    "width": 1600,
+    "height": 1201,
+    "cssWidth": 742,
+    "srcset": [
+      {
+        "src": "/images/landing/kanban-2226.webp",
+        "w": 2226
+      },
+      {
+        "src": "/images/landing/kanban-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/kanban-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "kanban-m",
+    "alt": "Two lanes of the ZeroBox kanban board, Foothold and Completed, with machine cards.",
+    "width": 1443,
+    "height": 1443,
+    "cssWidth": 481,
+    "srcset": [
+      {
+        "src": "/images/landing/kanban-m-1443.webp",
+        "w": 1443
+      },
+      {
+        "src": "/images/landing/kanban-m-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "clock",
+    "alt": "ZeroBox countdown clock for the 24-hour OSCP exam, with pause and reset controls.",
+    "width": 1080,
+    "height": 252,
+    "cssWidth": 360,
+    "srcset": [
+      {
+        "src": "/images/landing/clock-1080.webp",
+        "w": 1080
+      },
+      {
+        "src": "/images/landing/clock-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "graph",
+    "alt": "ZeroBox attack graph after Auto layout: Included, Bike and Unified linked by SSH, chisel and ligolo pivot edges.",
+    "width": 1600,
+    "height": 1000,
+    "cssWidth": 938,
+    "srcset": [
+      {
+        "src": "/images/landing/graph-2400.webp",
+        "w": 2400
+      },
+      {
+        "src": "/images/landing/graph-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/graph-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "table",
+    "alt": "ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Delete.",
+    "width": 1524,
+    "height": 1218,
+    "cssWidth": 508,
+    "srcset": [
+      {
+        "src": "/images/landing/table-1524.webp",
+        "w": 1524
+      },
+      {
+        "src": "/images/landing/table-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "vault",
+    "alt": "ZeroBox evidence vault stat tiles and credential list with every secret masked behind a reveal toggle.",
+    "width": 1600,
+    "height": 1067,
+    "cssWidth": 820,
+    "srcset": [
+      {
+        "src": "/images/landing/vault-2400.webp",
+        "w": 2400
+      },
+      {
+        "src": "/images/landing/vault-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/vault-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "exam",
+    "alt": "ZeroBox OSCP exam simulator three hours in: total score, countdown clock and the burn-down chart against the 70 point pass line.",
+    "width": 1600,
+    "height": 1201,
+    "cssWidth": 738,
+    "srcset": [
+      {
+        "src": "/images/landing/exam-2214.webp",
+        "w": 2214
+      },
+      {
+        "src": "/images/landing/exam-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/exam-800.webp",
+        "w": 800
+      }
+    ]
+  }
+]
