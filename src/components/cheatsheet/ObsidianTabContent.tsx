@@ -774,11 +774,12 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onViewModeChange('split');
+                  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+                  onViewModeChange(isMobile ? 'raw' : 'split');
                   if (soundEnabled) playCyberSound('click');
                 }}
                 className="px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-colors flex items-center gap-1 cursor-pointer"
-                title="Switch to Split Edit View"
+                title="Switch to Edit View"
               >
                 <Edit3 className="w-2.5 h-2.5" />
                 <span>Edit Note</span>
@@ -827,7 +828,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           onContentChange={setLiveContent}
           globalVars={globalVars}
           soundEnabled={soundEnabled}
-          minHeight="550px"
+          minHeight={typeof window !== 'undefined' && window.innerWidth < 768 ? '300px' : '550px'}
         />
       )}
 
@@ -842,7 +843,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               globalVars={globalVars}
               soundEnabled={soundEnabled}
               isSplitView={true}
-              minHeight="600px"
+              minHeight={typeof window !== 'undefined' && window.innerWidth < 768 ? '260px' : '600px'}
             />
           </div>
           <div className="min-w-0 rounded-xl border border-strong bg-surface-card p-4 sm:p-5 overflow-y-auto max-h-[850px] space-y-4">

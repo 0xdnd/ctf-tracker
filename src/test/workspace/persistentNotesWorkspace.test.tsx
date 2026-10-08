@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useCtfStore } from '../../store/useCtfStore';
 import { PersistentNotesWorkspace } from '../../components/workspace/PersistentNotesWorkspace';
 import { NotesWorkspaceTabStrip } from '../../components/workspace/NotesWorkspaceTabStrip';
 import { MobileNav } from '../../components/layout/MobileNav';
@@ -178,5 +179,109 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
     expect(merged.openTabIds).toContain('01-recon-port-scanning');
     expect(merged.openTabIds).not.toContain('00_methodology_pt');
     expect(merged.activeTabId).toBe('01-recon-port-scanning');
+  });
+
+  it('closes mobile notes sheet when navigating from MobileNav', () => {
+    act(() => {
+      useNotesWorkspaceStore.setState({
+        openTabIds: ['01-recon-port-scanning'],
+        isOpen: true,
+      });
+    });
+
+    render(
+      <BrowserRouter>
+        <MobileNav />
+      </BrowserRouter>
+    );
+
+    expect(useNotesWorkspaceStore.getState().isOpen).toBe(true);
+
+    // Tapping Targets navigation tab closes the open notes sheet
+    const targetsBtn = screen.getByText('Targets');
+    fireEvent.click(targetsBtn);
+    expect(useNotesWorkspaceStore.getState().isOpen).toBe(false);
+  });
+
+  it('renders mobile note content without nested overflow-y scroll lock', () => {
+    act(() => {
+      useNotesWorkspaceStore.setState({
+        openTabIds: ['01-recon-port-scanning'],
+        activeTabId: '01-recon-port-scanning',
+        isOpen: true,
+      });
+    });
+
+    render(
+      <BrowserRouter>
+        <PersistentNotesWorkspace />
+      </BrowserRouter>
+    );
+
+    const mobileTab = screen.getByTestId('mobile-dock-tab-content-01-recon-port-scanning');
+    expect(mobileTab).toBeInTheDocument();
+    // Inner active container owns the scroll and has touch overscroll containment
+    expect(mobileTab.className).toContain('overflow-y-auto');
+    expect(mobileTab.className).toContain('overscroll-contain');
+  });
+
+  it('resolves and renders custom user notes in NotesWorkspaceTabStrip', () => {
+    act(() => {
+      useNotesWorkspaceStore.setState({
+        openTabIds: ['custom-privesc-notes'],
+        activeTabId: 'custom-privesc-notes',
+      });
+    });
+
+    render(
+      <BrowserRouter>
+        <NotesWorkspaceTabStrip />
+      </BrowserRouter>
+    );
+
+    // Tab renders with formatted title
+    expect(screen.getByText('custom privesc notes')).toBeInTheDocument();
+  });
+
+  it('resolves custom notes directly from useCtfStore with custom title and search dropdown', () => {
+    act(() => {
+      useCtfStore.setState({
+        customNotes: [
+          {
+            id: 'custom-ad-note',
+            title: 'Custom AD Kerberoast Playbook',
+            titleEn: 'Custom AD Kerberoast Playbook',
+            category: 'active-directory',
+            rawCategory: 'active-directory',
+            subCategory: 'Kerberos',
+            tags: ['ad', 'kerberos'],
+            difficulty: 'Hard',
+            summary: 'Custom summary',
+            commands: ['GetUserSPNs.py'],
+            relPath: 'custom/ad.md',
+            rawMarkdown: '# Custom AD Playbook',
+          } as any,
+        ],
+      });
+      useNotesWorkspaceStore.setState({
+        openTabIds: ['custom-ad-note'],
+        activeTabId: 'custom-ad-note',
+      });
+    });
+
+    render(
+      <BrowserRouter>
+        <NotesWorkspaceTabStrip />
+      </BrowserRouter>
+    );
+
+    // Tab renders with the custom title from store
+    expect(screen.getByText('Custom AD Kerberoast Playbook')).toBeInTheDocument();
+
+    // Clicking '+' button opens search and includes the custom note
+    const plusBtn = screen.getByLabelText('Open Note in Tab');
+    fireEvent.click(plusBtn);
+    expect(screen.getByPlaceholderText('Search field notes & guides...')).toBeInTheDocument();
+    expect(screen.getAllByText('Custom AD Kerberoast Playbook').length).toBeGreaterThan(0);
   });
 });

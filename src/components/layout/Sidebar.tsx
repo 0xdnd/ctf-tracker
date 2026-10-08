@@ -221,7 +221,7 @@ export const Sidebar: React.FC = () => {
 
           {!collapsed && (
             <div className="flex-1 flex items-center justify-between min-w-0 text-left">
-              <span className="truncate mr-2">Notes Workspace</span>
+              <span className="truncate mr-2">Notes</span>
               {openNotesCount > 0 && (
                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
                   {openNotesCount} active

@@ -25,7 +25,8 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
   } = useNotesWorkspaceStore();
 
   const customNotes = useCtfStore((s) => s.customNotes || []);
-  const allNotes = React.useMemo(() => getAllCptsNotes(), [customNotes]);
+  const userNotes = useCtfStore((s) => s.userNotes || []);
+  const allNotes = React.useMemo(() => [...(customNotes || []), ...getAllCptsNotes()], [customNotes, userNotes]);
   const notesMap = React.useMemo(() => new Map(allNotes.map((n) => [n.id, n])), [allNotes]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -71,7 +72,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
         {openTabIds.map((tabId) => {
           const note = notesMap.get(tabId);
           const isActive = tabId === activeTabId;
-          const title = note?.title || tabId.replace(/_/g, ' ');
+          const title = note?.title || tabId.replace(/[_-]/g, ' ');
 
           return (
             <div
@@ -101,7 +102,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   e.stopPropagation();
                   closeTab(tabId);
                 }}
-                className={`relative p-0.5 rounded-sm hover:bg-surface-hover text-muted hover:text-secondary transition-colors flex-shrink-0 ${
+                className={`relative p-1 rounded-sm hover:bg-surface-hover text-muted hover:text-secondary transition-colors flex-shrink-0 min-w-[20px] min-h-[20px] flex items-center justify-center cursor-pointer ${
                   isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
                 }`}
                 title="Close Tab"
@@ -152,7 +153,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                 )}
               </div>
 
-              <div className="max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin">
+              <div className="max-h-[48vh] sm:max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin overscroll-contain">
                 {filteredNotes.map((note) => {
                   const isAlreadyOpen = openTabIds.includes(note.id);
                   return (
@@ -163,6 +164,9 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                         openNote(note.id);
                         setIsSearchOpen(false);
                         setSearchQuery('');
+                        if (searchInputRef.current) {
+                          searchInputRef.current.blur();
+                        }
                       }}
                       className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
                         isAlreadyOpen

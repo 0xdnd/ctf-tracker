@@ -329,25 +329,45 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
       expect(screen.getAllByText(/Crucial AD reconnaissance methodology/i).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('provides quick Edit Note button in reading view header that switches to split mode', () => {
-      const onViewModeChange = vi.fn();
-      render(
-        <ObsidianTabContent
-          note={sampleNote}
-          isActive={true}
-          globalVars={mockGlobalVars}
-          soundEnabled={false}
-          onNavigateToNote={vi.fn()}
-          viewMode="reading"
-          onViewModeChange={onViewModeChange}
-        />
-      );
+    describe('quick Edit button viewport behavior', () => {
+      const originalWidth = window.innerWidth;
+      const setWidth = (w: number) =>
+        Object.defineProperty(window, 'innerWidth', { value: w, configurable: true, writable: true });
+      afterEach(() => setWidth(originalWidth));
 
-      const editBtn = screen.getByTitle('Switch to Split Edit View');
-      expect(editBtn).toBeInTheDocument();
+      const renderReading = (onViewModeChange: () => void) =>
+        render(
+          <ObsidianTabContent
+            note={sampleNote}
+            isActive={true}
+            globalVars={mockGlobalVars}
+            soundEnabled={false}
+            onNavigateToNote={vi.fn()}
+            viewMode="reading"
+            onViewModeChange={onViewModeChange}
+          />
+        );
 
-      fireEvent.click(editBtn);
-      expect(onViewModeChange).toHaveBeenCalledWith('split');
+      it('switches to split mode at desktop width', () => {
+        setWidth(1024);
+        const onViewModeChange = vi.fn();
+        renderReading(onViewModeChange);
+
+        const editBtn = screen.getByTitle('Switch to Edit View');
+        expect(editBtn).toBeInTheDocument();
+
+        fireEvent.click(editBtn);
+        expect(onViewModeChange).toHaveBeenCalledWith('split');
+      });
+
+      it('switches to raw mode at mobile width', () => {
+        setWidth(375);
+        const onViewModeChange = vi.fn();
+        renderReading(onViewModeChange);
+
+        fireEvent.click(screen.getByTitle('Switch to Edit View'));
+        expect(onViewModeChange).toHaveBeenCalledWith('raw');
+      });
     });
   });
 

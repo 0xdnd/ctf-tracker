@@ -112,6 +112,7 @@ export const MobileNav: React.FC = () => {
     setActiveTab(tabId);
     navigate(path);
     setMobileMenuOpen(false);
+    useNotesWorkspaceStore.getState().setIsOpen(false);
     if (soundEnabled) playCyberSound('click');
   };
 

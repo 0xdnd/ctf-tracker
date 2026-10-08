@@ -634,7 +634,7 @@ export const UnifiedHeader: React.FC = () => {
             toggleNotesWorkspace();
             if (soundEnabled) playCyberSound('click');
           }}
-          className={`hidden xl:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary' : ''}`}
+          className={`hidden md:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
           title="Toggle Notes Workspace Sidecar (Alt+N)"
           aria-label="Toggle Field Notes Sidecar"
         >
@@ -646,7 +646,7 @@ export const UnifiedHeader: React.FC = () => {
               </span>
             )}
           </div>
-          <span className="hidden 2xl:inline">Notes</span>
+          <span className="hidden lg:inline">Notes</span>
         </button>
 
         {/* Command palette trigger */}
