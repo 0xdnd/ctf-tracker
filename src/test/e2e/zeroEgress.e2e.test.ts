@@ -58,7 +58,19 @@ describe('Tier 4 E2E: Air-Gapped Zero-Egress Posture & Network Isolation Invaria
       // CSP must forbid remote origins
       expect(csp).toMatch(/default-src\s+['"]none['"]/i);
       expect(csp).toMatch(/connect-src\s+['"]self['"]/i);
-      expect(csp).not.toMatch(/https:\/\//i);
+
+      // The ONLY permitted https origin is the optional BYOK AI host, and only inside connect-src.
+      const AI_HOST = 'https://api.anthropic.com';
+      const connectSrc = csp.match(/connect-src\s+([^;]*)/i)![1];
+      const cspWithoutAllowedAiHost = csp.replace(
+        connectSrc,
+        connectSrc.split(/\s+/).filter((t) => t !== AI_HOST).join(' ')
+      );
+      expect(cspWithoutAllowedAiHost).not.toMatch(/https:\/\//i);
+      for (const directive of ['default-src', 'script-src', 'img-src']) {
+        const value = csp.match(new RegExp(`${directive}\\s+([^;]*)`, 'i'))![1];
+        expect(value).not.toContain('api.anthropic.com');
+      }
     });
 
     it('ZERO-EGRESS-02: src/index.css contains ZERO remote @import statements or remote font URLs', () => {

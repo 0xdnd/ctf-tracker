@@ -394,7 +394,7 @@ export const SettingsDropdown: React.FC = () => {
 
           {/* Offline footer */}
           <div className="px-2 py-1 text-[11px] text-muted flex items-center justify-between">
-            <span>Offline, zero egress</span>
+            <span>Local-first, no telemetry</span>
             <span className="text-callout-success-fg font-medium">Verified</span>
           </div>
         </div>

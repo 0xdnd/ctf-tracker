@@ -626,7 +626,7 @@ export const NotesImportModal: React.FC = () => {
                   <ul className="list-disc list-inside space-y-1 text-secondary">
                     <li><strong>Direct Folder:</strong> Click <strong className="text-secondary">Select Folder / Dir</strong> to import your notes folder directly from disk without needing to zip it first.</li>
                     <li><strong>Nested Sub-directories:</strong> Preserves arbitrary folder depths (00 Methodology, 01 Recon, etc.) with automatic category grouping.</li>
-                    <li><strong>Zero-Egress:</strong> All markdown notes, frontmatter, and commands are parsed in-browser and cached in your private IndexedDB.</li>
+                    <li><strong>Local-first:</strong> All markdown notes, frontmatter, and commands are parsed in-browser and cached in your private IndexedDB. No telemetry.</li>
                     <li><strong>Persistence:</strong> Stored locally on this browser and retained across reloads.</li>
                   </ul>
                 </div>
