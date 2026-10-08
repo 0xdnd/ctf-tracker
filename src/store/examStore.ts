@@ -29,6 +29,7 @@ import {
   isDomainControllerBox,
 } from '../utils/examComplianceUtils';
 import { playCyberAlert } from '../utils/audioAlerts';
+import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
 import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
 
 let examAlertChannel: BroadcastChannel | null = null;
@@ -88,6 +89,12 @@ export interface ExamSessionState {
   isQuickDrawerOpen: boolean;
   scratchNotes: string;
   includeBonusPoints: boolean;
+  /** Box the operator is currently working (rabbit-hole clock). */
+  activeBoxId: string | null;
+  /** Effective ms timestamp the active box session began (shifted forward across pauses). */
+  activeBoxSince: number | null;
+  activeBoxPausedAt: number | null;
+  rabbitHoleSnoozeUntil: number | null;
 }
 
 export interface ExamStoreActions {
@@ -117,6 +124,10 @@ export interface ExamStoreActions {
   setScratchNotes: (notes: string) => void;
   setIncludeBonusPoints: (include: boolean) => void;
 
+  // Rabbit-hole clock
+  setActiveBox: (boxId: string | null) => void;
+  snoozeRabbitHole: (minutes?: number) => void;
+
   // UI State
   setQuickDrawerOpen: (open: boolean) => void;
   toggleQuickDrawer: () => void;
@@ -145,6 +156,30 @@ const DEFAULT_BREAK_STATE: ExamBreakState = {
   expiresAt: null,
 };
 
+const NO_ACTIVE_BOX = {
+  activeBoxId: null,
+  activeBoxSince: null,
+  activeBoxPausedAt: null,
+  rabbitHoleSnoozeUntil: null,
+} as const;
+
+/** Progress on the active box (new flag) restarts its rabbit-hole clock. */
+function rabbitHoleProgressReset(state: ExamSessionState, boxId: string): Partial<ExamSessionState> {
+  if (state.activeBoxId !== boxId) return {};
+  return { activeBoxSince: state.activeBoxPausedAt ?? Date.now(), rabbitHoleSnoozeUntil: null };
+}
+
+/** Shift the rabbit-hole clock forward by the pause duration so paused time does not count. */
+function resumedRabbitHoleClock(state: ExamSessionState, now: number): Partial<ExamSessionState> {
+  if (!state.activeBoxId || state.activeBoxPausedAt === null) return { activeBoxPausedAt: null };
+  const paused = Math.max(0, now - state.activeBoxPausedAt);
+  return {
+    activeBoxPausedAt: null,
+    activeBoxSince: state.activeBoxSince === null ? null : state.activeBoxSince + paused,
+    rabbitHoleSnoozeUntil: state.rabbitHoleSnoozeUntil === null ? null : state.rabbitHoleSnoozeUntil + paused,
+  };
+}
+
 function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
   const config = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
   const boxes = generateExamTargetsForTrack(track);
@@ -168,6 +203,7 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
     isQuickDrawerOpen: false,
     scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n- administrator : P@ssw0rd2024!\n\n## Active Tunnels & Pivots\n- Chisel SOCKS5 proxy on 127.0.0.1:1080 -> 172.16.1.0/24`,
     includeBonusPoints: false,
+    ...NO_ACTIVE_BOX,
   };
 }
 
@@ -239,6 +275,7 @@ export const useExamStore = create<ExamStore>()(
           osid: config?.osid || get().osid,
           activeBreak: { ...DEFAULT_BREAK_STATE },
           breakHistory: [],
+          ...NO_ACTIVE_BOX,
           milestones: [
             {
               id: `ms_${now}_start`,
@@ -268,6 +305,7 @@ export const useExamStore = create<ExamStore>()(
           examExpiresAt: null,
           timerPausedRemainingSeconds: remaining,
           remainingSeconds: remaining,
+          activeBoxPausedAt: state.activeBoxId ? now : null,
         });
 
         playCyberAlert('tick');
@@ -286,6 +324,7 @@ export const useExamStore = create<ExamStore>()(
           examExpiresAt: expiresAt,
           timerPausedRemainingSeconds: null,
           remainingSeconds: remaining,
+          ...resumedRabbitHoleClock(state, now),
         });
 
         playCyberAlert('tick');
@@ -412,6 +451,7 @@ export const useExamStore = create<ExamStore>()(
         set({
           boxes: updatedBoxes,
           milestones: newMilestones,
+          ...(!wasAlreadyPwned ? rabbitHoleProgressReset(state, boxId) : {}),
         });
 
         return true;
@@ -463,7 +503,9 @@ export const useExamStore = create<ExamStore>()(
           playCyberAlert('tick');
         }
 
-        set({ boxes: updatedBoxes });
+        const nowPwned = updatedBoxes.find((b) => b.id === boxId);
+        const gained = flagType === 'user' ? nowPwned?.userPwned : nowPwned?.rootPwned;
+        set({ boxes: updatedBoxes, ...(gained ? rabbitHoleProgressReset(state, boxId) : {}) });
       },
 
       updateProof: (boxId, flagType, proofUpdate) => {
@@ -639,6 +681,24 @@ export const useExamStore = create<ExamStore>()(
         set((state) => ({ isQuickDrawerOpen: !state.isQuickDrawerOpen }));
       },
 
+      setActiveBox: (boxId) => {
+        const state = get();
+        if (state.status !== 'running' && state.status !== 'paused') return;
+        if (state.activeBoxId === boxId) return;
+        set({
+          activeBoxId: boxId,
+          activeBoxSince: boxId ? state.activeBoxPausedAt ?? Date.now() : null,
+          activeBoxPausedAt: boxId && state.status === 'paused' ? state.activeBoxPausedAt ?? Date.now() : null,
+          rabbitHoleSnoozeUntil: null,
+        });
+      },
+
+      snoozeRabbitHole: (minutes = RABBIT_HOLE_THRESHOLDS.snoozeMinutes) => {
+        const state = get();
+        const ref = state.activeBoxPausedAt ?? Date.now();
+        set({ rabbitHoleSnoozeUntil: ref + minutes * 60_000 });
+      },
+
       // 1Hz tick: Pure in-memory derivation, excluded from partialize and selective storage
       tick: () => {
         const state = get();
@@ -792,6 +852,10 @@ export const useExamStore = create<ExamStore>()(
         milestones: state.milestones,
         scratchNotes: state.scratchNotes,
         includeBonusPoints: state.includeBonusPoints,
+        activeBoxId: state.activeBoxId,
+        activeBoxSince: state.activeBoxSince,
+        activeBoxPausedAt: state.activeBoxPausedAt,
+        rabbitHoleSnoozeUntil: state.rabbitHoleSnoozeUntil,
         isQuickDrawerOpen: state.isQuickDrawerOpen,
       }),
       onRehydrateStorage: () => (state) => {

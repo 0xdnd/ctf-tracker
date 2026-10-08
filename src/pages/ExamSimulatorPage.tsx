@@ -55,6 +55,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
 import { ExamReportModal } from '../components/exam/ExamReportModal';
+import { useExamRabbitHole } from '../hooks/useExamRabbitHole';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
 
 export const ExamSimulatorPage: React.FC = () => {
@@ -133,6 +134,10 @@ export const ExamSimulatorPage: React.FC = () => {
   // Expanded box card for evidence dropzones
   const [expandedBoxId, setExpandedBoxId] = useState<string | null>(null);
   const [activeProofTab, setActiveProofTab] = useState<'user' | 'root'>('user');
+
+  const rabbitHole = useExamRabbitHole();
+  const setActiveBox = useExamStore((s) => s.setActiveBox);
+  const snoozeRabbitHole = useExamStore((s) => s.snoozeRabbitHole);
 
   // Bio-Break Modal visibility
   const [isBioBreakModalOpen, setIsBioBreakModalOpen] = useState(false);
@@ -968,7 +973,10 @@ export const ExamSimulatorPage: React.FC = () => {
             </span>
             <button aria-label={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
               type="button"
-              onClick={() => setExpandedBoxId(isExpanded ? null : box.id)}
+              onClick={() => {
+                if (!isExpanded) setActiveBox(box.id);
+                setExpandedBoxId(isExpanded ? null : box.id);
+              }}
               className="p-1 max-sm:p-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary transition-interactive border border-subtle active:scale-[0.97]"
               title={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
             >
@@ -989,6 +997,26 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
           <DifficultyBadge difficulty={box.difficulty} size="xs" />
         </div>
+
+        {rabbitHole.isRabbitHole && rabbitHole.boxId === box.id && (
+          <div
+            role="alert"
+            data-testid={`exam-rabbit-hole-${box.id}`}
+            className="mb-3 p-2 rounded-lg border border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg text-xs flex items-center justify-between gap-2"
+          >
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              Rabbit hole: {Math.floor(rabbitHole.timeSpentSeconds / 60)}m without a flag. Pivot to another target.
+            </span>
+            <button
+              type="button"
+              onClick={() => snoozeRabbitHole()}
+              className="px-2 py-1 max-sm:py-2 rounded border border-callout-danger-border font-semibold transition-interactive active:scale-[0.97]"
+            >
+              Snooze 30m
+            </button>
+          </div>
+        )}
 
         {/* Pwn Quick Action Buttons */}
         <div className="grid grid-cols-2 gap-2 mb-3">

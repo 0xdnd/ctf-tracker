@@ -9,6 +9,7 @@
  */
 
 import { ExamBox, ExamTrackConfig } from './examComplianceUtils';
+import { RABBIT_HOLE_THRESHOLDS } from './rabbitHoleConfig';
 
 /** Track parameters the pacing engine scales against (defaults to the 24h / 100-pt OSCP exam). */
 export type PacingTrackConfig = Pick<ExamTrackConfig, 'maxScore' | 'durationSeconds'>;
@@ -143,7 +144,7 @@ export function checkRabbitHole(
   targetName: string,
   targetActiveSinceMs: number | null,
   isPwned: boolean = false,
-  thresholdMinutes: number = 90,
+  thresholdMinutes: number = RABBIT_HOLE_THRESHOLDS.examMinutes,
   currentTime: number = Date.now()
 ): RabbitHoleWarning {
   const thresholdSeconds = thresholdMinutes * 60;
