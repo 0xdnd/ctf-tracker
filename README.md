@@ -31,6 +31,10 @@
 
 ---
 
+**ZeroBox is a free, open-source CTF tracker** for [Hack The Box](https://www.hackthebox.com/) and [TryHackMe](https://tryhackme.com/). Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
+
+---
+
 ## 🤔 Why ZeroBox?
 
 Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across browser tabs, a Notion page, a text file of creds and a cheatsheet you keep re-typing IPs into. ZeroBox puts it all in one place:
@@ -144,6 +148,25 @@ npx tsc --noEmit   # type check
 npm test           # unit & component tests (Vitest)
 npm run test:e2e   # browser E2E crawl (Python + Playwright)
 ```
+
+---
+
+## ❓ FAQ
+
+**What is a CTF tracker?**
+A CTF tracker is a tool for keeping track of the capture the flag challenges you have started and finished. ZeroBox tracks HTB machines and TryHackMe rooms through each stage, from recon to root, and stores your flags, credentials and notes with them.
+
+**Is ZeroBox free?**
+Yes. It's free for personal and educational use, needs no account, and has no paywall. Open [ctftracker.com](https://ctftracker.com/) and start.
+
+**Does it work offline? Where is my data stored?**
+Everything is stored locally in your browser (LocalStorage + IndexedDB). There is no backend and nothing is uploaded. You can export a JSON backup at any time.
+
+**Which platforms does it cover?**
+415 retired Hack The Box machines and Starting Point labs, plus 514 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab.
+
+**Can I use it to prepare for OSCP or CPTS?**
+Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
 
 ---
 
