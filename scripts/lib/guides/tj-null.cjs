@@ -69,7 +69,7 @@ function build({ model, esc }) {
 <li>Re-solve a few boxes from scratch later, with a timer.</li>
 </ul>
 <h2>On the list, in the ZeroBox catalogue</h2>
-<p>${onList.length} Hack The Box machines from the list are in the catalogue, and ${taggedOnList} of them carry the ZeroBox OSCP tag. Others carry tags from other tracks or none, so the last column shows the tag, not whether a box is on TJ Null's list. Machines I have solved link to an attack path page; the rest link to the official room.</p>
+<p>${onList.length} Hack The Box machines from the list are in the catalogue, and ${taggedOnList} of them carry the ZeroBox OSCP tag. Others carry tags from other tracks or none, so the last column shows the tag, not whether a box is on TJ Null's list. Machines with a ZeroBox writeup link to an attack path page; the rest link to the official room.</p>
 <table><thead><tr><th>Machine (Hack The Box)</th><th>OS</th><th>Difficulty</th><th>ZeroBox OSCP tag</th></tr></thead><tbody>${rowsA}</tbody></table>
 <h2>Other machines the catalogue tags OSCP</h2>
 <p>These ${others.length} carry the ZeroBox OSCP tag but are not on the Hack The Box tab above, mostly TryHackMe rooms. They are useful practice, but they are not TJ Null's picks. For the same machines grouped by difficulty, see <a href="/oscp-like-machines/">OSCP-like machines</a>.</p>
