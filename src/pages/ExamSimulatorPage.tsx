@@ -74,6 +74,7 @@ export const ExamSimulatorPage: React.FC = () => {
     milestones,
     scratchNotes,
     includeBonusPoints,
+    findings,
     candidateName,
     candidateCallsign,
     osid,
@@ -109,6 +110,7 @@ export const ExamSimulatorPage: React.FC = () => {
       milestones: s.milestones,
       scratchNotes: s.scratchNotes,
       includeBonusPoints: s.includeBonusPoints,
+      findings: s.findings,
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
       osid: s.osid,
@@ -248,6 +250,7 @@ export const ExamSimulatorPage: React.FC = () => {
       boxes,
       scratchNotes,
       includeBonusPoints,
+      findings,
     };
     const md = generateExamReportMarkdown(sessionPayload);
     const blob = new Blob([md], { type: 'text/markdown' });

@@ -31,6 +31,7 @@ import {
 import { playCyberAlert } from '../utils/audioAlerts';
 import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
 import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
+import type { Finding } from '../types/findings';
 
 let examAlertChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -95,6 +96,8 @@ export interface ExamSessionState {
   activeBoxSince: number | null;
   activeBoxPausedAt: number | null;
   rabbitHoleSnoozeUntil: number | null;
+  /** Structured report findings for this exam session (additive; absent in older payloads). */
+  findings: Finding[];
 }
 
 export interface ExamStoreActions {
@@ -127,6 +130,11 @@ export interface ExamStoreActions {
   // Rabbit-hole clock
   setActiveBox: (boxId: string | null) => void;
   snoozeRabbitHole: (minutes?: number) => void;
+
+  // Report findings
+  addFinding: (finding?: Partial<Omit<Finding, 'id'>>) => string;
+  updateFinding: (id: string, patch: Partial<Omit<Finding, 'id'>>) => void;
+  deleteFinding: (id: string) => void;
 
   // UI State
   setQuickDrawerOpen: (open: boolean) => void;
@@ -203,6 +211,7 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
     isQuickDrawerOpen: false,
     scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n- administrator : P@ssw0rd2024!\n\n## Active Tunnels & Pivots\n- Chisel SOCKS5 proxy on 127.0.0.1:1080 -> 172.16.1.0/24`,
     includeBonusPoints: false,
+    findings: [],
     ...NO_ACTIVE_BOX,
   };
 }
@@ -699,6 +708,31 @@ export const useExamStore = create<ExamStore>()(
         set({ rabbitHoleSnoozeUntil: ref + minutes * 60_000 });
       },
 
+      addFinding: (finding) => {
+        const id = `fnd_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const created: Finding = {
+          title: '',
+          severity: 'info',
+          affectedHosts: [],
+          description: '',
+          evidenceRefs: [],
+          ...finding,
+          id,
+        };
+        set((state) => ({ findings: [...(state.findings || []), created] }));
+        return id;
+      },
+
+      updateFinding: (id, patch) => {
+        set((state) => ({
+          findings: (state.findings || []).map((f) => (f.id === id ? { ...f, ...patch, id } : f)),
+        }));
+      },
+
+      deleteFinding: (id) => {
+        set((state) => ({ findings: (state.findings || []).filter((f) => f.id !== id) }));
+      },
+
       // 1Hz tick: Pure in-memory derivation, excluded from partialize and selective storage
       tick: () => {
         const state = get();
@@ -824,6 +858,7 @@ export const useExamStore = create<ExamStore>()(
       // v1: ScreenshotProof gained optional `imageRef` (bytes in IndexedDB) and `dataUrl` became
       // optional. The shape change is additive, so older payloads need no sync transformation;
       // inline Base64 is moved to IndexedDB asynchronously after hydration.
+      // `findings` is likewise additive: older payloads lack it and keep the initial `[]`.
       version: 1,
       migrate: (persistedState) => persistedState as ExamSessionState,
       // Crucial: Only persist discrete state mutations!
@@ -852,6 +887,7 @@ export const useExamStore = create<ExamStore>()(
         milestones: state.milestones,
         scratchNotes: state.scratchNotes,
         includeBonusPoints: state.includeBonusPoints,
+        findings: state.findings,
         activeBoxId: state.activeBoxId,
         activeBoxSince: state.activeBoxSince,
         activeBoxPausedAt: state.activeBoxPausedAt,

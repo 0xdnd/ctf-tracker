@@ -18,12 +18,76 @@
 import {
   ExamTrack,
   ExamBox,
+  ScreenshotProof,
   ExamSessionState,
   EXAM_TRACK_CONFIGS,
   calculateExamScore,
   ExamScoreResult,
 } from './examComplianceUtils';
 import { parseMarkdownToHtml, escapeHtml } from './writeupHtmlExporter';
+import type { Finding } from '../types/findings';
+import { sortFindingsBySeverity } from './cvss';
+
+/** Single-line, pipe-free text so it is safe inside a markdown table cell or heading. */
+const inlineText = (value: string): string => (value || '').replace(/\s*[\r\n]+\s*/g, ' ').replace(/\|/g, '/').trim();
+
+/**
+ * Renders the "Findings Summary" table (severity-sorted) and per-finding sections.
+ * Evidence ids are resolved against the boxes' proof screenshots; unknown ids are skipped.
+ * Returns '' when there are no findings.
+ */
+export function generateFindingsMarkdown(
+  findings: Finding[] | undefined,
+  boxes: ExamBox[],
+  options?: { includeScreenshots?: boolean }
+): string {
+  if (!findings || findings.length === 0) return '';
+  const includeScreenshots = options?.includeScreenshots !== false;
+  const sorted = sortFindingsBySeverity(findings);
+
+  const screenshots = new Map<string, { sc: ScreenshotProof; box: ExamBox; flag: string }>();
+  boxes.forEach((b) =>
+    ([['user', b.userProof], ['root', b.rootProof]] as const).forEach(([flag, proof]) =>
+      (proof?.screenshots || []).forEach((sc) => screenshots.set(sc.id, { sc, box: b, flag }))
+    )
+  );
+
+  let md = `## 2A. Findings Summary\n\n`;
+  md += `| # | Finding | Severity | CVSS | Affected Hosts |\n| :--- | :--- | :--- | :--- | :--- |\n`;
+  sorted.forEach((f, i) => {
+    const score = typeof f.cvssScore === 'number' ? f.cvssScore.toFixed(1) : 'N/A';
+    const hosts = f.affectedHosts.map(inlineText).filter(Boolean).join(', ') || 'N/A';
+    md += `| ${i + 1} | ${inlineText(f.title) || 'Untitled finding'} | ${f.severity.toUpperCase()} | ${score} | ${hosts} |\n`;
+  });
+
+  md += `\n---\n\n## 2B. Detailed Findings\n\n`;
+  sorted.forEach((f, i) => {
+    md += `### 2B.${i + 1} ${inlineText(f.title) || 'Untitled finding'}\n\n`;
+    md += `- **Severity:** ${f.severity.toUpperCase()}\n`;
+    if (typeof f.cvssScore === 'number') {
+      md += `- **CVSS v3.1 Base Score:** ${f.cvssScore.toFixed(1)}${f.cvssVector ? ` (\`${inlineText(f.cvssVector)}\`)` : ''}\n`;
+    } else if (f.cvssVector) {
+      md += `- **CVSS Vector:** \`${inlineText(f.cvssVector)}\`\n`;
+    }
+    md += `- **Affected Hosts:** ${f.affectedHosts.map(inlineText).filter(Boolean).join(', ') || 'N/A'}\n\n`;
+    md += `**Description:**\n\n${f.description || 'No description provided.'}\n\n`;
+    if (f.impact) md += `**Impact:**\n\n${f.impact}\n\n`;
+    if (f.remediation) md += `**Remediation:**\n\n${f.remediation}\n\n`;
+
+    const evidence = f.evidenceRefs.map((id) => screenshots.get(id)).filter((e): e is NonNullable<typeof e> => Boolean(e));
+    if (evidence.length > 0) {
+      md += `**Evidence:**\n\n`;
+      evidence.forEach(({ sc, box, flag }) => {
+        const caption = inlineText(sc.caption) || 'Evidence screenshot';
+        md += `- ${caption} (${box.name}, ${flag} proof, ${sc.timestamp})\n`;
+        if (includeScreenshots && sc.dataUrl) md += `\n![${caption}](${sc.dataUrl})\n\n`;
+      });
+      md += `\n`;
+    }
+  });
+  md += `---\n\n`;
+  return md;
+}
 
 export interface ExamReportOptions {
   candidateName?: string;
@@ -296,6 +360,8 @@ export function generateExamReportMarkdown(
 
     report += `---\n\n`;
   });
+
+  report += generateFindingsMarkdown(session.findings, session.boxes, { includeScreenshots });
 
   report += `## 3. Candidate Operational Scratchpad & Notes\n\n`;
   report += `${session.scratchNotes || 'No additional scratchpad notes provided.'}\n\n`;

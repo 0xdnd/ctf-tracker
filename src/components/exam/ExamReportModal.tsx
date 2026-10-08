@@ -16,8 +16,11 @@ import {
   User,
   Hash,
   Sparkles,
+  Archive,
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
+import { ExamFindingsEditor } from './ExamFindingsEditor';
+import { buildSubmissionBundle } from '../../utils/examSubmissionBundle';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useBoxesWithProofImages } from '../../hooks/useProofImage';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
@@ -67,6 +70,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       timerPausedRemainingSeconds: s.timerPausedRemainingSeconds,
       scratchNotes: s.scratchNotes,
       includeBonusPoints: s.includeBonusPoints,
+      findings: s.findings,
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
       osid: s.osid,
@@ -75,7 +79,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
 
   // Fallback to store if propSession is not provided
   const baseSession: ExamSessionState = useMemo(() => {
-    if (propSession) return propSession;
+    if (propSession) return propSession.findings ? propSession : { ...propSession, findings: store.findings };
     return {
       id: store.id,
       track: store.track,
@@ -90,6 +94,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       boxes: store.boxes,
       scratchNotes: store.scratchNotes,
       includeBonusPoints: store.includeBonusPoints,
+      findings: store.findings,
     };
   }, [propSession, store]);
 
@@ -109,6 +114,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   // Button Feedback States
   const [copied, setCopied] = useState<boolean>(false);
   const [downloadFeedback, setDownloadFeedback] = useState<string | null>(null);
+  const [bundling, setBundling] = useState<boolean>(false);
 
   // Sync internal state when modal opens or baseSession changes
   useEffect(() => {
@@ -234,6 +240,38 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     playCyberSound('export');
     setDownloadFeedback('Air-gapped standalone HTML report (.html) downloaded.');
     setTimeout(() => setDownloadFeedback(null), 3000);
+  };
+
+  // Submission bundle (.zip): report.md, report.html, proofs/, findings.json, README.txt
+  const handleDownloadBundle = async () => {
+    setBundling(true);
+    try {
+      const { data, missingImages } = await buildSubmissionBundle(effectiveSession, reportOptions);
+      const blob = new Blob([data as BlobPart], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeCallsign = (candidateCallsign || 'candidate').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeDate = (examDate || new Date().toISOString().slice(0, 10)).replace(/[^a-zA-Z0-9_-]/g, '_');
+      a.download = `${selectedTrack}_SUBMISSION_BUNDLE_${safeCallsign}_${safeDate}.zip`;
+      try {
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch {}
+      URL.revokeObjectURL(url);
+      playCyberSound('export');
+      setDownloadFeedback(
+        missingImages > 0
+          ? `Submission bundle (.zip) downloaded. ${missingImages} proof image(s) could not be loaded.`
+          : 'Submission bundle (.zip) downloaded.'
+      );
+    } catch {
+      setDownloadFeedback('Submission bundle export failed.');
+    } finally {
+      setBundling(false);
+      setTimeout(() => setDownloadFeedback(null), 3000);
+    }
   };
 
   const trackConfig = EXAM_TRACK_CONFIGS[selectedTrack] || EXAM_TRACK_CONFIGS.OSCP;
@@ -490,7 +528,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Live Report Preview & Mode Tabs */}
+          {/* Section 2: Structured findings (stored per exam session) */}
+          <ExamFindingsEditor boxes={baseSession.boxes} />
+
+          {/* Live Report Preview & Mode Tabs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -599,6 +640,18 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             >
               <FileCode className="w-3.5 h-3.5 fill-current" />
               <span>Export HTML (.html)</span>
+            </button>
+
+            {/* Download Submission Bundle (.zip) */}
+            <button
+              type="button"
+              data-testid="report-download-bundle-btn"
+              onClick={handleDownloadBundle}
+              disabled={resolvingProofImages || bundling}
+              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>{bundling ? 'Building bundle...' : 'Download submission bundle (.zip)'}</span>
             </button>
           </div>
         </div>

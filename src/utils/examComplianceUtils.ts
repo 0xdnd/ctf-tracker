@@ -9,6 +9,7 @@
  */
 
 import { OperatingSystem, Difficulty, Machine } from '../types';
+import type { Finding } from '../types/findings';
 
 export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP';
 export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
@@ -95,6 +96,8 @@ export interface ExamSessionState {
   boxes: ExamBox[];
   scratchNotes: string;
   includeBonusPoints?: boolean;
+  /** Structured findings rendered as the report's Findings Summary / Detailed Findings sections. */
+  findings?: Finding[];
 }
 
 export interface FlagValidationResult {
