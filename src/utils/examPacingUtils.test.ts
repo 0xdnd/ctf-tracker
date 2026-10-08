@@ -6,7 +6,7 @@ import {
   formatSecondsToHms,
   formatSecondsToHoursMinutes,
 } from './examPacingUtils';
-import { generateExamTargetsForTrack } from './examComplianceUtils';
+import { generateExamTargetsForTrack, EXAM_TRACK_CONFIGS } from './examComplianceUtils';
 
 describe('examPacingUtils Dynamic Pacing & Rabbit Hole Engine', () => {
   const mockBoxes = generateExamTargetsForTrack('OSCP');
@@ -132,6 +132,158 @@ describe('examPacingUtils Dynamic Pacing & Rabbit Hole Engine', () => {
 
       expect(analysis.unrootedBoxesCount).toBe(6);
       expect(analysis.timeRemainingPerUnrootedBoxSeconds).toBe(Math.floor(remainingSeconds / 6)); // 3000s
+    });
+  });
+
+  describe('computeExamPacing track-aware thresholds', () => {
+    const HOUR = 3600 * 1000;
+    const makeSession = (
+      now: number,
+      elapsedH: number,
+      remainingH: number,
+      totalH: number
+    ) => ({
+      examStartedAt: now - elapsedH * HOUR,
+      examExpiresAt: now + remainingH * HOUR,
+      timerPausedRemainingSeconds: null,
+      totalDurationSeconds: totalH * 3600,
+      boxes: mockBoxes,
+    });
+
+    it('CPTS (240h): 30h left with 40 pts needed is CRITICAL (<= 25% of duration)', () => {
+      const now = Date.now();
+      const analysis = computeExamPacing(
+        makeSession(now, 210, 30, 240),
+        { totalScore: 45, passThreshold: 85 },
+        now,
+        EXAM_TRACK_CONFIGS.CPTS
+      );
+      expect(analysis.pacingStatus).toBe('CRITICAL');
+    });
+
+    it('CPTS (240h): 30h left with only 10 pts needed is not CRITICAL (<= 20% of maxScore)', () => {
+      const now = Date.now();
+      const analysis = computeExamPacing(
+        makeSession(now, 210, 30, 240),
+        { totalScore: 75, passThreshold: 85 },
+        now,
+        EXAM_TRACK_CONFIGS.CPTS
+      );
+      expect(analysis.pacingStatus).not.toBe('CRITICAL');
+    });
+
+    it('CPTS (240h): 70h left (> 25% of duration) is not CRITICAL even with 40 pts needed', () => {
+      const now = Date.now();
+      const session = makeSession(now, 170, 70, 240);
+      const cpts = computeExamPacing(session, { totalScore: 45, passThreshold: 85 }, now, EXAM_TRACK_CONFIGS.CPTS);
+      expect(cpts.pacingStatus).not.toBe('CRITICAL');
+    });
+
+    it('CRTO (48h): CRITICAL at 12h left with > 20 pts needed, not at 13h', () => {
+      const now = Date.now();
+      const at12 = computeExamPacing(
+        makeSession(now, 36, 12, 48),
+        { totalScore: 40, passThreshold: 75 },
+        now,
+        EXAM_TRACK_CONFIGS.CRTO
+      );
+      expect(at12.pacingStatus).toBe('CRITICAL');
+
+      const at13 = computeExamPacing(
+        makeSession(now, 35, 13, 48),
+        { totalScore: 40, passThreshold: 75 },
+        now,
+        EXAM_TRACK_CONFIGS.CRTO
+      );
+      expect(at13.pacingStatus).not.toBe('CRITICAL');
+    });
+
+    it('zero score is BEHIND_SCHEDULE only once 15% of the track duration has elapsed', () => {
+      const now = Date.now();
+      // CRTO: 15% of 48h = 7.2h
+      const early = computeExamPacing(
+        makeSession(now, 6, 42, 48),
+        { totalScore: 0, passThreshold: 75 },
+        now,
+        EXAM_TRACK_CONFIGS.CRTO
+      );
+      expect(early.pacingStatus).toBe('ON_TRACK');
+
+      const late = computeExamPacing(
+        makeSession(now, 8, 40, 48),
+        { totalScore: 0, passThreshold: 75 },
+        now,
+        EXAM_TRACK_CONFIGS.CRTO
+      );
+      expect(late.pacingStatus).toBe('BEHIND_SCHEDULE');
+    });
+
+    it('does not flag BEHIND_SCHEDULE on an absolute pts/hr rule when the pace is steady', () => {
+      const now = Date.now();
+      // OSCP, 20h left, 60 pts needed => 3 pts/hr required vs 20 pts / 4h = 5 pts/hr current
+      const analysis = computeExamPacing(
+        makeSession(now, 4, 20, 24),
+        { totalScore: 20, passThreshold: 80 },
+        now
+      );
+      expect(analysis.pacingStatus).toBe('ON_TRACK');
+    });
+
+    it('caps the projected score at the track maxScore, not a literal 100', () => {
+      const now = Date.now();
+      const cfg = { ...EXAM_TRACK_CONFIGS.CRTO, maxScore: 80 };
+      const analysis = computeExamPacing(
+        makeSession(now, 2, 46, 48),
+        { totalScore: 50, passThreshold: 75 },
+        now,
+        cfg
+      );
+      expect(analysis.projectedFinalScore).toBe(80);
+    });
+
+    it('defaults to the OSCP 24h / 100 pts behaviour when no config is passed', () => {
+      const now = Date.now();
+      const session = {
+        examStartedAt: now - 10 * HOUR,
+        examExpiresAt: null,
+        timerPausedRemainingSeconds: null,
+        boxes: mockBoxes,
+      };
+      const analysis = computeExamPacing(session, { totalScore: 10, passThreshold: 70 }, now);
+      expect(analysis.remainingSeconds).toBe(86400);
+
+      // 6h left (25% of 24h) with 30 pts needed: CRITICAL, exactly as before
+      const critical = computeExamPacing(
+        makeSession(now, 18, 6, 24),
+        { totalScore: 40, passThreshold: 70 },
+        now
+      );
+      expect(critical.pacingStatus).toBe('CRITICAL');
+
+      // Projection cap of 100
+      const capped = computeExamPacing(
+        makeSession(now, 1, 23, 24),
+        { totalScore: 90, passThreshold: 70 + 30 },
+        now
+      );
+      expect(capped.projectedFinalScore).toBe(100);
+    });
+
+    it('uses the track duration as the default remaining time when the session has none', () => {
+      const now = Date.now();
+      const session = {
+        examStartedAt: null,
+        examExpiresAt: null,
+        timerPausedRemainingSeconds: null,
+        boxes: mockBoxes,
+      };
+      const analysis = computeExamPacing(
+        session,
+        { totalScore: 0, passThreshold: 85 },
+        now,
+        EXAM_TRACK_CONFIGS.CPTS
+      );
+      expect(analysis.remainingSeconds).toBe(EXAM_TRACK_CONFIGS.CPTS.durationSeconds);
     });
   });
 

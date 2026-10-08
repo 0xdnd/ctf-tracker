@@ -11,6 +11,8 @@
  *   14 flag objectives across DMZ, Internal, AD, and Vault tiers).
  * - Zero-Point Security CRTO: Red team operator engagement report (75-pt threshold,
  *   8 C2 objectives, operational security & detection telemetry).
+ * - OffSec OSEP (PEN-300): Defense evasion & breaching defenses enterprise report.
+ * - Altered Security CRTP: Active Directory attack path assessment report.
  */
 
 import {
@@ -75,6 +77,26 @@ This assessment operated under assumed-breach red team conditions utilizing C2 o
 3. **Active Directory Reconnaissance & LAPS Extraction:** Queried domain directory objects using stealth LDAP queries to identify Tier-0 administrators, Kerberoastable SPNs, and accessible LAPS password attributes.
 4. **Lateral Movement & Peer-to-Peer Pivots:** Leveraged SMB pipe beacons, WinRM jumps, and WMI command execution across workstation and server tiers without triggering network anomalies.
 5. **Domain Dominance & Persistence:** Abused Active Directory Certificate Services (ADCS), forged Golden/Silver tickets with the Domain KRBTGT hash, and verified enterprise forest dominance.`;
+  }
+
+  if (track === 'OSEP') {
+    return `### 4.1 OffSec PEN-300 Evasion Techniques & Breaching Defenses Methodology
+The assessment simulated an advanced adversary operating against a defended enterprise network (endpoint protection, application allow-listing, and network segmentation):
+1. **Client-Side Initial Access:** Delivered staged payloads through phishing-style vectors (Office macros, HTA/JScript, and compiled loaders), with payload obfuscation and runtime decryption to defeat signature-based detection.
+2. **Endpoint Defense Evasion:** Bypassed AMSI, PowerShell Constrained Language Mode, and AppLocker policy restrictions; validated AV/EDR evasion through process injection and in-memory .NET assembly execution.
+3. **Linux Pivoting & Credential Material Abuse:** Compromised the Linux jump host, extracted Kerberos credential caches and keytabs, and tunneled traffic into segmented internal subnets.
+4. **MSSQL & Delegation Exploitation:** Abused MSSQL linked servers, UNC path coercion, and unconstrained/constrained Kerberos delegation to escalate between Windows hosts.
+5. **Domain & Forest Compromise:** Escalated from the child domain to the forest root using trust-key and SID-history techniques, culminating in capture of the final objective on the forest root domain controller.`;
+  }
+
+  if (track === 'CRTP') {
+    return `### 4.1 Altered Security CRTP Active Directory Attack Methodology
+The assessment followed a structured Active Directory attack path against a multi-domain lab environment:
+1. **Domain Enumeration:** Mapped users, groups, computers, GPOs, ACLs, and trust relationships using PowerView and the ActiveDirectory module to identify privileged attack paths.
+2. **Local Privilege Escalation:** Identified misconfigured services, unquoted paths, and weak permissions on the initial workstation to obtain local administrator rights.
+3. **Credential Extraction & Lateral Movement:** Harvested credentials and hashes, performed pass-the-hash and over-pass-the-hash, and moved laterally using PowerShell Remoting and WMI.
+4. **Domain Privilege Escalation:** Leveraged Kerberoasting, unconstrained and constrained delegation, and ACL abuse to reach domain administrator privileges.
+5. **Persistence & Trust Abuse:** Forged Golden and Silver tickets, abused DCSync rights, and crossed domain trusts via inter-realm TGTs to achieve enterprise forest dominance.`;
   }
 
   // Default: OffSec OSCP (PEN-200)
@@ -147,6 +169,10 @@ export function generateExamReportMarkdown(
     reportHeaderTitle = 'HACK THE BOX CPTS // OFFICIAL ENTERPRISE PENETRATION TESTING REPORT';
   } else if (effectiveTrack === 'CRTO') {
     reportHeaderTitle = 'ZERO-POINT SECURITY CRTO // CERTIFIED RED TEAM OPERATOR ENGAGEMENT REPORT';
+  } else if (effectiveTrack === 'OSEP') {
+    reportHeaderTitle = 'OFFSEC OSEP // EVASION TECHNIQUES & BREACHING DEFENSES EXAM REPORT';
+  } else if (effectiveTrack === 'CRTP') {
+    reportHeaderTitle = 'ALTERED SECURITY CRTP // CERTIFIED RED TEAM PROFESSIONAL ASSESSMENT REPORT';
   }
 
   let report = `# ${reportHeaderTitle}

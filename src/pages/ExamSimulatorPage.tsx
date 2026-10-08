@@ -176,9 +176,11 @@ export const ExamSimulatorPage: React.FC = () => {
       {
         totalScore: scoreData.totalScore,
         passThreshold: scoreData.passThreshold,
-      }
+      },
+      Date.now(),
+      trackConfig
     );
-  }, [startedAt, examExpiresAt, timerPausedRemainingSeconds, totalDurationSeconds, boxes, scoreData]);
+  }, [startedAt, examExpiresAt, timerPausedRemainingSeconds, totalDurationSeconds, boxes, scoreData, trackConfig]);
 
   // Burn-down series: memoized on boxes/session only (NOT on the 1Hz tick) so the
   // step path never re-renders; only the "now" marker moves.
@@ -372,8 +374,8 @@ export const ExamSimulatorPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {(['OSCP', 'CPTS', 'CRTO'] as ExamTrack[]).map((t) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {(Object.keys(EXAM_TRACK_CONFIGS) as ExamTrack[]).map((t) => {
                 const conf = EXAM_TRACK_CONFIGS[t];
                 const isSelected = track === t;
                 return (
@@ -408,7 +410,7 @@ export const ExamSimulatorPage: React.FC = () => {
                       {conf.description}
                     </p>
 
-                    <div className="pt-2 border-t border-subtle text-[11px] text-muted flex items-center justify-between">
+                    <div className="pt-2 border-t border-subtle text-[11px] text-muted flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                       <span className="font-mono tabular-nums">Duration: {Math.round(conf.durationSeconds / 3600)}h</span>
                       <span>{conf.targetSummary}</span>
                     </div>

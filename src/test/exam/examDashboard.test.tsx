@@ -109,6 +109,22 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
       expect(screen.getByTestId('exam-track-select-oscp')).toBeInTheDocument();
       expect(screen.getByTestId('exam-track-select-cpts')).toBeInTheDocument();
       expect(screen.getByTestId('exam-track-select-crto')).toBeInTheDocument();
+      expect(screen.getByTestId('exam-track-select-osep')).toBeInTheDocument();
+      expect(screen.getByTestId('exam-track-select-crtp')).toBeInTheDocument();
+    });
+
+    it('selects OSEP from the picker and loads its dedicated lab', () => {
+      render(
+        <MemoryRouter>
+          <ExamSimulatorPage />
+        </MemoryRouter>
+      );
+
+      fireEvent.click(screen.getByTestId('exam-track-select-osep'));
+
+      const state = useExamStore.getState();
+      expect(state.track).toBe('OSEP');
+      expect(state.boxes.every((b) => b.id.startsWith('osep-'))).toBe(true);
     });
 
     it('switches tracks in setup view and updates target sets', () => {

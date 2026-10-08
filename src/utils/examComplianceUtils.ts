@@ -531,7 +531,29 @@ export function generateExamTargetsForTrack(track: ExamTrack, machines: Machine[
     }));
   }
 
-  // Fallback / CRTP / OSEP default
+  if (track === 'OSEP') {
+    // OffSec OSEP (PEN-300): multi-host defended enterprise network (client-side/phishing foothold,
+    // AppLocker/AV/EDR evasion, Linux pivot, MSSQL linked-server abuse, child-to-parent domain escalation).
+    // Flags total 100 pts; the config pass mark (100 pts) requires the full chain to the forest root.
+    const osepTargets = [
+      { id: 'osep-1', name: 'CLIENT01', ip: '192.168.50.10', os: 'Windows' as OperatingSystem, difficulty: 'Medium' as const, type: 'osep-client', label: 'Client Workstation: Phishing Foothold & AV/AMSI Evasion', userPoints: 10, rootPoints: 10 },
+      { id: 'osep-2', name: 'WEB01', ip: '192.168.50.20', os: 'Linux' as OperatingSystem, difficulty: 'Medium' as const, type: 'osep-linux-pivot', label: 'Linux Web/Jump Host: Kerberos Credential Cache Pivot', userPoints: 5, rootPoints: 10 },
+      { id: 'osep-3', name: 'SQL01', ip: '192.168.50.30', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, type: 'osep-mssql', label: 'MSSQL Server: Linked-Server & Constrained Delegation Abuse', userPoints: 5, rootPoints: 10 },
+      { id: 'osep-4', name: 'APP01', ip: '192.168.60.15', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, type: 'osep-app', label: 'Hardened App Server: AppLocker / EDR Bypass', userPoints: 5, rootPoints: 10 },
+      { id: 'osep-5', name: 'CHILD-DC01', ip: '192.168.60.5', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, type: 'osep-child-dc', label: 'Child Domain Controller: Domain Escalation', userPoints: 0, rootPoints: 15 },
+      { id: 'osep-6', name: 'FOREST-DC01', ip: '192.168.70.5', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, type: 'osep-forest-dc', label: 'Forest Root DC: Cross-Domain Trust Abuse (secret.txt)', userPoints: 0, rootPoints: 20 },
+    ];
+
+    return osepTargets.map((t) => ({
+      ...t,
+      userPwned: false,
+      rootPwned: false,
+      userProof: createDefaultProof(),
+      rootProof: createDefaultProof(),
+    }));
+  }
+
+  // Fallback / CRTP default
   const dc1 = shuffle(adMachines)[0] || { name: 'DC01', ip: '10.0.0.1', os: 'Windows' as OperatingSystem };
   const srv1 = shuffle(winMachines)[0] || { name: 'SRV01', ip: '10.0.0.2', os: 'Windows' as OperatingSystem };
   const ws1 = shuffle(winMachines)[1] || { name: 'WS01', ip: '10.0.0.3', os: 'Windows' as OperatingSystem };

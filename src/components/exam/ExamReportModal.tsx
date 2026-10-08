@@ -35,6 +35,14 @@ import {
   ExamReportOptions,
 } from '../../utils/examReportGenerator';
 
+const REPORT_TRACK_LABELS: Record<ExamTrack, { title: string; subtitle: string }> = {
+  OSCP: { title: 'OffSec OSCP', subtitle: 'PEN-200 (70 pts)' },
+  CPTS: { title: 'HTB CPTS', subtitle: '14 Flags (85 pts)' },
+  CRTO: { title: 'ZPS CRTO', subtitle: '8 Objs (75 pts)' },
+  OSEP: { title: 'OffSec OSEP', subtitle: 'PEN-300 (100 pts)' },
+  CRTP: { title: 'Altered CRTP', subtitle: 'AD Lab (100 pts)' },
+};
+
 export interface ExamReportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -337,8 +345,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             </div>
 
             {/* Track Selector Buttons */}
-            <div className="grid grid-cols-3 gap-2">
-              {(['OSCP', 'CPTS', 'CRTO'] as ExamTrack[]).map((t) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {(Object.keys(EXAM_TRACK_CONFIGS) as ExamTrack[]).map((t) => {
                 const isSelected = selectedTrack === t;
                 return (
                   <button
@@ -352,9 +360,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
  : 'bg-surface-card border-subtle text-muted hover:text-primary hover:border-strong'
  }`}
                   >
-                    <div>{t === 'OSCP' ? 'OffSec OSCP' : t === 'CPTS' ? 'HTB CPTS' : 'ZPS CRTO'}</div>
+                    <div>{REPORT_TRACK_LABELS[t].title}</div>
                     <div className="text-[11px] font-normal text-muted mt-0.5">
-                      {t === 'OSCP' ? 'PEN-200 (70 pts)' : t === 'CPTS' ? '14 Flags (85 pts)' : '8 Objs (75 pts)'}
+                      {REPORT_TRACK_LABELS[t].subtitle}
                     </div>
                   </button>
                 );
