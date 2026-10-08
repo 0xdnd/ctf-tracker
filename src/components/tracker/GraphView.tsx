@@ -22,7 +22,10 @@ import {
   Focus,
   Move,
   Network,
-  Download
+  Download,
+  Undo2,
+  Redo2,
+  Workflow
 } from 'lucide-react';
 import { Machine, Platform, OperatingSystem, Difficulty } from '../../types';
 import { useCtfStore, ThemePreset } from '../../store/useCtfStore';
@@ -35,6 +38,8 @@ import { playCyberSound } from '../../utils/helpers';
 import { AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES, AttackGraphEdge } from '../../types/graph';
 import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
+import { computeAutoLayout } from '../../utils/graphAutoLayout';
+import { useGraphHistory } from '../../hooks/useGraphHistory';
 
 export interface GraphViewProps {
   filteredMachines: Machine[];
@@ -818,13 +823,14 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // Zustand Store Slice for M1/M2 coordinate persistence & M3 edges
   const allMachines = useCtfStore((s) => s.machines);
   const graphNodePositions = useCtfStore((s) => s.graphNodePositions);
-  const setGraphNodePosition = useCtfStore((s) => s.setGraphNodePosition);
   const resetGraphLayout = useCtfStore((s) => s.resetGraphLayout);
   const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
   const graphEdges = useCtfStore((s) => s.graphEdges);
-  const addGraphEdge = useCtfStore((s) => s.addGraphEdge);
-  const updateGraphEdge = useCtfStore((s) => s.updateGraphEdge);
-  const deleteGraphEdge = useCtfStore((s) => s.deleteGraphEdge);
+  // Undo/redo: recorded replacements for the store's edge + node-position mutators
+  const {
+    addGraphEdge, updateGraphEdge, deleteGraphEdge, setGraphNodePosition, applyNodePositions,
+    undo, redo, canUndo, canRedo, undoLabel, redoLabel,
+  } = useGraphHistory();
 
   // M3 Vector Inspector & Pivot Connection Mode State
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -1569,6 +1575,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (soundEnabled) playCyberSound('click');
   }, [soundEnabled]);
 
+  // Auto layout: layered left-to-right by edge direction, applied as one undoable entry
+  const handleAutoLayout = useCallback(() => {
+    const positions = computeAutoLayout(allNodes.map((n) => n.id), graphEdges, { maxX: 1510, maxY: 1150 });
+    applyNodePositions(positions, 'Auto layout');
+    if (soundEnabled) playCyberSound('click');
+  }, [allNodes, graphEdges, applyNodePositions, soundEnabled]);
+
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1716,6 +1729,42 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         >
           <Share2 className="w-4 h-4" />
           <span className="text-xs font-semibold hidden xl:inline">SVG</span>
+        </button>
+
+        <div className="w-px h-4 bg-border-subtle mx-0.5" />
+
+        <button
+          type="button"
+          data-testid="graph-undo"
+          onClick={() => { undo(); }}
+          disabled={!canUndo}
+          aria-label="Undo"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
+          title={undoLabel ? `Undo ${undoLabel} (Ctrl/Cmd+Z)` : 'Undo (Ctrl/Cmd+Z)'}
+        >
+          <Undo2 className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          data-testid="graph-redo"
+          onClick={() => { redo(); }}
+          disabled={!canRedo}
+          aria-label="Redo"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
+          title={redoLabel ? `Redo ${redoLabel} (Ctrl/Cmd+Shift+Z)` : 'Redo (Ctrl/Cmd+Shift+Z)'}
+        >
+          <Redo2 className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          data-testid="graph-auto-layout"
+          onClick={handleAutoLayout}
+          disabled={allNodes.length === 0}
+          aria-label="Auto layout"
+          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
+          title="Auto layout: arrange nodes by attack path (undoable)"
+        >
+          <Workflow className="w-4 h-4" />
         </button>
 
         <div className="w-px h-4 bg-border-subtle mx-0.5" />
