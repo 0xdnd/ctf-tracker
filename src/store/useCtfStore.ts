@@ -35,6 +35,7 @@ import {
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
 import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
+import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
 export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
@@ -1047,7 +1048,7 @@ export const useCtfStore = create<CtfStoreState>()(
       updateMachineStatus: (id, status) => {
         set((state) => {
           const now = new Date().toISOString();
-          const today = now.slice(0, 10);
+          const today = toLocalDateKey(new Date());
           const isNowRoot = status === 'root' || status === 'completed';
           const isNowFoothold = status === 'foothold' || isNowRoot;
           
@@ -1861,6 +1862,12 @@ export const useCtfStore = create<CtfStoreState>()(
           }));
         }
 
+        let exportGraphEdges = state.graphEdges;
+        if (options?.redactSecrets) {
+          const scrub = (v?: string) => (v && v.toLowerCase().includes('pass') ? '[REDACTED]' : v);
+          exportGraphEdges = exportGraphEdges.map((e) => ({ ...e, label: scrub(e.label), notes: scrub(e.notes) }));
+        }
+
         const exportData = {
           version: '2.0.0',
           exportedAt: new Date().toISOString(),
@@ -1875,6 +1882,8 @@ export const useCtfStore = create<CtfStoreState>()(
           deletedNoteIds: state.deletedNoteIds,
           userSolvesReset: state.userSolvesReset,
           themePreset: state.themePreset,
+          graphEdges: exportGraphEdges,
+          graphNodePositions: state.graphNodePositions,
         };
         return JSON.stringify(exportData, null, 2);
       },
@@ -1905,6 +1914,23 @@ export const useCtfStore = create<CtfStoreState>()(
             if (nextThemePreset) {
               applyThemePreset(nextThemePreset);
             }
+            const isNum = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+            const importedGraph: Partial<AttackGraphPersistedState> | undefined = (() => {
+              const out: Partial<AttackGraphPersistedState> = {};
+              if (Array.isArray(data.graphEdges)) {
+                out.graphEdges = data.graphEdges.filter(
+                  (e: any) => e && typeof e.id === 'string' && typeof e.sourceId === 'string' && typeof e.targetId === 'string'
+                );
+              }
+              if (data.graphNodePositions && typeof data.graphNodePositions === 'object') {
+                const pos: Record<string, AttackNodePosition> = {};
+                for (const [k, v] of Object.entries(data.graphNodePositions)) {
+                  if (v && isNum((v as any).x) && isNum((v as any).y)) pos[k] = { x: (v as any).x, y: (v as any).y };
+                }
+                out.graphNodePositions = pos;
+              }
+              return out.graphEdges || out.graphNodePositions ? out : undefined;
+            })();
             set((state) => ({
               machines: normalizedMachines,
               ...(nextThemePreset ? { themePreset: nextThemePreset } : {}),
@@ -1916,7 +1942,15 @@ export const useCtfStore = create<CtfStoreState>()(
               userWikilinkMap: (data.userWikilinkMap && typeof data.userWikilinkMap === 'object') ? data.userWikilinkMap : state.userWikilinkMap,
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
               userSolvesReset,
+              ...importedGraph,
             }));
+            if (importedGraph) {
+              saveAttackGraphState(
+                importedGraph.graphNodePositions ?? get().graphNodePositions,
+                importedGraph.graphEdges ?? get().graphEdges,
+                get().currentProfileId || 'guest'
+              );
+            }
             return true;
           }
           return false;

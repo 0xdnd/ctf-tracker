@@ -15,6 +15,8 @@ export interface WorkspaceExportPayload {
   deletedNoteIds?: string[];
   userSolvesReset?: boolean;
   themePreset?: string;
+  graphEdges?: any[];
+  graphNodePositions?: Record<string, { x: number; y: number }>;
 }
 
 export interface WorkspaceImportResult {
@@ -121,6 +123,8 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
     deletedNoteIds: Array.isArray(root.deletedNoteIds) ? root.deletedNoteIds : undefined,
     userSolvesReset: Boolean(root.userSolvesReset),
     themePreset: typeof root.themePreset === 'string' ? root.themePreset : undefined,
+    graphEdges: Array.isArray(root.graphEdges) ? root.graphEdges.map((item: any) => sanitizeObjectKeys(item)) : undefined,
+    graphNodePositions: root.graphNodePositions && typeof root.graphNodePositions === 'object' && !Array.isArray(root.graphNodePositions) ? sanitizeObjectKeys(root.graphNodePositions) : undefined,
   };
 
   return {
