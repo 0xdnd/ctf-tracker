@@ -1,0 +1,47 @@
+/* 20-chrome: header, nav, mobile menu, breadcrumb, footer, buttons, wrapper */
+.wrap{width:min(var(--wrap),100% - 2*var(--gutter));margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:40px;padding:0 18px;border:1px solid transparent;border-radius:var(--r-md);background:var(--accent);color:var(--accent-ink);font:600 .9375rem/1 var(--font-sans);text-decoration:none;white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s,transform .12s var(--ease)}
+.btn:active{transform:scale(.97)}
+.btn-secondary{background:var(--elev);border-color:var(--line-strong);color:var(--text)}
+.btn-ghost{background:transparent;color:var(--text-2)}
+.btn-sm{min-height:36px;padding:0 14px;font-size:.875rem}
+.btn-lg{min-height:48px;padding:0 24px;font-size:1rem}
+@media(hover:hover) and (pointer:fine){
+.btn:hover{background:var(--accent-hover);color:var(--accent-ink)}
+.btn-secondary:hover{background:var(--hover);border-color:var(--faint);color:var(--text)}
+.btn-ghost:hover{background:var(--hover);color:var(--text)}
+}
+@media(prefers-reduced-motion:reduce){.btn{transition:background-color .15s,border-color .15s,color .15s}.btn:active{transform:none}}
+.site-header{position:sticky;top:0;z-index:50;background:var(--header-bg);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid var(--line)}
+.bar{position:relative;display:flex;align-items:center;gap:var(--s3);min-height:var(--header-h)}
+.brand{display:inline-flex;align-items:center;gap:10px;margin-right:auto;color:var(--text);font-weight:650;letter-spacing:-.01em;text-decoration:none}
+.brand img{width:32px;height:32px;border-radius:var(--r-md)}
+.nav-inline{display:none}
+.nav-inline a,.nav-panel a{color:var(--muted);font-size:.875rem;font-weight:500;text-decoration:none;border-radius:var(--r-md);transition:background-color .15s,color .15s}
+.nav-inline a{padding:6px 5px;white-space:nowrap}
+.nav-inline a[aria-current],.nav-panel a[aria-current]{color:var(--text)}
+@media(hover:hover) and (pointer:fine){.nav-inline a:hover,.nav-panel a:hover{color:var(--text);background:var(--hover)}}
+.nav-menu summary{display:inline-flex;align-items:center;gap:var(--s2);min-height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--elev);color:var(--text);font-size:.875rem;font-weight:600;cursor:pointer;list-style:none}
+.nav-menu summary::-webkit-details-marker{display:none}
+.nav-menu summary::after{content:"";width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.nav-menu[open] summary::after{transform:translateY(1px) rotate(-135deg)}
+.nav-panel{position:absolute;top:100%;left:calc(-1*var(--gutter));right:calc(-1*var(--gutter));display:flex;flex-direction:column;padding:var(--s2) var(--gutter) var(--s4);background:var(--card);border-bottom:1px solid var(--line)}
+.nav-panel a{display:block;padding:12px var(--s2);font-size:1rem}
+@media(min-width:768px){
+.nav-inline{display:flex;margin-left:auto}
+.brand{margin-right:0}
+.nav-menu{display:none}
+}
+@media(min-width:960px){.nav-inline{gap:2px}.nav-inline a{padding:6px 8px}}
+.crumbs{margin:var(--s5) 0 var(--s2);color:var(--muted);font-size:13px;line-height:1.5}
+.crumbs a{color:var(--muted);text-decoration:none}
+.crumbs .sep{margin:0 2px;color:var(--faint)}
+@media(hover:hover) and (pointer:fine){.crumbs a:hover{color:var(--text);text-decoration:underline}}
+.site-footer{margin-top:var(--s9);padding:var(--s7) 0 var(--s8);border-top:1px solid var(--line);color:var(--muted);font-size:.875rem}
+.footer-nav{display:grid;gap:var(--s5) var(--s7);grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:var(--s6)}
+.footer-nav h2{margin:0 0 var(--s3);font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.footer-nav ul{margin:0;padding:0;list-style:none}
+.footer-nav li{margin:0}
+.footer-nav a{display:inline-block;padding:4px 0;color:var(--muted);text-decoration:none}
+.site-footer p{max-width:var(--prose);margin:0 0 var(--s3);font-size:13px;line-height:1.6}
+@media(hover:hover) and (pointer:fine){.footer-nav a:hover{color:var(--text);text-decoration:underline}}

@@ -1,20 +1,100 @@
 // Shared HTML layout + helpers for static content pages (CSS in dist/static.css, no JS).
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const { beaconTag, analyticsNote } = require('./site.cjs');
 const ORIGIN = 'https://ctftracker.com';
+
+// Stylesheet sources, concatenated in this exact order (later files override earlier ones).
+const CSS_DIR = path.join(__dirname, '..', 'site', 'css');
+const CSS_FILES = ['00-tokens.css', '10-base.css', '20-chrome.css', '30-content.css', '40-landing.css', '50-motion.css', '60-light.css'];
+const STATIC_CSS = CSS_FILES.map((f) => {
+  const file = path.join(CSS_DIR, f);
+  if (!fs.existsSync(file)) throw new Error(`layout: missing CSS source ${path.relative(process.cwd(), file)}`);
+  return fs.readFileSync(file, 'utf8').replace(/\r\n?/g, '\n').replace(/\n*$/, '\n');
+}).join('');
+// Content-hashed href so a changed stylesheet is never served stale from the browser cache or the service worker.
+const CSS_HREF = '/static.css?v=' + crypto.createHash('sha1').update(STATIC_CSS).digest('hex').slice(0, 8);
+const FONT_PATHS = ['/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const jsonLd = (o) => JSON.stringify(o).replace(/</g, '\\u003c');
 
+// Primary nav (the brand links home; "Open ZeroBox" is rendered separately as the button).
 const NAV = [
-  ['/', 'Home'],
   ['/machines/', 'Machines'],
   ['/cheatsheet-library/', 'Cheatsheets'],
   ['/methodology-guide/', 'Methodology'],
-  ['/revshells/', 'Reverse Shells'],
-  ['/oscp-like-machines/', 'OSCP-Like'],
-  ['/techniques/', 'Techniques'],
+  ['/revshells/', 'Reverse shells'],
+  ['/exam/', 'Exam simulator'],
 ];
+
+const FOOTER_LINKS = {
+  Explore: [
+    ['/machines/', 'Machines'],
+    ['/cheatsheet-library/', 'Cheatsheets'],
+    ['/methodology-guide/', 'Methodology'],
+    ['/revshells/', 'Reverse shells'],
+    ['/oscp-like-machines/', 'OSCP-like machines'],
+    ['/techniques/', 'Techniques'],
+    ['/cpts-notes/', 'CPTS notes'],
+  ],
+  ZeroBox: [
+    ['/tracker/', 'Open ZeroBox'],
+    ['https://github.com/0xdnd/ctf-tracker', 'GitHub'],
+  ],
+};
+
+/** current: path of the page being rendered; exact match gets aria-current="page", a parent section gets "true". */
+function navLinks(current) {
+  return NAV.map(([p, l]) => {
+    const exact = current === p;
+    const section = !exact && typeof current === 'string' && current.startsWith(p);
+    const aria = exact ? ' aria-current="page"' : section ? ' aria-current="true"' : '';
+    return `<a href="${p}"${aria}>${esc(l)}</a>`;
+  }).join('');
+}
+
+/** Sticky header. No inline styles (content-page CSP is style-src 'self'). Mobile menu is a <details>, no JS. */
+function siteHeader({ current } = {}) {
+  const links = navLinks(current);
+  return `<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" />ZeroBox</a>
+    <nav class="nav-inline" aria-label="Primary">${links}</nav>
+    <a class="btn btn-sm" href="/tracker/">Open ZeroBox</a>
+    <details class="nav-menu">
+      <summary>Menu</summary>
+      <nav class="nav-panel" aria-label="Primary (menu)">${links}</nav>
+    </details>
+  </div>
+</header>`;
+}
+
+/** Footer. analyticsNote defaults to the beacon disclosure from site.cjs; pass '' to omit it. */
+function siteFooter({ analyticsNote: note } = {}) {
+  const cols = Object.entries(FOOTER_LINKS)
+    .map(
+      ([h, links]) =>
+        `<div><h2>${esc(h)}</h2><ul>${links.map(([p, l]) => `<li><a href="${p}">${esc(l)}</a></li>`).join('')}</ul></div>`
+    )
+    .join('');
+  const extra = note === undefined ? analyticsNote() : note;
+  return `<footer class="site-footer">
+  <div class="wrap">
+    <nav class="footer-nav" aria-label="Footer">${cols}</nav>
+    <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
+    ${extra}
+  </div>
+</footer>`;
+}
+
+/** Font preload tags; only pages that opt in (the landing) use these, content pages do not preload. */
+function fontPreloadTags() {
+  return `  <link rel="preload" href="${FONT_PATHS[0]}" as="font" type="font/woff2" crossorigin />`;
+}
 
 function breadcrumbLd(crumbs) {
   return {
@@ -29,14 +109,13 @@ function truncate(s, n) {
   return t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…';
 }
 
-/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[] } */
+/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean } */
 function renderPage(opts) {
   const url = ORIGIN + opts.path;
   const crumbs = opts.crumbs || [['Home', '/']];
   const ld = [breadcrumbLd(crumbs), ...(opts.ld || [])]
     .map((o) => `  <script type="application/ld+json">${jsonLd(o)}</script>`)
     .join('\n');
-  const nav = NAV.map(([p, l]) => `<a href="${p}">${esc(l)}</a>`).join('');
   const crumbHtml = crumbs
     .map(([n, p], i) => (i === crumbs.length - 1 ? `<span aria-current="page">${esc(n)}</span>` : `<a href="${p}">${esc(n)}</a>`))
     .join(' <span class="sep">/</span> ');
@@ -48,13 +127,14 @@ function renderPage(opts) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${esc(opts.title)}</title>
   <meta name="description" content="${desc}" />
-  <meta name="theme-color" content="#0B0F19" />
+  <meta name="theme-color" content="#09090b" />
   <link rel="canonical" href="${url}" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico?v=12" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=12" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=12" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/static.css" />
+  <link rel="stylesheet" href="${CSS_HREF}" />${opts.preloadFonts ? `
+${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
   <meta property="og:site_name" content="ZeroBox" />
   <meta property="og:url" content="${url}" />
@@ -72,76 +152,18 @@ function renderPage(opts) {
 ${ld}
 </head>
 <body>
+${siteHeader({ current: opts.path })}
   <div class="wrap">
-    <header class="top">
-      <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" />ZeroBox</a>
-      <nav class="top" aria-label="Primary">${nav}<a class="cta" href="/tracker/">Open ZeroBox</a></nav>
-    </header>
     <nav class="crumbs" aria-label="Breadcrumb">${crumbHtml}</nav>
-    <main>
+    <main id="main">
       <h1>${esc(opts.h1)}</h1>
 ${opts.body}
     </main>
-    <footer>
-      <p><a href="/machines/">Machines</a><a href="/cheatsheet-library/">Cheatsheets</a><a href="/methodology-guide/">Methodology</a><a href="/revshells/">Reverse shells</a><a href="/oscp-like-machines/">OSCP-like machines</a><a href="/techniques/">Techniques</a><a href="/cpts-notes/">CPTS notes</a><a href="/tracker/">Open ZeroBox</a><a href="https://github.com/0xdnd/ctf-tracker">GitHub</a></p>
-      <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
-      ${analyticsNote()}
-    </footer>
   </div>
+${siteFooter({ analyticsNote: analyticsNote() })}
 ${beaconTag()}</body>
 </html>
 `;
 }
 
-const STATIC_CSS = `:root{--bg:#0B0F19;--card:#121826;--line:#1f2a3d;--text:#e5e9f0;--muted:#9aa6b8;--accent:#10b981;--accent-ink:#04130d}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-a{color:var(--accent)}
-.wrap{max-width:960px;margin:0 auto;padding:0 20px}
-header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:.02em}
-.brand img{width:32px;height:32px;border-radius:6px}
-nav.top{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
-nav.top a{color:var(--muted);text-decoration:none;font-size:14px}
-nav.top a:hover{color:var(--text)}
-nav.top a.cta{background:var(--accent);color:var(--accent-ink);font-weight:700;padding:7px 14px;border-radius:8px}
-nav.crumbs{font-size:13px;color:var(--muted);margin:4px 0 8px}
-nav.crumbs a{color:var(--muted)}
-nav.crumbs .sep{opacity:.5}
-h1{font-size:clamp(26px,4.5vw,38px);line-height:1.2;margin:8px 0 14px;letter-spacing:-.01em}
-h2{font-size:clamp(20px,3vw,26px);margin:36px 0 10px;line-height:1.3}
-h3{font-size:18px;margin:24px 0 6px}
-p{margin:0 0 14px}
-.lead{color:var(--muted);font-size:17px;max-width:760px}
-.muted{color:var(--muted)}
-ul,ol{padding-left:22px;margin:0 0 14px}
-li{margin-bottom:4px}
-pre{background:#0a0e17;border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:8px 0 14px;font-size:13.5px;line-height:1.5}
-code{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace}
-p code,li code,td code{background:#0a0e17;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.9em}
-pre code{background:none;border:0;padding:0}
-.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;text-decoration:none;color:var(--text)}
-a.card:hover{border-color:var(--accent)}
-.card h3{margin:0 0 4px;font-size:17px}
-.card p{margin:0;color:var(--muted);font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin:12px 0 20px}
-.facts{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:15px}
-.facts th,.facts td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-.facts th{color:var(--muted);font-weight:600;width:34%}
-table.list{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 18px}
-table.list th,table.list td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-table.list th{color:var(--muted);font-weight:600}
-.tag{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:0 9px;font-size:12px;color:var(--muted);margin:0 4px 4px 0}
-.chips a{display:inline-block;margin:0 8px 8px 0;padding:4px 12px;border:1px solid var(--line);border-radius:999px;text-decoration:none;font-size:14px}
-.chips a:hover{border-color:var(--accent)}
-.cta-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:28px 0}
-.btn{display:inline-block;padding:10px 20px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;text-decoration:none}
-.note{color:var(--muted);font-size:14px}
-footer{border-top:1px solid var(--line);margin-top:48px;padding:24px 0 40px;color:var(--muted);font-size:14px}
-footer a{margin-right:16px}
-a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-@media(max-width:600px){table.list .hide-sm{display:none}}
-`;
-
-module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, STATIC_CSS, NAV };
+module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, STATIC_CSS, CSS_HREF, NAV, siteHeader, siteFooter, fontPreloadTags };

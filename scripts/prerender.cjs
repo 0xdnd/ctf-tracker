@@ -33,7 +33,10 @@ fs.writeFileSync(
 );
 
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
-const shellAssets = [...new Set([...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]))];
+// The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
+const { CSS_HREF } = require('./lib/layout.cjs');
+const staticShellAssets = [CSS_HREF, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
+const shellAssets = [...new Set([...[...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]), ...staticShellAssets])];
 const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
   const sw = fs.readFileSync(swPath, 'utf8');
