@@ -20,5 +20,7 @@ color-scheme:dark;
 --fs-h2:clamp(1.75rem,1.45rem + 1.2vw,2.25rem);
 --fs-h3:1.25rem;--fs-body:1rem;--fs-prose:1.0625rem;--fs-code:.875rem;--fs-small:.875rem;
 --ease:cubic-bezier(.23,1,.32,1);
+--spring:var(--ease);--spring-dur:420ms;--press:80ms;
 }
+@supports(transition-timing-function:linear(0,1)){:root{--spring:linear(0,.055,.175,.312,.445,.562,.66,.74,.803,.852,.89,.919,.94,.956,.968,.977,.983,.988,.991,.994,1)}}
 @media(min-width:768px){:root{--section-y:96px;--gutter:24px}}

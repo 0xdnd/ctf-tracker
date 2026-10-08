@@ -4,7 +4,9 @@
 @keyframes fade{from{opacity:0}}
 @media(prefers-reduced-motion:no-preference){
 .hud{animation:hud-in 520ms var(--ease) 150ms backwards}
-.proof li{animation:rise 360ms var(--ease) backwards}
+.hero .lead{animation:rise 420ms var(--spring) 60ms backwards}
+.hero .cta-row{animation:rise 420ms var(--spring) 120ms backwards}
+.proof li{animation:rise 360ms var(--spring) backwards}
 .proof li:nth-child(2){animation-delay:50ms}
 .proof li:nth-child(3){animation-delay:100ms}
 .proof li:nth-child(4){animation-delay:150ms}
@@ -17,6 +19,8 @@
 .faq details[open]::details-content{block-size:auto}
 }
 }
+::view-transition-old(root),::view-transition-new(root){animation-duration:240ms;animation-timing-function:ease}
+.theme-anim body,.theme-anim .site-header,.theme-anim .card,.theme-anim .closing{transition:background-color .24s,color .24s,border-color .24s}
 @media(prefers-reduced-motion:reduce){
-.hud,.proof li{animation:fade 150ms ease-out backwards}
+.hero .lead,.hero .cta-row,.hud,.proof li{animation:fade 150ms ease-out backwards}
 }
