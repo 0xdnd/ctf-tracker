@@ -202,7 +202,9 @@ export default defineConfig(({ mode }) => {
   build: {
     outDir: 'dist',
     sourcemap: false,
-    chunkSizeWarningLimit: 1200,
+    // Entry is ~734 kB; machinesCatalog (612 kB) is a lazy chunk loaded via loadMachinesCatalog().
+    // Raise only as high as needed (default 500); lower again as the entry shrinks.
+    chunkSizeWarningLimit: 750,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',

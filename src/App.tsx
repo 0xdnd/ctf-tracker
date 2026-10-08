@@ -251,8 +251,20 @@ const MainAppContent: React.FC = () => {
     useCtfStore.getState().saveProfileData();
     // Auto-hydrate private field manual notes and wikilinks from local IndexedDB
     useCtfStore.getState().loadUserNotesFromDb();
-    // Asynchronously hydrate full master catalog in background without blocking cold boot TTI
-    useCtfStore.getState().loadCatalog();
+    // Hydrate the full master catalog (separate ~600 KB chunk) off the critical path:
+    // wait for browser idle so it never competes with first paint / route chunks.
+    // Routes that need it (tracker, target detail) trigger loadCatalog() themselves.
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const hydrate = () => { useCtfStore.getState().loadCatalog(); };
+    if (typeof w.requestIdleCallback === 'function') {
+      const idleId = w.requestIdleCallback(hydrate, { timeout: 3000 });
+      return () => w.cancelIdleCallback?.(idleId);
+    }
+    const timerId = window.setTimeout(hydrate, 1500);
+    return () => window.clearTimeout(timerId);
   }, []);
 
   // Sync store activeTab with route

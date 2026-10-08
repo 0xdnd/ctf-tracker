@@ -40,7 +40,7 @@ import {
 import { STARTER_MACHINES } from '../data/starterMachines';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
-let cachedCatalog: Machine[] | null = null;
+import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
 import { CPTS_NOTES, getAllCptsNotes, type CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
 import { 
@@ -657,7 +657,7 @@ export const mergeMachinesWithCatalog = (
   userSolvesReset: boolean = false,
   catalogSource?: Machine[]
 ): Machine[] => {
-  const catalog = catalogSource || cachedCatalog || STARTER_MACHINES;
+  const catalog = catalogSource || getLoadedMachinesCatalog() || STARTER_MACHINES;
   const map = new Map<string, Machine>();
   const nameMap = new Map<string, Machine>();
   const platformNameMap = new Map<string, Machine>();
@@ -853,7 +853,7 @@ export const mergeMachinesWithCatalog = (
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
-const initialAttackGraphData = loadInitialAttackGraphState();
+const initialAttackGraphData = loadInitialAttackGraphState(initialProfileId);
 const initialLootData = loadLootState(initialProfileId);
 
 export const useCtfStore = create<CtfStoreState>()(
@@ -984,8 +984,7 @@ export const useCtfStore = create<CtfStoreState>()(
         if (get().isCatalogLoaded || get().isCatalogLoading) return;
         set({ isCatalogLoading: true });
         try {
-          const { INITIAL_MACHINES } = await import('../data/machinesCatalog');
-          cachedCatalog = INITIAL_MACHINES;
+          const INITIAL_MACHINES = await loadMachinesCatalog();
           const state = get();
           const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset, INITIAL_MACHINES);
           set({
@@ -1914,15 +1913,11 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       restoreDanielSolves: async () => {
-        let catalog = cachedCatalog;
-        if (!catalog) {
-          try {
-            const mod = await import('../data/machinesCatalog');
-            cachedCatalog = mod.INITIAL_MACHINES;
-            catalog = mod.INITIAL_MACHINES;
-          } catch {
-            catalog = STARTER_MACHINES;
-          }
+        let catalog: Machine[];
+        try {
+          catalog = await loadMachinesCatalog();
+        } catch {
+          catalog = STARTER_MACHINES;
         }
         const targetId = get().currentProfileId || 'guest';
         const customMachines = get().machines.filter(
@@ -2265,15 +2260,11 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       resetAllProgress: async () => {
-        let catalog = cachedCatalog;
-        if (!catalog) {
-          try {
-            const mod = await import('../data/machinesCatalog');
-            cachedCatalog = mod.INITIAL_MACHINES;
-            catalog = mod.INITIAL_MACHINES;
-          } catch {
-            catalog = STARTER_MACHINES;
-          }
+        let catalog: Machine[];
+        try {
+          catalog = await loadMachinesCatalog();
+        } catch {
+          catalog = STARTER_MACHINES;
         }
         const targetId = get().currentProfileId || 'guest';
         // Explicitly clear IndexedDB deep storage and vault notes to prevent orphaned data accumulation
