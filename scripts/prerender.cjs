@@ -151,7 +151,7 @@ const FAQ = [
   ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
   ['Can I track Hack The Box and TryHackMe progress in one place?', 'Yes. The catalog covers Hack The Box and TryHackMe machines, and you can add custom targets for any other CTF or lab, so one board holds all of it. You enter progress yourself because ZeroBox does not connect to your HTB or THM account.'],
   ['Is there an OSCP exam simulator?', 'Yes. The exam simulator runs a timed 24h OSCP practice with a countdown clock, point scoring, pacing guidance, breaks and evidence proofs, and it also has CPTS, CRTO, OSEP and CRTP tracks. It is a practice tool and is not affiliated with OffSec.'],
-  ['Is there a desktop app?', 'Yes. The repository includes a Tauri desktop build that you can compile from source. The instructions are in the GitHub README.'],
+  ['Is there a desktop app?', 'Yes. Desktop installers are published on GitHub Releases, and you can also build the Tauri app from source using the instructions in the GitHub README.'],
 ];
 
 const CARD_DESC = {
@@ -159,7 +159,7 @@ const CARD_DESC = {
   '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
   '/cheatsheets/': '130+ reverse shells with LHOST and LPORT filled in.',
   '/cpts-manual/': 'Pentest notes app with Obsidian-style wikilinks and a private vault.',
-  '/exam/': 'OSCP exam simulator, plus CPTS and CRTO practice, with scoring.',
+  '/exam/': 'OSCP exam simulator with CPTS, CRTO, OSEP and CRTP tracks and scoring.',
   '/writeup/': 'CTF writeup and report editor with templates, live preview and export.',
   '/analytics/': 'Skill radar, activity heatmap and benchmarks.',
   '/vault/': 'Credentials, flags and hashes from every target.',

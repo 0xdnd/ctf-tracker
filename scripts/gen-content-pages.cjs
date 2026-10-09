@@ -337,7 +337,7 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: 'HTB Machines List and Tracker by OS and Difficulty | ZeroBox',
+    title: 'HTB & TryHackMe Machines List by OS and Difficulty | ZeroBox',
     description: `Directory of ${model.machines.length} Hack The Box and TryHackMe machines grouped by platform, OS and difficulty, with attack paths for the solved ones.`,
     h1: 'Hack The Box and TryHackMe machines list and tracker',
     body: parts.join('\n'),
