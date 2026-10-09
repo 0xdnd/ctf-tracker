@@ -29,7 +29,6 @@
   "license": "SEE LICENSE IN LICENSE",
   "author": "Daniel Dayan <0xdnd>",
   "homepage": "https://ctftracker.com",
-  "keywords": ["ctf","hackthebox","tryhackme","oscp","cpts","crto","pentesting","writeups","cybersecurity","offline-first","tauri","react"],
   "repository": {
     "type": "git",
     "url": "https://github.com/0xdnd/ctf-tracker.git"

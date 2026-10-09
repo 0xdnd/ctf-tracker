@@ -258,6 +258,15 @@ const HERO_SIZES = '(min-width:1100px) 480px,(min-width:900px) 400px,(min-width:
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
+const SHOT_ALT = {
+  'hero-app': 'ZeroBox CTF tracker kanban board of Hack The Box and TryHackMe machines',
+  'burn-chart': 'ZeroBox exam burn-down chart against the 70 point pass line',
+  graph: 'ZeroBox attack graph after Auto layout',
+  table: 'ZeroBox CTF tracker table view with rows selected',
+  vault: 'ZeroBox pentest evidence vault rows',
+  exam: 'ZeroBox OSCP exam simulator countdown and target view',
+};
+
 function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
   const s = shotByName[name];
   const real = hasShot(s);
