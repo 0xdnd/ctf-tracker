@@ -38,7 +38,7 @@
 .feat-txt h3{margin:0 0 var(--s1);font-size:1.125rem;font-weight:600}
 .feat-txt p{max-width:60ch;margin:0;color:var(--muted)}
 .feat-row{display:grid;gap:var(--s6);margin-top:var(--s6);align-items:start}
-.feat-nmap{display:grid;gap:var(--s6);margin-top:var(--s6);align-items:center}
+.feat-nmap{display:grid;gap:var(--s6);margin-top:var(--s6);align-items:start}
 .feat-nmap .feat-txt{margin-top:0}
 .code{min-width:0;margin:0;padding:var(--s4);overflow-x:auto;font-size:.8125rem;line-height:1.7;color:var(--text-2);border-radius:var(--r-lg);background:linear-gradient(to right,var(--code) 30%,transparent) 0 0/32px 100% no-repeat local,linear-gradient(to left,var(--code) 30%,transparent) 100% 0/32px 100% no-repeat local,linear-gradient(to right,rgb(0 0 0/.55),transparent) 0 0/14px 100% no-repeat scroll,linear-gradient(to left,rgb(0 0 0/.55),transparent) 100% 0/14px 100% no-repeat scroll,var(--code);box-shadow:0 0 0 1px rgb(255 255 255/.1)}
 @media(max-width:479px){.code{padding:12px;font-size:.75rem}}

@@ -19,5 +19,4 @@ color-scheme:light;
 /* Screenshots are dark images: give the frames a visible edge on a light page. */
 :root[data-theme="light"] .frame{background:#18181b;box-shadow:0 0 0 1px rgb(9 9 11/.28),0 24px 48px -24px rgb(9 9 11/.35)}
 :root[data-theme="light"] .hero-media{--e1:0 0 0 1px rgb(9 9 11/.28),0 24px 48px -24px rgb(9 9 11/.38);--e2:0 0 0 1px var(--hair),inset 0 1px 0 rgb(255 255 255/.05),0 4px 8px -2px rgb(9 9 11/.25),0 20px 36px -14px rgb(9 9 11/.5)}
-:root[data-theme="light"] .facts-panel .fact-net{border-left-color:var(--accent);background:var(--elev)}
 :root[data-theme="light"] #exam .pills li{background:var(--card)}

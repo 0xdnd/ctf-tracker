@@ -593,28 +593,42 @@ async function main() {
       await untilOpaque(page, page.locator('thead th').first());
       await settle(page, 600);
       const bar = await rectOf(page.getByText('3 selected').first(), { minW: 400, minH: 30, cls: 'rounded' });
-      const x = Math.floor(bar.x);
-      const ths = await page.locator('thead th').evaluateAll((els) => els.map((e) => ({ text: e.textContent.trim(), right: e.getBoundingClientRect().right })));
-      // Elements of the bulk bar that a vertical cut at `edge` would slice in two.
-      const barParts = await page.evaluate(
-        ({ bar }) =>
-          [...document.querySelectorAll('button, input, select, span')]
-            .map((e) => e.getBoundingClientRect())
-            .filter((r) => r.width > 0 && r.top >= bar.y && r.bottom <= bar.y + bar.height)
-            .map((r) => ({ left: r.left, right: r.right })),
-        { bar },
+      // The real table is 1120px wide and scrolls sideways, so a plain crop always slices the card. Instead lay the whole
+      // block (bulk bar + table card) out at 644px: keep Target..Difficulty, hide the right-hand columns and the Delete/Clear
+      // buttons, and cut the card after six rows so its right and bottom borders sit inside the crop.
+      const ROWS = 6;
+      const clip = await page.evaluate(
+        ({ W, ROWS }) => {
+          const style = document.createElement('style');
+          style.textContent = 'thead th:nth-child(n+6),tbody td:nth-child(n+6){display:none!important}';
+          document.head.appendChild(style);
+          const table = document.querySelector('thead').closest('table');
+          table.style.minWidth = '0';
+          const scroller = table.parentElement;
+          const card = scroller.parentElement;
+          const wrap = card.parentElement;
+          for (const b of wrap.querySelectorAll('button')) if (/^(Delete|Clear)$/.test(b.textContent.trim())) b.style.display = 'none';
+          wrap.style.width = W + 'px';
+          const rows = [...table.querySelectorAll('tbody tr')];
+          const cut = rows[ROWS - 1].getBoundingClientRect().bottom - scroller.getBoundingClientRect().top;
+          scroller.style.maxHeight = Math.ceil(cut) + 'px';
+          scroller.style.overflowY = 'hidden';
+          const r = wrap.getBoundingClientRect();
+          return { x: Math.floor(r.x) - 1, y: Math.floor(r.y) - 1, width: Math.ceil(r.width) + 2, height: Math.ceil(r.height) + 2, cardRight: card.getBoundingClientRect().right };
+        },
+        { W: 644, ROWS },
       );
-      const slices = (edge) => barParts.some((r) => r.left < edge - 1 && r.right > edge + 1);
-      const col = ths.filter((t) => t.right - x <= 700 && !slices(t.right)).at(-1);
-      const width = Math.ceil(col.right - x);
-      if (width < 600) console.warn(`  [table] crop is only ${width} CSS px wide`);
-      const rows = await page.locator('tbody tr').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
-      const y = Math.floor(bar.y - 8);
-      const aim = y + Math.round(width * 0.85);
-      const rowEnd = rows.reduce((a, b) => (Math.abs(b - aim) < Math.abs(a - aim) ? b : a));
-      const clip = { x, y, width, height: Math.ceil(rowEnd - y) + 1 };
-      if (clip.y + clip.height > 900) throw new Error(`table crop does not fit the viewport (${clip.y + clip.height})`);
-      console.log(`  [table] last column in the crop: ${col.text || '(blank)'}`);
+      await settle(page, 800);
+      // Re-measure after the relayout.
+      const after = await page.evaluate(() => {
+        const wrap = document.querySelector('thead').closest('table').parentElement.parentElement.parentElement;
+        const r = wrap.getBoundingClientRect();
+        return { x: Math.floor(r.x) - 1, y: Math.floor(r.y) - 1, width: Math.ceil(r.width) + 2, height: Math.ceil(r.height) + 2 };
+      });
+      Object.assign(clip, after);
+      delete clip.cardRight;
+      if (clip.y + clip.height > 900) throw new Error(`table crop does not fit the viewport ${JSON.stringify(clip)}`);
+      if (DEBUG) console.log('  table clip', JSON.stringify(clip), 'bar', JSON.stringify(bar));
       await take('table', clip);
       await setView(VIEW_TRACKER);
     }
@@ -688,9 +702,40 @@ async function main() {
           last = 'in';
         } else break;
       }
+      // Frame the pivot chain and the one subnet hub it hangs off: hide the other machines, hubs and the operator rig so no
+      // node or edge is cut by the crop. Only display changes; the layout and the real edges are untouched.
+      await page.evaluate(() => {
+        const KEEP = ['htb-included', 'htb-bike', 'htb-unified', 'htb-funnel'];
+        const vp = document.getElementById('canvas-viewport');
+        const chainRects = KEEP.map((id) => document.querySelector(`[data-testid="attack-node-${id}"]`).getBoundingClientRect());
+        const chainBottom = Math.max(...chainRects.map((r) => r.bottom));
+        const hide = (el) => {
+          el.style.display = 'none';
+        };
+        for (const c of [...vp.children]) {
+          const tid = c.getAttribute('data-testid') || '';
+          if (tid.startsWith('attack-edge-')) continue;
+          if (tid.startsWith('attack-node-')) {
+            if (!KEEP.includes(tid.slice('attack-node-'.length))) hide(c);
+            continue;
+          }
+          if (c.tagName === 'line') {
+            // Spokes from a hub to a machine: keep the ones that end on the chain row.
+            if (c.getBoundingClientRect().top > chainBottom + 5) hide(c);
+            continue;
+          }
+          if (c.tagName === 'g' && c.textContent.includes('Web Surface')) {
+            for (const l of c.querySelectorAll('line')) if (l.getBoundingClientRect().height > 150) hide(l);
+            c.setAttribute('data-keep-hub', '1');
+            continue;
+          }
+          hide(c);
+        }
+      });
+      await settle(page, 600);
       const four = await chain();
       const dx = Math.round(clip.x + (GW - four.width) / 2 - four.x);
-      const dy = Math.round(clip.y + GH * 0.36 - (four.y + four.height / 2));
+      const dy = Math.round(clip.y + 70 - four.y);
       const sx = Math.round(svgBox.x + svgBox.width - 40);
       const sy = Math.round(Math.min(svgBox.y + svgBox.height, VIEW_GRAPH.height) - 40);
       if (DEBUG) console.log('  pan', { dx, dy, sx, sy });
@@ -702,8 +747,20 @@ async function main() {
       }
       await page.mouse.up();
       await settle(page, 1000);
+      // Height: 70px above the chain to 50px below the hub label.
+      const hub = await page.locator('[data-keep-hub="1"]').evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { bottom: r.bottom };
+      });
+      clip.height = Math.ceil(hub.bottom + 50 - clip.y);
+      if (DEBUG) console.log('  graph clip', JSON.stringify(clip), JSON.stringify(await chain()));
       if (clip.x + clip.width > VIEW_GRAPH.width || clip.y + clip.height > VIEW_GRAPH.height) {
         throw new Error(`graph crop outside the viewport ${JSON.stringify(clip)}`);
+      }
+      if (DEBUG) {
+        console.log('  graph children', JSON.stringify(await page.evaluate(() => [...document.getElementById('canvas-viewport').children].map((c) => `${c.tagName}${c.getAttribute('data-testid') ? '#' + c.getAttribute('data-testid') : ''}[${c.querySelectorAll('[data-testid^="attack-node-"]').length}]`))));
+        console.log('  graph nodes', JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('[data-testid^="attack-node-"]')].map((e) => { const r = e.getBoundingClientRect(); return [e.dataset.testid, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }))));
+        await page.screenshot({ path: path.join(os.tmpdir(), 'graph-full.png') });
       }
       await take('graph', clip);
       await setView(VIEW_TRACKER);
@@ -867,6 +924,10 @@ async function main() {
         const budget = v.budget ?? BUDGET_KB[v.w];
         if (v.data.length > budget * 1000) console.warn(`  !! ${v.file} exceeds ${budget} KB budget`);
         entry.srcset.push({ src: `/images/landing/${v.file}`, w: v.w });
+      }
+      // Drop widths left over from an earlier capture of this shot.
+      for (const f of fs.readdirSync(OUT_DIR)) {
+        if (f.startsWith(`${name}-`) && f.endsWith('.webp') && !variants.some((v) => v.file === f)) fs.rmSync(path.join(OUT_DIR, f));
       }
       entry.srcset.sort((a, b) => b.w - a.w);
       // width/height = intrinsic size of the 1600 variant (or the largest one when the crop is smaller).

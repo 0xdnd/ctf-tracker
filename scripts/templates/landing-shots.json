@@ -37,7 +37,7 @@
     "name": "graph",
     "alt": "ZeroBox attack graph after Auto layout: the Included, Bike, Unified and Funnel host nodes linked by SSH tunnel, chisel and ligolo edges.",
     "width": 1600,
-    "height": 700,
+    "height": 520,
     "cssWidth": 1120,
     "srcset": [
       {
@@ -58,12 +58,12 @@
     "name": "table",
     "alt": "ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.",
     "width": 1600,
-    "height": 1406,
-    "cssWidth": 627,
+    "height": 1464,
+    "cssWidth": 646,
     "srcset": [
       {
-        "src": "/images/landing/table-1881.webp",
-        "w": 1881
+        "src": "/images/landing/table-1938.webp",
+        "w": 1938
       },
       {
         "src": "/images/landing/table-1600.webp",
