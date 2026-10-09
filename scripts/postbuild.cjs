@@ -27,7 +27,7 @@ if (!fs.existsSync(distNoJekyll)) {
   fs.writeFileSync(distNoJekyll, '', 'utf8');
 }
 
-// 3. Mirror all favicon and icon assets into dist and dist/assets
+// 3. Mirror all favicon and icon assets into dist
 const iconFiles = [
   'favicon.ico',
   'favicon.png',
@@ -57,7 +57,6 @@ iconFiles.forEach(file => {
   const srcPub = path.join(rootDir, 'public', file);
   if (fs.existsSync(srcPub)) {
     fs.copyFileSync(srcPub, path.join(distDir, file));
-    if (!['logo.png', 'icon-512.png'].includes(file)) fs.copyFileSync(srcPub, path.join(distAssetsDir, file));
   }
 });
 console.log('✓ Mirrored all icon and favicon variants into dist and dist/assets');

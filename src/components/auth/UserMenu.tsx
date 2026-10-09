@@ -300,8 +300,8 @@ export const UserMenu: React.FC = () => {
             </div>
             <div className="w-full h-1.5 rounded-full bg-surface-inverse-elevated overflow-hidden">
               <div
-                className="h-full bg-accent transition-[width] duration-300"
-                style={{ width: `${gamification.rankProgressPct}%` }}
+                className="h-full w-full origin-left bg-accent transition-transform duration-300"
+                style={{ transform: `scaleX(${gamification.rankProgressPct / 100})` }}
               />
             </div>
           </div>

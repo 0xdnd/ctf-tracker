@@ -968,8 +968,8 @@ export const OperatorProfileModal: React.FC = () => {
                   </div>
                   <div className="w-full h-2 rounded-full bg-surface-inverse-elevated overflow-hidden border border-inverse">
                     <div
-                      className="h-full bg-accent transition-[width] duration-500 ease-out"
-                      style={{ width: `${gamification.rankProgressPct}%` }}
+                      className="h-full w-full origin-left bg-accent transition-transform duration-500 ease-out"
+                      style={{ transform: `scaleX(${gamification.rankProgressPct / 100})` }}
                     />
                   </div>
                   {gamification.nextRank && (

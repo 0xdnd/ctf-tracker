@@ -272,8 +272,8 @@ export const Sidebar: React.FC = () => {
 
             <div className="w-full bg-surface-sunken rounded-full h-1 overflow-hidden mb-1.5">
               <div
-                className="h-full bg-accent transition-[width] duration-500 rounded-full"
-                style={{ width: `${Math.min(100, Math.max(0, pwnPercentage))}%` }}
+                className="h-full w-full origin-left bg-accent transition-transform duration-500"
+                style={{ transform: `scaleX(${Math.min(100, Math.max(0, pwnPercentage)) / 100})` }}
               />
             </div>
 
