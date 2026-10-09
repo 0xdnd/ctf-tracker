@@ -1,32 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Sparkles, 
-  Terminal, 
-  Key, 
-  Check, 
-  Copy, 
-  Square, 
-  Play, 
-  ShieldAlert, 
-  ExternalLink, 
-  Cpu, 
-  Save, 
+import {
+  Sparkles,
+  Terminal,
+  Key,
+  Check,
+  Copy,
+  Square,
+  Play,
+  ShieldAlert,
+  Cpu,
+  Save,
   AlertTriangle,
-  RotateCcw,
   Zap,
-  Info
+  Info,
+  Trash2,
+  ShieldOff,
+  ShieldCheck
 } from 'lucide-react';
 import { Machine } from '../../types';
 import { ScanImportResult } from '../../utils/scanParserUtils';
-import { 
-  getStoredApiKey, 
-  saveApiKey, 
-  getSelectedModel, 
-  setSelectedModel, 
-  CLAUDE_MODELS, 
-  testAnthropicConnection 
+import {
+  getStoredApiKey,
+  saveApiKey,
+  removeApiKey,
+  isRememberKeyEnabled,
+  getSelectedModel,
+  setSelectedModel,
+  CLAUDE_MODELS,
+  testAnthropicConnection
 } from '../../utils/aiClient';
-import { interpretScanWithClaude } from '../../utils/aiScanInterpreter';
+import { interpretScanWithClaude, buildRedactedScanPrompt, CYBER_TACTICAL_SYSTEM_PROMPT } from '../../utils/aiScanInterpreter';
+import { canSkipConsentDialog, rememberRedactedConsent } from '../../utils/aiConsent';
+import { AiConsentDialog } from './AiConsentDialog';
 import { playCyberSound } from '../../utils/helpers';
 
 interface AiScanIntelTabProps {
@@ -46,8 +51,12 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
   const [hasStoredKey, setHasStoredKey] = useState<boolean>(false);
   const [showKeyDrawer, setShowKeyDrawer] = useState<boolean>(false);
   const [keyInput, setKeyInput] = useState<string>('');
+  const [rememberKey, setRememberKey] = useState<boolean>(isRememberKeyEnabled());
   const [testingKey, setTestingKey] = useState<boolean>(false);
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
+
+  const [redactEnabled, setRedactEnabled] = useState<boolean>(true);
+  const [pendingSend, setPendingSend] = useState<{ prompt: string; map: ReturnType<typeof buildRedactedScanPrompt>['map'] } | null>(null);
 
   const [selectedModel, setModel] = useState<string>(getSelectedModel());
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -79,11 +88,21 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
 
   const handleSaveApiKey = () => {
     if (!keyInput.trim()) return;
-    saveApiKey(keyInput.trim());
+    saveApiKey(keyInput.trim(), rememberKey);
     setApiKey(keyInput.trim());
     setHasStoredKey(true);
     setShowKeyDrawer(false);
     setKeyInput('');
+    playCyberSound('click');
+  };
+
+  const handleForgetKey = () => {
+    removeApiKey();
+    setApiKey('');
+    setHasStoredKey(false);
+    setKeyInput('');
+    setTestResult(null);
+    setShowKeyDrawer(true);
     playCyberSound('click');
   };
 
@@ -110,19 +129,8 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
     playCyberSound('click');
   };
 
-  const handleStartAnalysis = async () => {
-    if (!parsedResults || parsedResults.ports.length === 0) {
-      setErrorMsg('No scan parsed yet. Please paste or upload an Nmap/Rustscan file in the Importer tab first.');
-      playCyberSound('alert');
-      return;
-    }
-
-    if (!apiKey) {
-      setShowKeyDrawer(true);
-      setErrorMsg('Please configure your Anthropic API Key first.');
-      playCyberSound('alert');
-      return;
-    }
+  const runAnalysis = async (consentGranted: boolean) => {
+    if (!parsedResults) return;
 
     setIsGenerating(true);
     setAiOutput('');
@@ -140,12 +148,14 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
           targetOs: targetMachine?.os,
           difficulty: targetMachine?.difficulty,
           model: selectedModel,
-          apiKey
+          apiKey,
+          redact: redactEnabled,
+          consentGranted
         },
         {
-          onChunk: (chunk) => {
+          onChunk: (cumulativeText) => {
             if (abortControllerRef.current) return;
-            setAiOutput((prev) => prev + chunk);
+            setAiOutput(cumulativeText);
           },
           onDone: () => {
             setIsGenerating(false);
@@ -162,6 +172,47 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
       setIsGenerating(false);
       setErrorMsg(err.message || 'Execution error.');
     }
+  };
+
+  const handleStartAnalysis = () => {
+    if (!parsedResults || parsedResults.ports.length === 0) {
+      setErrorMsg('No scan parsed yet. Please paste or upload an Nmap/Rustscan file in the Importer tab first.');
+      playCyberSound('alert');
+      return;
+    }
+
+    if (!apiKey) {
+      setShowKeyDrawer(true);
+      setErrorMsg('Please configure your Anthropic API Key first.');
+      playCyberSound('alert');
+      return;
+    }
+
+    if (canSkipConsentDialog(redactEnabled)) {
+      void runAnalysis(true);
+      return;
+    }
+
+    // Build the exact post-redaction payload for the consent preview before sending anything.
+    const { prompt, map } = buildRedactedScanPrompt(parsedResults, {
+      targetIp: targetMachine?.ip,
+      targetName: targetMachine?.name,
+      targetOs: targetMachine?.os,
+      difficulty: targetMachine?.difficulty,
+      redact: redactEnabled
+    });
+    setPendingSend({ prompt, map });
+  };
+
+  const handleConsentCancel = () => {
+    setPendingSend(null);
+    playCyberSound('click');
+  };
+
+  const handleConsentSend = (shouldRemember: boolean) => {
+    setPendingSend(null);
+    if (shouldRemember) rememberRedactedConsent();
+    void runAnalysis(true);
   };
 
   const handleStopAnalysis = () => {
@@ -204,11 +255,11 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-primary">Claude AI Recon Intelligence</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent font-semibold border border-accent/20">
-                BYOK Zero-Egress
+                BYOK
               </span>
             </div>
             <p className="text-[11px] text-muted">
-              Deep exploit chaining, CVE hypotheses, and customized tactical playbooks.
+              No telemetry. AI is optional and uses your own key.
             </p>
           </div>
         </div>
@@ -236,6 +287,21 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
           })}
         </div>
 
+        {/* Redaction Toggle */}
+        <button
+          type="button"
+          onClick={() => setRedactEnabled((v) => !v)}
+          title={redactEnabled ? 'IPs, hostnames, AD domains, and usernames are redacted before sending' : 'Warning: real values will be sent unredacted'}
+          className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors ${
+            redactEnabled
+              ? 'bg-surface-card border-subtle text-secondary hover:border-accent'
+              : 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
+          }`}
+        >
+          {redactEnabled ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
+          <span>{redactEnabled ? 'Redaction ON' : 'Redaction OFF'}</span>
+        </button>
+
         {/* Key Settings Button */}
         <button
           type="button"
@@ -254,24 +320,24 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
       {/* API Key Drawer (collapsible) */}
       {showKeyDrawer && (
         <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-2 animate-fade-in text-xs">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="font-semibold text-primary flex items-center gap-1.5">
               <Key className="w-4 h-4 text-accent" />
               <span>Enter Anthropic API Key (sk-ant-...)</span>
             </span>
             <span className="text-[10px] text-muted flex items-center gap-1">
               <ShieldAlert className="w-3 h-3 text-callout-success-fg" />
-              <span>Zero-Egress: Stored locally in your browser only.</span>
+              <span>Stored only in your browser. No telemetry.</span>
             </span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <input
               type="password"
               placeholder="sk-ant-api03-..."
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              className="flex-1 px-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-primary font-mono text-xs focus:outline-none focus:border-accent"
+              className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-primary font-mono text-xs focus:outline-none focus:border-accent"
             />
             <button
               type="button"
@@ -289,7 +355,27 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
             >
               <span>{testingKey ? 'Testing...' : 'Test Key'}</span>
             </button>
+            {hasStoredKey && (
+              <button
+                type="button"
+                onClick={handleForgetKey}
+                className="px-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle hover:border-callout-danger-border hover:text-callout-danger-fg text-secondary font-medium text-xs flex items-center gap-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Forget Key</span>
+              </button>
+            )}
           </div>
+
+          <label className="flex items-center gap-2 text-[11px] text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberKey}
+              onChange={(e) => setRememberKey(e.target.checked)}
+              className="h-3.5 w-3.5 accent-accent"
+            />
+            <span>Remember key on this device (persists across browser restarts). Off by default - key is kept only for this session.</span>
+          </label>
 
           {testResult && (
             <div className={`text-[11px] font-medium flex items-center gap-1.5 ${
@@ -345,7 +431,7 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
       )}
 
       {/* Stream Output Console Window */}
-      <div 
+      <div
         ref={outputContainerRef}
         className="flex-1 p-4 rounded-xl bg-surface-sunken border border-subtle overflow-y-auto font-mono text-xs text-primary leading-relaxed whitespace-pre-wrap select-text relative"
       >
@@ -402,6 +488,16 @@ export const AiScanIntelTab: React.FC<AiScanIntelTabProps> = ({
           </div>
         </div>
       )}
+
+      <AiConsentDialog
+        isOpen={!!pendingSend}
+        redacted={redactEnabled}
+        model={selectedModel}
+        systemPrompt={CYBER_TACTICAL_SYSTEM_PROMPT}
+        userPrompt={pendingSend?.prompt || ''}
+        onCancel={handleConsentCancel}
+        onSend={handleConsentSend}
+      />
     </div>
   );
 };

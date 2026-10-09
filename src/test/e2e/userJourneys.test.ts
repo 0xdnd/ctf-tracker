@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCtfStore } from '../../store/useCtfStore';
-import { exportWorkspaceToJson, validateWorkspacePayload } from '../../utils/workspaceStorage';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 
 const initialSnapshot = useCtfStore.getState();

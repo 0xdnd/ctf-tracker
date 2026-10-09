@@ -11,19 +11,12 @@ import {
   Sparkles, 
   Terminal, 
   Target, 
-  Flag, 
   Layers, 
-  HardDrive, 
   ArrowRight,
-  RefreshCw,
   Award,
   RotateCcw,
   Trophy,
-  Lock,
-  Unlock,
-  Zap,
-  Crown
-} from 'lucide-react';
+  Lock} from 'lucide-react';
 import { useAuthStore, DEFAULT_DANIEL_PROFILE } from '../../store/useAuthStore';
 import { useCtfStore, safeLocalStorage, getProfileStorageKey } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
@@ -58,7 +51,6 @@ export const OperatorProfileModal: React.FC = () => {
     setOperatorProfileModalOpen,
     loginAsOperator,
     switchProfile,
-    renameProfile,
     updateProfile,
     deleteProfile,
     updateUserTrophies,
@@ -403,7 +395,7 @@ export const OperatorProfileModal: React.FC = () => {
                     Local / Guest Operator
                   </span>
                   <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-surface-sunken text-secondary border border-subtle">
-                    Air-gapped
+                    Local-first
                   </span>
                 </div>
                 <div className="text-xs text-tertiary">
@@ -1108,11 +1100,11 @@ export const OperatorProfileModal: React.FC = () => {
             </div>
           )}
 
-          {/* Air-gapped security note */}
+          {/* Local-first privacy note */}
           <div className="p-3 rounded-xl bg-surface-base border border-subtle text-[11px] text-tertiary flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-callout-success-fg flex-shrink-0" />
             <span>
-              <strong className="font-medium">Nothing leaves this device.</strong> Operator profiles and machine progress live in local browser storage.
+              <strong className="font-medium">Local-first. No telemetry.</strong> Profiles and progress live in local browser storage. Optional AI uses your own key and only runs when you send.
             </span>
           </div>
         </div>

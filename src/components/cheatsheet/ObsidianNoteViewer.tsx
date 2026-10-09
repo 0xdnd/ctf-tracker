@@ -33,7 +33,7 @@ import {
 } from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { GlobalVariables } from '../../types';
-import { OpenNoteOptions, SplitOrientation } from '../../types/workspace';
+import { SplitOrientation } from '../../types/workspace';
 import { ShareLinkButton } from '../common/ShareLinkButton';
 import { ObsidianTabContent } from './ObsidianTabContent';
 import { handleWorkspaceLinkClick, scrollToHeadingAnchor } from '../../utils/workspaceLinkInterceptor';
@@ -98,12 +98,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   splitOrientation = 'horizontal',
   onToggleSplit,
   onMoveTabToOtherPane,
-  paneId,
   isPaneActive = true,
   onFocusPane,
   isSidebarOpen = true,
   onToggleSidebar,
-  onSwitchToCards,
 }) => {
   const [viewMode, setViewMode] = useState<ObsidianViewMode>('reading');
   const [langMode, setLangMode] = useState<ObsidianNoteLanguage>(defaultLanguage);

@@ -1,20 +1,17 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   X, 
   Zap, 
   Terminal, 
   Copy, 
   Check, 
-  FileText, 
   Search, 
   ShieldAlert, 
   Flame, 
   Cpu, 
-  ExternalLink,
   RotateCcw,
   Sparkles,
-  Layers,
   ArrowRight,
   Upload,
   FileCode,
@@ -28,19 +25,15 @@ import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
-import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { CyberSelect } from '../common/CyberSelect';
 import { 
   detectAndParseScan, 
-  ScanImportResult, 
-  ParsedPort 
-} from '../../utils/scanParserUtils';
+  ScanImportResult} from '../../utils/scanParserUtils';
 import { 
   getTacticalPayloads, 
   applyBypassEncoder, 
   ENCODER_OPTIONS, 
-  BypassEncoderType, 
-  TacticalPayload 
-} from '../../utils/payloadCrafterUtils';
+  BypassEncoderType} from '../../utils/payloadCrafterUtils';
 
 const SAMPLE_LINUX_SCAN = `# Nmap 7.94 scan initiated Wed Sep 2 22:00:00 2026 as: nmap -sC -sV -p- -oN scan.log 10.10.10.3
 Nmap scan report for 10.10.10.3
@@ -127,7 +120,6 @@ const SAMPLE_NMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const ReconAutomationModal: React.FC = () => {
   const { 
-    reconAutomationModalOpen, 
     setReconAutomationModalOpen, 
     machines, 
     selectedMachineId, 

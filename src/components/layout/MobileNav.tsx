@@ -41,7 +41,6 @@ export const MobileNav: React.FC = () => {
   const location = useLocation();
 
   const {
-    activeTab,
     setActiveTab,
     machines,
     reconAutomationModalOpen,
@@ -112,6 +111,7 @@ export const MobileNav: React.FC = () => {
     setActiveTab(tabId);
     navigate(path);
     setMobileMenuOpen(false);
+    useNotesWorkspaceStore.getState().setIsOpen(false);
     if (soundEnabled) playCyberSound('click');
   };
 

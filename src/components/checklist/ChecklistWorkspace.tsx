@@ -16,21 +16,16 @@ import {
   Terminal, 
   ChevronDown, 
   ChevronRight,
-  ExternalLink,
-  Zap,
-  Tag,
-  FolderGit2,
-  Filter
-} from 'lucide-react';
+  Zap} from 'lucide-react';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { toast } from '../../store/useToastStore';
 import { Machine } from '../../types';
-import { ChecklistItemStatus, ChecklistItem, MethodologyPhase } from '../../types/checklist';
+import { ChecklistItemStatus } from '../../types/checklist';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { generateApplicablePhases, SERVICE_BRANCHES } from '../../data/methodologyFramework';
-import { parseNmapScanOutput } from '../../utils/nmapParser';
+import { generateApplicablePhases } from '../../data/methodologyFramework';
+import { detectAndParseScan } from '../../utils/scanParserUtils';
 import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter';
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
 import { interpolateCommand, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
@@ -42,7 +37,6 @@ interface ChecklistWorkspaceProps {
 
 export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   machine,
-  onOpenInWriteup,
 }) => {
   const {
     setMachineOpenPorts,
@@ -153,7 +147,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
   const handleApplyNmapScan = () => {
     if (!nmapInputText.trim()) return;
-    const { ports } = parseNmapScanOutput(nmapInputText);
+    const ports = detectAndParseScan(nmapInputText)?.ports.map((p) => p.port) ?? [];
     if (ports.length > 0) {
       const merged = Array.from(new Set([...openPorts, ...ports])).sort((a, b) => a - b);
       setMachineOpenPorts(machine.id, merged);

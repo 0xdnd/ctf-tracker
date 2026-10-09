@@ -11,11 +11,13 @@ import {
   ShieldAlert, 
   Zap, 
   Network,
-  RotateCcw,
   CheckCircle2
 } from 'lucide-react';
 import { Machine, TargetServicePort } from '../../types';
-import { detectAndParseScan, ScanImportResult, ParsedPort } from '../../utils/scanParserUtils';
+import { detectAndParseScan, ScanImportResult, ParsedHost } from '../../utils/scanParserUtils';
+import { buildMachineDraftFromHost, deriveServiceTags, toTargetServices } from '../../utils/scanCardHelper';
+import { useCtfStore } from '../../store/useCtfStore';
+import { MultiHostImportPanel } from './MultiHostImportPanel';
 import { playCyberSound } from '../../utils/helpers';
 import { confirmAction } from '../../store/useConfirmStore';
 
@@ -51,44 +53,22 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
   const [isPasteMode, setIsPasteMode] = useState(false);
   const [copiedTool, setCopiedTool] = useState<string | null>(null);
   const [appliedSuccess, setAppliedSuccess] = useState(false);
+  const [pendingMultiHost, setPendingMultiHost] = useState<{ result: ScanImportResult; rawText: string } | null>(null);
+  const [createdCount, setCreatedCount] = useState<number | null>(null);
+  const machines = useCtfStore((s) => s.machines);
+  const addCustomMachine = useCtfStore((s) => s.addCustomMachine);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Existing machine services or local parsed state
   const activeServices: TargetServicePort[] = machine.services || [];
-  const openPortsList = machine.openPorts || activeServices.map((s) => s.port);
 
-  const handleProcessScanText = useCallback((rawText: string) => {
-    if (!rawText.trim()) return;
-
-    const result: ScanImportResult | null = detectAndParseScan(rawText);
-    if (!result || result.ports.length === 0) {
-      if (soundEnabled) playCyberSound('toggle');
-      return;
-    }
-
-    const mappedServices: TargetServicePort[] = result.ports.map((p: ParsedPort) => ({
-      port: p.port,
-      protocol: p.protocol as 'tcp' | 'udp',
-      state: p.state,
-      service: p.service,
-      version: p.version,
-      cveNotes: p.cveNotes,
-      suggestedTools: p.suggestedTools,
-    }));
+  const applyScanResult = useCallback((result: ScanImportResult, rawText: string) => {
+    const mappedServices: TargetServicePort[] = toTargetServices(result.ports);
 
     const portsArray = mappedServices.map((s) => s.port);
 
     // Auto-detect service keywords to add to tags if missing
-    const newTags = [...machine.tags];
-    mappedServices.forEach((s) => {
-      const sName = s.service.toLowerCase();
-      if (sName.includes('smb') && !newTags.includes('smb')) newTags.push('smb');
-      if (sName.includes('http') && !newTags.includes('web')) newTags.push('web');
-      if (sName.includes('ftp') && !newTags.includes('ftp')) newTags.push('ftp');
-      if (sName.includes('kerberos') && !newTags.includes('kerberos')) newTags.push('kerberos');
-      if (sName.includes('ldap') && !newTags.includes('active-directory')) newTags.push('active-directory');
-      if (sName.includes('mysql') && !newTags.includes('mysql')) newTags.push('mysql');
-    });
+    const newTags = deriveServiceTags(machine.tags, mappedServices);
 
     const updates: Partial<Machine> = {
       services: mappedServices,
@@ -108,6 +88,45 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
     setAppliedSuccess(true);
     setTimeout(() => setAppliedSuccess(false), 2500);
   }, [machine, onUpdateMachine, soundEnabled]);
+
+  const handleProcessScanText = useCallback((rawText: string) => {
+    if (!rawText.trim()) return;
+
+    const result: ScanImportResult | null = detectAndParseScan(rawText);
+    setCreatedCount(null);
+    // Multi-host scans (>1 host) let the operator pick which hosts become new targets
+    if (result?.hosts && result.hosts.length > 1) {
+      setPendingMultiHost({ result, rawText });
+      return;
+    }
+    setPendingMultiHost(null);
+    if (!result || result.ports.length === 0) {
+      if (soundEnabled) playCyberSound('toggle');
+      return;
+    }
+    applyScanResult(result, rawText);
+  }, [applyScanResult, soundEnabled]);
+
+  const handleCreateTargets = (selectedHosts: ParsedHost[]) => {
+    if (!pendingMultiHost) return;
+    const usedNames = new Set<string>();
+    selectedHosts.forEach((host) => {
+      addCustomMachine(buildMachineDraftFromHost(host, pendingMultiHost.result.format, usedNames));
+    });
+    setPendingMultiHost(null);
+    setCreatedCount(selectedHosts.length);
+  };
+
+  const handleApplyFirstHost = () => {
+    if (!pendingMultiHost) return;
+    const { result, rawText } = pendingMultiHost;
+    setPendingMultiHost(null);
+    if (result.ports.length === 0) {
+      if (soundEnabled) playCyberSound('toggle');
+      return;
+    }
+    applyScanResult(result, rawText);
+  };
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -291,6 +310,25 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                 <span>Parse & Apply Scan</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {pendingMultiHost?.result.hosts && (
+          <MultiHostImportPanel
+            key={pendingMultiHost.rawText.length}
+            hosts={pendingMultiHost.result.hosts}
+            existingMachines={[...machines, machine]}
+            soundEnabled={soundEnabled}
+            onCreate={handleCreateTargets}
+            onApplyFirstHost={handleApplyFirstHost}
+            onCancel={() => setPendingMultiHost(null)}
+          />
+        )}
+
+        {createdCount !== null && (
+          <div role="status" className="p-2.5 rounded-lg bg-callout-success-bg border border-callout-success-border text-callout-success-fg text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-callout-success-fg" />
+            <span>Created {createdCount} {createdCount === 1 ? 'target' : 'targets'} from the scan.</span>
           </div>
         )}
 

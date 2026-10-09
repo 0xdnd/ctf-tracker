@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { useExamStore, EXAM_STORAGE_KEY } from './examStore';
-import { calculateExamScore } from '../utils/examComplianceUtils';
+import { useExamStore } from './examStore';
 
 describe('useExamStore Zustand 5 State & Endurance Suite', () => {
   beforeEach(() => {

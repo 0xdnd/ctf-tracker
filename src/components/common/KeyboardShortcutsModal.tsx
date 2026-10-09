@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Keyboard, Command, Eye, Zap, Flame, Clock, Flag, Download } from 'lucide-react';
+import { X, Keyboard, Command, Eye, Zap } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 
 interface ShortcutEntry {

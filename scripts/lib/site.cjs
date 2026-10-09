@@ -32,7 +32,7 @@ function injectBeacon(html) {
 // Footer disclosure paragraph; empty unless the beacon is active.
 function analyticsNote() {
   if (!beaconTag()) return '';
-  return '<p>This site uses cookieless Cloudflare Web Analytics. The ZeroBox app itself sends no data.</p>';
+  return '<p>This site uses cookieless Cloudflare Web Analytics. The ZeroBox app sends no analytics or telemetry.</p>';
 }
 
 module.exports = { beaconTag, injectBeacon, analyticsNote };

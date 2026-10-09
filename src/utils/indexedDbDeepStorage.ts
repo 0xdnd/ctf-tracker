@@ -322,3 +322,86 @@ export async function deleteMachineDeepData(profileId: string, machineId: string
     try { db?.close(); } catch {}
   }
 }
+
+/**
+ * Exam proof images (binary blobs).
+ *
+ * Stored in the same object store under a reserved key prefix, so no DB_VERSION bump / schema
+ * migration is needed and older builds opening the database keep working. All helpers resolve
+ * (never throw); writes resolve `true` only once the transaction has COMPLETED.
+ */
+const PROOF_IMAGE_KEY_PREFIX = 'exam_proof_image:';
+
+interface ProofImageRecord {
+  blob: Blob;
+  mime: string;
+  size: number;
+  savedAt: string;
+}
+
+export function isProofImageStorageAvailable(): boolean {
+  return isIndexedDbSupported();
+}
+
+async function runProofImageTx<T>(
+  mode: IDBTransactionMode,
+  fallback: T,
+  run: (store: IDBObjectStore, setResult: (value: T) => void) => void
+): Promise<T> {
+  const db = await openDeepDatabase();
+  if (!db) return fallback;
+  return new Promise<T>((resolve) => {
+    let result = fallback;
+    let settled = false;
+    const done = (value: T) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch {}
+      resolve(value);
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, mode);
+      tx.oncomplete = () => done(result);
+      tx.onerror = () => done(fallback);
+      tx.onabort = () => done(fallback);
+      run(tx.objectStore(STORE_NAME), (value) => { result = value; });
+    } catch (err) {
+      console.warn('[ZeroBox Deep Storage] Proof image transaction failed:', err);
+      done(fallback);
+    }
+  });
+}
+
+/** Persists one proof image blob. Resolves `true` only after the write transaction completed. */
+export function saveProofImageBlob(id: string, blob: Blob): Promise<boolean> {
+  return runProofImageTx<boolean>('readwrite', false, (store, setResult) => {
+    const record: ProofImageRecord = {
+      blob,
+      mime: blob.type,
+      size: blob.size,
+      savedAt: new Date().toISOString(),
+    };
+    store.put(record, PROOF_IMAGE_KEY_PREFIX + id);
+    setResult(true);
+  });
+}
+
+/** Loads one proof image blob, or null when missing / IndexedDB unavailable. */
+export function loadProofImageBlob(id: string): Promise<Blob | null> {
+  return runProofImageTx<Blob | null>('readonly', null, (store, setResult) => {
+    const req = store.get(PROOF_IMAGE_KEY_PREFIX + id);
+    req.onsuccess = () => {
+      const record = req.result as ProofImageRecord | undefined;
+      setResult(record && record.blob instanceof Blob ? record.blob : null);
+    };
+  });
+}
+
+/** Deletes proof image blobs by id (missing ids are ignored). */
+export async function deleteProofImageBlobs(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await runProofImageTx<boolean>('readwrite', false, (store, setResult) => {
+    ids.forEach((id) => store.delete(PROOF_IMAGE_KEY_PREFIX + id));
+    setResult(true);
+  });
+}

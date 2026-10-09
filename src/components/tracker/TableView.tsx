@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
+  ArrowUp,
+  ArrowDown,
   ArrowUpDown,
+  X,
+  Trash2,
+  Plus,
   Flag,
   Crosshair,
   FileText,
@@ -24,12 +29,21 @@ import { CategoryBadge } from '../common/CategoryBadge';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { CyberButton } from '../common/CyberButton';
+import { confirmAction, useConfirmStore } from '../../store/useConfirmStore';
+import { SortKey, nextSortKeys, sortByKeys, applySelectionClick } from '../../utils/tableSort';
 
 interface TableViewProps {
   filteredMachines: Machine[];
 }
 
 type SortField = 'name' | 'platform' | 'os' | 'difficulty' | 'status' | 'timeSpentSeconds';
+
+const CHECKBOX_CLASS =
+  'h-3.5 w-3.5 rounded border-strong text-accent bg-surface-card cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+
+const CHECK_CELL =
+  'flex h-8 w-8 cursor-pointer items-center justify-center [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
 
 const STATUS_OPTIONS: CyberSelectOption<PipelineStatus>[] = [
   { value: 'backlog', label: 'Backlog' },
@@ -83,6 +97,9 @@ interface TableRowProps {
   machine: Machine;
   isActiveTarget: boolean;
   soundEnabled: boolean;
+  /** Bulk-selection state; only the desktop table renders the checkbox. */
+  isChecked?: boolean;
+  onToggleCheck?: (id: string, shift: boolean) => void;
   onSelect: (id: string) => void;
   onStatusChange: (status: PipelineStatus, id: string) => void;
   onToggleUserFlag: (id: string) => void;
@@ -209,6 +226,8 @@ const TableRow = React.memo<TableRowProps>(({
   machine: m,
   isActiveTarget,
   soundEnabled,
+  isChecked = false,
+  onToggleCheck,
   onSelect,
   onStatusChange,
   onToggleUserFlag,
@@ -221,10 +240,24 @@ const TableRow = React.memo<TableRowProps>(({
   return (
     <tr
       className={`interactive-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-subtle ${
-        isActiveTarget ? 'bg-accent-muted border-l-2 border-l-accent' : ''
+        isActiveTarget ? 'bg-accent-muted border-l-2 border-l-accent' : isChecked ? 'bg-surface-sunken' : ''
       }`}
       onClick={() => onSelect(m.id)}
     >
+      {/* Bulk select */}
+      <td className="py-2.5 pl-4 pr-0 w-10" onClick={(e) => e.stopPropagation()}>
+        <label className={CHECK_CELL}>
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={() => {}}
+            onClick={(e) => onToggleCheck?.(m.id, e.shiftKey)}
+            className={CHECKBOX_CLASS}
+            aria-label={`Select ${m.name}`}
+          />
+        </label>
+      </td>
+
       {/* Target name & IP */}
       <td className="py-2.5 px-4">
         <div className="flex items-center gap-2.5">
@@ -466,42 +499,151 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
   );
 
   const isBelowSm = useIsBelowSm();
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortAsc, setSortAsc] = useState(true);
-  const [customColumnSorted, setCustomColumnSorted] = useState(false);
+  const [sortKeys, setSortKeys] = useState<SortKey<SortField>[]>([]);
   const [mobileVisible, setMobileVisible] = useState(30);
 
-  const handleSort = useCallback((field: SortField) => {
-    setCustomColumnSorted(true);
-    setSortField((prevField) => {
-      if (prevField === field) {
-        setSortAsc((prevAsc) => !prevAsc);
-        return field;
-      } else {
-        setSortAsc(true);
-        return field;
-      }
+  /** Plain click = primary sort only; shift+click = add / flip / remove a secondary key. */
+  const handleSort = useCallback((field: SortField, additive: boolean) => {
+    setSortKeys((prev) => nextSortKeys(prev, field, additive));
+  }, []);
+
+  // Comparator is rebuilt only when the keys change, never per render or per row.
+  const sortedMachines = useMemo(
+    () => (sortKeys.length === 0 ? filteredMachines : sortByKeys<Machine, SortField>(filteredMachines, sortKeys)),
+    [filteredMachines, sortKeys],
+  );
+
+  // ---- Bulk selection -------------------------------------------------------
+  const { updateMachine, deleteMachine } = useCtfStore(
+    useShallow((s) => ({ updateMachine: s.updateMachine, deleteMachine: s.deleteMachine }))
+  );
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [announcement, setAnnouncement] = useState('');
+  const [tagDraft, setTagDraft] = useState('');
+  const anchorRef = useRef<string | null>(null);
+  const orderedIdsRef = useRef<string[]>([]);
+  orderedIdsRef.current = useMemo(() => sortedMachines.map((m) => m.id), [sortedMachines]);
+
+  const clearSelection = useCallback(() => {
+    anchorRef.current = null;
+    setSelectedIds((prev) => (prev.size === 0 ? prev : new Set()));
+  }, []);
+
+  // Selection belongs to the current filter result: when the set of visible rows changes, drop it.
+  const visibleSignature = useMemo(() => filteredMachines.map((m) => m.id).join('|'), [filteredMachines]);
+  useEffect(() => {
+    clearSelection();
+  }, [visibleSignature, clearSelection]);
+
+  const handleToggleCheck = useCallback((id: string, shift: boolean) => {
+    setSelectedIds((prev) => {
+      const r = applySelectionClick(prev, orderedIdsRef.current, anchorRef.current, id, shift);
+      anchorRef.current = r.anchor;
+      return r.selected;
     });
   }, []);
 
-  const sortedMachines = useMemo(() => {
-    if (!customColumnSorted) {
-      return filteredMachines;
-    }
-    const list = [...filteredMachines];
-    list.sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
-      if (typeof valA === 'string' && typeof valB === 'string') {
-        return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+  const allSelected = sortedMachines.length > 0 && selectedIds.size === sortedMachines.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+  const handleToggleAll = useCallback(() => {
+    anchorRef.current = null;
+    setSelectedIds((prev) => (prev.size === orderedIdsRef.current.length ? new Set() : new Set(orderedIdsRef.current)));
+  }, []);
+  const selectAllRef = useCallback(
+    (el: HTMLInputElement | null) => {
+      if (el) el.indeterminate = someSelected;
+    },
+    [someSelected],
+  );
+
+  // Esc clears the selection unless something else (dialog, open listbox, text field, detail modal) owns it.
+  const hasSelection = selectedIds.size > 0;
+  useEffect(() => {
+    if (!hasSelection) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (useConfirmStore.getState().pending || useCtfStore.getState().selectedMachineId) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('input[type="text"], textarea, [aria-expanded="true"], [role="listbox"]')) return;
+      clearSelection();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hasSelection, clearSelection]);
+
+  const selectedMachines = useMemo(
+    () => (selectedIds.size === 0 ? [] : sortedMachines.filter((m) => selectedIds.has(m.id))),
+    [sortedMachines, selectedIds],
+  );
+  const removableTagOptions = useMemo<CyberSelectOption<string>[]>(() => {
+    const counts = new Map<string, number>();
+    for (const m of selectedMachines) for (const t of m.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([tag, n]) => ({ value: tag, label: `${tag} (${n})` }));
+  }, [selectedMachines]);
+
+  const handleBulkStatus = useCallback(
+    (status: PipelineStatus) => {
+      const ids = [...selectedIds];
+      if (ids.length === 0) return;
+      ids.forEach((id) => updateMachineStatus(id, status));
+      if (status === 'root' || status === 'completed') {
+        triggerRootCelebration();
+        if (soundEnabled) playCyberSound('root');
       }
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return sortAsc ? valA - valB : valB - valA;
+      const label = STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
+      setAnnouncement(`${ids.length} ${ids.length === 1 ? 'target' : 'targets'} set to ${label}`);
+    },
+    [selectedIds, updateMachineStatus, soundEnabled],
+  );
+
+  const handleBulkAddTag = useCallback(() => {
+    const tag = tagDraft.trim();
+    if (!tag || selectedIds.size === 0) return;
+    const byId = new Map(useCtfStore.getState().machines.map((m) => [m.id, m]));
+    let touched = 0;
+    selectedIds.forEach((id) => {
+      const m = byId.get(id);
+      if (m && !m.tags.includes(tag)) {
+        updateMachine(id, { tags: [...m.tags, tag] });
+        touched++;
       }
-      return 0;
     });
-    return list;
-  }, [filteredMachines, sortField, sortAsc, customColumnSorted]);
+    setTagDraft('');
+    setAnnouncement(`Tag ${tag} added to ${touched} ${touched === 1 ? 'target' : 'targets'}`);
+  }, [tagDraft, selectedIds, updateMachine]);
+
+  const handleBulkRemoveTag = useCallback(
+    (tag: string) => {
+      const byId = new Map(useCtfStore.getState().machines.map((m) => [m.id, m]));
+      let touched = 0;
+      selectedIds.forEach((id) => {
+        const m = byId.get(id);
+        if (m && m.tags.includes(tag)) {
+          updateMachine(id, { tags: m.tags.filter((t) => t !== tag) });
+          touched++;
+        }
+      });
+      setAnnouncement(`Tag ${tag} removed from ${touched} ${touched === 1 ? 'target' : 'targets'}`);
+    },
+    [selectedIds, updateMachine],
+  );
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const ok = await confirmAction({
+      title: `Delete ${ids.length} ${ids.length === 1 ? 'target' : 'targets'}?`,
+      body: 'This permanently removes the selected targets and their saved data. This cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    ids.forEach((id) => deleteMachine(id));
+    clearSelection();
+    setAnnouncement(`${ids.length} ${ids.length === 1 ? 'target' : 'targets'} deleted`);
+  }, [selectedIds, deleteMachine, clearSelection]);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -554,6 +696,8 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
     machine: m,
     isActiveTarget: activeTargetId === m.id,
     soundEnabled,
+    isChecked: selectedIds.has(m.id),
+    onToggleCheck: handleToggleCheck,
     onSelect: setSelectedMachineId,
     onStatusChange: handleStatusChange,
     onToggleUserFlag: toggleUserFlag,
@@ -587,6 +731,72 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
   }
 
   return (
+    <div className="space-y-3">
+    <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
+    {hasSelection && (
+      <div
+        role="toolbar"
+        aria-label="Bulk actions for selected targets"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-subtle bg-surface-card px-4 py-2.5 text-xs font-sans surface-card-depth"
+      >
+        <span className="font-medium text-primary">
+          <span className="font-mono tabular-nums">{selectedIds.size}</span> selected
+        </span>
+
+        <CyberSelect<string>
+          value=""
+          onChange={(v) => handleBulkStatus(v as PipelineStatus)}
+          options={STATUS_OPTIONS}
+          placeholder="Set status"
+          ariaLabel="Set status for selected targets"
+          size="xs"
+          variant="hardware"
+          soundEnabled={soundEnabled}
+        />
+
+        <form
+          className="flex items-center gap-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleBulkAddTag();
+          }}
+        >
+          <input
+            type="text"
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+            maxLength={40}
+            placeholder="New tag"
+            aria-label="Tag to add to selected targets"
+            className="h-6 w-28 rounded-sm border border-subtle bg-surface-sunken px-2 text-xs text-primary placeholder:text-muted focus:border-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 [@media(pointer:coarse)]:h-11"
+          />
+          <CyberButton type="submit" size="xs" variant="secondary" iconLeft={<Plus className="h-3 w-3" />} disabled={!tagDraft.trim()} aria-label="Add tag to selected targets">
+            Add tag
+          </CyberButton>
+        </form>
+
+        <CyberSelect<string>
+          value=""
+          onChange={handleBulkRemoveTag}
+          options={removableTagOptions}
+          placeholder="Remove tag"
+          ariaLabel="Remove tag from selected targets"
+          size="xs"
+          variant="hardware"
+          disabled={removableTagOptions.length === 0}
+          soundEnabled={soundEnabled}
+        />
+
+        <div className="ml-auto flex items-center gap-2">
+          <CyberButton size="xs" variant="danger" iconLeft={<Trash2 className="h-3 w-3" />} onClick={handleBulkDelete} aria-label={`Delete ${selectedIds.size} selected targets`}>
+            Delete
+          </CyberButton>
+          <CyberButton size="xs" variant="ghost" iconLeft={<X className="h-3 w-3" />} onClick={clearSelection} title="Clear selection (Esc)" aria-label="Clear selection">
+            Clear
+          </CyberButton>
+        </div>
+      </div>
+    )}
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -594,31 +804,56 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
       className="rounded-2xl border border-subtle bg-surface-card overflow-hidden text-xs pb-4 surface-card-depth machined-edge"
     >
       <div ref={parentRef} className="overflow-x-auto max-h-[calc(100vh-230px)] overflow-y-auto">
-        <table className="w-full text-left border-collapse min-w-[1080px]">
+        <table className="w-full text-left border-collapse min-w-[1120px]">
           <thead className="sticky top-0 z-10 bg-surface-base/95 backdrop-blur-sm border-b border-subtle text-xs text-muted font-sans font-semibold machined-edge">
             <tr>
-              {HEADERS.map((h) =>
-                h.field ? (
-                  <th
-                    key={h.label}
-                    className={`${h.className} cursor-pointer hover:text-primary transition-colors group`}
-                    onClick={() => handleSort(h.field as SortField)}
-                  >
-                    <div className="flex items-center gap-1.5">
+              <th className="py-3 pl-4 pr-0 w-10">
+                <label className={CHECK_CELL}>
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleToggleAll}
+                    disabled={sortedMachines.length === 0}
+                    className={CHECKBOX_CLASS}
+                    aria-label={`Select all ${sortedMachines.length} filtered targets`}
+                  />
+                </label>
+              </th>
+              {HEADERS.map((h) => {
+                if (!h.field) return <th key={h.label} className={h.className}>{h.label}</th>;
+                const field = h.field;
+                const idx = sortKeys.findIndex((k) => k.field === field);
+                const key = idx >= 0 ? sortKeys[idx] : null;
+                const ariaSort = idx === 0 && key ? (key.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+                const state = key
+                  ? `, ${key.dir === 'asc' ? 'ascending' : 'descending'}${sortKeys.length > 1 ? `, priority ${idx + 1}` : ''}`
+                  : '';
+                const Icon = key ? (key.dir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+                return (
+                  <th key={h.label} className={`${h.className} transition-colors`} aria-sort={ariaSort}>
+                    <button
+                      type="button"
+                      onClick={(e) => handleSort(field, e.shiftKey)}
+                      title="Click to sort. Shift+click to add or change a secondary sort."
+                      aria-label={`Sort by ${h.label}${state}`}
+                      className={`group flex cursor-pointer items-center gap-1.5 rounded-sm font-semibold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${key ? 'text-primary' : ''}`}
+                    >
                       <span>{h.label}</span>
-                      <ArrowUpDown className="w-3 h-3 text-muted/70 group-hover:text-primary transition-colors" />
-                    </div>
+                      <Icon className={`w-3 h-3 transition-colors group-hover:text-primary ${key ? 'text-accent' : 'text-muted/70'}`} aria-hidden="true" />
+                      {key && sortKeys.length > 1 && (
+                        <span aria-hidden="true" className="font-mono text-xs tabular-nums text-accent">{idx + 1}</span>
+                      )}
+                    </button>
                   </th>
-                ) : (
-                  <th key={h.label} className={h.className}>{h.label}</th>
-                )
-              )}
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-subtle">
             {paddingTop > 0 && (
               <tr>
-                <td style={{ height: `${paddingTop}px` }} colSpan={9} />
+                <td style={{ height: `${paddingTop}px` }} colSpan={10} />
               </tr>
             )}
             {virtualRows.map((virtualRow) => {
@@ -628,7 +863,7 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
             })}
             {paddingBottom > 0 && (
               <tr>
-                <td style={{ height: `${paddingBottom}px` }} colSpan={9} />
+                <td style={{ height: `${paddingBottom}px` }} colSpan={10} />
               </tr>
             )}
           </tbody>
@@ -640,9 +875,10 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
           <span className="font-mono tabular-nums font-medium text-primary">{sortedMachines.length}</span> targets
         </div>
         <div className="text-xs text-muted hidden sm:block">
-          <span className="font-mono">j/k</span> navigate · <span className="font-mono">space</span> inspect
+          <span className="font-mono">j/k</span> navigate · <span className="font-mono">space</span> inspect · <span className="font-mono">shift+click</span> header multi-sort or checkbox range
         </div>
       </div>
     </motion.div>
+    </div>
   );
 };

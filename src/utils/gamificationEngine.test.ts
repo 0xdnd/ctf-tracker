@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { 
   evaluateOperatorGamification, 
-  syncOperatorTrophies, 
-  OPERATOR_RANKS, 
-  TROPHY_DEFINITIONS 
-} from './gamificationEngine';
+  syncOperatorTrophies} from './gamificationEngine';
 import { Machine } from '../types';
 
 describe('gamificationEngine', () => {

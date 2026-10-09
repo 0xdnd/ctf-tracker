@@ -111,4 +111,28 @@ function getModel() {
   return cached;
 }
 
-module.exports = { getModel, slugify };
+let guidesCache;
+/**
+ * Long-form guide pages from ./guides.cjs: [{ path, title, description, html, lastmod }].
+ * Tolerant: when guides.cjs is absent it logs one line and returns [] so the rest of the build still works.
+ */
+function getGuides() {
+  if (guidesCache) return guidesCache;
+  let buildGuidePages;
+  try {
+    ({ buildGuidePages } = require('./guides.cjs'));
+  } catch (e) {
+    if (e && e.code === 'MODULE_NOT_FOUND' && /[\\/]guides\.cjs'/.test(String(e.message).split('\n')[0])) {
+      console.log('guides: scripts/lib/guides.cjs not found, skipping guide pages');
+      guidesCache = [];
+      return guidesCache;
+    }
+    throw e;
+  }
+  const layout = require('./layout.cjs');
+  const site = { ORIGIN: layout.ORIGIN, REPO: layout.REPO, name: 'ZeroBox' };
+  guidesCache = buildGuidePages({ model: getModel(), renderPage: layout.renderPage, site });
+  return guidesCache;
+}
+
+module.exports = { getModel, getGuides, slugify };

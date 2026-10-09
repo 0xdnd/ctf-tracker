@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 type RGB = [number, number, number];
 
-const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf8');
+const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf8').replace(/\r\n/g, '\n');
 
 const TEXT_TOKENS = ['text-primary', 'text-secondary', 'text-muted', 'text-tertiary', 'text-dim'] as const;
 const SURFACE_TOKENS = ['surface-base', 'surface-card', 'surface-elevated', 'surface-sunken', 'surface-hover'] as const;

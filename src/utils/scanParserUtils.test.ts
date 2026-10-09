@@ -241,4 +241,95 @@ PORT   STATE SERVICE VERSION
       expect(res?.ports[1].cveNotes).toContain('CVE-2021-41773');
     });
   });
+
+  describe('headerless nmap port lines (ex-nmapParser coverage)', () => {
+    const openPorts = (text: string) => detectAndParseScan(text)?.ports.map((p) => p.port) ?? [];
+
+    it('parses standard nmap output with open ports and services', () => {
+      const raw = `
+Starting Nmap 7.94 ( https://nmap.org )
+Nmap scan report for 10.10.10.150
+Host is up (0.045s latency).
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5
+80/tcp   open  http        Apache httpd 2.4.41 ((Ubuntu))
+445/tcp  open  netbios-ssn Samba smbd 4.6.2
+Nmap done: 1 IP address scanned in 8.35 seconds
+`;
+      const res = detectAndParseScan(raw);
+      expect(res?.format).toBe('nmap-text');
+      expect(res?.ports.map((p) => p.port)).toEqual([22, 80, 445]);
+      expect(res?.ports[0]).toMatchObject({ protocol: 'tcp', state: 'open', service: 'ssh', version: 'OpenSSH 8.2p1 Ubuntu 4ubuntu0.5' });
+    });
+
+    it('parses bare UDP and TCP port lines that have no PORT/STATE header', () => {
+      const res = detectAndParseScan('53/udp   open  domain  ISC BIND 9.16.1\n161/udp  open  snmp    SNMPv3 server\n');
+      expect(res?.ports.map((p) => p.port)).toEqual([53, 161]);
+      expect(res?.ports.every((p) => p.protocol === 'udp')).toBe(true);
+      expect(res?.ports[0].service).toBe('domain');
+    });
+
+    it('keeps open and open|filtered ports but drops closed and filtered ones', () => {
+      const raw = `
+21/tcp   closed   ftp
+22/tcp   open     ssh
+23/tcp   filtered telnet
+80/tcp   open|filtered http
+443/tcp  open     https
+`;
+      expect(openPorts(raw)).toEqual([22, 80, 443]);
+      expect(detectAndParseScan(raw)?.ports.find((p) => p.port === 80)?.state).toBe('open|filtered');
+    });
+
+    it('parses comma-separated port lists with keywords', () => {
+      expect(openPorts('Discovered open ports: 21, 22, 80, 443 on target')).toEqual([21, 22, 80, 443]);
+    });
+
+    it('returns null for empty or portless input', () => {
+      expect(detectAndParseScan('')).toBeNull();
+      expect(detectAndParseScan('No ports open, host seems down.')).toBeNull();
+    });
+  });
+
+  describe('multi-host intake', () => {
+    it('lists every host of a multi-host nmap text report', () => {
+      const text = `Nmap scan report for dc01.corp.local (10.0.0.1)
+Host is up.
+PORT    STATE SERVICE
+88/tcp  open  kerberos-sec
+389/tcp open  ldap
+
+Nmap scan report for 10.0.0.2
+Host is up.
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+`;
+      const res = detectAndParseScan(text);
+      expect(res?.hosts).toHaveLength(2);
+      expect(res?.hosts?.[0]).toMatchObject({ ip: '10.0.0.1', hostname: 'dc01.corp.local' });
+      expect(res?.hosts?.[0].ports.map((p) => p.port)).toEqual([88, 389]);
+      expect(res?.hosts?.[1]).toMatchObject({ ip: '10.0.0.2', os: 'Linux' });
+      expect(res?.hosts?.[1].ports.map((p) => p.port)).toEqual([22]);
+    });
+
+    it('does not set hosts for a single-host text report', () => {
+      expect(detectAndParseScan('Nmap scan report for 10.0.0.9\nPORT STATE SERVICE\n22/tcp open ssh\n')?.hosts).toBeUndefined();
+    });
+
+    it('groups gnmap lines by host', () => {
+      const gnmap = [
+        '# Nmap 7.94 scan initiated as: nmap -oG - 10.0.0.0/30',
+        'Host: 10.0.0.1 (a.lab)\tStatus: Up',
+        'Host: 10.0.0.1 (a.lab)\tPorts: 22/open/tcp//ssh//OpenSSH 8.2/, 80/open/tcp//http//nginx/\tIgnored State: closed (998)',
+        'Host: 10.0.0.2 ()\tPorts: 445/open/tcp//microsoft-ds///',
+      ].join('\n');
+      const res = detectAndParseScan(gnmap);
+      expect(res?.format).toBe('gnmap');
+      expect(res?.hosts).toHaveLength(2);
+      expect(res?.hosts?.[0]).toMatchObject({ ip: '10.0.0.1', hostname: 'a.lab' });
+      expect(res?.hosts?.[0].ports.map((p) => p.port)).toEqual([22, 80]);
+      expect(res?.hosts?.[1].ports.map((p) => p.port)).toEqual([445]);
+    });
+  });
 });

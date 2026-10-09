@@ -193,6 +193,7 @@ export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'co
 }
 
 export function triggerRootCelebration() {
+  // Loaded on demand so canvas-confetti stays out of the entry preload graph.
   import('canvas-confetti')
     .then(({ default: confetti }) => {
       confetti({

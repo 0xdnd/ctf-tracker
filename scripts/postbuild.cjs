@@ -9,7 +9,8 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
-// 1. Copy dist/index.html to dist/404.html for SPA routing on GitHub Pages
+// 1. Interim dist/404.html (copy of the SPA shell). scripts/gen-content-pages.cjs replaces it with the designed 404 page,
+//    whose /404.js boots the app shell for client routes such as /target/<id>.
 const distIndex = path.join(distDir, 'index.html');
 const dist404 = path.join(distDir, '404.html');
 if (fs.existsSync(distIndex)) {

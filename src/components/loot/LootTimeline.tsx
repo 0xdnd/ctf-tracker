@@ -5,7 +5,7 @@ import {
   formatIsoTimestamp 
 } from '../../pages/EvidenceVaultPage';
 import { CyberBadge } from '../common/CyberBadge';
-import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { playCyberSound } from '../../utils/helpers';
 
 export interface LootTimelineProps {
   items: VaultEvidenceItem[];
@@ -291,7 +291,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
       ) : (
         /* ================= Chronological Stream View ================= */
         <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-px before:bg-surface-hover">
-          {chronologicalItems.map((item, index) => {
+          {chronologicalItems.map((item) => {
             const isRevealed = Boolean(revealedIds[item.id]);
             const isCopied = copiedId === item.id;
             const phaseId = assignKillChainPhase(item);

@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Platform } from '../../types';
 import { getPlatformTone, NEUTRAL_TONE } from '../../utils/categoryUtils';
 
@@ -15,7 +14,6 @@ export const PlatformIcon: React.FC<{ platform: Platform; className?: string; mo
   platform,
   className = 'w-3.5 h-3.5',
   monochrome = false,
-  variant = 'default',
 }) => {
   const isMono = monochrome;
   const toneClass = isMono ? '' : getPlatformTone(platform).text;

@@ -13,21 +13,15 @@ import {
   Flag, 
   Clock, 
   FileDown, 
-  CheckCircle2, 
   ChevronRight,
   ChevronDown,
   Terminal,
   Trophy,
   Coffee,
-  Sparkles,
   Zap,
   Target,
-  ArrowRight,
   User,
-  Shield,
   Layers,
-  HelpCircle,
-  ExternalLink,
   Flame,
   X
 } from 'lucide-react';
@@ -43,18 +37,16 @@ import {
   EXAM_TRACK_CONFIGS,
   calculateExamScore, 
   generateExamReportMarkdown,
-  validateFlagFormat,
-  isActiveDirectoryBox,
-  isDomainControllerBox
-} from '../utils/examComplianceUtils';
+  isActiveDirectoryBox} from '../utils/examComplianceUtils';
 import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
-import { buildBurndownSeries, resolveChartWindow } from '../utils/examBurndown';
+import { buildBurndownSeries, resolveChartWindow, persistChartExpiry, readPersistedChartExpiry } from '../utils/examBurndown';
 import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
 import { ExamReportModal } from '../components/exam/ExamReportModal';
+import { useExamRabbitHole } from '../hooks/useExamRabbitHole';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
 
 export const ExamSimulatorPage: React.FC = () => {
@@ -67,12 +59,11 @@ export const ExamSimulatorPage: React.FC = () => {
     examExpiresAt,
     totalDurationSeconds,
     timerPausedRemainingSeconds,
-    remainingSeconds,
     activeBreak,
-    breakHistory,
     milestones,
     scratchNotes,
     includeBonusPoints,
+    findings,
     candidateName,
     candidateCallsign,
     osid,
@@ -82,16 +73,13 @@ export const ExamSimulatorPage: React.FC = () => {
     resetExam,
     setTrack,
     shuffleTargets,
-    submitFlag,
     togglePwn,
     setCandidateInfo,
     setScratchNotes,
     setIncludeBonusPoints,
     getRemainingSeconds,
     getBreakRemainingSeconds,
-    getScore,
     getPassingStatus,
-    tick,
   } = useExamStore(
     useShallow((s) => ({
       id: s.id,
@@ -108,6 +96,7 @@ export const ExamSimulatorPage: React.FC = () => {
       milestones: s.milestones,
       scratchNotes: s.scratchNotes,
       includeBonusPoints: s.includeBonusPoints,
+      findings: s.findings,
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
       osid: s.osid,
@@ -133,6 +122,10 @@ export const ExamSimulatorPage: React.FC = () => {
   // Expanded box card for evidence dropzones
   const [expandedBoxId, setExpandedBoxId] = useState<string | null>(null);
   const [activeProofTab, setActiveProofTab] = useState<'user' | 'root'>('user');
+
+  const rabbitHole = useExamRabbitHole();
+  const setActiveBox = useExamStore((s) => s.setActiveBox);
+  const snoozeRabbitHole = useExamStore((s) => s.snoozeRabbitHole);
 
   // Bio-Break Modal visibility
   const [isBioBreakModalOpen, setIsBioBreakModalOpen] = useState(false);
@@ -176,9 +169,11 @@ export const ExamSimulatorPage: React.FC = () => {
       {
         totalScore: scoreData.totalScore,
         passThreshold: scoreData.passThreshold,
-      }
+      },
+      Date.now(),
+      trackConfig
     );
-  }, [startedAt, examExpiresAt, timerPausedRemainingSeconds, totalDurationSeconds, boxes, scoreData]);
+  }, [startedAt, examExpiresAt, timerPausedRemainingSeconds, totalDurationSeconds, boxes, scoreData, trackConfig]);
 
   // Burn-down series: memoized on boxes/session only (NOT on the 1Hz tick) so the
   // step path never re-renders; only the "now" marker moves.
@@ -186,7 +181,13 @@ export const ExamSimulatorPage: React.FC = () => {
   // window stays on the wall-clock axis (prior pause time included).
   const lastExpiresAtRef = useRef<number | null>(null);
   if (!startedAt) lastExpiresAtRef.current = null;
-  else if (examExpiresAt !== null) lastExpiresAtRef.current = examExpiresAt;
+  else if (examExpiresAt !== null) {
+    lastExpiresAtRef.current = examExpiresAt;
+    persistChartExpiry(startedAt, examExpiresAt);
+  } else if (lastExpiresAtRef.current === null) {
+    // Reloaded while paused: recover the expiry persisted before the pause.
+    lastExpiresAtRef.current = readPersistedChartExpiry(startedAt);
+  }
   const chartWindow = startedAt
     ? resolveChartWindow({
         startedAt,
@@ -235,6 +236,7 @@ export const ExamSimulatorPage: React.FC = () => {
       boxes,
       scratchNotes,
       includeBonusPoints,
+      findings,
     };
     const md = generateExamReportMarkdown(sessionPayload);
     const blob = new Blob([md], { type: 'text/markdown' });
@@ -372,8 +374,8 @@ export const ExamSimulatorPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {(['OSCP', 'CPTS', 'CRTO'] as ExamTrack[]).map((t) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {(Object.keys(EXAM_TRACK_CONFIGS) as ExamTrack[]).map((t) => {
                 const conf = EXAM_TRACK_CONFIGS[t];
                 const isSelected = track === t;
                 return (
@@ -408,7 +410,7 @@ export const ExamSimulatorPage: React.FC = () => {
                       {conf.description}
                     </p>
 
-                    <div className="pt-2 border-t border-subtle text-[11px] text-muted flex items-center justify-between">
+                    <div className="pt-2 border-t border-subtle text-[11px] text-muted flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                       <span className="font-mono tabular-nums">Duration: {Math.round(conf.durationSeconds / 3600)}h</span>
                       <span>{conf.targetSummary}</span>
                     </div>
@@ -960,7 +962,10 @@ export const ExamSimulatorPage: React.FC = () => {
             </span>
             <button aria-label={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
               type="button"
-              onClick={() => setExpandedBoxId(isExpanded ? null : box.id)}
+              onClick={() => {
+                if (!isExpanded) setActiveBox(box.id);
+                setExpandedBoxId(isExpanded ? null : box.id);
+              }}
               className="p-1 max-sm:p-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary transition-interactive border border-subtle active:scale-[0.97]"
               title={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
             >
@@ -981,6 +986,26 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
           <DifficultyBadge difficulty={box.difficulty} size="xs" />
         </div>
+
+        {rabbitHole.isRabbitHole && rabbitHole.boxId === box.id && (
+          <div
+            role="alert"
+            data-testid={`exam-rabbit-hole-${box.id}`}
+            className="mb-3 p-2 rounded-lg border border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg text-xs flex items-center justify-between gap-2"
+          >
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              Rabbit hole: {Math.floor(rabbitHole.timeSpentSeconds / 60)}m without a flag. Pivot to another target.
+            </span>
+            <button
+              type="button"
+              onClick={() => snoozeRabbitHole()}
+              className="px-2 py-1 max-sm:py-2 rounded border border-callout-danger-border font-semibold transition-interactive active:scale-[0.97]"
+            >
+              Snooze 30m
+            </button>
+          </div>
+        )}
 
         {/* Pwn Quick Action Buttons */}
         <div className="grid grid-cols-2 gap-2 mb-3">

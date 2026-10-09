@@ -1,6 +1,7 @@
 import { Machine } from '../types';
-import { MethodologyPhase, ChecklistItem } from '../types/checklist';
+import { ChecklistItem } from '../types/checklist';
 import { generateApplicablePhases } from '../data/methodologyFramework';
+import { RABBIT_HOLE_THRESHOLDS } from './rabbitHoleConfig';
 
 export interface RabbitHoleWarning {
   isRabbitHole: boolean;
@@ -16,7 +17,7 @@ export interface RabbitHoleWarning {
  */
 export function evaluateRabbitHoleStatus(
   machine: Machine,
-  thresholdMinutes: number = 30
+  thresholdMinutes: number = RABBIT_HOLE_THRESHOLDS.checklistMinutes
 ): RabbitHoleWarning {
   const checklist = machine.checklist;
   const activeItemId = checklist?.activeItemId;

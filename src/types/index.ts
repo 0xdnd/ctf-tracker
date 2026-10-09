@@ -57,6 +57,7 @@ export interface Machine {
 
 export * from './checklist';
 export * from './graph';
+export * from './loot';
 
 export interface CheatsheetCommand {
   id: string;

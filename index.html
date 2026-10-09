@@ -14,9 +14,22 @@
     <link rel="preload" as="image" type="image/webp" href="/logo-zerobox-64.webp" imagesrcset="/logo-zerobox-64.webp 64w, /logo-zerobox-128.webp 128w" imagesizes="32px" fetchpriority="high" />
     <link rel="canonical" href="https://ctftracker.com/" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ZeroBox — #1 Offline-First CTF Tracker & OSCP Exam Simulator. Track 929+ Hack The Box & TryHackMe labs, dynamic reverse shell HUD, TJ_Null tracks & burndown timer. Free, no signup." />
+    <meta name="description" content="Free offline CTF tracker for HTB and THM with an OSCP exam simulator, CPTS and CRTO practice, cheatsheets and a pentest methodology checklist." />
+    <meta name="keywords" content="ctf tracker, oscp exam simulator, hack the box tracker, tryhackme room tracker, tj null list, cpts tracker, reverse shell generator, offensive security dashboard" />
     <meta name="theme-color" content="#0B0F19" />
-    <title>ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]</title>
+    <title>ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator</title>
+
+    <script>document.documentElement.classList.add('js');</script>
+    <style>
+      /* Boot splash: JS users only, invisible for the first 300ms so fast loads never see it. React replaces #root children on mount. */
+      #boot-splash{display:none}
+      .js [data-prerender]{display:none}
+      .js #boot-splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#09090b;color:#a1a1aa;font:500 14px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em;opacity:0;animation:boot-splash-in .3s ease-out .3s forwards}
+      .js #boot-splash img{width:48px;height:48px;display:block}
+      @keyframes boot-splash-in{to{opacity:1}}
+      @keyframes boot-splash-show{to{opacity:1}}
+      @media (prefers-reduced-motion:reduce){.js #boot-splash{animation:boot-splash-show 0s linear .3s forwards}}
+    </style>
 
     <script>
       if (window.location.hostname === '0xdnd.github.io' && window.location.pathname.startsWith('/ctf-tracker')) {
@@ -71,8 +84,8 @@
     <!-- Open Graph / Facebook / LinkedIn / Discord -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://ctftracker.com/" />
-    <meta property="og:title" content="ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]" />
-    <meta property="og:description" content="Mission control dashboard for Hack The Box, TryHackMe, and exam prep (OSCP/CPTS/CRTO). Track 929+ targets, 8-phase attack methodologies, tactical payloads, and exam simulations." />
+    <meta property="og:title" content="ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator" />
+    <meta property="og:description" content="Free offline CTF tracker for HTB and THM with an OSCP exam simulator, CPTS and CRTO practice, cheatsheets and a pentest methodology checklist." />
     <meta property="og:image" content="https://ctftracker.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -80,14 +93,14 @@
     <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://ctftracker.com/" />
-    <meta name="twitter:title" content="ZEROBOX — #1 Offline CTF Tracker & OSCP Exam Simulator [Free]" />
-    <meta name="twitter:description" content="Mission control dashboard for Hack The Box, TryHackMe, and exam prep. Track 929+ targets, 8-phase attack methodologies, and interactive writeups." />
+    <meta name="twitter:title" content="ZeroBox — Free Offline CTF Tracker &amp; OSCP Exam Simulator" />
+    <meta name="twitter:description" content="Free offline CTF tracker for HTB and THM with an OSCP exam simulator, CPTS and CRTO practice, cheatsheets and a pentest methodology checklist." />
     <meta name="twitter:image" content="https://ctftracker.com/og.png" />
 
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss:; media-src 'self' data: blob:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss: https://api.anthropic.com; media-src 'self' data: blob:;" />
   </head>
   <body class="bg-cyber-bg text-cyber-text antialiased selection:bg-emerald-500 selection:text-black">
-    <div id="root"></div>
+    <div id="root"><div id="boot-splash" role="status"><img src="/icon-192.png" width="48" height="48" alt="" /><span>Loading ZeroBox</span></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

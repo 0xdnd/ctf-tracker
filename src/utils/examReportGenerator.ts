@@ -11,17 +11,83 @@
  *   14 flag objectives across DMZ, Internal, AD, and Vault tiers).
  * - Zero-Point Security CRTO: Red team operator engagement report (75-pt threshold,
  *   8 C2 objectives, operational security & detection telemetry).
+ * - OffSec OSEP (PEN-300): Defense evasion & breaching defenses enterprise report.
+ * - Altered Security CRTP: Active Directory attack path assessment report.
  */
 
 import {
   ExamTrack,
   ExamBox,
+  ScreenshotProof,
   ExamSessionState,
   EXAM_TRACK_CONFIGS,
   calculateExamScore,
   ExamScoreResult,
 } from './examComplianceUtils';
 import { parseMarkdownToHtml, escapeHtml } from './writeupHtmlExporter';
+import type { Finding } from '../types/findings';
+import { sortFindingsBySeverity } from './cvss';
+
+/** Single-line, pipe-free text so it is safe inside a markdown table cell or heading. */
+const inlineText = (value: string): string => (value || '').replace(/\s*[\r\n]+\s*/g, ' ').replace(/\|/g, '/').trim();
+
+/**
+ * Renders the "Findings Summary" table (severity-sorted) and per-finding sections.
+ * Evidence ids are resolved against the boxes' proof screenshots; unknown ids are skipped.
+ * Returns '' when there are no findings.
+ */
+export function generateFindingsMarkdown(
+  findings: Finding[] | undefined,
+  boxes: ExamBox[],
+  options?: { includeScreenshots?: boolean }
+): string {
+  if (!findings || findings.length === 0) return '';
+  const includeScreenshots = options?.includeScreenshots !== false;
+  const sorted = sortFindingsBySeverity(findings);
+
+  const screenshots = new Map<string, { sc: ScreenshotProof; box: ExamBox; flag: string }>();
+  boxes.forEach((b) =>
+    ([['user', b.userProof], ['root', b.rootProof]] as const).forEach(([flag, proof]) =>
+      (proof?.screenshots || []).forEach((sc) => screenshots.set(sc.id, { sc, box: b, flag }))
+    )
+  );
+
+  let md = `## 2A. Findings Summary\n\n`;
+  md += `| # | Finding | Severity | CVSS | Affected Hosts |\n| :--- | :--- | :--- | :--- | :--- |\n`;
+  sorted.forEach((f, i) => {
+    const score = typeof f.cvssScore === 'number' ? f.cvssScore.toFixed(1) : 'N/A';
+    const hosts = f.affectedHosts.map(inlineText).filter(Boolean).join(', ') || 'N/A';
+    md += `| ${i + 1} | ${inlineText(f.title) || 'Untitled finding'} | ${f.severity.toUpperCase()} | ${score} | ${hosts} |\n`;
+  });
+
+  md += `\n---\n\n## 2B. Detailed Findings\n\n`;
+  sorted.forEach((f, i) => {
+    md += `### 2B.${i + 1} ${inlineText(f.title) || 'Untitled finding'}\n\n`;
+    md += `- **Severity:** ${f.severity.toUpperCase()}\n`;
+    if (typeof f.cvssScore === 'number') {
+      md += `- **CVSS v3.1 Base Score:** ${f.cvssScore.toFixed(1)}${f.cvssVector ? ` (\`${inlineText(f.cvssVector)}\`)` : ''}\n`;
+    } else if (f.cvssVector) {
+      md += `- **CVSS Vector:** \`${inlineText(f.cvssVector)}\`\n`;
+    }
+    md += `- **Affected Hosts:** ${f.affectedHosts.map(inlineText).filter(Boolean).join(', ') || 'N/A'}\n\n`;
+    md += `**Description:**\n\n${f.description || 'No description provided.'}\n\n`;
+    if (f.impact) md += `**Impact:**\n\n${f.impact}\n\n`;
+    if (f.remediation) md += `**Remediation:**\n\n${f.remediation}\n\n`;
+
+    const evidence = f.evidenceRefs.map((id) => screenshots.get(id)).filter((e): e is NonNullable<typeof e> => Boolean(e));
+    if (evidence.length > 0) {
+      md += `**Evidence:**\n\n`;
+      evidence.forEach(({ sc, box, flag }) => {
+        const caption = inlineText(sc.caption) || 'Evidence screenshot';
+        md += `- ${caption} (${box.name}, ${flag} proof, ${sc.timestamp})\n`;
+        if (includeScreenshots && sc.dataUrl) md += `\n![${caption}](${sc.dataUrl})\n\n`;
+      });
+      md += `\n`;
+    }
+  });
+  md += `---\n\n`;
+  return md;
+}
 
 export interface ExamReportOptions {
   candidateName?: string;
@@ -77,6 +143,26 @@ This assessment operated under assumed-breach red team conditions utilizing C2 o
 5. **Domain Dominance & Persistence:** Abused Active Directory Certificate Services (ADCS), forged Golden/Silver tickets with the Domain KRBTGT hash, and verified enterprise forest dominance.`;
   }
 
+  if (track === 'OSEP') {
+    return `### 4.1 OffSec PEN-300 Evasion Techniques & Breaching Defenses Methodology
+The assessment simulated an advanced adversary operating against a defended enterprise network (endpoint protection, application allow-listing, and network segmentation):
+1. **Client-Side Initial Access:** Delivered staged payloads through phishing-style vectors (Office macros, HTA/JScript, and compiled loaders), with payload obfuscation and runtime decryption to defeat signature-based detection.
+2. **Endpoint Defense Evasion:** Bypassed AMSI, PowerShell Constrained Language Mode, and AppLocker policy restrictions; validated AV/EDR evasion through process injection and in-memory .NET assembly execution.
+3. **Linux Pivoting & Credential Material Abuse:** Compromised the Linux jump host, extracted Kerberos credential caches and keytabs, and tunneled traffic into segmented internal subnets.
+4. **MSSQL & Delegation Exploitation:** Abused MSSQL linked servers, UNC path coercion, and unconstrained/constrained Kerberos delegation to escalate between Windows hosts.
+5. **Domain & Forest Compromise:** Escalated from the child domain to the forest root using trust-key and SID-history techniques, culminating in capture of the final objective on the forest root domain controller.`;
+  }
+
+  if (track === 'CRTP') {
+    return `### 4.1 Altered Security CRTP Active Directory Attack Methodology
+The assessment followed a structured Active Directory attack path against a multi-domain lab environment:
+1. **Domain Enumeration:** Mapped users, groups, computers, GPOs, ACLs, and trust relationships using PowerView and the ActiveDirectory module to identify privileged attack paths.
+2. **Local Privilege Escalation:** Identified misconfigured services, unquoted paths, and weak permissions on the initial workstation to obtain local administrator rights.
+3. **Credential Extraction & Lateral Movement:** Harvested credentials and hashes, performed pass-the-hash and over-pass-the-hash, and moved laterally using PowerShell Remoting and WMI.
+4. **Domain Privilege Escalation:** Leveraged Kerberoasting, unconstrained and constrained delegation, and ACL abuse to reach domain administrator privileges.
+5. **Persistence & Trust Abuse:** Forged Golden and Silver tickets, abused DCSync rights, and crossed domain trusts via inter-realm TGTs to achieve enterprise forest dominance.`;
+  }
+
   // Default: OffSec OSCP (PEN-200)
   return `### 4.1 OffSec PEN-200 Practical Penetration Testing Methodology
 The assessment adhered to the official OffSec PEN-200 examination standards:
@@ -93,7 +179,7 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
 /**
  * Returns structured Strategic Remediation Plan (Short, Medium, and Long-Term).
  */
-export function getStrategicRemediation(track: ExamTrack): string {
+export function getStrategicRemediation(_track: ExamTrack): string {
   return `### 5.1 Immediate Short-Term Remediation (0 - 48 Hours)
 - **Credential Revocation & Force Rotation:** Immediately invalidate and rotate all compromised service account passwords, domain administrator credentials, and SSH keys identified during the assessment.
 - **Isolate Vulnerable Services:** Restrict exposed administrative panels, debug endpoints, and database ports from the public internet and untrusted subnets using strict firewall rules.
@@ -147,6 +233,10 @@ export function generateExamReportMarkdown(
     reportHeaderTitle = 'HACK THE BOX CPTS // OFFICIAL ENTERPRISE PENETRATION TESTING REPORT';
   } else if (effectiveTrack === 'CRTO') {
     reportHeaderTitle = 'ZERO-POINT SECURITY CRTO // CERTIFIED RED TEAM OPERATOR ENGAGEMENT REPORT';
+  } else if (effectiveTrack === 'OSEP') {
+    reportHeaderTitle = 'OFFSEC OSEP // EVASION TECHNIQUES & BREACHING DEFENSES EXAM REPORT';
+  } else if (effectiveTrack === 'CRTP') {
+    reportHeaderTitle = 'ALTERED SECURITY CRTP // CERTIFIED RED TEAM PROFESSIONAL ASSESSMENT REPORT';
   }
 
   let report = `# ${reportHeaderTitle}
@@ -270,6 +360,8 @@ export function generateExamReportMarkdown(
 
     report += `---\n\n`;
   });
+
+  report += generateFindingsMarkdown(session.findings, session.boxes, { includeScreenshots });
 
   report += `## 3. Candidate Operational Scratchpad & Notes\n\n`;
   report += `${session.scratchNotes || 'No additional scratchpad notes provided.'}\n\n`;

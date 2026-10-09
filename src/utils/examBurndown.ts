@@ -205,3 +205,28 @@ export function resolveChartWindow(input: ChartWindowInput): ChartWindow {
   nowMs = Math.max(startedAt, nowMs);
   return { end, nowMs };
 }
+
+const EXPIRY_KEY_PREFIX = 'exam-burndown-expiry:';
+
+/**
+ * The pause moment is not stored, so the live expiry cannot be derived while
+ * paused. Persist the last live expiry per session (keyed by startedAt) so the
+ * chart window survives a reload while paused. Storage failures are non-fatal.
+ */
+export function persistChartExpiry(startedAt: number, examExpiresAt: number): void {
+  try {
+    localStorage.setItem(EXPIRY_KEY_PREFIX + startedAt, String(examExpiresAt));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function readPersistedChartExpiry(startedAt: number): number | null {
+  try {
+    const raw = localStorage.getItem(EXPIRY_KEY_PREFIX + startedAt);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}

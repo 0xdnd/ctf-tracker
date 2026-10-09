@@ -8,7 +8,6 @@ import {
   createDefaultProof,
   isDomainControllerBox,
   isActiveDirectoryBox,
-  ExamBox,
   ExamSessionState,
 } from './examComplianceUtils';
 

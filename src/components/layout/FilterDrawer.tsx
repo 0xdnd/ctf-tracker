@@ -6,7 +6,6 @@ import {
   X, 
   RotateCcw, 
   Check, 
-  SlidersHorizontal, 
   ShieldAlert, 
   Layers, 
   Tag, 
@@ -19,12 +18,7 @@ import {
   Shield,
   Key,
   Terminal,
-  Filter,
-  Sparkles,
-  Zap,
-  Award,
-  GraduationCap
-} from 'lucide-react';
+  Filter} from 'lucide-react';
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';

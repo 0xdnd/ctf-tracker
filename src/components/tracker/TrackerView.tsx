@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   RotateCcw, 
@@ -9,27 +8,16 @@ import {
   LayoutGrid, 
   Globe,
   Terminal,
-  Cpu,
-  Layers,
   Sparkles,
-  Shield,
-  Key,
-  FolderGit2,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
   Target,
   Trophy,
   Zap,
   ArrowUpDown,
   Eye,
   EyeOff,
-  Ban,
-  Filter,
   SlidersHorizontal,
   Share2,
   X,
-  Compass,
   GraduationCap,
   Crosshair,
   Tv,
@@ -37,23 +25,20 @@ import {
   Flame,
   ShieldAlert
 } from 'lucide-react';
-import { useCtfStore, BoxVectorCategory, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
+import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { playCyberSound, triggerRootCelebration } from '../../utils/helpers';
+import { playCyberSound } from '../../utils/helpers';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
 import { KanbanBoard } from './KanbanBoard';
 import { TableView } from './TableView';
 import { GridView } from './GridView';
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
 import { FilterDrawer } from '../layout/FilterDrawer';
-import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
-import { OsIcon } from '../common/OsBadge';
-import { CyberSelect, CyberMultiSelect, CyberSelectOption } from '../common/CyberSelect';
+import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { CanvasSkeleton } from '../common/Skeleton';
 import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
 import { 
   VULN_CATEGORIES, 
-  VULN_DOMAINS, 
   VulnDomainId, 
   classifyMachine, 
   matchesCategory, 
@@ -281,61 +266,41 @@ export const TrackerView: React.FC = () => {
   }, [filters.selectedVulnCategory]);
 
   // Extract all unique tags across machines
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    machines.forEach((m) => {
-      m.tags.forEach((t) => set.add(t));
-    });
-    return Array.from(set).sort();
-  }, [machines]);
 
   // Track statistics (pwned count & total for each track)
-  const trackStats = useMemo(() => {
-    const stats: Record<string, { total: number; rooted: number; percent: number }> = {};
-    
-    PRACTICE_TRACKS.forEach((track) => {
-      const matching = machines.filter(track.filterFn);
-      const total = matching.length;
-      const rooted = matching.filter(m => m.status === 'root' || m.status === 'completed').length;
-      const percent = total > 0 ? Math.round((rooted / total) * 100) : 0;
-      stats[track.id] = { total, rooted, percent };
-    });
-
-    return stats;
-  }, [machines]);
 
   // Memoized live category and domain counts across all catalog targets
-  const { categoryCounts, domainCounts } = useMemo(() => {
-    const catCounts: Record<string, number> = { ALL: machines.length };
-    const domCounts: Record<VulnDomainId, number> = {
-      all: machines.length,
-      web: 0,
-      ad: 0,
-      system: 0,
-      advanced: 0,
-    };
-    VULN_CATEGORIES.forEach((c) => {
-      catCounts[c.id] = 0;
-    });
-    let adCount = 0;
-    let nonAdCount = 0;
-    machines.forEach((m) => {
-      const res = classifyMachine(m);
-      if (res.isAD) adCount++;
-      else nonAdCount++;
-      res.domains.forEach((d) => {
-        domCounts[d] = (domCounts[d] || 0) + 1;
-      });
-      res.categories.forEach((catId) => {
-        if (catCounts[catId] !== undefined) {
-          catCounts[catId]++;
-        }
-      });
-    });
-    catCounts['AD_TOTAL'] = adCount;
-    catCounts['NON_AD_TOTAL'] = nonAdCount;
-    return { categoryCounts: catCounts, domainCounts: domCounts };
-  }, [machines]);
+  useMemo(() => {
+        const catCounts: Record<string, number> = { ALL: machines.length };
+        const domCounts: Record<VulnDomainId, number> = {
+            all: machines.length,
+            web: 0,
+            ad: 0,
+            system: 0,
+            advanced: 0,
+        };
+        VULN_CATEGORIES.forEach((c) => {
+            catCounts[c.id] = 0;
+        });
+        let adCount = 0;
+        let nonAdCount = 0;
+        machines.forEach((m) => {
+            const res = classifyMachine(m);
+            if (res.isAD) adCount++;
+            else nonAdCount++;
+            res.domains.forEach((d) => {
+                domCounts[d] = (domCounts[d] || 0) + 1;
+            });
+            res.categories.forEach((catId) => {
+                if (catCounts[catId] !== undefined) {
+                    catCounts[catId]++;
+                }
+            });
+        });
+        catCounts['AD_TOTAL'] = adCount;
+        catCounts['NON_AD_TOTAL'] = nonAdCount;
+        return { categoryCounts: catCounts, domainCounts: domCounts };
+    }, [machines]);
 
   // Deferred filter state for 120 FPS typing responsiveness
   const deferredFilters = React.useDeferredValue(filters);
@@ -535,27 +500,7 @@ export const TrackerView: React.FC = () => {
     return list;
   }, [machines, deferredFilters, sessionSeed]);
 
-  const platformList: (Platform | 'ALL')[] = ['ALL', 'HTB', 'THM', 'Custom'];
-  const difficultyList: (Difficulty | 'ALL')[] = ['ALL', 'Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
-  const osList: ('ALL' | OperatingSystem)[] = ['ALL', 'Linux', 'Windows'];
-  const vectorCategoryList: BoxVectorCategory[] = [
-    'ALL', 
-    'Web', 
-    'Linux PrivEsc', 
-    'Windows PrivEsc', 
-    'Active Directory', 
-    'Network / SMB', 
-    'Binary / Pwn'
-  ];
 
-  const displayedCategories = useMemo(() => {
-    if (selectedDomain === 'all') {
-      return [...VULN_CATEGORIES]
-        .sort((a, b) => (categoryCounts[b.id] || 0) - (categoryCounts[a.id] || 0))
-        .slice(0, 10);
-    }
-    return VULN_CATEGORIES.filter((c) => c.domain === selectedDomain);
-  }, [selectedDomain, categoryCounts]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;

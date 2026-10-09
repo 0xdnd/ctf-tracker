@@ -1,0 +1,26 @@
+/* 00-tokens: fonts and design tokens (dark default; 60-light.css overrides under [data-theme=light]) */
+@font-face{font-family:"Inter Variable";font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/inter-latin-var.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800;font-display:swap;src:url(/fonts/jetbrains-mono-latin-var.woff2) format("woff2")}
+@font-face{font-family:"Inter Fallback";src:local(Arial),local("Helvetica Neue"),local(Helvetica);size-adjust:107.64%;ascent-override:90.49%;descent-override:22.56%;line-gap-override:0%}
+:root{
+color-scheme:dark;
+--bg:#09090b;--band:#0e0e11;--card:#121215;--elev:#18181b;--code:#0c0c0f;--hover:#1e1e23;
+--line:#27272a;--line-strong:#3f3f46;
+--text:#f4f4f5;--text-2:#e4e4e7;--muted:#a1a1aa;--faint:#87878f;
+--accent:#0ea5e9;--accent-hover:#38bdf8;--accent-ink:#09090b;--ok:#10b981;
+--btn2-bg:#202026;--btn2-border:#3f3f46;--btn2-hover-bg:#2a2a31;--btn2-hover-border:#52525b;
+--focus:#38bdf8;--link:#0ea5e9;--header-bg:rgb(9 9 11/.82);
+--r-md:8px;--r-lg:12px;--r-pill:999px;
+--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:64px;--s9:96px;
+--section-y:64px;--gutter:16px;--wrap:1120px;--prose:68ch;--header-h:64px;
+--font-sans:"Inter Variable","Inter Fallback",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+--font-mono:"JetBrains Mono Variable",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+--fs-display:clamp(2.25rem,1.6rem + 2.6vw,3.5rem);
+--fs-h1:clamp(2rem,1.5rem + 2vw,2.75rem);
+--fs-h2:clamp(1.75rem,1.45rem + 1.2vw,2.25rem);
+--fs-h3:1.25rem;--fs-body:1rem;--fs-prose:1.0625rem;--fs-code:.875rem;--fs-small:.875rem;
+--ease:cubic-bezier(.23,1,.32,1);
+--spring:var(--ease);--spring-dur:420ms;--press:80ms;
+}
+@supports(transition-timing-function:linear(0,1)){:root{--spring:linear(0,.055,.175,.312,.445,.562,.66,.74,.803,.852,.89,.919,.94,.956,.968,.977,.983,.988,.991,.994,1)}}
+@media(min-width:768px){:root{--section-y:96px;--gutter:24px}}

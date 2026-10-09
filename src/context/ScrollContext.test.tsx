@@ -76,14 +76,12 @@ describe('ScrollContext', () => {
 
   it('attaches scroll element and responds to scroll events', async () => {
     let capturedActions: ReturnType<typeof useScrollActions> | null = null;
-    let capturedState: ReturnType<typeof useScrollState> | null = null;
 
     render(
       <ScrollProvider>
         <TestConsumer
-          onMount={(actions, state) => {
+          onMount={(actions) => {
             capturedActions = actions;
-            capturedState = state;
           }}
         />
       </ScrollProvider>

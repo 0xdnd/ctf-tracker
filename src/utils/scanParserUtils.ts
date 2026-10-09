@@ -213,13 +213,23 @@ export function parseGrepableNmap(content: string): ScanImportResult | null {
   let detectedIp: string | undefined;
   let detectedHost: string | undefined;
   const ports: ParsedPort[] = [];
+  const hostsByIp = new Map<string, ParsedHost>();
 
   for (const line of lines) {
     if (line.startsWith('Host:')) {
       const hostMatch = line.match(/^Host:\s*([0-9]{1,3}(?:\.[0-9]{1,3}){3})\s*(?:\(([^)]*)\))?/);
+      let lineHost: ParsedHost | undefined;
       if (hostMatch) {
         detectedIp = hostMatch[1];
         if (hostMatch[2]) detectedHost = hostMatch[2];
+        lineHost = hostsByIp.get(hostMatch[1]);
+        if (!lineHost) {
+          lineHost = { ip: hostMatch[1], ports: [] };
+          hostsByIp.set(hostMatch[1], lineHost);
+        }
+        if (hostMatch[2] && !lineHost.hostname) lineHost.hostname = hostMatch[2];
+        const osField = line.match(/\tOS:\s*([^\t\r\n]+)/);
+        if (osField && !lineHost.os) lineHost.os = osField[1].trim();
       }
 
       const portsPart = line.split('Ports:')[1];
@@ -237,7 +247,7 @@ export function parseGrepableNmap(content: string): ScanImportResult | null {
             const isOpenState = state === 'open' || state === 'open|filtered';
             if (isOpenState && isValidPort(portNum)) {
               const { tools, cve } = getServiceIntelligence(portNum, service, version);
-              ports.push({
+              const gnmapPort: ParsedPort = {
                 port: portNum,
                 protocol: proto,
                 state: state || 'open',
@@ -245,7 +255,9 @@ export function parseGrepableNmap(content: string): ScanImportResult | null {
                 version,
                 suggestedTools: tools,
                 cveNotes: cve,
-              });
+              };
+              ports.push(gnmapPort);
+              lineHost?.ports.push(gnmapPort);
             }
           }
         }
@@ -260,6 +272,7 @@ export function parseGrepableNmap(content: string): ScanImportResult | null {
     detectedIp,
     detectedHost,
     ports,
+    ...(hostsByIp.size > 1 ? { hosts: Array.from(hostsByIp.values()) } : {}),
     rawSummary: `Grepable Nmap scan parsed with ${ports.length} open ports.`,
   };
 }
@@ -339,7 +352,9 @@ const NSE_SUB_LINE_REGEX = /^\s*(?:\|_|[|_])\s+(.*)$/;
  * Supports IPv4/IPv6 target identification, service versioning, and NSE script capture
  */
 export function parseNmapText(content: string): ScanImportResult | null {
-  if (!content.includes('Nmap scan report') && !content.includes('PORT') && !content.includes('STATE')) {
+  // Also accept headerless snippets made of bare "22/tcp open ssh" port lines
+  const hasOpenPortLine = /^\s*\d{1,5}\/(?:tcp|udp)\s+open/im.test(content);
+  if (!content.includes('Nmap scan report') && !content.includes('PORT') && !content.includes('STATE') && !hasOpenPortLine) {
     return null;
   }
 
@@ -425,12 +440,28 @@ export function parseNmapText(content: string): ScanImportResult | null {
 
   if (ports.length === 0 && !detectedIp) return null;
 
+  // Multi-host report: one "Nmap scan report for" section per host
+  let hosts: ParsedHost[] | undefined;
+  const sections = content.split(/^(?=Nmap scan report for )/im).filter((sec) => /^Nmap scan report for /i.test(sec));
+  if (sections.length > 1) {
+    hosts = sections.map((sec) => {
+      const sub = parseNmapText(sec);
+      return {
+        ip: sub?.detectedIp,
+        hostname: sub?.detectedHost && sub.detectedHost !== sub.detectedIp ? sub.detectedHost : undefined,
+        os: sub?.detectedOs,
+        ports: sub?.ports ?? [],
+      };
+    });
+  }
+
   return {
     format: 'nmap-text',
     detectedIp,
     detectedHost,
     detectedOs: osMatch ? osMatch[1].trim() : undefined,
     ports,
+    ...(hosts ? { hosts } : {}),
     rawSummary: `Standard Nmap scan report: ${ports.length} open ports identified.`,
   };
 }

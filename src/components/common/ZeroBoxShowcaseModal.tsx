@@ -20,7 +20,7 @@ export const ZeroBoxShowcaseModal: React.FC = () => {
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [, setIsPlaying] = useState(false);
   const [currentChapter, setCurrentChapter] = useState<number>(1);
 
   // Keyboard accessibility: Escape to close

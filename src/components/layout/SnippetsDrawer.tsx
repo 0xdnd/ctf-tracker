@@ -8,8 +8,6 @@ import {
   Check, 
   Star, 
   ExternalLink,
-  Code2,
-  Sparkles,
   AlertTriangle
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';

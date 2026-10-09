@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
@@ -56,6 +56,8 @@ import { getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
 import { QuickCommandsTab } from './QuickCommandsTab';
 import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
+import { AiScanIntelTab } from '../automation/AiScanIntelTab';
+import { detectAndParseScan } from '../../utils/scanParserUtils';
 
 const HEADER_ICON_BTN =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
@@ -131,7 +133,7 @@ export const MachineDetailModal: React.FC = () => {
   const [copiedReportMd, setCopiedReportMd] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
-  const [activeModalTab, setActiveModalTab] = useState<'overview' | 'checklist' | 'commands' | 'report' | 'walkthrough'>('overview');
+  const [activeModalTab, setActiveModalTab] = useState<'overview' | 'checklist' | 'commands' | 'report' | 'walkthrough' | 'ai'>('overview');
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const [isModalDragOver, setIsModalDragOver] = useState(false);
   const [modalScanToast, setModalScanToast] = useState<{ message: string; isError?: boolean } | null>(null);
@@ -143,6 +145,11 @@ export const MachineDetailModal: React.FC = () => {
   }
   const machine = currentMachine || lastMachineRef.current;
   const isActiveTarget = Boolean(machine && activeTargetId === machine.id);
+  const isMachineFrozen = machine?.status === 'completed';
+  const aiScanResults = useMemo(
+    () => (machine?.rawScanOutput ? detectAndParseScan(machine.rawScanOutput) : null),
+    [machine?.rawScanOutput]
+  );
 
   const handleModalFileDrop = (files: FileList | null) => {
     if (!files || files.length === 0 || !machine) return;
@@ -469,6 +476,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 ) : null,
               },
               { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5" /> },
+              { id: 'ai', label: 'AI (optional, BYOK)', icon: <Sparkles className="w-3.5 h-3.5" /> },
               ...(!machine.isActive && Boolean(machine.officialSynopsis || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf)
                 ? [{ id: 'walkthrough', label: 'Official intel', icon: <BookOpen className="w-3.5 h-3.5" /> }]
                 : []),
@@ -524,6 +532,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           <div className="flex-1 overflow-y-auto p-4 sm:p-5 text-xs scrollbar-thin">
           {activeModalTab === 'commands' ? (
             <QuickCommandsTab machine={machine} />
+          ) : activeModalTab === 'ai' ? (
+            <AiScanIntelTab
+              targetMachine={machine}
+              parsedResults={aiScanResults}
+              isTargetFrozen={isMachineFrozen}
+              onApplyToTargetNotes={(markdownContent) =>
+                updateMachine(machine.id, { quickNotes: `${machine.quickNotes || ''}${markdownContent}` })
+              }
+            />
           ) : activeModalTab === 'checklist' ? (
             <ChecklistWorkspace machine={machine} onOpenInWriteup={handleOpenInWriteup} />
           ) : activeModalTab === 'report' ? (

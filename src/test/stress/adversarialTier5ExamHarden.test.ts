@@ -30,10 +30,6 @@ import {
   calculateExamScore,
   getPassingStatus,
   createDefaultProof,
-  EXAM_TRACK_CONFIGS,
-  ExamTrack,
-  ExamBox,
-  ScreenshotProof,
   ExamSessionState as ComplianceSessionState,
 } from '../../utils/examComplianceUtils';
 import {
@@ -45,18 +41,10 @@ import {
 } from '../../utils/audioAlerts';
 import {
   computeExamPacing,
-  checkRabbitHole,
-  calculateBreakCountdown,
-  formatSecondsToHms,
-  formatSecondsToHoursMinutes,
 } from '../../utils/examPacingUtils';
 import {
   generateExamReportMarkdown,
-  generateExamReportHtml,
   exportStandaloneHtmlReport,
-  getRemediationForBox,
-  getTrackMethodology,
-  getStrategicRemediation,
 } from '../../utils/examReportGenerator';
 
 // Components
@@ -121,7 +109,6 @@ describe('TIER 5 ADVERSARIAL COVERAGE HARDENING SUITE', () => {
     });
 
     it('ADV-STORE-02: Rehydration with NaN, negative, or distant past timestamps', () => {
-      const now = Date.now();
       const corruptedPayload = {
         state: {
           id: 'exam_corrupted',
