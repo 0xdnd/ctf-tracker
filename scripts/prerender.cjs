@@ -279,7 +279,7 @@ const heroHud = () =>
     ? shotImg('burn-chart', { sizes: HUD_SIZES, alt: '', eager: 'low' })
     : shotImg('exam', { sizes: HUD_SIZES, alt: '', eager: 'low' });
 
-const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO } = require('./lib/layout.cjs');
+const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO, LINKEDIN } = require('./lib/layout.cjs');
 // The repo publishes releases (checked with gh release list), so the desktop CTA goes straight to the latest one.
 const DESKTOP_HREF = REPO + '/releases/latest';
 
@@ -343,6 +343,9 @@ const subs = {
   '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1152px) 453px,(min-width:900px) 41vw,calc(100vw - 32px)' }),
   '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1152px) 625px,(min-width:900px) 58vw,calc(100vw - 32px)' }),
   '{{ICON_ARROW}}': ICON.arrow,
+  '{{ICON_GITHUB}}': ICON.github,
+  '{{ICON_LINKEDIN}}': ICON.linkedin,
+  '{{LINKEDIN_HREF}}': LINKEDIN,
   '{{REPO_HREF}}': REPO,
   '{{ICON_EXT}}': ICON.ext,
   '{{DESKTOP_HREF}}': DESKTOP_HREF,

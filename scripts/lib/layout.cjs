@@ -34,6 +34,8 @@ const NAV = [
 ];
 
 const REPO = 'https://github.com/0xdnd/ctf-tracker';
+const GITHUB_PROFILE = 'https://github.com/0xdnd';
+const LINKEDIN = 'https://www.linkedin.com/in/daniel-dayan-a66322352/';
 
 const FOOTER_LINKS = {
   Guides: [
@@ -46,6 +48,10 @@ const FOOTER_LINKS = {
     ['/cheatsheet-library/', 'Cheatsheets'],
     ['/methodology-guide/', 'Methodology'],
     ['/revshells/', 'Reverse shells'],
+  ],
+  Creator: [
+    [GITHUB_PROFILE, 'Profile on GitHub'],
+    [LINKEDIN, 'LinkedIn'],
   ],
   ZeroBox: [
     ['/tracker/', 'Open tracker'],
@@ -60,6 +66,8 @@ const svgIcon = (cls, paths) =>
 const ICON = {
   arrow: svgIcon('ico-arrow', '<path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/>'),
   warn: svgIcon('ico-warn', '<path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/>'),
+  github: svgIcon('ico-github', '<path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5"/>'),
+  linkedin: svgIcon('ico-linkedin', '<path d="M8 11v5"/><path d="M8 8v.01"/><path d="M12 16v-5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/><path d="M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4z"/>'),
   ext: svgIcon('ico-ext', '<path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>'),
 };
 
@@ -98,11 +106,13 @@ function siteHeader({ current } = {}) {
   <div class="wrap bar">
     <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" aria-hidden="true" /><span class="brand-name">ZeroBox</span></a>
     <nav class="nav-inline" aria-label="Primary">${links}</nav>
+    <a class="icon-link" href="${REPO}" rel="noopener" aria-label="ZeroBox source on GitHub">${ICON.github}</a>
+    <a class="icon-link" href="${LINKEDIN}" rel="noopener" aria-label="Daniel Dayan on LinkedIn">${ICON.linkedin}</a>
     <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch to light theme">${THEME_ICONS}</button>
     <a class="btn btn-sm" href="/tracker/">Open tracker</a>
     <details class="nav-menu">
       <summary>Menu</summary>
-      <nav class="nav-panel" aria-label="Primary (menu)">${links}</nav>
+      <nav class="nav-panel" aria-label="Primary (menu)">${links}<span class="nav-social"><a href="${REPO}" rel="noopener">${ICON.github}GitHub</a><a href="${LINKEDIN}" rel="noopener">${ICON.linkedin}LinkedIn</a></span></nav>
     </details>
   </div>
 </header>`;
@@ -302,4 +312,4 @@ ${beaconTag()}</body>
 `;
 }
 
-module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO };
+module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
