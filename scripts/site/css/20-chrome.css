@@ -2,7 +2,7 @@
 .wrap{width:min(var(--wrap),100% - 2*var(--gutter));margin-inline:auto}
 :root{--ring-offset:var(--bg)}
 .cta-box,.closing,.cell,.card,.facts-panel{--ring-offset:var(--card)}
-.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:44px;padding:0 20px;border:1px solid transparent;border-radius:var(--r-md);background:linear-gradient(180deg,color-mix(in srgb,var(--b,var(--accent)) 88%,#fff) 0%,var(--b,var(--accent)) 60%);color:var(--accent-ink);font:600 .9375rem/1 var(--font-sans);text-decoration:none;white-space:nowrap;cursor:pointer;box-shadow:inset 0 1px 0 rgb(255 255 255/.28),inset 0 -1px 0 rgb(0 0 0/.12),0 1px 2px rgb(0 0 0/.35),0 4px 12px -6px rgb(14 165 233/.28);transition:transform var(--spring-dur) var(--spring),box-shadow var(--spring-dur) var(--spring),border-color .15s,color .15s,filter .15s}
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:44px;padding:0 20px;border:1px solid transparent;border-radius:var(--r-md);background-color:var(--b,var(--accent));background-image:linear-gradient(180deg,color-mix(in srgb,var(--b,var(--accent)) 88%,#fff) 0%,var(--b,var(--accent)) 60%);color:var(--accent-ink);font:600 .9375rem/1 var(--font-sans);text-decoration:none;white-space:nowrap;cursor:pointer;box-shadow:inset 0 1px 0 rgb(255 255 255/.28),inset 0 -1px 0 rgb(0 0 0/.12),0 1px 2px rgb(0 0 0/.35),0 4px 12px -6px rgb(14 165 233/.28);transition:transform var(--spring-dur) var(--spring),box-shadow var(--spring-dur) var(--spring),border-color .15s,color .15s,filter .15s}
 .btn:active{transform:translateY(0) scale(.97);filter:brightness(.96);box-shadow:inset 0 -1px 0 rgb(0 0 0/.12),0 1px 2px rgb(0 0 0/.35);transition-duration:var(--press),var(--press),.15s,.15s,.15s;transition-timing-function:var(--ease)}
 .btn:focus-visible{outline:2px solid transparent;outline-offset:2px;box-shadow:0 0 0 2px var(--ring-offset),0 0 0 4px var(--focus)}
 .btn .ico{flex:none;width:16px;height:16px;transition:transform var(--spring-dur) var(--spring)}
@@ -56,7 +56,7 @@
 .nav-menu[open] summary::after{transform:translateY(1px) rotate(-135deg)}
 .nav-panel{position:absolute;top:100%;left:calc(-1*var(--gutter));right:calc(-1*var(--gutter));display:flex;flex-direction:column;padding:var(--s2) var(--gutter) var(--s4);background:var(--card);border-bottom:1px solid var(--line)}
 .nav-panel a{display:block;padding:12px var(--s2);font-size:1rem}
-@media(min-width:768px){
+@media(min-width:960px){
 .nav-inline{display:flex;margin-left:auto}
 .brand{margin-right:0}
 .nav-menu{display:none}
