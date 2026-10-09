@@ -18,9 +18,8 @@
  *   - ExamQuickActionDrawer "Report" button opens modal
  */
 
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ExamReportModal } from '../../components/exam/ExamReportModal';
 import { ExamSimulatorPage } from '../../pages/ExamSimulatorPage';
@@ -29,9 +28,7 @@ import { useExamStore } from '../../store/examStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import * as helpers from '../../utils/helpers';
 import {
-  generateExamReportMarkdown,
   generateExamReportHtml,
-  exportStandaloneHtmlReport,
 } from '../../utils/examReportGenerator';
 import {
   ExamSessionState,

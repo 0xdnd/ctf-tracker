@@ -9,16 +9,17 @@ import {
   FileCode,
   X,
   ShieldCheck,
-  AlertTriangle,
   Eye,
   Sliders,
   Calendar,
   User,
   Hash,
-  Sparkles,
+  Archive,
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
+import { ExamFindingsEditor } from './ExamFindingsEditor';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useBoxesWithProofImages } from '../../hooks/useProofImage';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { sanitizeHtml } from '../../utils/securityUtils';
@@ -34,6 +35,14 @@ import {
   generateExamReportHtml,
   ExamReportOptions,
 } from '../../utils/examReportGenerator';
+
+const REPORT_TRACK_LABELS: Record<ExamTrack, { title: string; subtitle: string }> = {
+  OSCP: { title: 'OffSec OSCP', subtitle: 'PEN-200 (70 pts)' },
+  CPTS: { title: 'HTB CPTS', subtitle: '14 Flags (85 pts)' },
+  CRTO: { title: 'ZPS CRTO', subtitle: '8 Objs (75 pts)' },
+  OSEP: { title: 'OffSec OSEP', subtitle: 'PEN-300 (100 pts)' },
+  CRTP: { title: 'Altered CRTP', subtitle: 'AD Lab (100 pts)' },
+};
 
 export interface ExamReportModalProps {
   isOpen: boolean;
@@ -58,6 +67,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       timerPausedRemainingSeconds: s.timerPausedRemainingSeconds,
       scratchNotes: s.scratchNotes,
       includeBonusPoints: s.includeBonusPoints,
+      findings: s.findings,
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
       osid: s.osid,
@@ -66,7 +76,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
 
   // Fallback to store if propSession is not provided
   const baseSession: ExamSessionState = useMemo(() => {
-    if (propSession) return propSession;
+    if (propSession) return propSession.findings ? propSession : { ...propSession, findings: store.findings };
     return {
       id: store.id,
       track: store.track,
@@ -81,6 +91,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       boxes: store.boxes,
       scratchNotes: store.scratchNotes,
       includeBonusPoints: store.includeBonusPoints,
+      findings: store.findings,
     };
   }, [propSession, store]);
 
@@ -100,6 +111,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   // Button Feedback States
   const [copied, setCopied] = useState<boolean>(false);
   const [downloadFeedback, setDownloadFeedback] = useState<string | null>(null);
+  const [bundling, setBundling] = useState<boolean>(false);
 
   // Sync internal state when modal opens or baseSession changes
   useEffect(() => {
@@ -142,15 +154,22 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     includeRemediation,
   ]);
 
+  // Proof images live in IndexedDB; re-inline them as data URLs so the exported report embeds them
+  const { boxes: reportBoxes, resolving: resolvingProofImages } = useBoxesWithProofImages(
+    baseSession.boxes,
+    isOpen && includeScreenshots
+  );
+
   // Current session with user overrides
   const effectiveSession: ExamSessionState = useMemo(() => ({
     ...baseSession,
+    boxes: reportBoxes,
     track: selectedTrack,
     candidateName,
     candidateCallsign,
     osid,
     includeBonusPoints,
-  }), [baseSession, selectedTrack, candidateName, candidateCallsign, osid, includeBonusPoints]);
+  }), [baseSession, reportBoxes, selectedTrack, candidateName, candidateCallsign, osid, includeBonusPoints]);
 
   // Generated Markdown & HTML Preview
   const generatedMarkdown = useMemo(() => {
@@ -218,6 +237,40 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     playCyberSound('export');
     setDownloadFeedback('Air-gapped standalone HTML report (.html) downloaded.');
     setTimeout(() => setDownloadFeedback(null), 3000);
+  };
+
+  // Submission bundle (.zip): report.md, report.html, proofs/, findings.json, README.txt
+  const handleDownloadBundle = async () => {
+    setBundling(true);
+    try {
+      // Loaded on demand: pulls in jszip, which must stay out of the entry preload graph.
+      const { buildSubmissionBundle } = await import('../../utils/examSubmissionBundle');
+      const { data, missingImages } = await buildSubmissionBundle(effectiveSession, reportOptions);
+      const blob = new Blob([data as BlobPart], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeCallsign = (candidateCallsign || 'candidate').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeDate = (examDate || new Date().toISOString().slice(0, 10)).replace(/[^a-zA-Z0-9_-]/g, '_');
+      a.download = `${selectedTrack}_SUBMISSION_BUNDLE_${safeCallsign}_${safeDate}.zip`;
+      try {
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch {}
+      URL.revokeObjectURL(url);
+      playCyberSound('export');
+      setDownloadFeedback(
+        missingImages > 0
+          ? `Submission bundle (.zip) downloaded. ${missingImages} proof image(s) could not be loaded.`
+          : 'Submission bundle (.zip) downloaded.'
+      );
+    } catch {
+      setDownloadFeedback('Submission bundle export failed.');
+    } finally {
+      setBundling(false);
+      setTimeout(() => setDownloadFeedback(null), 3000);
+    }
   };
 
   const trackConfig = EXAM_TRACK_CONFIGS[selectedTrack] || EXAM_TRACK_CONFIGS.OSCP;
@@ -337,8 +390,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             </div>
 
             {/* Track Selector Buttons */}
-            <div className="grid grid-cols-3 gap-2">
-              {(['OSCP', 'CPTS', 'CRTO'] as ExamTrack[]).map((t) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {(Object.keys(EXAM_TRACK_CONFIGS) as ExamTrack[]).map((t) => {
                 const isSelected = selectedTrack === t;
                 return (
                   <button
@@ -352,9 +405,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
  : 'bg-surface-card border-subtle text-muted hover:text-primary hover:border-strong'
  }`}
                   >
-                    <div>{t === 'OSCP' ? 'OffSec OSCP' : t === 'CPTS' ? 'HTB CPTS' : 'ZPS CRTO'}</div>
+                    <div>{REPORT_TRACK_LABELS[t].title}</div>
                     <div className="text-[11px] font-normal text-muted mt-0.5">
-                      {t === 'OSCP' ? 'PEN-200 (70 pts)' : t === 'CPTS' ? '14 Flags (85 pts)' : '8 Objs (75 pts)'}
+                      {REPORT_TRACK_LABELS[t].subtitle}
                     </div>
                   </button>
                 );
@@ -474,7 +527,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Live Report Preview & Mode Tabs */}
+          {/* Section 2: Structured findings (stored per exam session) */}
+          <ExamFindingsEditor boxes={baseSession.boxes} />
+
+          {/* Live Report Preview & Mode Tabs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -539,7 +595,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
         <div className="px-5 py-3.5 border-t border-subtle bg-surface-sunken flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted">
             <span className="w-2 h-2 rounded-full bg-callout-success-fg motion-safe:animate-pulse" />
-            <span className="text-[11px]">Offline export, nothing leaves this device</span>
+            <span className="text-[11px]">
+              {resolvingProofImages ? 'Loading proof images...' : 'Offline export, nothing leaves this device'}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -548,7 +606,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               type="button"
               data-testid="report-copy-markdown-btn"
               onClick={handleCopyMarkdown}
-              className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] ${
+              disabled={resolvingProofImages}
+              className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait ${
  copied
  ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
  : 'bg-surface-card hover:bg-surface-hover border-subtle text-primary'
@@ -563,7 +622,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               type="button"
               data-testid="report-download-md-btn"
               onClick={handleDownloadMarkdown}
-              className="px-3.5 py-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-primary text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97]"
+              disabled={resolvingProofImages}
+              className="px-3.5 py-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-primary text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
             >
               <Download className="w-3.5 h-3.5 text-accent" />
               <span>Download (.md)</span>
@@ -574,10 +634,23 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               type="button"
               data-testid="report-export-html-btn"
               onClick={handleExportHtml}
-              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97]"
+              disabled={resolvingProofImages}
+              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
             >
               <FileCode className="w-3.5 h-3.5 fill-current" />
               <span>Export HTML (.html)</span>
+            </button>
+
+            {/* Download Submission Bundle (.zip) */}
+            <button
+              type="button"
+              data-testid="report-download-bundle-btn"
+              onClick={handleDownloadBundle}
+              disabled={resolvingProofImages || bundling}
+              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>{bundling ? 'Building bundle...' : 'Download submission bundle (.zip)'}</span>
             </button>
           </div>
         </div>

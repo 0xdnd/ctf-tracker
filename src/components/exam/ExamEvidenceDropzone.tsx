@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { 
   Camera, 
@@ -9,7 +9,6 @@ import {
   Terminal, 
   Network, 
   UploadCloud, 
-  FileImage, 
   ShieldCheck, 
   Check, 
   X,
@@ -18,13 +17,15 @@ import {
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
 import { confirmAction } from '../../store/useConfirmStore';
-import { 
-  ExamBox, 
-  ScreenshotProof, 
+import { useProofImage } from '../../hooks/useProofImage';
+import {
+  ExamBox,
+  ScreenshotProof,
   ExamTargetProof,
   validateFlagFormat,
   isDomainControllerBox
 } from '../../utils/examComplianceUtils';
+import { createScreenshotProof } from '../../utils/examProofImages';
 
 export interface ExamEvidenceDropzoneProps {
   box?: ExamBox;
@@ -124,6 +125,41 @@ export async function downscaleImageFile(
   });
 }
 
+/**
+ * Thumbnail for one proof screenshot. The image bytes live in IndexedDB (imageRef); legacy
+ * screenshots that still carry an inline data URL render directly.
+ */
+const ProofThumbnail: React.FC<{ screenshot: ScreenshotProof; onExpand: (src: string) => void }> = ({
+  screenshot: sc,
+  onExpand,
+}) => {
+  const { src, loading } = useProofImage(sc.imageRef, sc.dataUrl);
+
+  return (
+    <div className="relative group rounded overflow-hidden bg-surface-base aspect-video flex items-center justify-center border border-subtle">
+      {src ? (
+        <>
+          <img
+            src={src}
+            alt={sc.caption}
+            className="max-h-full max-w-full object-contain"
+          />
+          <button
+            type="button"
+            onClick={() => onExpand(src)}
+            className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Expand preview</span>
+          </button>
+        </>
+      ) : (
+        <span className="text-[11px] text-muted">{loading ? 'Loading image...' : 'Image unavailable'}</span>
+      )}
+    </div>
+  );
+};
+
 export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
   box: propBox,
   boxId: propBoxId,
@@ -185,13 +221,14 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
         const now = new Date().toISOString();
         const defaultCaption = `${box.name} [${box.ip}] - ${isUser ? 'user/local.txt' : 'root/proof.txt'} evidence`;
 
-        const newScreenshot: ScreenshotProof = {
+        // Image bytes go to IndexedDB; the store keeps only imageRef (inline Base64 if IndexedDB fails).
+        const newScreenshot = await createScreenshotProof(box.id, flagType, {
           id: `sc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           dataUrl: compressedBase64,
           caption: defaultCaption,
           timestamp: now,
           sizeBytes: Math.round(compressedBase64.length * 0.75),
-        };
+        });
 
         addScreenshot(box.id, flagType, newScreenshot);
 
@@ -535,21 +572,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                 className="p-2.5 rounded-lg bg-surface-sunken border border-subtle flex flex-col justify-between gap-2 text-xs"
               >
                 {/* Thumbnail Preview */}
-                <div className="relative group rounded overflow-hidden bg-surface-base aspect-video flex items-center justify-center border border-subtle">
-                  <img
-                    src={sc.dataUrl}
-                    alt={sc.caption}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPreviewImage(sc.dataUrl)}
-                    className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Expand preview</span>
-                  </button>
-                </div>
+                <ProofThumbnail screenshot={sc} onExpand={setPreviewImage} />
 
                 {/* Caption / Metadata */}
                 <div>
