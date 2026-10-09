@@ -1,9 +1,13 @@
-/* 50-motion: CSS-only motion. No transition:all, no infinite loops, no opacity animation on the h1 or the LCP image. */
+/* 50-motion: CSS-only motion. No transition:all, no infinite loops, no opacity animation on the h1 or the LCP image (the hero window only rises). */
 @keyframes rise{from{opacity:0;transform:translateY(8px)}}
-@keyframes hud-in{from{opacity:0;transform:translate(24px,12px)}}
+@keyframes win-in{from{transform:translateY(14px)}}
+@keyframes pace-in{from{opacity:0;transform:translate(-18px,16px)}}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px) scale(.96)}}
 @keyframes fade{from{opacity:0}}
 @media(prefers-reduced-motion:no-preference){
-.hud{animation:hud-in 520ms var(--ease) 150ms backwards}
+.win{animation:win-in 560ms var(--ease) backwards}
+.pace{animation:pace-in 640ms var(--spring) 200ms backwards}
+.toast{animation:toast-in 460ms var(--spring) 900ms backwards}
 .hero .lead{animation:rise 420ms var(--spring) 60ms backwards}
 .hero .cta-row{animation:rise 420ms var(--spring) 120ms backwards}
 .proof li{animation:rise 360ms var(--spring) backwards}
@@ -22,5 +26,8 @@
 ::view-transition-old(root),::view-transition-new(root){animation-duration:240ms;animation-timing-function:ease}
 .theme-anim body,.theme-anim .site-header,.theme-anim .card,.theme-anim .closing{transition:background-color .24s,color .24s,border-color .24s}
 @media(prefers-reduced-motion:reduce){
-.hero .lead,.hero .cta-row,.hud,.proof li{animation:fade 150ms ease-out backwards}
+.hero .lead,.hero .cta-row,.proof li{animation:fade 150ms ease-out backwards}
+.win{animation:none}
+.pace,.toast{animation:fade 240ms ease-out 200ms backwards}
+.toast{animation-delay:450ms}
 }

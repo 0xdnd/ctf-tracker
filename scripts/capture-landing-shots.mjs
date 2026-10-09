@@ -73,7 +73,13 @@ const SHOTS = {
   app: {
     alt: 'ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.',
   },
+  'app-focus': {
+    alt: 'ZeroBox tracker: sidebar modules, filter bar and the Backlog and Foothold lanes of a kanban board of HTB and THM machines.',
+  },
   burndown: {
+    alt: 'ZeroBox exam burn-down chart against the 70 point pass line.',
+  },
+  'burn-chart': {
     alt: 'ZeroBox exam burn-down chart against the 70 point pass line.',
   },
   kanban: {
@@ -86,7 +92,7 @@ const SHOTS = {
     alt: 'ZeroBox countdown clock for the 24-hour OSCP exam, with pause and reset controls.',
   },
   graph: {
-    alt: 'ZeroBox attack graph after Auto layout: Included, Bike and Unified linked by SSH, chisel and ligolo pivot edges.',
+    alt: 'ZeroBox attack graph after Auto layout: the Included and Bike host nodes linked by an SSH tunnel edge.',
   },
   table: {
     alt: 'ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Delete.',
@@ -535,6 +541,15 @@ async function main() {
       await take('kanban', clip);
     }
     {
+      // Hero window: sidebar slice + the first two lanes, <= 780 CSS px wide so it renders at >= 0.75 scale in the ~585px hero column.
+      const w = Math.ceil(lanes[1].x + lanes[1].width) + 6;
+      if (w > 780) throw new Error(`app-focus crop is ${w} CSS px wide, expected <= 780`);
+      const h = Math.round(w * 0.74);
+      const clip = { x: 0, y: 0, width: w, height: h };
+      await assertNoText(page, 'Drag a target here', clip);
+      await take('app-focus', clip);
+    }
+    {
       // 1:1 crop around two adjacent lanes (Foothold + Completed) at the narrowest desktop layout.
       // The kanban turns into a tabbed single lane below 1024px, so 1024 is the narrowest window
       // that still shows lanes side by side; two lanes are ~480 CSS px there.
@@ -645,15 +660,20 @@ async function main() {
     }
     {
       const { box, hub } = await cluster();
-      const w = Math.ceil(box.width) + 32;
-      const h = Math.round((w * 10) / 16);
+      // Tight crop: the first two nodes and the SSH tunnel edge between them (nodes >= 210 CSS px wide), ~600 CSS px,
+      // so the bento cell (~600px) shows it at about 1:1. The hub/third node are left out on purpose.
+      const inc = await nodeRect('htb-included');
+      const bike = await nodeRect('htb-bike');
+      const w = Math.ceil(bike.x + bike.width - inc.x) + 32;
+      const h = Math.round(w * 0.52);
       const clip = {
-        x: Math.max(0, Math.floor(box.x - 16)),
-        y: Math.min(VIEW_TRACKER.height - h, Math.max(0, Math.floor(box.y + box.height / 2 - h / 2))),
+        x: Math.max(0, Math.floor(inc.x - 24)),
+        y: Math.max(0, Math.floor(inc.y - 56)),
         width: w,
         height: h,
       };
       if (!hub) console.warn('  [graph] no hub node found below the chain');
+      if (w > 660) console.warn(`  [graph] crop is ${w} CSS px wide (target <= 660 for >= 0.9 scale in the bento cell)`);
       if (clip.x + clip.width > VIEW_TRACKER.width || clip.y + clip.height > VIEW_TRACKER.height) {
         throw new Error(`graph crop outside the viewport ${JSON.stringify(clip)}; cluster ${JSON.stringify(box)}`);
       }
@@ -694,11 +714,14 @@ async function main() {
     if ((await page.getByRole('button', { name: 'Mask secret' }).count()) > 0) throw new Error('a secret is revealed in the vault');
     if (await page.evaluate((m) => m.some((x) => document.body.innerText.includes(x)), FAKE_SECRETS)) throw new Error('a seeded secret is visible');
     {
+      // 1040 wide: the vault area is ~740 CSS px, so the crop renders at >= 0.75 scale in the bento cell.
+      await setView({ width: 1040, height: VIEW_TRACKER.height });
       const first = await rectOf(page.getByText('Total artifacts').first(), { minW: 100, minH: 60, cls: 'rounded' });
-      const width = Math.min(VIEW_TRACKER.width - Math.floor(first.x), 900);
+      const width = Math.min(1040 - Math.floor(first.x), 760);
       const clip = { x: Math.floor(first.x), y: Math.floor(first.y - 8), width, height: Math.round((width * 2) / 3) };
       if (clip.y + clip.height > VIEW_TRACKER.height) throw new Error(`vault crop does not fit the viewport ${JSON.stringify(clip)}`);
       await take('vault', clip);
+      await setView(VIEW_TRACKER);
     }
 
     // ---- exam simulator (1024x900) -----------------------------------------------------------
@@ -749,6 +772,13 @@ async function main() {
         y: Math.floor(burn.y - 2),
         width: Math.ceil(burn.width) + 4,
         height: Math.ceil(burn.height) + 4,
+      });
+      // Hero pacing card: the chart plus its legend only (no card header or border), as tight as the labels allow.
+      await take('burn-chart', {
+        x: Math.floor(burn.x + 12),
+        y: Math.floor(burn.y + 40),
+        width: Math.ceil(burn.width) - 24,
+        height: Math.ceil(burn.height) - 46,
       });
       // Countdown card (legacy overlay).
       await take('clock', {

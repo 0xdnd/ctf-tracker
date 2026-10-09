@@ -240,7 +240,8 @@ try {
 }
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
 const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
-const HERO_SIZES = '(min-width:1200px) 640px,(min-width:900px) 55vw,calc(100vw - 32px)';
+const HERO_SIZES = '(min-width:1200px) 585px,(min-width:900px) 52vw,min(100vw - 32px,640px)';
+const HERO_M_SIZES = 'calc(100vw - 32px)';
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
@@ -256,28 +257,39 @@ function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
     `width="${real ? s.width : shotW}"`,
     `height="${real ? s.height : shotH}"`,
     `alt="${esc(alt !== undefined ? alt : real && s.alt ? s.alt : SHOT_ALT[name])}"`,
-    eager ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"',
+    eager === 'high' || eager === true ? 'fetchpriority="high" decoding="async"' : eager ? 'loading="eager" decoding="async"' : 'loading="lazy" decoding="async"',
   ].filter(Boolean);
   return `<img ${attrs.join(' ')} />`;
 }
 
-// Hero: the full app window (`app` shot) at every width, with the burn-down card overlapping its lower-left corner.
+// Hero scene: the app window (`app` shot, browser chrome built in HTML/CSS) with an "Exam pacing" card (burn-down crop) and a
+// rabbit-hole toast layered on its corners, at every width. Only the window image is fetchpriority=high (the LCP element).
+// Phones (<600px) get the tighter two-lane crop (`kanban-m`, cropped to 4:3 in CSS) so the cards stay readable.
 function heroPicture() {
-  return shotImg('app', { sizes: HERO_SIZES, eager: true });
+  const m = shotByName['kanban-m'];
+  const img = shotImg('app-focus', { sizes: HERO_SIZES, eager: true });
+  if (!hasShot(m) || !hasShot(shotByName['app-focus'])) return img;
+  return `<picture><source media="(max-width:599px)" srcset="${esc(srcsetOf(m))}" sizes="${esc(HERO_M_SIZES)}" width="${m.width}" height="${m.height}" />${img}</picture>`;
 }
 
 // Single preload for the hero image.
 function heroPreload() {
-  const s = shotByName.app;
+  const s = shotByName['app-focus'];
   if (!hasShot(s)) return '  <link rel="preload" as="image" href="/images/screenshot.png" fetchpriority="high" />';
-  return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
+  const m = shotByName['kanban-m'];
+  if (!hasShot(m)) return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
+  return [
+    `  <link rel="preload" as="image" media="(max-width:599px)" imagesrcset="${esc(srcsetOf(m))}" imagesizes="${esc(HERO_M_SIZES)}" fetchpriority="high" />`,
+    `  <link rel="preload" as="image" media="(min-width:600px)" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`,
+  ].join('\n');
 }
 
-// Hero overlay: the burn-down card (decorative, eager), else the exam shot.
+// Pacing card image (decorative, eager but not high priority so it never competes with the LCP image), else the exam shot.
+const HUD_SIZES = '(min-width:900px) 340px,300px';
 const heroHud = () =>
-  hasShot(shotByName.burndown)
-    ? shotImg('burndown', { sizes: '(min-width:1200px) 300px,(min-width:900px) 24vw,0px', alt: '', eager: true })
-    : shotImg('exam', { sizes: '(min-width:1200px) 300px,28vw', alt: '', eager: true });
+  hasShot(shotByName['burn-chart'])
+    ? shotImg('burn-chart', { sizes: HUD_SIZES, alt: '', eager: 'low' })
+    : shotImg('exam', { sizes: HUD_SIZES, alt: '', eager: 'low' });
 
 const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO } = require('./lib/layout.cjs');
 // The repo publishes releases (checked with gh release list), so the desktop CTA goes straight to the latest one.
@@ -343,6 +355,7 @@ const subs = {
   '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1200px) 620px,(min-width:900px) 52vw,calc(100vw - 32px)' }),
   '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1200px) 620px,(min-width:900px) 56vw,calc(100vw - 32px)' }),
   '{{ICON_ARROW}}': ICON.arrow,
+  '{{ICON_WARN}}': ICON.warn,
   '{{ICON_EXT}}': ICON.ext,
   '{{DESKTOP_HREF}}': DESKTOP_HREF,
   '{{PROOF_STRIP}}': proofStrip,

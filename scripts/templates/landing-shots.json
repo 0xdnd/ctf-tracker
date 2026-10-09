@@ -21,6 +21,27 @@
     ]
   },
   {
+    "name": "app-focus",
+    "alt": "ZeroBox tracker: sidebar modules, filter bar and the Backlog and Foothold lanes of a kanban board of HTB and THM machines.",
+    "width": 1600,
+    "height": 1185,
+    "cssWidth": 775,
+    "srcset": [
+      {
+        "src": "/images/landing/app-focus-2325.webp",
+        "w": 2325
+      },
+      {
+        "src": "/images/landing/app-focus-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/app-focus-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
     "name": "burndown",
     "alt": "ZeroBox exam burn-down chart against the 70 point pass line.",
     "width": 1446,
@@ -33,6 +54,23 @@
       },
       {
         "src": "/images/landing/burndown-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "burn-chart",
+    "alt": "ZeroBox exam burn-down chart against the 70 point pass line.",
+    "width": 1362,
+    "height": 582,
+    "cssWidth": 454,
+    "srcset": [
+      {
+        "src": "/images/landing/burn-chart-1362.webp",
+        "w": 1362
+      },
+      {
+        "src": "/images/landing/burn-chart-800.webp",
         "w": 800
       }
     ]
@@ -94,14 +132,14 @@
   },
   {
     "name": "graph",
-    "alt": "ZeroBox attack graph after Auto layout: Included, Bike and Unified linked by SSH, chisel and ligolo pivot edges.",
+    "alt": "ZeroBox attack graph after Auto layout: the Included and Bike host nodes linked by an SSH tunnel edge.",
     "width": 1600,
-    "height": 1000,
-    "cssWidth": 938,
+    "height": 833,
+    "cssWidth": 601,
     "srcset": [
       {
-        "src": "/images/landing/graph-2400.webp",
-        "w": 2400
+        "src": "/images/landing/graph-1803.webp",
+        "w": 1803
       },
       {
         "src": "/images/landing/graph-1600.webp",
@@ -135,11 +173,11 @@
     "alt": "ZeroBox evidence vault stat tiles and credential list with every secret masked behind a reveal toggle.",
     "width": 1600,
     "height": 1067,
-    "cssWidth": 820,
+    "cssWidth": 760,
     "srcset": [
       {
-        "src": "/images/landing/vault-2400.webp",
-        "w": 2400
+        "src": "/images/landing/vault-2280.webp",
+        "w": 2280
       },
       {
         "src": "/images/landing/vault-1600.webp",
