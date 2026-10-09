@@ -76,7 +76,6 @@
           <div class="pace-h"><span>Exam pacing</span><span class="chip">3h in · 30/100</span></div>
           {{IMG_HUD}}
         </div>
-        <div class="fl toast" aria-hidden="true">{{ICON_WARN}}<span><b>Rabbit hole</b>91 min on Bike. Pivot?</span></div>
       </div>
     </div>
   </section>
@@ -93,26 +92,34 @@
         <h2 id="features-title">One board per box, from nmap to report</h2>
         <p>Commands, credentials, notes and status for every target live in one place, and none of it needs a login.</p>
       </div>
-      <div class="bento">
-        <article class="cell c-graph">
-          <div class="cell-txt">
-            <h3>Attack graph</h3>
-            <p>Hosts, services and credentials as linked nodes. Auto-layout untangles a large network in one click, and undo reverses a bad move.</p>
-          </div>
-          <div class="frame">{{IMG_GRAPH}}</div>
-        </article>
-        <article class="cell c-table">
-          <div class="cell-txt">
+      <article class="feat feat-graph">
+        <div class="frame">{{IMG_GRAPH}}</div>
+        <div class="feat-txt">
+          <h3>Attack graph</h3>
+          <p>Hosts, services and credentials as linked nodes. Auto-layout untangles a large network in one click, and undo reverses a bad move.</p>
+        </div>
+      </article>
+      <div class="feat-row">
+        <article class="feat feat-table">
+          <div class="frame">{{IMG_TABLE}}</div>
+          <div class="feat-txt">
             <h3>Table with bulk actions</h3>
             <p>Sort and filter the whole catalog, then select several machines and act on them together.</p>
           </div>
-          <div class="frame">{{IMG_TABLE}}</div>
         </article>
-        <article class="cell c-nmap">
-          <div class="cell-txt">
-            <h3>Multi-host nmap import</h3>
-            <p>Scan a subnet with <code>-oX</code> and import the XML. Each live host lands on the board with its open ports and services.</p>
+        <article class="feat feat-vault">
+          <div class="frame">{{IMG_VAULT}}</div>
+          <div class="feat-txt">
+            <h3>Evidence vault</h3>
+            <p>Credentials, hashes, keys and flags from every target in one searchable table. Secrets stay masked until you reveal them.</p>
           </div>
+        </article>
+      </div>
+      <article class="feat-nmap">
+        <div class="feat-txt">
+          <h3>Multi-host nmap import</h3>
+          <p>Scan a subnet with <code>-oX</code> and import the XML. Each live host lands on the board with its open ports and services.</p>
+        </div>
 <pre class="code" tabindex="0" role="region" aria-label="Example nmap sweep"><code><span class="t-dim">$</span> nmap -sV -oX sweep.xml 10.129.14.0/28
 
 Nmap scan report for 10.129.14.17
@@ -125,15 +132,7 @@ Nmap scan report for 10.129.14.21
 <span class="t-hi">5985/tcp</span> open  winrm   WinRM
 
 <span class="t-dim"># 2 hosts, 5 ports, ready to import</span></code></pre>
-        </article>
-        <article class="cell c-vault">
-          <div class="cell-txt">
-            <h3>Evidence vault</h3>
-            <p>Credentials, hashes, keys and flags from every target in one searchable table. Secrets stay masked until you reveal them.</p>
-          </div>
-          <div class="frame">{{IMG_VAULT}}</div>
-        </article>
-      </div>
+      </article>
     </div>
   </section>
 
@@ -160,7 +159,7 @@ Nmap scan report for 10.129.14.21
   <section class="sec" id="modules" aria-labelledby="modules-title">
     <div class="wrap">
       <div class="sec-head">
-        <h2 id="modules-title">Eight modules, one workspace</h2>
+        <h2 id="modules-title">Targets, notes, evidence and exams share one workspace</h2>
       </div>
       <div class="mods">
 {{FEATURE_CARDS}}
@@ -171,14 +170,14 @@ Nmap scan report for 10.129.14.21
   <section class="sec" id="privacy" aria-labelledby="privacy-title">
     <div class="wrap privacy-grid">
       <div class="privacy-copy">
-        <h2 id="privacy-title">Your notes stay in your browser.</h2>
-        <p>In short: local storage only, no telemetry, optional encrypted backups.</p>
-        <p>The one network feature is separate: optional BYOK AI scan interpretation, off by default; it contacts api.anthropic.com only when you press send, after showing you the redacted payload.</p>
+        <h2 id="privacy-title">Your notes stay in your browser</h2>
+        <p>The app has no account, sends no telemetry and has no server holding your data.</p>
+        <p>The source is public on <a href="{{REPO_HREF}}" rel="noopener">GitHub</a>, so you can check what it stores and what it sends.</p>
       </div>
       <dl class="facts-panel">
         <div><dt>Stored in</dt><dd>LocalStorage and IndexedDB on your device. Clearing site data erases it.</dd></div>
         <div><dt>Backups</dt><dd>JSON export and restore, with optional passphrase encryption.</dd></div>
-        <div><dt>AI scan interpretation</dt><dd>Bring your own key. Nothing is sent until you review the redacted payload and press send.</dd></div>
+        <div class="fact-net"><dt>AI scan interpretation (optional)</dt><dd>Off by default. Bring your own key. Data is sent only when you press send, and only to api.anthropic.com.</dd></div>
       </dl>
     </div>
   </section>

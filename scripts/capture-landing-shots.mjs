@@ -5,6 +5,7 @@
  *   npm run shots:landing            (or: node scripts/capture-landing-shots.mjs)
  *   node scripts/capture-landing-shots.mjs --canvas  (encode WebP with the in-page canvas instead of Pillow)
  *   node scripts/capture-landing-shots.mjs --debug   (also keep the raw PNG captures)
+ *   node scripts/capture-landing-shots.mjs --only=graph,table   (re-capture only these shots; the manifest keeps the others)
  *
  * Output:
  *   public/images/landing/{name}-2400.webp, {name}-1600.webp, {name}-800.webp
@@ -15,8 +16,8 @@
  *     afterwards) and serves it with `vite preview` on port 4173. Only the Vite build is needed,
  *     not the full site build.
  *   - A brand new Chromium context is used every run (no profile, no storage), dark colour scheme,
- *     reduced motion, deviceScaleFactor 3. Viewport 1100x760 for the tracker, vault and graph shots,
- *     1024x900 for the exam shots.
+ *     reduced motion, deviceScaleFactor 3. Viewport 1100x760 for the tracker, vault and table shots,
+ *     1440x1200 for the graph, 1024x900 for the exam and hero-app shots.
  *   - Determinism: the clock is installed at a fixed instant and then PAUSED, so time only moves
  *     when this script calls clock.runFor(); Math.random is replaced by a seeded PRNG; the
  *     pointer is parked off-screen and the caret is hidden.
@@ -50,10 +51,13 @@ const DIST_DIR = path.join(ROOT, '.landing-shots-dist');
 const PORT = 4173;
 const BASE = `http://localhost:${PORT}`;
 const VIEW_TRACKER = { width: 1100, height: 760 };
-// Kanban lanes are 100vh-270px tall; 1040 wide makes the three lanes ~750 CSS px together.
-const VIEW_KANBAN = { width: 1040, height: 900 };
-const VIEW_APP = { width: 1440, height: 900 };
+// hero-app: the app's narrowest desktop layout (1024 is where the sidebar and side-by-side lanes appear).
+const VIEW_HERO = { width: 1024, height: 1000 };
+// The graph svg keeps a 4:3 viewBox, so a 1120px-wide crop with no letterbox strips needs a canvas at least 840px tall.
+const VIEW_GRAPH = { width: 1440, height: 1200 };
 const VIEW_EXAM = { width: 1024, height: 900 };
+// Width the app is laid out at for hero-app (rail 58px + two lanes of ~210px); chosen so the crop is <= 533 CSS px.
+const HERO_LAYOUT_W = 600;
 const SCALE = 3;
 const T0 = new Date('2026-10-01T09:00:00Z');
 const PAUSE_AT = new Date('2026-10-01T09:00:30Z');
@@ -67,41 +71,28 @@ const PRNG_SEED = 12345;
 const args = new Set(process.argv.slice(2));
 const DEBUG = args.has('--debug');
 const FORCE_CANVAS = args.has('--canvas');
+const ONLY = (process.argv.slice(2).find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
+const want = (...names) => ONLY.length === 0 || names.some((n) => ONLY.includes(n));
 
 /** Shot names and alt text (the crop of every shot is computed in main()). */
 const SHOTS = {
-  app: {
-    alt: 'ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.',
-  },
-  'app-focus': {
-    alt: 'ZeroBox tracker: sidebar modules, filter bar and the Backlog and Foothold lanes of a kanban board of HTB and THM machines.',
-  },
-  burndown: {
-    alt: 'ZeroBox exam burn-down chart against the 70 point pass line.',
+  'hero-app': {
+    alt: 'ZeroBox tracker with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes of a kanban board of HTB and THM machines.',
   },
   'burn-chart': {
     alt: 'ZeroBox exam burn-down chart against the 70 point pass line.',
   },
-  kanban: {
-    alt: 'ZeroBox kanban board with Backlog, Foothold and Completed lanes, each card showing the target IP, OS and difficulty badges.',
-  },
-  'kanban-m': {
-    alt: 'Two lanes of the ZeroBox kanban board, Foothold and Completed, with machine cards.',
-  },
-  clock: {
-    alt: 'ZeroBox countdown clock for the 24-hour OSCP exam, with pause and reset controls.',
-  },
   graph: {
-    alt: 'ZeroBox attack graph after Auto layout: the Included and Bike host nodes linked by an SSH tunnel edge.',
+    alt: 'ZeroBox attack graph after Auto layout: the Included, Bike, Unified and Funnel host nodes linked by SSH tunnel, chisel and ligolo edges.',
   },
   table: {
-    alt: 'ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Delete.',
+    alt: 'ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.',
   },
   vault: {
-    alt: 'ZeroBox evidence vault stat tiles and credential list with every secret masked behind a reveal toggle.',
+    alt: 'ZeroBox evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.',
   },
   exam: {
-    alt: 'ZeroBox OSCP exam simulator three hours in: total score, countdown clock and the burn-down chart against the 70 point pass line.',
+    alt: 'ZeroBox OSCP exam simulator three hours in: the OSCP track, total score, countdown clock and the first Active Directory targets.',
   },
 };
 
@@ -203,8 +194,6 @@ function initScript({ seed, credentials }) {
         edge('shot-e1', 'included', 'bike', 'pivot-ssh', 'compromised', 'SSH tunnel', 22),
         edge('shot-e2', 'bike', 'unified', 'pivot-chisel', 'compromised', 'chisel :8000', 8000),
         edge('shot-e3', 'unified', 'funnel', 'pivot-ligolo', 'compromised', 'ligolo agent', 11601),
-        edge('shot-e4', 'funnel', 'three', 'pivot-socks5', 'potential', 'SOCKS5 :1080', 1080),
-        edge('shot-e5', 'funnel', 'oopsie', 'lateral-cred-reuse', 'potential', 'cred reuse', 445),
       ];
       localStorage.setItem(KEY, JSON.stringify({ graphNodePositions: {}, graphEdges: edges, nodePositions: {}, edges }));
     }
@@ -517,138 +506,194 @@ async function main() {
     const viewBtn = (label) => page.getByRole('button', { name: `${label} View`, exact: true });
     const statusPill = (label) => page.getByRole('button', { name: label, exact: true });
 
-    // ---- kanban + kanban-m ------------------------------------------------------------------
-    console.log('> kanban');
-    await setView(VIEW_KANBAN);
-    await viewBtn('Kanban').click();
-    await page.getByRole('button', { name: /Hide Empty Lanes/ }).click();
-    await settle(page, 1500);
-    const lane = async (title) => {
-      const r = await laneRect(page, title);
-      if (!r) throw new Error(`lane "${title}" not found`);
-      return r;
-    };
-    const lanes = [await lane('Backlog'), await lane('Foothold'), await lane('Completed')];
-    const laneUnion = union(lanes);
-    {
-      // 4:3 crop around the three populated lanes, 640-760 CSS px wide.
-      const w = Math.ceil(laneUnion.width) + 4;
-      if (w < 640 || w > 760) throw new Error(`three lanes are ${w} CSS px wide, expected 640-760`);
-      const h = Math.round((w * 3) / 4);
-      const clip = { x: Math.floor(laneUnion.x - 2), y: Math.floor(laneUnion.y - 2), width: w, height: h };
-      if (clip.y + h > laneUnion.y + laneUnion.height + 2) throw new Error(`lanes (${laneUnion.height}px) are shorter than the crop (${h}px)`);
+    // ---- hero-app: the app at its narrowest desktop layout, sidebar collapsed to the icon rail ----
+    // Lanes sit side by side only from 1024px (Tailwind lg). To get a window about 600 CSS px wide we keep the 1024px
+    // viewport (so the lg layout stays) and lay #root out at HERO_LAYOUT_W px, with the Backlog lane hidden and the grid
+    // set to two columns so the Foothold and Completed lanes (cards of equal height) share the width.
+    // The app's own top bar overlaps itself at that width, so the crop starts under it.
+    if (want('hero-app')) {
+      console.log('> hero-app');
+      await setView(VIEW_HERO);
+      await viewBtn('Kanban').click();
+      await page.getByRole('button', { name: /Hide Empty Lanes/ }).click();
+      await page.getByRole('button', { name: 'Collapse Sidebar' }).click();
+      await settle(page, 1500);
+      const narrow = await page.addStyleTag({
+        content: `#root{width:${HERO_LAYOUT_W}px!important;height:${VIEW_HERO.height}px!important;overflow:hidden;transform:translateZ(0)}`,
+      });
+      await page.evaluate(() => {
+        const title = [...document.querySelectorAll('div, span, h2, h3')].find(
+          (e) => e.children.length === 0 && e.textContent.trim() === 'Backlog' && !e.closest('button'),
+        );
+        let lane = title;
+        for (; lane; lane = lane.parentElement) {
+          const r = lane.getBoundingClientRect();
+          if (r.width >= 100 && r.height >= 250 && String(lane.className).includes('rounded')) break;
+        }
+        if (!lane) throw new Error('Backlog lane not found');
+        lane.parentElement.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+        lane.style.display = 'none';
+      });
+      await settle(page, 1500);
+      const lane = async (title) => {
+        const r = await laneRect(page, title);
+        if (!r) throw new Error(`lane "${title}" not found`);
+        return r;
+      };
+      const completed = await lane('Completed');
+      const foothold = await lane('Foothold');
+      const laneBottom = Math.min(completed.y + completed.height, foothold.y + foothold.height);
+      const topBar = await rectOfSelector(page, 'header');
+      const y0 = Math.ceil(topBar.y + topBar.height);
+      const w = Math.ceil(completed.x + completed.width) + 6;
+      if (w > 533) console.warn(`  [hero-app] crop is ${w} CSS px wide (target <= 533 for a >= 0.9 scale in the 480px hero column)`);
+      const cards = await page.evaluate(() =>
+        [...document.querySelectorAll('.cyber-kanban-contain')].map((e) => {
+          const r = e.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom };
+        }),
+      );
+      // End the crop in a gap between cards (in both lanes), near a 5:4 ratio.
+      const aim = y0 + Math.round(w * 1.25);
+      let end = null;
+      for (let d = 0; d <= 320 && end === null; d++) {
+        for (const y of [aim - d, aim + d]) {
+          if (cards.every((c) => y <= c.top - 2 || y >= c.bottom + 2)) {
+            end = y;
+            break;
+          }
+        }
+      }
+      if (DEBUG) console.log('  [hero-app] cards', cards.map((c) => `${Math.round(c.top)}-${Math.round(c.bottom)}`).join(' '));
+      if (end === null) {
+        console.warn('  [hero-app] no card gap near the crop end; cutting at the aim line');
+        end = aim;
+      }
+      const clip = { x: 0, y: y0, width: w, height: end - y0 };
+      if (clip.y + clip.height > laneBottom) throw new Error('hero-app crop runs past the lane bottoms');
       await assertNoText(page, 'Drag a target here', clip);
-      await take('kanban', clip);
-    }
-    {
-      // Hero window: sidebar slice + the first two lanes, <= 780 CSS px wide so it renders at >= 0.75 scale in the ~585px hero column.
-      const w = Math.ceil(lanes[1].x + lanes[1].width) + 6;
-      if (w > 780) throw new Error(`app-focus crop is ${w} CSS px wide, expected <= 780`);
-      const h = Math.round(w * 0.74);
-      const clip = { x: 0, y: 0, width: w, height: h };
-      await assertNoText(page, 'Drag a target here', clip);
-      await take('app-focus', clip);
-    }
-    {
-      // 1:1 crop around two adjacent lanes (Foothold + Completed) at the narrowest desktop layout.
-      // The kanban turns into a tabbed single lane below 1024px, so 1024 is the narrowest window
-      // that still shows lanes side by side; two lanes are ~480 CSS px there.
-      await setView({ width: 1024, height: VIEW_KANBAN.height });
-      const f = await lane('Foothold');
-      const c = await lane('Completed');
-      const two = union([f, c]);
-      const w = Math.ceil(two.width) + 4;
-      if (w > 440) console.warn(`  [kanban-m] two lanes are ${w} CSS px wide (target <= 440; the app's lane width at its narrowest desktop layout)`);
-      const clip = { x: Math.floor(two.x - 2), y: Math.floor(f.y - 2), width: w, height: w };
-      if (clip.y + w > f.y + f.height + 2) throw new Error(`lanes (${f.height}px) are shorter than the crop (${w}px)`);
-      await assertNoText(page, 'Drag a target here', clip);
-      await take('kanban-m', clip);
+      await take('hero-app', clip);
+      await narrow.evaluate((el) => el.remove());
+      await page.getByRole('button', { name: 'Expand Sidebar' }).click();
+      await settle(page, 1000);
       await setView(VIEW_TRACKER);
     }
 
-    // ---- app: the whole window (sidebar expanded, kanban, empty lanes hidden) ---------------
-    console.log('> app');
-    await setView(VIEW_APP);
-    await assertNoText(page, 'Drag a target here', { x: 0, y: 0, width: VIEW_APP.width, height: VIEW_APP.height });
-    await take('app', { x: 0, y: 0, width: VIEW_APP.width, height: VIEW_APP.height });
-    await setView(VIEW_TRACKER);
-
     // ---- table with bulk selection ----------------------------------------------------------
-    console.log('> table');
-    await viewBtn('Table').click();
-    await statusPill('Pwned').click();
-    await settle(page, 3000);
-    const rowBoxes = page.getByRole('checkbox', { name: /^Select (?!all)/ });
-    for (let i = 0; i < 3; i++) await rowBoxes.nth(i).check();
-    await until(page, page.getByText('3 selected'));
-    await untilOpaque(page, page.locator('thead th').first());
-    await settle(page, 600);
-    {
+    // ~640 CSS px: it renders 1:1 in the 7-of-12 column of the 1120px features grid. The crop ends on a column boundary.
+    if (want('table')) {
+      console.log('> table');
+      await setView({ width: 1300, height: 900 });
+      await viewBtn('Table').click();
+      await statusPill('Pwned').click();
+      await settle(page, 3000);
+      const rowBoxes = page.getByRole('checkbox', { name: /^Select (?!all)/ });
+      for (let i = 0; i < 3; i++) await rowBoxes.nth(i).check();
+      await until(page, page.getByText('3 selected'));
+      await untilOpaque(page, page.locator('thead th').first());
+      await settle(page, 600);
       const bar = await rectOf(page.getByText('3 selected').first(), { minW: 400, minH: 30, cls: 'rounded' });
-      const osHead = await rectOf(page.locator('thead th').filter({ hasText: /^\s*OS\s*$/ }).first(), { minW: 20, minH: 10 });
       const x = Math.floor(bar.x);
-      const width = Math.ceil(osHead.x + osHead.width + 24 - x);
-      const clip = { x, y: Math.floor(bar.y - 8), width, height: Math.round((width * 4) / 5) };
-      if (clip.y + clip.height > VIEW_TRACKER.height) throw new Error(`table crop does not fit the viewport (${clip.y + clip.height})`);
+      const ths = await page.locator('thead th').evaluateAll((els) => els.map((e) => ({ text: e.textContent.trim(), right: e.getBoundingClientRect().right })));
+      // Elements of the bulk bar that a vertical cut at `edge` would slice in two.
+      const barParts = await page.evaluate(
+        ({ bar }) =>
+          [...document.querySelectorAll('button, input, select, span')]
+            .map((e) => e.getBoundingClientRect())
+            .filter((r) => r.width > 0 && r.top >= bar.y && r.bottom <= bar.y + bar.height)
+            .map((r) => ({ left: r.left, right: r.right })),
+        { bar },
+      );
+      const slices = (edge) => barParts.some((r) => r.left < edge - 1 && r.right > edge + 1);
+      const col = ths.filter((t) => t.right - x <= 700 && !slices(t.right)).at(-1);
+      const width = Math.ceil(col.right - x);
+      if (width < 600) console.warn(`  [table] crop is only ${width} CSS px wide`);
+      const rows = await page.locator('tbody tr').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
+      const y = Math.floor(bar.y - 8);
+      const aim = y + Math.round(width * 0.85);
+      const rowEnd = rows.reduce((a, b) => (Math.abs(b - aim) < Math.abs(a - aim) ? b : a));
+      const clip = { x, y, width, height: Math.ceil(rowEnd - y) + 1 };
+      if (clip.y + clip.height > 900) throw new Error(`table crop does not fit the viewport (${clip.y + clip.height})`);
+      console.log(`  [table] last column in the crop: ${col.text || '(blank)'}`);
       await take('table', clip);
+      await setView(VIEW_TRACKER);
     }
 
     // ---- attack graph after Auto layout, zoomed ----------------------------------------------
-    console.log('> graph');
-    // Collapse the sidebar: the zoomed chain needs the full width.
-    await page.getByRole('button', { name: 'Collapse Sidebar' }).click();
-    await settle(page, 1500);
-    await statusPill('Foothold').click();
-    await viewBtn('Attack Graph').click();
-    await until(page, page.getByTestId('graph-auto-layout'));
-    await page.getByTestId('graph-auto-layout').click();
-    await settle(page, 1500);
-    await page.getByTestId('graph-fit-screen').click();
-    await settle(page, 2000);
-    // Hide the floating quick-copy chip and close the minimap so the canvas is unobstructed.
-    await page.getByRole('button', { name: 'Open Quick Copy Menu' }).evaluate((el) => {
-      let n = el;
-      while (n.parentElement && getComputedStyle(n).position !== 'fixed') n = n.parentElement;
-      n.style.visibility = 'hidden';
-    });
-    await page.getByTestId('graph-minimap-container').getByRole('button').first().click();
-    await settle(page, 600);
-    const nodeRect = (id) => rectOfSelector(page, `[data-testid="attack-node-${id}"]`);
-    for (let i = 0; i < 10; i++) {
-      const r = await nodeRect('htb-included');
-      if (r.width >= 210) break;
-      await page.getByTestId('graph-zoom-in').click();
-      await settle(page, 500);
-    }
-    // Pan (drag the empty canvas) so the first three nodes and the hub below them are centred.
-    const cluster = async () => {
-      const three = union([await nodeRect('htb-included'), await nodeRect('htb-bike'), await nodeRect('htb-unified')]);
-      const hub = await page.evaluate(({ bottom, cx, left, right }) => {
-        // Cluster hub = the bracketed "[THM ...]" label nearest below the chain, plus its ring above.
-        const labels = [...document.querySelectorAll('[data-testid="canvas-viewport"] text, [data-testid="canvas-viewport"] tspan')]
-          .filter((e) => e.children.length === 0 && /\[[^\]]+\]/.test(e.textContent || ''))
-          .map((e) => e.getBoundingClientRect())
-          .filter((r) => r.width > 0 && r.top > bottom && r.x >= left - 20 && r.x + r.width <= right + 20);
-        labels.sort((a, b) => a.top - b.top || Math.abs(a.x + a.width / 2 - cx) - Math.abs(b.x + b.width / 2 - cx));
-        const r = labels[0];
-        if (!r) return null;
-        const ring = Math.max(60, r.height * 5);
-        return { x: r.x, y: r.y - ring, width: r.width, height: r.height + ring };
-      }, { bottom: three.y + three.height, cx: three.x + three.width / 2, left: three.x, right: three.x + three.width });
-      return { three, hub, box: hub ? union([three, hub]) : three };
-    };
-    {
-      const canvas = await rectOf(page.getByTestId('canvas-nav-toolbar'), { minW: 600, minH: 400, cls: 'rounded-2xl' });
-      const { box } = await cluster();
-      const visibleBottom = Math.min(canvas.y + canvas.height, VIEW_TRACKER.height);
-      const target = { x: canvas.x + canvas.width / 2, y: (Math.max(canvas.y, 0) + visibleBottom) / 2 + 24 };
-      const dx = Math.round(target.x - (box.x + box.width / 2));
-      const dy = Math.round(target.y - (box.y + box.height / 2));
-      // Start the drag on an empty canvas spot (bottom-right corner of the visible canvas).
-      const sx = Math.round(canvas.x + canvas.width - 40);
-      const sy = Math.round(visibleBottom - 40);
-      const startEl = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.tagName, [sx, sy]);
-      if (DEBUG) console.log('  pan', { dx, dy, sx, sy, startEl });
+    // 1120x490 CSS (16:7): the canvas from its top-left corner, with the toolbar fully inside the crop.
+    if (want('graph')) {
+      console.log('> graph');
+      await setView(VIEW_GRAPH);
+      // Collapse the sidebar: the zoomed chain needs the full width.
+      if ((await page.getByRole('button', { name: 'Collapse Sidebar' }).count()) > 0) {
+        await page.getByRole('button', { name: 'Collapse Sidebar' }).click();
+        await settle(page, 1500);
+      }
+      await statusPill('Foothold').click();
+      await viewBtn('Attack Graph').click();
+      await until(page, page.getByTestId('graph-auto-layout'));
+      // The canvas is a fixed 720px tall; the 1600x1200 viewBox only fills a 1120px-wide crop from 840px up.
+      await page.addStyleTag({ content: '[class~="h-[720px]"]{height:900px!important}' });
+      await settle(page, 800);
+      await page.getByTestId('graph-auto-layout').click();
+      await settle(page, 1500);
+      await page.getByTestId('graph-fit-screen').click();
+      await settle(page, 2000);
+      // Hide the floating quick-copy chip and close the minimap so the canvas is unobstructed.
+      await page.getByRole('button', { name: 'Open Quick Copy Menu' }).evaluate((el) => {
+        let n = el;
+        while (n.parentElement && getComputedStyle(n).position !== 'fixed') n = n.parentElement;
+        n.style.visibility = 'hidden';
+      });
+      await page.getByTestId('graph-minimap-container').getByRole('button').first().click();
+      await settle(page, 600);
+      const nodeRect = (id) => rectOfSelector(page, `[data-testid="attack-node-${id}"]`);
+      for (let i = 0; i < 10; i++) {
+        const r = await nodeRect('htb-included');
+        if (r.width >= 150) break;
+        await page.getByTestId('graph-zoom-in').click();
+        await settle(page, 500);
+      }
+      const GW = 1120;
+      const GH = 490;
+      const svgBox = await rectOfSelector(page, '[data-testid="graph-viewport-svg"]');
+      const toolbar = await rectOfSelector(page, '[data-testid="canvas-nav-toolbar"]');
+      // preserveAspectRatio "meet" on a 1600x1200 viewBox: the drawn area is centred and may leave strips at the sides.
+      const drawnW = Math.min(svgBox.width, (svgBox.height * 4) / 3);
+      const drawnX = svgBox.x + (svgBox.width - drawnW) / 2;
+      if (drawnW < GW) throw new Error(`graph canvas draws ${drawnW} CSS px wide, need ${GW}`);
+      const clip = {
+        x: Math.floor(drawnX + (drawnW - GW) / 2),
+        y: Math.ceil(Math.max(svgBox.y, toolbar.y + toolbar.height) + 8),
+        width: GW,
+        height: GH,
+      };
+      if (DEBUG) console.log('  graph', { svgBox, toolbar, drawnW, clip });
+      // Pan (drag the empty canvas) so the first three nodes sit in the middle of the crop.
+      // Choose the zoom so the four-node chain Included -> Funnel is centred with a 28-100px margin on each side.
+      const zoomBtn = (dir) => page.getByTestId(`graph-zoom-${dir}`);
+      const chain = async () => union([await nodeRect('htb-included'), await nodeRect('htb-bike'), await nodeRect('htb-unified'), await nodeRect('htb-funnel')]);
+      let last = null;
+      for (let i = 0; i < 6; i++) {
+        const m = (GW - (await chain()).width) / 2;
+        if (m < 28) {
+          await zoomBtn('out').click();
+          await settle(page, 800);
+          if (last === 'in') break;
+          last = 'out';
+        } else if (m > 100) {
+          if (last === 'out') break;
+          await zoomBtn('in').click();
+          await settle(page, 800);
+          last = 'in';
+        } else break;
+      }
+      const four = await chain();
+      const dx = Math.round(clip.x + (GW - four.width) / 2 - four.x);
+      const dy = Math.round(clip.y + GH * 0.36 - (four.y + four.height / 2));
+      const sx = Math.round(svgBox.x + svgBox.width - 40);
+      const sy = Math.round(Math.min(svgBox.y + svgBox.height, VIEW_GRAPH.height) - 40);
+      if (DEBUG) console.log('  pan', { dx, dy, sx, sy });
       await page.mouse.move(sx, sy);
       await page.mouse.down();
       for (let i = 1; i <= 8; i++) {
@@ -657,136 +702,140 @@ async function main() {
       }
       await page.mouse.up();
       await settle(page, 1000);
-    }
-    {
-      const { box, hub } = await cluster();
-      // Tight crop: the first two nodes and the SSH tunnel edge between them (nodes >= 210 CSS px wide), ~600 CSS px,
-      // so the bento cell (~600px) shows it at about 1:1. The hub/third node are left out on purpose.
-      const inc = await nodeRect('htb-included');
-      const bike = await nodeRect('htb-bike');
-      const w = Math.ceil(bike.x + bike.width - inc.x) + 32;
-      const h = Math.round(w * 0.52);
-      const clip = {
-        x: Math.max(0, Math.floor(inc.x - 24)),
-        y: Math.max(0, Math.floor(inc.y - 56)),
-        width: w,
-        height: h,
-      };
-      if (!hub) console.warn('  [graph] no hub node found below the chain');
-      if (w > 660) console.warn(`  [graph] crop is ${w} CSS px wide (target <= 660 for >= 0.9 scale in the bento cell)`);
-      if (clip.x + clip.width > VIEW_TRACKER.width || clip.y + clip.height > VIEW_TRACKER.height) {
-        throw new Error(`graph crop outside the viewport ${JSON.stringify(clip)}; cluster ${JSON.stringify(box)}`);
+      if (clip.x + clip.width > VIEW_GRAPH.width || clip.y + clip.height > VIEW_GRAPH.height) {
+        throw new Error(`graph crop outside the viewport ${JSON.stringify(clip)}`);
       }
       await take('graph', clip);
-    }
-
-    // ---- vault: seeded fake credentials, secrets masked --------------------------------------
-    console.log('> vault');
-    await page.getByRole('button', { name: 'Expand Sidebar' }).click();
-    await settle(page, 1500);
-    await viewBtn('Kanban').click();
-    await settle(page, 1500);
-    await statusPill('All').click();
-    await settle(page, 1500);
-    await page.getByRole('button', { name: /Evidence & Loot Vault/ }).click();
-    await until(page, page.getByRole('button', { name: 'Reveal secret' }));
-    await untilOpaque(page, page.getByRole('button', { name: 'Reveal secret' }));
-    await settle(page, 1500);
-    if ((await page.getByRole('button', { name: 'Mask secret' }).count()) > 0) throw new Error('a secret is revealed in the vault');
-    const tiles = await page.evaluate((markers) => {
-      const out = {};
-      for (const label of ['Passwords', 'Hashes', 'SSH keys']) {
-        const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === label);
-        const m = el && el.parentElement ? el.parentElement.innerText.match(/\d+/) : null;
-        out[label] = m ? Number(m[0]) : 0;
-      }
-      out.leaked = markers.some((m) => document.body.innerText.includes(m));
-      return out;
-    }, FAKE_SECRETS);
-    if (tiles.leaked) throw new Error('a seeded secret is visible in the vault');
-    for (const k of ['Passwords', 'Hashes', 'SSH keys']) if (tiles[k] < 1) throw new Error(`vault tile "${k}" is ${tiles[k]}, expected >= 1`);
-    // Machine flags are listed first; narrow the list to the seeded credentials (their notes say "demo data").
-    await page.getByPlaceholder(/Search credentials/).fill('demo data');
-    await settle(page, 1500);
-    for (const user of ['mike', 'svc_backup', 'root', 'admin', 'web_deploy']) {
-      if ((await page.getByText(user, { exact: true }).count()) < 1) throw new Error(`seeded credential "${user}" is not listed`);
-    }
-    if ((await page.getByRole('button', { name: 'Mask secret' }).count()) > 0) throw new Error('a secret is revealed in the vault');
-    if (await page.evaluate((m) => m.some((x) => document.body.innerText.includes(x)), FAKE_SECRETS)) throw new Error('a seeded secret is visible');
-    {
-      // 1040 wide: the vault area is ~740 CSS px, so the crop renders at >= 0.75 scale in the bento cell.
-      await setView({ width: 1040, height: VIEW_TRACKER.height });
-      const first = await rectOf(page.getByText('Total artifacts').first(), { minW: 100, minH: 60, cls: 'rounded' });
-      const width = Math.min(1040 - Math.floor(first.x), 760);
-      const clip = { x: Math.floor(first.x), y: Math.floor(first.y - 8), width, height: Math.round((width * 2) / 3) };
-      if (clip.y + clip.height > VIEW_TRACKER.height) throw new Error(`vault crop does not fit the viewport ${JSON.stringify(clip)}`);
-      await take('vault', clip);
       await setView(VIEW_TRACKER);
     }
 
-    // ---- exam simulator (1024x900) -----------------------------------------------------------
-    console.log('> exam');
-    await setView(VIEW_EXAM);
-    await page.getByRole('button', { name: /24h Exam Simulator/ }).click();
-    const nameField = page.locator('#candidate-name');
-    await until(page, nameField);
-    await settle(page, 2500);
-    // Generic candidate identity (the store default is the project author).
-    await nameField.fill('Alex Morgan');
-    await page.locator('#candidate-callsign').fill('amorgan');
-    await page.locator('#candidate-osid').fill('OS-100000');
-    await page.getByRole('button', { name: /Launch OSCP exam clock/ }).click();
-    await settle(page, 2500);
+    // ---- vault: seeded fake credentials, secrets masked --------------------------------------
+    if (want('vault')) {
+      console.log('> vault');
+      await setView(VIEW_TRACKER);
+      if ((await page.getByRole('button', { name: 'Expand Sidebar' }).count()) > 0) {
+        await page.getByRole('button', { name: 'Expand Sidebar' }).click();
+        await settle(page, 1500);
+      }
+      await viewBtn('Kanban').click();
+      await settle(page, 1500);
+      await statusPill('All').click();
+      await settle(page, 1500);
+      await page.getByRole('button', { name: /Evidence & Loot Vault/ }).click();
+      await until(page, page.getByRole('button', { name: 'Reveal secret' }));
+      await untilOpaque(page, page.getByRole('button', { name: 'Reveal secret' }));
+      await settle(page, 1500);
+      if ((await page.getByRole('button', { name: 'Mask secret' }).count()) > 0) throw new Error('a secret is revealed in the vault');
+      const tiles = await page.evaluate((markers) => {
+        const out = {};
+        for (const label of ['Passwords', 'Hashes', 'SSH keys']) {
+          const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === label);
+          const m = el && el.parentElement ? el.parentElement.innerText.match(/\d+/) : null;
+          out[label] = m ? Number(m[0]) : 0;
+        }
+        out.leaked = markers.some((m) => document.body.innerText.includes(m));
+        return out;
+      }, FAKE_SECRETS);
+      if (tiles.leaked) throw new Error('a seeded secret is visible in the vault');
+      for (const k of ['Passwords', 'Hashes', 'SSH keys']) if (tiles[k] < 1) throw new Error(`vault tile "${k}" is ${tiles[k]}, expected >= 1`);
+      // Machine flags are listed first; narrow the list to the seeded credentials (their notes say "demo data").
+      await page.getByPlaceholder(/Search credentials/).fill('demo data');
+      await settle(page, 1500);
+      for (const user of ['mike', 'svc_backup', 'root', 'admin', 'web_deploy']) {
+        if ((await page.getByText(user, { exact: true }).count()) < 1) throw new Error(`seeded credential "${user}" is not listed`);
+      }
+      if ((await page.getByRole('button', { name: 'Mask secret' }).count()) > 0) throw new Error('a secret is revealed in the vault');
+      if (await page.evaluate((m) => m.some((x) => document.body.innerText.includes(x)), FAKE_SECRETS)) throw new Error('a seeded secret is visible');
+      // ~450 CSS px: it renders 1:1 in the 5-of-12 column. The full table is 960px wide, so for this shot only the Category,
+      // Discovered and Actions columns are hidden and the secret column loses its 320px minimum; every cell shown is the app's own.
+      await page.addStyleTag({
+        content:
+          'table[role="table"]{min-width:0!important;width:450px!important}' +
+          'table[role="table"] :is(th,td):is(:nth-child(2),:nth-child(5),:nth-child(6)){display:none!important}' +
+          'table[role="table"] th:nth-child(4){min-width:0!important}',
+      });
+      await settle(page, 1200);
+      const head = await rectOf(page.getByRole('columnheader', { name: 'Target' }), { minW: 100, minH: 20 });
+      const tableBox = await page.locator('table[role="table"]').first().evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      });
+      const rowBottoms = await page.locator('table[role="table"] tbody tr').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
+      const width = 450;
+      const y = Math.floor(head.y);
+      const aim = y + Math.round(width * 0.9);
+      const rowEnd = rowBottoms.reduce((a, b) => (Math.abs(b - aim) < Math.abs(a - aim) ? b : a));
+      const clip = { x: Math.floor(tableBox.x), y, width: Math.min(width, Math.floor(tableBox.width)), height: Math.ceil(rowEnd - y) + 1 };
+      if (clip.width < width) console.warn(`  [vault] the trimmed table is only ${tableBox.width} CSS px wide`);
+      if (clip.y + clip.height > VIEW_TRACKER.height) throw new Error(`vault crop does not fit the viewport ${JSON.stringify(clip)}`);
+      await take('vault', clip);
+    }
 
-    // Boxes: AD set (web01 user, srv01 user, dc root) then 3 standalone (user + root each).
-    const userFlags = page.getByRole('button', { name: /^User Flag/ });
-    const rootFlags = page.getByRole('button', { name: /^Root Flag/ });
-    await advance(page, 35); // 00:35 -> first standalone user flag
-    await userFlags.nth(2).click();
-    await advance(page, 50); // 01:25 -> first standalone root flag
-    await rootFlags.nth(1).click();
-    await advance(page, 55); // 02:20 -> second standalone user flag
-    await userFlags.nth(3).click();
-    await advance(page, 25); // 02:45 -> AD foothold (the set only scores once all three boxes fall)
-    await userFlags.nth(0).click();
-    await advance(page, 15); // 03:00
-    await scrollTop(page);
-    await settle(page, 600);
-    {
-      const score = await rectOf(page.getByText('Total exam score').first(), { minW: 200, minH: 60, cls: 'rounded' });
-      const burn = await rectOf(page.getByText('Burn-down to pass').first(), { minW: 300, minH: 200, cls: 'rounded' });
-      const clock = await rectOf(page.getByText('Countdown clock').first(), { minW: 150, minH: 60, cls: 'rounded' });
-      const box = union([score, burn, clock]);
-      // ~4:3: the three cards plus the first row of target cards beneath them.
-      const examW = Math.ceil(box.width) + 16;
-      const clip = {
-        x: Math.floor(box.x - 8),
-        y: Math.floor(box.y - 8),
-        width: examW,
-        height: Math.min(Math.round((examW * 3) / 4), VIEW_EXAM.height - Math.floor(box.y - 8)),
-      };
-      await take('exam', clip);
-      // The hero overlay: just the burn-down card.
-      await take('burndown', {
-        x: Math.floor(burn.x - 2),
-        y: Math.floor(burn.y - 2),
-        width: Math.ceil(burn.width) + 4,
-        height: Math.ceil(burn.height) + 4,
+    // ---- exam simulator (1024x900) -----------------------------------------------------------
+    if (want('exam', 'burn-chart')) {
+      console.log('> exam');
+      await setView(VIEW_EXAM);
+      if ((await page.getByRole('button', { name: 'Expand Sidebar' }).count()) > 0) {
+        await page.getByRole('button', { name: 'Expand Sidebar' }).click();
+        await settle(page, 1000);
+      }
+      await page.getByRole('button', { name: /24h Exam Simulator/ }).click();
+      const nameField = page.locator('#candidate-name');
+      await until(page, nameField);
+      await settle(page, 2500);
+      // Generic candidate identity (the store default is the project author).
+      await nameField.fill('Alex Morgan');
+      await page.locator('#candidate-callsign').fill('amorgan');
+      await page.locator('#candidate-osid').fill('OS-100000');
+      await page.getByRole('button', { name: /Launch OSCP exam clock/ }).click();
+      await settle(page, 2500);
+
+      // Boxes: AD set (web01 user, srv01 user, dc root) then 3 standalone (user + root each).
+      const userFlags = page.getByRole('button', { name: /^User Flag/ });
+      const rootFlags = page.getByRole('button', { name: /^Root Flag/ });
+      await advance(page, 35); // 00:35 -> first standalone user flag
+      await userFlags.nth(2).click();
+      await advance(page, 50); // 01:25 -> first standalone root flag
+      await rootFlags.nth(1).click();
+      await advance(page, 55); // 02:20 -> second standalone user flag
+      await userFlags.nth(3).click();
+      await advance(page, 25); // 02:45 -> AD foothold (the set only scores once all three boxes fall)
+      await userFlags.nth(0).click();
+      await advance(page, 15); // 03:00
+      await scrollTop(page);
+      await settle(page, 600);
+      {
+        // Hero pacing card: the chart and its legend only (no card header or border).
+        const chart = await rectOfSelector(page, '[data-testid="exam-burndown-chart"]');
+        console.log(`  [burn-chart] ${JSON.stringify(chart)}`);
+        await take('burn-chart', { x: Math.floor(chart.x), y: Math.floor(chart.y), width: Math.ceil(chart.width), height: Math.ceil(chart.height) });
+      }
+      // The exam image shows the timer, the track and the targets. The burn-down is already in the hero pacing card,
+      // so the pacing row (velocity, target budget and the chart) is hidden for this shot only.
+      await page.evaluate(() => {
+        const label = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === 'Burn-down to pass');
+        let card = label;
+        for (; card; card = card.parentElement) {
+          const r = card.getBoundingClientRect();
+          if (r.width >= 300 && r.height >= 200 && String(card.className).includes('rounded')) break;
+        }
+        const row = card && card.parentElement;
+        if (!row || !row.innerText.includes('Velocity pacing')) throw new Error('pacing row not found');
+        row.style.display = 'none';
       });
-      // Hero pacing card: the chart plus its legend only (no card header or border), as tight as the labels allow.
-      await take('burn-chart', {
-        x: Math.floor(burn.x + 12),
-        y: Math.floor(burn.y + 40),
-        width: Math.ceil(burn.width) - 24,
-        height: Math.ceil(burn.height) - 46,
-      });
-      // Countdown card (legacy overlay).
-      await take('clock', {
-        x: Math.floor(clock.x - 2),
-        y: Math.floor(clock.y - 2),
-        width: Math.ceil(clock.width) + 4,
-        height: Math.ceil(clock.height) + 4,
-      });
+      await settle(page, 600);
+      {
+        const heading = await rectOf(page.getByRole('heading', { name: /OffSec OSCP/ }).first(), { minW: 100, minH: 20 });
+        const score = await rectOf(page.getByText('Total exam score').first(), { minW: 200, minH: 60, cls: 'rounded' });
+        const clock = await rectOf(page.getByText('Countdown clock').first(), { minW: 150, minH: 60, cls: 'rounded' });
+        const dc = await rectOf(page.getByText('AD Set: Domain Controller').first(), { minW: 200, minH: 100, cls: 'rounded' });
+        const x = Math.floor(score.x - 10);
+        const y = Math.floor(heading.y - 12);
+        const width = Math.ceil(clock.x + clock.width - score.x) + 20;
+        const clip = { x, y, width, height: Math.ceil(dc.y + dc.height) + 8 - y };
+        if (clip.y + clip.height > VIEW_EXAM.height) throw new Error(`exam crop does not fit the viewport ${JSON.stringify(clip)}`);
+        await take('exam', clip);
+      }
     }
 
     // ---- Encode ------------------------------------------------------------------------------
@@ -795,8 +844,19 @@ async function main() {
     const pillow = !FORCE_CANVAS && hasPillow();
     console.log(`  encoder: ${pillow ? 'Pillow (Lanczos, method 6)' : 'canvas toDataURL'}`);
     const codec = pillow ? null : await ctx.newPage(); // blank page used purely as an encoder
+    let previous = [];
+    try {
+      previous = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
+    } catch {
+      previous = [];
+    }
     const manifest = [];
     for (const [name, meta] of Object.entries(SHOTS)) {
+      if (!results[name]) {
+        const kept = previous.find((e) => e.name === name);
+        if (kept) manifest.push(kept);
+        continue;
+      }
       const { png, cssWidth } = results[name];
       const entry = { name, alt: meta.alt, width: 0, height: 0, cssWidth, srcset: [] };
       const variants = pillow ? encodeWithPillow(name, png) : await encodeWithCanvas(codec, name, png);

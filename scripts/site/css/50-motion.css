@@ -1,13 +1,9 @@
-/* 50-motion: CSS-only motion. No transition:all, no infinite loops, no opacity animation on the h1 or the LCP image (the hero window only rises). */
+/* 50-motion: CSS-only motion. No transition:all, no infinite loops, no opacity animation on the h1 or the LCP image (the hero window is static; only the pacing card enters). */
 @keyframes rise{from{opacity:0;transform:translateY(8px)}}
-@keyframes win-in{from{transform:translateY(14px)}}
 @keyframes pace-in{from{opacity:0;transform:translate(-18px,16px)}}
-@keyframes toast-in{from{opacity:0;transform:translateY(8px) scale(.96)}}
 @keyframes fade{from{opacity:0}}
 @media(prefers-reduced-motion:no-preference){
-.win{animation:win-in 560ms var(--ease) backwards}
-.pace{animation:pace-in 640ms var(--spring) 200ms backwards}
-.toast{animation:toast-in 460ms var(--spring) 900ms backwards}
+.pace{animation:pace-in 560ms var(--spring) 80ms backwards}
 .hero .lead{animation:rise 420ms var(--spring) 60ms backwards}
 .hero .cta-row{animation:rise 420ms var(--spring) 120ms backwards}
 .proof li{animation:rise 360ms var(--spring) backwards}
@@ -15,7 +11,7 @@
 .proof li:nth-child(3){animation-delay:100ms}
 .proof li:nth-child(4){animation-delay:150ms}
 @supports (animation-timeline:view()){
-.sec-head,.cell,.exam-grid>*,.privacy-grid>*,.mods,.guides,.faq,.closing-inner{animation:rise linear forwards;animation-timeline:view();animation-range:entry 0% entry 30%}
+.sec-head,.feat,.feat-nmap,.exam-grid>*,.privacy-grid>*,.mods,.guides,.faq,.closing-inner{animation:rise linear forwards;animation-timeline:view();animation-range:entry 0% entry 30%}
 }
 @supports (interpolate-size:allow-keywords) and selector(::details-content){
 .faq details{interpolate-size:allow-keywords}
@@ -27,7 +23,5 @@
 .theme-anim body,.theme-anim .site-header,.theme-anim .card,.theme-anim .closing{transition:background-color .24s,color .24s,border-color .24s}
 @media(prefers-reduced-motion:reduce){
 .hero .lead,.hero .cta-row,.proof li{animation:fade 150ms ease-out backwards}
-.win{animation:none}
-.pace,.toast{animation:fade 240ms ease-out 200ms backwards}
-.toast{animation-delay:450ms}
+.pace{animation:fade 240ms ease-out 200ms backwards}
 }

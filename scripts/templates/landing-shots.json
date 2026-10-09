@@ -1,59 +1,17 @@
 [
   {
-    "name": "app",
-    "alt": "ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.",
-    "width": 1600,
-    "height": 1000,
-    "cssWidth": 1440,
+    "name": "hero-app",
+    "alt": "ZeroBox tracker with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes of a kanban board of HTB and THM machines.",
+    "width": 1575,
+    "height": 1719,
+    "cssWidth": 525,
     "srcset": [
       {
-        "src": "/images/landing/app-2400.webp",
-        "w": 2400
+        "src": "/images/landing/hero-app-1575.webp",
+        "w": 1575
       },
       {
-        "src": "/images/landing/app-1600.webp",
-        "w": 1600
-      },
-      {
-        "src": "/images/landing/app-800.webp",
-        "w": 800
-      }
-    ]
-  },
-  {
-    "name": "app-focus",
-    "alt": "ZeroBox tracker: sidebar modules, filter bar and the Backlog and Foothold lanes of a kanban board of HTB and THM machines.",
-    "width": 1600,
-    "height": 1185,
-    "cssWidth": 775,
-    "srcset": [
-      {
-        "src": "/images/landing/app-focus-2325.webp",
-        "w": 2325
-      },
-      {
-        "src": "/images/landing/app-focus-1600.webp",
-        "w": 1600
-      },
-      {
-        "src": "/images/landing/app-focus-800.webp",
-        "w": 800
-      }
-    ]
-  },
-  {
-    "name": "burndown",
-    "alt": "ZeroBox exam burn-down chart against the 70 point pass line.",
-    "width": 1446,
-    "height": 732,
-    "cssWidth": 482,
-    "srcset": [
-      {
-        "src": "/images/landing/burndown-1446.webp",
-        "w": 1446
-      },
-      {
-        "src": "/images/landing/burndown-800.webp",
+        "src": "/images/landing/hero-app-800.webp",
         "w": 800
       }
     ]
@@ -61,13 +19,13 @@
   {
     "name": "burn-chart",
     "alt": "ZeroBox exam burn-down chart against the 70 point pass line.",
-    "width": 1362,
-    "height": 582,
-    "cssWidth": 454,
+    "width": 1353,
+    "height": 573,
+    "cssWidth": 451,
     "srcset": [
       {
-        "src": "/images/landing/burn-chart-1362.webp",
-        "w": 1362
+        "src": "/images/landing/burn-chart-1353.webp",
+        "w": 1353
       },
       {
         "src": "/images/landing/burn-chart-800.webp",
@@ -76,70 +34,15 @@
     ]
   },
   {
-    "name": "kanban",
-    "alt": "ZeroBox kanban board with Backlog, Foothold and Completed lanes, each card showing the target IP, OS and difficulty badges.",
-    "width": 1600,
-    "height": 1201,
-    "cssWidth": 742,
-    "srcset": [
-      {
-        "src": "/images/landing/kanban-2226.webp",
-        "w": 2226
-      },
-      {
-        "src": "/images/landing/kanban-1600.webp",
-        "w": 1600
-      },
-      {
-        "src": "/images/landing/kanban-800.webp",
-        "w": 800
-      }
-    ]
-  },
-  {
-    "name": "kanban-m",
-    "alt": "Two lanes of the ZeroBox kanban board, Foothold and Completed, with machine cards.",
-    "width": 1443,
-    "height": 1443,
-    "cssWidth": 481,
-    "srcset": [
-      {
-        "src": "/images/landing/kanban-m-1443.webp",
-        "w": 1443
-      },
-      {
-        "src": "/images/landing/kanban-m-800.webp",
-        "w": 800
-      }
-    ]
-  },
-  {
-    "name": "clock",
-    "alt": "ZeroBox countdown clock for the 24-hour OSCP exam, with pause and reset controls.",
-    "width": 1080,
-    "height": 252,
-    "cssWidth": 360,
-    "srcset": [
-      {
-        "src": "/images/landing/clock-1080.webp",
-        "w": 1080
-      },
-      {
-        "src": "/images/landing/clock-800.webp",
-        "w": 800
-      }
-    ]
-  },
-  {
     "name": "graph",
-    "alt": "ZeroBox attack graph after Auto layout: the Included and Bike host nodes linked by an SSH tunnel edge.",
+    "alt": "ZeroBox attack graph after Auto layout: the Included, Bike, Unified and Funnel host nodes linked by SSH tunnel, chisel and ligolo edges.",
     "width": 1600,
-    "height": 833,
-    "cssWidth": 601,
+    "height": 700,
+    "cssWidth": 1120,
     "srcset": [
       {
-        "src": "/images/landing/graph-1803.webp",
-        "w": 1803
+        "src": "/images/landing/graph-2400.webp",
+        "w": 2400
       },
       {
         "src": "/images/landing/graph-1600.webp",
@@ -153,14 +56,18 @@
   },
   {
     "name": "table",
-    "alt": "ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Delete.",
-    "width": 1524,
-    "height": 1218,
-    "cssWidth": 508,
+    "alt": "ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.",
+    "width": 1600,
+    "height": 1406,
+    "cssWidth": 627,
     "srcset": [
       {
-        "src": "/images/landing/table-1524.webp",
-        "w": 1524
+        "src": "/images/landing/table-1881.webp",
+        "w": 1881
+      },
+      {
+        "src": "/images/landing/table-1600.webp",
+        "w": 1600
       },
       {
         "src": "/images/landing/table-800.webp",
@@ -170,18 +77,14 @@
   },
   {
     "name": "vault",
-    "alt": "ZeroBox evidence vault stat tiles and credential list with every secret masked behind a reveal toggle.",
-    "width": 1600,
-    "height": 1067,
-    "cssWidth": 760,
+    "alt": "ZeroBox evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.",
+    "width": 1350,
+    "height": 1050,
+    "cssWidth": 450,
     "srcset": [
       {
-        "src": "/images/landing/vault-2280.webp",
-        "w": 2280
-      },
-      {
-        "src": "/images/landing/vault-1600.webp",
-        "w": 1600
+        "src": "/images/landing/vault-1350.webp",
+        "w": 1350
       },
       {
         "src": "/images/landing/vault-800.webp",
@@ -191,14 +94,14 @@
   },
   {
     "name": "exam",
-    "alt": "ZeroBox OSCP exam simulator three hours in: total score, countdown clock and the burn-down chart against the 70 point pass line.",
+    "alt": "ZeroBox OSCP exam simulator three hours in: the OSCP track, total score, countdown clock and the first Active Directory targets.",
     "width": 1600,
-    "height": 1201,
-    "cssWidth": 738,
+    "height": 1475,
+    "cssWidth": 742,
     "srcset": [
       {
-        "src": "/images/landing/exam-2214.webp",
-        "w": 2214
+        "src": "/images/landing/exam-2226.webp",
+        "w": 2226
       },
       {
         "src": "/images/landing/exam-1600.webp",

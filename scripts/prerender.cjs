@@ -36,7 +36,15 @@ fs.writeFileSync(
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
 const { CSS_HREF, THEME_SRC } = require('./lib/layout.cjs');
-const staticShellAssets = [CSS_HREF, THEME_SRC, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
+// The two hero images (window + pacing card) are part of the first paint, so every width of them is precached too.
+let heroShots = [];
+try {
+  heroShots = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8')).filter((x) => x.name === 'hero-app' || x.name === 'burn-chart');
+} catch (e) {
+  heroShots = [];
+}
+const heroAssets = heroShots.flatMap((x) => (x.srcset || []).map((v) => v.src));
+const staticShellAssets = [CSS_HREF, THEME_SRC, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2', ...heroAssets];
 const shellAssets = [...new Set([...[...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]), ...staticShellAssets])];
 const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
@@ -161,7 +169,7 @@ const cards = routes
   )
   .join('\n');
 
-const faqHtml = FAQ.map(([q, a]) => `        <details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('\n');
+const faqHtml = FAQ.map(([q, a], i) => `        <details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('\n');
 
 const faqLd = {
   '@context': 'https://schema.org',
@@ -219,19 +227,7 @@ if (fs.existsSync(shotSrc)) {
 // ---- Landing images, proof strip and guide list (counts come from the content model, never hardcoded) ----
 // Landing screenshots: scripts/templates/landing-shots.json ([{name, alt, width, height, srcset:[{src,w}]}]) when present,
 // otherwise every slot falls back to /images/screenshot.png so the page works before and after the shots land.
-// Slots: kanban (hero >=600px), kanban-m (hero <600px, optional), clock (hero overlay, optional; falls back to exam),
-// graph, table, vault, exam. Old and new manifests both work: a missing entry falls back, it never throws.
-const SHOT_ALT = {
-  app: 'ZeroBox tracker: sidebar modules, filter bar and a kanban board of HTB and THM machines across Backlog, Foothold and Completed lanes.',
-  burndown: 'ZeroBox exam burn-down chart',
-  kanban: 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
-  'kanban-m': 'ZeroBox Kanban board tracking Hack The Box and TryHackMe machines',
-  clock: 'ZeroBox exam countdown clock',
-  table: 'ZeroBox machine table with sortable columns and bulk actions',
-  graph: 'ZeroBox attack graph linking hosts, services and credentials',
-  vault: 'ZeroBox evidence vault listing credentials, hashes and keys with secrets masked',
-  exam: 'ZeroBox exam simulator with score, countdown and points burndown chart',
-};
+// Slots: hero-app (hero window), burn-chart (hero pacing card), graph, table, vault, exam. A missing entry falls back, it never throws.
 let shotList = [];
 try {
   shotList = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8'));
@@ -240,8 +236,8 @@ try {
 }
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
 const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
-const HERO_SIZES = '(min-width:1200px) 585px,(min-width:900px) 52vw,min(100vw - 32px,640px)';
-const HERO_M_SIZES = 'calc(100vw - 32px)';
+// Rendered width of the hero window: 480px column >=1100, 400px >=900, 320px >=640, then the full width (max 420px) stacked.
+const HERO_SIZES = '(min-width:1100px) 480px,(min-width:900px) 400px,(min-width:640px) 320px,calc(100vw - 32px)';
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
@@ -262,30 +258,22 @@ function shotImg(name, { sizes, eager = false, cls = '', alt } = {}) {
   return `<img ${attrs.join(' ')} />`;
 }
 
-// Hero scene: the app window (`app` shot, browser chrome built in HTML/CSS) with an "Exam pacing" card (burn-down crop) and a
-// rabbit-hole toast layered on its corners, at every width. Only the window image is fetchpriority=high (the LCP element).
-// Phones (<600px) get the tighter two-lane crop (`kanban-m`, cropped to 4:3 in CSS) so the cards stay readable.
+// Hero scene: the app window (`hero-app`, browser chrome built in HTML/CSS) with an "Exam pacing" card (`burn-chart`) on its corner.
+// Exactly two images at every width, no art direction: the same file is used everywhere. Only the window image is fetchpriority=high (the LCP element).
 function heroPicture() {
-  const m = shotByName['kanban-m'];
-  const img = shotImg('app-focus', { sizes: HERO_SIZES, eager: true });
-  if (!hasShot(m) || !hasShot(shotByName['app-focus'])) return img;
-  return `<picture><source media="(max-width:599px)" srcset="${esc(srcsetOf(m))}" sizes="${esc(HERO_M_SIZES)}" width="${m.width}" height="${m.height}" />${img}</picture>`;
+  return shotImg('hero-app', { sizes: HERO_SIZES, eager: true });
 }
 
 // Single preload for the hero image.
 function heroPreload() {
-  const s = shotByName['app-focus'];
+  const s = shotByName['hero-app'];
   if (!hasShot(s)) return '  <link rel="preload" as="image" href="/images/screenshot.png" fetchpriority="high" />';
-  const m = shotByName['kanban-m'];
-  if (!hasShot(m)) return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
-  return [
-    `  <link rel="preload" as="image" media="(max-width:599px)" imagesrcset="${esc(srcsetOf(m))}" imagesizes="${esc(HERO_M_SIZES)}" fetchpriority="high" />`,
-    `  <link rel="preload" as="image" media="(min-width:600px)" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`,
-  ].join('\n');
+  return `  <link rel="preload" as="image" imagesrcset="${esc(srcsetOf(s))}" imagesizes="${esc(HERO_SIZES)}" fetchpriority="high" />`;
 }
 
 // Pacing card image (decorative, eager but not high priority so it never competes with the LCP image), else the exam shot.
-const HUD_SIZES = '(min-width:900px) 340px,300px';
+// Card width: 280px >=1100, 240px >=900, 200px >=640, then 62% of the (max 420px) media column, capped at 230px.
+const HUD_SIZES = '(min-width:1100px) 280px,(min-width:900px) 240px,(min-width:640px) 200px,min(calc((100vw - 32px) * .62),230px)';
 const heroHud = () =>
   hasShot(shotByName['burn-chart'])
     ? shotImg('burn-chart', { sizes: HUD_SIZES, alt: '', eager: 'low' })
@@ -305,15 +293,15 @@ const proofStrip = [
   `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source on GitHub${ICON.ext}</a></li>`,
 ].join('\n');
 
-// [href, title, description, count]; count is optional (a mono figure on the right).
+// [href, title, description, count]; count is optional (mono figure after the title, with its unit).
 const GUIDES = [
-  ['/machines/', 'Machine writeups', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, nf.format(model.machines.length)],
-  ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', nf.format(model.shellCount)],
-  ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', String(model.phases.length)],
-  ['/cheatsheet-library/', 'Cheatsheets by topic', 'Recon, web, privesc, Active Directory, pivoting.', String(model.topics.length)],
-  ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', String(model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length)],
+  ['/machines/', 'Machine writeups', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(model.machines.length)} boxes`],
+  ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', `${nf.format(model.shellCount)} shells`],
+  ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', `${model.phases.length} phases`],
+  ['/cheatsheet-library/', 'Cheatsheets by topic', 'Recon, web, privesc, Active Directory, pivoting.', `${model.topics.length} topics`],
+  ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', `${model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length} boxes`],
   ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', ''],
-  ['/cpts-notes/', 'CPTS study notes', 'Short notes with commands.', String(model.notes.length)],
+  ['/cpts-notes/', 'CPTS study notes', 'Short notes with commands.', `${model.notes.length} notes`],
 ];
 // Long-form guides from scripts/lib/guides.cjs (none when the file is absent). Short card copy per path; the
 // guide's own description is the fallback for any guide added later.
@@ -337,7 +325,7 @@ const examGuides =
     : '';
 const guideList = GUIDES.map(
   ([h, t, d, n]) =>
-    `          <li><a href="${h}"><span class="g-t">${esc(t)}</span><span class="g-d">${esc(d)}</span>${n ? `<span class="g-n">${esc(n)}</span>` : ''}</a></li>`
+    `          <li><a href="${h}"><span class="g-h"><span class="g-t">${esc(t)}</span>${n ? `<span class="g-n">${esc(n)}</span>` : ''}</span><span class="g-d">${esc(d)}</span></a></li>`
 ).join('\n');
 
 let landing = fs.readFileSync(path.join(__dirname, 'templates', 'landing.html'), 'utf8');
@@ -350,12 +338,12 @@ const subs = {
   '{{SITE_FOOTER}}': siteFooter({ analyticsNote: analyticsNote() }),
   '{{IMG_HERO}}': heroPicture(),
   '{{IMG_HUD}}': heroHud(),
-  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1200px) 620px,(min-width:900px) 52vw,calc(100vw - 32px)' }),
-  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1200px) 440px,(min-width:900px) 38vw,calc(100vw - 32px)' }),
-  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1200px) 620px,(min-width:900px) 52vw,calc(100vw - 32px)' }),
-  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1200px) 620px,(min-width:900px) 56vw,calc(100vw - 32px)' }),
+  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1152px) 1120px,calc(100vw - 32px)' }),
+  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1152px) 643px,(min-width:900px) 58vw,calc(100vw - 32px)' }),
+  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1152px) 453px,(min-width:900px) 41vw,calc(100vw - 32px)' }),
+  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1152px) 625px,(min-width:900px) 58vw,calc(100vw - 32px)' }),
   '{{ICON_ARROW}}': ICON.arrow,
-  '{{ICON_WARN}}': ICON.warn,
+  '{{REPO_HREF}}': REPO,
   '{{ICON_EXT}}': ICON.ext,
   '{{DESKTOP_HREF}}': DESKTOP_HREF,
   '{{PROOF_STRIP}}': proofStrip,

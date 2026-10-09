@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { getModel, getGuides, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
-const { ORIGIN, esc, renderPage, STATIC_CSS, ctaBox, fitTitle, techArticleLd } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, STATIC_CSS, ctaBox, fitTitle, truncate, techArticleLd } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
@@ -175,6 +175,8 @@ const fmtDur = (s) => {
 };
 const fmtDate = (d) => (d ? String(d).slice(0, 10) : '');
 const ROOM_REL = 'nofollow noopener';
+// "a" or "an" by the first letter of the word that follows (an easy, an insane, a medium).
+const article = (word) => (/^[aeiou]/i.test(String(word).trim()) ? 'an' : 'a');
 
 // Meta description for a machine page: the hint's first sentence when it fits as a complete sentence, else a facts-based sentence.
 function machineDesc(m, summary, tagList) {
@@ -185,7 +187,7 @@ function machineDesc(m, summary, tagList) {
   if (first && first.length >= 45 && !/^Solved /.test(first) && !/[{}]/.test(first) && /[.!?]$/.test(first) && lead.length + first.length <= 155) return lead + first;
   const techs = techGroups.filter((g) => (m.tags || []).some((t) => TECH.matchesTag(g, t))).slice(0, 3).map((g) => g.name);
   const diff = m.difficulty.toLowerCase();
-  return `${m.name} is ${/^[aeiou]/.test(diff) ? 'an' : 'a'} ${diff} ${m.os} machine on ${m.platform}. ${techs.length ? `My ${kindWord} covers ${techs.join(', ')}.` : `Read my ${kindWord} and the techniques it trains.`}`;
+  return `${m.name} is ${article(diff)} ${diff} ${m.os} machine on ${m.platform}. ${techs.length ? `My ${kindWord} covers ${techs.join(', ')}.` : `Read my ${kindWord} and the techniques it trains.`}`;
 }
 
 // "Related" block on a machine page: its certification hubs and the technique hubs its tags match.
@@ -217,7 +219,11 @@ for (const m of withPage) {
   );
   const tagList = (m.tags || []).filter((t) => !GENERIC_TAGS.has(t.toLowerCase()));
   const rel = related(m);
-  const summary = m.hint || `Solved ${m.difficulty.toLowerCase()} ${m.os} target covering ${tagList.slice(0, 4).join(', ') || 'core pentest techniques'}.`;
+  const template = truncate(`Solved ${m.difficulty.toLowerCase()} ${m.os} target covering ${tagList.slice(0, 4).join(', ') || 'core pentest techniques'}.`, 300);
+  // The page body uses a hint only when it reads as a complete sentence; a stub or truncated hint falls back to the template sentence.
+  // The meta description keeps its own rules (machineDesc), so the SEO baseline does not move.
+  const hint = String(m.hint || '').replace(/\s+/g, ' ').trim();
+  const summary = /[.!?]$/.test(hint) ? hint : template;
   const stats = [
     m.timeToUserSeconds ? ['Time to user', fmtDur(m.timeToUserSeconds)] : null,
     m.timeToRootSeconds ? ['Time to root', fmtDur(m.timeToRootSeconds)] : null,
@@ -232,7 +238,7 @@ for (const m of withPage) {
     m.certifications && m.certifications.length ? ['Relevant for', m.certifications.join(', ')] : null,
   ].filter(Boolean);
     const body = [
-    `<p class="lead">${esc(m.name)} is a ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself. This page is my short attack path summary and the techniques it trains.</p>`,
+    `<p class="lead">${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself. This page is my short attack path summary and the techniques it trains.</p>`,
     m.ownWriteup || m.roomUrl
       ? ctaBox({
           href: m.ownWriteup || m.roomUrl,
@@ -261,7 +267,7 @@ for (const m of withPage) {
     renderPage({
       path: mUrl(m),
       title,
-      description: machineDesc(m, summary, tagList),
+      description: machineDesc(m, m.hint || template, tagList),
       h1: m.ownWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`,
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [m.name, mUrl(m)]],
