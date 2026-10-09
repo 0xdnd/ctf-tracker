@@ -1,7 +1,7 @@
 [
   {
     "name": "hero-app",
-    "alt": "ZeroBox tracker with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes of a kanban board of HTB and THM machines.",
+    "alt": "ZeroBox CTF tracker kanban board of Hack The Box and TryHackMe machines, with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes.",
     "width": 1575,
     "height": 1719,
     "cssWidth": 525,
@@ -56,7 +56,7 @@
   },
   {
     "name": "table",
-    "alt": "ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.",
+    "alt": "ZeroBox CTF tracker table view with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.",
     "width": 1600,
     "height": 1464,
     "cssWidth": 646,
@@ -77,7 +77,7 @@
   },
   {
     "name": "vault",
-    "alt": "ZeroBox evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.",
+    "alt": "ZeroBox pentest evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.",
     "width": 1350,
     "height": 1050,
     "cssWidth": 450,

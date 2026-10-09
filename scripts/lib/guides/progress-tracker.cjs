@@ -61,7 +61,7 @@ function build({ model, esc }) {
     title: 'HTB & TryHackMe Progress Tracker (Free, Offline)',
     description:
       'What HTB and TryHackMe profiles do not track, how a spreadsheet compares with ZeroBox, plus a workflow with nmap imports. Free and offline.',
-    h1: 'A free, offline progress tracker for HTB and TryHackMe',
+    h1: 'A free, offline Hack The Box and TryHackMe progress tracker',
     lead: 'Hack The Box and TryHackMe profiles count what you have owned, not how you solved it or what you would change, so most people keep a separate tracker. This page compares a profile, a spreadsheet and ZeroBox, and describes a workflow with nmap imports and local-only storage.',
     body,
     cta: {

@@ -77,7 +77,7 @@ const want = (...names) => ONLY.length === 0 || names.some((n) => ONLY.includes(
 /** Shot names and alt text (the crop of every shot is computed in main()). */
 const SHOTS = {
   'hero-app': {
-    alt: 'ZeroBox tracker with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes of a kanban board of HTB and THM machines.',
+    alt: 'ZeroBox CTF tracker kanban board of Hack The Box and TryHackMe machines, with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes.',
   },
   'burn-chart': {
     alt: 'ZeroBox exam burn-down chart against the 70 point pass line.',
@@ -86,10 +86,10 @@ const SHOTS = {
     alt: 'ZeroBox attack graph after Auto layout: the Included, Bike, Unified and Funnel host nodes linked by SSH tunnel, chisel and ligolo edges.',
   },
   table: {
-    alt: 'ZeroBox machine table with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.',
+    alt: 'ZeroBox CTF tracker table view with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.',
   },
   vault: {
-    alt: 'ZeroBox evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.',
+    alt: 'ZeroBox pentest evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.',
   },
   exam: {
     alt: 'ZeroBox OSCP exam simulator three hours in: the OSCP track, total score, countdown clock and the first Active Directory targets.',

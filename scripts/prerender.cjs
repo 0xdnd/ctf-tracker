@@ -140,7 +140,7 @@ for (const route of routes) {
 
 // ---- Landing page ----
 // One description for <meta name="description">, og:description and twitter:description (kept at 155 chars or fewer).
-const META_DESC = 'Free offline CTF tracker for HTB and THM with an OSCP exam simulator, CPTS and CRTO practice, cheatsheets and a pentest methodology checklist.';
+const META_DESC = 'Free offline CTF tracker for Hack The Box and TryHackMe, with an OSCP exam simulator, cheatsheets and a report template. No account needed.';
 if (META_DESC.length > 155) throw new Error(`prerender: landing description is ${META_DESC.length} chars (max 155)`);
 const FAQ = [
   ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under a non-commercial license.'],
@@ -148,16 +148,19 @@ const FAQ = [
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
   ['Can I use it for OSCP prep?', 'Yes. It includes a 24h OSCP exam simulator with scoring, pacing, breaks and evidence proofs, an OSCP cheatsheet with reverse shells, and a pentest methodology checklist. It is an independent tool and not affiliated with OffSec.'],
   ['Does it support Hack The Box and TryHackMe?', 'It ships with a catalog of Hack The Box and TryHackMe machines you can track, and you can add custom targets for any other CTF or lab. It does not connect to your HTB or THM account, so progress is entered by you.'],
+  ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
+  ['Can I track Hack The Box and TryHackMe progress in one place?', 'Yes. The catalog covers Hack The Box and TryHackMe machines, and you can add custom targets for any other CTF or lab, so one board holds all of it. You enter progress yourself because ZeroBox does not connect to your HTB or THM account.'],
+  ['Is there an OSCP exam simulator?', 'Yes. The exam simulator runs a timed 24h OSCP practice with a countdown clock, point scoring, pacing guidance, breaks and evidence proofs, and it also has CPTS, CRTO, OSEP and CRTP tracks. It is a practice tool and is not affiliated with OffSec.'],
   ['Is there a desktop app?', 'Yes. The repository includes a Tauri desktop build that you can compile from source. The instructions are in the GitHub README.'],
 ];
 
 const CARD_DESC = {
-  '/tracker/': 'Kanban, table and grid board for HTB and THM machines.',
+  '/tracker/': 'CTF progress tracker: Kanban, table and grid board for Hack The Box and TryHackMe machines.',
   '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
   '/cheatsheets/': '130+ reverse shells with LHOST and LPORT filled in.',
-  '/cpts-manual/': 'Obsidian-style notes with wikilinks and a private vault.',
-  '/exam/': 'Timed OSCP, CPTS and CRTO practice with scoring.',
-  '/writeup/': 'Markdown writeups with live preview and export.',
+  '/cpts-manual/': 'Pentest notes app with Obsidian-style wikilinks and a private vault.',
+  '/exam/': 'OSCP exam simulator, plus CPTS and CRTO practice, with scoring.',
+  '/writeup/': 'CTF writeup and report editor with templates, live preview and export.',
   '/analytics/': 'Skill radar, activity heatmap and benchmarks.',
   '/vault/': 'Credentials, flags and hashes from every target.',
 };
@@ -186,13 +189,27 @@ const webAppLd = {
     {
       '@type': 'WebApplication',
       '@id': ORIGIN + '/#webapp',
-      name: 'ZeroBox — Tactical Cybersecurity Lab & CTF Tracker',
+      name: 'ZeroBox',
+      alternateName: ['ZeroBox CTF Tracker', 'CTF Tracker'],
       url: ORIGIN + '/',
       applicationCategory: 'SecurityApplication',
-      operatingSystem: 'All',
+      operatingSystem: 'Web browser',
       browserRequirements: 'Requires JavaScript and modern browser',
       description:
-        'Offline-first tracker for Hack The Box, TryHackMe and OSCP/CPTS prep with a Kanban board, reverse shell cheatsheet and 24h exam simulator.',
+        'Free offline CTF tracker for Hack The Box, TryHackMe and OSCP/CPTS prep with a Kanban board, reverse shell cheatsheet and 24h OSCP exam simulator.',
+      keywords: 'CTF tracker, HTB tracker, Hack The Box tracker, TryHackMe tracker, OSCP tracker, OSCP exam simulator, CTF progress tracker, pentest notes, CPTS',
+      featureList: [
+        'Kanban, table and grid CTF tracker for Hack The Box and TryHackMe machines',
+        'OSCP, CPTS, CRTO, OSEP and CRTP exam simulator with scoring and pacing',
+        'Attack graph of hosts, services and credentials',
+        'Multi-host nmap XML import',
+        'Evidence vault for credentials, hashes and flags',
+        'Reverse shell and pentest cheatsheets with LHOST and LPORT filled in',
+        'Pentest methodology checklist',
+        'Markdown writeup and report editor',
+        'Obsidian-style pentest notes with a private local vault',
+        'Works offline, with data stored in your browser',
+      ],
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       author: { '@type': 'Person', name: 'Daniel Dayan', url: 'https://github.com/0xdnd' },
     },
@@ -295,19 +312,19 @@ const proofStrip = [
 
 // [href, title, description, count]; count is optional (mono figure after the title, with its unit).
 const GUIDES = [
-  ['/machines/', 'Machine writeups', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(model.machines.length)} boxes`],
+  ['/machines/', 'Hack The Box and TryHackMe machine list', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(model.machines.length)} boxes`],
   ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', `${nf.format(model.shellCount)} shells`],
   ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', `${model.phases.length} phases`],
-  ['/cheatsheet-library/', 'Cheatsheets by topic', 'Recon, web, privesc, Active Directory, pivoting.', `${model.topics.length} topics`],
+  ['/cheatsheet-library/', 'OSCP and CTF cheatsheets', 'Recon, web, privesc, Active Directory, pivoting.', `${model.topics.length} topics`],
   ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', `${model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length} boxes`],
   ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', ''],
-  ['/cpts-notes/', 'CPTS study notes', 'Short notes with commands.', `${model.notes.length} notes`],
+  ['/cpts-notes/', 'CPTS and OSCP study notes', 'Short notes with commands.', `${model.notes.length} notes`],
 ];
 // Long-form guides from scripts/lib/guides.cjs (none when the file is absent). Short card copy per path; the
 // guide's own description is the fallback for any guide added later.
 const GUIDE_CARD = {
   '/oscp-exam-scoring-and-time-budget/': ['OSCP exam scoring and time budget', 'Point structure, passing combinations and an hour-by-hour 24h plan.'],
-  '/tj-null-list/': ['TJ Null OSCP list', 'What the list is, how to work it, and the HTB boxes from it you can track.'],
+  '/tj-null-list/': ['TJ Null OSCP list tracker', 'What the list is, how to work it, and the HTB boxes from it you can track.'],
   '/oscp-report-template/': ['OSCP report template', 'A Markdown report skeleton with a finding template and a CVSS 3.1 example.'],
   '/htb-progress-tracker/': ['HTB and THM progress tracker', 'What the platforms do not track, and a workflow that fills the gap.'],
   '/cpts-exam-guide/': ['HTB CPTS exam guide', 'Exam format, flags, passing requirement and a day-by-day pacing plan.'],
@@ -321,7 +338,7 @@ const hasGuide = (p) => guidePages.some((g) => g.path === p);
 // One line in the exam section pointing at the scoring and report guides (empty when they are absent).
 const examGuides =
   hasGuide('/oscp-exam-scoring-and-time-budget/') && hasGuide('/oscp-report-template/')
-    ? '        <p>Planning your 24 hours? Read the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget guide</a> and start your write-up from the <a href="/oscp-report-template/">OSCP report template</a>.</p>'
+    ? '        <p>Planning your 24 hours? Read the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget guide</a> and start your write-up from the <a href="/oscp-report-template/">OSCP report template</a>.' + (hasGuide('/cpts-exam-guide/') ? ' Working toward CPTS? See the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a>.' : '') + '</p>'
     : '';
 const guideList = GUIDES.map(
   ([h, t, d, n]) =>

@@ -1,9 +1,9 @@
 [
   {
     "path": "/tracker/",
-    "title": "CTF & HTB Machine Tracker — Kanban Board | ZeroBox",
-    "description": "Track Hack The Box and TryHackMe machines on a Kanban, table or grid board. Store IPs, notes and progress offline in your browser. Free, no account needed.",
-    "h1": "CTF and HTB machine tracker",
+    "title": "CTF Tracker for HTB and THM Machines | ZeroBox",
+    "description": "Track Hack The Box and TryHackMe machines on a Kanban, table or grid board. A free CTF tracker that stores IPs, notes and progress offline in your browser.",
+    "h1": "CTF tracker for HTB and TryHackMe machines",
     "intro": "Keep every Hack The Box, TryHackMe and lab target in one board instead of scattered notes. Move machines through your own workflow, record IPs and findings, and pick up where you left off, all stored locally in your browser.",
     "bullets": [
       "Kanban, table and grid views of your machines, with search and filters",
@@ -46,7 +46,7 @@
   },
   {
     "path": "/cpts-manual/",
-    "title": "CPTS Notes & Field Manual — Obsidian-Style Vault | ZeroBox",
+    "title": "CPTS Notes App: Obsidian-Style Field Manual | ZeroBox",
     "description": "A CPTS field manual and notes viewer with wikilinks, multi-tab docked notes and a private local vault. Import your own Obsidian notes. Free and offline.",
     "h1": "CPTS notes and field manual",
     "intro": "Read and search penetration testing notes in an Obsidian-style viewer. Open several notes in tabs, follow wikilinks, and keep your private notes in a local vault that never leaves your browser.",
@@ -60,7 +60,7 @@
   },
   {
     "path": "/exam/",
-    "title": "OSCP Exam Simulator — 24h Timer & Report | ZeroBox",
+    "title": "OSCP Exam Simulator: 24h Timer, Scoring & Report | ZeroBox",
     "description": "Practice OSCP, CPTS and CRTO exams with a countdown timer, scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
@@ -75,7 +75,7 @@
   },
   {
     "path": "/writeup/",
-    "title": "Pentest Writeup Editor — Markdown & Report Export | ZeroBox",
+    "title": "CTF Writeup Template & Pentest Report Editor | ZeroBox",
     "description": "Write CTF writeups and pentest reports in a dual-pane Markdown editor with live preview. Export to Obsidian or GitBook. Free and private.",
     "h1": "Writeup studio",
     "intro": "A Markdown editor for CTF writeups and pentest reports with a live preview. Drafts stay in your browser and export as plain Markdown files.",

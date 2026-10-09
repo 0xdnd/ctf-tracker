@@ -337,9 +337,9 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: 'HTB & TryHackMe Machines by OS and Difficulty | ZeroBox',
+    title: 'HTB Machines List and Tracker by OS and Difficulty | ZeroBox',
     description: `Directory of ${model.machines.length} Hack The Box and TryHackMe machines grouped by platform, OS and difficulty, with attack paths for the solved ones.`,
-    h1: 'Hack The Box and TryHackMe machines',
+    h1: 'Hack The Box and TryHackMe machines list and tracker',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
     ogType: 'website',
@@ -380,9 +380,9 @@ emit(
   '/cheatsheet-library/',
   renderPage({
     path: '/cheatsheet-library/',
-    title: 'Pentest Command Reference by Topic | ZeroBox',
+    title: 'OSCP & CTF Cheatsheets by Topic | ZeroBox',
     description: 'Free OSCP and CTF cheatsheets by topic: recon, web fuzzing, exploitation, privesc, Active Directory, pivoting and file transfers.',
-    h1: 'Pentest command reference by topic',
+    h1: 'OSCP and CTF cheatsheets by topic',
     body: [
       `<p class="lead">Command cheatsheets for penetration testing labs and OSCP preparation, grouped by phase. Every command is a template you can adapt to your target.</p>`,
       `<div class="grid">${model.topics.map((t) => card(`/cheatsheets/${t.slug}/`, t.name, `${t.items.length} commands`)).join('')}${card('/revshells/', 'Reverse shells', `${model.shellCount} reverse, bind and TTY shell one-liners`)}</div>`,
