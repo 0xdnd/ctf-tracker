@@ -178,6 +178,7 @@ export default defineConfig(({ mode }) => {
   return {
   plugins: [react(), localVaultPlugin()],
   base: isTauri ? './' : '/',
+  esbuild: { legalComments: 'eof' },
   define: {
     'import.meta.env.VITE_TARGET': JSON.stringify(isTauri ? 'tauri' : 'web'),
   },
@@ -222,11 +223,8 @@ export default defineConfig(({ mode }) => {
             return 'tracks-data';
           }
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('zustand')) return 'vendor-framework';
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|@remix-run[\\/]router|zustand|use-sync-external-store)[\\/]/.test(id)) return 'vendor-framework';
             if (id.includes('framer-motion')) return 'vendor-motion';
-            if (id.includes('lucide-react')) return 'vendor-icons';
-            if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui-utils';
-            if (id.includes('canvas-confetti') || id.includes('jszip')) return 'vendor-utils';
           }
         }
       }

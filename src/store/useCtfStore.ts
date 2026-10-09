@@ -18,7 +18,7 @@ import { STARTER_MACHINES } from '../data/starterMachines';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
 let cachedCatalog: Machine[] | null = null;
-import { CPTS_NOTES, getAllCptsNotes, type CptsNoteEntry } from '../utils/obsidianManualUtils';
+import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
 import { 
   extractDeepWriteups, 
@@ -250,7 +250,7 @@ interface CtfStoreState {
   deletedNoteIds: string[];
   userSolvesReset: boolean;
   addCustomNote: (note: Partial<CptsNoteEntry> & { title: string }) => void;
-  updateNoteContent: (noteId: string, rawMarkdown: string) => void;
+  updateNoteContent: (noteId: string, rawMarkdown: string) => void | Promise<void>;
   deleteNote: (noteId: string) => void;
   restoreDeletedNotes: () => void;
   resetSolvesToZero: () => void;
@@ -1681,7 +1681,7 @@ export const useCtfStore = create<CtfStoreState>()(
         }));
       },
 
-      updateNoteContent: (noteId: string, rawMarkdown: string) => {
+      updateNoteContent: async (noteId: string, rawMarkdown: string) => {
         const state = get();
         const now = new Date().toISOString();
 
@@ -1713,7 +1713,8 @@ export const useCtfStore = create<CtfStoreState>()(
           return;
         }
 
-        // 3. Promote catalog note from CPTS_NOTES into customNotes
+        // 3. Promote catalog note from CPTS_NOTES into customNotes (catalog JSON is lazy-loaded)
+        const { CPTS_NOTES, getAllCptsNotes } = await import('../utils/obsidianManualUtils');
         const catalogNote = CPTS_NOTES.find((n) => n.id === noteId);
         if (catalogNote) {
           const promotedNote: CptsNoteEntry = {

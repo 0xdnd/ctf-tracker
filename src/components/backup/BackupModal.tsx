@@ -27,7 +27,6 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
-import { generateObsidianVaultZip } from '../../utils/obsidianVaultExporter';
 import { extractCandidateNames, matchCandidateNamesToCatalog } from '../../utils/bulkPwnImporter';
 import { PipelineStatus } from '../../types';
 
@@ -122,6 +121,7 @@ export const BackupModal: React.FC = () => {
   const handleExportObsidianVault = async () => {
     try {
       setIsExportingVault(true);
+      const { generateObsidianVaultZip } = await import('../../utils/obsidianVaultExporter');
       const zipBlob = await generateObsidianVaultZip(machines, cheatsheets);
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');

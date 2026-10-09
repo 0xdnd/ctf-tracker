@@ -45,7 +45,6 @@ import { KanbanBoard } from './KanbanBoard';
 import { TableView } from './TableView';
 import { GridView } from './GridView';
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
-import { CuratedPathways } from './CuratedPathways';
 import { FilterDrawer } from '../layout/FilterDrawer';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsIcon } from '../common/OsBadge';
