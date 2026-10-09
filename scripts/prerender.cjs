@@ -290,7 +290,7 @@ const proofStrip = [
   proofItem(nf.format(model.machines.length), 'machines catalogued'),
   proofItem(nf.format(model.shellCount), 'reverse shells'),
   proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
-  `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source on GitHub${ICON.ext}</a></li>`,
+  `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source available on GitHub${ICON.ext}</a></li>`,
 ].join('\n');
 
 // [href, title, description, count]; count is optional (mono figure after the title, with its unit).

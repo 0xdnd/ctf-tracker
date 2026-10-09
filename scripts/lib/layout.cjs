@@ -56,7 +56,8 @@ const FOOTER_LINKS = {
   ZeroBox: [
     ['/tracker/', 'Open tracker'],
     ['/exam/', 'Exam simulator'],
-    [REPO, 'Source on GitHub'],
+    [REPO, 'Source code'],
+    [REPO + '/blob/main/LICENSE', 'License'],
   ],
 };
 
@@ -106,7 +107,7 @@ function siteHeader({ current } = {}) {
   <div class="wrap bar">
     <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" aria-hidden="true" /><span class="brand-name">ZeroBox</span></a>
     <nav class="nav-inline" aria-label="Primary">${links}</nav>
-    <a class="icon-link" href="${REPO}" rel="noopener" aria-label="ZeroBox source on GitHub">${ICON.github}</a>
+    <a class="icon-link" href="${REPO}" rel="noopener" aria-label="ZeroBox source code on GitHub">${ICON.github}</a>
     <a class="icon-link" href="${LINKEDIN}" rel="me noopener" aria-label="Daniel Dayan on LinkedIn">${ICON.linkedin}</a>
     <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch to light theme">${THEME_ICONS}</button>
     <a class="btn btn-sm" href="/tracker/">Open tracker</a>
@@ -208,7 +209,7 @@ const organizationLd = () => ({
   name: 'ZeroBox',
   url: ORIGIN + '/',
   logo: ORIGIN + '/icon-512.png',
-  sameAs: [REPO],
+  sameAs: [REPO, GITHUB_PROFILE, LINKEDIN],
 });
 const websiteLd = () => ({
   '@type': 'WebSite',

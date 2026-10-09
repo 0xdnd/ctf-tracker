@@ -132,10 +132,13 @@
 .social-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--muted);font-size:.875rem;font-weight:500;text-decoration:none;transition:color .15s}
 .social-link svg{width:18px;height:18px}
 @media(hover:hover) and (pointer:fine){.social-link:hover{color:var(--text)}}
+.social-note{display:inline-flex;align-items:center;min-height:44px;color:var(--muted);font-size:.875rem}
 .byline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s4);margin-top:var(--s6);padding-top:var(--s5);border-top:1px solid var(--line)}
 .closing-inner .byline{flex:1 0 100%}
 .byline p{max-width:52ch;margin:0;color:var(--muted)}
 .byline strong{color:var(--text)}
+.license-note{flex:1 0 100%;margin:0;font-size:.9rem;color:var(--muted)}
+.license-note a{color:var(--text);text-decoration:underline;text-underline-offset:3px}
 .landing main{padding:0}
 /* Enlargeable screenshots (script adds role=button) and the preview dialog. */
 .frame[role="button"]{cursor:zoom-in;-webkit-tap-highlight-color:transparent}
