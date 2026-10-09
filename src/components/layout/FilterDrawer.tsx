@@ -187,7 +187,7 @@ export const FilterDrawer: React.FC = () => {
     filters,
     setFilters,
     resetFilters,
-    machines,
+    machines: liveMachines,
     soundEnabled,
   } = useCtfStore(
     useShallow((s) => ({
@@ -200,6 +200,9 @@ export const FilterDrawer: React.FC = () => {
       soundEnabled: s.soundEnabled,
     }))
   );
+
+  // Always mounted: derive its counts from a deferred copy so the catalog swap re-render stays interruptible.
+  const machines = React.useDeferredValue(liveMachines);
 
   const trapRef = useFocusTrap<HTMLDivElement>({
     isActive: filterDrawerOpen,

@@ -527,8 +527,29 @@
   border-radius: var(--radius-xs, 2px);
 }
 
+/* Card entrance (Kanban + Grid): compositor-only CSS replacement for per-card framer-motion springs.
+   Per-card stagger is set inline via animation-delay. */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-enter {
+  animation: card-enter 220ms ease-out backwards;
+}
+
 /* Accessibility & Web Interface Guidelines: Reduced Motion (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
+  .card-enter {
+    animation: none !important;
+  }
+
   *,
   *::before,
   *::after {

@@ -22,7 +22,6 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
-import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
@@ -251,28 +250,26 @@ const GridCard = React.memo<GridCardProps>(({
                     {isHintRevealed ? 'Hide' : 'Peek'}
                   </button>
                 </div>
-                <AnimatePresence initial={false}>
-                  <motion.div
-                    layout
-                    className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
-                      isHintRevealed
-                        ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
-                        : 'flex cursor-pointer select-none items-center justify-center border-subtle bg-surface-sunken/60 p-2 px-2.5 text-muted hover:border-strong hover:text-primary'
-                    }`}
-                    onClick={(e) => {
-                      if (!isHintRevealed) onToggleHint(e, m.id);
-                    }}
-                  >
-                    {isHintRevealed ? (
-                      m.hint
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-xs">
-                        <Eye className="h-3 w-3 text-muted" />
-                        <span>Click to reveal hint</span>
-                      </span>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                {/* Plain div: framer-motion `layout` measures every card's box on mount (forced reflow). */}
+                <div
+                  className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
+                    isHintRevealed
+                      ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
+                      : 'flex cursor-pointer select-none items-center justify-center border-subtle bg-surface-sunken/60 p-2 px-2.5 text-muted hover:border-strong hover:text-primary'
+                  }`}
+                  onClick={(e) => {
+                    if (!isHintRevealed) onToggleHint(e, m.id);
+                  }}
+                >
+                  {isHintRevealed ? (
+                    m.hint
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs">
+                      <Eye className="h-3 w-3 text-muted" />
+                      <span>Click to reveal hint</span>
+                    </span>
+                  )}
+                </div>
               </div>
             ) : null}
 
@@ -501,14 +498,10 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
     <div className="space-y-6 font-sans pb-12">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {visibleMachines.map((m, idx) => (
-          <motion.div
+          <div
             key={m.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              ...TACTICAL_SPRING,
-              delay: CASCADE_STAGGER_DELAY(idx),
-            }}
+            className="card-enter"
+            style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
           >
             <GridCard
               machine={m}
@@ -523,7 +516,7 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
               onOpenWriteup={handleOpenWriteup}
               onOpenDetail={handleOpenDetail}
             />
-          </motion.div>
+          </div>
         ))}
       </div>
 

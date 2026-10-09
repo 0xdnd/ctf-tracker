@@ -16,7 +16,7 @@ import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { ViewSkeleton } from './components/common/Skeleton';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
-import { useCtfStore, mergeMachinesWithCatalog, UiScale } from './store/useCtfStore';
+import { useCtfStore, UiScale } from './store/useCtfStore';
 import { useExamStore } from './store/examStore';
 import { useAuthStore } from './store/useAuthStore';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
@@ -208,48 +208,43 @@ const MainAppContent: React.FC = () => {
       return '1.0';
     };
 
+    // Writing zoom / --app-zoom invalidates style and layout for the whole document, so only write
+    // when the computed value actually differs from what is already applied, and do it inside rAF.
+    const rootStyle = document.documentElement.style as CSSStyleDeclaration & { zoom?: string };
+    const writeZoom = (zoom: string) => {
+      if (rootStyle.zoom === zoom && rootStyle.getPropertyValue('--app-zoom') === zoom) return;
+      rootStyle.zoom = zoom;
+      rootStyle.setProperty('--app-zoom', zoom);
+    };
+
     if (uiScale === 'auto') {
       let rafId: number | null = null;
-      const applyAutoZoom = () => {
-        const zoom = getAutoZoom(window.innerWidth);
-        (document.documentElement.style as CSSStyleDeclaration & { zoom?: string }).zoom = zoom;
-        document.documentElement.style.setProperty('--app-zoom', zoom);
-      };
-
-      applyAutoZoom();
-
-      const handleResize = () => {
-        if (rafId !== null) cancelAnimationFrame(rafId);
+      const scheduleAutoZoom = () => {
+        if (rafId !== null) return;
         rafId = requestAnimationFrame(() => {
-          applyAutoZoom();
           rafId = null;
+          writeZoom(getAutoZoom(window.innerWidth));
         });
       };
 
-      window.addEventListener('resize', handleResize);
+      scheduleAutoZoom();
+
+      window.addEventListener('resize', scheduleAutoZoom);
       return () => {
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('resize', scheduleAutoZoom);
         if (rafId !== null) cancelAnimationFrame(rafId);
       };
     } else {
       const zoomVal = zoomMap[uiScale] || '1.0';
-      (document.documentElement.style as CSSStyleDeclaration & { zoom?: string }).zoom = zoomVal;
-      document.documentElement.style.setProperty('--app-zoom', zoomVal);
+      const rafId = requestAnimationFrame(() => writeZoom(zoomVal));
+      return () => cancelAnimationFrame(rafId);
     }
   }, [uiScale]);
 
-  // Guarantee that all 45 completed HTB targets are populated in active state and profile,
-  // and force brand to ZEROBOX if still set to legacy rootvector or specter
+  // The persist `merge` already merges machines with the catalog and forces the ZEROBOX brand on
+  // rehydrate, and the store's profile auto-save subscriber persists later changes, so no extra
+  // merge / saveProfileData pass is needed here.
   useEffect(() => {
-    const state = useCtfStore.getState();
-    const current = state.machines;
-    const merged = mergeMachinesWithCatalog(current, state.userSolvesReset);
-    const updates: Partial<typeof state> = { machines: merged };
-    if (state.appBrand !== 'zerobox') {
-      updates.appBrand = 'zerobox';
-    }
-    useCtfStore.setState(updates);
-    useCtfStore.getState().saveProfileData();
     // Auto-hydrate private field manual notes and wikilinks from local IndexedDB
     useCtfStore.getState().loadUserNotesFromDb();
     // Asynchronously hydrate full master catalog in background without blocking cold boot TTI

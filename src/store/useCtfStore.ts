@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import type { StorageValue } from 'zustand/middleware';
 import { 
   Machine, 
   PipelineStatus, 
@@ -793,8 +794,8 @@ export const mergeMachinesWithCatalog = (
         (m.id && m.id.startsWith('custom-')) ||
         Boolean(m.userFlag?.trim()) ||
         Boolean(m.rootFlag?.trim()) ||
-        m.status === 'completed' ||
-        m.status === 'foothold' ||
+        // Any in-progress status (recon / foothold / root / completed): same rule as `userHasProgress` above
+        (Boolean(m.status) && (m.status as string) !== 'backlog' && (m.status as string) !== 'unsolved') ||
         (m.timeSpentSeconds && m.timeSpentSeconds > 0) ||
         Boolean(m.quickNotes?.trim()) ||
         Boolean(m.writeupMarkdown?.trim())
@@ -833,6 +834,11 @@ export const mergeMachinesWithCatalog = (
 
   return [...customEntries, ...catalogEntries];
 };
+
+// Persist snapshot memo (see partialize / storage.setItem in the store config below)
+let lastPartialize: { inputs: unknown[]; snapshot: Record<string, unknown> } | null = null;
+let lastPersistedSnapshot: unknown;
+let lastPersistedVersion: number | undefined;
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
@@ -959,14 +965,19 @@ export const useCtfStore = create<CtfStoreState>()(
 
       loadCatalog: async () => {
         if (get().isCatalogLoaded || get().isCatalogLoading) return;
+        // Transient flag: not part of partialize(), so this set() never re-serializes the machines.
         set({ isCatalogLoading: true });
         try {
           const { INITIAL_MACHINES } = await import('../data/machinesCatalog');
           cachedCatalog = INITIAL_MACHINES;
           const state = get();
           const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset, INITIAL_MACHINES);
+          const unchanged =
+            merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
+          // Single set(): keep the existing machines reference when the merge changed nothing so
+          // subscribers and the persist layer see no machines change.
           set({
-            machines: merged,
+            ...(unchanged ? {} : { machines: merged }),
             isCatalogLoaded: true,
             isCatalogLoading: false,
           });
@@ -2147,15 +2158,17 @@ export const useCtfStore = create<CtfStoreState>()(
     {
       name: 'zerobox-tactical-store',
       version: 2,
-      storage: createJSONStorage(() => ({
-        getItem: (name: string): string | null => {
+      // Object-level storage (not createJSONStorage): lets us skip the JSON.stringify + localStorage write
+      // whenever partialize() hands back the exact same snapshot object (transient-only set() calls such as
+      // timer ticks, modal flags and isCatalogLoading), and parses the stored blob only once at boot.
+      storage: {
+        getItem: (name: string): StorageValue<any> | null => {
           if (typeof window === 'undefined') return null;
           try {
             const raw = safeLocalStorage.getItem(name);
             if (!raw) return null;
-            // Validate JSON syntax without throwing uncaught SyntaxError at boot
-            JSON.parse(raw);
-            return raw;
+            // Throws on corrupted JSON; handled below without surfacing an uncaught SyntaxError at boot
+            return JSON.parse(raw) as StorageValue<any>;
           } catch (err) {
             console.warn(
               `[ZeroBox Storage] Corrupted JSON detected in '${name}'. Quarantining and falling back to clean default state:`,
@@ -2171,13 +2184,17 @@ export const useCtfStore = create<CtfStoreState>()(
             return null;
           }
         },
-        setItem: (name: string, value: string): void => {
-          safeLocalStorage.setItem(name, value);
+        setItem: (name: string, value: StorageValue<any>): void => {
+          if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
+          safeLocalStorage.setItem(name, JSON.stringify(value));
+          lastPersistedSnapshot = value.state;
+          lastPersistedVersion = value.version;
         },
         removeItem: (name: string): void => {
+          lastPersistedSnapshot = undefined;
           safeLocalStorage.removeItem(name);
         },
-      })),
+      },
       migrate: (persistedState: any) => {
         const currentState = useCtfStore?.getState() || {};
         const persisted = persistedState || {};
@@ -2244,23 +2261,48 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         }
       },
-      partialize: (state) => ({
-        currentProfileId: state.currentProfileId,
-        appBrand: state.appBrand,
-        themePreset: state.themePreset,
-        userSolvesReset: state.userSolvesReset,
-        customNotes: state.customNotes,
-        deletedNoteIds: state.deletedNoteIds,
-        machines: toLeanMachines(state.machines),
-        activeTargetId: state.activeTargetId,
-        globalVars: state.globalVars,
-        cheatsheets: state.cheatsheets,
-        activitySessions: state.activitySessions,
-        viewMode: state.viewMode,
-        crtOverlay: state.crtOverlay,
-        soundEnabled: state.soundEnabled,
-        uiScale: state.uiScale,
-      }),
+      partialize: (state) => {
+        const inputs = [
+          state.currentProfileId,
+          state.appBrand,
+          state.themePreset,
+          state.userSolvesReset,
+          state.customNotes,
+          state.deletedNoteIds,
+          state.machines,
+          state.activeTargetId,
+          state.globalVars,
+          state.cheatsheets,
+          state.activitySessions,
+          state.viewMode,
+          state.crtOverlay,
+          state.soundEnabled,
+          state.uiScale,
+        ];
+        // Same persisted inputs => return the identical snapshot so the storage adapter can skip serializing.
+        if (lastPartialize && lastPartialize.inputs.every((v, i) => Object.is(v, inputs[i]))) {
+          return lastPartialize.snapshot;
+        }
+        const snapshot = {
+          currentProfileId: state.currentProfileId,
+          appBrand: state.appBrand,
+          themePreset: state.themePreset,
+          userSolvesReset: state.userSolvesReset,
+          customNotes: state.customNotes,
+          deletedNoteIds: state.deletedNoteIds,
+          machines: toLeanMachines(state.machines),
+          activeTargetId: state.activeTargetId,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          viewMode: state.viewMode,
+          crtOverlay: state.crtOverlay,
+          soundEnabled: state.soundEnabled,
+          uiScale: state.uiScale,
+        };
+        lastPartialize = { inputs, snapshot };
+        return snapshot;
+      },
     }
   )
 );

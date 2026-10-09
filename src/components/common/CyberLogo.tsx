@@ -33,7 +33,7 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
   const activePreset = explicitTheme || currentStoreTheme;
 
   const currentLogo = THEME_LOGO_MAP[activePreset] || DEFAULT_LOGO;
-  const base = currentLogo.replace(/.webp$/, '');
+  const base = currentLogo.replace(/\.webp$/, '');
   const srcSet = `${base}-64.webp 64w, ${base}-128.webp 128w, ${base}-224.webp 224w`;
 
   const containerSizeMap = {

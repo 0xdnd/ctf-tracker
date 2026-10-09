@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Crosshair, 
   Flag, 
@@ -20,7 +19,6 @@ import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
-import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
@@ -97,6 +95,9 @@ const LANES: LaneConfig[] = [
     emptyLine: 'Move finished machines here to log writeups.',
   },
 ];
+
+/** Cards rendered per lane initially, and added per scroll / "Load more" step (keeps the DOM small). */
+const LANE_PAGE_SIZE = 24;
 
 const LANE_DOT_BY_STATUS: Record<string, string> = Object.fromEntries(LANES.map((l) => [l.id, l.dotClass]));
 
@@ -334,7 +335,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - scrollTop - clientHeight < 400) {
       if (limit < laneMachines.length) {
-        setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }));
+        setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + LANE_PAGE_SIZE) }));
       }
     }
   };
@@ -386,14 +387,10 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         className="flex-1 p-2 space-y-2 md:overflow-y-auto scroll-smooth"
       >
         {displayedMachines.map((m, idx) => (
-          <motion.div
+          <div
             key={m.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              ...TACTICAL_SPRING,
-              delay: CASCADE_STAGGER_DELAY(idx),
-            }}
+            className="card-enter"
+            style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
           >
             <KanbanCard
               machine={m}
@@ -406,7 +403,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
               onRetreat={handleRetreat}
               onOpenReport={setReportMachineId}
             />
-          </motion.div>
+          </div>
         ))}
 
         {laneMachines.length > displayedMachines.length && (
@@ -416,18 +413,18 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
             </div>
             <div className="flex items-center gap-2 w-full">
               <button
-                onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }))}
+                onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + LANE_PAGE_SIZE) }))}
                 className="flex-1 py-1.5 px-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-accent text-accent text-xs font-medium transition-colors flex items-center justify-center gap-1 active:scale-[0.97] cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5" /> Load +60 More
+                <Sparkles className="w-3.5 h-3.5" /> Load +{LANE_PAGE_SIZE} More
               </button>
-              {laneMachines.length > limit + 60 && (
+              {laneMachines.length > limit + LANE_PAGE_SIZE && (
                 <button
-                  onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 180) }))}
+                  onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
                   className="py-1.5 px-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary text-xs transition-colors font-medium active:scale-[0.97] cursor-pointer"
-                  title="Expand by larger batch (up to +180) with DOM protection"
+                  title="Render all remaining targets in this lane"
                 >
-                  Load +180
+                  Show all
                 </button>
               )}
             </div>
@@ -530,6 +527,36 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     return 'grid-cols-1 lg:grid-cols-3 xl:grid-cols-5';
   }, [visibleLanes.length]);
 
+  // One memo for every lane: stable per-lane arrays (full lane + displayed slice) so React.memo(KanbanLane) holds
+  // across unrelated parent re-renders. The engaged target is pinned into the displayed slice.
+  const laneData = React.useMemo(() => {
+    const byLane = new Map<PipelineStatus, { laneMachines: Machine[]; displayedMachines: Machine[] }>();
+    for (const lane of LANES) {
+      byLane.set(lane.id, { laneMachines: [], displayedMachines: [] });
+    }
+    for (const m of filteredMachines) {
+      byLane.get(m.status)?.laneMachines.push(m);
+    }
+    for (const lane of LANES) {
+      const entry = byLane.get(lane.id)!;
+      const all = entry.laneMachines;
+      const limit = laneLimits[lane.id] ?? LANE_PAGE_SIZE;
+      if (all.length <= limit) {
+        entry.displayedMachines = all;
+        continue;
+      }
+      let slice = all.slice(0, limit);
+      if (activeTargetId && !slice.some((m) => m.id === activeTargetId)) {
+        const activeM = all.find((m) => m.id === activeTargetId);
+        if (activeM) {
+          slice = [activeM, ...slice.slice(0, limit - 1)];
+        }
+      }
+      entry.displayedMachines = slice;
+    }
+    return byLane;
+  }, [filteredMachines, laneLimits, activeTargetId]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -573,7 +600,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       <div className="lg:hidden sticky top-0 z-20 bg-surface-sunken/95 py-1.5 mb-2 backdrop-blur-md border-b border-subtle">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {visibleLanes.map((lane) => {
-            const laneCount = filteredMachines.filter((m) => m.status === lane.id).length;
+            const laneCount = laneData.get(lane.id)?.laneMachines.length ?? 0;
             const isSelected = mobileActiveLane === lane.id;
             return (
               <button
@@ -601,22 +628,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
       <div className={`grid ${gridColsClass} gap-3.5 items-start transition-colors`}>
         {visibleLanes.map((lane) => {
-          const laneMachines = filteredMachines.filter((m) => m.status === lane.id);
-          const limit = laneLimits[lane.id] ?? 60;
+          const { laneMachines, displayedMachines } = laneData.get(lane.id)!;
+          const limit = laneLimits[lane.id] ?? LANE_PAGE_SIZE;
           const isMobileActive = mobileActiveLane === lane.id;
-
-          const displayedMachines = laneMachines.length <= limit 
-            ? laneMachines 
-            : (() => {
-                let slice = laneMachines.slice(0, limit);
-                if (activeTargetId && !slice.some((m) => m.id === activeTargetId)) {
-                  const activeM = laneMachines.find((m) => m.id === activeTargetId);
-                  if (activeM) {
-                    slice = [activeM, ...slice.slice(0, limit - 1)];
-                  }
-                }
-                return slice;
-              })();
 
           const fullLaneIdx = LANES.findIndex((l) => l.id === lane.id);
           const prevLane = fullLaneIdx > 0 ? LANES[fullLaneIdx - 1].id : undefined;

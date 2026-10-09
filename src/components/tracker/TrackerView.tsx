@@ -104,7 +104,7 @@ const PRIMARY_TRACK_PILLS: PrimaryTrackPill[] = [
 
 export const TrackerView: React.FC = () => {
   const {
-    machines,
+    machines: liveMachines,
     filters,
     setFilters,
     resetFilters,
@@ -132,6 +132,11 @@ export const TrackerView: React.FC = () => {
   );
 
   const location = useLocation();
+
+  // The catalog swap (a few hundred -> ~930 machines) re-derives every list below. Rendering from a deferred
+  // copy lets React keep the UI responsive and interrupt that re-render. (startTransition around a zustand
+  // set() would not, since the store is read through useSyncExternalStore.)
+  const machines = React.useDeferredValue(liveMachines);
 
   const sessionSeed = React.useMemo(() => Math.floor(Math.random() * 1000000), []);
 
@@ -1002,7 +1007,7 @@ export const TrackerView: React.FC = () => {
                     pill.onRemove();
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="inline-flex items-center justify-center w-4 h-4 rounded text-tertiary hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer [@media(pointer:coarse)]:w-8 [@media(pointer:coarse)]:h-8"
+                  className="inline-flex items-center justify-center w-6 h-6 -m-1 rounded text-tertiary hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer [@media(pointer:coarse)]:w-8 [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:m-0"
                   title={`Remove ${pill.label}`}
                   aria-label={`Remove filter ${pill.label}`}
                 >
