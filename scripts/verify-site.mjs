@@ -224,6 +224,44 @@ for (const v of variants) {
   }
   await ctx.close();
 }
+// Deep links GitHub Pages serves through 404.html: /404.js must boot the app shell and leave the URL alone.
+const deepLinks = ['/target/abc-123', '/target/abc-123/focus', '/writeup/xyz', '/Target/abc-123'];
+const deepResults = [];
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
+  await ctx.addInitScript(() => {
+    window.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) =>
+      window.__csp.push(`${e.violatedDirective} blocked ${String(e.blockedURI).slice(0, 60)}`));
+  });
+  for (const url of deepLinks) {
+    const fails = [];
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text().slice(0, 140)); });
+    page.on('pageerror', (e) => errs.push('pageerror: ' + String(e.message).slice(0, 140)));
+    try {
+      const resp = await page.goto(base + url, { waitUntil: 'load' });
+      if (!resp || resp.status() !== 404) fails.push(`HTTP ${resp && resp.status()} (expected 404)`);
+      try { await page.waitForFunction(() => { const r = document.getElementById('root'); return r && r.children.length > 0; }, null, { timeout: 8000 }); }
+      catch { fails.push('React app did not mount (#root has no children)'); }
+      await page.waitForTimeout(300);
+      const st = await page.evaluate(() => ({
+        path: location.pathname,
+        nf: [...document.querySelectorAll('h1')].some((h) => /isn['’]t on the board/.test(h.textContent || '')),
+        csp: window.__csp || [],
+      }));
+      if (st.path !== url) fails.push(`pathname changed to ${st.path}`);
+      if (st.nf) fails.push('404 page h1 is showing');
+      st.csp.forEach((c) => fails.push('CSP violation: ' + c));
+      errs.filter((c) => !c.startsWith('Failed to load resource')).forEach((c) => fails.push('console error: ' + c));
+    } catch (e) { fails.push('navigation/check error: ' + String(e.message).slice(0, 120)); }
+    deepResults.push({ url, fails });
+    await page.close();
+  }
+  await ctx.close();
+}
+
 await browser.close();
 srv.close();
 
@@ -254,5 +292,6 @@ for (const pg of pages) {
     console.log(`    ${f}  [${vs.length === variants.length ? 'all' : vs.join(' ')}]`);
   }
 }
-console.log(`\n${total ? 'FAIL' : 'PASS'}: ${total} failure(s) across ${results.length} page/variant runs${axeSrc ? '' : ' (axe SKIPPED)'}`);
+for (const d of deepResults) { total += d.fails.length; console.log(`deep-link ${d.url}: ${d.fails.length ? d.fails.join("; ") : "ok"}`); }
+console.log(`\n${total ? 'FAIL' : 'PASS'}: ${total} failure(s) across ${results.length} page/variant runs + ${deepResults.length} deep-link boots${axeSrc ? '' : ' (axe SKIPPED)'}`);
 process.exit(total ? 1 : 0);

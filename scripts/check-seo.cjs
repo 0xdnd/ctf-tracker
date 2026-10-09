@@ -104,6 +104,7 @@ for (const [d, list] of descs) if (list.length > 1) offenders.push(`duplicate de
 
 // ---- sitemap integrity ----
 const sm = { urls: 0, images: 0, indexable: 0 };
+const { parseRoutes } = require('./route-parse.cjs');
 const spa404 = { routes: 0 };
 const smFile = path.join(DIST, 'sitemap.xml');
 if (!fs.existsSync(smFile)) offenders.push('sitemap.xml missing from dist');
@@ -163,9 +164,27 @@ else {
   // /404.js must boot the app shell for every client route in src/App.tsx (the ones GitHub Pages has no folder for).
   try {
     const js = fs.readFileSync(path.join(DIST, '404.js'), 'utf8');
-    const spa = new Function('return ' + /var SPA = (\/.*\/);/.exec(js)[1])();
-    const app = fs.readFileSync(path.join(__dirname, '..', 'src', 'App.tsx'), 'utf8');
-    const routes = [...app.matchAll(/<Route path="(\/[^"]*)"/g)].map((m) => m[1]).filter((r) => r !== '/');
+    const spa = new Function('return ' + /var SPA = (\/.*\/i?);/.exec(js)[1])();
+    const srcDir = process.env.CHECK_SEO_SRC || path.join(__dirname, '..', 'src');
+    const found = [];
+    (function walk(d) {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const fp = path.join(d, e.name);
+        if (e.isDirectory()) walk(fp);
+        else if (/\.(tsx?|jsx?)$/.test(e.name)) found.push(fp);
+      }
+    })(srcDir);
+    const routes = [];
+    for (const fp of found) {
+      const text = fs.readFileSync(fp, 'utf8');
+      const rel = path.relative(srcDir, fp).replace(/\\/g, '/');
+      if (/\b(useRoutes|createBrowserRouter)\b/.test(text)) offenders.push(`${rel} uses useRoutes/createBrowserRouter; the 404 drift check only understands <Route>`);
+      const r = parseRoutes(text, rel);
+      r.bad.forEach((b) => offenders.push(b));
+      routes.push(...r.routes);
+    }
+    const uniq = [...new Set(routes.filter((r) => r.startsWith('/') && r !== '/' && !r.includes('*')))];
+    routes.length = 0; routes.push(...uniq);
     spa404.routes = routes.length;
     for (const r of routes) {
       const sample = r.replace(/:\w+/g, 'abc123');

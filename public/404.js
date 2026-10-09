@@ -4,7 +4,7 @@
   var path = location.pathname;
   // Client routes of the app (keep in sync with <Route> in src/App.tsx; scripts/check-seo.cjs verifies it).
   // GitHub Pages has no folder for some of them (/target/<id>, /writeup/<id>, ...), so it serves this file and the app shell must boot here.
-  var SPA = /^\/(?:tracker|methodology|cheatsheets?|notes|field-manual|cpts(?:-manual)?|writeups?|analytics|exam(?:-simulator)?|vault|evidence|loot)\/?$|^\/targets?\/[^\/]+(?:\/focus)?\/?$|^\/writeup\/[^\/]+\/?$/;
+  var SPA = /^\/(?:tracker|methodology|cheatsheets?|notes|field-manual|cpts(?:-manual)?|writeups?|analytics|exam(?:-simulator)?|vault|evidence|loot)\/?$|^\/targets?\/[^\/]+(?:\/focus)?\/?$|^\/writeup\/[^\/]+\/?$/i;
   if (SPA.test(path)) {
     de.hidden = true;
     fetch('/app-shell.html', { credentials: 'same-origin' })
