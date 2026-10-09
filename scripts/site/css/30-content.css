@@ -54,3 +54,11 @@ th,td{padding:10px}
 tbody tr:hover{background:var(--card)}
 }
 @media(prefers-reduced-motion:reduce){.chips a,.card{transition:none}}
+/* 404 */
+.nf{padding-top:var(--s7)}
+.nf .lead{max-width:54ch}
+.nf .cta-actions{margin-bottom:var(--s6)}
+.nf-term{max-width:34rem;margin-bottom:var(--s7)}
+.nf-st{color:var(--text);font-weight:600}
+.nf .chips a{min-height:44px}
+@media(prefers-reduced-motion:no-preference){.nf-term{animation:rise 420ms var(--spring) 80ms backwards}}

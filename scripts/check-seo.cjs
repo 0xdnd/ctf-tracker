@@ -5,6 +5,10 @@
 //   og/twitter   : title and description match the page's own title and description
 //   duplicates   : the same title or description on two pages
 //   json-ld      : every application/ld+json block parses
+//   sitemap      : dist/sitemap.xml is well formed (no changefreq/priority, W3C dates, no duplicates, absolute https URLs),
+//                  every URL has a dist file whose canonical equals the URL, every indexable page (has a title, no noindex)
+//                  is listed, 404.html / app-shell.html are not, and every <image:loc> resolves to a dist file
+//   404          : dist/404.html is noindex, has no canonical and returns the designed page
 // Usage: node scripts/check-seo.cjs [--dist <dir>] [--verbose]
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +39,9 @@ const attr = (html, re) => {
   return m ? decode(m[1]) : null;
 };
 
+const ORIGIN = 'https://ctftracker.com';
 const offenders = [];
+const pageInfo = []; // { name, url, file, canonical, noindex, hasTitle }
 const titles = new Map();
 const descs = new Map();
 let pages = 0;
@@ -48,6 +54,12 @@ for (const file of walk(DIST)) {
   if (title === null) continue; // not a page (verification stub etc.)
   pages++;
   const name = '/' + rel(file).replace(/index\.html$/, '');
+  pageInfo.push({
+    name,
+    file,
+    canonical: attr(html, /<link rel="canonical" href="([^"]*)"/),
+    noindex: /<meta name="robots" content="[^"]*noindex/.test(html),
+  });
   const desc = attr(html, /<meta name="description" content="([^"]*)"/);
   const bad = (what) => offenders.push(`${name}  ${what}`);
 
@@ -90,7 +102,85 @@ for (const file of walk(DIST)) {
 for (const [t, list] of titles) if (list.length > 1) offenders.push(`duplicate title on ${list.join(', ')}: ${t}`);
 for (const [d, list] of descs) if (list.length > 1) offenders.push(`duplicate description on ${list.join(', ')}: ${d}`);
 
+// ---- sitemap integrity ----
+const sm = { urls: 0, images: 0, indexable: 0 };
+const spa404 = { routes: 0 };
+const smFile = path.join(DIST, 'sitemap.xml');
+if (!fs.existsSync(smFile)) offenders.push('sitemap.xml missing from dist');
+else {
+  const xml = fs.readFileSync(smFile, 'utf8');
+  if (!/^<\?xml version="1\.0" encoding="UTF-8"\?>\s*<urlset\b/.test(xml) || !/<\/urlset>\s*$/.test(xml)) offenders.push('sitemap.xml is not a <urlset> document');
+  if (/<(changefreq|priority)\b/.test(xml)) offenders.push('sitemap.xml still has <changefreq> or <priority> (Google ignores both)');
+  const blocks = [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => m[1]);
+  if (blocks.length !== (xml.match(/<url>/g) || []).length) offenders.push('sitemap.xml has an unclosed <url>');
+  const fileFor = (u) => {
+    const p = u.slice(ORIGIN.length).replace(/^\//, '');
+    return path.join(DIST, p === '' || p.endsWith('/') ? p + 'index.html' : p);
+  };
+  const byName = new Map(pageInfo.map((p) => [ORIGIN + p.name, p]));
+  const seenLoc = new Set();
+  for (const b of blocks) {
+    const loc = decode((/<loc>([^<]*)<\/loc>/.exec(b) || [])[1] || '').trim();
+    const bad = (what) => offenders.push(`sitemap ${loc || '(no loc)'}  ${what}`);
+    sm.urls++;
+    if (!loc.startsWith(ORIGIN + '/')) { bad(`not an absolute ${ORIGIN} URL`); continue; }
+    if (seenLoc.has(loc)) bad('duplicate URL');
+    seenLoc.add(loc);
+    if (/\.html$/.test(loc) || /[?#]/.test(loc)) bad('not a clean page URL (html file, query or fragment)');
+    const lm = (/<lastmod>([^<]*)<\/lastmod>/.exec(b) || [])[1];
+    if (!lm || !/^\d{4}-\d{2}-\d{2}$/.test(lm) || Number.isNaN(Date.parse(lm))) bad(`lastmod missing or not YYYY-MM-DD: ${lm}`);
+    if (!fs.existsSync(fileFor(loc))) { bad('no matching file in dist'); continue; }
+    const page = byName.get(loc);
+    if (!page) bad('file is not an HTML page with a title');
+    else {
+      if (page.noindex) bad('page is noindex');
+      if (page.canonical !== loc) bad(`canonical differs from the sitemap URL: ${page.canonical}`);
+    }
+    for (const im of b.matchAll(/<image:loc>([^<]*)<\/image:loc>/g)) {
+      sm.images++;
+      const u = decode(im[1]).trim();
+      if (!u.startsWith(ORIGIN + '/') || !fs.existsSync(fileFor(u))) bad(`image has no matching file in dist: ${u}`);
+    }
+  }
+  if (/<image:image>/.test(xml) && !/xmlns:image="http:\/\/www\.google\.com\/schemas\/sitemap-image\/1\.1"/.test(xml)) offenders.push('sitemap.xml uses <image:image> without the xmlns:image declaration');
+  for (const p of pageInfo) {
+    if (p.noindex) continue;
+    sm.indexable++;
+    if (!p.canonical) offenders.push(`${p.name}  indexable page has no canonical`);
+    if (!seenLoc.has(ORIGIN + p.name)) offenders.push(`${p.name}  indexable page is missing from sitemap.xml`);
+  }
+}
+
+// ---- 404 page ----
+const f404 = path.join(DIST, '404.html');
+if (!fs.existsSync(f404)) offenders.push('404.html missing from dist');
+else {
+  const h = fs.readFileSync(f404, 'utf8');
+  if (!/<meta name="robots" content="[^"]*noindex/.test(h)) offenders.push("404.html is not noindex");
+  if (/<link rel="canonical"/.test(h)) offenders.push('404.html has a canonical');
+  if (!/<h1>[^<]*isn't on the board/.test(h) && !/<h1>[^<]*isn&#39;t on the board/.test(h)) offenders.push('404.html is not the designed 404 page');
+  if (!/<script src="\/404\.js\?v=[0-9a-f]{8}"><\/script>/.test(h)) offenders.push('404.html does not load /404.js');
+  // /404.js must boot the app shell for every client route in src/App.tsx (the ones GitHub Pages has no folder for).
+  try {
+    const js = fs.readFileSync(path.join(DIST, '404.js'), 'utf8');
+    const spa = new Function('return ' + /var SPA = (\/.*\/);/.exec(js)[1])();
+    const app = fs.readFileSync(path.join(__dirname, '..', 'src', 'App.tsx'), 'utf8');
+    const routes = [...app.matchAll(/<Route path="(\/[^"]*)"/g)].map((m) => m[1]).filter((r) => r !== '/');
+    spa404.routes = routes.length;
+    for (const r of routes) {
+      const sample = r.replace(/:\w+/g, 'abc123');
+      if (!spa.test(sample) || !spa.test(sample + '/')) offenders.push(`404.js does not boot the app for route ${r} (tested ${sample})`);
+    }
+    for (const nope of ['/does-not-exist', '/machines/nope', '/tracker/xyz', '/target', '/targets/a/b']) {
+      if (spa.test(nope)) offenders.push(`404.js treats ${nope} as an app route`);
+    }
+  } catch (e) {
+    offenders.push('404.js app-route pattern could not be checked: ' + e.message);
+  }
+}
+
 console.log(`check-seo: ${pages} pages, ${ldBlocks} JSON-LD blocks, title <= ${MAX_TITLE}, description <= ${MAX_DESC}`);
+console.log(`check-seo: sitemap ${sm.urls} URLs, ${sm.images} images, ${sm.indexable} indexable pages, 404 boots ${spa404.routes} app routes`);
 if (VERBOSE || offenders.length) for (const o of offenders) console.log('  OFFENDER ' + o);
 console.log(`check-seo: ${offenders.length} offenders`);
 process.exit(offenders.length ? 1 : 0);

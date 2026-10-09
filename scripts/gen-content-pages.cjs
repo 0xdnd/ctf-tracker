@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { getModel, getGuides, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
-const { ORIGIN, esc, renderPage, STATIC_CSS, ctaBox, fitTitle, truncate, techArticleLd } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ctaBox, fitTitle, truncate, techArticleLd } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
@@ -837,8 +837,10 @@ emit(
 // ===================== Guides (scripts/lib/guides.cjs) =====================
 for (const g of guides) emit('guide', g.path, g.html, 0.7, g.lastmod || BUILD_DATE);
 
-// ===================== static.css, sitemap =====================
+// ===================== static.css, 404, sitemap =====================
 fs.writeFileSync(path.join(distDir, 'static.css'), STATIC_CSS, 'utf8');
+// Designed 404 (replaces the plain app-shell copy postbuild.cjs leaves behind). Never listed in the sitemap.
+fs.writeFileSync(path.join(distDir, '404.html'), render404Page(), 'utf8');
 
 // lastmod comes from the last git commit of each page's source (BUILD_DATE while that source has uncommitted edits).
 // <priority> and <changefreq> are deliberately omitted: Google ignores both.
@@ -850,12 +852,34 @@ const seen = new Set();
 const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, lastmod: p.lastmod || BUILD_DATE }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
 const missing = all.filter((u) => !fs.existsSync(path.join(distDir, u.loc.replace(/^\/|\/$/g, ''), 'index.html')));
 if (missing.length) throw new Error('gen-content-pages: sitemap URLs without a file in dist: ' + missing.map((u) => u.loc).join(', '));
+// Image sitemap: the landing screenshots (largest width of each) so Google Images can index them under the landing URL.
+const LANDING_IMAGES = ['hero-app', 'burn-chart', 'graph', 'table', 'vault', 'exam'];
+let landingShots = [];
+try {
+  landingShots = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8'));
+} catch (e) {
+  console.warn('gen-content-pages: scripts/templates/landing-shots.json unreadable; sitemap has no image entries');
+}
+const imagesFor = (loc) => {
+  if (loc !== '/') return [];
+  return LANDING_IMAGES.map((name) => {
+    const shot = landingShots.find((x) => x.name === name);
+    const best = shot && Array.isArray(shot.srcset) && shot.srcset.reduce((a, b) => (b.w > a.w ? b : a), { w: 0 });
+    return best && best.src ? best.src : null;
+  }).filter(Boolean);
+};
+const missingImages = all.flatMap((u) => imagesFor(u.loc)).filter((src) => !fs.existsSync(path.join(distDir, src.replace(/^\//, ''))));
+if (missingImages.length) throw new Error('gen-content-pages: sitemap images without a file in dist: ' + missingImages.join(', '));
+const urlXml = (u) => {
+  const imgs = imagesFor(u.loc).map((src) => `<image:image><image:loc>${ORIGIN}${src}</image:loc></image:image>`).join('');
+  return `  <url><loc>${ORIGIN}${u.loc}</loc><lastmod>${u.lastmod}</lastmod>${imgs}</url>`;
+};
 const sitemap =
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-  all.map((u) => `  <url><loc>${ORIGIN}${u.loc}</loc><lastmod>${u.lastmod}</lastmod></url>`).join('\n') +
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n` +
+  all.map(urlXml).join('\n') +
   `\n</urlset>\n`;
 fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap, 'utf8');
 
 console.log(`machines: ${model.machines.length} total, ${withPage.length} owner-solved pages`);
 console.log('pages by type:', counts, `total generated: ${pages.length}`);
-console.log(`sitemap URLs: ${all.length}`);
+console.log(`sitemap URLs: ${all.length}, images: ${all.reduce((n, u) => n + imagesFor(u.loc).length, 0)}`);

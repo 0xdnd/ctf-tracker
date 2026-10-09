@@ -314,4 +314,56 @@ ${beaconTag()}</body>
 `;
 }
 
-module.exports = { ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
+/** Designed 404 page (dist/404.html). Root-relative URLs only, because GitHub Pages serves it at any depth.
+ *  /404.js boots the app shell for client routes that have no folder (e.g. /target/<id>) and fills the requested path.
+ *  The CSP equals the app shell's: the shell is document.write()n into this document and a stricter policy would carry over and break it. */
+const NF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', '404.js'), 'utf8');
+const NF_SRC = '/404.js?v=' + crypto.createHash('sha1').update(NF_JS).digest('hex').slice(0, 8);
+const SHELL_CSP = "default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss: https://api.anthropic.com; media-src 'self' data: blob:;";
+const NF_LINKS = [
+  ['/machines/', 'Machines'],
+  ['/cheatsheet-library/', 'Cheatsheets'],
+  ['/methodology-guide/', 'Methodology'],
+  ['/revshells/', 'Reverse shells'],
+  ['/exam/', 'Exam simulator'],
+  ['/#guides', 'Guides'],
+];
+function render404Page() {
+  const chips = NF_LINKS.map(([h, l]) => `<a href="${h}">${esc(l)}</a>`).join('');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page not found | ZeroBox</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#09090b" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=12" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=12" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=12" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <script src="${THEME_SRC}"></script>
+  <script src="${NF_SRC}"></script>
+  <link rel="stylesheet" href="${CSS_HREF}" />
+  <meta http-equiv="Content-Security-Policy" content="${SHELL_CSP}" />
+</head>
+<body>
+${siteHeader({ current: '' })}
+  <div class="wrap">
+    <main id="main" class="nf">
+      <h1>This box isn't on the board</h1>
+      <p class="lead">There is no page at <code data-nf-path>this address</code>. The link may be old or mistyped.</p>
+      <div class="cta-actions"><a class="btn" href="/">Back to home</a><a class="btn btn-secondary" href="/tracker/">Open tracker</a></div>
+      <pre class="code nf-term" tabindex="0" role="region" aria-label="Server response for the requested path"><code><span class="t-dim">$</span> curl -I <span data-nf-path>/missing-page</span>
+HTTP/2 <span class="nf-st">404</span></code></pre>
+      <h2>Popular destinations</h2>
+      <div class="chips">${chips}</div>
+    </main>
+  </div>
+${siteFooter({ analyticsNote: '' })}
+</body>
+</html>
+`;
+}
+
+module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };

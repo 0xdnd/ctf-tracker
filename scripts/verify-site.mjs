@@ -87,7 +87,10 @@ function pageList() {
     ['revshells', '/revshells/'], ['cheatsheet', firstSub('cheatsheets')],
     ['methodology', '/methodology-guide/'], ['techniques', '/techniques/'],
   ];
-  return want.map(([name, url]) => ({ name, url, missing: !url || !resolveFile(url) }));
+  const pages = want.map(([name, url]) => ({ name, url, status: 200, missing: !url || !resolveFile(url) }));
+  // The 404 page is served for any unknown path, with status 404 (as GitHub Pages does).
+  pages.push({ name: 'not-found', url: '/this-page-does-not-exist/', status: 404, missing: !fs.existsSync(path.join(DIST, '404.html')) });
+  return pages;
 }
 
 if (flag('--html-validate')) {
@@ -175,13 +178,21 @@ for (const v of variants) {
     const consoleErrs = [];
     page.on('console', (m) => { if (m.type() === 'error') consoleErrs.push(m.text().slice(0, 140)); });
     page.on('pageerror', (e) => consoleErrs.push('pageerror: ' + String(e.message).slice(0, 140)));
+    // Chrome logs the 404 document itself as a console error; judge the 404 page by its subresources instead.
+    const badRes = [];
+    page.on('response', (r) => { if (r.status() >= 400 && r.request().resourceType() !== 'document') badRes.push(`${r.status()} ${r.url().replace(base, '')}`); });
     try {
       const resp = await page.goto(base + pg.url, { waitUntil: 'load' });
-      if (!resp || resp.status() !== 200) fails.push(`HTTP ${resp && resp.status()}`);
+      if (!resp || resp.status() !== pg.status) fails.push(`HTTP ${resp && resp.status()} (expected ${pg.status})`);
       await page.waitForTimeout(300);
+      if (pg.name === 'not-found') {
+        const shown = await page.evaluate(() => [...document.querySelectorAll('[data-nf-path]')].map((e) => e.textContent));
+        if (!shown.length || shown.some((t) => t !== '/this-page-does-not-exist/')) fails.push(`404 page does not show the requested path: ${JSON.stringify(shown)}`);
+      }
       fails.push(...await page.evaluate(inPageChecks, pg.name === 'home'));
       (await page.evaluate(() => window.__csp)).forEach((c) => fails.push('CSP violation: ' + c));
-      consoleErrs.forEach((c) => fails.push('console error: ' + c));
+      consoleErrs.filter((c) => !(pg.status === 404 && c.startsWith('Failed to load resource'))).forEach((c) => fails.push('console error: ' + c));
+      badRes.forEach((c) => fails.push('failed subresource: ' + c));
       if (axeSrc) {
         try {
           await page.evaluate(axeSrc); // evaluate bypasses page CSP
