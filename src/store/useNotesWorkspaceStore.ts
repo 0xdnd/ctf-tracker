@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CptsNoteEntry, getAllCptsNotes, getNoteById } from '../utils/obsidianManualUtils';
+import { CptsNoteEntry, getAllCptsNotes } from '../utils/obsidianManualUtils';
 import { useCtfStore } from './useCtfStore';
 
 export type DockSize = 'normal' | 'expanded';
@@ -177,7 +177,8 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       getActiveNote: () => {
         const state = get();
         const customNotes = useCtfStore.getState().customNotes || [];
-        const all = [...customNotes, ...getAllCptsNotes()];
+        const userNotes = useCtfStore.getState().userNotes || [];
+        const all = [...customNotes, ...userNotes, ...getAllCptsNotes()];
 
         // 1. Try currently active tab
         if (state.activeTabId) {
@@ -198,7 +199,8 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       getOpenNotes: () => {
         const state = get();
         const custom = useCtfStore.getState().customNotes || [];
-        const all = [...custom, ...getAllCptsNotes()];
+        const userNotes = useCtfStore.getState().userNotes || [];
+        const all = [...custom, ...userNotes, ...getAllCptsNotes()];
         const map = new Map(all.map((n) => [n.id, n]));
 
         const matched = state.openTabIds
@@ -223,7 +225,8 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
         }
 
         // Auto-sanitize legacy invalid tab IDs (e.g. stale '00_methodology_pt')
-        const all = [...(useCtfStore.getState().customNotes || []), ...getAllCptsNotes()];
+        const userNotes = useCtfStore.getState().userNotes || [];
+        const all = [...(useCtfStore.getState().customNotes || []), ...userNotes, ...getAllCptsNotes()];
         const validIds = new Set(all.map((n) => n.id));
         const defaultId = all.find((n) => n.id === '01-recon-port-scanning')?.id || all[0]?.id || '01-recon-port-scanning';
 
