@@ -15,7 +15,6 @@
 }
 @keyframes rise-lg{from{opacity:0;transform:translateY(18px)}}
 @keyframes bar{to{transform:scaleX(1)}}
-@keyframes drift-win{to{translate:0 -14px}}
 @keyframes drift-pace{to{translate:0 -34px}}
 @keyframes lb-in{from{opacity:0;transform:scale(.97)}}
 @supports (animation-timeline:view()){
@@ -25,8 +24,7 @@
 @supports (animation-timeline:scroll()){
 body.landing::before{content:"";position:fixed;inset:0 0 auto 0;z-index:60;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:0 50%;pointer-events:none;animation:bar linear both;animation-timeline:scroll(root)}
 @media(min-width:640px){
-/* Hero depth on scroll: the window and the pacing card drift at different rates (independent `translate`, so hover and entrance transforms are untouched). */
-.hero-media .win{animation:drift-win linear both;animation-timeline:scroll(root);animation-range:0 640px}
+/* Hero depth on scroll: the pacing card drifts over the static window (independent `translate`, so hover and entrance transforms are untouched). */
 .pace{animation:pace-in 560ms var(--spring) 80ms backwards,drift-pace linear both;animation-timeline:auto,scroll(root);animation-range:normal,0 640px}
 }
 }
@@ -36,7 +34,6 @@ body.landing::before{content:"";position:fixed;inset:0 0 auto 0;z-index:60;heigh
 /* Pointer depth: the script sets --tx/--ty/--mx/--my on a hovered frame and --hx/--hy (-1..1) on the hero media. */
 .frame.is-tilting{transform:perspective(1100px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));transition:transform 90ms linear,box-shadow var(--spring-dur) var(--spring);box-shadow:0 0 0 1px rgb(255 255 255/.16),0 34px 60px -22px rgb(0 0 0/.8)}
 .frame.is-tilting::after{opacity:1}
-.hero-media .win{transform:translate3d(calc(var(--hx,0)*-7px),calc(var(--hy,0)*-5px),0)}
 .hero-media .pace{transform:translate3d(calc(var(--hx,0)*13px),calc(var(--hy,0)*10px),0)}
 }
 @supports (interpolate-size:allow-keywords) and selector(::details-content){

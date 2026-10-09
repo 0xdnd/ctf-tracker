@@ -107,12 +107,12 @@ function siteHeader({ current } = {}) {
     <a class="brand" href="/"><img src="/icon-192.png" width="32" height="32" alt="" aria-hidden="true" /><span class="brand-name">ZeroBox</span></a>
     <nav class="nav-inline" aria-label="Primary">${links}</nav>
     <a class="icon-link" href="${REPO}" rel="noopener" aria-label="ZeroBox source on GitHub">${ICON.github}</a>
-    <a class="icon-link" href="${LINKEDIN}" rel="noopener" aria-label="Daniel Dayan on LinkedIn">${ICON.linkedin}</a>
+    <a class="icon-link" href="${LINKEDIN}" rel="me noopener" aria-label="Daniel Dayan on LinkedIn">${ICON.linkedin}</a>
     <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch to light theme">${THEME_ICONS}</button>
     <a class="btn btn-sm" href="/tracker/">Open tracker</a>
     <details class="nav-menu">
       <summary>Menu</summary>
-      <nav class="nav-panel" aria-label="Primary (menu)">${links}<span class="nav-social"><a href="${REPO}" rel="noopener">${ICON.github}GitHub</a><a href="${LINKEDIN}" rel="noopener">${ICON.linkedin}LinkedIn</a></span></nav>
+      <nav class="nav-panel" aria-label="Primary (menu)">${links}<span class="nav-social"><a href="${REPO}" rel="noopener">${ICON.github}GitHub</a><a href="${LINKEDIN}" rel="me noopener">${ICON.linkedin}LinkedIn</a></span></nav>
     </details>
   </div>
 </header>`;
@@ -126,7 +126,7 @@ function siteFooter({ analyticsNote: note } = {}) {
         `<div><h2>${esc(h)}</h2><ul>${links
           .map(([p, l]) => {
             const external = /^https?:/.test(p);
-            return `<li><a href="${p}"${external ? ' rel="noopener"' : ''}>${esc(l)}${external ? ICON.ext : ''}</a></li>`;
+            return `<li><a href="${p}"${external ? (p === GITHUB_PROFILE || p === LINKEDIN ? ' rel="me noopener"' : ' rel="noopener"') : ''}>${esc(l)}${external ? ICON.ext : ''}</a></li>`;
           })
           .join('')}</ul></div>`
     )

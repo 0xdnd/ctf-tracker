@@ -68,7 +68,7 @@
         </div>
         <p class="hero-social">
           <a class="social-link" href="{{REPO_HREF}}" rel="noopener">{{ICON_GITHUB}}Star on GitHub</a>
-          <a class="social-link" href="{{LINKEDIN_HREF}}" rel="noopener">{{ICON_LINKEDIN}}Built by Daniel Dayan</a>
+          <a class="social-link" href="{{LINKEDIN_HREF}}" rel="me noopener">{{ICON_LINKEDIN}}Built by Daniel Dayan</a>
         </p>
       </div>
       <div class="hero-media">
@@ -224,7 +224,7 @@ Nmap scan report for 10.129.14.21
         <p><strong>Built and maintained by Daniel Dayan.</strong> Star the project, report a bug or say hello.</p>
         <div class="cta-row">
           <a class="btn btn-secondary btn-sm" href="{{REPO_HREF}}" rel="noopener">{{ICON_GITHUB}}Star on GitHub</a>
-          <a class="btn btn-secondary btn-sm" href="{{LINKEDIN_HREF}}" rel="noopener">{{ICON_LINKEDIN}}Connect on LinkedIn</a>
+          <a class="btn btn-secondary btn-sm" href="{{LINKEDIN_HREF}}" rel="me noopener">{{ICON_LINKEDIN}}Connect on LinkedIn</a>
         </div>
       </div>
     </div>
@@ -269,13 +269,20 @@ Nmap scan report for 10.129.14.21
       var hero = d.querySelector('.hero');
       var media = d.querySelector('.hero-media');
       if (hero && media) {
+        var hpending = 0, hlast = null;
         hero.addEventListener('pointermove', function (e) {
           if (!canMove(e)) return;
-          var r = hero.getBoundingClientRect();
-          media.style.setProperty('--hx', Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2)).toFixed(3));
-          media.style.setProperty('--hy', Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2)).toFixed(3));
+          hlast = e;
+          if (hpending) return;
+          hpending = raf(function () {
+            hpending = 0;
+            var r = hero.getBoundingClientRect();
+            media.style.setProperty('--hx', Math.max(-1, Math.min(1, ((hlast.clientX - r.left) / r.width - 0.5) * 2)).toFixed(3));
+            media.style.setProperty('--hy', Math.max(-1, Math.min(1, ((hlast.clientY - r.top) / r.height - 0.5) * 2)).toFixed(3));
+          });
         });
         hero.addEventListener('pointerleave', function () {
+          if (hpending) { window.cancelAnimationFrame(hpending); hpending = 0; }
           media.style.removeProperty('--hx');
           media.style.removeProperty('--hy');
         });
