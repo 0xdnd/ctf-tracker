@@ -6,13 +6,9 @@ import {
   ShieldCheck, 
   Award, 
   Terminal, 
-  Code2, 
   BookOpen, 
   Cpu, 
-  CheckCircle2, 
-  Sparkles,
   Zap,
-  Target,
   Scale,
   Copy,
   Check,
@@ -344,9 +340,9 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-0.5">
-                <div className="text-primary font-semibold text-base">Zero egress</div>
+                <div className="text-primary font-semibold text-base">Local-first</div>
                 <div className="text-primary font-medium text-xs">Local-first engine</div>
-                <div className="text-[11px] text-muted">Offline-first Zustand state. No data leaves this machine.</div>
+                <div className="text-[11px] text-muted">Offline-first Zustand state. No telemetry. Optional AI uses your own key and only runs when you send.</div>
               </div>
             </div>
           </div>

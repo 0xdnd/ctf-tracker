@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Check, X, Clipboard, Globe, Shield, Terminal, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Crosshair, X, Clipboard, Globe, ArrowRight } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';

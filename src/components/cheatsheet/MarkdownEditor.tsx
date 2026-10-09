@@ -54,7 +54,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   minHeight = '400px',
 }) => {
   const [content, setContent] = useState<string>(initialContent);
-  const [isDirty, setIsDirty] = useState<boolean>(false);
+  const [, setIsDirty] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty'>('saved');
   const [calloutDropdownOpen, setCalloutDropdownOpen] = useState<boolean>(false);
   const [varDropdownOpen, setVarDropdownOpen] = useState<boolean>(false);
@@ -74,10 +74,19 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   // Execute debounced save to store
   const executeSave = useCallback((rawText: string) => {
     setSaveStatus('saving');
-    updateNoteContent(noteId, rawText);
-    if (onSave) onSave();
-    setIsDirty(false);
-    setSaveStatus('saved');
+    // updateNoteContent is async (promoting a catalog note lazy-loads its chunk): only report "saved"
+    // once it resolves, and keep the edit marked dirty if it rejects.
+    Promise.resolve(updateNoteContent(noteId, rawText))
+      .then(() => {
+        if (onSave) onSave();
+        setIsDirty(false);
+        setSaveStatus('saved');
+      })
+      .catch((err) => {
+        console.warn('[ZeroBox] Could not save note', err);
+        setIsDirty(true);
+        setSaveStatus('dirty');
+      });
   }, [noteId, updateNoteContent, onSave]);
 
   // Handle text changes with debounce

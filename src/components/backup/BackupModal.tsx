@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   X, 
   Database, 
@@ -9,27 +9,57 @@ import {
   AlertTriangle, 
   RotateCcw,
   CheckCircle2,
-  FileJson,
   Sparkles,
   Package,
   Zap,
-  CheckCircle,
-  FileText,
   Flame,
   ShieldAlert,
   ChevronDown,
   ChevronUp,
   Terminal,
   HelpCircle,
-  Shield
+  Shield,
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
-import { generateObsidianVaultZip } from '../../utils/obsidianVaultExporter';
 import { extractCandidateNames, matchCandidateNamesToCatalog } from '../../utils/bulkPwnImporter';
 import { PipelineStatus } from '../../types';
+import {
+  BackupCryptoError,
+  MIN_PASSPHRASE_LENGTH,
+  WRONG_PASSPHRASE_MESSAGE,
+  decryptBackup,
+  encryptBackup,
+  isCryptoAvailable,
+  isEncryptedBackup,
+  passphraseLength,
+  passphraseStrength,
+  type PassphraseStrength,
+} from '../../utils/backupCrypto';
+
+const STRENGTH_LABEL: Record<PassphraseStrength, string> = {
+  'too-short': 'Too short',
+  weak: 'Weak',
+  fair: 'Fair',
+  strong: 'Strong',
+};
+
+const STRENGTH_CLASS: Record<PassphraseStrength, string> = {
+  'too-short': 'text-callout-warn-fg',
+  weak: 'text-callout-warn-fg',
+  fair: 'text-secondary',
+  strong: 'text-callout-success-fg',
+};
+
+const describeCryptoError = (err: unknown): string =>
+  err instanceof BackupCryptoError ? err.message : WRONG_PASSPHRASE_MESSAGE;
+
+const PASSPHRASE_INPUT_CLASS =
+  'w-full p-2.5 rounded bg-surface-card border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/50 font-mono';
 
 export const BackupModal: React.FC = () => {
   const {
@@ -72,6 +102,16 @@ export const BackupModal: React.FC = () => {
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Optional passphrase encryption (export) and decryption (import)
+  const [encryptExport, setEncryptExport] = useState(false);
+  const [exportPassphrase, setExportPassphrase] = useState('');
+  const [exportPassphraseConfirm, setExportPassphraseConfirm] = useState('');
+  const [importPassphrase, setImportPassphrase] = useState('');
+  const [exportError, setExportError] = useState('');
+  const [cryptoBusy, setCryptoBusy] = useState<'export' | 'import' | null>(null);
+  const cryptoBusyRef = useRef(false);
+  const cryptoOpToken = useRef(0);
+
   // Bulk Pwn Importer State
   const [bulkInputText, setBulkInputText] = useState('');
   const [targetStatus, setTargetStatus] = useState<PipelineStatus>('completed');
@@ -102,16 +142,70 @@ export const BackupModal: React.FC = () => {
     return machines.filter((m) => m.status === 'completed' || m.status === 'foothold').length;
   }, [machines]);
 
+  const cryptoAvailable = isCryptoAvailable();
+  const importIsEncrypted = useMemo(() => isEncryptedBackup(importText), [importText]);
+
+  // Drop secrets from memory and abandon any in-flight key derivation when the modal closes.
+  useEffect(() => {
+    if (!backupModalOpen) {
+      cryptoOpToken.current += 1;
+      cryptoBusyRef.current = false;
+      setCryptoBusy(null);
+      setExportPassphrase('');
+      setExportPassphraseConfirm('');
+      setImportPassphrase('');
+      setExportError('');
+    }
+  }, [backupModalOpen]);
+
   if (!backupModalOpen) return null;
 
-  const handleDownloadBackup = () => {
-    const jsonStr = exportBackup({ redactSecrets });
-    const blob = new Blob([jsonStr], { type: 'application/json' });
+  const encrypting = encryptExport && cryptoAvailable;
+  const exportPassphraseLength = passphraseLength(exportPassphrase);
+  const exportPassphraseTooShort = exportPassphrase.length > 0 && exportPassphraseLength < MIN_PASSPHRASE_LENGTH;
+  const exportPassphraseMismatch =
+    exportPassphraseConfirm.length > 0 &&
+    exportPassphrase.normalize('NFC') !== exportPassphraseConfirm.normalize('NFC');
+  const exportPassphraseValid =
+    exportPassphraseLength >= MIN_PASSPHRASE_LENGTH &&
+    exportPassphrase.normalize('NFC') === exportPassphraseConfirm.normalize('NFC');
+  const exportBlocked = cryptoBusy !== null || (encrypting && !exportPassphraseValid);
+  const strength = passphraseStrength(exportPassphrase);
+  const exportPassphraseNotice = exportPassphraseTooShort
+    ? `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`
+    : exportPassphraseMismatch
+      ? 'Passphrases do not match.'
+      : '';
+
+  /** Encrypts the current backup JSON; resolves null when blocked, abandoned, or failed. */
+  const buildEncryptedExport = async (): Promise<string | null> => {
+    if (cryptoBusyRef.current || !exportPassphraseValid) return null;
+    const token = ++cryptoOpToken.current;
+    cryptoBusyRef.current = true;
+    setExportError('');
+    setCryptoBusy('export');
+    try {
+      const envelope = await encryptBackup(exportBackup({ redactSecrets }), exportPassphrase);
+      return cryptoOpToken.current === token ? envelope : null;
+    } catch (err) {
+      if (cryptoOpToken.current === token) setExportError(describeCryptoError(err));
+      return null;
+    } finally {
+      if (cryptoOpToken.current === token) {
+        cryptoBusyRef.current = false;
+        setCryptoBusy(null);
+      }
+    }
+  };
+
+  const triggerBackupDownload = (text: string, encrypted: boolean) => {
+    const blob = new Blob([text], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.download = `zerobox_ctf_backup_${redactSecrets ? 'redacted_' : ''}${dateStr}.json`;
+    const variant = encrypted ? 'encrypted_' : redactSecrets ? 'redacted_' : '';
+    link.download = `zerobox_ctf_backup_${variant}${dateStr}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -119,9 +213,23 @@ export const BackupModal: React.FC = () => {
     if (soundEnabled) playCyberSound('root');
   };
 
+  const handleDownloadBackup = async () => {
+    if (!encrypting) {
+      triggerBackupDownload(exportBackup({ redactSecrets }), false);
+      return;
+    }
+    const envelope = await buildEncryptedExport();
+    if (envelope !== null) {
+      triggerBackupDownload(envelope, true);
+      setExportPassphrase('');
+      setExportPassphraseConfirm('');
+    }
+  };
+
   const handleExportObsidianVault = async () => {
     try {
       setIsExportingVault(true);
+      const { generateObsidianVaultZip } = await import('../../utils/obsidianVaultExporter');
       const zipBlob = await generateObsidianVaultZip(machines, cheatsheets);
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
@@ -140,9 +248,15 @@ export const BackupModal: React.FC = () => {
     }
   };
 
-  const handleCopyBackup = () => {
-    const jsonStr = exportBackup({ redactSecrets });
-    navigator.clipboard.writeText(jsonStr);
+  const handleCopyBackup = async () => {
+    const text = encrypting ? await buildEncryptedExport() : exportBackup({ redactSecrets });
+    if (text === null) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setExportError('Could not write to the clipboard. Use Download instead.');
+      return;
+    }
     setCopied(true);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopied(false), 2000);
@@ -161,13 +275,41 @@ export const BackupModal: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const handleExecuteImport = () => {
-    if (!importText.trim()) return;
+  const handleExecuteImport = async () => {
+    if (!importText.trim() || cryptoBusyRef.current) return;
+    let payload = importText;
+    if (importIsEncrypted) {
+      if (!importPassphrase) {
+        setImportStatus('error');
+        setErrorMessage('Enter the passphrase to decrypt this backup.');
+        return;
+      }
+      const token = ++cryptoOpToken.current;
+      cryptoBusyRef.current = true;
+      setImportStatus('idle');
+      setCryptoBusy('import');
+      try {
+        payload = await decryptBackup(importText, importPassphrase);
+      } catch (err) {
+        if (cryptoOpToken.current === token) {
+          setImportStatus('error');
+          setErrorMessage(describeCryptoError(err));
+        }
+        return;
+      } finally {
+        if (cryptoOpToken.current === token) {
+          cryptoBusyRef.current = false;
+          setCryptoBusy(null);
+        }
+      }
+      if (cryptoOpToken.current !== token) return;
+    }
     try {
-      const success = importBackup(importText);
+      const success = importBackup(payload);
       if (success) {
         setImportStatus('success');
         setErrorMessage('');
+        setImportPassphrase('');
         if (soundEnabled) playCyberSound('root');
         setTimeout(() => {
           setBackupModalOpen(false);
@@ -332,16 +474,119 @@ export const BackupModal: React.FC = () => {
                   </span>
                 </label>
 
-                <div className="flex items-center gap-2 pt-1">
+                {/* Optional passphrase encryption (independent of redaction) */}
+                <div className="space-y-2">
+                  <label
+                    className={`flex items-center gap-2 select-none text-[11px] pt-0.5 ${
+                      cryptoAvailable
+                        ? 'cursor-pointer text-secondary hover:text-primary'
+                        : 'cursor-not-allowed text-muted'
+                    }`}
+                  >
+                    <input
+                      id="backup-encrypt-toggle"
+                      name="backup-encrypt-toggle"
+                      type="checkbox"
+                      checked={encrypting}
+                      disabled={!cryptoAvailable}
+                      aria-describedby={cryptoAvailable ? undefined : 'backup-encrypt-unavailable'}
+                      onChange={(e) => {
+                        setEncryptExport(e.target.checked);
+                        setExportError('');
+                        if (!e.target.checked) {
+                          setExportPassphrase('');
+                          setExportPassphraseConfirm('');
+                        }
+                      }}
+                      className="w-3.5 h-3.5 rounded border-strong text-accent focus-visible:ring-2 focus-visible:ring-accent/50 bg-surface-card cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <span className="flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-muted" />
+                      <span>Encrypt with passphrase</span>
+                    </span>
+                  </label>
+
+                  {!cryptoAvailable && (
+                    <p id="backup-encrypt-unavailable" className="text-[11px] text-muted pl-5">
+                      Encryption is unavailable because this page is not in a secure context. Open ZeroBox over HTTPS or on localhost to encrypt backups.
+                    </p>
+                  )}
+
+                  {encrypting && (
+                    <div className="space-y-2.5 pl-0 sm:pl-5">
+                      <div className="p-2.5 rounded-lg bg-callout-warn-bg border border-callout-warn-border text-[11px] text-callout-warn-fg flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>There is no recovery. If you lose this passphrase, the backup cannot be opened.</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label htmlFor="backup-export-passphrase" className="block text-[11px] font-medium text-secondary">
+                          Export passphrase
+                        </label>
+                        <input
+                          id="backup-export-passphrase"
+                          name="backup-export-passphrase"
+                          type="password"
+                          autoComplete="new-password"
+                          spellCheck={false}
+                          value={exportPassphrase}
+                          onChange={(e) => setExportPassphrase(e.target.value)}
+                          aria-describedby="backup-export-passphrase-strength backup-export-passphrase-notice"
+                          aria-invalid={exportPassphraseTooShort || undefined}
+                          className={PASSPHRASE_INPUT_CLASS}
+                        />
+                        {exportPassphrase.length > 0 && (
+                          <p
+                            id="backup-export-passphrase-strength"
+                            className={`text-[11px] ${STRENGTH_CLASS[strength]}`}
+                          >
+                            Strength: {STRENGTH_LABEL[strength]}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <label htmlFor="backup-export-passphrase-confirm" className="block text-[11px] font-medium text-secondary">
+                          Confirm export passphrase
+                        </label>
+                        <input
+                          id="backup-export-passphrase-confirm"
+                          name="backup-export-passphrase-confirm"
+                          type="password"
+                          autoComplete="new-password"
+                          spellCheck={false}
+                          value={exportPassphraseConfirm}
+                          onChange={(e) => setExportPassphraseConfirm(e.target.value)}
+                          aria-describedby="backup-export-passphrase-notice"
+                          aria-invalid={exportPassphraseMismatch || undefined}
+                          className={PASSPHRASE_INPUT_CLASS}
+                        />
+                      </div>
+
+                      <div
+                        id="backup-export-passphrase-notice"
+                        role="status"
+                        aria-live="polite"
+                        className="text-[11px] text-callout-danger-fg min-h-[1rem]"
+                      >
+                        {exportPassphraseNotice}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
                   <button
                     onClick={handleDownloadBackup}
-                    className="flex items-center gap-1.5 px-3 py-1.5 max-sm:py-3 rounded-lg bg-surface-hover text-primary font-medium hover:bg-surface-hover transition-[background-color,border-color,color,transform] active:scale-[0.97]"
+                    disabled={exportBlocked}
+                    className="flex items-center gap-1.5 px-3 py-1.5 max-sm:py-3 rounded-lg bg-surface-hover text-primary font-medium hover:bg-surface-hover transition-[background-color,border-color,color,transform] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Download className="w-3.5 h-3.5" /> Download JSON
+                    <Download className="w-3.5 h-3.5" /> {encrypting ? 'Download encrypted JSON' : 'Download JSON'}
                   </button>
                   <button
                     onClick={handleCopyBackup}
-                    className="flex items-center gap-1 px-3 py-1.5 max-sm:py-3 rounded-lg bg-surface-card border border-subtle text-primary hover:border-strong transition-colors"
+                    disabled={exportBlocked}
+                    className="flex items-center gap-1 px-3 py-1.5 max-sm:py-3 rounded-lg bg-surface-card border border-subtle text-primary hover:border-strong transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {copied ? (
                       <>
@@ -351,11 +596,25 @@ export const BackupModal: React.FC = () => {
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Copy JSON</span>
+                        <span>{encrypting ? 'Copy encrypted JSON' : 'Copy JSON'}</span>
                       </>
                     )}
                   </button>
                 </div>
+
+                {cryptoBusy === 'export' && (
+                  <div role="status" aria-live="polite" className="flex items-center gap-2 text-[11px] text-secondary">
+                    <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" aria-hidden="true" />
+                    <span>Encrypting backup (deriving key)...</span>
+                  </div>
+                )}
+
+                {exportError && (
+                  <div role="alert" className="flex items-center gap-2 text-callout-danger-fg text-xs">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span>{exportError}</span>
+                  </div>
+                )}
               </div>
 
               {/* Section 1B: Export as Standalone Obsidian Vault (.zip) */}
@@ -428,8 +687,46 @@ export const BackupModal: React.FC = () => {
                   className="w-full p-2.5 rounded bg-surface-card border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent resize-none font-mono text-xs"
                 />
 
+                {importIsEncrypted && (
+                  <div className="p-3 rounded-lg bg-surface-sunken border border-subtle space-y-2">
+                    <div className="flex items-center gap-1.5 font-semibold text-primary">
+                      <Lock className="w-3.5 h-3.5 text-muted" />
+                      <span>Encrypted backup detected</span>
+                    </div>
+                    <label htmlFor="backup-import-passphrase" className="block text-[11px] text-muted">
+                      Backup passphrase
+                    </label>
+                    <input
+                      id="backup-import-passphrase"
+                      name="backup-import-passphrase"
+                      type="password"
+                      autoComplete="off"
+                      spellCheck={false}
+                      value={importPassphrase}
+                      onChange={(e) => {
+                        setImportPassphrase(e.target.value);
+                        if (importStatus === 'error') setImportStatus('idle');
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void handleExecuteImport();
+                        }
+                      }}
+                      disabled={cryptoBusy === 'import'}
+                      className={PASSPHRASE_INPUT_CLASS}
+                    />
+                    {cryptoBusy === 'import' && (
+                      <div role="status" aria-live="polite" className="flex items-center gap-2 text-[11px] text-secondary">
+                        <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" aria-hidden="true" />
+                        <span>Decrypting backup (deriving key)...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {importStatus === 'error' && (
-                  <div className="flex items-center gap-2 text-callout-danger-fg text-xs">
+                  <div role="alert" className="flex items-center gap-2 text-callout-danger-fg text-xs">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
@@ -443,11 +740,11 @@ export const BackupModal: React.FC = () => {
                 )}
 
                 <button
-                  disabled={!importText.trim()}
+                  disabled={!importText.trim() || cryptoBusy !== null || (importIsEncrypted && !importPassphrase)}
                   onClick={handleExecuteImport}
                   className="px-3.5 py-1.5 max-sm:py-3 rounded-lg bg-accent text-on-accent font-medium hover:brightness-110 active:scale-[0.97] transition-[opacity,filter,transform] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Import and apply
+                  {importIsEncrypted ? 'Decrypt and import' : 'Import and apply'}
                 </button>
               </div>
 

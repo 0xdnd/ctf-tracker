@@ -1,7 +1,7 @@
 import { isTauriTarget } from '../../utils/runtimeTarget';
 import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Terminal, 
   Copy, 
@@ -10,35 +10,20 @@ import {
   Star, 
   Plus, 
   Trash2, 
-  Radio, 
   Code,
   BookOpen,
   Sparkles,
   ChevronDown,
-  ChevronUp,
-  ChevronRight,
-  Layers,
-  Compass,
-  FileText,
-  Languages,
-  ArrowRightLeft,
   Folder,
   FolderOpen,
   Table,
   LayoutList,
-  Zap,
-  Filter,
-  ShieldCheck,
   Upload,
   Hash,
   ArrowUpDown,
   RotateCcw,
-  PanelRight,
   PanelLeft,
-  SlidersHorizontal,
-  Maximize2,
-  ExternalLink
-} from 'lucide-react';
+  Maximize2} from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -48,15 +33,11 @@ import { interpolateCommand, playCyberSound } from '../../utils/helpers';
 import { 
   CPTS_NOTES, 
   CptsNoteEntry, 
-  CptsTopicGroup,
   CptsTreeNode,
-  getCptsCategories, 
   getCategoryTopicGroups,
-  parseSubCategory,
   searchCptsNotes,
   getNoteById,
   buildCptsFileTree,
-  getAllNotesInTreeNode,
   CptsSortOrder,
   sortNotesByNumber,
   formatNoteNumberBadge,
@@ -141,9 +122,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCptsCategory, setSelectedCptsCategory] = useState('ALL');
   const [selectedCptsSubCategory, setSelectedCptsSubCategory] = useState<string>('ALL');
-  const [expandedSidebarCategories, setExpandedSidebarCategories] = useState<Record<string, boolean>>({
-    '01 Information Gathering & Recon': true,
-  });
   const [selectedTreePath, setSelectedTreePath] = useState<string | null>(null);
   const [expandedTreeFolders, setExpandedTreeFolders] = useState<Record<string, boolean>>(() => {
     try {
@@ -175,14 +153,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [newNoteInitialDir, setNewNoteInitialDir] = useState<string | undefined>(undefined);
   const [cptsDisplayLayout, setCptsDisplayLayout] = useState<CptsDisplayLayout>('cards');
   const [cptsSortOrder, setCptsSortOrder] = useState<CptsSortOrder>('number');
-  const [expandedIndexRows, setExpandedIndexRows] = useState<Record<string, boolean>>({});
-  const [collapsedGroupSections, setCollapsedGroupSections] = useState<Record<string, boolean>>({});
   const [jumpDropdownOpen, setJumpDropdownOpen] = useState(false);
-  const [hudOptionsOpen, setHudOptionsOpen] = useState(false);
   const [jumpSearchQuery, setJumpSearchQuery] = useState('');
-  const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null);
   const [cptsLimit, setCptsLimit] = useState(30);
-  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -460,7 +433,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [newDesc, setNewDesc] = useState('');
   const [newTemplate, setNewTemplate] = useState('');
   const [newTags, setNewTags] = useState('');
-  const [notesTextDirection, setNotesTextDirection] = useState<'auto' | 'rtl' | 'ltr'>('auto');
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -471,11 +443,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }, 2000);
   };
 
-  const handleCopyAllNoteCommands = (note: CptsNoteEntry) => {
-    if (!note.commands || note.commands.length === 0) return;
-    const interpolated = note.commands.map(cmd => interpolateCommand(cmd, globalVars)).join('\n\n');
-    handleCopy(interpolated, `all-${note.id}`);
-  };
 
   const handleCreateCustom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -538,7 +505,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   }, [allActiveNotes, treeSearchQuery]);
 
   const cptsFileTree = useMemo(() => buildCptsFileTree(filteredTreeNotes), [filteredTreeNotes]);
-  const cptsCategories = useMemo(() => getCptsCategories(allActiveNotes), [allActiveNotes]);
 
   // Persist expanded tree folders
   useEffect(() => {
@@ -906,34 +872,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     return getCategoryTopicGroups(selectedCptsCategory, allActiveNotes);
   }, [selectedCptsCategory, allActiveNotes]);
 
-  const activeTopicLeaves = useMemo(() => {
-    if (selectedCptsSubCategory === 'ALL') return [];
-    const group = activeCategoryTopicGroups.find(g => g.group === selectedCptsSubCategory);
-    return group ? group.leaves : [];
-  }, [activeCategoryTopicGroups, selectedCptsSubCategory]);
 
-  const groupedCptsNotes = useMemo(() => {
-    if (cptsDisplayLayout !== 'grouped') return [];
-    const map: Record<string, CptsNoteEntry[]> = {};
-    for (const note of filteredCptsNotes) {
-      const { group } = parseSubCategory(note.subCategory);
-      if (!map[group]) map[group] = [];
-      map[group].push(note);
-    }
-    return Object.entries(map).map(([group, notes]) => ({
-      group,
-      count: notes.length,
-      notes
-    })).sort((a, b) => b.count - a.count);
-  }, [filteredCptsNotes, cptsDisplayLayout]);
 
   const visibleCptsNotes = useMemo(() => {
     return filteredCptsNotes.slice(0, cptsLimit);
   }, [filteredCptsNotes, cptsLimit]);
 
-  const totalCptsCommands = useMemo(() => {
-    return filteredCptsNotes.reduce((sum, n) => sum + (n.commands ? n.commands.length : 0), 0);
-  }, [filteredCptsNotes]);
 
   // Tree action handlers
   const handleSelectTreeFolder = (fullPath: string) => {
@@ -1017,43 +961,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     if (soundEnabled) playCyberSound('root');
   };
 
-  const handleJumpToNote = (note: CptsNoteEntry) => {
-    setJumpDropdownOpen(false);
-    setJumpSearchQuery('');
-    setHighlightedNoteId(note.id);
-    if (soundEnabled) playCyberSound('root');
-
-    // If note is in another category or subcategory, switch so it is visible
-    if (selectedCptsCategory !== 'ALL' && selectedCptsCategory !== note.category) {
-      setSelectedCptsCategory(note.category);
-      setSelectedCptsSubCategory('ALL');
-    } else if (selectedCptsSubCategory !== 'ALL') {
-      const { group } = parseSubCategory(note.subCategory);
-      if (selectedCptsSubCategory !== group) {
-        setSelectedCptsSubCategory('ALL');
-      }
-    }
-
-    // Ensure note is within pagination window
-    setCptsLimit((prev) => Math.max(prev, 60));
-
-    // Auto expand row if in quick-index mode
-    if (cptsDisplayLayout === 'quick-index') {
-      setExpandedIndexRows((prev) => ({ ...prev, [note.id]: true }));
-    }
-
-    // Scroll smoothly to element
-    setTimeout(() => {
-      const el = document.getElementById(`cpts-note-${note.id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 150);
-
-    setTimeout(() => {
-      setHighlightedNoteId(null);
-    }, 3000);
-  };
 
   // Standalone detached pop-out window view (e.g. secondary monitor or external browser window)
   if (isPopout && activeObsidianNote) {

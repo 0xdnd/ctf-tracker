@@ -6,7 +6,6 @@ import {
   X, 
   RotateCcw, 
   Check, 
-  SlidersHorizontal, 
   ShieldAlert, 
   Layers, 
   Tag, 
@@ -19,12 +18,7 @@ import {
   Shield,
   Key,
   Terminal,
-  Filter,
-  Sparkles,
-  Zap,
-  Award,
-  GraduationCap
-} from 'lucide-react';
+  Filter} from 'lucide-react';
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
@@ -187,7 +181,7 @@ export const FilterDrawer: React.FC = () => {
     filters,
     setFilters,
     resetFilters,
-    machines,
+    machines: liveMachines,
     soundEnabled,
   } = useCtfStore(
     useShallow((s) => ({
@@ -200,6 +194,9 @@ export const FilterDrawer: React.FC = () => {
       soundEnabled: s.soundEnabled,
     }))
   );
+
+  // Always mounted: derive its counts from a deferred copy so the catalog swap re-render stays interruptible.
+  const machines = React.useDeferredValue(liveMachines);
 
   const trapRef = useFocusTrap<HTMLDivElement>({
     isActive: filterDrawerOpen,

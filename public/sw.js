@@ -1,6 +1,6 @@
 // ZeroBox Tactical CTF Tracker — Offline Service Worker
 // Versioned precache with offline SPA navigation fallback and zero external egress
-const CACHE_VERSION = 'zerobox-v3.2.0';
+const CACHE_VERSION = 'zerobox-v3.3.0';
 // /app-shell.html is the SPA shell emitted by scripts/prerender.cjs; / is the static landing page.
 const APP_SHELL = '/app-shell.html';
 // Hashed JS/CSS referenced by the shell; scripts/prerender.cjs replaces the placeholder at build time.

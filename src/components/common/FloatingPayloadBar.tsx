@@ -9,8 +9,6 @@ import {
   Radio, 
   Terminal, 
   Crosshair, 
-  ShieldAlert,
-  Sliders,
   X
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -58,7 +56,7 @@ const QUICK_PAYLOADS: QuickShell[] = [
 ];
 
 export const FloatingPayloadBar: React.FC = () => {
-  const { globalVars, setGlobalVars, activeTargetId, soundEnabled } = useCtfStore(
+  const { globalVars, setGlobalVars, soundEnabled } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
       setGlobalVars: s.setGlobalVars,

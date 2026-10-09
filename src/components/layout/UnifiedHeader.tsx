@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -42,7 +42,6 @@ const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
 
 export const UnifiedHeader: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const {
     activeTargetId,
@@ -634,7 +633,7 @@ export const UnifiedHeader: React.FC = () => {
             toggleNotesWorkspace();
             if (soundEnabled) playCyberSound('click');
           }}
-          className={`hidden xl:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary' : ''}`}
+          className={`hidden md:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
           title="Toggle Notes Workspace Sidecar (Alt+N)"
           aria-label="Toggle Field Notes Sidecar"
         >
@@ -646,7 +645,7 @@ export const UnifiedHeader: React.FC = () => {
               </span>
             )}
           </div>
-          <span className="hidden 2xl:inline">Notes</span>
+          <span className="hidden lg:inline">Notes</span>
         </button>
 
         {/* Command palette trigger */}

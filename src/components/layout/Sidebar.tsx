@@ -14,10 +14,7 @@ import {
   Radio,
   Compass,
   GraduationCap,
-  Share2,
   BookOpen,
-  ListTodo,
-  Palette,
   Database
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -221,7 +218,7 @@ export const Sidebar: React.FC = () => {
 
           {!collapsed && (
             <div className="flex-1 flex items-center justify-between min-w-0 text-left">
-              <span className="truncate mr-2">Notes Workspace</span>
+              <span className="truncate mr-2">Notes</span>
               {openNotesCount > 0 && (
                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
                   {openNotesCount} active
@@ -272,8 +269,8 @@ export const Sidebar: React.FC = () => {
 
             <div className="w-full bg-surface-sunken rounded-full h-1 overflow-hidden mb-1.5">
               <div
-                className="h-full bg-accent transition-[width] duration-500 rounded-full"
-                style={{ width: `${Math.min(100, Math.max(0, pwnPercentage))}%` }}
+                className="h-full w-full origin-left bg-accent transition-transform duration-500"
+                style={{ transform: `scaleX(${Math.min(100, Math.max(0, pwnPercentage)) / 100})` }}
               />
             </div>
 

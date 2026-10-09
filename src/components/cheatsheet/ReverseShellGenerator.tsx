@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Copy,
   Check,
@@ -9,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
-import { ALL_SHELL_ITEMS, ShellCategory, ShellItem } from '../../data/revshellsData';
+import { ALL_SHELL_ITEMS, ShellCategory } from '../../data/revshellsData';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 
 interface ReverseShellGeneratorProps {
@@ -32,7 +31,7 @@ const LISTENER_TYPES = [
   { id: 'powercat', label: 'powercat' },
 ];
 
-export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ initialCategory }) => {
+export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () => {
   const globalVars = useCtfStore((s) => s.globalVars);
   const setGlobalVars = useCtfStore((s) => s.setGlobalVars);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);

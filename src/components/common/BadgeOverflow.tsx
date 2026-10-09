@@ -85,7 +85,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
             aria-describedby={open ? popoverId : undefined}
             aria-expanded={open}
             onClick={() => setOpen(true)}
-            className="inline-flex h-5 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
+            className="inline-flex h-6 -my-0.5 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
           >
             +{rest.length}
           </button>

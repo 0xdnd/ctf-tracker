@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CyberLogo } from './CyberLogo';
@@ -78,9 +77,11 @@ describe('CyberLogo component', () => {
   });
 
   it('has fetchpriority="high" and decoding="async" for optimal LCP performance', () => {
-    render(<CyberLogo />);
+    render(<CyberLogo size="sm" />);
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('fetchpriority', 'high');
+    expect(img).toHaveAttribute('srcset', expect.stringContaining('/logo-zerobox-64.webp 64w'));
+    expect(img).toHaveAttribute('width', '32');
     expect(img).toHaveAttribute('decoding', 'async');
   });
 });

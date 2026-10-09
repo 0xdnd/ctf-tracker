@@ -1,13 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
   X, 
-  Terminal, 
   Copy, 
   Check, 
   Radio, 
-  Zap, 
-  ExternalLink,
-  ShieldAlert,
   ArrowRight
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';

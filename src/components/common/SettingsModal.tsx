@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   Settings, 
   X, 
   Palette, 
-  Sliders, 
   Terminal, 
-  Flame, 
   Sun, 
   Moon, 
   Volume2, 

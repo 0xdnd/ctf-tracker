@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' data: blob:;"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: blob:; font-src 'self' data:; connect-src 'self' https://api.anthropic.com; media-src 'self' data: blob:;"
     }
   },
   "bundle": {

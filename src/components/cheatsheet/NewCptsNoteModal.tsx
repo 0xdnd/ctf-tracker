@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, BookOpen, Plus, Terminal, Code, Sparkles, Folder } from 'lucide-react';
+import { X, BookOpen, Plus, Terminal, Folder } from 'lucide-react';
 import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 
