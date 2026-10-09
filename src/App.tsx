@@ -54,6 +54,7 @@ const TargetDetailPage = lazy(() => import('./pages/TargetDetailPage').then(m =>
 const MethodologyPage = lazy(() => import('./pages/MethodologyPage').then(m => ({ default: m.MethodologyPage })));
 const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m => ({ default: m.ExamSimulatorPage })));
 const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const CyberRouteLoader: React.FC = () => <ViewSkeleton />;
 
@@ -507,7 +508,7 @@ const MainAppContent: React.FC = () => {
                     <Route path="/vault" element={<EvidenceVaultPage />} />
                     <Route path="/evidence" element={<EvidenceVaultPage />} />
                     <Route path="/loot" element={<EvidenceVaultPage />} />
-                    <Route path="*" element={<Navigate to="/tracker/" replace />} />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Suspense>
               </RouteErrorBoundary>

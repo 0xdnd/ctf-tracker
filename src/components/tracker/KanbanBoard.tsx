@@ -13,7 +13,8 @@ import {
   Key,
   Zap,
   Award,
-  Plus
+  Plus,
+  Lock
 } from 'lucide-react';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -155,7 +156,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
   const metaBadges: React.ReactNode[] = [
     <OsBadge key="os" os={m.os} size="xs" />,
     <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-    ...m.certifications.map((cert) => (
+    ...(m.certifications || []).map((cert) => (
       <span
         key={cert}
         className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
@@ -232,52 +233,66 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       </div>
 
       {/* Row 2: IP (telemetry) and time spent */}
-      <div className="mt-1 flex items-center justify-between gap-2 pl-4">
-        <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
-        <div className={`flex items-center gap-1 font-mono text-xs tabular-nums text-muted ${REVEAL}`}>
-          <Clock className="h-3 w-3" />
-          <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+      {m.isActive ? (
+        <div className="mt-1.5 pl-4 text-[11px] text-muted font-mono flex items-center justify-between">
+          <span className="flex items-center gap-1 text-callout-warn-fg">
+            <Lock className="h-3 w-3 text-callout-warn-fg" /> HTB ToS Protected
+          </span>
+          <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
+            <Clock className="h-3 w-3" />
+            <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="mt-1 flex items-center justify-between gap-2 pl-4">
+            <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+            <div className={`flex items-center gap-1 font-mono text-xs tabular-nums text-muted ${REVEAL}`}>
+              <Clock className="h-3 w-3" />
+              <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+            </div>
+          </div>
 
-      {/* Row 3: max two badges (+N), flags and utility actions on hover */}
-      <div className="mt-2 flex items-center justify-between gap-2 pl-4">
-        <BadgeOverflow badges={metaBadges} max={2} />
-        <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
-          <span
-            className={flagChip(hasUser, 'warn')}
-            title={hasUser ? 'User flag captured (initial foothold)' : 'User flag pending (foothold required)'}
-            aria-label={hasUser ? `User flag captured for ${m.name}` : `User flag pending for ${m.name}`}
-          >
-            <Flag className="h-2.5 w-2.5" /> U
-          </span>
-          <span
-            className={flagChip(hasRoot, 'success')}
-            title={hasRoot ? 'Root flag captured (privesc complete)' : 'Root flag pending (privilege escalation required)'}
-            aria-label={hasRoot ? `Root flag captured for ${m.name}` : `Root flag pending for ${m.name}`}
-          >
-            <Flag className="h-2.5 w-2.5" /> R
-          </span>
-          <ShareLinkButton
-            path={`/target/${m.id}`}
-            title={m.name}
-            iconOnly
-            className={`${ICON_BTN} hover:text-accent`}
-          />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenReport(m.id);
-            }}
-            className={`${ICON_BTN} hover:text-accent`}
-            title="Open pentest pre-report"
-            aria-label={`Open pentest pre-report for ${m.name}`}
-          >
-            <FileText className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
+          {/* Row 3: max two badges (+N), flags and utility actions on hover */}
+          <div className="mt-2 flex items-center justify-between gap-2 pl-4">
+            <BadgeOverflow badges={metaBadges} max={2} />
+            <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
+              <span
+                className={flagChip(hasUser, 'warn')}
+                title={hasUser ? 'User flag captured (initial foothold)' : 'User flag pending (foothold required)'}
+                aria-label={hasUser ? `User flag captured for ${m.name}` : `User flag pending for ${m.name}`}
+              >
+                <Flag className="h-2.5 w-2.5" /> U
+              </span>
+              <span
+                className={flagChip(hasRoot, 'success')}
+                title={hasRoot ? 'Root flag captured (privesc complete)' : 'Root flag pending (privilege escalation required)'}
+                aria-label={hasRoot ? `Root flag captured for ${m.name}` : `Root flag pending for ${m.name}`}
+              >
+                <Flag className="h-2.5 w-2.5" /> R
+              </span>
+              <ShareLinkButton
+                path={`/target/${m.id}`}
+                title={m.name}
+                iconOnly
+                className={`${ICON_BTN} hover:text-accent`}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenReport(m.id);
+                }}
+                className={`${ICON_BTN} hover:text-accent`}
+                title="Open pentest pre-report"
+                aria-label={`Open pentest pre-report for ${m.name}`}
+              >
+                <FileText className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }, (prev, next) => {

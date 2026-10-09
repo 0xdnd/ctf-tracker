@@ -281,59 +281,70 @@ export const TargetDetailPage: React.FC = () => {
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
-              <CyberButton
-                variant="ghost"
-                size="md"
-                iconLeft={<FileText className="h-3.5 w-3.5" />}
-                onClick={openWriteup}
-              >
-                Writeup Studio
-              </CyberButton>
-              {isFocusMode ? (
-                <CyberButton
-                  variant="ghost"
-                  size="md"
-                  iconLeft={<Eye className="h-3.5 w-3.5" />}
-                  title="Exit Focus Mode"
-                  onClick={() => navigate(`/target/${machine.id}`)}
-                >
-                  Exit focus
-                </CyberButton>
-              ) : (
-                <button
-                  aria-label="Enter focus mode"
-                  onClick={() => navigate(`/target/${machine.id}/focus`)}
-                  title="Enter Focus Mode"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-secondary transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97]"
-                >
-                  <Crosshair className="h-4 w-4" aria-hidden="true" />
-                </button>
+              {!machine.isActive && (
+                <>
+                  <CyberButton
+                    variant="ghost"
+                    size="md"
+                    iconLeft={<FileText className="h-3.5 w-3.5" />}
+                    onClick={openWriteup}
+                  >
+                    Writeup Studio
+                  </CyberButton>
+                  {isFocusMode ? (
+                    <CyberButton
+                      variant="ghost"
+                      size="md"
+                      iconLeft={<Eye className="h-3.5 w-3.5" />}
+                      title="Exit Focus Mode"
+                      onClick={() => navigate(`/target/${machine.id}`)}
+                    >
+                      Exit focus
+                    </CyberButton>
+                  ) : (
+                    <button
+                      aria-label="Enter focus mode"
+                      onClick={() => navigate(`/target/${machine.id}/focus`)}
+                      title="Enter Focus Mode"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-secondary transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97]"
+                    >
+                      <Crosshair className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  )}
+                </>
               )}
             </>
           }
-          overflow={[
-            { id: 'writeup', label: 'Writeup Studio', icon: <FileText className="h-4 w-4" />, onSelect: openWriteup },
-            isFocusMode
-              ? { id: 'focus', label: 'Exit focus mode', icon: <Eye className="h-4 w-4" />, onSelect: () => navigate(`/target/${machine.id}`) }
-              : { id: 'focus', label: 'Focus mode', icon: <Crosshair className="h-4 w-4" />, onSelect: () => navigate(`/target/${machine.id}/focus`) },
-            ...(isActiveTarget
-              ? [{ id: 'disengage', label: 'Disengage target', icon: <X className="h-4 w-4" />, danger: true, onSelect: () => setActiveTarget(null) }]
-              : []),
-          ]}
+          overflow={
+            machine.isActive
+              ? (isActiveTarget ? [{ id: 'disengage', label: 'Disengage target', icon: <X className="h-4 w-4" />, danger: true, onSelect: () => setActiveTarget(null) }] : [])
+              : [
+                  { id: 'writeup', label: 'Writeup Studio', icon: <FileText className="h-4 w-4" />, onSelect: openWriteup },
+                  isFocusMode
+                    ? { id: 'focus', label: 'Exit focus mode', icon: <Eye className="h-4 w-4" />, onSelect: () => navigate(`/target/${machine.id}`) }
+                    : { id: 'focus', label: 'Focus mode', icon: <Crosshair className="h-4 w-4" />, onSelect: () => navigate(`/target/${machine.id}/focus`) },
+                  ...(isActiveTarget
+                    ? [{ id: 'disengage', label: 'Disengage target', icon: <X className="h-4 w-4" />, danger: true, onSelect: () => setActiveTarget(null) }]
+                    : []),
+                ]
+          }
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <BadgeOverflow badges={badges} max={2} />
-            <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel />
+            {machine.isActive ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                <span>Active Lab · HTB ToS Protected</span>
+              </span>
+            ) : (
+              <>
+                <BadgeOverflow badges={badges} max={2} />
+                <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel />
+              </>
+            )}
             <span className="inline-flex items-center gap-1.5 text-secondary">
               <Clock className="h-3.5 w-3.5 text-muted" aria-hidden="true" />
               <TargetDetailTimerDisplay machineId={machine.id} fallbackSeconds={machine.timeSpentSeconds} isActiveTarget={isActiveTarget} />
             </span>
-            {machine.isActive && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg">
-                <Lock className="h-3 w-3" aria-hidden="true" />
-                <span>Active lab · writeups prohibited (HTB ToS)</span>
-              </span>
-            )}
             {roomUrl && (
               <a
                 href={roomUrl}
@@ -358,33 +369,63 @@ export const TargetDetailPage: React.FC = () => {
         </PageHeader>
       </div>
 
-      {/* Navigation tabs: single line, horizontally scrollable */}
-      <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0">
-        <div className="flex min-w-max items-center gap-1">
-          {tabs.map((tab) => {
-            const selected = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                data-testid={tab.testId}
-                className={`-mb-px inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-[13px] font-medium transition-colors sm:min-h-9 ${
-                  selected
-                    ? 'border-accent text-primary'
-                    : 'border-transparent text-muted hover:text-primary'
-                }`}
+      {machine.isActive ? (
+        <div className="rounded-2xl border border-subtle bg-surface-card p-6 sm:p-10 text-center space-y-6 max-w-2xl mx-auto my-8">
+          <div className="w-12 h-12 rounded-xl bg-callout-warn-bg border border-callout-warn-border flex items-center justify-center mx-auto text-callout-warn-fg">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-semibold text-primary">{machine.name}</h2>
+            <div className="text-xs font-mono uppercase tracking-wider text-muted">
+              Active Seasonal Target · Name Only
+            </div>
+          </div>
+          <p className="text-sm text-secondary leading-relaxed max-w-lg mx-auto">
+            In strict compliance with <strong>Hack The Box Terms of Service (AUP §8.2)</strong>, active machines are restricted to name only. Reconnaissance data, open ports, flags, attack vectors, hints, and notes are prohibited until retirement.
+          </p>
+          {roomUrl && (
+            <div className="pt-2">
+              <a
+                href={roomUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-primary font-medium text-xs transition-colors"
               >
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span className="rounded px-1.5 text-xs font-medium tabular-nums bg-surface-sunken text-secondary">
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                <span>Play on Hack The Box</span>
+                <ExternalLink className="w-3.5 h-3.5 text-muted" />
+              </a>
+            </div>
+          )}
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Navigation tabs: single line, horizontally scrollable */}
+          <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0">
+            <div className="flex min-w-max items-center gap-1">
+              {tabs.map((tab) => {
+                const selected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    data-testid={tab.testId}
+                    className={`-mb-px inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-[13px] font-medium transition-colors sm:min-h-9 ${
+                      selected
+                        ? 'border-accent text-primary'
+                        : 'border-transparent text-muted hover:text-primary'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span className="rounded px-1.5 text-xs font-medium tabular-nums bg-surface-sunken text-secondary">
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
       {/* Main tab stage */}
       {activeTab === 'checklist' ? (
@@ -622,6 +663,8 @@ export const TargetDetailPage: React.FC = () => {
           </section>
 
         </div>
+      )}
+        </>
       )}
     </motion.div>
   );

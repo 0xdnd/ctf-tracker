@@ -9,7 +9,8 @@ import {
   FileText,
   ExternalLink,
   ListChecks,
-  Maximize2
+  Maximize2,
+  Lock
 } from 'lucide-react';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -123,25 +124,29 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
         <Maximize2 className="w-3.5 h-3.5" />
       </button>
 
-      <button
-        type="button"
-        onClick={() => onOpenReport(m.id)}
-        className={`${ICON_BTN} hover:text-accent`}
-        title="Open Executive Pentest Pre-Report"
-        aria-label={`Open executive pentest pre-report for ${m.name}`}
-      >
-        <FileText className="w-3.5 h-3.5" />
-      </button>
+      {!m.isActive && (
+        <>
+          <button
+            type="button"
+            onClick={() => onOpenReport(m.id)}
+            className={`${ICON_BTN} hover:text-accent`}
+            title="Open Executive Pentest Pre-Report"
+            aria-label={`Open executive pentest pre-report for ${m.name}`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onClick={() => onOpenWriteup(m.id)}
-        className={`${ICON_BTN} hover:text-accent`}
-        title="Open Writeup"
-        aria-label={`Open writeup studio for ${m.name}`}
-      >
-        <FileText className="w-3.5 h-3.5" />
-      </button>
+          <button
+            type="button"
+            onClick={() => onOpenWriteup(m.id)}
+            className={`${ICON_BTN} hover:text-accent`}
+            title="Open Writeup"
+            aria-label={`Open writeup studio for ${m.name}`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+          </button>
+        </>
+      )}
 
       {Boolean(sanitizeExternalUrl(m.roomUrl)) && (
         <a
@@ -234,7 +239,11 @@ const TableRow = React.memo<TableRowProps>(({
                 </span>
               )}
             </div>
-            <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5 tabular-nums font-mono text-xs" />
+            {m.isActive ? (
+              <div className="mt-0.5 text-[11px] font-mono text-muted">HTB ToS Protected</div>
+            ) : (
+              <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5 tabular-nums font-mono text-xs" />
+            )}
           </div>
         </div>
       </td>
@@ -246,13 +255,17 @@ const TableRow = React.memo<TableRowProps>(({
 
       {/* OS & category */}
       <td className="py-2.5 px-3">
-        <BadgeOverflow
-          badges={[
-            <OsBadge key="os" os={m.os} size="xs" />,
-            <CategoryBadge key="cat" machine={m} size="xs" />,
-          ]}
-          max={2}
-        />
+        {m.isActive ? (
+          <span className="text-muted font-mono text-xs">—</span>
+        ) : (
+          <BadgeOverflow
+            badges={[
+              <OsBadge key="os" os={m.os} size="xs" />,
+              <CategoryBadge key="cat" machine={m} size="xs" />,
+            ]}
+            max={2}
+          />
+        )}
       </td>
 
       {/* Difficulty */}
@@ -274,7 +287,13 @@ const TableRow = React.memo<TableRowProps>(({
 
       {/* Flags */}
       <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
-        <FlagButtons machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />
+        {m.isActive ? (
+          <span className="text-xs text-muted flex items-center gap-1 font-mono">
+            <Lock className="w-3 h-3 text-callout-warn-fg" /> Protected
+          </span>
+        ) : (
+          <FlagButtons machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />
+        )}
       </td>
 
       {/* Time */}
@@ -284,17 +303,21 @@ const TableRow = React.memo<TableRowProps>(({
 
       {/* Tracks */}
       <td className="py-2.5 px-3">
-        <BadgeOverflow
-          badges={m.certifications.map((c) => (
-            <span
-              key={c}
-              className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
-            >
-              {c}
-            </span>
-          ))}
-          max={2}
-        />
+        {m.isActive ? (
+          <span className="text-muted font-mono text-xs">—</span>
+        ) : (
+          <BadgeOverflow
+            badges={m.certifications.map((c) => (
+              <span
+                key={c}
+                className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
+              >
+                {c}
+              </span>
+            ))}
+            max={2}
+          />
+        )}
       </td>
 
       {/* Actions */}
@@ -344,25 +367,36 @@ const StackedCard = React.memo<TableRowProps>(({
       <span className="shrink-0 font-mono text-xs tabular-nums text-muted">{formatSeconds(m.timeSpentSeconds)}</span>
     </div>
     <div className="mt-1 pl-4">
-      <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+      {m.isActive ? (
+        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-callout-warn-fg">
+          <Lock className="w-3 h-3" />
+          <span>HTB ToS Protected</span>
+        </span>
+      ) : (
+        <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+      )}
     </div>
     <div className="mt-2.5 flex items-center justify-between gap-2 pl-4">
-      <BadgeOverflow
-        badges={[
-          <OsBadge key="os" os={m.os} size="xs" />,
-          <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-          <PlatformBadge key="plat" platform={m.platform} size="sm" />,
-          ...m.certifications.map((c) => (
-            <span
-              key={c}
-              className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
-            >
-              {c}
-            </span>
-          )),
-        ]}
-        max={2}
-      />
+      {m.isActive ? (
+        <span className="text-[11px] text-muted font-mono">Protected Target</span>
+      ) : (
+        <BadgeOverflow
+          badges={[
+            <OsBadge key="os" os={m.os} size="xs" />,
+            <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
+            <PlatformBadge key="plat" platform={m.platform} size="sm" />,
+            ...(m.certifications || []).map((c) => (
+              <span
+                key={c}
+                className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
+              >
+                {c}
+              </span>
+            )),
+          ]}
+          max={2}
+        />
+      )}
     </div>
     <div className="mt-3 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
       <FlagButtons machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />

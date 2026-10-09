@@ -728,6 +728,7 @@ const sitemap =
   all.map((u) => `  <url><loc>${ORIGIN}${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}<priority>${u.priority}</priority></url>`).join('\n') +
   `\n</urlset>\n`;
 fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap, 'utf8');
+fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'), sitemap, 'utf8');
 
 console.log(`machines: ${model.machines.length} total, ${withPage.length} owner-solved pages`);
 console.log('pages by type:', counts, `total generated: ${pages.length}`);

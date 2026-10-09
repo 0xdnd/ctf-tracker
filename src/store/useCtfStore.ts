@@ -613,6 +613,32 @@ export const toLeanMachines = (machines: Machine[]): Machine[] => {
     });
 };
 
+export function sanitizeActiveMachine(m: Machine): Machine {
+  if (!m.isActive) return m;
+  return {
+    ...m,
+    ip: '',
+    tags: [],
+    writeupUrl: '',
+    hint: '',
+    officialWalkthrough: '',
+    officialSynopsis: '',
+    officialPdf: '',
+    userFlag: '',
+    rootFlag: '',
+    userPwnedAt: undefined,
+    rootPwnedAt: undefined,
+    openPorts: [],
+    services: [],
+    scanSummary: '',
+    rawScanOutput: '',
+    quickNotes: '',
+    writeupMarkdown: '',
+    skillsLearned: [],
+    checklist: undefined,
+  };
+}
+
 export const mergeMachinesWithCatalog = (
   storedMachines?: Machine[],
   userSolvesReset: boolean = false,
@@ -782,18 +808,14 @@ export const mergeMachinesWithCatalog = (
     });
   }
 
-  // Enforce Hack The Box Terms of Service compliance: Active machines MUST NEVER have writeupUrl or hint
+  // Enforce Hack The Box Terms of Service compliance: Active machines MUST ONLY have name and room link (no spoilers/recon)
   map.forEach((machine) => {
     const norm = machine.name.toLowerCase().trim();
     if (KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
       machine.isActive = true;
     }
     if (machine.isActive) {
-      machine.writeupUrl = '';
-      machine.hint = '';
-      machine.officialWalkthrough = '';
-      machine.officialSynopsis = '';
-      machine.officialPdf = '';
+      Object.assign(machine, sanitizeActiveMachine(machine));
     }
   });
 
@@ -1176,11 +1198,7 @@ export const useCtfStore = create<CtfStoreState>()(
                 merged.isActive = true;
               }
               if (merged.isActive) {
-                merged.writeupUrl = '';
-                merged.hint = '';
-                merged.officialWalkthrough = '';
-                merged.officialSynopsis = '';
-                merged.officialPdf = '';
+                return sanitizeActiveMachine(merged);
               }
               return merged;
             }),
@@ -1203,21 +1221,16 @@ export const useCtfStore = create<CtfStoreState>()(
         const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(norm);
         const isActive = Boolean(data.isActive || isKnownActive);
 
-        const newMachine: Machine = {
+        const baseMachine: Machine = {
           ...data,
           id,
           isCustom: true,
           isActive,
-          // If active seasonal lab, enforce HTB ToS sanitation strictly at intake
-          writeupUrl: isActive ? '' : (data.writeupUrl || ''),
-          hint: isActive ? '' : (data.hint || ''),
-          officialWalkthrough: '',
-          officialSynopsis: '',
-          officialPdf: '',
           timeSpentSeconds: 0,
           createdAt: now,
           updatedAt: now,
         };
+        const newMachine: Machine = isActive ? sanitizeActiveMachine(baseMachine) : baseMachine;
         set((state) => ({
           machines: [newMachine, ...state.machines],
           unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
@@ -1295,7 +1308,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setMachineOpenPorts: (machineId, ports) => {
         set((state) => ({
           machines: state.machines.map((m) =>
-            m.id === machineId
+            m.id === machineId && !m.isActive
               ? {
                   ...m,
                   openPorts: ports,
@@ -1316,7 +1329,7 @@ export const useCtfStore = create<CtfStoreState>()(
           const now = new Date().toISOString();
           return {
             machines: state.machines.map((m) => {
-              if (m.id !== machineId) return m;
+              if (m.id !== machineId || m.isActive) return m;
 
               const existingChecklist = m.checklist || {
                 openPorts: m.openPorts || [],
@@ -1354,7 +1367,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setChecklistItemNotes: (machineId, itemId, notes) => {
         set((state) => ({
           machines: state.machines.map((m) => {
-            if (m.id !== machineId) return m;
+            if (m.id !== machineId || m.isActive) return m;
             const existingChecklist = m.checklist || {
               openPorts: m.openPorts || [],
               activeItemId: null,
@@ -1383,7 +1396,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setActiveChecklistItem: (machineId, itemId) => {
         set((state) => ({
           machines: state.machines.map((m) =>
-            m.id === machineId
+            m.id === machineId && !m.isActive
               ? {
                   ...m,
                   checklist: {
@@ -1401,7 +1414,7 @@ export const useCtfStore = create<CtfStoreState>()(
       resetMachineChecklist: (machineId) => {
         set((state) => ({
           machines: state.machines.map((m) =>
-            m.id === machineId
+            m.id === machineId && !m.isActive
               ? {
                   ...m,
                   checklist: {
@@ -1438,7 +1451,7 @@ export const useCtfStore = create<CtfStoreState>()(
           }
 
           const m = updatedMachines.find((x) => x.id === id);
-          const isPlaceholderIp = Boolean(m && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
+          const isPlaceholderIp = Boolean(m && !m.isActive && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
           return {
             machines: updatedMachines,
             activeTargetId: id,
@@ -1446,7 +1459,7 @@ export const useCtfStore = create<CtfStoreState>()(
             assignIpMachineId: isPlaceholderIp ? id : null,
             globalVars: {
               ...state.globalVars,
-              targetIp: m?.ip && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
+              targetIp: m?.ip && !m.isActive && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
             },
             unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };

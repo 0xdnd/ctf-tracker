@@ -64,10 +64,13 @@ function getModel() {
     let n = 2;
     while (used.has(slug)) slug = `${base}-${n++}`;
     used.add(slug);
-    // Only the owner's own solved targets get a detail page.
-    const safe = m;
-    const ownerSolved = m.status === 'completed' || /0xdnd\.gitbook\.io/.test(m.writeupUrl || '');
-    const ownWriteup = /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '') ? m.writeupUrl : '';
+    // Only the owner's own solved retired targets get a detail page (HTB ToS AUP §8.2 compliance)
+    const isAct = Boolean(m.isActive);
+    const safe = isAct
+      ? { ...m, ip: '', tags: [], userFlag: '', rootFlag: '', hint: '', writeupUrl: '', openPorts: [], services: [] }
+      : m;
+    const ownerSolved = !isAct && (m.status === 'completed' || /0xdnd\.gitbook\.io/.test(m.writeupUrl || ''));
+    const ownWriteup = (!isAct && /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '')) ? m.writeupUrl : '';
     return { ...safe, slug, ownWriteup, hasPage: ownerSolved };
   });
 

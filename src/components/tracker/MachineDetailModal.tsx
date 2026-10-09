@@ -321,70 +321,76 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-semibold text-primary tracking-tight font-sans">{machine.name}</h2>
-              <BadgeOverflow
-                max={2}
-                badges={[
-                  <OsBadge key="os" os={machine.os} size="sm" />,
-                  <DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />,
-                  <PlatformBadge key="plat" platform={machine.platform} size="sm" />,
-                  <CategoryBadge key="cat" machine={machine} size="sm" />,
-                ]}
-              />
-            </div>
-            <div className="text-xs text-tertiary mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel className="font-mono tabular-nums" />
-              {Boolean(machine.ip && machine.ip.includes('x')) && (
-                <button
-                  type="button"
-                  onClick={() => setAssignIpMachineId(machine.id)}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors active:scale-[0.97] cursor-pointer"
-                  title="Target has placeholder IP. Click to assign live spawned IP"
-                >
-                  <Crosshair className="w-3 h-3" />
-                  <span>Assign spawned IP</span>
-                </button>
-              )}
-              {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
-                <a
-                  href={sanitizeExternalUrl(machine.roomUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
-                >
-                  Official room <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
               {machine.isActive ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg border border-callout-warn-border bg-callout-warn-bg px-2 py-0.5 rounded-md">
                   <Lock className="w-3 h-3" />
-                  <span>Active lab · writeups prohibited (HTB ToS)</span>
+                  <span>Active Lab · HTB ToS Protected</span>
                 </span>
-              ) : Boolean(sanitizeExternalUrl(machine.writeupUrl)) ? (
-                <a
-                  href={sanitizeExternalUrl(machine.writeupUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
-                >
-                  Writeup <ExternalLink className="w-3 h-3" />
-                </a>
-              ) : null}
+              ) : (
+                <BadgeOverflow
+                  max={2}
+                  badges={[
+                    <OsBadge key="os" os={machine.os} size="sm" />,
+                    <DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />,
+                    <PlatformBadge key="plat" platform={machine.platform} size="sm" />,
+                    <CategoryBadge key="cat" machine={machine} size="sm" />,
+                  ]}
+                />
+              )}
             </div>
+            {!machine.isActive && (
+              <div className="text-xs text-tertiary mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel className="font-mono tabular-nums" />
+                {Boolean(machine.ip && machine.ip.includes('x')) && (
+                  <button
+                    type="button"
+                    onClick={() => setAssignIpMachineId(machine.id)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors active:scale-[0.97] cursor-pointer"
+                    title="Target has placeholder IP. Click to assign live spawned IP"
+                  >
+                    <Crosshair className="w-3 h-3" />
+                    <span>Assign spawned IP</span>
+                  </button>
+                )}
+                {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
+                  <a
+                    href={sanitizeExternalUrl(machine.roomUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                  >
+                    Official room <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+                {Boolean(sanitizeExternalUrl(machine.writeupUrl)) && (
+                  <a
+                    href={sanitizeExternalUrl(machine.writeupUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                  >
+                    Writeup <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
             {/* One primary action */}
-            <button
-              onClick={() => {
-                setSelectedMachineId(machine.id);
-                setReconAutomationModalOpen(true);
-              }}
-              className="flex items-center gap-1.5 h-8 px-3 mr-1 rounded-lg bg-accent text-on-accent hover:bg-accent-hover font-medium text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
-              title="Open Multi-Format Scan Importer & Payload Crafter for this target"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Import scan &amp; payloads</span>
-            </button>
+            {!machine.isActive && (
+              <button
+                onClick={() => {
+                  setSelectedMachineId(machine.id);
+                  setReconAutomationModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 h-8 px-3 mr-1 rounded-lg bg-accent text-on-accent hover:bg-accent-hover font-medium text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
+                title="Open Multi-Format Scan Importer & Payload Crafter for this target"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Import scan &amp; payloads</span>
+              </button>
+            )}
 
             {machine.isCustom && (
               <button
@@ -407,14 +413,16 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               </button>
             )}
 
-            <button
-              onClick={() => setReportMachineId(machine.id)}
-              className={HEADER_ICON_BTN}
-              title="Open Executive Pentest Pre-Report"
-              aria-label="Open pre-report"
-            >
-              <FileText className="w-4 h-4" />
-            </button>
+            {!machine.isActive && (
+              <button
+                onClick={() => setReportMachineId(machine.id)}
+                className={HEADER_ICON_BTN}
+                title="Open Executive Pentest Pre-Report"
+                aria-label="Open pre-report"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+            )}
             <ShareLinkButton
               path={`/target/${machine.id}`}
               title={machine.name}
@@ -441,50 +449,79 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
         </div>
 
         {/* Modal Navigation Tabs (pinned below header, single-line, scrollable) */}
-        <div
-          role="tablist"
-          aria-label="Machine detail sections"
-          className="flex-shrink-0 flex items-center border-b border-subtle bg-surface-card px-2 sm:px-4 overflow-x-auto no-scrollbar"
-        >
-          {([
-            { id: 'overview', label: 'Overview', icon: <Crosshair className="w-3.5 h-3.5" /> },
-            { id: 'commands', label: 'Arsenal', icon: <Zap className="w-3.5 h-3.5" /> },
-            {
-              id: 'checklist',
-              label: 'Checklist',
-              icon: <ListChecks className="w-3.5 h-3.5" />,
-              extra: checklistCompletedCount > 0 ? (
-                <span className="text-xs px-1.5 h-5 inline-flex items-center rounded bg-accent-muted text-accent font-medium tabular-nums">
-                  {checklistCompletedCount} done
-                </span>
-              ) : null,
-            },
-            { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5" /> },
-            ...(!machine.isActive && Boolean(machine.officialSynopsis || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf)
-              ? [{ id: 'walkthrough', label: 'Official intel', icon: <BookOpen className="w-3.5 h-3.5" /> }]
-              : []),
-          ] as { id: typeof activeModalTab; label: string; icon: React.ReactNode; extra?: React.ReactNode }[]).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeModalTab === tab.id}
-              onClick={() => setActiveModalTab(tab.id)}
-              className={`flex items-center gap-1.5 py-2.5 px-3 sm:px-4 min-h-[44px] sm:min-h-0 font-sans font-medium text-sm border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
-                activeModalTab === tab.id
-                  ? 'border-accent text-primary'
-                  : 'border-transparent text-muted hover:text-primary'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-              {tab.extra}
-            </button>
-          ))}
-        </div>
+        {!machine.isActive && (
+          <div
+            role="tablist"
+            aria-label="Machine detail sections"
+            className="flex-shrink-0 flex items-center border-b border-subtle bg-surface-card px-2 sm:px-4 overflow-x-auto no-scrollbar"
+          >
+            {([
+              { id: 'overview', label: 'Overview', icon: <Crosshair className="w-3.5 h-3.5" /> },
+              { id: 'commands', label: 'Arsenal', icon: <Zap className="w-3.5 h-3.5" /> },
+              {
+                id: 'checklist',
+                label: 'Checklist',
+                icon: <ListChecks className="w-3.5 h-3.5" />,
+                extra: checklistCompletedCount > 0 ? (
+                  <span className="text-xs px-1.5 h-5 inline-flex items-center rounded bg-accent-muted text-accent font-medium tabular-nums">
+                    {checklistCompletedCount} done
+                  </span>
+                ) : null,
+              },
+              { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5" /> },
+              ...(!machine.isActive && Boolean(machine.officialSynopsis || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf)
+                ? [{ id: 'walkthrough', label: 'Official intel', icon: <BookOpen className="w-3.5 h-3.5" /> }]
+                : []),
+            ] as { id: typeof activeModalTab; label: string; icon: React.ReactNode; extra?: React.ReactNode }[]).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeModalTab === tab.id}
+                onClick={() => setActiveModalTab(tab.id)}
+                className={`flex items-center gap-1.5 py-2.5 px-3 sm:px-4 min-h-[44px] sm:min-h-0 font-sans font-medium text-sm border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+                  activeModalTab === tab.id
+                    ? 'border-accent text-primary'
+                    : 'border-transparent text-muted hover:text-primary'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.extra}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Modal Body (Scrollable Center Workspace) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 text-xs scrollbar-thin">
+        {machine.isActive ? (
+          <div className="flex-1 overflow-y-auto p-6 sm:p-12 flex flex-col items-center justify-center text-center space-y-5">
+            <div className="w-14 h-14 rounded-2xl bg-callout-warn-bg border border-callout-warn-border flex items-center justify-center text-callout-warn-fg shadow-sm">
+              <Lock className="w-7 h-7" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-semibold text-primary">{machine.name}</h3>
+              <p className="text-xs font-mono uppercase tracking-wider text-muted">Active Seasonal Target · Name Only</p>
+            </div>
+            <p className="text-sm text-secondary leading-relaxed max-w-md">
+              In strict compliance with <strong>Hack The Box Terms of Service (AUP §8.2)</strong>, active machines are restricted to name only. No walkthroughs, attack vectors, open ports, flags, hints, or notes are permitted until retirement.
+            </p>
+            {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
+              <div className="pt-2">
+                <a
+                  href={sanitizeExternalUrl(machine.roomUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-primary font-medium text-xs transition-colors"
+                >
+                  <span>Play on Hack The Box</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-muted" />
+                </a>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 text-xs scrollbar-thin">
           {activeModalTab === 'commands' ? (
             <QuickCommandsTab machine={machine} />
           ) : activeModalTab === 'checklist' ? (
@@ -1424,6 +1461,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
         </div>
       )}
     </div>
+  )}
 
         {/* Modal Footer (Pinned at Bottom) */}
         <div className="flex-shrink-0 border-t border-subtle p-3 sm:p-3.5 bg-surface-sunken/95 backdrop-blur-sm flex items-center justify-between">
@@ -1432,20 +1470,24 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setReportMachineId(machine.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-callout-tip-bg hover:bg-callout-tip-bg border border-callout-tip-border text-callout-tip-fg hover:text-callout-tip-fg font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
-              title="Open Printable Pentest Report PDF"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Pre-Report PDF</span>
-            </button>
-            <button
-              onClick={handleOpenInWriteup}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-muted border border-accent text-callout-info-fg hover:bg-accent hover:text-on-accent font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
-            >
-              <FileText className="w-3.5 h-3.5" /> Writeup Studio
-            </button>
+            {!machine.isActive && (
+              <>
+                <button
+                  onClick={() => setReportMachineId(machine.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-callout-tip-bg hover:bg-callout-tip-bg border border-callout-tip-border text-callout-tip-fg hover:text-callout-tip-fg font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
+                  title="Open Printable Pentest Report PDF"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Pre-Report PDF</span>
+                </button>
+                <button
+                  onClick={handleOpenInWriteup}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-muted border border-accent text-callout-info-fg hover:bg-accent hover:text-on-accent font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
+                >
+                  <FileText className="w-3.5 h-3.5" /> Writeup Studio
+                </button>
+              </>
+            )}
             <button
               onClick={() => setSelectedMachineId(null)}
               className="px-4 py-1.5 rounded-lg bg-surface-card border border-strong text-primary hover:border-callout-success-border transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] font-medium shadow-xs"
