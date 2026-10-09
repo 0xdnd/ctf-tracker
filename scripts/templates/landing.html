@@ -223,6 +223,97 @@ Nmap scan report for 10.129.14.21
 {{SITE_FOOTER}}
 
   <script>
+    // Progressive enhancement: pointer depth on the screenshots, a depth shift on the hero, and click-to-enlarge.
+    (function () {
+      var d = document;
+      var mq = function (q) { return window.matchMedia && window.matchMedia(q).matches; };
+      var canMove = function (e) { return e.pointerType === 'mouse' && !mq('(prefers-reduced-motion:reduce)'); };
+      var frames = [].slice.call(d.querySelectorAll('.frame'));
+      var raf = function (fn) { return window.requestAnimationFrame(fn); };
+
+      frames.forEach(function (f) {
+        var pending = 0, last = null;
+        f.addEventListener('pointermove', function (e) {
+          if (!canMove(e)) return;
+          last = e;
+          if (pending) return;
+          pending = raf(function () {
+            pending = 0;
+            var r = f.getBoundingClientRect(), x = (last.clientX - r.left) / r.width, y = (last.clientY - r.top) / r.height;
+            var k = r.width > 800 ? 2.2 : 4;
+            f.classList.add('is-tilting');
+            f.style.setProperty('--tx', ((0.5 - y) * k).toFixed(2) + 'deg');
+            f.style.setProperty('--ty', ((x - 0.5) * k).toFixed(2) + 'deg');
+            f.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+            f.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+          });
+        });
+        f.addEventListener('pointerleave', function () {
+          if (pending) { window.cancelAnimationFrame(pending); pending = 0; }
+          f.classList.remove('is-tilting');
+          ['--tx', '--ty', '--mx', '--my'].forEach(function (p) { f.style.removeProperty(p); });
+        });
+      });
+
+      var hero = d.querySelector('.hero');
+      var media = d.querySelector('.hero-media');
+      if (hero && media) {
+        hero.addEventListener('pointermove', function (e) {
+          if (!canMove(e)) return;
+          var r = hero.getBoundingClientRect();
+          media.style.setProperty('--hx', Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2)).toFixed(3));
+          media.style.setProperty('--hy', Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2)).toFixed(3));
+        });
+        hero.addEventListener('pointerleave', function () {
+          media.style.removeProperty('--hx');
+          media.style.removeProperty('--hy');
+        });
+      }
+
+      if (typeof HTMLDialogElement === 'undefined') return;
+      var dlg, big;
+      function openPreview(f) {
+        var img = f.querySelector('img');
+        if (!img) return;
+        if (!dlg) {
+          dlg = d.createElement('dialog');
+          dlg.className = 'lb';
+          dlg.setAttribute('aria-label', 'Screenshot preview');
+          big = d.createElement('img');
+          var x = d.createElement('button');
+          x.type = 'button';
+          x.setAttribute('aria-label', 'Close preview');
+          x.textContent = '×';
+          dlg.appendChild(big);
+          dlg.appendChild(x);
+          dlg.addEventListener('click', function () { dlg.close(); });
+          dlg.addEventListener('close', function () { if (dlg.opener) dlg.opener.focus(); });
+          d.body.appendChild(dlg);
+        }
+        big.src = img.getAttribute('src');
+        big.alt = img.alt;
+        big.width = img.naturalWidth || img.width;
+        big.height = img.naturalHeight || img.height;
+        dlg.opener = f;
+        dlg.showModal();
+      }
+      frames.forEach(function (f) {
+        var img = f.querySelector('img');
+        if (!img) return;
+        f.setAttribute('role', 'button');
+        f.setAttribute('aria-haspopup', 'dialog');
+        f.setAttribute('aria-label', 'Enlarge: ' + img.alt);
+        f.tabIndex = 0;
+        f.addEventListener('click', function () { openPreview(f); });
+        f.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); openPreview(f); }
+          else if (e.key === ' ') e.preventDefault();
+        });
+        f.addEventListener('keyup', function (e) { if (e.key === ' ') openPreview(f); });
+      });
+    })();
+  </script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});

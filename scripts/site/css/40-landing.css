@@ -2,7 +2,7 @@
 .landing h2{margin:0 0 var(--s3);padding:0;border:0}
 .landing h3{margin:0 0 var(--s2);font-size:1.0625rem}
 .cta-row{display:flex;flex-wrap:wrap;gap:var(--s3)}
-.frame{transition:transform var(--spring-dur) var(--spring),box-shadow var(--spring-dur) var(--spring);overflow:hidden;border-radius:var(--r-lg);background:var(--card);box-shadow:0 0 0 1px rgb(255 255 255/.1),0 24px 48px -20px rgb(0 0 0/.7)}
+.frame{position:relative;transition:transform var(--spring-dur) var(--spring),box-shadow var(--spring-dur) var(--spring);overflow:hidden;border-radius:var(--r-lg);background:var(--card);box-shadow:0 0 0 1px rgb(255 255 255/.1),0 24px 48px -20px rgb(0 0 0/.7)}
 .frame img{display:block;width:100%;height:auto}
 /* Hero: copy, then one browser window with the "Exam pacing" card overlapping its corner. Exactly two images. */
 .hero{padding:var(--s6) 0 var(--s5);overflow-x:clip}
@@ -112,7 +112,8 @@
 .proof .num{font-size:1.75rem}
 .feat-row{grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--s5);margin-top:var(--s7)}
 .feat-table{grid-column:1/8}
-.feat-vault{grid-column:8/13}
+.feat-vault{grid-column:8/13;align-self:start}
+@media(min-height:720px){.feat-vault{position:sticky;top:calc(var(--header-h) + var(--s5))}}
 .feat-nmap{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--s7);margin-top:var(--s8)}
 .exam-grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:var(--s7);align-items:center}
 .mods{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -126,6 +127,17 @@
 .hero-grid{grid-template-columns:minmax(0,1fr) 480px;gap:var(--s8)}
 .pace{left:-44px;bottom:-40px;width:280px}
 }
-@media(hover:hover) and (pointer:fine){.hero-media:hover .win{transform:translateY(-2px)}.hero-media:hover .pace{transform:translate(-3px,3px)}.mod:hover h3,.guides a:hover .g-t{color:var(--accent-hover)}}
+@media(hover:hover) and (pointer:fine){.mod:hover h3,.guides a:hover .g-t{color:var(--accent-hover)}}
 .landing main{padding:0}
-@media(prefers-reduced-motion:reduce){.frame,.win,.fl,.mod h3{transition:none}.hero-media:hover .win,.hero-media:hover .fl{transform:none}}
+/* Enlargeable screenshots (script adds role=button) and the preview dialog. */
+.frame[role="button"]{cursor:zoom-in;-webkit-tap-highlight-color:transparent}
+.frame[role="button"]:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.frame::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgb(255 255 255/.09),transparent 62%);transition:opacity .3s}
+.lb{max-width:96vw;max-height:94vh;margin:auto;padding:0;overflow:hidden;border:0;border-radius:var(--r-lg);background:var(--card);color:var(--text);box-shadow:0 0 0 1px rgb(255 255 255/.14),0 40px 90px -20px rgb(0 0 0/.9)}
+.lb::backdrop{background:rgb(5 5 8/.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.lb img{display:block;width:auto;height:auto;max-width:96vw;max-height:94vh;cursor:zoom-out}
+.lb button{position:fixed;top:14px;right:14px;z-index:1;display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid rgb(255 255 255/.2);border-radius:var(--r-pill);background:rgb(9 9 11/.78);color:#fff;font:400 26px/1 var(--font-sans);cursor:pointer}
+@media(max-width:700px){.lb{overflow:auto;width:96vw}.lb img{max-width:none;max-height:none;width:240vw}}
+.lb button:hover{background:rgb(39 39 42/.95)}
+.lb button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.frame,.frame::after,.win,.fl,.mod h3{transition:none}}
