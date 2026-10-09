@@ -87,7 +87,8 @@ function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', 
 
 /** current: path of the page being rendered; exact match gets aria-current="page", a parent section gets "true". */
 function navLinks(current) {
-  return NAV.map(([p, l]) => {
+  const home = `<a href="/"${current === '/' ? ' aria-current="page"' : ''}>Home</a>`;
+  return home + NAV.map(([p, l]) => {
     const exact = current === p;
     const section = !exact && typeof current === 'string' && current.startsWith(p);
     const aria = exact ? ' aria-current="page"' : section ? ' aria-current="true"' : '';
