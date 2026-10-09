@@ -21,13 +21,18 @@ function beaconTag() {
 function injectBeacon(html) {
   const tag = beaconTag();
   if (!tag || html.includes('static.cloudflareinsights.com/beacon.min.js')) return html;
+  html = html.replace(/(<meta http-equiv="Content-Security-Policy"[^>]*>)/, (m) => {
+    if (!m.includes('static.cloudflareinsights.com')) m = m.replace(/script-src ([^;"]*)/, 'script-src $1 https://static.cloudflareinsights.com');
+    if (!m.includes('https://cloudflareinsights.com')) m = m.replace(/connect-src ([^;"]*)/, 'connect-src $1 https://cloudflareinsights.com');
+    return m;
+  });
   return html.replace('</body>', `${tag}\n</body>`);
 }
 
 // Footer disclosure paragraph; empty unless the beacon is active.
 function analyticsNote() {
   if (!beaconTag()) return '';
-  return '<p>This site uses cookieless Cloudflare Web Analytics. The ZeroBox app itself sends no data.</p>';
+  return '<p>This site uses cookieless Cloudflare Web Analytics. The ZeroBox app sends no analytics or telemetry.</p>';
 }
 
 module.exports = { beaconTag, injectBeacon, analyticsNote };

@@ -9,7 +9,8 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
-// 1. Copy dist/index.html to dist/404.html for SPA routing on GitHub Pages
+// 1. Interim dist/404.html (copy of the SPA shell). scripts/gen-content-pages.cjs replaces it with the designed 404 page,
+//    whose /404.js boots the app shell for client routes such as /target/<id>.
 const distIndex = path.join(distDir, 'index.html');
 const dist404 = path.join(distDir, '404.html');
 if (fs.existsSync(distIndex)) {
@@ -27,7 +28,7 @@ if (!fs.existsSync(distNoJekyll)) {
   fs.writeFileSync(distNoJekyll, '', 'utf8');
 }
 
-// 3. Mirror all favicon and icon assets into dist and dist/assets
+// 3. Mirror all favicon and icon assets into dist
 const iconFiles = [
   'favicon.ico',
   'favicon.png',
@@ -57,7 +58,6 @@ iconFiles.forEach(file => {
   const srcPub = path.join(rootDir, 'public', file);
   if (fs.existsSync(srcPub)) {
     fs.copyFileSync(srcPub, path.join(distDir, file));
-    fs.copyFileSync(srcPub, path.join(distAssetsDir, file));
   }
 });
 console.log('✓ Mirrored all icon and favicon variants into dist and dist/assets');

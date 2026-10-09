@@ -64,10 +64,13 @@ function getModel() {
     let n = 2;
     while (used.has(slug)) slug = `${base}-${n++}`;
     used.add(slug);
-    // Only the owner's own solved targets get a detail page.
-    const safe = m;
-    const ownerSolved = m.status === 'completed' || /0xdnd\.gitbook\.io/.test(m.writeupUrl || '');
-    const ownWriteup = /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '') ? m.writeupUrl : '';
+    // Only the owner's own solved retired targets get a detail page (HTB ToS AUP §8.2 compliance)
+    const isAct = Boolean(m.isActive);
+    const safe = isAct
+      ? { ...m, ip: '', tags: [], userFlag: '', rootFlag: '', hint: '', writeupUrl: '', openPorts: [], services: [] }
+      : m;
+    const ownerSolved = !isAct && (m.status === 'completed' || /0xdnd\.gitbook\.io/.test(m.writeupUrl || ''));
+    const ownWriteup = (!isAct && /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '')) ? m.writeupUrl : '';
     return { ...safe, slug, ownWriteup, hasPage: ownerSolved };
   });
 
@@ -108,4 +111,28 @@ function getModel() {
   return cached;
 }
 
-module.exports = { getModel, slugify };
+let guidesCache;
+/**
+ * Long-form guide pages from ./guides.cjs: [{ path, title, description, html, lastmod }].
+ * Tolerant: when guides.cjs is absent it logs one line and returns [] so the rest of the build still works.
+ */
+function getGuides() {
+  if (guidesCache) return guidesCache;
+  let buildGuidePages;
+  try {
+    ({ buildGuidePages } = require('./guides.cjs'));
+  } catch (e) {
+    if (e && e.code === 'MODULE_NOT_FOUND' && /[\\/]guides\.cjs'/.test(String(e.message).split('\n')[0])) {
+      console.log('guides: scripts/lib/guides.cjs not found, skipping guide pages');
+      guidesCache = [];
+      return guidesCache;
+    }
+    throw e;
+  }
+  const layout = require('./layout.cjs');
+  const site = { ORIGIN: layout.ORIGIN, REPO: layout.REPO, name: 'ZeroBox' };
+  guidesCache = buildGuidePages({ model: getModel(), renderPage: layout.renderPage, site });
+  return guidesCache;
+}
+
+module.exports = { getModel, getGuides, slugify };
