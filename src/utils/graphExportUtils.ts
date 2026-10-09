@@ -1,4 +1,4 @@
-import { AttackGraphEdge, AttackNodePosition, ATTACK_EDGE_META } from '../types/graph';
+import { AttackGraphEdge, ATTACK_EDGE_META } from '../types/graph';
 import { Machine } from '../types';
 
 export interface ExportGraphNode {

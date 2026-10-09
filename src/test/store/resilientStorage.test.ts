@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  saveWorkspaceToIdb,
-  loadWorkspaceFromIdb,
-  listSnapshots,
   bindExportGuard,
   ensurePersistence,
 } from '../../utils/resilientStorage';

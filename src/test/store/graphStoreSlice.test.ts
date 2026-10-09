@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useCtfStore, ATTACK_GRAPH_STORAGE_KEY, safeLocalStorage } from '../../store/useCtfStore';
-import { AttackGraphEdge, AttackNodePosition } from '../../types';
+import { AttackNodePosition } from '../../types';
 
 describe('useCtfStore - Attack Graph & Pivot Topology Slice', () => {
   beforeEach(() => {

@@ -73,16 +73,16 @@ export const NewMachineModal: React.FC = () => {
 
     addCustomMachine({
       name: name.trim(),
-      ip: ip.trim() || '10.10.x.x',
-      os,
+      ip: effectiveIsActive ? '' : (ip.trim() || '10.10.x.x'),
+      os: effectiveIsActive ? 'Other' : os,
       platform,
-      difficulty,
+      difficulty: effectiveIsActive ? 'Medium' : difficulty,
       status: 'backlog',
       isActive: effectiveIsActive,
-      tags: tagList,
+      tags: effectiveIsActive ? [] : tagList,
       certifications: [],
       roomUrl: sanitizeExternalUrl(roomUrl.trim()),
-      hint: effectiveIsActive ? undefined : (hint.trim() || undefined),
+      hint: undefined,
       timeSpentSeconds: 0,
     });
 
@@ -138,91 +138,6 @@ export const NewMachineModal: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="new-machine-ip-input" className="block text-muted mb-1 font-semibold">
-                Target IP
-              </label>
-              <input
-                id="new-machine-ip-input"
-                name="new-machine-ip"
-                aria-label="Target IP Address"
-                type="text"
-                value={ip}
-                onChange={(e) => setIp(e.target.value)}
-                placeholder="10.10.10.x"
-                className="font-mono tabular-nums w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
-              />
-            </div>
-
-            <div>
-              <label className="block text-muted mb-1 font-semibold">
-                Platform
-              </label>
-              <CyberSelect<Platform>
-                value={platform}
-                onChange={setPlatform}
-                options={PLATFORM_OPTIONS}
-                variant="emerald"
-                size="md"
-                className="w-full"
-                triggerClassName="w-full bg-surface-sunken"
-                soundEnabled={soundEnabled}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="flex items-center justify-between text-muted mb-1 font-semibold">
-                <span>Operating System</span>
-                <OsBadge os={os} size="xs" />
-              </label>
-              <CyberSelect<OperatingSystem>
-                value={os}
-                onChange={setOs}
-                options={OS_OPTIONS}
-                variant="emerald"
-                size="md"
-                className="w-full"
-                triggerClassName="w-full bg-surface-sunken"
-                soundEnabled={soundEnabled}
-              />
-            </div>
-
-            <div>
-              <label className="block text-muted mb-1 font-semibold">
-                Difficulty Tier
-              </label>
-              <CyberSelect<Difficulty>
-                value={difficulty}
-                onChange={setDifficulty}
-                options={DIFFICULTY_OPTIONS}
-                variant="emerald"
-                size="md"
-                className="w-full"
-                triggerClassName="w-full bg-surface-sunken"
-                soundEnabled={soundEnabled}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="new-machine-tags-input" className="block text-muted mb-1 font-semibold">
-              Attack Vectors / Tags (Comma-separated)
-            </label>
-            <input
-              id="new-machine-tags-input"
-              name="new-machine-tags"
-              aria-label="Attack Vectors and Tags"
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="SQLi, SUID, Kerberoasting, LinPEAS"
-              className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
-            />
-          </div>
-
           {/* Active Lab ToS Safeguard Control */}
           <div className={`p-3 rounded-lg border transition-colors ${
             effectiveIsActive 
@@ -238,8 +153,8 @@ export const NewMachineModal: React.FC = () => {
                   </span>
                   <span className="text-xs text-tertiary">
                     {isKnownActive 
-                      ? 'Known in-season HTB machine detected. ToS safeguards automatically engaged.'
-                      : 'Mark if target is in-season / active to enforce spoiler & writeup locks.'}
+                      ? 'Known in-season HTB machine detected. Name-only mode engaged.'
+                      : 'Enforce Hack The Box Terms of Service (Name only, no spoilers/recon).'}
                   </span>
                 </div>
               </div>
@@ -254,14 +169,14 @@ export const NewMachineModal: React.FC = () => {
             </label>
             {effectiveIsActive && (
               <p className="text-xs leading-relaxed pt-2 border-t border-callout-warn-border text-callout-warn-fg">
-                Active Lab Safe-Mode: Personal time, flags, notes, and checklist tracking are fully supported. Public writeup URLs and spoilers are locked out to comply with Hack The Box Terms of Service (AUP §8.2).
+                HTB ToS Compliance Mode: Per Hack The Box rules (AUP §8.2), only the machine name and official room link are stored. IP, attack vectors, hints, flags, and notes are strictly excluded.
               </p>
             )}
           </div>
 
           <div>
             <label htmlFor="new-machine-url-input" className="block text-muted mb-1 font-semibold">
-              {effectiveIsActive ? 'Official Lab Room URL' : 'Lab Room / Writeup URL'}
+              {effectiveIsActive ? 'Official Lab Room URL (Optional)' : 'Lab Room / Writeup URL'}
             </label>
             <input
               id="new-machine-url-input"
@@ -270,33 +185,115 @@ export const NewMachineModal: React.FC = () => {
               type="url"
               value={roomUrl}
               onChange={(e) => setRoomUrl(e.target.value)}
-              placeholder={effectiveIsActive ? 'https://app.hackthebox.com/machines/...' : 'https://app.hackthebox.com/machines/...'}
+              placeholder="https://app.hackthebox.com/machines/..."
               className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
             />
           </div>
 
-          <div>
-            <label htmlFor="new-machine-hint-input" className="block text-muted mb-1 font-semibold">
-              Key Hint / Vulnerability Intel
-            </label>
-            {effectiveIsActive ? (
-              <div className="p-2.5 rounded-lg border border-dashed border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg text-xs flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-callout-warn-fg flex-shrink-0" />
-                <span>Intel hints and spoilers are locked for active labs per HTB Terms of Service (AUP §8.2).</span>
+          {!effectiveIsActive && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="new-machine-ip-input" className="block text-muted mb-1 font-semibold">
+                    Target IP
+                  </label>
+                  <input
+                    id="new-machine-ip-input"
+                    name="new-machine-ip"
+                    aria-label="Target IP Address"
+                    type="text"
+                    value={ip}
+                    onChange={(e) => setIp(e.target.value)}
+                    placeholder="10.10.10.x"
+                    className="font-mono tabular-nums w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-muted mb-1 font-semibold">
+                    Platform
+                  </label>
+                  <CyberSelect<Platform>
+                    value={platform}
+                    onChange={setPlatform}
+                    options={PLATFORM_OPTIONS}
+                    variant="emerald"
+                    size="md"
+                    className="w-full"
+                    triggerClassName="w-full bg-surface-sunken"
+                    soundEnabled={soundEnabled}
+                  />
+                </div>
               </div>
-            ) : (
-              <textarea
-                id="new-machine-hint-input"
-                name="new-machine-hint"
-                aria-label="Key Hint or Vulnerability Intel"
-                rows={2}
-                value={hint}
-                onChange={(e) => setHint(e.target.value)}
-                placeholder="Optional hint for when you get stuck..."
-                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border resize-none"
-              />
-            )}
-          </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="flex items-center justify-between text-muted mb-1 font-semibold">
+                    <span>Operating System</span>
+                    <OsBadge os={os} size="xs" />
+                  </label>
+                  <CyberSelect<OperatingSystem>
+                    value={os}
+                    onChange={setOs}
+                    options={OS_OPTIONS}
+                    variant="emerald"
+                    size="md"
+                    className="w-full"
+                    triggerClassName="w-full bg-surface-sunken"
+                    soundEnabled={soundEnabled}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-muted mb-1 font-semibold">
+                    Difficulty Tier
+                  </label>
+                  <CyberSelect<Difficulty>
+                    value={difficulty}
+                    onChange={setDifficulty}
+                    options={DIFFICULTY_OPTIONS}
+                    variant="emerald"
+                    size="md"
+                    className="w-full"
+                    triggerClassName="w-full bg-surface-sunken"
+                    soundEnabled={soundEnabled}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="new-machine-tags-input" className="block text-muted mb-1 font-semibold">
+                  Attack Vectors / Tags (Comma-separated)
+                </label>
+                <input
+                  id="new-machine-tags-input"
+                  name="new-machine-tags"
+                  aria-label="Attack Vectors and Tags"
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="SQLi, SUID, Kerberoasting, LinPEAS"
+                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="new-machine-hint-input" className="block text-muted mb-1 font-semibold">
+                  Key Hint / Vulnerability Intel
+                </label>
+                <textarea
+                  id="new-machine-hint-input"
+                  name="new-machine-hint"
+                  aria-label="Key Hint or Vulnerability Intel"
+                  rows={2}
+                  value={hint}
+                  onChange={(e) => setHint(e.target.value)}
+                  placeholder="Optional hint for when you get stuck..."
+                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border resize-none"
+                />
+              </div>
+            </>
+          )}
 
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
             <button

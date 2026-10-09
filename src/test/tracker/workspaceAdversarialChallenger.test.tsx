@@ -1,8 +1,7 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { GraphView, computeCanvasDelta } from '../../components/tracker/GraphView';
+import { GraphView } from '../../components/tracker/GraphView';
 import { ObsidianNoteViewer } from '../../components/cheatsheet/ObsidianNoteViewer';
 import { CheatsheetView } from '../../components/cheatsheet/CheatsheetView';
 import { 

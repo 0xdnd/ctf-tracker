@@ -1,6 +1,5 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { EditableIpBadge } from '../../components/common/EditableIpBadge';
 import { useCtfStore } from '../../store/useCtfStore';
 import * as helpers from '../../utils/helpers';

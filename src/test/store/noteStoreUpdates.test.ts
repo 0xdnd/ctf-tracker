@@ -165,7 +165,7 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
   // 3. Baseline Catalog Promotion & Immutability
   // --------------------------------------------------------------------------
   describe('3. Baseline Catalog Promotion & Immutability', () => {
-    it('promotes baseline CPTS_NOTES entry to customNotes without mutating baseline static catalog', () => {
+    it('promotes baseline CPTS_NOTES entry to customNotes without mutating baseline static catalog', async () => {
       expect(CPTS_NOTES.length).toBeGreaterThan(0);
       const baselineNote = CPTS_NOTES[0];
       const baselineId = baselineNote.id;
@@ -178,7 +178,7 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
       });
 
       const editedMarkdown = '# Customized Baseline Guide\n\nAdded custom flags and notes.';
-      useCtfStore.getState().updateNoteContent(baselineId, editedMarkdown);
+      await useCtfStore.getState().updateNoteContent(baselineId, editedMarkdown);
 
       // Invariant 1: Static CPTS_NOTES catalog remains completely IMMUTABLE
       const baselineAfter = CPTS_NOTES.find((n) => n.id === baselineId);
@@ -202,16 +202,16 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
       expect(activeNote?.rawMarkdown).toBe(editedMarkdown);
     });
 
-    it('subsequent edits to a promoted note update customNotes without creating duplicate entries', () => {
+    it('subsequent edits to a promoted note update customNotes without creating duplicate entries', async () => {
       const baselineId = CPTS_NOTES[0].id;
       useCtfStore.setState({ customNotes: [], userNotes: [] });
 
       // First edit promotes
-      useCtfStore.getState().updateNoteContent(baselineId, 'First edit');
+      await useCtfStore.getState().updateNoteContent(baselineId, 'First edit');
       expect(useCtfStore.getState().customNotes.length).toBe(1);
 
       // Second edit updates the promoted record
-      useCtfStore.getState().updateNoteContent(baselineId, 'Second edit');
+      await useCtfStore.getState().updateNoteContent(baselineId, 'Second edit');
       expect(useCtfStore.getState().customNotes.length).toBe(1);
       expect(useCtfStore.getState().customNotes[0].rawMarkdown).toBe('Second edit');
     });
@@ -254,14 +254,14 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
   // 5. Defensive Edge Cases & Invariants
   // --------------------------------------------------------------------------
   describe('5. Defensive Edge Cases', () => {
-    it('gracefully handles non-existent note ID without crashing or corrupting state', () => {
+    it('gracefully handles non-existent note ID without crashing or corrupting state', async () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const initialCustom = useCtfStore.getState().customNotes;
       const initialUser = useCtfStore.getState().userNotes;
 
-      expect(() => {
-        useCtfStore.getState().updateNoteContent('ghost-note-404', 'Some content');
-      }).not.toThrow();
+      await expect(
+        Promise.resolve(useCtfStore.getState().updateNoteContent('ghost-note-404', 'Some content'))
+      ).resolves.not.toThrow();
 
       expect(useCtfStore.getState().customNotes).toEqual(initialCustom);
       expect(useCtfStore.getState().userNotes).toEqual(initialUser);

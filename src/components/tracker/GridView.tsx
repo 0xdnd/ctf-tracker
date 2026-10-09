@@ -22,7 +22,6 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
-import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
@@ -86,6 +85,7 @@ const GridCard = React.memo<GridCardProps>(({
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
+    if (m.isActive) return;
 
     const files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
@@ -207,121 +207,138 @@ const GridCard = React.memo<GridCardProps>(({
         </div>
 
         {/* IP (telemetry) + status label + time */}
-        <div className="mt-1 flex items-center justify-between gap-2 pl-4">
-          <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
-          <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
-            <Clock className="h-3 w-3 shrink-0" />
-            <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
-          </div>
-        </div>
-        <div className="mt-0.5 pl-4 text-xs text-muted font-sans">{statusLabel}</div>
-
-        {/* Max two badges, rest behind +N */}
-        <div className="mt-3 pl-4">
-          <BadgeOverflow badges={metaBadges} max={2} />
-        </div>
-
-        {/* Hint spoiler / Active ToS guard */}
         {m.isActive ? (
-          <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-callout-warn-border bg-callout-warn-bg px-2.5 py-1.5 text-xs text-callout-warn-fg">
-            <Lock className="h-3 w-3 flex-shrink-0 text-callout-warn-fg" />
-            <span>Active lab · writeups prohibited (HTB ToS)</span>
-          </div>
-        ) : m.hint ? (
-          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-muted">Intel hint</span>
-              <button
-                type="button"
-                onClick={(e) => onToggleHint(e, m.id)}
-                className="flex cursor-pointer items-center gap-1 text-xs text-muted transition-colors hover:text-primary active:scale-[0.97]"
-                title={isHintRevealed ? 'Hide Intel Hint' : 'Peek Intel Hint'}
-                aria-label={isHintRevealed ? `Hide intel hint for ${m.name}` : `Peek intel hint for ${m.name}`}
-              >
-                {isHintRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {isHintRevealed ? 'Hide' : 'Peek'}
-              </button>
+          <div className="mt-3 pl-4 space-y-2">
+            <div className="flex items-center gap-1.5 rounded-lg border border-callout-warn-border bg-callout-warn-bg px-2.5 py-1.5 text-xs text-callout-warn-fg">
+              <Lock className="h-3.5 w-3.5 flex-shrink-0 text-callout-warn-fg" />
+              <span>HTB ToS Protected · Name Only</span>
             </div>
-            <AnimatePresence initial={false}>
-              <motion.div
-                layout
-                className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
-                  isHintRevealed
-                    ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
-                    : 'flex cursor-pointer select-none items-center justify-center border-subtle bg-surface-sunken/60 p-2 px-2.5 text-muted hover:border-strong hover:text-primary'
-                }`}
-                onClick={(e) => {
-                  if (!isHintRevealed) onToggleHint(e, m.id);
-                }}
-              >
-                {isHintRevealed ? (
-                  m.hint
-                ) : (
-                  <span className="flex items-center gap-1.5 text-xs">
-                    <Eye className="h-3 w-3 text-muted" />
-                    <span>Click to reveal hint</span>
-                  </span>
-                )}
-              </motion.div>
-            </AnimatePresence>
+            <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
+              <Clock className="h-3 w-3 shrink-0" />
+              <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+            </div>
           </div>
-        ) : null}
+        ) : (
+          <>
+            <div className="mt-1 flex items-center justify-between gap-2 pl-4">
+              <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+              <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
+                <Clock className="h-3 w-3 shrink-0" />
+                <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+              </div>
+            </div>
+            <div className="mt-0.5 pl-4 text-xs text-muted font-sans">{statusLabel}</div>
 
-        {/* Open ports (telemetry) */}
-        {m.openPorts && m.openPorts.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1">
-            <span className="flex items-center gap-1 text-xs text-muted">
-              <Radio className="h-3 w-3 text-muted" /> Ports
-            </span>
-            {m.openPorts.slice(0, 4).map((port) => (
-              <span
-                key={port}
-                className="rounded border border-subtle bg-surface-sunken px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums text-secondary"
-              >
-                {port}
-              </span>
-            ))}
-            {m.openPorts.length > 4 && (
-              <span className="font-mono text-xs tabular-nums text-muted">+{m.openPorts.length - 4}</span>
+            {/* Max two badges, rest behind +N */}
+            <div className="mt-3 pl-4">
+              <BadgeOverflow badges={metaBadges} max={2} />
+            </div>
+
+            {/* Hint spoiler */}
+            {m.hint ? (
+              <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted">Intel hint</span>
+                  <button
+                    type="button"
+                    onClick={(e) => onToggleHint(e, m.id)}
+                    className="flex cursor-pointer items-center gap-1 text-xs text-muted transition-colors hover:text-primary active:scale-[0.97]"
+                    title={isHintRevealed ? 'Hide Intel Hint' : 'Peek Intel Hint'}
+                    aria-label={isHintRevealed ? `Hide intel hint for ${m.name}` : `Peek intel hint for ${m.name}`}
+                  >
+                    {isHintRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {isHintRevealed ? 'Hide' : 'Peek'}
+                  </button>
+                </div>
+                {/* Plain div: framer-motion `layout` measures every card's box on mount (forced reflow). */}
+                <div
+                  className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
+                    isHintRevealed
+                      ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
+                      : 'flex cursor-pointer select-none items-center justify-center border-subtle bg-surface-sunken/60 p-2 px-2.5 text-muted hover:border-strong hover:text-primary'
+                  }`}
+                  onClick={(e) => {
+                    if (!isHintRevealed) onToggleHint(e, m.id);
+                  }}
+                >
+                  {isHintRevealed ? (
+                    m.hint
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs">
+                      <Eye className="h-3 w-3 text-muted" />
+                      <span>Click to reveal hint</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Open ports (telemetry) */}
+            {m.openPorts && m.openPorts.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1">
+                <span className="flex items-center gap-1 text-xs text-muted">
+                  <Radio className="h-3 w-3 text-muted" /> Ports
+                </span>
+                {m.openPorts.slice(0, 4).map((port) => (
+                  <span
+                    key={port}
+                    className="rounded border border-subtle bg-surface-sunken px-1.5 py-0.5 font-mono text-xs font-medium tabular-nums text-secondary"
+                  >
+                    {port}
+                  </span>
+                ))}
+                {m.openPorts.length > 4 && (
+                  <span className="font-mono text-xs tabular-nums text-muted">+{m.openPorts.length - 4}</span>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
       {/* Footer: flags + engage stay visible, utility actions reveal on hover/focus */}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-subtle pt-3" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onToggleUserFlag(m.id)}
-            className={flagBtn(hasUser, 'warn')}
-            title="Toggle User Flag"
-            aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
-          >
-            <Flag className="h-2.5 w-2.5" /> U
-          </button>
-          <button
-            type="button"
-            onClick={() => onToggleRootFlag(m.id, hasRoot)}
-            className={flagBtn(hasRoot, 'success')}
-            title="Toggle Root Flag"
-            aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
-          >
-            <Flag className="h-2.5 w-2.5" /> R
-          </button>
-        </div>
+        {m.isActive ? (
+          <div className="flex items-center gap-1.5 text-[11px] text-muted font-mono">
+            <Lock className="h-3 w-3 text-callout-warn-fg" />
+            <span>Protected</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => onToggleUserFlag(m.id)}
+              className={flagBtn(hasUser, 'warn')}
+              title="Toggle User Flag"
+              aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
+            >
+              <Flag className="h-2.5 w-2.5" /> U
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleRootFlag(m.id, hasRoot)}
+              className={flagBtn(hasRoot, 'success')}
+              title="Toggle Root Flag"
+              aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
+            >
+              <Flag className="h-2.5 w-2.5" /> R
+            </button>
+          </div>
+        )}
 
         <div className="flex items-center gap-0.5">
           <div className={`flex items-center gap-0.5 ${REVEAL}`}>
-            <button
-              type="button"
-              onClick={() => onSelectMachine(m.id)}
-              className={ICON_BTN}
-              title="Attack Methodology Checklist"
-              aria-label={`Open attack methodology checklist for ${m.name}`}
-            >
-              <ListChecks className="h-3.5 w-3.5" />
-            </button>
+            {!m.isActive && (
+              <button
+                type="button"
+                onClick={() => onSelectMachine(m.id)}
+                className={ICON_BTN}
+                title="Attack Methodology Checklist"
+                aria-label={`Open attack methodology checklist for ${m.name}`}
+              >
+                <ListChecks className="h-3.5 w-3.5" />
+              </button>
+            )}
 
             <ShareLinkButton
               path={`/target/${m.id}`}
@@ -343,31 +360,35 @@ const GridCard = React.memo<GridCardProps>(({
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
 
-            <button
-              type="button"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                onOpenReport(m.id);
-              }}
-              className={`${ICON_BTN} hover:text-accent`}
-              title="Open Executive Pentest Pre-Report"
-              aria-label={`Open executive pentest pre-report for ${m.name}`}
-            >
-              <FileText className="h-3.5 w-3.5" />
-            </button>
+            {!m.isActive && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    onOpenReport(m.id);
+                  }}
+                  className={`${ICON_BTN} hover:text-accent`}
+                  title="Open Executive Pentest Pre-Report"
+                  aria-label={`Open executive pentest pre-report for ${m.name}`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                </button>
 
-            <button
-              type="button"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                onOpenWriteup(m.id);
-              }}
-              className={`${ICON_BTN} hover:text-accent`}
-              title="Open Writeup"
-              aria-label={`Open writeup studio for ${m.name}`}
-            >
-              <FileText className="h-3.5 w-3.5" />
-            </button>
+                <button
+                  type="button"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    onOpenWriteup(m.id);
+                  }}
+                  className={`${ICON_BTN} hover:text-accent`}
+                  title="Open Writeup"
+                  aria-label={`Open writeup studio for ${m.name}`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
 
             {Boolean(sanitizeExternalUrl(m.roomUrl)) && (
               <a
@@ -477,14 +498,10 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
     <div className="space-y-6 font-sans pb-12">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {visibleMachines.map((m, idx) => (
-          <motion.div
+          <div
             key={m.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              ...TACTICAL_SPRING,
-              delay: CASCADE_STAGGER_DELAY(idx),
-            }}
+            className="card-enter"
+            style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
           >
             <GridCard
               machine={m}
@@ -499,7 +516,7 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
               onOpenWriteup={handleOpenWriteup}
               onOpenDetail={handleOpenDetail}
             />
-          </motion.div>
+          </div>
         ))}
       </div>
 

@@ -8,14 +8,7 @@ import {
   Check, 
   Trash2, 
   ArrowRight, 
-  ShieldCheck, 
-  Layers, 
-  Radio, 
-  Server, 
-  Network, 
-  ExternalLink,
-  Info
-} from 'lucide-react';
+  Network} from 'lucide-react';
 import { 
   AttackGraphEdge, 
   AttackEdgeType, 
@@ -27,9 +20,8 @@ import { Machine } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { generatePivotCommands } from '../../utils/pivotCommandUtils';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
-import { OsBadge } from '../common/OsBadge';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
-import { DRAWER_SLIDE_TRANSITION, DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
+import { DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
 
 export interface GraphEdgeInspectorDrawerProps {
   edge: AttackGraphEdge | null;

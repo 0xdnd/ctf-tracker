@@ -1,18 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Terminal, 
   Copy, 
   Check, 
-  Search, 
-  Globe, 
-  Cpu, 
-  Layers, 
-  ArrowRight, 
-  Flame, 
-  Server, 
-  ShieldCheck,
-  Zap
-} from 'lucide-react';
+  Search} from 'lucide-react';
 import { Machine } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';

@@ -1,6 +1,5 @@
-import React from 'react';
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { renderInlineMarkdown } from '../../components/writeup/WriteupStudio';
 
 describe('WriteupStudio Inline Markdown Parser', () => {

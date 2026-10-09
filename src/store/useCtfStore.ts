@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import type { StorageValue } from 'zustand/middleware';
 import { 
   Machine, 
   PipelineStatus, 
@@ -12,13 +13,36 @@ import {
   OperatingSystem,
   AttackGraphEdge,
   AttackNodePosition,
-  AttackGraphPersistedState
+  AttackGraphPersistedState,
+  Credential,
+  CredAttempt,
+  LootItem,
+  NewCredentialInput,
+  CredentialPatch,
+  NewCredAttemptInput,
+  NewLootItemInput,
+  LootItemPatch
 } from '../types';
+import {
+  loadLootState,
+  saveLootState,
+  clearLootState,
+  getLootStorageKey,
+  parseLootPayload,
+  buildCredential,
+  findDuplicateCredential,
+  patchCredential,
+  upsertAttemptInList,
+  buildLootItem,
+  patchLootItem,
+  mergeImportedLoot,
+  redactLootState
+} from './lootPersistence';
 import { STARTER_MACHINES } from '../data/starterMachines';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
-let cachedCatalog: Machine[] | null = null;
-import { CPTS_NOTES, getAllCptsNotes, type CptsNoteEntry } from '../utils/obsidianManualUtils';
+import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
+import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
 import { 
   extractDeepWriteups, 
@@ -34,7 +58,8 @@ import {
   triggerWorkspaceDownload, 
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
-import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
+import { saveWorkspaceToIdb } from '../utils/resilientStorage';
+import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
 export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
@@ -250,7 +275,7 @@ interface CtfStoreState {
   deletedNoteIds: string[];
   userSolvesReset: boolean;
   addCustomNote: (note: Partial<CptsNoteEntry> & { title: string }) => void;
-  updateNoteContent: (noteId: string, rawMarkdown: string) => void;
+  updateNoteContent: (noteId: string, rawMarkdown: string) => void | Promise<void>;
   deleteNote: (noteId: string) => void;
   restoreDeletedNotes: () => void;
   resetSolvesToZero: () => void;
@@ -284,6 +309,21 @@ interface CtfStoreState {
   updateGraphEdge: (id: string, updates: Partial<AttackGraphEdge>) => void;
   deleteGraphEdge: (id: string) => void;
   clearGraphEdges: () => void;
+
+  // Credentials & Loot (per profile; persisted by lootPersistence, not by zustand persist)
+  credentials: Credential[];
+  credAttempts: CredAttempt[];
+  lootItems: LootItem[];
+  /** Returns the new credential's id, or the id of the existing one when the credKey already exists. */
+  addCredential: (input: NewCredentialInput) => string;
+  /** Returns false when the id is unknown or the edit would duplicate another real credential. */
+  updateCredential: (id: string, patch: CredentialPatch) => boolean;
+  deleteCredential: (id: string) => void;
+  upsertCredAttempt: (attempt: NewCredAttemptInput) => string;
+  deleteCredAttempt: (id: string) => void;
+  addLootItem: (input: NewLootItemInput) => string;
+  updateLootItem: (id: string, patch: LootItemPatch) => void;
+  deleteLootItem: (id: string) => void;
 }
 
 const DEFAULT_GLOBAL_VARS: GlobalVariables = {
@@ -613,12 +653,38 @@ export const toLeanMachines = (machines: Machine[]): Machine[] => {
     });
 };
 
+export function sanitizeActiveMachine(m: Machine): Machine {
+  if (!m.isActive) return m;
+  return {
+    ...m,
+    ip: '',
+    tags: [],
+    writeupUrl: '',
+    hint: '',
+    officialWalkthrough: '',
+    officialSynopsis: '',
+    officialPdf: '',
+    userFlag: '',
+    rootFlag: '',
+    userPwnedAt: undefined,
+    rootPwnedAt: undefined,
+    openPorts: [],
+    services: [],
+    scanSummary: '',
+    rawScanOutput: '',
+    quickNotes: '',
+    writeupMarkdown: '',
+    skillsLearned: [],
+    checklist: undefined,
+  };
+}
+
 export const mergeMachinesWithCatalog = (
   storedMachines?: Machine[],
   userSolvesReset: boolean = false,
   catalogSource?: Machine[]
 ): Machine[] => {
-  const catalog = catalogSource || cachedCatalog || STARTER_MACHINES;
+  const catalog = catalogSource || getLoadedMachinesCatalog() || STARTER_MACHINES;
   const map = new Map<string, Machine>();
   const nameMap = new Map<string, Machine>();
   const platformNameMap = new Map<string, Machine>();
@@ -767,8 +833,8 @@ export const mergeMachinesWithCatalog = (
         (m.id && m.id.startsWith('custom-')) ||
         Boolean(m.userFlag?.trim()) ||
         Boolean(m.rootFlag?.trim()) ||
-        m.status === 'completed' ||
-        m.status === 'foothold' ||
+        // Any in-progress status (recon / foothold / root / completed): same rule as `userHasProgress` above
+        (Boolean(m.status) && (m.status as string) !== 'backlog' && (m.status as string) !== 'unsolved') ||
         (m.timeSpentSeconds && m.timeSpentSeconds > 0) ||
         Boolean(m.quickNotes?.trim()) ||
         Boolean(m.writeupMarkdown?.trim())
@@ -782,18 +848,14 @@ export const mergeMachinesWithCatalog = (
     });
   }
 
-  // Enforce Hack The Box Terms of Service compliance: Active machines MUST NEVER have writeupUrl or hint
+  // Enforce Hack The Box Terms of Service compliance: Active machines MUST ONLY have name and room link (no spoilers/recon)
   map.forEach((machine) => {
     const norm = machine.name.toLowerCase().trim();
     if (KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
       machine.isActive = true;
     }
     if (machine.isActive) {
-      machine.writeupUrl = '';
-      machine.hint = '';
-      machine.officialWalkthrough = '';
-      machine.officialSynopsis = '';
-      machine.officialPdf = '';
+      Object.assign(machine, sanitizeActiveMachine(machine));
     }
   });
 
@@ -812,9 +874,15 @@ export const mergeMachinesWithCatalog = (
   return [...customEntries, ...catalogEntries];
 };
 
+// Persist snapshot memo (see partialize / storage.setItem in the store config below)
+let lastPartialize: { inputs: unknown[]; snapshot: Record<string, unknown> } | null = null;
+let lastPersistedSnapshot: unknown;
+let lastPersistedVersion: number | undefined;
+
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
-const initialAttackGraphData = loadInitialAttackGraphState();
+const initialAttackGraphData = loadInitialAttackGraphState(initialProfileId);
+const initialLootData = loadLootState(initialProfileId);
 
 export const useCtfStore = create<CtfStoreState>()(
   persist(
@@ -834,6 +902,11 @@ export const useCtfStore = create<CtfStoreState>()(
       // Attack Graph & Pivot Topology State
       graphNodePositions: initialAttackGraphData.graphNodePositions,
       graphEdges: initialAttackGraphData.graphEdges,
+
+      // Credentials & Loot (per-profile, loaded lazily with legacy migration)
+      credentials: initialLootData.credentials,
+      credAttempts: initialLootData.credAttempts,
+      lootItems: initialLootData.lootItems,
 
       appBrand: 'zerobox',
       activeTab: 'tracker',
@@ -937,14 +1010,18 @@ export const useCtfStore = create<CtfStoreState>()(
 
       loadCatalog: async () => {
         if (get().isCatalogLoaded || get().isCatalogLoading) return;
+        // Transient flag: not part of partialize(), so this set() never re-serializes the machines.
         set({ isCatalogLoading: true });
         try {
-          const { INITIAL_MACHINES } = await import('../data/machinesCatalog');
-          cachedCatalog = INITIAL_MACHINES;
+          const INITIAL_MACHINES = await loadMachinesCatalog();
           const state = get();
           const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset, INITIAL_MACHINES);
+          const unchanged =
+            merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
+          // Single set(): keep the existing machines reference when the merge changed nothing so
+          // subscribers and the persist layer see no machines change.
           set({
-            machines: merged,
+            ...(unchanged ? {} : { machines: merged }),
             isCatalogLoaded: true,
             isCatalogLoading: false,
           });
@@ -1047,7 +1124,7 @@ export const useCtfStore = create<CtfStoreState>()(
       updateMachineStatus: (id, status) => {
         set((state) => {
           const now = new Date().toISOString();
-          const today = now.slice(0, 10);
+          const today = toLocalDateKey(new Date());
           const isNowRoot = status === 'root' || status === 'completed';
           const isNowFoothold = status === 'foothold' || isNowRoot;
           
@@ -1176,11 +1253,7 @@ export const useCtfStore = create<CtfStoreState>()(
                 merged.isActive = true;
               }
               if (merged.isActive) {
-                merged.writeupUrl = '';
-                merged.hint = '';
-                merged.officialWalkthrough = '';
-                merged.officialSynopsis = '';
-                merged.officialPdf = '';
+                return sanitizeActiveMachine(merged);
               }
               return merged;
             }),
@@ -1203,21 +1276,16 @@ export const useCtfStore = create<CtfStoreState>()(
         const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(norm);
         const isActive = Boolean(data.isActive || isKnownActive);
 
-        const newMachine: Machine = {
+        const baseMachine: Machine = {
           ...data,
           id,
           isCustom: true,
           isActive,
-          // If active seasonal lab, enforce HTB ToS sanitation strictly at intake
-          writeupUrl: isActive ? '' : (data.writeupUrl || ''),
-          hint: isActive ? '' : (data.hint || ''),
-          officialWalkthrough: '',
-          officialSynopsis: '',
-          officialPdf: '',
           timeSpentSeconds: 0,
           createdAt: now,
           updatedAt: now,
         };
+        const newMachine: Machine = isActive ? sanitizeActiveMachine(baseMachine) : baseMachine;
         set((state) => ({
           machines: [newMachine, ...state.machines],
           unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
@@ -1295,7 +1363,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setMachineOpenPorts: (machineId, ports) => {
         set((state) => ({
           machines: state.machines.map((m) =>
-            m.id === machineId
+            m.id === machineId && !m.isActive
               ? {
                   ...m,
                   openPorts: ports,
@@ -1316,7 +1384,7 @@ export const useCtfStore = create<CtfStoreState>()(
           const now = new Date().toISOString();
           return {
             machines: state.machines.map((m) => {
-              if (m.id !== machineId) return m;
+              if (m.id !== machineId || m.isActive) return m;
 
               const existingChecklist = m.checklist || {
                 openPorts: m.openPorts || [],
@@ -1354,7 +1422,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setChecklistItemNotes: (machineId, itemId, notes) => {
         set((state) => ({
           machines: state.machines.map((m) => {
-            if (m.id !== machineId) return m;
+            if (m.id !== machineId || m.isActive) return m;
             const existingChecklist = m.checklist || {
               openPorts: m.openPorts || [],
               activeItemId: null,
@@ -1383,7 +1451,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setActiveChecklistItem: (machineId, itemId) => {
         set((state) => ({
           machines: state.machines.map((m) =>
-            m.id === machineId
+            m.id === machineId && !m.isActive
               ? {
                   ...m,
                   checklist: {
@@ -1401,7 +1469,7 @@ export const useCtfStore = create<CtfStoreState>()(
       resetMachineChecklist: (machineId) => {
         set((state) => ({
           machines: state.machines.map((m) =>
-            m.id === machineId
+            m.id === machineId && !m.isActive
               ? {
                   ...m,
                   checklist: {
@@ -1438,7 +1506,7 @@ export const useCtfStore = create<CtfStoreState>()(
           }
 
           const m = updatedMachines.find((x) => x.id === id);
-          const isPlaceholderIp = Boolean(m && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
+          const isPlaceholderIp = Boolean(m && !m.isActive && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
           return {
             machines: updatedMachines,
             activeTargetId: id,
@@ -1446,7 +1514,7 @@ export const useCtfStore = create<CtfStoreState>()(
             assignIpMachineId: isPlaceholderIp ? id : null,
             globalVars: {
               ...state.globalVars,
-              targetIp: m?.ip && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
+              targetIp: m?.ip && !m.isActive && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
             },
             unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
@@ -1643,6 +1711,82 @@ export const useCtfStore = create<CtfStoreState>()(
         });
       },
 
+      // Credentials & Loot Actions: every mutation persists the active profile's loot immediately
+      addCredential: (input) => {
+        const cred = buildCredential(input);
+        const existing = findDuplicateCredential(get().credentials, cred);
+        if (existing) return existing.id;
+        set((state) => {
+          const credentials = [...state.credentials, cred];
+          saveLootState(state.currentProfileId, { ...state, credentials });
+          return { credentials };
+        });
+        return cred.id;
+      },
+
+      updateCredential: (id, patch) => {
+        const credentials = patchCredential(get().credentials, id, patch);
+        if (!credentials) return false;
+        set((state) => {
+          saveLootState(state.currentProfileId, { ...state, credentials });
+          return { credentials };
+        });
+        return true;
+      },
+
+      deleteCredential: (id) => {
+        set((state) => {
+          const credentials = state.credentials.filter((c) => c.id !== id);
+          const credAttempts = state.credAttempts.filter((a) => a.credId !== id);
+          saveLootState(state.currentProfileId, { ...state, credentials, credAttempts });
+          return { credentials, credAttempts };
+        });
+      },
+
+      upsertCredAttempt: (input) => {
+        const { list, attempt } = upsertAttemptInList(get().credAttempts, input);
+        set((state) => {
+          saveLootState(state.currentProfileId, { ...state, credAttempts: list });
+          return { credAttempts: list };
+        });
+        return attempt.id;
+      },
+
+      deleteCredAttempt: (id) => {
+        set((state) => {
+          const credAttempts = state.credAttempts.filter((a) => a.id !== id);
+          saveLootState(state.currentProfileId, { ...state, credAttempts });
+          return { credAttempts };
+        });
+      },
+
+      addLootItem: (input) => {
+        const item = buildLootItem(input);
+        set((state) => {
+          const lootItems = [...state.lootItems, item];
+          saveLootState(state.currentProfileId, { ...state, lootItems });
+          return { lootItems };
+        });
+        return item.id;
+      },
+
+      updateLootItem: (id, patch) => {
+        const lootItems = patchLootItem(get().lootItems, id, patch);
+        if (!lootItems) return;
+        set((state) => {
+          saveLootState(state.currentProfileId, { ...state, lootItems });
+          return { lootItems };
+        });
+      },
+
+      deleteLootItem: (id) => {
+        set((state) => {
+          const lootItems = state.lootItems.filter((l) => l.id !== id);
+          saveLootState(state.currentProfileId, { ...state, lootItems });
+          return { lootItems };
+        });
+      },
+
       addCustomNote: (note) => {
         const id = 'custom-note-' + Date.now();
         const fullNote: CptsNoteEntry = {
@@ -1668,7 +1812,7 @@ export const useCtfStore = create<CtfStoreState>()(
         }));
       },
 
-      updateNoteContent: (noteId: string, rawMarkdown: string) => {
+      updateNoteContent: async (noteId: string, rawMarkdown: string) => {
         const state = get();
         const now = new Date().toISOString();
 
@@ -1700,7 +1844,8 @@ export const useCtfStore = create<CtfStoreState>()(
           return;
         }
 
-        // 3. Promote catalog note from CPTS_NOTES into customNotes
+        // 3. Promote catalog note from CPTS_NOTES into customNotes (catalog JSON is lazy-loaded)
+        const { CPTS_NOTES, getAllCptsNotes } = await import('../utils/obsidianManualUtils');
         const catalogNote = CPTS_NOTES.find((n) => n.id === noteId);
         if (catalogNote) {
           const promotedNote: CptsNoteEntry = {
@@ -1793,15 +1938,11 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       restoreDanielSolves: async () => {
-        let catalog = cachedCatalog;
-        if (!catalog) {
-          try {
-            const mod = await import('../data/machinesCatalog');
-            cachedCatalog = mod.INITIAL_MACHINES;
-            catalog = mod.INITIAL_MACHINES;
-          } catch {
-            catalog = STARTER_MACHINES;
-          }
+        let catalog: Machine[];
+        try {
+          catalog = await loadMachinesCatalog();
+        } catch {
+          catalog = STARTER_MACHINES;
         }
         const targetId = get().currentProfileId || 'guest';
         const customMachines = get().machines.filter(
@@ -1861,6 +2002,16 @@ export const useCtfStore = create<CtfStoreState>()(
           }));
         }
 
+        let exportGraphEdges = state.graphEdges;
+        if (options?.redactSecrets) {
+          const scrub = (v?: string) => (v && v.toLowerCase().includes('pass') ? '[REDACTED]' : v);
+          exportGraphEdges = exportGraphEdges.map((e) => ({ ...e, label: scrub(e.label), notes: scrub(e.notes) }));
+        }
+
+        const exportLoot = options?.redactSecrets
+          ? redactLootState(state)
+          : { credentials: state.credentials, credAttempts: state.credAttempts, lootItems: state.lootItems };
+
         const exportData = {
           version: '2.0.0',
           exportedAt: new Date().toISOString(),
@@ -1875,6 +2026,9 @@ export const useCtfStore = create<CtfStoreState>()(
           deletedNoteIds: state.deletedNoteIds,
           userSolvesReset: state.userSolvesReset,
           themePreset: state.themePreset,
+          graphEdges: exportGraphEdges,
+          graphNodePositions: state.graphNodePositions,
+          ...exportLoot,
         };
         return JSON.stringify(exportData, null, 2);
       },
@@ -1905,6 +2059,25 @@ export const useCtfStore = create<CtfStoreState>()(
             if (nextThemePreset) {
               applyThemePreset(nextThemePreset);
             }
+            const isNum = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+            const importedGraph: Partial<AttackGraphPersistedState> | undefined = (() => {
+              const out: Partial<AttackGraphPersistedState> = {};
+              if (Array.isArray(data.graphEdges)) {
+                out.graphEdges = data.graphEdges.filter(
+                  (e: any) => e && typeof e.id === 'string' && typeof e.sourceId === 'string' && typeof e.targetId === 'string'
+                );
+              }
+              if (data.graphNodePositions && typeof data.graphNodePositions === 'object') {
+                const pos: Record<string, AttackNodePosition> = {};
+                for (const [k, v] of Object.entries(data.graphNodePositions)) {
+                  if (v && isNum((v as any).x) && isNum((v as any).y)) pos[k] = { x: (v as any).x, y: (v as any).y };
+                }
+                out.graphNodePositions = pos;
+              }
+              return out.graphEdges || out.graphNodePositions ? out : undefined;
+            })();
+            // Loot is merged (not replaced) so a backup, redacted or stale, can never wipe real secrets.
+            const importedLoot = mergeImportedLoot(get(), data);
             set((state) => ({
               machines: normalizedMachines,
               ...(nextThemePreset ? { themePreset: nextThemePreset } : {}),
@@ -1916,7 +2089,19 @@ export const useCtfStore = create<CtfStoreState>()(
               userWikilinkMap: (data.userWikilinkMap && typeof data.userWikilinkMap === 'object') ? data.userWikilinkMap : state.userWikilinkMap,
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
               userSolvesReset,
+              ...importedGraph,
+              ...importedLoot,
             }));
+            if (importedLoot) {
+              saveLootState(get().currentProfileId || 'guest', importedLoot);
+            }
+            if (importedGraph) {
+              saveAttackGraphState(
+                importedGraph.graphNodePositions ?? get().graphNodePositions,
+                importedGraph.graphEdges ?? get().graphEdges,
+                get().currentProfileId || 'guest'
+              );
+            }
             return true;
           }
           return false;
@@ -1951,6 +2136,7 @@ export const useCtfStore = create<CtfStoreState>()(
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : [],
               graphNodePositions: graphState.graphNodePositions,
               graphEdges: graphState.graphEdges,
+              ...loadLootState(profileId),
             });
 
             // Asynchronously enrich with deep writeups from IndexedDB
@@ -1992,6 +2178,7 @@ export const useCtfStore = create<CtfStoreState>()(
           const writeKey = getWriteProfileStorageKey(profileId);
           safeLocalStorage.setItem(writeKey, JSON.stringify(payload));
           saveAttackGraphState(get().graphNodePositions, get().graphEdges, profileId);
+          saveLootState(profileId, get());
           set({ currentProfileId: profileId, isDeepStorageLoaded: true });
           return;
         }
@@ -2014,6 +2201,7 @@ export const useCtfStore = create<CtfStoreState>()(
             userSolvesReset: false,
             graphNodePositions: graphState.graphNodePositions,
             graphEdges: graphState.graphEdges,
+            ...loadLootState(profileId),
           });
           get().saveProfileData(profileId);
           return;
@@ -2036,6 +2224,7 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset: true,
           graphNodePositions: graphState.graphNodePositions,
           graphEdges: graphState.graphEdges,
+          ...loadLootState(profileId),
         });
         get().saveProfileData(profileId);
       },
@@ -2096,21 +2285,18 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       resetAllProgress: async () => {
-        let catalog = cachedCatalog;
-        if (!catalog) {
-          try {
-            const mod = await import('../data/machinesCatalog');
-            cachedCatalog = mod.INITIAL_MACHINES;
-            catalog = mod.INITIAL_MACHINES;
-          } catch {
-            catalog = STARTER_MACHINES;
-          }
+        let catalog: Machine[];
+        try {
+          catalog = await loadMachinesCatalog();
+        } catch {
+          catalog = STARTER_MACHINES;
         }
         const targetId = get().currentProfileId || 'guest';
         // Explicitly clear IndexedDB deep storage and vault notes to prevent orphaned data accumulation
         await clearDeepProfileData(targetId);
         await clearVaultFromIndexedDb();
         safeLocalStorage.removeItem(ATTACK_GRAPH_STORAGE_KEY);
+        clearLootState(targetId);
         set(() => ({
           machines: mergeMachinesWithCatalog([], true, catalog),
           activeTargetId: null,
@@ -2125,6 +2311,9 @@ export const useCtfStore = create<CtfStoreState>()(
           unexportedChangesCount: 0,
           graphNodePositions: {},
           graphEdges: [],
+          credentials: [],
+          credAttempts: [],
+          lootItems: [],
         }));
         get().saveProfileData(targetId);
         broadcastCrossTabMessage('STATE_UPDATED', { profileId: targetId });
@@ -2133,15 +2322,17 @@ export const useCtfStore = create<CtfStoreState>()(
     {
       name: 'zerobox-tactical-store',
       version: 2,
-      storage: createJSONStorage(() => ({
-        getItem: (name: string): string | null => {
+      // Object-level storage (not createJSONStorage): lets us skip the JSON.stringify + localStorage write
+      // whenever partialize() hands back the exact same snapshot object (transient-only set() calls such as
+      // timer ticks, modal flags and isCatalogLoading), and parses the stored blob only once at boot.
+      storage: {
+        getItem: (name: string): StorageValue<any> | null => {
           if (typeof window === 'undefined') return null;
           try {
             const raw = safeLocalStorage.getItem(name);
             if (!raw) return null;
-            // Validate JSON syntax without throwing uncaught SyntaxError at boot
-            JSON.parse(raw);
-            return raw;
+            // Throws on corrupted JSON; handled below without surfacing an uncaught SyntaxError at boot
+            return JSON.parse(raw) as StorageValue<any>;
           } catch (err) {
             console.warn(
               `[ZeroBox Storage] Corrupted JSON detected in '${name}'. Quarantining and falling back to clean default state:`,
@@ -2157,15 +2348,18 @@ export const useCtfStore = create<CtfStoreState>()(
             return null;
           }
         },
-        setItem: (name: string, value: string): void => {
-          safeLocalStorage.setItem(name, value);
+        setItem: (name: string, value: StorageValue<any>): void => {
+          if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
+          safeLocalStorage.setItem(name, JSON.stringify(value));
+          lastPersistedSnapshot = value.state;
+          lastPersistedVersion = value.version;
         },
         removeItem: (name: string): void => {
+          lastPersistedSnapshot = undefined;
           safeLocalStorage.removeItem(name);
         },
-      })),
+      },
       migrate: (persistedState: any) => {
-        const currentState = useCtfStore?.getState() || {};
         const persisted = persistedState || {};
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
@@ -2230,23 +2424,48 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         }
       },
-      partialize: (state) => ({
-        currentProfileId: state.currentProfileId,
-        appBrand: state.appBrand,
-        themePreset: state.themePreset,
-        userSolvesReset: state.userSolvesReset,
-        customNotes: state.customNotes,
-        deletedNoteIds: state.deletedNoteIds,
-        machines: toLeanMachines(state.machines),
-        activeTargetId: state.activeTargetId,
-        globalVars: state.globalVars,
-        cheatsheets: state.cheatsheets,
-        activitySessions: state.activitySessions,
-        viewMode: state.viewMode,
-        crtOverlay: state.crtOverlay,
-        soundEnabled: state.soundEnabled,
-        uiScale: state.uiScale,
-      }),
+      partialize: (state) => {
+        const inputs = [
+          state.currentProfileId,
+          state.appBrand,
+          state.themePreset,
+          state.userSolvesReset,
+          state.customNotes,
+          state.deletedNoteIds,
+          state.machines,
+          state.activeTargetId,
+          state.globalVars,
+          state.cheatsheets,
+          state.activitySessions,
+          state.viewMode,
+          state.crtOverlay,
+          state.soundEnabled,
+          state.uiScale,
+        ];
+        // Same persisted inputs => return the identical snapshot so the storage adapter can skip serializing.
+        if (lastPartialize && lastPartialize.inputs.every((v, i) => Object.is(v, inputs[i]))) {
+          return lastPartialize.snapshot;
+        }
+        const snapshot = {
+          currentProfileId: state.currentProfileId,
+          appBrand: state.appBrand,
+          themePreset: state.themePreset,
+          userSolvesReset: state.userSolvesReset,
+          customNotes: state.customNotes,
+          deletedNoteIds: state.deletedNoteIds,
+          machines: toLeanMachines(state.machines),
+          activeTargetId: state.activeTargetId,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          viewMode: state.viewMode,
+          crtOverlay: state.crtOverlay,
+          soundEnabled: state.soundEnabled,
+          uiScale: state.uiScale,
+        };
+        lastPartialize = { inputs, snapshot };
+        return snapshot;
+      },
     }
   )
 );
@@ -2400,6 +2619,11 @@ if (typeof window !== 'undefined') {
       } catch (err) {
         console.warn('[ZeroBox] Failed to synchronize cross-tab storage event', err);
       }
+    }
+
+    if (event.key === getLootStorageKey(currentProfileId)) {
+      const loot = parseLootPayload(event.newValue);
+      if (loot) useCtfStore.setState(loot);
     }
 
     if (event.key === ATTACK_GRAPH_STORAGE_KEY) {

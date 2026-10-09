@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Crosshair, 
   Flag, 
@@ -13,13 +12,13 @@ import {
   Key,
   Zap,
   Award,
-  Plus
+  Plus,
+  Lock
 } from 'lucide-react';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
-import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
@@ -97,6 +96,9 @@ const LANES: LaneConfig[] = [
   },
 ];
 
+/** Cards rendered per lane initially, and added per scroll / "Load more" step (keeps the DOM small). */
+const LANE_PAGE_SIZE = 24;
+
 const LANE_DOT_BY_STATUS: Record<string, string> = Object.fromEntries(LANES.map((l) => [l.id, l.dotClass]));
 
 /** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
@@ -155,7 +157,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
   const metaBadges: React.ReactNode[] = [
     <OsBadge key="os" os={m.os} size="xs" />,
     <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-    ...m.certifications.map((cert) => (
+    ...(m.certifications || []).map((cert) => (
       <span
         key={cert}
         className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
@@ -232,52 +234,66 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       </div>
 
       {/* Row 2: IP (telemetry) and time spent */}
-      <div className="mt-1 flex items-center justify-between gap-2 pl-4">
-        <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
-        <div className={`flex items-center gap-1 font-mono text-xs tabular-nums text-muted ${REVEAL}`}>
-          <Clock className="h-3 w-3" />
-          <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+      {m.isActive ? (
+        <div className="mt-1.5 pl-4 text-[11px] text-muted font-mono flex items-center justify-between">
+          <span className="flex items-center gap-1 text-callout-warn-fg">
+            <Lock className="h-3 w-3 text-callout-warn-fg" /> HTB ToS Protected
+          </span>
+          <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
+            <Clock className="h-3 w-3" />
+            <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="mt-1 flex items-center justify-between gap-2 pl-4">
+            <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+            <div className={`flex items-center gap-1 font-mono text-xs tabular-nums text-muted ${REVEAL}`}>
+              <Clock className="h-3 w-3" />
+              <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
+            </div>
+          </div>
 
-      {/* Row 3: max two badges (+N), flags and utility actions on hover */}
-      <div className="mt-2 flex items-center justify-between gap-2 pl-4">
-        <BadgeOverflow badges={metaBadges} max={2} />
-        <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
-          <span
-            className={flagChip(hasUser, 'warn')}
-            title={hasUser ? 'User flag captured (initial foothold)' : 'User flag pending (foothold required)'}
-            aria-label={hasUser ? `User flag captured for ${m.name}` : `User flag pending for ${m.name}`}
-          >
-            <Flag className="h-2.5 w-2.5" /> U
-          </span>
-          <span
-            className={flagChip(hasRoot, 'success')}
-            title={hasRoot ? 'Root flag captured (privesc complete)' : 'Root flag pending (privilege escalation required)'}
-            aria-label={hasRoot ? `Root flag captured for ${m.name}` : `Root flag pending for ${m.name}`}
-          >
-            <Flag className="h-2.5 w-2.5" /> R
-          </span>
-          <ShareLinkButton
-            path={`/target/${m.id}`}
-            title={m.name}
-            iconOnly
-            className={`${ICON_BTN} hover:text-accent`}
-          />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenReport(m.id);
-            }}
-            className={`${ICON_BTN} hover:text-accent`}
-            title="Open pentest pre-report"
-            aria-label={`Open pentest pre-report for ${m.name}`}
-          >
-            <FileText className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
+          {/* Row 3: max two badges (+N), flags and utility actions on hover */}
+          <div className="mt-2 flex items-center justify-between gap-2 pl-4">
+            <BadgeOverflow badges={metaBadges} max={2} />
+            <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
+              <span
+                className={flagChip(hasUser, 'warn')}
+                title={hasUser ? 'User flag captured (initial foothold)' : 'User flag pending (foothold required)'}
+                aria-label={hasUser ? `User flag captured for ${m.name}` : `User flag pending for ${m.name}`}
+              >
+                <Flag className="h-2.5 w-2.5" /> U
+              </span>
+              <span
+                className={flagChip(hasRoot, 'success')}
+                title={hasRoot ? 'Root flag captured (privesc complete)' : 'Root flag pending (privilege escalation required)'}
+                aria-label={hasRoot ? `Root flag captured for ${m.name}` : `Root flag pending for ${m.name}`}
+              >
+                <Flag className="h-2.5 w-2.5" /> R
+              </span>
+              <ShareLinkButton
+                path={`/target/${m.id}`}
+                title={m.name}
+                iconOnly
+                className={`${ICON_BTN} hover:text-accent`}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenReport(m.id);
+                }}
+                className={`${ICON_BTN} hover:text-accent`}
+                title="Open pentest pre-report"
+                aria-label={`Open pentest pre-report for ${m.name}`}
+              >
+                <FileText className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }, (prev, next) => {
@@ -319,7 +335,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - scrollTop - clientHeight < 400) {
       if (limit < laneMachines.length) {
-        setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }));
+        setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + LANE_PAGE_SIZE) }));
       }
     }
   };
@@ -371,14 +387,10 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         className="flex-1 p-2 space-y-2 md:overflow-y-auto scroll-smooth"
       >
         {displayedMachines.map((m, idx) => (
-          <motion.div
+          <div
             key={m.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              ...TACTICAL_SPRING,
-              delay: CASCADE_STAGGER_DELAY(idx),
-            }}
+            className="card-enter"
+            style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
           >
             <KanbanCard
               machine={m}
@@ -391,7 +403,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
               onRetreat={handleRetreat}
               onOpenReport={setReportMachineId}
             />
-          </motion.div>
+          </div>
         ))}
 
         {laneMachines.length > displayedMachines.length && (
@@ -401,18 +413,18 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
             </div>
             <div className="flex items-center gap-2 w-full">
               <button
-                onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }))}
+                onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + LANE_PAGE_SIZE) }))}
                 className="flex-1 py-1.5 px-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-accent text-accent text-xs font-medium transition-colors flex items-center justify-center gap-1 active:scale-[0.97] cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5" /> Load +60 More
+                <Sparkles className="w-3.5 h-3.5" /> Load +{LANE_PAGE_SIZE} More
               </button>
-              {laneMachines.length > limit + 60 && (
+              {laneMachines.length > limit + LANE_PAGE_SIZE && (
                 <button
-                  onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 180) }))}
+                  onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
                   className="py-1.5 px-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary text-xs transition-colors font-medium active:scale-[0.97] cursor-pointer"
-                  title="Expand by larger batch (up to +180) with DOM protection"
+                  title="Render all remaining targets in this lane"
                 >
-                  Load +180
+                  Show all
                 </button>
               )}
             </div>
@@ -515,6 +527,36 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     return 'grid-cols-1 lg:grid-cols-3 xl:grid-cols-5';
   }, [visibleLanes.length]);
 
+  // One memo for every lane: stable per-lane arrays (full lane + displayed slice) so React.memo(KanbanLane) holds
+  // across unrelated parent re-renders. The engaged target is pinned into the displayed slice.
+  const laneData = React.useMemo(() => {
+    const byLane = new Map<PipelineStatus, { laneMachines: Machine[]; displayedMachines: Machine[] }>();
+    for (const lane of LANES) {
+      byLane.set(lane.id, { laneMachines: [], displayedMachines: [] });
+    }
+    for (const m of filteredMachines) {
+      byLane.get(m.status)?.laneMachines.push(m);
+    }
+    for (const lane of LANES) {
+      const entry = byLane.get(lane.id)!;
+      const all = entry.laneMachines;
+      const limit = laneLimits[lane.id] ?? LANE_PAGE_SIZE;
+      if (all.length <= limit) {
+        entry.displayedMachines = all;
+        continue;
+      }
+      let slice = all.slice(0, limit);
+      if (activeTargetId && !slice.some((m) => m.id === activeTargetId)) {
+        const activeM = all.find((m) => m.id === activeTargetId);
+        if (activeM) {
+          slice = [activeM, ...slice.slice(0, limit - 1)];
+        }
+      }
+      entry.displayedMachines = slice;
+    }
+    return byLane;
+  }, [filteredMachines, laneLimits, activeTargetId]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -558,7 +600,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       <div className="lg:hidden sticky top-0 z-20 bg-surface-sunken/95 py-1.5 mb-2 backdrop-blur-md border-b border-subtle">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {visibleLanes.map((lane) => {
-            const laneCount = filteredMachines.filter((m) => m.status === lane.id).length;
+            const laneCount = laneData.get(lane.id)?.laneMachines.length ?? 0;
             const isSelected = mobileActiveLane === lane.id;
             return (
               <button
@@ -586,22 +628,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
       <div className={`grid ${gridColsClass} gap-3.5 items-start transition-colors`}>
         {visibleLanes.map((lane) => {
-          const laneMachines = filteredMachines.filter((m) => m.status === lane.id);
-          const limit = laneLimits[lane.id] ?? 60;
+          const { laneMachines, displayedMachines } = laneData.get(lane.id)!;
+          const limit = laneLimits[lane.id] ?? LANE_PAGE_SIZE;
           const isMobileActive = mobileActiveLane === lane.id;
-
-          const displayedMachines = laneMachines.length <= limit 
-            ? laneMachines 
-            : (() => {
-                let slice = laneMachines.slice(0, limit);
-                if (activeTargetId && !slice.some((m) => m.id === activeTargetId)) {
-                  const activeM = laneMachines.find((m) => m.id === activeTargetId);
-                  if (activeM) {
-                    slice = [activeM, ...slice.slice(0, limit - 1)];
-                  }
-                }
-                return slice;
-              })();
 
           const fullLaneIdx = LANES.findIndex((l) => l.id === lane.id);
           const prevLane = fullLaneIdx > 0 ? LANES[fullLaneIdx - 1].id : undefined;

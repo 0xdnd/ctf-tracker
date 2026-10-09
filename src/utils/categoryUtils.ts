@@ -348,11 +348,13 @@ const VULN_PATTERNS: Record<string, RegExp[]> = {
   ],
 };
 
-// Ultra-fast memoization cache to guarantee 120 FPS performance across 931 machines
-const classificationCache = new Map<string, ClassificationResult>();
+// Ultra-fast memoization cache to guarantee 120 FPS performance across 931 machines.
+// Keyed by machine object identity: a re-render or catalog re-merge only re-classifies machine objects that
+// actually changed (unchanged ones keep their reference), and entries are GC'd with their machine.
+let classificationCache = new WeakMap<Machine, ClassificationResult>();
 
 export function clearClassificationCache(): void {
-  classificationCache.clear();
+  classificationCache = new WeakMap<Machine, ClassificationResult>();
 }
 
 export function classifyMachine(m: Machine): ClassificationResult {
@@ -366,7 +368,7 @@ export function classifyMachine(m: Machine): ClassificationResult {
     };
   }
 
-  const cached = classificationCache.get(m.id);
+  const cached = classificationCache.get(m);
   if (cached) return cached;
 
   const categories: string[] = [];
@@ -437,7 +439,7 @@ export function classifyMachine(m: Machine): ClassificationResult {
     isAD,
   };
 
-  classificationCache.set(m.id, result);
+  classificationCache.set(m, result);
   return result;
 }
 
