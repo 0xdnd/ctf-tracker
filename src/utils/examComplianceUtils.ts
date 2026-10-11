@@ -11,7 +11,7 @@
 import { OperatingSystem, Difficulty, Machine } from '../types';
 import type { Finding } from '../types/findings';
 
-export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP';
+export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'PNPT';
 export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
 
 export interface ScreenshotProof {
@@ -186,6 +186,24 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     requiresAdFullChain: false,
     description: 'Certified Red Team Professional Active Directory practical assessment.',
     targetSummary: 'Active Directory Domain Lab',
+  },
+  // Modeled on the published PNPT rules (https://certifications.tcm-sec.com/pnpt/): 5 days of lab
+  // time, 2 further days for the report, then a live 15-minute debrief. Pass is objective-based
+  // (OSINT, AD exploitation, domain controller compromise, report, debrief); there are no flags
+  // and no points. TCM does not publish a machine count, so the five objective weights below are
+  // an approximation used only for progress and pacing display.
+  PNPT: {
+    id: 'PNPT',
+    name: 'TCM Security PNPT',
+    durationSeconds: 5 * 24 * 3600, // 432,000s (5 days)
+    passThreshold: 100,
+    maxScore: 100,
+    requiresAdFullChain: true,
+    scoringModel: 'objective',
+    reportWindowSeconds: 2 * 24 * 3600, // 2 days after the lab window
+    debriefMinutes: 15,
+    description: 'Modeled on the published PNPT rules: 5 days of lab time, 2 days to write the report, then a live 15-minute debrief. Objective-based (OSINT, Active Directory exploitation, domain controller compromise); no flags or points.',
+    targetSummary: '5 Objective Chain to Domain Controller (no flags)',
   },
 };
 
@@ -570,6 +588,35 @@ export function generateExamTargetsForTrack(track: ExamTrack, machines: Machine[
 
     return osepTargets.map((t) => ({
       ...t,
+      userPwned: false,
+      rootPwned: false,
+      userProof: createDefaultProof(),
+      rootProof: createDefaultProof(),
+    }));
+  }
+
+  if (track === 'PNPT') {
+    // Objective chain modeled on the published PNPT rules. Five objectives at 20 weight each:
+    // progress/pacing display only; the track passes when every objective is complete.
+    const pnptObjectives = [
+      { id: 'pnpt-1', name: 'OSINT-RECON', ip: 'external', os: 'Other' as OperatingSystem, difficulty: 'Easy' as const, label: 'Objective 1: OSINT & Attack Surface Intelligence' },
+      { id: 'pnpt-2', name: 'EXT-PERIMETER', ip: '10.10.10.10', os: 'Linux' as OperatingSystem, difficulty: 'Medium' as const, label: 'Objective 2: External Perimeter Breach' },
+      { id: 'pnpt-3', name: 'INT-WS01', ip: '10.10.20.21', os: 'Windows' as OperatingSystem, difficulty: 'Medium' as const, label: 'Objective 3: Internal Foothold with A/V & Egress Bypass' },
+      { id: 'pnpt-4', name: 'INT-SRV01', ip: '10.10.20.30', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, label: 'Objective 4: Lateral & Vertical Movement' },
+      { id: 'pnpt-5', name: 'CORP-DC01', ip: '10.10.20.5', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, label: 'Objective 5: Domain Controller Compromise', dc: true },
+    ];
+
+    return pnptObjectives.map((obj) => ({
+      id: obj.id,
+      name: obj.name,
+      ip: obj.ip,
+      os: obj.os,
+      difficulty: obj.difficulty,
+      type: 'pnpt-objective',
+      ...(obj.dc ? { adRole: 'dc' as const } : {}),
+      label: obj.label,
+      userPoints: 0,
+      rootPoints: 20,
       userPwned: false,
       rootPwned: false,
       userProof: createDefaultProof(),

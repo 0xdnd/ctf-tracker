@@ -42,6 +42,7 @@ const REPORT_TRACK_LABELS: Record<ExamTrack, { title: string; subtitle: string }
   CRTO: { title: 'ZPS CRTO', subtitle: '8 Objs (75 pts)' },
   OSEP: { title: 'OffSec OSEP', subtitle: 'PEN-300 (100 pts)' },
   CRTP: { title: 'Altered CRTP', subtitle: 'AD Lab (100 pts)' },
+  PNPT: { title: 'TCM PNPT', subtitle: 'Objectives + Debrief' },
 };
 
 export interface ExamReportModalProps {

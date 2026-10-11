@@ -163,6 +163,16 @@ The assessment followed a structured Active Directory attack path against a mult
 5. **Persistence & Trust Abuse:** Forged Golden and Silver tickets, abused DCSync rights, and crossed domain trusts via inter-realm TGTs to achieve enterprise forest dominance.`;
   }
 
+  if (track === 'PNPT') {
+    return `### 4.1 TCM Security PNPT Network Penetration Test Methodology
+This assessment was modeled on the published PNPT rules: an objective-based external-to-internal engagement ending in Active Directory domain compromise.
+1. **OSINT & Intelligence Gathering:** Collected publicly available information on the target organization (staff, email formats, exposed services, breached credentials) to shape the attack plan.
+2. **External Perimeter Assessment:** Enumerated internet-facing services and identified a path to an initial foothold on the perimeter.
+3. **Internal Foothold, A/V & Egress Bypass:** Established a stable internal foothold, working around endpoint protection and restricted egress where required.
+4. **Active Directory Enumeration & Lateral / Vertical Movement:** Mapped the domain, harvested and relayed credentials, and moved laterally and vertically toward privileged accounts.
+5. **Domain Controller Compromise:** Compromised the exam domain controller and documented the full attack chain with reproducible evidence.`;
+  }
+
   // Default: OffSec OSCP (PEN-200)
   return `### 4.1 OffSec PEN-200 Practical Penetration Testing Methodology
 The assessment adhered to the official OffSec PEN-200 examination standards:
@@ -180,7 +190,17 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
  * Track-specific submission/declaration section appended after the methodology.
  * Returns '' for tracks that have none (their reports are unchanged).
  */
-export function getTrackSubmissionSection(_track: ExamTrack): string {
+export function getTrackSubmissionSection(track: ExamTrack): string {
+  if (track === 'PNPT') {
+    return `### 4.2 PNPT Submission Checklist (Report, Tool Disclosure & Debrief)
+Modeled on the published PNPT rules; confirm the current requirements on the official certification page before your real attempt.
+
+- **Report window:** 2 days after the 5-day lab window to deliver a detailed, professionally written report.
+- **Tool & AI usage disclosure:** All tools are allowed, including AI-enabled tools, but how they were used must be disclosed in the report.
+  - Tools and AI assistance used: _list each tool or AI assistant and what it was used for_
+- **Attack chain narrative:** OSINT findings, perimeter breach, internal foothold, lateral/vertical movement and domain controller compromise, each with reproducible steps and screenshots.
+- **Live debrief:** 15-minute live report debrief in front of the assessors; be ready to walk through the attack chain and remediation advice.`;
+  }
   return '';
 }
 
@@ -245,6 +265,8 @@ export function generateExamReportMarkdown(
     reportHeaderTitle = 'OFFSEC OSEP // EVASION TECHNIQUES & BREACHING DEFENSES EXAM REPORT';
   } else if (effectiveTrack === 'CRTP') {
     reportHeaderTitle = 'ALTERED SECURITY CRTP // CERTIFIED RED TEAM PROFESSIONAL ASSESSMENT REPORT';
+  } else if (effectiveTrack === 'PNPT') {
+    reportHeaderTitle = 'TCM SECURITY PNPT // NETWORK PENETRATION TEST REPORT';
   }
 
   const objectiveModel = trackConfig.scoringModel === 'objective';
