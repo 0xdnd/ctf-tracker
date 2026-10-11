@@ -1946,7 +1946,15 @@ export const useCtfStore = create<CtfStoreState>()(
         }
 
         // 3. Promote catalog note from CPTS_NOTES into customNotes (catalog JSON is lazy-loaded)
-        const { CPTS_NOTES, getAllCptsNotes } = await import('../utils/obsidianManualUtils');
+        const { CPTS_NOTES, getAllCptsNotes, loadCptsVault } = await import(
+          '../utils/obsidianManualUtils'
+        );
+        try {
+          // The vault is lazy: make sure the registry is filled before the lookup, or the edit is dropped.
+          await loadCptsVault();
+        } catch (err) {
+          console.warn('[ZeroBox] Could not load CPTS vault before promoting note edit', err);
+        }
         const catalogNote = CPTS_NOTES.find((n) => n.id === noteId);
         if (catalogNote) {
           const promotedNote: CptsNoteEntry = {
