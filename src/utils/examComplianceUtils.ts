@@ -11,7 +11,7 @@
 import { OperatingSystem, Difficulty, Machine } from '../types';
 import type { Finding } from '../types/findings';
 
-export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP';
+export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'PNPT' | 'OSWE';
 export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
 
 export interface ScreenshotProof {
@@ -107,6 +107,14 @@ export interface FlagValidationResult {
   description: string;
 }
 
+/**
+ * 'points' (default): the exam is scored in points against passThreshold.
+ * 'objective': the exam is pass/fail on completing every technical objective (plus a report and
+ * debrief outside the simulator). Objective weights only drive progress/pacing display; the track
+ * passes when all objectives are complete.
+ */
+export type ExamScoringModel = 'points' | 'objective';
+
 export interface ExamTrackConfig {
   id: ExamTrack;
   name: string;
@@ -116,6 +124,16 @@ export interface ExamTrackConfig {
   requiresAdFullChain: boolean;
   description: string;
   targetSummary: string;
+  /** Defaults to 'points' when omitted. */
+  scoringModel?: ExamScoringModel;
+  /** Time allowed to write/submit the report after the lab window closes (seconds). Informational. */
+  reportWindowSeconds?: number;
+  /** Length of the live report debrief, when the exam has one (minutes). Informational. */
+  debriefMinutes?: number;
+}
+
+export function isObjectiveTrack(track: ExamTrack): boolean {
+  return EXAM_TRACK_CONFIGS[track]?.scoringModel === 'objective';
 }
 
 export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
@@ -168,6 +186,41 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     requiresAdFullChain: false,
     description: 'Certified Red Team Professional Active Directory practical assessment.',
     targetSummary: 'Active Directory Domain Lab',
+  },
+  // Modeled on the published PNPT rules (https://certifications.tcm-sec.com/pnpt/): 5 days of lab
+  // time, 2 further days for the report, then a live 15-minute debrief. Pass is objective-based
+  // (OSINT, AD exploitation, domain controller compromise, report, debrief); there are no flags
+  // and no points. TCM does not publish a machine count, so the five objective weights below are
+  // an approximation used only for progress and pacing display.
+  PNPT: {
+    id: 'PNPT',
+    name: 'TCM Security PNPT',
+    durationSeconds: 5 * 24 * 3600, // 432,000s (5 days)
+    passThreshold: 100,
+    maxScore: 100,
+    requiresAdFullChain: true,
+    scoringModel: 'objective',
+    reportWindowSeconds: 2 * 24 * 3600, // 2 days after the lab window
+    debriefMinutes: 15,
+    description: 'Modeled on the published PNPT rules: 5 days of lab time, 2 days to write the report, then a live 15-minute debrief. Objective-based (OSINT, Active Directory exploitation, domain controller compromise); no flags or points.',
+    targetSummary: '5 Objective Chain to Domain Controller (no flags)',
+  },
+  // Modeled on the OffSec OSWE (WEB-300) exam guide and FAQ on help.offsec.com
+  // (https://help.offsec.com/hc/en-us/articles/360046869951 and .../360046418812): 47h45m of
+  // proctored lab time, 100 points available, 85 to pass, and 24 further hours to send the
+  // documentation. APPROXIMATE: the number of web applications and the per-application point
+  // split are not stated in the sources we could read, so the 2 x (25 + 25) layout below is
+  // an approximation.
+  OSWE: {
+    id: 'OSWE',
+    name: 'OffSec OSWE (WEB-300)',
+    durationSeconds: 47 * 3600 + 45 * 60, // 171,900s (47h45m)
+    passThreshold: 85,
+    maxScore: 100,
+    requiresAdFullChain: false,
+    reportWindowSeconds: 24 * 3600, // 24h to send documentation after the exam
+    description: 'Modeled on the published OSWE rules: 47h45m proctored white-box web exam, 100 points available, 85 to pass, with 24 further hours to send documentation. Authentication bypass and remote code execution objectives per web application.',
+    targetSummary: '2 Web Apps: Auth Bypass + RCE (approx. 25 pts each)',
   },
 };
 
@@ -559,6 +612,56 @@ export function generateExamTargetsForTrack(track: ExamTrack, machines: Machine[
     }));
   }
 
+  if (track === 'PNPT') {
+    // Objective chain modeled on the published PNPT rules. Five objectives at 20 weight each:
+    // progress/pacing display only; the track passes when every objective is complete.
+    const pnptObjectives = [
+      { id: 'pnpt-1', name: 'OSINT-RECON', ip: 'external', os: 'Other' as OperatingSystem, difficulty: 'Easy' as const, label: 'Objective 1: OSINT & Attack Surface Intelligence' },
+      { id: 'pnpt-2', name: 'EXT-PERIMETER', ip: '10.10.10.10', os: 'Linux' as OperatingSystem, difficulty: 'Medium' as const, label: 'Objective 2: External Perimeter Breach' },
+      { id: 'pnpt-3', name: 'INT-WS01', ip: '10.10.20.21', os: 'Windows' as OperatingSystem, difficulty: 'Medium' as const, label: 'Objective 3: Internal Foothold with A/V & Egress Bypass' },
+      { id: 'pnpt-4', name: 'INT-SRV01', ip: '10.10.20.30', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, label: 'Objective 4: Lateral & Vertical Movement' },
+      { id: 'pnpt-5', name: 'CORP-DC01', ip: '10.10.20.5', os: 'Windows' as OperatingSystem, difficulty: 'Hard' as const, label: 'Objective 5: Domain Controller Compromise', dc: true },
+    ];
+
+    return pnptObjectives.map((obj) => ({
+      id: obj.id,
+      name: obj.name,
+      ip: obj.ip,
+      os: obj.os,
+      difficulty: obj.difficulty,
+      type: 'pnpt-objective',
+      ...(obj.dc ? { adRole: 'dc' as const } : {}),
+      label: obj.label,
+      userPoints: 0,
+      rootPoints: 20,
+      userPwned: false,
+      rootPwned: false,
+      userProof: createDefaultProof(),
+      rootProof: createDefaultProof(),
+    }));
+  }
+
+  if (track === 'OSWE') {
+    // White-box web exam: per application, an authentication bypass (user stage) and remote code
+    // execution (root stage). Layout is approximate; see the OSWE config comment.
+    const oswe = [
+      { id: 'oswe-1', name: 'WEBAPP-1', ip: '192.168.50.11', label: 'Web App 1: Authentication Bypass + Remote Code Execution' },
+      { id: 'oswe-2', name: 'WEBAPP-2', ip: '192.168.50.12', label: 'Web App 2: Authentication Bypass + Remote Code Execution' },
+    ];
+    return oswe.map((app) => ({
+      ...app,
+      os: 'Linux' as OperatingSystem,
+      difficulty: 'Hard' as const,
+      type: 'oswe-webapp',
+      userPoints: 25,
+      rootPoints: 25,
+      userPwned: false,
+      rootPwned: false,
+      userProof: createDefaultProof(),
+      rootProof: createDefaultProof(),
+    }));
+  }
+
   // Fallback / CRTP default
   const dc1 = shuffle(adMachines)[0] || { name: 'DC01', ip: '10.0.0.1', os: 'Windows' as OperatingSystem };
   const srv1 = shuffle(winMachines)[0] || { name: 'SRV01', ip: '10.0.0.2', os: 'Windows' as OperatingSystem };
@@ -685,7 +788,22 @@ export function calculateExamScore(
 
   // Compliance Audit: Check for missing proofs on claimed points
   const complianceIssues: string[] = [];
+  const objectiveModel = config.scoringModel === 'objective';
   boxes.forEach((b) => {
+    if (objectiveModel) {
+      // Objective exams have no flag files: the evidence is a screenshot or a written note per objective.
+      if (b.rootPwned && b.rootPoints > 0) {
+        const hasEvidence = Boolean(
+          b.rootProof?.screenshotTaken ||
+            (b.rootProof?.screenshots && b.rootProof.screenshots.length > 0) ||
+            b.rootProof?.reproductionSteps?.trim()
+        );
+        if (!hasEvidence) {
+          complianceIssues.push(`${b.name}: Objective evidence (screenshot or reproduction notes) is missing`);
+        }
+      }
+      return;
+    }
     if (b.userPwned && b.userPoints > 0) {
       if (!b.userProof?.flagText?.trim()) {
         complianceIssues.push(`${b.name}: User flag text is missing`);

@@ -401,7 +401,7 @@ export const ExamSimulatorPage: React.FC = () => {
                         {t}
                       </span>
                       <span className="text-[11px] font-medium text-muted font-mono tabular-nums">
-                        Pass: {conf.passThreshold} pts
+                        {conf.scoringModel === 'objective' ? 'Pass: all objectives' : `Pass: ${conf.passThreshold} pts`}
                       </span>
                     </div>
 
@@ -411,7 +411,10 @@ export const ExamSimulatorPage: React.FC = () => {
                     </p>
 
                     <div className="pt-2 border-t border-subtle text-[11px] text-muted flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                      <span className="font-mono tabular-nums">Duration: {Math.round(conf.durationSeconds / 3600)}h</span>
+                      <span className="font-mono tabular-nums">
+                        Duration: {Math.round(conf.durationSeconds / 3600)}h
+                        {conf.reportWindowSeconds ? ` + ${Math.round(conf.reportWindowSeconds / 3600)}h report` : ''}
+                      </span>
                       <span>{conf.targetSummary}</span>
                     </div>
                   </div>

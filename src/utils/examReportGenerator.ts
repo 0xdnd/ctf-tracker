@@ -163,6 +163,26 @@ The assessment followed a structured Active Directory attack path against a mult
 5. **Persistence & Trust Abuse:** Forged Golden and Silver tickets, abused DCSync rights, and crossed domain trusts via inter-realm TGTs to achieve enterprise forest dominance.`;
   }
 
+  if (track === 'PNPT') {
+    return `### 4.1 TCM Security PNPT Network Penetration Test Methodology
+This assessment was modeled on the published PNPT rules: an objective-based external-to-internal engagement ending in Active Directory domain compromise.
+1. **OSINT & Intelligence Gathering:** Collected publicly available information on the target organization (staff, email formats, exposed services, breached credentials) to shape the attack plan.
+2. **External Perimeter Assessment:** Enumerated internet-facing services and identified a path to an initial foothold on the perimeter.
+3. **Internal Foothold, A/V & Egress Bypass:** Established a stable internal foothold, working around endpoint protection and restricted egress where required.
+4. **Active Directory Enumeration & Lateral / Vertical Movement:** Mapped the domain, harvested and relayed credentials, and moved laterally and vertically toward privileged accounts.
+5. **Domain Controller Compromise:** Compromised the exam domain controller and documented the full attack chain with reproducible evidence.`;
+  }
+
+  if (track === 'OSWE') {
+    return `### 4.1 OffSec WEB-300 Advanced Web Attacks & Exploitation Methodology
+The assessment was a white-box review of custom web applications, with source code access to find chained weaknesses:
+1. **Application Mapping & Source Review:** Mapped routes, authentication flows and trust boundaries, then audited the application source (and, where provided, debug access) for exploitable logic.
+2. **Authentication Bypass:** Identified a flaw in session, password-reset, type-handling or injection logic that grants access without valid credentials.
+3. **Post-Authentication Escalation to Code Execution:** Chained the authenticated foothold into remote code execution (for example file upload, deserialization, template or command injection).
+4. **Exploit Automation:** Scripted the full attack chain so that it runs end to end without manual steps.
+5. **Proof & Documentation:** Recorded the proof for each objective together with the reproducible steps required for the exam documentation.`;
+  }
+
   // Default: OffSec OSCP (PEN-200)
   return `### 4.1 OffSec PEN-200 Practical Penetration Testing Methodology
 The assessment adhered to the official OffSec PEN-200 examination standards:
@@ -174,6 +194,33 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
    - Initial Foothold: Web service exploitation and unprivileged domain user access.
    - Lateral Movement: Internal host compromise via Kerberoasting, password spraying, or bloodhound attack paths.
    - Domain Controller: Forest root compromise resulting in proof.txt capture and domain dominance.`;
+}
+
+/**
+ * Track-specific submission/declaration section appended after the methodology.
+ * Returns '' for tracks that have none (their reports are unchanged).
+ */
+export function getTrackSubmissionSection(track: ExamTrack): string {
+  if (track === 'PNPT') {
+    return `### 4.2 PNPT Submission Checklist (Report, Tool Disclosure & Debrief)
+Modeled on the published PNPT rules; confirm the current requirements on the official certification page before your real attempt.
+
+- **Report window:** 2 days after the 5-day lab window to deliver a detailed, professionally written report.
+- **Tool & AI usage disclosure:** All tools are allowed, including AI-enabled tools, but how they were used must be disclosed in the report.
+  - Tools and AI assistance used: _list each tool or AI assistant and what it was used for_
+- **Attack chain narrative:** OSINT findings, perimeter breach, internal foothold, lateral/vertical movement and domain controller compromise, each with reproducible steps and screenshots.
+- **Live debrief:** 15-minute live report debrief in front of the assessors; be ready to walk through the attack chain and remediation advice.`;
+  }
+  if (track === 'OSWE') {
+    return `### 4.2 OSWE Documentation Checklist
+Modeled on the published OSWE rules; confirm the current requirements in the official OffSec exam guide before your real attempt.
+
+- **Documentation window:** 24 hours after the 47h45m exam window to send the exam documentation.
+- **Proctoring:** The exam is proctored and open book, but AI chatbots and LLMs with direct prompt access are excluded.
+- **Per application:** authentication bypass steps, remote code execution steps, proof screenshots, and the exploit script that reproduces the chain (recommended; verify against the official guide).
+- **Scoring reminder:** 100 points available, 85 required to pass.`;
+  }
+  return '';
 }
 
 /**
@@ -237,16 +284,32 @@ export function generateExamReportMarkdown(
     reportHeaderTitle = 'OFFSEC OSEP // EVASION TECHNIQUES & BREACHING DEFENSES EXAM REPORT';
   } else if (effectiveTrack === 'CRTP') {
     reportHeaderTitle = 'ALTERED SECURITY CRTP // CERTIFIED RED TEAM PROFESSIONAL ASSESSMENT REPORT';
+  } else if (effectiveTrack === 'OSWE') {
+    reportHeaderTitle = 'OFFSEC OSWE // ADVANCED WEB ATTACKS & EXPLOITATION EXAM REPORT';
+  } else if (effectiveTrack === 'PNPT') {
+    reportHeaderTitle = 'TCM SECURITY PNPT // NETWORK PENETRATION TEST REPORT';
   }
+
+  const objectiveModel = trackConfig.scoringModel === 'objective';
+  const trackPassLine = objectiveModel
+    ? `${trackConfig.name} (Pass: all technical objectives, written report and live debrief)`
+    : `${trackConfig.name} (Passing Threshold: ${scoreData.passThreshold} Points)`;
+  const resultLine = objectiveModel
+    ? scoreData.isPassing
+      ? '**TECHNICAL OBJECTIVES COMPLETE (report and debrief still required)**'
+      : '**IN PROGRESS / OBJECTIVES OUTSTANDING**'
+    : scoreData.isPassing
+      ? '**PASSED (REQUIREMENTS SATISFIED)**'
+      : '**IN PROGRESS / FAILED**';
 
   let report = `# ${reportHeaderTitle}
 
-**Candidate Name:** ${candidateName}  
-**Callsign / Handle:** ${candidateCallsign}  
-**OSID:** ${osid}  
-**Exam Track:** ${trackConfig.name} (Passing Threshold: ${scoreData.passThreshold} Points)  
-**Date of Assessment:** ${examDate}  
-**Assessment Result:** ${scoreData.isPassing ? '**PASSED (REQUIREMENTS SATISFIED)**' : '**IN PROGRESS / FAILED**'}  
+**Candidate Name:** ${candidateName}
+**Callsign / Handle:** ${candidateCallsign}
+**OSID:** ${osid}
+**Exam Track:** ${trackPassLine}
+**Date of Assessment:** ${examDate}
+**Assessment Result:** ${resultLine}
 **Total Points Achieved:** **${scoreData.totalScore} / ${scoreData.maxScore} PTS**  
 **Compliance Verification:** ${scoreData.isCompliant ? '100% COMPLIANT (All proof criteria satisfied)' : `WARNING: ${scoreData.complianceIssues.length} compliance checklist items incomplete`}
 
@@ -369,6 +432,11 @@ export function generateExamReportMarkdown(
   report += `---\n\n`;
   report += `## 4. Assessment Methodology & Standards\n\n`;
   report += `${getTrackMethodology(effectiveTrack)}\n\n`;
+
+  const submissionSection = getTrackSubmissionSection(effectiveTrack);
+  if (submissionSection) {
+    report += `---\n\n${submissionSection}\n\n`;
+  }
 
   if (includeRemediation) {
     report += `---\n\n`;
