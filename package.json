@@ -41,6 +41,7 @@
     "test:watch": "vitest",
     "test:e2e": "python scripts/run_webapp_tests.py",
     "test:e2e:pw": "playwright test",
+    "test:e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "lint": "eslint .",
     "index-notes": "node scripts/index-cpts-notes.cjs",
     "build": "tsc && vite build && node scripts/postbuild.cjs && node scripts/prerender.cjs && node scripts/gen-content-pages.cjs",
