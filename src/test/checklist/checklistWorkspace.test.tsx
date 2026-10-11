@@ -66,4 +66,13 @@ describe('ChecklistWorkspace', () => {
     fireEvent.click(screen.getByText('Extract Ports & Update Checklist'));
     expect(setPorts).toHaveBeenCalledWith('m-test', [22, 80, 445]);
   });
+
+  it('exposes the nmap import as a named dialog that closes on Escape', async () => {
+    render(<ChecklistWorkspace machine={machine} />);
+    fireEvent.click(screen.getByText('Import Nmap Scan'));
+    const dialog = screen.getByRole('dialog', { name: 'Import Nmap scan output' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
 });

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { X, BookOpen, Plus, Terminal, Folder } from 'lucide-react';
 import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { Modal } from '../common/Modal';
 
 const STAGE_OPTIONS: CyberSelectOption[] = [
   { value: '0 — Methodology', label: '0 — Methodology', color: 'rgb(var(--text-tertiary))' },
@@ -50,8 +51,6 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
       setUseCustomDir(false);
     }
   }, [isOpen, initialDirectory]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,19 +103,22 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl border border-subtle bg-surface-card shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      labelledBy="new-cpts-note-title"
+      size="xl"
+      closeOnBackdrop={false}
+      className="!bg-black/80 backdrop-blur-sm"
+      panelClassName="!rounded-xl !shadow-2xl"
+    >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-sunken">
           <div className="flex items-center gap-2.5">
             <BookOpen className="w-5 h-5 text-muted" />
             <div>
-              <h3 className="text-base font-semibold text-primary flex items-center gap-2">
+              <h3 id="new-cpts-note-title" className="text-base font-semibold text-primary flex items-center gap-2">
                 <span>New field manual note</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary">
                   OBSIDIAN COMPATIBLE
@@ -370,7 +372,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             </motion.button>
           </div>
         </form>
-      </motion.div>
-    </div>
+      </div>
+    </Modal>
   );
 };

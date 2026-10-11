@@ -111,6 +111,15 @@ describe('exam destructive actions require confirmation', () => {
     const count = (id: string) =>
       useExamStore.getState().boxes.find((b) => b.id === id)!.userProof.screenshots?.length ?? 0;
 
+    it('expands a screenshot into a named dialog that closes on Escape', async () => {
+      setup();
+      fireEvent.click(screen.getByText('Expand preview'));
+      const dialog = await screen.findByRole('dialog', { name: 'Screenshot preview' });
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      fireEvent.keyDown(window, { key: 'Escape' });
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Screenshot preview' })).toBeNull());
+    });
+
     it('cancel keeps the screenshot', async () => {
       const id = setup();
       fireEvent.click(screen.getByTestId('screenshot-delete-btn-sc_confirm_1'));

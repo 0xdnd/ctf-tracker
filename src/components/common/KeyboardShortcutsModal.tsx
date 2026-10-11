@@ -1,7 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { X, Keyboard, Command, Eye, Zap } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { Modal } from './Modal';
 
 interface ShortcutEntry {
   keys: string[];
@@ -47,19 +47,6 @@ export const KeyboardShortcutsModal: React.FC = () => {
   const shortcutsModalOpen = useCtfStore((s) => s.shortcutsModalOpen);
   const setShortcutsModalOpen = useCtfStore((s) => s.setShortcutsModalOpen);
 
-  React.useEffect(() => {
-    if (!shortcutsModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        setShortcutsModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcutsModalOpen, setShortcutsModalOpen]);
-
   const sections: { id: ShortcutEntry['category']; title: string; Icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'navigation', title: 'Navigation and views', Icon: Eye },
     { id: 'actions', title: 'Actions', Icon: Zap },
@@ -67,22 +54,14 @@ export const KeyboardShortcutsModal: React.FC = () => {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.12 } }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-surface-inverse/70 font-sans"
-      onClick={() => setShortcutsModalOpen(false)}
+    <Modal
+      open={shortcutsModalOpen}
+      onClose={() => setShortcutsModalOpen(false)}
+      labelledBy="keyboard-shortcuts-title"
+      size="xl"
+      instant
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98, y: 8, transition: { duration: 0.12 } }}
-        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-subtle bg-surface-card shadow-xl overflow-hidden relative z-10"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-subtle bg-surface-card">
           <div className="flex items-center gap-2.5">
@@ -90,7 +69,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
               <Keyboard className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-primary tracking-tight">Keyboard shortcuts</h2>
+              <h2 id="keyboard-shortcuts-title" className="text-sm font-semibold text-primary tracking-tight">Keyboard shortcuts</h2>
               <p className="text-[11px] text-muted">Navigate and operate ZeroBox without leaving the keyboard.</p>
             </div>
           </div>
@@ -105,7 +84,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
         </div>
 
         {/* Shortcuts body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-xs scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-8 sm:p-6 sm:pb-6 space-y-5 text-xs scrollbar-thin">
           {sections.map(({ id, title, Icon }) => (
             <div key={id} className="space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-medium text-secondary">
@@ -148,7 +127,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
             Close
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </Modal>
   );
 };

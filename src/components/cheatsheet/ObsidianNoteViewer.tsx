@@ -630,7 +630,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       if (soundEnabled) playCyberSound('click');
                       handleCloseSpecificTab(tab.id);
                     }}
-                    className="p-0.5 rounded opacity-60 group-hover:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
+                    className="p-0.5 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
                     title="Close tab (Alt+W)"
                     aria-label={`Close tab ${tab.titleEn || tab.title}`}
                   >

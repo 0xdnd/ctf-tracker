@@ -204,6 +204,11 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // The command palette owns plain typing while open; never fall through to single-key hotkeys.
+      if (useCtfStore.getState().commandPaletteOpen && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        return;
+      }
+
       // Ignore single-character keybindings when active element is an input, textarea, or select
       const activeEl = document.activeElement as HTMLElement | null;
       if (

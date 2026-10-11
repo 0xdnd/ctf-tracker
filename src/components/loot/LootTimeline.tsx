@@ -382,7 +382,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onToggleReveal}
-              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 tap-target rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
               title={isRevealed ? 'Mask secret' : 'Reveal secret'}
               aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
             >
@@ -393,7 +393,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
           <button
             type="button"
             onClick={onCopy}
-            className={`p-1.5 max-sm:p-3 rounded-lg text-xs font-medium transition-interactive flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
+            className={`p-1.5 tap-target rounded-lg text-xs font-medium transition-interactive flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
  isCopied
  ? 'bg-callout-success-bg text-callout-success-fg px-2'
  : 'text-muted hover:text-primary hover:bg-surface-hover'
@@ -414,7 +414,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onDelete}
-              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 tap-target rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
               title="Delete custom loot"
               aria-label="Delete custom loot"
             >

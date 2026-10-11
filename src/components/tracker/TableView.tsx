@@ -43,7 +43,7 @@ const CHECKBOX_CLASS =
   'h-3.5 w-3.5 rounded border-strong text-accent bg-surface-card cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 const CHECK_CELL =
-  'flex h-8 w-8 cursor-pointer items-center justify-center [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
+  'flex h-8 w-8 cursor-pointer items-center justify-center [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
 
 const STATUS_OPTIONS: CyberSelectOption<PipelineStatus>[] = [
   { value: 'backlog', label: 'Backlog' },
@@ -55,10 +55,10 @@ const STATUS_OPTIONS: CyberSelectOption<PipelineStatus>[] = [
 
 /** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
 const REVEAL =
-  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150';
+  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150';
 
 const ICON_BTN =
-  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
+  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
 
 const STATUS_DOT: Record<string, string> = {
   backlog: 'bg-surface-hover border border-strong',
@@ -119,8 +119,8 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
   onOpenReport,
   onOpenWriteup,
 }) => (
-  <div className="flex flex-wrap items-center justify-end gap-0.5">
-    <div className={`flex items-center gap-0.5 ${REVEAL}`}>
+  <div className="flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3">
+    <div className={`flex items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
       <button
         type="button"
         onClick={() => onSelect(m.id)}
@@ -245,7 +245,7 @@ const TableRow = React.memo<TableRowProps>(({
       onClick={() => onSelect(m.id)}
     >
       {/* Bulk select */}
-      <td className="py-2.5 pl-4 pr-0 w-10" onClick={(e) => e.stopPropagation()}>
+      <td className="sticky left-0 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 pl-4 pr-0 w-10" onClick={(e) => e.stopPropagation()}>
         <label className={CHECK_CELL}>
           <input
             type="checkbox"
@@ -259,7 +259,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Target name & IP */}
-      <td className="py-2.5 px-4">
+      <td className="sticky left-10 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-4">
         <div className="flex items-center gap-2.5">
           <PlatformIcon platform={m.platform} className="w-4 h-4 flex-shrink-0" />
           <div>
@@ -354,7 +354,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Actions */}
-      <td className="py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]" onClick={(e) => e.stopPropagation()}>
+      <td className="sticky right-0 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]" onClick={(e) => e.stopPropagation()}>
         <RowActions
           machine={m}
           isActiveTarget={isActiveTarget}
@@ -457,7 +457,7 @@ const StackedCard = React.memo<TableRowProps>(({
 ));
 
 const HEADERS: { label: string; field?: SortField; className: string }[] = [
-  { label: 'Target', field: 'name', className: 'py-3 px-4' },
+  { label: 'Target', field: 'name', className: 'sticky left-10 z-20 bg-surface-base py-3 px-4' },
   { label: 'Platform', field: 'platform', className: 'py-3 px-3' },
   { label: 'OS', field: 'os', className: 'py-3 px-3' },
   { label: 'Difficulty', field: 'difficulty', className: 'py-3 px-3' },
@@ -465,7 +465,7 @@ const HEADERS: { label: string; field?: SortField; className: string }[] = [
   { label: 'Flags', className: 'py-3 px-3' },
   { label: 'Time', field: 'timeSpentSeconds', className: 'py-3 px-3' },
   { label: 'Tracks', className: 'py-3 px-3' },
-  { label: 'Actions', className: 'py-3 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]' },
+  { label: 'Actions', className: 'sticky right-0 z-20 bg-surface-base py-3 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]' },
 ];
 
 export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
@@ -801,13 +801,13 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={TACTICAL_SPRING}
-      className="rounded-2xl border border-subtle bg-surface-card overflow-hidden text-xs pb-4 surface-card-depth machined-edge"
+      className="rounded-2xl border border-subtle bg-surface-card overflow-hidden text-xs pb-4 mb-20 surface-card-depth machined-edge"
     >
       <div ref={parentRef} className="overflow-x-auto max-h-[calc(100vh-230px)] overflow-y-auto">
         <table className="w-full text-left border-collapse min-w-[1120px]">
           <thead className="sticky top-0 z-10 bg-surface-base/95 backdrop-blur-sm border-b border-subtle text-xs text-muted font-sans font-semibold machined-edge">
             <tr>
-              <th className="py-3 pl-4 pr-0 w-10">
+              <th className="sticky left-0 z-20 bg-surface-base py-3 pl-4 pr-0 w-10">
                 <label className={CHECK_CELL}>
                   <input
                     ref={selectAllRef}

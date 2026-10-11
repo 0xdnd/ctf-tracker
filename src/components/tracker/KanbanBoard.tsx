@@ -103,10 +103,10 @@ const LANE_DOT_BY_STATUS: Record<string, string> = Object.fromEntries(LANES.map(
 
 /** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
 const REVEAL =
-  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150';
+  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150';
 
 const ICON_BTN =
-  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
+  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
 
 interface KanbanCardProps {
   machine: Machine;
@@ -197,7 +197,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           {m.name}
         </button>
 
-        <div className={`flex shrink-0 items-center gap-0.5 ${REVEAL}`}>
+        <div className={`flex shrink-0 items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
           {prevLane && (
             <button
               type="button"
@@ -355,14 +355,14 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
       } lg:h-[calc(100vh-270px)] lg:min-h-[480px]`}
     >
       {/* Lane header: sentence-case title, mono count */}
-      <div className="border-b border-subtle px-3 py-2.5 bg-surface-card/90 flex-shrink-0 flex items-center justify-between font-sans">
+      <div className="border-b border-subtle px-3 py-2.5 bg-surface-card/90 flex-shrink-0 flex items-center justify-between gap-3 font-sans">
         <div className="flex items-center gap-2 min-w-0">
           <LaneIcon className="w-3.5 h-3.5 shrink-0 text-muted" />
           <div className="min-w-0">
             <div className="text-sm font-semibold text-primary truncate font-sans">
               {lane.title}
             </div>
-            <div className="text-xs text-muted truncate font-sans">{lane.subtitle}</div>
+            <div className="text-xs text-muted truncate font-sans" title={lane.subtitle}>{lane.subtitle}</div>
             {laneMachines.length > limit && (
                 <button
                   onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}

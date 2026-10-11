@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   Search, 
@@ -93,20 +92,7 @@ export const CommandPalette: React.FC = () => {
   });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard shortcut listener for Ctrl+K / Cmd+K / Escape
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        if (e.repeat) return;
-        e.preventDefault();
-        setCommandPaletteOpen(!commandPaletteOpen);
-      } else if (e.key === 'Escape' && commandPaletteOpen) {
-        setCommandPaletteOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [commandPaletteOpen, setCommandPaletteOpen]);
+  // Ctrl+K toggling lives in useTacticalHotkeys; Esc is handled by useFocusTrap.
 
   // Filtered results
   const filteredMachines = useMemo(() => {
@@ -500,22 +486,14 @@ export const CommandPalette: React.FC = () => {
   }, [selectedIndex, commandPaletteOpen]);
 
   return (
-    <AnimatePresence>
+    <>
       {commandPaletteOpen && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+        <div
           className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
           onClick={() => setCommandPaletteOpen(false)}
         >
-          <motion.div 
+          <div
             ref={trapRef}
-            initial={{ opacity: 0, scale: 0.96, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: -4, transition: { duration: 0.12 } }}
-            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -694,9 +672,9 @@ export const CommandPalette: React.FC = () => {
           </div>
           <span>ZeroBox command palette</span>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
     )}
-  </AnimatePresence>
+  </>
   );
 };

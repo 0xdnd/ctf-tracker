@@ -294,7 +294,7 @@ export const FloatingPayloadBar: React.FC = () => {
                 }}
                 title={`Copy LHOST (${lhost})`}
                 aria-label="Copy LHOST"
-                className="p-1 hover:bg-surface-hover rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                className="p-1 hover:bg-surface-hover rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100"
               >
                 {copiedKey === 'min-lhost-btn' ? (
                   <Check className="w-3 h-3 text-callout-success-fg" />

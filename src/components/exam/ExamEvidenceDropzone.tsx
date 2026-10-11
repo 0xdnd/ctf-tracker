@@ -25,6 +25,7 @@ import {
   validateFlagFormat,
   isDomainControllerBox
 } from '../../utils/examComplianceUtils';
+import { Modal } from '../common/Modal';
 import { createScreenshotProof } from '../../utils/examProofImages';
 
 export interface ExamEvidenceDropzoneProps {
@@ -147,7 +148,7 @@ const ProofThumbnail: React.FC<{ screenshot: ScreenshotProof; onExpand: (src: st
           <button
             type="button"
             onClick={() => onExpand(src)}
-            className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
+            className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Expand preview</span>
@@ -636,12 +637,14 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       )}
 
       {/* 5. Expanded Modal Preview if user clicked image */}
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-50 bg-surface-inverse/60 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setPreviewImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh] bg-surface-card border border-subtle rounded-2xl overflow-hidden p-2">
+      <Modal
+        open={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        ariaLabel="Screenshot preview"
+        size="2xl"
+        className="!bg-surface-inverse/60 backdrop-blur-md"
+        panelClassName="!w-auto p-2"
+      >
             <button aria-label="Close screenshot preview"
               type="button"
               onClick={() => setPreviewImage(null)}
@@ -650,13 +653,11 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               <X className="w-4 h-4" />
             </button>
             <img
-              src={previewImage}
+              src={previewImage ?? undefined}
               alt="Expanded proof preview"
               className="max-h-[85vh] max-w-full object-contain rounded"
             />
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

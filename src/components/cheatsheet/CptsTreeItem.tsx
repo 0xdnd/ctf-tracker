@@ -83,7 +83,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                   e.stopPropagation();
                   onAddNoteToFolder(node.fullPath);
                 }}
-                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 p-0.5 rounded text-secondary hover:text-primary hover:bg-surface-hover transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
+                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100 tap-target p-0.5 rounded text-secondary hover:text-primary hover:bg-surface-hover transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
                 title={`Add note inside ${node.name}`}
                 aria-label={`Add note inside ${node.name}`}
               >
@@ -165,7 +165,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
               e.stopPropagation();
               onDeleteNote(note.id, noteTitle);
             }}
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 p-0.5 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
+            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100 tap-target p-0.5 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-[opacity,background-color,border-color,color] cursor-pointer active:scale-[0.97]"
             title="Delete note"
             aria-label={`Delete note ${noteTitle}`}
           >

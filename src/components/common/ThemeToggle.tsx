@@ -88,7 +88,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       };
 
   return (
-    <div className={`inline-flex items-center gap-2 select-none ${className}`}>
+    <div className={`inline-flex shrink-0 items-center gap-2 select-none ${className}`}>
       <motion.button
         type="button"
         role="switch"
@@ -97,7 +97,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         tabIndex={0}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className="relative flex items-center cursor-pointer overflow-hidden bg-surface-sunken border border-subtle hover:border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors [@media(pointer:coarse)]:min-h-11"
+        className="relative flex shrink-0 items-center cursor-pointer overflow-hidden bg-surface-sunken border border-subtle hover:border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors [@media(pointer:coarse)]:min-h-11"
         style={{
           width: dimensions.width,
           height: dimensions.height,
@@ -125,7 +125,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           style={{
             width: dimensions.knobWidth,
             height: dimensions.knobHeight,
-            top: dimensions.padding,
+            top: '50%',
+            marginTop: -dimensions.knobHeight / 2,
             left: dimensions.padding,
             borderRadius: dimensions.innerRadius,
           }}
