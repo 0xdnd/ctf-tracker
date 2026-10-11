@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
@@ -485,11 +486,12 @@ export const CommandPalette: React.FC = () => {
     }
   }, [selectedIndex, commandPaletteOpen]);
 
-  return (
-    <>
-      {commandPaletteOpen && (
+  // z-popover (130): above Modal's z-modal/z-modalNested, so Ctrl+K inside Settings or MachineDetail renders
+  // on top of the dialog that its focus trap now outranks; below toasts. Instant, no animation.
+  const palette = commandPaletteOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
+          data-command-palette-backdrop
+          className="fixed inset-0 z-popover flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
           onClick={() => setCommandPaletteOpen(false)}
         >
           <div
@@ -674,7 +676,8 @@ export const CommandPalette: React.FC = () => {
         </div>
       </div>
     </div>
-    )}
-  </>
-  );
+  ) : null;
+
+  // Portaled to <body> like Modal, so no ancestor stacking context can trap it below a modal.
+  return typeof document !== 'undefined' ? createPortal(palette, document.body) : palette;
 };
