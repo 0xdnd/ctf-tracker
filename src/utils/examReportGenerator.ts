@@ -173,6 +173,16 @@ This assessment was modeled on the published PNPT rules: an objective-based exte
 5. **Domain Controller Compromise:** Compromised the exam domain controller and documented the full attack chain with reproducible evidence.`;
   }
 
+  if (track === 'OSWE') {
+    return `### 4.1 OffSec WEB-300 Advanced Web Attacks & Exploitation Methodology
+The assessment was a white-box review of custom web applications, with source code access to find chained weaknesses:
+1. **Application Mapping & Source Review:** Mapped routes, authentication flows and trust boundaries, then audited the application source (and, where provided, debug access) for exploitable logic.
+2. **Authentication Bypass:** Identified a flaw in session, password-reset, type-handling or injection logic that grants access without valid credentials.
+3. **Post-Authentication Escalation to Code Execution:** Chained the authenticated foothold into remote code execution (for example file upload, deserialization, template or command injection).
+4. **Exploit Automation:** Scripted the full attack chain so that it runs end to end without manual steps.
+5. **Proof & Documentation:** Recorded the proof for each objective together with the reproducible steps required for the exam documentation.`;
+  }
+
   // Default: OffSec OSCP (PEN-200)
   return `### 4.1 OffSec PEN-200 Practical Penetration Testing Methodology
 The assessment adhered to the official OffSec PEN-200 examination standards:
@@ -200,6 +210,15 @@ Modeled on the published PNPT rules; confirm the current requirements on the off
   - Tools and AI assistance used: _list each tool or AI assistant and what it was used for_
 - **Attack chain narrative:** OSINT findings, perimeter breach, internal foothold, lateral/vertical movement and domain controller compromise, each with reproducible steps and screenshots.
 - **Live debrief:** 15-minute live report debrief in front of the assessors; be ready to walk through the attack chain and remediation advice.`;
+  }
+  if (track === 'OSWE') {
+    return `### 4.2 OSWE Documentation Checklist
+Modeled on the published OSWE rules; confirm the current requirements in the official OffSec exam guide before your real attempt.
+
+- **Documentation window:** 24 hours after the 47h45m exam window to send the exam documentation.
+- **Proctoring:** The exam is proctored and open book, but AI chatbots and LLMs with direct prompt access are excluded.
+- **Per application:** authentication bypass steps, remote code execution steps, proof screenshots, and the exploit script that reproduces the chain (recommended; verify against the official guide).
+- **Scoring reminder:** 100 points available, 85 required to pass.`;
   }
   return '';
 }
@@ -265,6 +284,8 @@ export function generateExamReportMarkdown(
     reportHeaderTitle = 'OFFSEC OSEP // EVASION TECHNIQUES & BREACHING DEFENSES EXAM REPORT';
   } else if (effectiveTrack === 'CRTP') {
     reportHeaderTitle = 'ALTERED SECURITY CRTP // CERTIFIED RED TEAM PROFESSIONAL ASSESSMENT REPORT';
+  } else if (effectiveTrack === 'OSWE') {
+    reportHeaderTitle = 'OFFSEC OSWE // ADVANCED WEB ATTACKS & EXPLOITATION EXAM REPORT';
   } else if (effectiveTrack === 'PNPT') {
     reportHeaderTitle = 'TCM SECURITY PNPT // NETWORK PENETRATION TEST REPORT';
   }

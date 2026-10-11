@@ -11,7 +11,7 @@
 import { OperatingSystem, Difficulty, Machine } from '../types';
 import type { Finding } from '../types/findings';
 
-export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'PNPT';
+export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'PNPT' | 'OSWE';
 export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
 
 export interface ScreenshotProof {
@@ -204,6 +204,23 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     debriefMinutes: 15,
     description: 'Modeled on the published PNPT rules: 5 days of lab time, 2 days to write the report, then a live 15-minute debrief. Objective-based (OSINT, Active Directory exploitation, domain controller compromise); no flags or points.',
     targetSummary: '5 Objective Chain to Domain Controller (no flags)',
+  },
+  // Modeled on the OffSec OSWE (WEB-300) exam guide and FAQ on help.offsec.com
+  // (https://help.offsec.com/hc/en-us/articles/360046869951 and .../360046418812): 47h45m of
+  // proctored lab time, 100 points available, 85 to pass, and 24 further hours to send the
+  // documentation. APPROXIMATE: the number of web applications and the per-application point
+  // split are not stated in the sources we could read, so the 2 x (25 + 25) layout below is
+  // an approximation.
+  OSWE: {
+    id: 'OSWE',
+    name: 'OffSec OSWE (WEB-300)',
+    durationSeconds: 47 * 3600 + 45 * 60, // 171,900s (47h45m)
+    passThreshold: 85,
+    maxScore: 100,
+    requiresAdFullChain: false,
+    reportWindowSeconds: 24 * 3600, // 24h to send documentation after the exam
+    description: 'Modeled on the published OSWE rules: 47h45m proctored white-box web exam, 100 points available, 85 to pass, with 24 further hours to send documentation. Authentication bypass and remote code execution objectives per web application.',
+    targetSummary: '2 Web Apps: Auth Bypass + RCE (approx. 25 pts each)',
   },
 };
 
@@ -617,6 +634,27 @@ export function generateExamTargetsForTrack(track: ExamTrack, machines: Machine[
       label: obj.label,
       userPoints: 0,
       rootPoints: 20,
+      userPwned: false,
+      rootPwned: false,
+      userProof: createDefaultProof(),
+      rootProof: createDefaultProof(),
+    }));
+  }
+
+  if (track === 'OSWE') {
+    // White-box web exam: per application, an authentication bypass (user stage) and remote code
+    // execution (root stage). Layout is approximate; see the OSWE config comment.
+    const oswe = [
+      { id: 'oswe-1', name: 'WEBAPP-1', ip: '192.168.50.11', label: 'Web App 1: Authentication Bypass + Remote Code Execution' },
+      { id: 'oswe-2', name: 'WEBAPP-2', ip: '192.168.50.12', label: 'Web App 2: Authentication Bypass + Remote Code Execution' },
+    ];
+    return oswe.map((app) => ({
+      ...app,
+      os: 'Linux' as OperatingSystem,
+      difficulty: 'Hard' as const,
+      type: 'oswe-webapp',
+      userPoints: 25,
+      rootPoints: 25,
       userPwned: false,
       rootPwned: false,
       userProof: createDefaultProof(),
