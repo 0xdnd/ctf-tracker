@@ -169,6 +169,30 @@ export default {
         mono: ['JetBrains Mono', 'Fira Code', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
+      // Semantic z-index scale. Maps the layering already in use; existing
+      // numeric z-* usages are untouched and migrate to these over time.
+      //   z-10   raised      in-flow stacking (cards, select trigger)
+      //   z-20   sticky      sticky headers / toolbars (existing z-20/30/40)
+      //   z-50   overlay     existing z-50 modals and panels
+      //   z-70   dropdown    open select trigger; menus use z-[100] today
+      //   z-100  modal       MachineDetail, NewMachine, FilterDrawer
+      //   z-110  modalNested profile/report modals opened over a modal
+      //   z-120  drawer      side drawers, showcase
+      //   z-130  popover     tooltips; above every modal/drawer
+      //   z-300  critical    confirm/consent dialogs (z-[300], z-[320])
+      //   z-9999 toast       toasts stay above everything
+      zIndex: {
+        raised: '10',
+        sticky: '20',
+        overlay: '50',
+        dropdown: '70',
+        modal: '100',
+        modalNested: '110',
+        drawer: '120',
+        popover: '130',
+        critical: '300',
+        toast: '9999',
+      },
       boxShadow: {
         'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         'sm': '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
