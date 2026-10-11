@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   Crosshair, 
   Compass, 
@@ -86,6 +87,21 @@ export const MobileNav: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const [copiedVar, setCopiedVar] = React.useState<'lhost' | 'lport' | null>(null);
   const [justSavedMobile, setJustSavedMobile] = React.useState(false);
+
+  const drawerRef = useFocusTrap<HTMLDivElement>({
+    isActive: mobileMenuOpen,
+    onClose: () => setMobileMenuOpen(false),
+  });
+
+  // Lock page scroll while the drawer is open.
+  React.useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileMenuOpen]);
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
   const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
@@ -237,6 +253,10 @@ export const MobileNav: React.FC = () => {
 
             {/* Sliding panel */}
             <motion.div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%', transition: { duration: 0.15, ease: 'easeOut' } }}
