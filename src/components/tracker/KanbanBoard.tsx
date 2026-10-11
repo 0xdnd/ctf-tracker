@@ -197,7 +197,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           {m.name}
         </button>
 
-        <div className={`flex shrink-0 items-center gap-0.5 ${REVEAL}`}>
+        <div className={`flex shrink-0 items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
           {prevLane && (
             <button
               type="button"

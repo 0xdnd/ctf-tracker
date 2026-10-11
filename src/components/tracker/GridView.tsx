@@ -326,8 +326,8 @@ const GridCard = React.memo<GridCardProps>(({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-end gap-0.5">
-          <div className={`flex flex-wrap items-center justify-end gap-0.5 ${REVEAL}`}>
+        <div className="flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3">
+          <div className={`flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
             {!m.isActive && (
               <button
                 type="button"

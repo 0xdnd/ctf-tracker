@@ -119,8 +119,8 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
   onOpenReport,
   onOpenWriteup,
 }) => (
-  <div className="flex flex-wrap items-center justify-end gap-0.5">
-    <div className={`flex items-center gap-0.5 ${REVEAL}`}>
+  <div className="flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3">
+    <div className={`flex items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
       <button
         type="button"
         onClick={() => onSelect(m.id)}
