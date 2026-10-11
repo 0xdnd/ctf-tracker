@@ -177,6 +177,14 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
 }
 
 /**
+ * Track-specific submission/declaration section appended after the methodology.
+ * Returns '' for tracks that have none (their reports are unchanged).
+ */
+export function getTrackSubmissionSection(_track: ExamTrack): string {
+  return '';
+}
+
+/**
  * Returns structured Strategic Remediation Plan (Short, Medium, and Long-Term).
  */
 export function getStrategicRemediation(_track: ExamTrack): string {
@@ -239,14 +247,26 @@ export function generateExamReportMarkdown(
     reportHeaderTitle = 'ALTERED SECURITY CRTP // CERTIFIED RED TEAM PROFESSIONAL ASSESSMENT REPORT';
   }
 
+  const objectiveModel = trackConfig.scoringModel === 'objective';
+  const trackPassLine = objectiveModel
+    ? `${trackConfig.name} (Pass: all technical objectives, written report and live debrief)`
+    : `${trackConfig.name} (Passing Threshold: ${scoreData.passThreshold} Points)`;
+  const resultLine = objectiveModel
+    ? scoreData.isPassing
+      ? '**TECHNICAL OBJECTIVES COMPLETE (report and debrief still required)**'
+      : '**IN PROGRESS / OBJECTIVES OUTSTANDING**'
+    : scoreData.isPassing
+      ? '**PASSED (REQUIREMENTS SATISFIED)**'
+      : '**IN PROGRESS / FAILED**';
+
   let report = `# ${reportHeaderTitle}
 
-**Candidate Name:** ${candidateName}  
-**Callsign / Handle:** ${candidateCallsign}  
-**OSID:** ${osid}  
-**Exam Track:** ${trackConfig.name} (Passing Threshold: ${scoreData.passThreshold} Points)  
-**Date of Assessment:** ${examDate}  
-**Assessment Result:** ${scoreData.isPassing ? '**PASSED (REQUIREMENTS SATISFIED)**' : '**IN PROGRESS / FAILED**'}  
+**Candidate Name:** ${candidateName}
+**Callsign / Handle:** ${candidateCallsign}
+**OSID:** ${osid}
+**Exam Track:** ${trackPassLine}
+**Date of Assessment:** ${examDate}
+**Assessment Result:** ${resultLine}
 **Total Points Achieved:** **${scoreData.totalScore} / ${scoreData.maxScore} PTS**  
 **Compliance Verification:** ${scoreData.isCompliant ? '100% COMPLIANT (All proof criteria satisfied)' : `WARNING: ${scoreData.complianceIssues.length} compliance checklist items incomplete`}
 
@@ -369,6 +389,11 @@ export function generateExamReportMarkdown(
   report += `---\n\n`;
   report += `## 4. Assessment Methodology & Standards\n\n`;
   report += `${getTrackMethodology(effectiveTrack)}\n\n`;
+
+  const submissionSection = getTrackSubmissionSection(effectiveTrack);
+  if (submissionSection) {
+    report += `---\n\n${submissionSection}\n\n`;
+  }
 
   if (includeRemediation) {
     report += `---\n\n`;

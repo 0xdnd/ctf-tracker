@@ -12,7 +12,8 @@ import { ExamBox, ExamTrackConfig } from './examComplianceUtils';
 import { RABBIT_HOLE_THRESHOLDS } from './rabbitHoleConfig';
 
 /** Track parameters the pacing engine scales against (defaults to the 24h / 100-pt OSCP exam). */
-export type PacingTrackConfig = Pick<ExamTrackConfig, 'maxScore' | 'durationSeconds'>;
+export type PacingTrackConfig = Pick<ExamTrackConfig, 'maxScore' | 'durationSeconds'> &
+  Partial<Pick<ExamTrackConfig, 'scoringModel' | 'reportWindowSeconds' | 'debriefMinutes'>>;
 
 const DEFAULT_PACING_TRACK: PacingTrackConfig = { maxScore: 100, durationSeconds: 86400 };
 
@@ -118,6 +119,24 @@ export function computeExamPacing(
   ) {
     pacingStatus = 'BEHIND_SCHEDULE';
     recommendation = `Pacing alert: Required pace is ${requiredPacePtsPerHour.toFixed(1)} pts/hr. If stuck on current target, pivot immediately!`;
+  }
+
+  if (trackConfig.scoringModel === 'objective') {
+    // Objective-based exams: pace against the objective chain, and remind about the report/debrief.
+    const totalObjectives = session.boxes.filter((b) => b.userPoints > 0 || b.rootPoints > 0).length;
+    const doneObjectives = totalObjectives - unrootedBoxesCount;
+    const reportHours = trackConfig.reportWindowSeconds ? Math.round(trackConfig.reportWindowSeconds / 3600) : 0;
+    const reportNote = reportHours ? ` The ${reportHours}h report window follows the lab.` : '';
+    const debriefNote = trackConfig.debriefMinutes ? ` Prepare the ${trackConfig.debriefMinutes}-minute live debrief.` : '';
+    if (pacingStatus === 'PASSED') {
+      recommendation = `ALL OBJECTIVES COMPLETE (${doneObjectives}/${totalObjectives}). Verify evidence, then write the report.${reportNote}${debriefNote}`;
+    } else if (pacingStatus === 'CRITICAL') {
+      recommendation = `CRITICAL TIME PRESSURE: ${(remainingSeconds / 3600).toFixed(1)}h of lab time left with ${unrootedBoxesCount} of ${totalObjectives} objectives open. Prioritise the next link in the chain.`;
+    } else if (pacingStatus === 'BEHIND_SCHEDULE') {
+      recommendation = `Behind schedule: ${doneObjectives}/${totalObjectives} objectives done. Required pace is ${requiredPacePtsPerHour.toFixed(1)} progress pts/hr; revisit your enumeration notes.`;
+    } else {
+      recommendation = `On track: ${doneObjectives}/${totalObjectives} objectives done. Keep notes and screenshots as you go; they feed the report.${reportNote}`;
+    }
   }
 
   return {

@@ -107,6 +107,14 @@ export interface FlagValidationResult {
   description: string;
 }
 
+/**
+ * 'points' (default): the exam is scored in points against passThreshold.
+ * 'objective': the exam is pass/fail on completing every technical objective (plus a report and
+ * debrief outside the simulator). Objective weights only drive progress/pacing display; the track
+ * passes when all objectives are complete.
+ */
+export type ExamScoringModel = 'points' | 'objective';
+
 export interface ExamTrackConfig {
   id: ExamTrack;
   name: string;
@@ -116,6 +124,16 @@ export interface ExamTrackConfig {
   requiresAdFullChain: boolean;
   description: string;
   targetSummary: string;
+  /** Defaults to 'points' when omitted. */
+  scoringModel?: ExamScoringModel;
+  /** Time allowed to write/submit the report after the lab window closes (seconds). Informational. */
+  reportWindowSeconds?: number;
+  /** Length of the live report debrief, when the exam has one (minutes). Informational. */
+  debriefMinutes?: number;
+}
+
+export function isObjectiveTrack(track: ExamTrack): boolean {
+  return EXAM_TRACK_CONFIGS[track]?.scoringModel === 'objective';
 }
 
 export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
@@ -685,7 +703,22 @@ export function calculateExamScore(
 
   // Compliance Audit: Check for missing proofs on claimed points
   const complianceIssues: string[] = [];
+  const objectiveModel = config.scoringModel === 'objective';
   boxes.forEach((b) => {
+    if (objectiveModel) {
+      // Objective exams have no flag files: the evidence is a screenshot or a written note per objective.
+      if (b.rootPwned && b.rootPoints > 0) {
+        const hasEvidence = Boolean(
+          b.rootProof?.screenshotTaken ||
+            (b.rootProof?.screenshots && b.rootProof.screenshots.length > 0) ||
+            b.rootProof?.reproductionSteps?.trim()
+        );
+        if (!hasEvidence) {
+          complianceIssues.push(`${b.name}: Objective evidence (screenshot or reproduction notes) is missing`);
+        }
+      }
+      return;
+    }
     if (b.userPwned && b.userPoints > 0) {
       if (!b.userProof?.flagText?.trim()) {
         complianceIssues.push(`${b.name}: User flag text is missing`);
