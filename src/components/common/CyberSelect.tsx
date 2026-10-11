@@ -151,6 +151,13 @@ export function CyberSelect<T extends string = string>({
     }
   }, [isOpen, value]);
 
+  // Reset highlighted index to top matching option when typing in search input
+  useEffect(() => {
+    if (isOpen && searchQuery.trim()) {
+      setHighlightedIndex(0);
+    }
+  }, [searchQuery, isOpen]);
+
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;

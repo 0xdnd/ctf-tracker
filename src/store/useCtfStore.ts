@@ -1732,8 +1732,19 @@ export const useCtfStore = create<CtfStoreState>()(
 
       setFilters: (f) => set((s) => {
         const nextFilters = { ...s.filters, ...f };
-        if (f.selectedTracks !== undefined) {
-          nextFilters.selectedTrack = f.selectedTracks.length > 0 ? f.selectedTracks[0] : 'ALL';
+        if (f.selectedTracks !== undefined && f.selectedTrack !== undefined) {
+          if (f.selectedTrack !== 'ALL' && (!f.selectedTracks || f.selectedTracks.length === 0)) {
+            nextFilters.selectedTracks = [f.selectedTrack];
+          } else if (f.selectedTrack === 'ALL' && (!f.selectedTracks || f.selectedTracks.length === 0)) {
+            nextFilters.selectedTrack = 'ALL';
+            nextFilters.selectedTracks = [];
+          } else if (f.selectedTracks.length > 1 && (!f.selectedTrack || f.selectedTrack === 'ALL')) {
+            nextFilters.selectedTrack = 'MULTI';
+          } else if (f.selectedTracks.length === 1 && (!f.selectedTrack || f.selectedTrack === 'ALL')) {
+            nextFilters.selectedTrack = f.selectedTracks[0];
+          }
+        } else if (f.selectedTracks !== undefined) {
+          nextFilters.selectedTrack = f.selectedTracks.length > 1 ? 'MULTI' : (f.selectedTracks.length === 1 ? f.selectedTracks[0] : 'ALL');
         } else if (f.selectedTrack !== undefined) {
           nextFilters.selectedTracks = f.selectedTrack === 'ALL' ? [] : [f.selectedTrack];
         }

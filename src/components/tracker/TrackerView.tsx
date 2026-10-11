@@ -791,7 +791,7 @@ export const TrackerView: React.FC = () => {
               if (val === 'ALL') {
                 setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
               } else if (val !== 'MULTI') {
-                setFilters({ selectedTrack: val, selectedTracks: [] });
+                setFilters({ selectedTrack: val, selectedTracks: [val] });
               }
               if (soundEnabled) playCyberSound('toggle');
             }}
