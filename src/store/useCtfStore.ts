@@ -39,6 +39,7 @@ import {
   redactLootState
 } from './lootPersistence';
 import { STARTER_MACHINES } from '../data/starterMachines';
+import { hasUserProgress, isGenuineCustom } from './machineNormalization';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
 import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
@@ -570,6 +571,47 @@ export const saveCustomMachinesToStorage = (machines: Machine[], profileId: stri
   }
 };
 
+/**
+ * One-time cleanup of the isolated custom-machine keys: older builds stamped catalog machines with progress as
+ * `isCustom` and mirrored their full (heavy) catalog payload here. Only rows that are now present in `machines` as
+ * normal catalog rows are removed, and `beforeWrite` (a profile flush) runs first so the progress they carry is
+ * already persisted in the profile key. Genuine customs are never touched.
+ */
+export const pruneMisstampedCustomMachines = (
+  machines: Machine[],
+  profileId: string = 'guest',
+  beforeWrite?: () => void
+): number => {
+  if (typeof window === 'undefined' || !Array.isArray(machines)) return 0;
+  const normalizedCatalogIds = new Set(
+    machines.filter((m) => m && !m.isCustom && !isGenuineCustom(m)).map((m) => m.id)
+  );
+  let removed = 0;
+  let flushed = false;
+  for (const key of [getCustomMachinesStorageKey(profileId), CUSTOM_MACHINES_STORAGE_KEY]) {
+    try {
+      const raw = safeLocalStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) continue;
+      const kept = parsed.filter(
+        (m: Machine) =>
+          !(m && typeof m.id === 'string' && !isGenuineCustom(m) && normalizedCatalogIds.has(m.id))
+      );
+      if (kept.length === parsed.length) continue;
+      if (!flushed) {
+        beforeWrite?.();
+        flushed = true;
+      }
+      safeLocalStorage.setItem(key, JSON.stringify(kept));
+      removed += parsed.length - kept.length;
+    } catch (err) {
+      console.warn('[ZeroBox] Failed to prune mis-stamped custom machines:', err);
+    }
+  }
+  return removed;
+};
+
 export const loadInitialProfileData = (profileId: string) => {
   if (typeof window !== 'undefined') {
     try {
@@ -685,6 +727,7 @@ export const mergeMachinesWithCatalog = (
   catalogSource?: Machine[]
 ): Machine[] => {
   const catalog = catalogSource || getLoadedMachinesCatalog() || STARTER_MACHINES;
+  const catalogIds = new Set(catalog.map((c) => c.id));
   const map = new Map<string, Machine>();
   const nameMap = new Map<string, Machine>();
   const platformNameMap = new Map<string, Machine>();
@@ -735,33 +778,40 @@ export const mergeMachinesWithCatalog = (
 
       // Multi-tier lookup to safeguard against catalog ID, name, or platform drift
       let catalogMachine = map.get(m.id);
+      // Exact catalog id or id-based alias: the stored row IS that catalog machine, so a stale isCustom stamp can go.
+      let matchedByIdentity = Boolean(catalogMachine) && catalogIds.has(m.id);
+      // Operator-created machines only ever match by exact id; fuzzy tiers would fold e.g. a custom "Lame" into htb-lame.
+      const genuineCustom = isGenuineCustom(m);
 
-      if (!catalogMachine) {
-        const aliasTarget =
+      if (!catalogMachine && !genuineCustom) {
+        const idAliasTarget =
           (m.id && CATALOG_MACHINE_ALIASES[m.id]) ||
-          (idSlug && CATALOG_MACHINE_ALIASES[idSlug]) ||
-          (normName && CATALOG_MACHINE_ALIASES[normName]);
+          (idSlug && CATALOG_MACHINE_ALIASES[idSlug]);
+        const aliasTarget = idAliasTarget || (normName && CATALOG_MACHINE_ALIASES[normName]);
         if (aliasTarget) {
           catalogMachine = map.get(aliasTarget) || nameMap.get(aliasTarget.toLowerCase().trim());
+          matchedByIdentity = Boolean(catalogMachine && idAliasTarget && catalogIds.has(catalogMachine.id));
         }
       }
 
-      if (!catalogMachine && m.platform) {
+      if (!catalogMachine && !genuineCustom && m.platform) {
         if (normName) catalogMachine = platformNameMap.get(`${m.platform}:${normName}`);
         if (!catalogMachine && nameSlug) catalogMachine = platformSlugMap.get(`${m.platform}:${nameSlug}`);
       }
 
-      if (!catalogMachine && normName) {
+      if (!catalogMachine && !genuineCustom && normName) {
         catalogMachine = nameMap.get(normName);
       }
 
-      if (!catalogMachine && nameSlug) {
+      if (!catalogMachine && !genuineCustom && nameSlug) {
         catalogMachine = slugMap.get(nameSlug);
       }
 
-      if (!catalogMachine && idSlug) {
+      if (!catalogMachine && !genuineCustom && idSlug) {
         catalogMachine = idSlugMap.get(idSlug);
       }
+      // Drop a stale "custom" stamp only on an identity match of a non-custom row; name-only matches keep legacy behavior.
+      const customFlag = matchedByIdentity && !genuineCustom ? { isCustom: undefined } : {};
       if (catalogMachine) {
         if (userSolvesReset) {
           // User started fresh: respect their current status (unsolved/foothold/completed) and progress without forcing catalog completed status
@@ -773,6 +823,7 @@ export const mergeMachinesWithCatalog = (
           map.set(catalogMachine.id, {
             ...catalogMachine,
             ...m,
+            ...customFlag,
             status: m.status || 'unsolved',
             userFlag: m.userFlag,
             rootFlag: m.rootFlag,
@@ -801,11 +852,12 @@ export const mergeMachinesWithCatalog = (
           const hasRootFlag = Boolean(m.rootFlag?.trim());
           const isFootholdOrAbove = mStatus === 'foothold' || mStatus === 'root' || mStatus === 'completed';
           const isRootOrAbove = mStatus === 'root' || mStatus === 'completed';
-          const userHasProgress = mStatus !== 'backlog' || hasUserFlag || hasRootFlag || (m.timeSpentSeconds > 0) || Boolean(m.quickNotes) || Boolean(m.writeupMarkdown);
+          const userHasProgress = mStatus !== 'backlog' || hasUserProgress(m);
 
           map.set(catalogMachine.id, {
             ...catalogMachine,
             ...m,
+            ...customFlag,
             status: userHasProgress ? mStatus : 'backlog',
             userFlag: m.userFlag || '',
             rootFlag: m.rootFlag || '',
@@ -827,23 +879,12 @@ export const mergeMachinesWithCatalog = (
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
           });
         }
-      } else if (
-        m.isCustom ||
-        m.platform === 'Custom' ||
-        (m.id && m.id.startsWith('custom-')) ||
-        Boolean(m.userFlag?.trim()) ||
-        Boolean(m.rootFlag?.trim()) ||
-        // Any in-progress status (recon / foothold / root / completed): same rule as `userHasProgress` above
-        (Boolean(m.status) && (m.status as string) !== 'backlog' && (m.status as string) !== 'unsolved') ||
-        (m.timeSpentSeconds && m.timeSpentSeconds > 0) ||
-        Boolean(m.quickNotes?.trim()) ||
-        Boolean(m.writeupMarkdown?.trim())
-      ) {
-        // Genuine custom user-added machine OR legacy catalog machine with verified user progress
-        map.set(m.id, {
-          ...m,
-          isCustom: true, // Safeguard: mark as custom so user progress and notes are never pruned
-        });
+      } else if (m.isCustom || genuineCustom || hasUserProgress(m)) {
+        // Genuine custom machine, legacy isCustom row, or catalog machine (not in the loaded catalog yet) with
+        // user progress: keep the row as stored. Only genuine customs get the flag (same rule as toLeanMachines);
+        // never stamp anything else (it would stick once the full catalog matches) and never remove a stamp
+        // (a legacy custom without progress would then be dropped on the next merge).
+        map.set(m.id, genuineCustom ? { ...m, isCustom: true } : { ...m });
       }
     });
   }
@@ -878,6 +919,8 @@ export const mergeMachinesWithCatalog = (
 let lastPartialize: { inputs: unknown[]; snapshot: Record<string, unknown> } | null = null;
 let lastPersistedSnapshot: unknown;
 let lastPersistedVersion: number | undefined;
+// pruneMisstampedCustomMachines runs once per session, after the first full-catalog merge
+let customStoragePruned = false;
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
@@ -1025,6 +1068,11 @@ export const useCtfStore = create<CtfStoreState>()(
             isCatalogLoaded: true,
             isCatalogLoading: false,
           });
+          // Full catalog is in: every mis-stamped catalog row is now normalized, so drop their stale custom copies once.
+          if (!customStoragePruned) {
+            customStoragePruned = true;
+            pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
+          }
         } catch (err) {
           console.error('Failed to lazy load machinesCatalog:', err);
           set({ isCatalogLoading: false });
