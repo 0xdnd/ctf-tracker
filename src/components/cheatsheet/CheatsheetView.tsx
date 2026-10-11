@@ -1,5 +1,7 @@
 import { isTauriTarget } from '../../utils/runtimeTarget';
 import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
+import { useCptsVault } from '../../hooks/useCptsVault';
+import { ViewSkeleton } from '../common/Skeleton';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -72,7 +74,7 @@ interface CheatsheetViewProps {
   defaultMode?: 'tactical' | 'cpts-manual';
 }
 
-export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) => {
+const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) => {
   const location = useLocation();
   const {
     cheatsheets,
@@ -2337,4 +2339,15 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       />
     </div>
   );
+};
+
+/**
+ * Waits for the lazy CPTS catalog before mounting the real view, because its
+ * state initialisers read the note pool synchronously. An 'error' status still
+ * mounts the view (user/custom notes keep working with an empty catalog).
+ */
+export const CheatsheetView: React.FC<CheatsheetViewProps> = (props) => {
+  const vaultStatus = useCptsVault();
+  if (vaultStatus === 'idle' || vaultStatus === 'loading') return <ViewSkeleton />;
+  return <CheatsheetViewContent {...props} />;
 };

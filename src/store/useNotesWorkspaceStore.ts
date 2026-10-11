@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CptsNoteEntry, getAllCptsNotes } from '../utils/obsidianManualUtils';
+import { CptsNoteEntry, getAllCptsNotes, isCptsVaultLoaded, loadCptsVault } from '../utils/obsidianManualUtils';
 import { useCtfStore } from './useCtfStore';
 
 export type DockSize = 'normal' | 'expanded';
 export type ObsidianViewMode = 'reading' | 'split' | 'raw';
 export type ObsidianNoteLanguage = 'en' | 'he';
 export type NoteFontSize = 'sm' | 'base' | 'lg' | 'xl';
+export type VaultStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface OpenNoteOptions {
   background?: boolean;
@@ -32,6 +33,10 @@ export interface NotesWorkspaceState {
   searchQuery: string;
   isSearchOpen: boolean;
 
+  // Lazy CPTS catalog loading (never persisted)
+  vaultStatus: VaultStatus;
+  ensureVaultLoaded: () => Promise<void>;
+
   // Actions
   openNote: (noteId: string, options?: OpenNoteOptions) => void;
   closeTab: (noteId: string) => void;
@@ -54,6 +59,22 @@ export interface NotesWorkspaceState {
   getOpenNotes: () => CptsNoteEntry[];
 }
 
+type TabSelection = Pick<NotesWorkspaceState, 'openTabIds' | 'activeTabId'>;
+
+function sanitizeTabs(state: TabSelection): TabSelection {
+  const userNotes = useCtfStore.getState().userNotes || [];
+  const all = [...(useCtfStore.getState().customNotes || []), ...userNotes, ...getAllCptsNotes()];
+  const validIds = new Set(all.map((n) => n.id));
+  const defaultId = all.find((n) => n.id === '01-recon-port-scanning')?.id || all[0]?.id || '01-recon-port-scanning';
+
+  const filteredTabs = (state.openTabIds || []).filter((id) => validIds.has(id));
+  const openTabIds = filteredTabs.length > 0 ? filteredTabs : [defaultId];
+  const activeTabId = !state.activeTabId || !validIds.has(state.activeTabId)
+    ? openTabIds[0] || defaultId
+    : state.activeTabId;
+  return { openTabIds, activeTabId };
+}
+
 export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
   persist(
     (set, get) => ({
@@ -67,6 +88,23 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       fontSize: 'base',
       searchQuery: '',
       isSearchOpen: false,
+      vaultStatus: isCptsVaultLoaded() ? 'ready' : 'idle',
+
+      ensureVaultLoaded: async () => {
+        if (isCptsVaultLoaded()) {
+          if (get().vaultStatus !== 'ready') set({ vaultStatus: 'ready' });
+          return;
+        }
+        if (get().vaultStatus !== 'loading') set({ vaultStatus: 'loading' });
+        try {
+          await loadCptsVault();
+          // Persisted tabs were kept as-is while the catalog was unavailable; validate them now.
+          set((state) => ({ vaultStatus: 'ready', ...sanitizeTabs(state) }));
+        } catch (err) {
+          console.warn('[ZeroBox] Could not load the CPTS vault data', err);
+          set({ vaultStatus: 'error' });
+        }
+      },
 
       openNote: (noteId: string, options?: OpenNoteOptions) => {
         if (!noteId) return;
@@ -129,6 +167,20 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       },
 
       toggleOpen: () => {
+        if (!isCptsVaultLoaded()) {
+          // Catalog not available yet: toggle without validating (and thus never dropping) persisted tabs.
+          set((state) => {
+            const defaultId = '01-recon-port-scanning';
+            const openTabIds = state.openTabIds.length > 0 ? state.openTabIds : [defaultId];
+            return {
+              isOpen: !state.isOpen,
+              openTabIds,
+              activeTabId: state.activeTabId || openTabIds[0],
+            };
+          });
+          void get().ensureVaultLoaded();
+          return;
+        }
         set((state) => {
           const all = [...(useCtfStore.getState().customNotes || []), ...getAllCptsNotes()];
           const defaultId = all.find((n) => n.id === '01-recon-port-scanning')?.id || all[0]?.id || '01-recon-port-scanning';
@@ -224,17 +276,11 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           merged.viewMode = 'reading';
         }
 
-        // Auto-sanitize legacy invalid tab IDs (e.g. stale '00_methodology_pt')
-        const userNotes = useCtfStore.getState().userNotes || [];
-        const all = [...(useCtfStore.getState().customNotes || []), ...userNotes, ...getAllCptsNotes()];
-        const validIds = new Set(all.map((n) => n.id));
-        const defaultId = all.find((n) => n.id === '01-recon-port-scanning')?.id || all[0]?.id || '01-recon-port-scanning';
-
-        const filteredTabs = (merged.openTabIds || []).filter((id) => validIds.has(id));
-        merged.openTabIds = filteredTabs.length > 0 ? filteredTabs : [defaultId];
-
-        if (!merged.activeTabId || !validIds.has(merged.activeTabId)) {
-          merged.activeTabId = merged.openTabIds[0] || defaultId;
+        // Auto-sanitize legacy invalid tab IDs (e.g. stale '00_methodology_pt').
+        // Skipped while the lazy catalog is unavailable so persisted tabs are never dropped;
+        // ensureVaultLoaded() re-runs it once the data is ready.
+        if (isCptsVaultLoaded()) {
+          Object.assign(merged, sanitizeTabs(merged));
         }
 
         return merged;

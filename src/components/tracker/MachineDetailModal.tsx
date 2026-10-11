@@ -39,6 +39,7 @@ import {
   FileCode
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
+import { useCptsVault } from '../../hooks/useCptsVault';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus, Difficulty, Machine } from '../../types';
@@ -195,7 +196,10 @@ export const MachineDetailModal: React.FC = () => {
   }, [machine?.checklist?.itemsState]);
 
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const recommendedNotes = useMemo(() => (machine ? getRecommendedNotesForMachine(machine, 4) : []), [machine]);
+  const vaultStatus = useCptsVault();
+  // vaultStatus re-runs the lookup once the lazy catalog has loaded
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const recommendedNotes = useMemo(() => (machine ? getRecommendedNotesForMachine(machine, 4) : []), [machine, vaultStatus]);
 
   const modalRef = useFocusTrap<HTMLDivElement>({
     isActive: Boolean(selectedMachineId),

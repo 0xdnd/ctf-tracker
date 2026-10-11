@@ -1,7 +1,9 @@
-import cptsNotesData from '../data/cptsNotesIndex.json';
 import { Machine } from '../types';
 import { classifyMachine } from './categoryUtils';
 import { useCtfStore } from '../store/useCtfStore';
+import { CPTS_NOTES, getStaticWikilinkMap } from './cptsVaultRegistry';
+
+export { CPTS_NOTES, isCptsVaultLoaded, loadCptsVault } from './cptsVaultRegistry';
 
 export interface ObsidianCallout {
   type: 'abstract' | 'tip' | 'warning' | 'danger' | 'example' | 'note' | 'important' | 'cite' | 'success' | 'info' | 'question';
@@ -61,15 +63,6 @@ export interface CptsNoteEntry {
   rawMarkdown?: string;
 }
 
-interface CptsRawPayload {
-  notes?: CptsNoteEntry[];
-  wikilinkMap?: Record<string, string>;
-}
-
-const rawData = cptsNotesData as unknown as CptsRawPayload | CptsNoteEntry[];
-export const CPTS_NOTES: CptsNoteEntry[] = Array.isArray(rawData) ? rawData : (rawData.notes || []);
-const WIKILINK_MAP: Record<string, string> = Array.isArray(rawData) ? {} : (rawData.wikilinkMap || {});
-
 /**
  * Returns active CPTS field manual notes:
  * Prioritizes user's private notes from store/IndexedDB if imported,
@@ -106,7 +99,7 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
   const stripped = lower.replace(/^\d+[\s_.-]*/, '').trim();
 
   // Combine store userWikilinkMap with static WIKILINK_MAP
-  let activeMap = WIKILINK_MAP;
+  let activeMap = getStaticWikilinkMap();
   if (typeof window !== 'undefined') {
     try {
       const userMap = useCtfStore.getState()?.userWikilinkMap;

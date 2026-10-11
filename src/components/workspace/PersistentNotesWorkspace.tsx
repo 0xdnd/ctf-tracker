@@ -13,6 +13,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { NotesWorkspaceTabStrip } from './NotesWorkspaceTabStrip';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
 import { playCyberSound } from '../../utils/helpers';
+import { useCptsVault } from '../../hooks/useCptsVault';
+import { NotesSkeleton } from '../common/Skeleton';
 
 export const PersistentNotesWorkspace: React.FC = () => {
   const {
@@ -64,8 +66,10 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
   const getActiveNote = useNotesWorkspaceStore((s) => s.getActiveNote);
   const getOpenNotes = useNotesWorkspaceStore((s) => s.getOpenNotes);
-  const activeNote = useMemo(() => getActiveNote(), [activeTabId, customNotes, userNotes, getActiveNote]);
-  const openNotes = useMemo(() => getOpenNotes(), [openTabIds, customNotes, userNotes, getOpenNotes]);
+  const vaultStatus = useCptsVault();
+  const vaultPending = vaultStatus === 'idle' || vaultStatus === 'loading';
+  const activeNote = useMemo(() => getActiveNote(), [activeTabId, customNotes, userNotes, getActiveNote, vaultStatus]);
+  const openNotes = useMemo(() => getOpenNotes(), [openTabIds, customNotes, userNotes, getOpenNotes, vaultStatus]);
 
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
@@ -229,7 +233,9 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
         {/* Active Note Content Stage (DOM Keep-Alive) */}
         <div className="flex-1 overflow-y-auto min-h-0 relative bg-surface-card">
-          {openNotes.length > 0 ? (
+          {openNotes.length === 0 && vaultPending ? (
+            <NotesSkeleton />
+          ) : openNotes.length > 0 ? (
             openNotes.map((tabNote) => {
               const isActive = tabNote.id === activeNote?.id;
               return (
@@ -372,7 +378,9 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
         {/* Mobile Note Stage (DOM Keep-Alive) */}
         <div className="flex-1 min-h-0 bg-surface-card p-1 overflow-hidden flex flex-col">
-          {openNotes.length > 0 ? (
+          {openNotes.length === 0 && vaultPending ? (
+            <NotesSkeleton />
+          ) : openNotes.length > 0 ? (
             openNotes.map((tabNote) => {
               const isActive = tabNote.id === activeNote?.id;
               return (

@@ -9,6 +9,7 @@ import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { getAllCptsNotes } from '../../utils/obsidianManualUtils';
+import { useCptsVault } from '../../hooks/useCptsVault';
 
 export const NotesWorkspaceTabStrip: React.FC = () => {
   const {
@@ -22,7 +23,8 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
 
   const customNotes = useCtfStore((s) => s.customNotes || []);
   const userNotes = useCtfStore((s) => s.userNotes || []);
-  const allNotes = React.useMemo(() => [...(customNotes || []), ...getAllCptsNotes()], [customNotes, userNotes]);
+  const vaultStatus = useCptsVault();
+  const allNotes = React.useMemo(() => [...(customNotes || []), ...getAllCptsNotes()], [customNotes, userNotes, vaultStatus]);
   const notesMap = React.useMemo(() => new Map(allNotes.map((n) => [n.id, n])), [allNotes]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);

@@ -21,6 +21,8 @@ import {
   Lock
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
+import { useCptsVault } from '../../hooks/useCptsVault';
+import { NotesSkeleton } from '../common/Skeleton';
 import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
 import { playCyberSound, interpolateCommand } from '../../utils/helpers';
@@ -340,12 +342,16 @@ export const WriteupStudio: React.FC = () => {
   }, [cptsSearch]);
 
   // Capped at top 20 matches as mandated by Fable Advisor
+  const vaultStatus = useCptsVault();
+  const vaultPending = vaultStatus === 'idle' || vaultStatus === 'loading';
   const matchingNotes = useMemo(() => {
     if (!debouncedSearch.trim()) {
       return selectedMachine ? getRecommendedNotesForMachine(selectedMachine, 20) : CPTS_NOTES.slice(0, 20);
     }
     return searchCptsNotes(debouncedSearch, 'ALL').slice(0, 20);
-  }, [debouncedSearch, selectedMachine]);
+    // vaultStatus re-runs the lookup once the lazy catalog has loaded
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, selectedMachine, vaultStatus]);
 
   const handleInsertNote = (note: CptsNoteEntry) => {
     if (!selectedMachine) return;
@@ -754,7 +760,9 @@ cat /root/root.txt
 
           {/* Matching Notes Grid */}
           <div tabIndex={0} role="region" aria-label="Matching field manual notes" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
-            {matchingNotes.length === 0 ? (
+            {matchingNotes.length === 0 && vaultPending ? (
+              <div className="col-span-full"><NotesSkeleton /></div>
+            ) : matchingNotes.length === 0 ? (
               <div className="col-span-full p-4 text-center text-xs text-muted">
                 No matching field manual notes found.
               </div>

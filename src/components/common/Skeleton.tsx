@@ -111,3 +111,14 @@ export const CanvasSkeleton: React.FC<{ label?: string; className?: string }> = 
     <Skeleton height="100%" className="min-h-[388px]" rounded="rounded-lg" />
   </SkeletonRegion>
 );
+
+/** Placeholder shown while the lazy CPTS field-manual data is loading. */
+export const NotesSkeleton: React.FC<{ label?: string; className?: string }> = ({
+  label = 'Loading field manual…',
+  className = '',
+}) => (
+  <SkeletonRegion label={label} className={`p-4 space-y-3 ${className}`}>
+    <Skeleton height={20} width="40%" />
+    <SkeletonText lines={6} />
+  </SkeletonRegion>
+);
