@@ -10,8 +10,16 @@ import {
 const formatSize = (chars: number) =>
   chars >= 1024 * 1024 ? `${(chars / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(chars / 1024))} KB`;
 
-/** "Restore pre-update snapshot" list. Renders nothing until a snapshot exists. */
-export default function PreUpdateSnapshots() {
+interface PreUpdateSnapshotsProps {
+  /** True while a confirmed restore is running (the parent blocks closing until it settles). */
+  onBusyChange?: (busy: boolean) => void;
+}
+
+/**
+ * "Restore pre-update snapshot" list. Renders nothing until a snapshot exists. The restore itself lives in
+ * preMigrationBackup (module scope), so it completes even if this component unmounts mid-flight.
+ */
+export default function PreUpdateSnapshots({ onBusyChange }: PreUpdateSnapshotsProps = {}) {
   const [snapshots, setSnapshots] = useState<PreMigrationBackupSummary[]>([]);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
@@ -39,8 +47,17 @@ export default function PreUpdateSnapshots() {
     });
     if (!ok) return;
     setBusyKey(snap.key);
-    const restored = await restorePreMigrationBackup(snap.key);
-    if (!restored) setBusyKey(null);
+    onBusyChange?.(true);
+    let restored = false;
+    try {
+      restored = await restorePreMigrationBackup(snap.key);
+    } finally {
+      // On success the page is reloading: stay busy so nothing can be closed or clicked in the meantime.
+      if (!restored) {
+        setBusyKey(null);
+        onBusyChange?.(false);
+      }
+    }
   };
 
   return (

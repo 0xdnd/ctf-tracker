@@ -96,6 +96,13 @@ export const BackupModal: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'backup' | 'bulk_pwn'>('backup');
 
+  // A pre-update snapshot restore is writing storage and about to reload: Esc / close are disabled meanwhile.
+  const [snapshotRestoring, setSnapshotRestoring] = useState(false);
+  const requestClose = () => {
+    if (snapshotRestoring) return;
+    setBackupModalOpen(false);
+  };
+
   // JSON Backup / Restore State
   const [importText, setImportText] = useState('');
   const [copied, setCopied] = useState(false);
@@ -394,14 +401,16 @@ export const BackupModal: React.FC = () => {
   return (
     <Modal
       open
-      onClose={() => setBackupModalOpen(false)}
+      onClose={requestClose}
       labelledBy="backup-modal-title"
       size="xl"
       closeOnBackdrop={false}
+      closeOnEsc={!snapshotRestoring}
       className="backdrop-blur-md !bg-surface-inverse/60 max-sm:!p-0"
       panelClassName="!shadow-2xl max-sm:!mx-0 max-sm:!rounded-none max-sm:!border-0 max-sm:!h-full max-sm:!max-h-none"
     >
-      <div className="flex flex-col max-sm:h-full sm:max-h-[90dvh] min-h-0">
+      {/* 2px less than the panel's 90dvh (its 1px border, top and bottom), so only the content area scrolls */}
+      <div className="flex flex-col max-sm:h-full sm:max-h-[calc(90dvh-2px)] min-h-0">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-card">
           <div className="flex items-center gap-2.5">
@@ -411,8 +420,10 @@ export const BackupModal: React.FC = () => {
             </h3>
           </div>
           <button aria-label="Close backup modal"
-            onClick={() => setBackupModalOpen(false)}
-            className="p-1.5 max-sm:p-3 rounded bg-surface-card text-muted hover:text-primary border border-subtle transition-colors"
+            onClick={requestClose}
+            disabled={snapshotRestoring}
+            title={snapshotRestoring ? 'Restoring a snapshot…' : undefined}
+            className="p-1.5 max-sm:p-3 rounded bg-surface-card text-muted hover:text-primary border border-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4" />
           </button>
@@ -820,7 +831,7 @@ export const BackupModal: React.FC = () => {
                 </div>
               </div>
 
-              <PreUpdateSnapshots />
+              <PreUpdateSnapshots onBusyChange={setSnapshotRestoring} />
 
               {/* Section 3: Reset */}
               <div className="p-3.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border space-y-2">
