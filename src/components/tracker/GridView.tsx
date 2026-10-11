@@ -30,7 +30,7 @@ import { ShareLinkButton } from '../common/ShareLinkButton';
 
 /** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
 const REVEAL =
-  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150';
+  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150';
 
 const ICON_BTN =
   'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';

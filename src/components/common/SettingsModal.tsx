@@ -301,7 +301,7 @@ export const SettingsModal: React.FC = () => {
                           {isCopied ? (
                             <span className="text-[10px] text-callout-success-fg font-medium">Copied</span>
                           ) : (
-                            <Copy className="w-2.5 h-2.5 text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Copy className="w-2.5 h-2.5 text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity" />
                           )}
                         </div>
                         <div className="text-[10px] text-muted font-mono truncate">

@@ -1,4 +1,5 @@
 import tailwindAnimate from 'tailwindcss-animate';
+import plugin from 'tailwindcss/plugin';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -228,5 +229,10 @@ export default {
       }
     },
   },
-  plugins: [tailwindAnimate],
+  plugins: [
+    tailwindAnimate,
+    plugin(({ addVariant }) => {
+      addVariant('touch', '@media (hover: none)');
+    }),
+  ],
 }

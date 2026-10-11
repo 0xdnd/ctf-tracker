@@ -161,7 +161,7 @@ export const ZeroBoxShowcaseModal: React.FC = () => {
             onClick={toggleFullscreen}
             title="Toggle Theater Fullscreen"
             aria-label="Toggle Fullscreen"
-            className="absolute top-3 right-3 p-2 rounded-lg bg-black/60 hover:bg-black/85 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+            className="absolute top-3 right-3 p-2 rounded-lg bg-black/60 hover:bg-black/85 text-white/80 hover:text-white border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100 transition-opacity cursor-pointer z-10"
           >
             <Maximize2 className="w-4 h-4" />
           </button>

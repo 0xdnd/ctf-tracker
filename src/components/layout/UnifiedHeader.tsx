@@ -212,7 +212,7 @@ export const UnifiedHeader: React.FC = () => {
   const ghostBtn =
     'items-center justify-center gap-1.5 h-8 px-2 rounded-lg text-secondary hover:bg-surface-hover hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
   const copyReveal =
-    'p-0.5 rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100';
+    'p-0.5 rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100';
   const segmentCls = 'group flex items-center gap-1 h-6 px-1.5 rounded-md hover:bg-surface-hover focus-within:bg-surface-card';
   const segmentLabelCls = 'text-[10px] font-medium text-muted flex-shrink-0 cursor-pointer select-none';
   const segmentInputCls =

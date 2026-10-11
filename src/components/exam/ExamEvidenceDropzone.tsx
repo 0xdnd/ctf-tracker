@@ -148,7 +148,7 @@ const ProofThumbnail: React.FC<{ screenshot: ScreenshotProof; onExpand: (src: st
           <button
             type="button"
             onClick={() => onExpand(src)}
-            className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
+            className="absolute inset-0 bg-surface-inverse/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100 flex items-center justify-center text-on-inverse transition-opacity font-semibold text-[11px] gap-1"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Expand preview</span>
