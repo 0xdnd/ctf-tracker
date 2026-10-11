@@ -106,3 +106,6 @@ test-results/
 # Local AI / dev notes (not published)
 CLAUDE.md
 dev/
+
+# Test coverage output
+coverage/

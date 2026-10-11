@@ -33,8 +33,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run Tests
-        run: npx vitest run
+      - name: Run Tests with Coverage
+        run: npm run test:coverage
+
+      - name: Build (vite only)
+        run: npx vite build
+
+      - name: Check Bundle Size Budget
+        run: node scripts/check-bundle-size.mjs
 
   e2e:
     runs-on: ubuntu-latest
