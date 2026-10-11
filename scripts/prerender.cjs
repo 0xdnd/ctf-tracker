@@ -50,7 +50,9 @@ const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
   const sw = fs.readFileSync(swPath, 'utf8');
   if (!sw.includes('/*__SHELL_ASSETS__*/')) throw new Error('prerender: sw.js placeholder missing');
-  fs.writeFileSync(swPath, sw.replace('/*__SHELL_ASSETS__*/[]', JSON.stringify(shellAssets)), 'utf8');
+  const { computeBuildHash, injectBuildHash } = require('./lib/build-hash.cjs');
+  const buildHash = computeBuildHash(shellAssets, fs.readFileSync(path.join(distDir, 'app-shell.html')));
+  fs.writeFileSync(swPath, injectBuildHash(sw.replace('/*__SHELL_ASSETS__*/[]', JSON.stringify(shellAssets)), buildHash), 'utf8');
 }
 
 const esc = (s) =>

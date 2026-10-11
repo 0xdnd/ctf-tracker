@@ -4,6 +4,9 @@ import App from './App';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import './index.css';
 import { isTauriTarget } from './utils/runtimeTarget';
+import { initServiceWorkerUpdates } from './utils/swUpdate';
+import { flushProfileSave } from './store/useCtfStore';
+import { useToastStore } from './store/useToastStore';
 
 // Register offline Service Worker only in production builds; clear any stale SW in DEV mode
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -18,16 +21,33 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         for (const key of keys) caches.delete(key);
       });
     }
-  } else if (!isTauriTarget()) {
+  } else if (isTauriTarget()) {
+    // Desktop shell: never run a service worker; drop any stale registration and ZeroBox caches.
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) reg.unregister().catch(() => {});
+    });
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const key of keys) if (key.startsWith('zerobox-')) caches.delete(key);
+      });
+    }
+  } else {
     window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .then((reg) => {
-          reg.update().catch(() => {});
-        })
-        .catch((err) => {
-          console.warn('[ZeroBox SW] Service Worker registration failed:', err);
-        });
+      initServiceWorkerUpdates({
+        navigator,
+        location,
+        now: Date.now,
+        flushBeforeReload: () => flushProfileSave(),
+        notify: ({ message, actionLabel, onAction }) =>
+          useToastStore.getState().addToast({
+            type: 'info',
+            message,
+            durationMs: 0,
+            action: { label: actionLabel, onClick: onAction },
+          }),
+      }).catch((err) => {
+        console.warn('[ZeroBox SW] Service Worker registration failed:', err);
+      });
     });
   }
 }

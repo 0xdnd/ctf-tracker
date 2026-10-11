@@ -5,7 +5,9 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'warning' | 'info';
   title?: string;
   message: string;
+  /** 0 makes the toast sticky (no auto-dismiss). */
   durationMs?: number;
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastStore {

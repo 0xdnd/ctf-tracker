@@ -1,6 +1,7 @@
 // ZeroBox Tactical CTF Tracker — Offline Service Worker
 // Versioned precache with offline SPA navigation fallback and zero external egress
-const CACHE_VERSION = 'zerobox-v3.3.0';
+// The build hash is injected by scripts/prerender.cjs from the shell asset list and app-shell.html.
+const CACHE_VERSION = 'zerobox-' + /*__BUILD_HASH__*/'dev';
 // /app-shell.html is the SPA shell emitted by scripts/prerender.cjs; / is the static landing page.
 const APP_SHELL = '/app-shell.html';
 // Hashed JS/CSS referenced by the shell; scripts/prerender.cjs replaces the placeholder at build time.
@@ -12,10 +13,13 @@ self.addEventListener('install', (event) => {
     (async () => {
       const cache = await caches.open(CACHE_VERSION);
       await cache.addAll(CORE_SHELL);
-      // Skip waiting to immediately activate for offline readiness
-      await self.skipWaiting();
     })()
   );
+});
+
+// A waiting worker only takes over when the page asks (user clicked Reload in the update toast).
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
