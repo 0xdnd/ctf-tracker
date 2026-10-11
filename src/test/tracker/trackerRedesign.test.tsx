@@ -62,12 +62,12 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(document.getElementById('tracker-cert-select')).toBeNull();
     });
 
-    it('opens the filter drawer from the Filters button and applies OS / difficulty / platform filters from it', () => {
+    it('opens the filter drawer from the Filters button and applies OS / difficulty / platform filters from it', async () => {
       wrap(<TrackerView />);
       fireEvent.click(screen.getAllByRole('button', { name: /^Filters/ })[1]);
       expect(useCtfStore.getState().filterDrawerOpen).toBe(true);
 
-      const dialog = screen.getByRole('dialog', { name: /Advanced filters drawer/i });
+      const dialog = await screen.findByRole('dialog', { name: /Advanced filters drawer/i }, { timeout: 10000 });
       fireEvent.click(within(within(dialog).getByRole('group', { name: 'Operating system' })).getByRole('button', { name: 'Windows' }));
       expect(useCtfStore.getState().filters.selectedOs).toBe('Windows');
 

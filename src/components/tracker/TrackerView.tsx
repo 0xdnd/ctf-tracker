@@ -30,12 +30,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
 import { KanbanBoard } from './KanbanBoard';
-import { TableView } from './TableView';
-import { GridView } from './GridView';
+const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
+const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
-import { FilterDrawer } from '../layout/FilterDrawer';
+const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
-import { CanvasSkeleton } from '../common/Skeleton';
+import { CanvasSkeleton, ViewSkeleton } from '../common/Skeleton';
 import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
 import { 
   VULN_CATEGORIES, 
@@ -117,6 +117,11 @@ export const TrackerView: React.FC = () => {
   );
 
   const location = useLocation();
+
+  // The filter drawer chunk is fetched the first time it is opened, then kept mounted for its exit animation.
+  const filterDrawerOpen = useCtfStore((s) => s.filterDrawerOpen);
+  const [filterDrawerSeen, setFilterDrawerSeen] = useState(filterDrawerOpen);
+  if (filterDrawerOpen && !filterDrawerSeen) setFilterDrawerSeen(true);
 
   // The catalog swap (a few hundred -> ~930 machines) re-derives every list below. Rendering from a deferred
   // copy lets React keep the UI responsive and interrupt that re-render. (startTransition around a zustand
@@ -976,7 +981,11 @@ export const TrackerView: React.FC = () => {
         )}
       </div>
       {/* Slide-over Filter Drawer */}
-      <FilterDrawer />
+      {filterDrawerSeen && (
+        <React.Suspense fallback={null}>
+          <FilterDrawer />
+        </React.Suspense>
+      )}
 
       {/* Main View Renderer */}
       {filteredMachines.length === 0 ? (
@@ -1001,8 +1010,16 @@ export const TrackerView: React.FC = () => {
       ) : (
         <>
           {viewMode === 'kanban' && <KanbanBoard filteredMachines={filteredMachines} />}
-          {viewMode === 'table' && <TableView filteredMachines={filteredMachines} />}
-          {viewMode === 'grid' && <GridView filteredMachines={filteredMachines} />}
+          {viewMode === 'table' && (
+            <React.Suspense fallback={<ViewSkeleton />}>
+              <TableView filteredMachines={filteredMachines} />
+            </React.Suspense>
+          )}
+          {viewMode === 'grid' && (
+            <React.Suspense fallback={<ViewSkeleton />}>
+              <GridView filteredMachines={filteredMachines} />
+            </React.Suspense>
+          )}
           {viewMode === 'graph' && (
             <React.Suspense fallback={<CanvasSkeleton label="Loading attack graph…" />}>
               <GraphView filteredMachines={filteredMachines} />

@@ -1,13 +1,9 @@
-import React, { useRef, useEffect, Suspense, lazy, useMemo } from 'react';
+import React, { useRef, useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { UnifiedHeader } from './components/layout/UnifiedHeader';
-import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
-import { SnippetsDrawer } from './components/layout/SnippetsDrawer';
-import { RevShellModal } from './components/common/RevShellModal';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
-import { CommandPalette } from './components/layout/CommandPalette';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTopButton } from './components/common/BackToTopButton';
 import { ScrollProvider, useScrollActions } from './context/ScrollContext';
@@ -18,10 +14,9 @@ import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
 import { useCtfStore, UiScale } from './store/useCtfStore';
 import { useExamStore } from './store/examStore';
+import { useNotesWorkspaceStore } from './store/useNotesWorkspaceStore';
 import { useAuthStore } from './store/useAuthStore';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
-import { ExamQuickActionDrawer } from './components/exam/ExamQuickActionDrawer';
-import { PersistentNotesWorkspace } from './components/workspace/PersistentNotesWorkspace';
 import { ensurePersistence, bindExportGuard } from './utils/resilientStorage';
 import { StartCleanModal } from './components/common/StartCleanModal';
 import { ToastContainer } from './components/common/ToastContainer';
@@ -45,6 +40,21 @@ const BackupModal = lazy(() => import('./components/backup/BackupModal').then(m 
 const ReconAutomationModal = lazy(() => import('./components/automation/ReconAutomationModal').then(m => ({ default: m.ReconAutomationModal })));
 const SettingsModal = lazy(() => import('./components/common/SettingsModal').then(m => ({ default: m.SettingsModal })));
 const ZeroBoxShowcaseModal = lazy(() => import('./components/common/ZeroBoxShowcaseModal').then(m => ({ default: m.ZeroBoxShowcaseModal })));
+
+// Code-split global overlays: mounted (and fetched) only once they are first needed
+const SnippetsDrawer = lazy(() => import('./components/layout/SnippetsDrawer').then(m => ({ default: m.SnippetsDrawer })));
+const RevShellModal = lazy(() => import('./components/common/RevShellModal').then(m => ({ default: m.RevShellModal })));
+const CommandPalette = lazy(() => import('./components/layout/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const ExamQuickActionDrawer = lazy(() => import('./components/exam/ExamQuickActionDrawer').then(m => ({ default: m.ExamQuickActionDrawer })));
+const PersistentNotesWorkspace = lazy(() => import('./components/workspace/PersistentNotesWorkspace').then(m => ({ default: m.PersistentNotesWorkspace })));
+const FloatingPayloadBar = lazy(() => import('./components/common/FloatingPayloadBar').then(m => ({ default: m.FloatingPayloadBar })));
+
+/** Stays true once `flag` has been true, so lazy overlays keep their state and exit animations. */
+const useEverTrue = (flag: boolean): boolean => {
+  const [seen, setSeen] = useState(flag);
+  if (flag && !seen) setSeen(true);
+  return seen || flag;
+};
 
 // Code-Split Route Modules (Zero-overhead on initial tracker load)
 const CheatsheetView = lazy(() => import('./components/cheatsheet/CheatsheetView').then(m => ({ default: m.CheatsheetView })));
@@ -104,6 +114,15 @@ const MainAppContent: React.FC = () => {
   const settingsModalOpen = useCtfStore((s) => s.settingsModalOpen);
   const showcaseModalOpen = useCtfStore((s) => s.showcaseModalOpen);
   const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
+  const snippetsDrawerOpen = useCtfStore((s) => s.snippetsDrawerOpen);
+  const revShellModalOpen = useCtfStore((s) => s.revShellModalOpen);
+  const examDrawerOpen = useExamStore((s) => s.isQuickDrawerOpen);
+  const notesWorkspaceOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  const mountCommandPalette = useEverTrue(commandPaletteOpen);
+  const mountSnippetsDrawer = useEverTrue(snippetsDrawerOpen);
+  const mountRevShell = useEverTrue(revShellModalOpen);
+  const mountExamDrawer = useEverTrue(examDrawerOpen);
+  const mountNotesWorkspace = useEverTrue(notesWorkspaceOpen);
   const operatorProfileModalOpen = useAuthStore((s) => s.operatorProfileModalOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
@@ -342,7 +361,7 @@ const MainAppContent: React.FC = () => {
       </AnimatePresence>
 
       {/* Global Quick Command Palette (Ctrl+K) */}
-      <CommandPalette />
+      {mountCommandPalette && <Suspense fallback={null}><CommandPalette /></Suspense>}
 
       {/* Heavy Tactical Modals (Deferred Lazy Loading - Fetched strictly when triggered) */}
       <RouteErrorBoundary>
@@ -403,13 +422,13 @@ const MainAppContent: React.FC = () => {
       <TimerController />
 
       {/* Slide-over Cheatsheet & Snippets Drawer (Alt+S) */}
-      <SnippetsDrawer />
+      {mountSnippetsDrawer && <Suspense fallback={null}><SnippetsDrawer /></Suspense>}
 
       {/* Slide-over Exam Mission Quick Action Drawer (Alt+E) */}
-      <ExamQuickActionDrawer />
+      {mountExamDrawer && <Suspense fallback={null}><ExamQuickActionDrawer /></Suspense>}
 
       {/* Rapid Reverse Shell Crafter Modal */}
-      <RevShellModal />
+      {mountRevShell && <Suspense fallback={null}><RevShellModal /></Suspense>}
 
       {/* Ephemeral Memory Fallback Storage Alert Banner */}
       <EphemeralStorageBanner />
@@ -523,11 +542,11 @@ const MainAppContent: React.FC = () => {
           </AnimatePresence>
         </main>
         {/* Global Persistent Multi-Tab Notes Workspace Sidecar (Non-blocking) */}
-        {!isPopout && <PersistentNotesWorkspace />}
+        {!isPopout && mountNotesWorkspace && <Suspense fallback={null}><PersistentNotesWorkspace /></Suspense>}
       </div>
 
       {/* Global Floating LHOST/LPORT Payload Bar - Hidden in Popout Mode */}
-      {!isPopout && <FloatingPayloadBar />}
+      {!isPopout && <Suspense fallback={null}><FloatingPayloadBar /></Suspense>}
 
       {/* Tactical Mobile Bottom Navigation Bar (md:hidden) */}
       {!focusMode && !isPopout && <MobileNav />}
