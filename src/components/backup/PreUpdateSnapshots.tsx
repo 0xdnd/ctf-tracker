@@ -41,7 +41,7 @@ export default function PreUpdateSnapshots({ onBusyChange }: PreUpdateSnapshotsP
     const when = new Date(snap.createdAt).toLocaleString();
     const ok = await confirmAction({
       title: 'Restore pre-update snapshot?',
-      body: `This replaces your tracker data (all profiles) with the copy saved on ${when}, before ZeroBox updated its data format. Changes made since then are replaced; a safety copy of your current data is kept first. Close other ZeroBox tabs, then continue. The app reloads afterwards.`,
+      body: `This replaces your tracker data (all profiles) with the copy saved on ${when}, before ZeroBox updated its data format. Changes made since then are replaced; a safety copy of your current data is kept first. Close other ZeroBox tabs first, because older tabs do not know about the restore lock. The app reloads afterwards.`,
       confirmLabel: 'Restore snapshot',
       tone: 'danger',
     });

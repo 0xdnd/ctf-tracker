@@ -1,5 +1,6 @@
 import { Machine, CheatsheetCommand, GlobalVariables, ActivitySession } from '../types';
 import { CptsNoteEntry } from './obsidianManualUtils';
+import { MAX_WEEKLY_ROOT_TARGET } from '../store/useGoalsStore';
 
 interface WorkspaceExportPayload {
   version: string;
@@ -28,17 +29,17 @@ export interface BackupGoals {
   weeklyRootTarget: number | null;
 }
 
-export const MAX_BACKUP_WEEKLY_ROOT_TARGET = 1000;
+
 
 /**
- * The optional `goals` block of a backup. weeklyRootTarget must be a positive integer up to 1000, or null
+ * The optional `goals` block of a backup. weeklyRootTarget must be a positive integer up to MAX_WEEKLY_ROOT_TARGET (99), or null
  * (no goal). Missing or invalid yields undefined, which means "leave the current goals untouched".
  */
 export function parseBackupGoals(raw: unknown): BackupGoals | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !('weeklyRootTarget' in raw)) return undefined;
   const target = (raw as { weeklyRootTarget: unknown }).weeklyRootTarget;
   if (target === null) return { weeklyRootTarget: null };
-  if (typeof target === 'number' && Number.isInteger(target) && target >= 1 && target <= MAX_BACKUP_WEEKLY_ROOT_TARGET) {
+  if (typeof target === 'number' && Number.isInteger(target) && target >= 1 && target <= MAX_WEEKLY_ROOT_TARGET) {
     return { weeklyRootTarget: target };
   }
   return undefined;

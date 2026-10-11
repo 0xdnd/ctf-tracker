@@ -41,7 +41,7 @@ describe('backup goals (weeklyRootTarget)', () => {
     expect(goal()).toBe(7);
   });
 
-  it.each([0, -3, 2.5, 1001, '12', true, [], {}])('ignores an invalid weeklyRootTarget (%j) and still imports', (bad) => {
+  it.each([0, -3, 2.5, 100, 500, 1001, '12', true, [], {}])('ignores an invalid weeklyRootTarget (%j) and still imports', (bad) => {
     const backup = exported();
     backup.goals = { weeklyRootTarget: bad };
     setGoal(7);
@@ -59,11 +59,12 @@ describe('backup goals (weeklyRootTarget)', () => {
     }
   });
 
-  it('validates the range: positive integers up to 1000, or null', () => {
+  it('validates the range: positive integers up to 99, or null', () => {
     expect(parseBackupGoals({ weeklyRootTarget: 1 })).toEqual({ weeklyRootTarget: 1 });
-    expect(parseBackupGoals({ weeklyRootTarget: 1000 })).toEqual({ weeklyRootTarget: 1000 });
+    expect(parseBackupGoals({ weeklyRootTarget: 99 })).toEqual({ weeklyRootTarget: 99 });
     expect(parseBackupGoals({ weeklyRootTarget: null })).toEqual({ weeklyRootTarget: null });
-    expect(parseBackupGoals({ weeklyRootTarget: 1001 })).toBeUndefined();
+    expect(parseBackupGoals({ weeklyRootTarget: 100 })).toBeUndefined();
+    expect(parseBackupGoals({ weeklyRootTarget: 500 })).toBeUndefined();
     expect(parseBackupGoals(undefined)).toBeUndefined();
   });
 
