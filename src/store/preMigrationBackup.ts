@@ -46,9 +46,14 @@ export const PRERESTORE_PREFIX = 'prerestore_';
 export const MAX_PREMIGRATION_BACKUPS = 2;
 const MAX_PRERESTORE_BACKUPS = 1;
 
-/** Every localStorage key the tracker's machine data lives in (persist blob, profiles, isolated customs). */
+/** Every localStorage key the tracker's data lives in (persist blob, profiles, isolated customs, goals). */
 export const PERSIST_STORE_KEY = 'zerobox-tactical-store';
-const EXACT_KEYS = new Set([PERSIST_STORE_KEY, 'specter_ctf_store_v2', 'zerobox_custom_machines_v1']);
+const EXACT_KEYS = new Set([
+  PERSIST_STORE_KEY,
+  'specter_ctf_store_v2',
+  'zerobox_custom_machines_v1',
+  'zerobox-goals-v1', // useGoalsStore (GOALS_STORAGE_KEY)
+]);
 const KEY_PREFIXES = ['zerobox_operator_profile_', 'specter_ctf_profile_', 'zerobox_custom_machines_v1_'];
 
 export const isBackedUpStorageKey = (key: string): boolean =>

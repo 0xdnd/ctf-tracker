@@ -20,6 +20,28 @@ interface WorkspaceExportPayload {
   credentials?: any[];
   credAttempts?: any[];
   lootItems?: any[];
+  /** Optional (added after 2.0.0 shipped; older builds ignore it, older backups lack it). */
+  goals?: BackupGoals;
+}
+
+export interface BackupGoals {
+  weeklyRootTarget: number | null;
+}
+
+export const MAX_BACKUP_WEEKLY_ROOT_TARGET = 1000;
+
+/**
+ * The optional `goals` block of a backup. weeklyRootTarget must be a positive integer up to 1000, or null
+ * (no goal). Missing or invalid yields undefined, which means "leave the current goals untouched".
+ */
+export function parseBackupGoals(raw: unknown): BackupGoals | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !('weeklyRootTarget' in raw)) return undefined;
+  const target = (raw as { weeklyRootTarget: unknown }).weeklyRootTarget;
+  if (target === null) return { weeklyRootTarget: null };
+  if (typeof target === 'number' && Number.isInteger(target) && target >= 1 && target <= MAX_BACKUP_WEEKLY_ROOT_TARGET) {
+    return { weeklyRootTarget: target };
+  }
+  return undefined;
 }
 
 export interface WorkspaceImportResult {
@@ -131,6 +153,7 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
     credentials: Array.isArray(root.credentials) ? root.credentials.map((item: any) => sanitizeObjectKeys(item)) : undefined,
     credAttempts: Array.isArray(root.credAttempts) ? root.credAttempts.map((item: any) => sanitizeObjectKeys(item)) : undefined,
     lootItems: Array.isArray(root.lootItems) ? root.lootItems.map((item: any) => sanitizeObjectKeys(item)) : undefined,
+    goals: parseBackupGoals(root.goals),
   };
 
   return {

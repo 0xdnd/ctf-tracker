@@ -80,6 +80,7 @@ import {
 } from './preMigrationBackup';
 import { SYNC_CHANNEL_NAME, syncChannel } from '../utils/crossTabChannel';
 import { useToastStore } from './useToastStore';
+import { useGoalsStore } from './useGoalsStore';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
@@ -2144,6 +2145,8 @@ export const useCtfStore = create<CtfStoreState>()(
           graphEdges: exportGraphEdges,
           graphNodePositions: state.graphNodePositions,
           ...exportLoot,
+          // Optional block: older builds ignore unknown fields, older backups simply lack it.
+          goals: { weeklyRootTarget: useGoalsStore.getState().weeklyRootTarget },
         };
         return JSON.stringify(exportData, null, 2);
       },
@@ -2209,6 +2212,10 @@ export const useCtfStore = create<CtfStoreState>()(
             }));
             if (importedLoot) {
               saveLootState(get().currentProfileId || 'guest', importedLoot);
+            }
+            // Validated in validateWorkspacePayload; missing or invalid leaves the current goals untouched.
+            if (data.goals) {
+              useGoalsStore.getState().setWeeklyRootTarget(data.goals.weeklyRootTarget);
             }
             if (importedGraph) {
               saveAttackGraphState(
