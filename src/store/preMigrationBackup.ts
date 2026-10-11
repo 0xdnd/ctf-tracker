@@ -6,6 +6,18 @@
  * rest rotate), deduped by a content hash so repeated boots never pile up identical copies. Restore writes the exact strings back and reloads;
  * the migration is idempotent, so it simply reruns.
  *
+ * Cross-tab restore protocol (other tabs still hold the old machines in memory and would flush them over the
+ * restored strings):
+ *   1. restoring tab: safety copy -> gate itself -> set the `zerobox_restore_in_progress` lock `{ ts, token }`
+ *      and post RESTORING on the sync channel -> wait RESTORE_SETTLE_MS for in-flight saves elsewhere to land
+ *      -> write the raw strings -> clear the lock, post RESTORED -> reload. On a failed write it rolls back,
+ *      marks the lock `aborted`, posts RESTORE_ABORTED and clears the lock.
+ *   2. every other tab (storage event, channel message, boot check, or the synchronous lock check inside
+ *      isSchemaWriteGated): engage the 'restoring' gate so all writes, debounced saves and the beforeunload
+ *      flush are no-ops, show a sticky toast, then reload once the lock is cleared or RESTORED arrives. An
+ *      abort releases the gate and re-flushes. A lock older than RESTORE_LOCK_STALE_MS is stale: cleared with a
+ *      warning instead of gating forever.
+ *
  * Dependency-free with respect to useCtfStore (no import cycle): useCtfStore calls in from `migrate`.
  */
 import {
@@ -16,11 +28,18 @@ import {
 } from '../utils/resilientStorage';
 import {
   SCHEMA_VERSION,
+  RESTORE_IN_PROGRESS_KEY,
+  RESTORE_LOCK_STALE_MS,
   isSchemaWriteGated,
   engageSchemaWriteGate,
   releaseRestoreWriteGate,
+  onSchemaWriteGateEngaged,
+  parseRestoreLock,
+  isStaleRestoreLock,
+  ignoreRestoreLockToken,
 } from '../utils/schemaWriteGate';
-import { toast } from './useToastStore';
+import { syncChannel } from '../utils/crossTabChannel';
+import { toast, useToastStore } from './useToastStore';
 
 export const PREMIGRATION_PREFIX = 'premigration_';
 export const PRERESTORE_PREFIX = 'prerestore_';
@@ -195,21 +214,219 @@ export async function listPreMigrationBackups(): Promise<PreMigrationBackupSumma
   return out;
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// Cross-tab restore lock (protocol in the header comment)
+// ---------------------------------------------------------------------------------------------------------
+
+/** How long the restoring tab waits after announcing the lock, so saves already in flight elsewhere land first. */
+export const RESTORE_SETTLE_MS = 300;
+export const RESTORE_FOLLOWER_TOAST_MESSAGE = 'Restoring a snapshot in another tab…';
+
+export type RestoreBroadcastType = 'RESTORING' | 'RESTORED' | 'RESTORE_ABORTED';
+
+let restoreInFlight = false; // this tab is the one restoring
+let following = false; // another tab is restoring: this tab is gated and waits to reload
+let reloadRequested = false;
+let followerTimer: ReturnType<typeof setTimeout> | null = null;
+const releaseListeners = new Set<() => void>();
+
+const defaultReload = () => window.location.reload();
+let reloadPage: () => void = defaultReload;
+
+/** Test seam: replace the page reload (jsdom cannot navigate). Pass null for the default. */
+export function setRestoreReloadHandler(fn: (() => void) | null): void {
+  reloadPage = fn ?? defaultReload;
+}
+
+/** Runs after an aborted restore in another tab released this tab's gate (useCtfStore re-flushes). */
+export function onRestoreLockReleased(cb: () => void): () => void {
+  releaseListeners.add(cb);
+  return () => releaseListeners.delete(cb);
+}
+
+export const isRestoreInFlight = (): boolean => restoreInFlight;
+export const isRestoreFollower = (): boolean => following;
+
+const postRestoreMessage = (type: RestoreBroadcastType, token: string) => {
+  try {
+    syncChannel?.postMessage({ type, token, timestamp: Date.now() });
+  } catch {}
+};
+
+const readRawLock = (): string | null => {
+  try {
+    return localStorage.getItem(RESTORE_IN_PROGRESS_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const clearLock = () => {
+  try {
+    localStorage.removeItem(RESTORE_IN_PROGRESS_KEY);
+  } catch {}
+};
+
+const STALE_LOCK_WARNING = '[ZeroBox] Cleared a stale restore lock (older than 60 s) left by a tab that closed mid-restore.';
+
+function reloadOnce() {
+  if (reloadRequested) return;
+  reloadRequested = true;
+  if (followerTimer) {
+    clearTimeout(followerTimer);
+    followerTimer = null;
+  }
+  reloadPage();
+}
+
+/** Safety net in case the clear event and RESTORED never arrive: never stay gated past a stale lock. */
+function scheduleFollowerCheck() {
+  if (followerTimer) clearTimeout(followerTimer);
+  const lock = parseRestoreLock(readRawLock());
+  const wait = lock ? Math.max(0, lock.ts + RESTORE_LOCK_STALE_MS - Date.now()) + 500 : RESTORE_LOCK_STALE_MS;
+  followerTimer = setTimeout(() => {
+    followerTimer = null;
+    if (!following) return;
+    const current = parseRestoreLock(readRawLock());
+    if (current?.aborted) {
+      releaseFollower();
+      return;
+    }
+    if (current && !isStaleRestoreLock(current)) {
+      scheduleFollowerCheck();
+      return;
+    }
+    if (current) {
+      console.warn(STALE_LOCK_WARNING);
+      clearLock();
+    }
+    reloadOnce();
+  }, wait);
+}
+
+function enterFollowerMode() {
+  if (following || restoreInFlight) return;
+  following = true;
+  console.warn('[ZeroBox] Another tab is restoring a snapshot; this tab stops writing and reloads when it finishes.');
+  useToastStore.getState().addToast({
+    type: 'info',
+    title: 'Restore in progress',
+    message: RESTORE_FOLLOWER_TOAST_MESSAGE,
+    durationMs: 0, // sticky until the reload
+  });
+  scheduleFollowerCheck();
+}
+
+function releaseFollower() {
+  if (!following) return;
+  following = false;
+  if (followerTimer) {
+    clearTimeout(followerTimer);
+    followerTimer = null;
+  }
+  releaseRestoreWriteGate();
+  const toasts = useToastStore.getState();
+  for (const t of toasts.toasts) if (t.message === RESTORE_FOLLOWER_TOAST_MESSAGE) toasts.removeToast(t.id);
+  releaseListeners.forEach((cb) => {
+    try {
+      cb();
+    } catch {}
+  });
+}
+
+// Every way of learning about a foreign restore (event, message, boot check, synchronous lock check in
+// isSchemaWriteGated) funnels through engageSchemaWriteGate('restoring'); the restoring tab itself is excluded.
+onSchemaWriteGateEngaged((reason) => {
+  if (reason === 'restoring' && !restoreInFlight) enterFollowerMode();
+});
+
+/** Boot check, before hydration: a fresh lock gates this tab; a stale, aborted or corrupt one is cleared. */
+export function initRestoreLockGate(): void {
+  if (typeof window === 'undefined') return;
+  const raw = readRawLock();
+  if (raw === null) return;
+  const lock = parseRestoreLock(raw);
+  if (lock && !lock.aborted && !isStaleRestoreLock(lock)) {
+    engageSchemaWriteGate('restoring');
+    return;
+  }
+  if (!lock?.aborted) console.warn(STALE_LOCK_WARNING);
+  clearLock();
+}
+
+/** `storage` event hook (another tab set or cleared the lock). Returns true when the event was the lock key. */
+export function handleRestoreLockStorageEvent(key: string | null, newValue: string | null): boolean {
+  if (key !== RESTORE_IN_PROGRESS_KEY) return false;
+  if (restoreInFlight) return true;
+  if (newValue === null) {
+    if (following) reloadOnce();
+    return true;
+  }
+  const lock = parseRestoreLock(newValue);
+  if (!lock) return true;
+  if (lock.aborted) {
+    ignoreRestoreLockToken(lock.token);
+    releaseFollower();
+  } else if (!isStaleRestoreLock(lock)) {
+    engageSchemaWriteGate('restoring');
+  }
+  return true;
+}
+
+/** Sync-channel hook. Returns true when the message belonged to the restore protocol. */
+export function handleRestoreBroadcast(data: unknown): boolean {
+  const msg = (data && typeof data === 'object' ? data : {}) as { type?: unknown; token?: unknown };
+  if (msg.type !== 'RESTORING' && msg.type !== 'RESTORED' && msg.type !== 'RESTORE_ABORTED') return false;
+  if (restoreInFlight) return true;
+  if (msg.type === 'RESTORING') {
+    engageSchemaWriteGate('restoring');
+  } else if (msg.type === 'RESTORED') {
+    // Even a tab that missed RESTORING must not flush its stale state on the way out.
+    engageSchemaWriteGate('restoring');
+    reloadOnce();
+  } else {
+    if (typeof msg.token === 'string') ignoreRestoreLockToken(msg.token);
+    releaseFollower();
+  }
+  return true;
+}
+
+const newRestoreToken = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
 /**
  * Write a snapshot's exact raw strings back and reload. Before touching anything, the current strings are
- * saved as a `prerestore_` record (restore aborts if that safety copy cannot be written), and this tab's own
- * writes are gated so its unload flush cannot clobber the restored data. Keys created after the snapshot are
- * left in place (nothing is deleted). A failed write is rolled back.
+ * saved as a `prerestore_` record (restore aborts if that safety copy cannot be written). Then this tab gates
+ * itself and takes the cross-tab restore lock so no tab (this one included) can flush stale state over the
+ * restored data, waits `settleMs` for saves already in flight elsewhere, and writes. Keys created after the
+ * snapshot are left in place (nothing is deleted). A failed write is rolled back and the lock released.
+ * The promise does not depend on any component: closing the UI mid-restore is harmless.
  */
 export async function restorePreMigrationBackup(
   key: string,
-  options: { reload?: () => void } = {}
+  options: { reload?: () => void; settleMs?: number } = {}
 ): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined' || restoreInFlight) return false;
   if (isSchemaWriteGated()) {
-    toast.error('Writes are blocked in this tab. Reload ZeroBox first, then restore.', 'Restore blocked');
+    toast.error(
+      following
+        ? 'Another tab is restoring a snapshot. Wait for it to finish.'
+        : 'Writes are blocked in this tab. Reload ZeroBox first, then restore.',
+      'Restore blocked'
+    );
     return false;
   }
+  restoreInFlight = true;
+  let restored = false;
+  try {
+    restored = await runRestore(key, options);
+    return restored;
+  } finally {
+    // After a successful restore the tab is reloading: stay the restoring tab (never become a follower).
+    if (!restored) restoreInFlight = false;
+  }
+}
+
+async function runRestore(key: string, options: { reload?: () => void; settleMs?: number }): Promise<boolean> {
   const rec = key.startsWith(PREMIGRATION_PREFIX) ? parseRecord(await getResilientRecord(key)) : null;
   if (!rec) {
     toast.error('That pre-update snapshot could not be read.', 'Restore failed');
@@ -226,7 +443,21 @@ export async function restorePreMigrationBackup(
     }
   }
 
+  // 1. Stop every writer: this tab first, then the others (lock + channel).
   engageSchemaWriteGate('restoring');
+  const token = newRestoreToken();
+  try {
+    localStorage.setItem(RESTORE_IN_PROGRESS_KEY, JSON.stringify({ ts: Date.now(), token }));
+  } catch (err) {
+    console.warn('[ZeroBox] Could not write the cross-tab restore lock; relying on the sync channel.', err);
+  }
+  postRestoreMessage('RESTORING', token);
+
+  // 2. Let saves other tabs already started land before we overwrite them.
+  await new Promise((resolve) => setTimeout(resolve, options.settleMs ?? RESTORE_SETTLE_MS));
+
+  // 3. Write. The rollback copy is taken now so it includes anything that landed during the settle window.
+  const rollback = captureRawStorage();
   const written: string[] = [];
   try {
     for (const [k, v] of Object.entries(rec.entries)) {
@@ -236,15 +467,24 @@ export async function restorePreMigrationBackup(
   } catch (err) {
     for (const k of written) {
       try {
-        if (k in current) localStorage.setItem(k, current[k]);
+        if (k in rollback) localStorage.setItem(k, rollback[k]);
         else localStorage.removeItem(k);
       } catch {}
     }
+    try {
+      localStorage.setItem(RESTORE_IN_PROGRESS_KEY, JSON.stringify({ ts: Date.now(), token, aborted: true }));
+    } catch {}
+    postRestoreMessage('RESTORE_ABORTED', token);
+    clearLock();
     releaseRestoreWriteGate();
     console.error('[ZeroBox] Pre-update snapshot restore failed and was rolled back:', err);
     toast.error('Restoring the snapshot failed (storage full?). Your current data was kept.', 'Restore failed');
     return false;
   }
-  (options.reload ?? (() => window.location.reload()))();
+
+  // 4. Done: release the other tabs into a reload, then reload this one.
+  clearLock();
+  postRestoreMessage('RESTORED', token);
+  (options.reload ?? reloadPage)();
   return true;
 }

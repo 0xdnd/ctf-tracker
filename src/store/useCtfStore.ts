@@ -70,7 +70,15 @@ import {
   initSchemaVersionGate,
   recordSchemaVersion,
 } from '../utils/schemaWriteGate';
-import { takePreMigrationBackup, whenPreMigrationBackupSettled } from './preMigrationBackup';
+import {
+  takePreMigrationBackup,
+  whenPreMigrationBackupSettled,
+  initRestoreLockGate,
+  handleRestoreLockStorageEvent,
+  handleRestoreBroadcast,
+  onRestoreLockReleased,
+} from './preMigrationBackup';
+import { SYNC_CHANNEL_NAME, syncChannel } from '../utils/crossTabChannel';
 import { useToastStore } from './useToastStore';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
@@ -387,11 +395,7 @@ export const getProfileStorageKey = (profileId: string) => {
 
 export const getWriteProfileStorageKey = (profileId: string) => `zerobox_operator_profile_${profileId || 'guest'}`;
 
-export const SYNC_CHANNEL_NAME = 'zerobox_cross_tab_sync';
-export const syncChannel: BroadcastChannel | null =
-  typeof window !== 'undefined' && 'BroadcastChannel' in window
-    ? new BroadcastChannel(SYNC_CHANNEL_NAME)
-    : null;
+export { SYNC_CHANNEL_NAME, syncChannel };
 
 export const broadcastCrossTabMessage = (
   type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED',
@@ -973,6 +977,8 @@ onSchemaWriteGateEngaged((reason) => {
   useToastStore.getState().addToast({ type: 'warning', title: 'Reload required', message: SCHEMA_GATE_TOAST_MESSAGE, durationMs: 0 });
 });
 initSchemaVersionGate();
+// Another tab mid-restore gates this one before hydration; a stale (>60 s) lock is cleared instead.
+initRestoreLockGate();
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
@@ -2612,7 +2618,10 @@ export function flushProfileSave() {
     clearTimeout(maxWaitTimer);
     maxWaitTimer = null;
   }
-  if (typeof window === 'undefined') return;
+  // Debounced, maxWait, beforeunload, visibility and Tauri-close saves all land here. While gated (newer schema,
+  // or a restore in this or another tab) nothing is written and the lastSaved markers stay put, so a released
+  // restore lock can re-flush the still-unsaved state.
+  if (typeof window === 'undefined' || isSchemaWriteGated()) return;
   const state = useCtfStore.getState();
   if (!state.currentProfileId) return;
 
@@ -2704,6 +2713,8 @@ useCtfStore.subscribe((state) => {
 // Flush immediately on tab close or backgrounding
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', flushProfileSave);
+  // An aborted restore in another tab released our gate: save whatever was held back while it was engaged.
+  onRestoreLockReleased(flushProfileSave);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       flushProfileSave();
@@ -2716,6 +2727,8 @@ if (typeof window !== 'undefined') {
 
   // Cross-tab auto-sync: Reconcile external storage modifications across open tabs
   window.addEventListener('storage', (event) => {
+    // Restore lock set/cleared by another tab (handled before the newValue check: clearing has newValue null)
+    if (handleRestoreLockStorageEvent(event.key, event.newValue)) return;
     if (!event.key || !event.newValue) return;
     if (event.key === SCHEMA_VERSION_STORAGE_KEY) {
       if (isNewerSchemaVersion(event.newValue)) engageSchemaWriteGate('newer-schema');
@@ -2771,6 +2784,7 @@ if (typeof window !== 'undefined') {
 
   // Cross-tab BroadcastChannel listener for deep storage updates
   syncChannel?.addEventListener('message', async (event) => {
+    if (handleRestoreBroadcast(event.data)) return;
     const { type, payload } = event.data || {};
     const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
     if (type === 'WRITEUPS_UPDATED') {
