@@ -23,7 +23,9 @@
 
 <a href="https://ctftracker.com/"><img src=".github/assets/screenshot.png" alt="ZeroBox Kanban board tracking HTB and THM machines" width="900" /></a>
 
-<a href="https://ctftracker.com"><img src=".github/assets/demo.gif" alt="ZeroBox demo: browsing HTB targets, dragging a machine across the Kanban board to Root Pwned, and the reverse shell generator" width="800" /></a>
+<a href=".github/assets/demo.mp4"><img src=".github/assets/demo.gif" alt="ZeroBox showcase: a walkthrough of the target library, Kanban board, and tooling" width="800" /></a>
+
+<sub>🎬 <a href=".github/assets/demo.mp4">Watch the full HD video (MP4)</a></sub>
 
 **[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)** · **[📝 Writeups](https://0xdnd.gitbook.io/thm-writeups/)**
 
