@@ -474,8 +474,10 @@
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-micro);
 }
-.interactive-surface:hover {
-  background-color: rgb(var(--surface-hover));
+@media (hover: hover) and (pointer: fine) {
+  .interactive-surface:hover {
+    background-color: rgb(var(--surface-hover));
+  }
 }
 .interactive-surface:focus-visible {
   outline: none;
@@ -494,8 +496,10 @@
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-micro);
 }
-.interactive-button:hover {
-  background-color: rgb(var(--surface-hover));
+@media (hover: hover) and (pointer: fine) {
+  .interactive-button:hover {
+    background-color: rgb(var(--surface-hover));
+  }
 }
 .interactive-button:active {
   transform: scale(0.97);
@@ -735,13 +739,17 @@ html:not(.dark) .text-white:not(button *):not(button):not(.bg-cyber-crimson *):n
 }
 
 /* Light Mode hover:text-white Invisibility Neutralization */
-html:not(.dark) .hover\:text-white:hover:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
-  color: rgb(var(--text-primary)) !important;
+@media (hover: hover) and (pointer: fine) {
+  html:not(.dark) .hover\:text-white:hover:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
+    color: rgb(var(--text-primary)) !important;
+  }
 }
 
 /* Light Mode group-hover:text-white Neutralization */
-html:not(.dark) .group:hover .group-hover\:text-white:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
-  color: rgb(var(--text-primary)) !important;
+@media (hover: hover) and (pointer: fine) {
+  html:not(.dark) .group:hover .group-hover\:text-white:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
+    color: rgb(var(--text-primary)) !important;
+  }
 }
 
 html:not(.dark) .bg-black\/40,
