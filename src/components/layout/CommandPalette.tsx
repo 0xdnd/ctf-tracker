@@ -92,20 +92,7 @@ export const CommandPalette: React.FC = () => {
   });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard shortcut listener for Ctrl+K / Cmd+K / Escape
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        if (e.repeat) return;
-        e.preventDefault();
-        setCommandPaletteOpen(!commandPaletteOpen);
-      } else if (e.key === 'Escape' && commandPaletteOpen) {
-        setCommandPaletteOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [commandPaletteOpen, setCommandPaletteOpen]);
+  // Ctrl+K toggling lives in useTacticalHotkeys; Esc is handled by useFocusTrap.
 
   // Filtered results
   const filteredMachines = useMemo(() => {
