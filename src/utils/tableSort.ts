@@ -3,7 +3,7 @@
  * No React / store imports so they stay trivially testable.
  */
 
-export type SortDir = 'asc' | 'desc';
+type SortDir = 'asc' | 'desc';
 
 export interface SortKey<F extends string = string> {
   field: F;

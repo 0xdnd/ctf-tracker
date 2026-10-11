@@ -11,14 +11,14 @@ export interface ObsidianCallout {
   isFoldedByDefault?: boolean;
 }
 
-export interface ObsidianTocItem {
+interface ObsidianTocItem {
   level: number;
   text: string;
   id: string;
   isHebrew: boolean;
 }
 
-export interface ObsidianChecklistItem {
+interface ObsidianChecklistItem {
   text: string;
   checked: boolean;
   raw: string;
@@ -68,7 +68,7 @@ interface CptsRawPayload {
 
 const rawData = cptsNotesData as unknown as CptsRawPayload | CptsNoteEntry[];
 export const CPTS_NOTES: CptsNoteEntry[] = Array.isArray(rawData) ? rawData : (rawData.notes || []);
-export const WIKILINK_MAP: Record<string, string> = Array.isArray(rawData) ? {} : (rawData.wikilinkMap || {});
+const WIKILINK_MAP: Record<string, string> = Array.isArray(rawData) ? {} : (rawData.wikilinkMap || {});
 
 /**
  * Returns active CPTS field manual notes:
@@ -359,7 +359,7 @@ export interface CptsTreeNode {
 /**
  * Extracts a numeric prefix from a filename or directory name (e.g. "01", "1.2", "02 FTP (21)")
  */
-export function extractLeadingNumber(str: string): number | null {
+function extractLeadingNumber(str: string): number | null {
   if (!str) return null;
   const match = str.trim().match(/^(\d+(?:\.\d+)?)/);
   return match ? parseFloat(match[1]) : null;
@@ -370,7 +370,7 @@ export function extractLeadingNumber(str: string): number | null {
  * Items with numbers sort strictly in ascending numerical order.
  * Items without numbers sort alphabetically after numbered items.
  */
-export function compareTreeNodesByNumber(a: CptsTreeNode, b: CptsTreeNode): number {
+function compareTreeNodesByNumber(a: CptsTreeNode, b: CptsTreeNode): number {
   const numA = extractLeadingNumber(a.name);
   const numB = extractLeadingNumber(b.name);
 
@@ -510,7 +510,7 @@ export function getNotesByCategory(category: string, notes: CptsNoteEntry[] = ge
   return notes.filter((n) => n.category === category);
 }
 
-export interface CptsTopicLeaf {
+interface CptsTopicLeaf {
   leaf: string;
   rawSub: string;
   count: number;
@@ -522,11 +522,11 @@ export interface CptsTopicGroup {
   leaves: CptsTopicLeaf[];
 }
 
-export function cleanSubCategorySegment(s: string): string {
+function cleanSubCategorySegment(s: string): string {
   return s.replace(/^\d+[\s_.-]*/, '').replace(/_/g, ' ').trim();
 }
 
-export function parseSubCategory(sub?: string): { group: string; leaf: string; full: string } {
+function parseSubCategory(sub?: string): { group: string; leaf: string; full: string } {
   if (!sub) return { group: 'Overview & Index', leaf: 'General Notes', full: '' };
   const parts = sub.split(' / ').map(cleanSubCategorySegment).filter(Boolean);
   const group = parts[0] || 'Overview';
@@ -667,7 +667,7 @@ export type CptsSortOrder = 'topic' | 'number' | 'title';
  * Extracts a hierarchical array of integers for sorting notes by number across all folders.
  * Uses Infinity for unnumbered segments to avoid NaN sort instabilities per Fable Advisor doctrine.
  */
-export function extractNoteSortTuple(note: CptsNoteEntry): number[] {
+function extractNoteSortTuple(note: CptsNoteEntry): number[] {
   const rel = note.relPath || '';
   const parts = rel.split('/');
   const nums: number[] = [];

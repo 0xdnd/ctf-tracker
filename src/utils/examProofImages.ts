@@ -53,7 +53,7 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /** Writes the image to IndexedDB. Returns the ref only if the write completed, otherwise null. */
-export async function persistProofImage(ref: string, dataUrl: string): Promise<string | null> {
+async function persistProofImage(ref: string, dataUrl: string): Promise<string | null> {
   if (!isProofImageStorageAvailable()) return null;
   const blob = dataUrlToBlob(dataUrl);
   if (!blob) return null;
@@ -70,7 +70,7 @@ export async function resolveProofImage(imageRef: string): Promise<string | null
   }
 }
 
-export function deleteProofImages(refs: string[]): Promise<void> {
+function deleteProofImages(refs: string[]): Promise<void> {
   return deleteProofImageBlobs(refs).catch(() => {});
 }
 
@@ -94,7 +94,7 @@ function proofsOf(box: ExamBox): ExamTargetProof[] {
 }
 
 /** All imageRefs referenced by the given boxes. */
-export function collectProofImageRefs(boxes: ExamBox[]): string[] {
+function collectProofImageRefs(boxes: ExamBox[]): string[] {
   const refs: string[] = [];
   boxes.forEach((b) =>
     proofsOf(b).forEach((p) =>

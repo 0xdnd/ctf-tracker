@@ -119,7 +119,7 @@ export function deriveServiceTags(existingTags: string[], services: { service: s
 }
 
 /** Best-effort OS guess from the scan's OS string, falling back to service banners. */
-export function guessOperatingSystem(host: ParsedHost): OperatingSystem {
+function guessOperatingSystem(host: ParsedHost): OperatingSystem {
   const haystack = host.os || host.ports.map((p) => p.version).join(' ');
   if (/windows|microsoft/i.test(haystack)) return 'Windows';
   if (/linux|unix|ubuntu|debian|centos|red hat|fedora/i.test(haystack)) return 'Linux';

@@ -1,7 +1,7 @@
 import { Machine, CheatsheetCommand, GlobalVariables, ActivitySession } from '../types';
 import { CptsNoteEntry } from './obsidianManualUtils';
 
-export interface WorkspaceExportPayload {
+interface WorkspaceExportPayload {
   version: string;
   exportedAt: string;
   appBrand: string;

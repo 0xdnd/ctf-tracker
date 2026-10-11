@@ -13,7 +13,7 @@ export interface ExportGraphNode {
   machine?: Machine;
 }
 
-export interface ObsidianCanvasNode {
+interface ObsidianCanvasNode {
   id: string;
   type: 'text' | 'file' | 'link' | 'group';
   text?: string;
@@ -26,7 +26,7 @@ export interface ObsidianCanvasNode {
   color?: string;
 }
 
-export interface ObsidianCanvasEdge {
+interface ObsidianCanvasEdge {
   id: string;
   fromNode: string;
   fromSide?: 'top' | 'right' | 'bottom' | 'left';

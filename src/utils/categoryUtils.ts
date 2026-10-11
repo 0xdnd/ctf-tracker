@@ -39,7 +39,7 @@ export interface BadgeTone {
   border: string;
 }
 
-export const CAT_TONES: Record<CatIndex, BadgeTone> = {
+const CAT_TONES: Record<CatIndex, BadgeTone> = {
   1: { badge: 'bg-cat-1-bg text-cat-1-fg border-cat-1-border', text: 'text-cat-1-fg', bg: 'bg-cat-1-bg', border: 'border-cat-1-border' },
   2: { badge: 'bg-cat-2-bg text-cat-2-fg border-cat-2-border', text: 'text-cat-2-fg', bg: 'bg-cat-2-bg', border: 'border-cat-2-border' },
   3: { badge: 'bg-cat-3-bg text-cat-3-fg border-cat-3-border', text: 'text-cat-3-fg', bg: 'bg-cat-3-bg', border: 'border-cat-3-border' },
@@ -57,9 +57,9 @@ export const NEUTRAL_TONE: BadgeTone = {
   border: 'border-subtle',
 };
 
-export type SemanticToneId = 'info' | 'tip' | 'warn' | 'danger' | 'success';
+type SemanticToneId = 'info' | 'tip' | 'warn' | 'danger' | 'success';
 
-export const SEMANTIC_TONES: Record<SemanticToneId, BadgeTone> = {
+const SEMANTIC_TONES: Record<SemanticToneId, BadgeTone> = {
   info: { badge: 'bg-callout-info-bg text-callout-info-fg border-callout-info-border', text: 'text-callout-info-fg', bg: 'bg-callout-info-bg', border: 'border-callout-info-border' },
   tip: { badge: 'bg-callout-tip-bg text-callout-tip-fg border-callout-tip-border', text: 'text-callout-tip-fg', bg: 'bg-callout-tip-bg', border: 'border-callout-tip-border' },
   warn: { badge: 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border', text: 'text-callout-warn-fg', bg: 'bg-callout-warn-bg', border: 'border-callout-warn-border' },
@@ -68,7 +68,7 @@ export const SEMANTIC_TONES: Record<SemanticToneId, BadgeTone> = {
 };
 
 /** Deterministic category -> cat-N slot. Related categories share a hue; icons + labels disambiguate. */
-export const CATEGORY_CAT_INDEX: Record<string, CatIndex> = {
+const CATEGORY_CAT_INDEX: Record<string, CatIndex> = {
   Web: 1,
   'CMS Exploits': 1,
   'Windows PrivEsc': 1,
@@ -96,7 +96,7 @@ export const CATEGORY_CAT_INDEX: Record<string, CatIndex> = {
   SSTI: 8,
 };
 
-export const PLATFORM_CAT_INDEX: Record<string, CatIndex> = {
+const PLATFORM_CAT_INDEX: Record<string, CatIndex> = {
   HTB: 6,
   THM: 5,
 };

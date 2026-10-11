@@ -8,7 +8,7 @@
 
 const STORAGE_KEY_CONSENT_REDACTED = 'zerobox_ai_consent_redacted';
 
-export function hasRememberedRedactedConsent(): boolean {
+function hasRememberedRedactedConsent(): boolean {
   try {
     return localStorage.getItem(STORAGE_KEY_CONSENT_REDACTED) === 'true';
   } catch {

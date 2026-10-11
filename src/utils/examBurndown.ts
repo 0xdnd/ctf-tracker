@@ -18,7 +18,7 @@
 
 import { calculateExamScore, ExamBox, ExamTrack } from './examComplianceUtils';
 
-export interface BurndownPoint {
+interface BurndownPoint {
   /** Epoch milliseconds */
   t: number;
   /** Score at time t (as computed by calculateExamScore) */
@@ -27,7 +27,7 @@ export interface BurndownPoint {
   remainingToPass: number;
 }
 
-export interface IdealPacePoint {
+interface IdealPacePoint {
   t: number;
   points: number;
 }
@@ -148,7 +148,7 @@ export function buildBurndownSeries(
 }
 
 /** Latest timestamp carried by any box (null when none). */
-export function latestBoxEventTime(boxes: ExamBox[]): number | null {
+function latestBoxEventTime(boxes: ExamBox[]): number | null {
   let latest: number | null = null;
   for (const box of boxes) {
     const times = [

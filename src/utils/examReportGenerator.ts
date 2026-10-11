@@ -36,7 +36,7 @@ const inlineText = (value: string): string => (value || '').replace(/\s*[\r\n]+\
  * Evidence ids are resolved against the boxes' proof screenshots; unknown ids are skipped.
  * Returns '' when there are no findings.
  */
-export function generateFindingsMarkdown(
+function generateFindingsMarkdown(
   findings: Finding[] | undefined,
   boxes: ExamBox[],
   options?: { includeScreenshots?: boolean }
@@ -103,7 +103,7 @@ export interface ExamReportOptions {
 /**
  * Returns host-level technical remediation recommendations based on box details.
  */
-export function getRemediationForBox(box: ExamBox): string {
+function getRemediationForBox(box: ExamBox): string {
   const isWindows = box.os === 'Windows' || box.name.toLowerCase().includes('dc') || box.name.toLowerCase().includes('srv');
   const isAd = box.type.startsWith('ad') || box.label.toLowerCase().includes('active directory');
 
@@ -179,7 +179,7 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
 /**
  * Returns structured Strategic Remediation Plan (Short, Medium, and Long-Term).
  */
-export function getStrategicRemediation(_track: ExamTrack): string {
+function getStrategicRemediation(_track: ExamTrack): string {
   return `### 5.1 Immediate Short-Term Remediation (0 - 48 Hours)
 - **Credential Revocation & Force Rotation:** Immediately invalidate and rotate all compromised service account passwords, domain administrator credentials, and SSH keys identified during the assessment.
 - **Isolate Vulnerable Services:** Restrict exposed administrative panels, debug endpoints, and database ports from the public internet and untrusted subnets using strict firewall rules.

@@ -10,14 +10,14 @@
 import type { AttackGraphEdge, AttackNodePosition } from '../types/graph';
 
 export const MAX_GRAPH_HISTORY = 100;
-export const DEFAULT_COALESCE_WINDOW_MS = 800;
+const DEFAULT_COALESCE_WINDOW_MS = 800;
 
 export interface GraphSnapshot {
   edges: AttackGraphEdge[];
   positions: Record<string, AttackNodePosition>;
 }
 
-export interface GraphHistoryEntry {
+interface GraphHistoryEntry {
   label: string;
   before: GraphSnapshot;
   after: GraphSnapshot;

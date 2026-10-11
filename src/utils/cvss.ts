@@ -5,7 +5,7 @@
 
 import type { Finding, FindingSeverity } from '../types/findings';
 
-export type CvssMetricKey = 'AV' | 'AC' | 'PR' | 'UI' | 'S' | 'C' | 'I' | 'A';
+type CvssMetricKey = 'AV' | 'AC' | 'PR' | 'UI' | 'S' | 'C' | 'I' | 'A';
 
 export type CvssMetrics = Record<CvssMetricKey, string>;
 

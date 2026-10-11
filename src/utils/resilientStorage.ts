@@ -202,7 +202,7 @@ export async function ensurePersistence(): Promise<boolean> {
   }
 }
 
-export interface StorageHealth {
+interface StorageHealth {
   persisted: boolean;
   usageMB: number;
   quotaMB: number;

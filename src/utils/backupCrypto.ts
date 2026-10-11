@@ -18,7 +18,7 @@
  */
 
 export const BACKUP_ENVELOPE_FORMAT = 'zerobox-backup-encrypted';
-export const BACKUP_ENVELOPE_VERSION = 1;
+const BACKUP_ENVELOPE_VERSION = 1;
 export const PBKDF2_ITERATIONS = 600_000;
 export const MIN_PBKDF2_ITERATIONS = 100_000;
 export const MAX_PBKDF2_ITERATIONS = 5_000_000;
@@ -34,9 +34,9 @@ const TAG_BYTES = TAG_BITS / 8;
 const BASE64_CHUNK = 0x8000; // 32 KB
 
 export const WRONG_PASSPHRASE_MESSAGE = 'Wrong passphrase or corrupted file';
-export const UNSUPPORTED_VERSION_MESSAGE = 'Unsupported backup version';
-export const INVALID_ENVELOPE_MESSAGE = 'Invalid encrypted backup file';
-export const CRYPTO_UNAVAILABLE_MESSAGE =
+const UNSUPPORTED_VERSION_MESSAGE = 'Unsupported backup version';
+const INVALID_ENVELOPE_MESSAGE = 'Invalid encrypted backup file';
+const CRYPTO_UNAVAILABLE_MESSAGE =
   'Encryption is unavailable here. WebCrypto requires a secure context (HTTPS or localhost).';
 
 export type BackupCryptoErrorCode =

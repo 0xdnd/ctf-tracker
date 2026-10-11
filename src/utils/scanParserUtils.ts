@@ -206,7 +206,7 @@ export function parseNmapXml(xmlContent: string): ScanImportResult | null {
 /**
  * Parse Grepable Nmap (.gnmap) output
  */
-export function parseGrepableNmap(content: string): ScanImportResult | null {
+function parseGrepableNmap(content: string): ScanImportResult | null {
   if (!content.includes('Ports:') && !content.includes('# Nmap')) return null;
 
   const lines = content.split('\n');
@@ -351,7 +351,7 @@ const NSE_SUB_LINE_REGEX = /^\s*(?:\|_|[|_])\s+(.*)$/;
  * Parse Standard Nmap text output (.nmap / console output)
  * Supports IPv4/IPv6 target identification, service versioning, and NSE script capture
  */
-export function parseNmapText(content: string): ScanImportResult | null {
+function parseNmapText(content: string): ScanImportResult | null {
   // Also accept headerless snippets made of bare "22/tcp open ssh" port lines
   const hasOpenPortLine = /^\s*\d{1,5}\/(?:tcp|udp)\s+open/im.test(content);
   if (!content.includes('Nmap scan report') && !content.includes('PORT') && !content.includes('STATE') && !hasOpenPortLine) {
