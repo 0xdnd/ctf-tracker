@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
+import PreUpdateSnapshots from './PreUpdateSnapshots';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
 import { extractCandidateNames, matchCandidateNamesToCatalog } from '../../utils/bulkPwnImporter';
@@ -812,6 +813,8 @@ export const BackupModal: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              <PreUpdateSnapshots />
 
               {/* Section 3: Reset */}
               <div className="p-3.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border space-y-2">

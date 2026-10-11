@@ -60,6 +60,18 @@ import {
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
 import { saveWorkspaceToIdb } from '../utils/resilientStorage';
+import {
+  SCHEMA_VERSION,
+  SCHEMA_VERSION_STORAGE_KEY,
+  isSchemaWriteGated,
+  isNewerSchemaVersion,
+  engageSchemaWriteGate,
+  onSchemaWriteGateEngaged,
+  initSchemaVersionGate,
+  recordSchemaVersion,
+} from '../utils/schemaWriteGate';
+import { takePreMigrationBackup } from './preMigrationBackup';
+import { useToastStore } from './useToastStore';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
@@ -385,6 +397,8 @@ export const broadcastCrossTabMessage = (
   type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED',
   payload?: any
 ) => {
+  // A gated (outdated/restoring) tab must not push its edits into other tabs, which would persist them.
+  if (isSchemaWriteGated()) return;
   try {
     syncChannel?.postMessage({ type, payload, timestamp: Date.now() });
   } catch {}
@@ -394,6 +408,10 @@ const inMemoryFallbackStorage = new Map<string, string>();
 let isStorageEphemeral = false;
 let profileLoadGeneration = 0;
 
+export { SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY } from '../utils/schemaWriteGate';
+export { restorePreMigrationBackup, listPreMigrationBackups } from './preMigrationBackup';
+
+// Every write below is a no-op while the schema write gate is engaged (newer ZeroBox in another tab, or restore).
 export const safeLocalStorage = {
   getItem: (name: string): string | null => {
     if (typeof window === 'undefined') return null;
@@ -406,7 +424,7 @@ export const safeLocalStorage = {
     }
   },
   setItem: (name: string, value: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     try {
       localStorage.setItem(name, value);
     } catch (e: any) {
@@ -425,7 +443,7 @@ export const safeLocalStorage = {
     }
   },
   removeItem: (name: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     try {
       localStorage.removeItem(name);
     } catch {
@@ -435,7 +453,7 @@ export const safeLocalStorage = {
   },
   isEphemeral: (): boolean => {
     if (isStorageEphemeral) return true;
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
     try {
       const test = '__zb_storage_test__';
       localStorage.setItem(test, '1');
@@ -921,6 +939,16 @@ let lastPersistedSnapshot: unknown;
 let lastPersistedVersion: number | undefined;
 // pruneMisstampedCustomMachines runs once per session, after the first full-catalog merge
 let customStoragePruned = false;
+
+// Version write gate: must be decided before the store boots (hydration writes synchronously).
+export const SCHEMA_GATE_TOAST_MESSAGE = 'ZeroBox was updated in another tab — reload to continue.';
+onSchemaWriteGateEngaged((reason) => {
+  if (reason !== 'newer-schema') return;
+  console.warn('[ZeroBox] Newer data schema detected; this tab will not write to storage until reloaded.');
+  // durationMs 0 = sticky (never auto-dismissed)
+  useToastStore.getState().addToast({ type: 'warning', title: 'Reload required', message: SCHEMA_GATE_TOAST_MESSAGE, durationMs: 0 });
+});
+initSchemaVersionGate();
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
@@ -2369,7 +2397,7 @@ export const useCtfStore = create<CtfStoreState>()(
     }),
     {
       name: 'zerobox-tactical-store',
-      version: 2,
+      version: SCHEMA_VERSION,
       // Object-level storage (not createJSONStorage): lets us skip the JSON.stringify + localStorage write
       // whenever partialize() hands back the exact same snapshot object (transient-only set() calls such as
       // timer ticks, modal flags and isCatalogLoading), and parses the stored blob only once at boot.
@@ -2407,7 +2435,15 @@ export const useCtfStore = create<CtfStoreState>()(
           safeLocalStorage.removeItem(name);
         },
       },
-      migrate: (persistedState: any) => {
+      migrate: (persistedState: any, fromVersion: number) => {
+        if (fromVersion > SCHEMA_VERSION) {
+          // Written by a newer build: never down-convert or write it back. Read-only until reload.
+          engageSchemaWriteGate('newer-schema');
+          return persistedState;
+        }
+        // v3 (isCustom normalization) needs no state transform here: mergeMachinesWithCatalog normalizes every
+        // entry point. Snapshot the raw strings first (synchronous capture, async IndexedDB write).
+        takePreMigrationBackup(fromVersion);
         const persisted = persistedState || {};
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
@@ -2517,6 +2553,9 @@ export const useCtfStore = create<CtfStoreState>()(
     }
   )
 );
+
+// Hydration is done (and any newer persisted blob has engaged the gate): record our schema version.
+recordSchemaVersion();
 
 // Selective, high-performance profile auto-save
 // Guards against 1Hz timer ticks, uses debouncing with maxWait cap, and flushes on tab close
@@ -2645,6 +2684,10 @@ if (typeof window !== 'undefined') {
   // Cross-tab auto-sync: Reconcile external storage modifications across open tabs
   window.addEventListener('storage', (event) => {
     if (!event.key || !event.newValue) return;
+    if (event.key === SCHEMA_VERSION_STORAGE_KEY) {
+      if (isNewerSchemaVersion(event.newValue)) engageSchemaWriteGate('newer-schema');
+      return;
+    }
     const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
     const profileKey = getProfileStorageKey(currentProfileId);
     if (event.key === profileKey || event.key === 'zerobox-tactical-store') {

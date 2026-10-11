@@ -26,6 +26,7 @@ import type {
   NewLootItemInput,
 } from '../types/loot';
 import { identifyHash } from '../utils/hashIdentifier';
+import { isSchemaWriteGated } from '../utils/schemaWriteGate';
 
 export const LOOT_SCHEMA_VERSION = 1;
 export const LOOT_STORAGE_KEY_PREFIX = 'zerobox_loot_v2_';
@@ -60,7 +61,7 @@ const lootStorage = {
     }
   },
   set(name: string, value: string): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     try {
       localStorage.setItem(name, value);
       memoryFallback.delete(name);
@@ -79,7 +80,7 @@ const lootStorage = {
     }
   },
   remove(name: string): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     memoryFallback.delete(name);
     try {
       localStorage.removeItem(name);
