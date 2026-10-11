@@ -39,6 +39,7 @@ import {
   redactLootState
 } from './lootPersistence';
 import { STARTER_MACHINES } from '../data/starterMachines';
+import { hasUserProgress, isGenuineCustom } from './machineNormalization';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
 import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
@@ -59,6 +60,18 @@ import {
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
 import { saveWorkspaceToIdb } from '../utils/resilientStorage';
+import {
+  SCHEMA_VERSION,
+  SCHEMA_VERSION_STORAGE_KEY,
+  isSchemaWriteGated,
+  isNewerSchemaVersion,
+  engageSchemaWriteGate,
+  onSchemaWriteGateEngaged,
+  initSchemaVersionGate,
+  recordSchemaVersion,
+} from '../utils/schemaWriteGate';
+import { takePreMigrationBackup, whenPreMigrationBackupSettled } from './preMigrationBackup';
+import { useToastStore } from './useToastStore';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
@@ -384,6 +397,8 @@ export const broadcastCrossTabMessage = (
   type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED',
   payload?: any
 ) => {
+  // A gated (outdated/restoring) tab must not push its edits into other tabs, which would persist them.
+  if (isSchemaWriteGated()) return;
   try {
     syncChannel?.postMessage({ type, payload, timestamp: Date.now() });
   } catch {}
@@ -393,6 +408,10 @@ const inMemoryFallbackStorage = new Map<string, string>();
 let isStorageEphemeral = false;
 let profileLoadGeneration = 0;
 
+export { SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY } from '../utils/schemaWriteGate';
+export { restorePreMigrationBackup, listPreMigrationBackups } from './preMigrationBackup';
+
+// Every write below is a no-op while the schema write gate is engaged (newer ZeroBox in another tab, or restore).
 export const safeLocalStorage = {
   getItem: (name: string): string | null => {
     if (typeof window === 'undefined') return null;
@@ -405,7 +424,7 @@ export const safeLocalStorage = {
     }
   },
   setItem: (name: string, value: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     try {
       localStorage.setItem(name, value);
     } catch (e: any) {
@@ -424,7 +443,7 @@ export const safeLocalStorage = {
     }
   },
   removeItem: (name: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     try {
       localStorage.removeItem(name);
     } catch {
@@ -434,7 +453,7 @@ export const safeLocalStorage = {
   },
   isEphemeral: (): boolean => {
     if (isStorageEphemeral) return true;
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
     try {
       const test = '__zb_storage_test__';
       localStorage.setItem(test, '1');
@@ -570,6 +589,71 @@ export const saveCustomMachinesToStorage = (machines: Machine[], profileId: stri
   }
 };
 
+/**
+ * One-time cleanup of the isolated custom-machine keys: older builds stamped catalog machines with progress as
+ * `isCustom` and mirrored their full (heavy) catalog payload here. Only rows that are now present in `machines` as
+ * normal catalog rows are candidates. `beforeWrite` (a profile flush) runs first, and the prune aborts (returns -1,
+ * nothing written) unless the profile key actually on disk (raw localStorage, not the in-memory quota fallback)
+ * contains every row about to be removed. Genuine customs are never touched.
+ */
+export const pruneMisstampedCustomMachines = (
+  machines: Machine[],
+  profileId: string = 'guest',
+  beforeWrite?: () => void
+): number => {
+  if (typeof window === 'undefined' || !Array.isArray(machines) || isSchemaWriteGated()) return -1;
+  const normalizedCatalogIds = new Set(
+    machines.filter((m) => m && !m.isCustom && !isGenuineCustom(m)).map((m) => m.id)
+  );
+  const plans: { key: string; kept: Machine[]; removedIds: string[] }[] = [];
+  for (const key of [getCustomMachinesStorageKey(profileId), CUSTOM_MACHINES_STORAGE_KEY]) {
+    try {
+      const raw = safeLocalStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) continue;
+      const isStale = (m: Machine) =>
+        Boolean(m && typeof m.id === 'string' && !isGenuineCustom(m) && normalizedCatalogIds.has(m.id));
+      const removedIds = parsed.filter(isStale).map((m: Machine) => m.id);
+      if (removedIds.length > 0) plans.push({ key, kept: parsed.filter((m: Machine) => !isStale(m)), removedIds });
+    } catch (err) {
+      console.warn('[ZeroBox] Failed to read custom machines for pruning:', err);
+    }
+  }
+  if (plans.length === 0) return 0;
+
+  beforeWrite?.();
+  // Verify the replacement copy really reached disk before deleting anything.
+  let onDisk: Set<string>;
+  try {
+    if (safeLocalStorage.isEphemeral()) return -1;
+    const raw = localStorage.getItem(getWriteProfileStorageKey(profileId));
+    const parsed = raw ? JSON.parse(raw) : null;
+    onDisk = new Set(
+      (Array.isArray(parsed?.machines) ? parsed.machines : [])
+        .filter((m: Machine) => m && typeof m.id === 'string')
+        .map((m: Machine) => m.id)
+    );
+  } catch {
+    return -1;
+  }
+  if (!plans.every((p) => p.removedIds.every((id) => onDisk.has(id)))) {
+    console.warn('[ZeroBox] Profile save not confirmed on disk; keeping isolated custom copies.');
+    return -1;
+  }
+
+  let removed = 0;
+  for (const p of plans) {
+    try {
+      localStorage.setItem(p.key, JSON.stringify(p.kept));
+      removed += p.removedIds.length;
+    } catch (err) {
+      console.warn('[ZeroBox] Failed to prune mis-stamped custom machines:', err);
+    }
+  }
+  return removed;
+};
+
 export const loadInitialProfileData = (profileId: string) => {
   if (typeof window !== 'undefined') {
     try {
@@ -685,6 +769,7 @@ export const mergeMachinesWithCatalog = (
   catalogSource?: Machine[]
 ): Machine[] => {
   const catalog = catalogSource || getLoadedMachinesCatalog() || STARTER_MACHINES;
+  const catalogIds = new Set(catalog.map((c) => c.id));
   const map = new Map<string, Machine>();
   const nameMap = new Map<string, Machine>();
   const platformNameMap = new Map<string, Machine>();
@@ -735,33 +820,40 @@ export const mergeMachinesWithCatalog = (
 
       // Multi-tier lookup to safeguard against catalog ID, name, or platform drift
       let catalogMachine = map.get(m.id);
+      // Exact catalog id or id-based alias: the stored row IS that catalog machine, so a stale isCustom stamp can go.
+      let matchedByIdentity = Boolean(catalogMachine) && catalogIds.has(m.id);
+      // Operator-created machines only ever match by exact id; fuzzy tiers would fold e.g. a custom "Lame" into htb-lame.
+      const genuineCustom = isGenuineCustom(m);
 
-      if (!catalogMachine) {
-        const aliasTarget =
+      if (!catalogMachine && !genuineCustom) {
+        const idAliasTarget =
           (m.id && CATALOG_MACHINE_ALIASES[m.id]) ||
-          (idSlug && CATALOG_MACHINE_ALIASES[idSlug]) ||
-          (normName && CATALOG_MACHINE_ALIASES[normName]);
+          (idSlug && CATALOG_MACHINE_ALIASES[idSlug]);
+        const aliasTarget = idAliasTarget || (normName && CATALOG_MACHINE_ALIASES[normName]);
         if (aliasTarget) {
           catalogMachine = map.get(aliasTarget) || nameMap.get(aliasTarget.toLowerCase().trim());
+          matchedByIdentity = Boolean(catalogMachine && idAliasTarget && catalogIds.has(catalogMachine.id));
         }
       }
 
-      if (!catalogMachine && m.platform) {
+      if (!catalogMachine && !genuineCustom && m.platform) {
         if (normName) catalogMachine = platformNameMap.get(`${m.platform}:${normName}`);
         if (!catalogMachine && nameSlug) catalogMachine = platformSlugMap.get(`${m.platform}:${nameSlug}`);
       }
 
-      if (!catalogMachine && normName) {
+      if (!catalogMachine && !genuineCustom && normName) {
         catalogMachine = nameMap.get(normName);
       }
 
-      if (!catalogMachine && nameSlug) {
+      if (!catalogMachine && !genuineCustom && nameSlug) {
         catalogMachine = slugMap.get(nameSlug);
       }
 
-      if (!catalogMachine && idSlug) {
+      if (!catalogMachine && !genuineCustom && idSlug) {
         catalogMachine = idSlugMap.get(idSlug);
       }
+      // Drop a stale "custom" stamp only on an identity match of a non-custom row; name-only matches keep legacy behavior.
+      const customFlag = matchedByIdentity && !genuineCustom ? { isCustom: undefined } : {};
       if (catalogMachine) {
         if (userSolvesReset) {
           // User started fresh: respect their current status (unsolved/foothold/completed) and progress without forcing catalog completed status
@@ -773,6 +865,7 @@ export const mergeMachinesWithCatalog = (
           map.set(catalogMachine.id, {
             ...catalogMachine,
             ...m,
+            ...customFlag,
             status: m.status || 'unsolved',
             userFlag: m.userFlag,
             rootFlag: m.rootFlag,
@@ -801,11 +894,12 @@ export const mergeMachinesWithCatalog = (
           const hasRootFlag = Boolean(m.rootFlag?.trim());
           const isFootholdOrAbove = mStatus === 'foothold' || mStatus === 'root' || mStatus === 'completed';
           const isRootOrAbove = mStatus === 'root' || mStatus === 'completed';
-          const userHasProgress = mStatus !== 'backlog' || hasUserFlag || hasRootFlag || (m.timeSpentSeconds > 0) || Boolean(m.quickNotes) || Boolean(m.writeupMarkdown);
+          const userHasProgress = mStatus !== 'backlog' || hasUserProgress(m);
 
           map.set(catalogMachine.id, {
             ...catalogMachine,
             ...m,
+            ...customFlag,
             status: userHasProgress ? mStatus : 'backlog',
             userFlag: m.userFlag || '',
             rootFlag: m.rootFlag || '',
@@ -827,23 +921,12 @@ export const mergeMachinesWithCatalog = (
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
           });
         }
-      } else if (
-        m.isCustom ||
-        m.platform === 'Custom' ||
-        (m.id && m.id.startsWith('custom-')) ||
-        Boolean(m.userFlag?.trim()) ||
-        Boolean(m.rootFlag?.trim()) ||
-        // Any in-progress status (recon / foothold / root / completed): same rule as `userHasProgress` above
-        (Boolean(m.status) && (m.status as string) !== 'backlog' && (m.status as string) !== 'unsolved') ||
-        (m.timeSpentSeconds && m.timeSpentSeconds > 0) ||
-        Boolean(m.quickNotes?.trim()) ||
-        Boolean(m.writeupMarkdown?.trim())
-      ) {
-        // Genuine custom user-added machine OR legacy catalog machine with verified user progress
-        map.set(m.id, {
-          ...m,
-          isCustom: true, // Safeguard: mark as custom so user progress and notes are never pruned
-        });
+      } else if (m.isCustom || genuineCustom || hasUserProgress(m)) {
+        // Genuine custom machine, legacy isCustom row, or catalog machine (not in the loaded catalog yet) with
+        // user progress: keep the row as stored. Only genuine customs get the flag (same rule as toLeanMachines);
+        // never stamp anything else (it would stick once the full catalog matches) and never remove a stamp
+        // (a legacy custom without progress would then be dropped on the next merge).
+        map.set(m.id, genuineCustom ? { ...m, isCustom: true } : { ...m });
       }
     });
   }
@@ -878,6 +961,18 @@ export const mergeMachinesWithCatalog = (
 let lastPartialize: { inputs: unknown[]; snapshot: Record<string, unknown> } | null = null;
 let lastPersistedSnapshot: unknown;
 let lastPersistedVersion: number | undefined;
+// pruneMisstampedCustomMachines runs once per session, after the first full-catalog merge
+let customStoragePruned = false;
+
+// Version write gate: must be decided before the store boots (hydration writes synchronously).
+export const SCHEMA_GATE_TOAST_MESSAGE = 'ZeroBox was updated in another tab — reload to continue.';
+onSchemaWriteGateEngaged((reason) => {
+  if (reason !== 'newer-schema') return;
+  console.warn('[ZeroBox] Newer data schema detected; this tab will not write to storage until reloaded.');
+  // durationMs 0 = sticky (never auto-dismissed)
+  useToastStore.getState().addToast({ type: 'warning', title: 'Reload required', message: SCHEMA_GATE_TOAST_MESSAGE, durationMs: 0 });
+});
+initSchemaVersionGate();
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
@@ -1025,6 +1120,12 @@ export const useCtfStore = create<CtfStoreState>()(
             isCatalogLoaded: true,
             isCatalogLoading: false,
           });
+          // Full catalog is in: every mis-stamped catalog row is now normalized, so drop their stale custom copies once.
+          // Never before the pre-migration snapshot exists; a failed/unconfirmed prune is retried next session.
+          if (!customStoragePruned && (await whenPreMigrationBackupSettled()) !== 'failed') {
+            const removed = pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
+            if (removed >= 0) customStoragePruned = true;
+          }
         } catch (err) {
           console.error('Failed to lazy load machinesCatalog:', err);
           set({ isCatalogLoading: false });
@@ -2321,7 +2422,7 @@ export const useCtfStore = create<CtfStoreState>()(
     }),
     {
       name: 'zerobox-tactical-store',
-      version: 2,
+      version: SCHEMA_VERSION,
       // Object-level storage (not createJSONStorage): lets us skip the JSON.stringify + localStorage write
       // whenever partialize() hands back the exact same snapshot object (transient-only set() calls such as
       // timer ticks, modal flags and isCatalogLoading), and parses the stored blob only once at boot.
@@ -2359,7 +2460,15 @@ export const useCtfStore = create<CtfStoreState>()(
           safeLocalStorage.removeItem(name);
         },
       },
-      migrate: (persistedState: any) => {
+      migrate: (persistedState: any, fromVersion: number) => {
+        if (fromVersion > SCHEMA_VERSION) {
+          // Written by a newer build: never down-convert or write it back. Read-only until reload.
+          engageSchemaWriteGate('newer-schema');
+          return persistedState;
+        }
+        // v3 (isCustom normalization) needs no state transform here: mergeMachinesWithCatalog normalizes every
+        // entry point. Snapshot the raw strings first (synchronous capture, async IndexedDB write).
+        takePreMigrationBackup(fromVersion);
         const persisted = persistedState || {};
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
@@ -2469,6 +2578,9 @@ export const useCtfStore = create<CtfStoreState>()(
     }
   )
 );
+
+// Hydration is done (and any newer persisted blob has engaged the gate): record our schema version.
+recordSchemaVersion();
 
 // Selective, high-performance profile auto-save
 // Guards against 1Hz timer ticks, uses debouncing with maxWait cap, and flushes on tab close
@@ -2597,6 +2709,10 @@ if (typeof window !== 'undefined') {
   // Cross-tab auto-sync: Reconcile external storage modifications across open tabs
   window.addEventListener('storage', (event) => {
     if (!event.key || !event.newValue) return;
+    if (event.key === SCHEMA_VERSION_STORAGE_KEY) {
+      if (isNewerSchemaVersion(event.newValue)) engageSchemaWriteGate('newer-schema');
+      return;
+    }
     const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
     const profileKey = getProfileStorageKey(currentProfileId);
     if (event.key === profileKey || event.key === 'zerobox-tactical-store') {

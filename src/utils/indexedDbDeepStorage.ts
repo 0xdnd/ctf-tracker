@@ -1,4 +1,5 @@
 import { Machine } from '../types';
+import { isSchemaWriteGated } from './schemaWriteGate';
 
 export interface DeepWriteupEntry {
   writeupMarkdown?: string;
@@ -148,6 +149,7 @@ export async function saveDeepProfileData(
     customNotes?: any[];
   }
 ): Promise<void> {
+  if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
   try {
     const activeDb = await openDeepDatabase();
@@ -241,6 +243,7 @@ export async function loadDeepProfileData(profileId: string): Promise<DeepProfil
  * Deletes deep profile data from IndexedDB.
  */
 export async function clearDeepProfileData(profileId: string): Promise<void> {
+  if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
   try {
     const activeDb = await openDeepDatabase();
@@ -278,6 +281,7 @@ export async function clearDeepProfileData(profileId: string): Promise<void> {
  * Deletes a single machine's writeup and notes entry from a deep profile in IndexedDB.
  */
 export async function deleteMachineDeepData(profileId: string, machineId: string): Promise<void> {
+  if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
   try {
     const activeDb = await openDeepDatabase();
@@ -374,6 +378,7 @@ async function runProofImageTx<T>(
 
 /** Persists one proof image blob. Resolves `true` only after the write transaction completed. */
 export function saveProofImageBlob(id: string, blob: Blob): Promise<boolean> {
+  if (isSchemaWriteGated()) return Promise.resolve(false);
   return runProofImageTx<boolean>('readwrite', false, (store, setResult) => {
     const record: ProofImageRecord = {
       blob,
@@ -399,6 +404,7 @@ export function loadProofImageBlob(id: string): Promise<Blob | null> {
 
 /** Deletes proof image blobs by id (missing ids are ignored). */
 export async function deleteProofImageBlobs(ids: string[]): Promise<void> {
+  if (isSchemaWriteGated()) return;
   if (ids.length === 0) return;
   await runProofImageTx<boolean>('readwrite', false, (store, setResult) => {
     ids.forEach((id) => store.delete(PROOF_IMAGE_KEY_PREFIX + id));

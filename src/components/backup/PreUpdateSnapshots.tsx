@@ -1,0 +1,74 @@
+import { useEffect, useState } from 'react';
+import { History } from 'lucide-react';
+import { confirmAction } from '../../store/useConfirmStore';
+import {
+  listPreMigrationBackups,
+  restorePreMigrationBackup,
+  type PreMigrationBackupSummary,
+} from '../../store/preMigrationBackup';
+
+const formatSize = (chars: number) =>
+  chars >= 1024 * 1024 ? `${(chars / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(chars / 1024))} KB`;
+
+/** "Restore pre-update snapshot" list. Renders nothing until a snapshot exists. */
+export default function PreUpdateSnapshots() {
+  const [snapshots, setSnapshots] = useState<PreMigrationBackupSummary[]>([]);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    listPreMigrationBackups()
+      .then((list) => {
+        if (alive) setSnapshots(list);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (snapshots.length === 0) return null;
+
+  const handleRestore = async (snap: PreMigrationBackupSummary) => {
+    const when = new Date(snap.createdAt).toLocaleString();
+    const ok = await confirmAction({
+      title: 'Restore pre-update snapshot?',
+      body: `This replaces your tracker data (all profiles) with the copy saved on ${when}, before ZeroBox updated its data format. Changes made since then are replaced; a safety copy of your current data is kept first. Close other ZeroBox tabs, then continue. The app reloads afterwards.`,
+      confirmLabel: 'Restore snapshot',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setBusyKey(snap.key);
+    const restored = await restorePreMigrationBackup(snap.key);
+    if (!restored) setBusyKey(null);
+  };
+
+  return (
+    <div className="p-3.5 rounded-lg border border-subtle bg-surface-sunken space-y-2">
+      <div className="flex items-center gap-2 text-primary">
+        <History className="w-4 h-4 text-muted" />
+        <span className="font-semibold">Restore pre-update snapshot</span>
+      </div>
+      <p className="text-muted text-[11px]">
+        Saved automatically right before ZeroBox upgraded your stored data.
+      </p>
+      <ul className="space-y-1.5">
+        {snapshots.map((snap) => (
+          <li key={snap.key} className="flex items-center justify-between gap-2 text-xs">
+            <span className="text-secondary">
+              {new Date(snap.createdAt).toLocaleString()} · v{snap.fromVersion} · {formatSize(snap.bytes)}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleRestore(snap)}
+              disabled={busyKey !== null}
+              className="px-2.5 py-1 max-sm:py-2.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary font-medium transition-colors disabled:opacity-50"
+            >
+              {busyKey === snap.key ? 'Restoring…' : 'Restore'}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

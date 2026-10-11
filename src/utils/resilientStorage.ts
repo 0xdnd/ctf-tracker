@@ -6,6 +6,8 @@
  * and navigator.storage.persist() verification.
  */
 
+import { isSchemaWriteGated } from './schemaWriteGate';
+
 const DB_NAME = 'zerobox_resilient_store_v1';
 const DB_VERSION = 1;
 const STORE_NAME = 'workspaces';
@@ -63,6 +65,7 @@ function openResilientDb(): Promise<IDBDatabase | null> {
  * Save workspace state to IndexedDB with automatic rolling snapshot.
  */
 export async function saveWorkspaceToIdb(key: string, data: unknown): Promise<boolean> {
+  if (isSchemaWriteGated()) return false;
   const db = await openResilientDb();
   if (!db) return false;
 
@@ -249,4 +252,81 @@ export function bindExportGuard(getDirtyCount: () => number): () => void {
   return () => {
     window.removeEventListener('beforeunload', handleBeforeUnload);
   };
+}
+
+// ---------------------------------------------------------------------------
+// Raw records in the workspaces store (no rolling snapshot side effect).
+// Used for pre-migration backups: `premigration_{from}_{timestamp}` keys.
+// ---------------------------------------------------------------------------
+
+function runRawRequest<T>(
+  mode: IDBTransactionMode,
+  op: (store: IDBObjectStore) => IDBRequest | void,
+  pick: (req: IDBRequest | void) => T,
+  fallback: T
+): Promise<T> {
+  return openResilientDb().then(
+    (db) =>
+      new Promise<T>((resolve) => {
+        if (!db) {
+          resolve(fallback);
+          return;
+        }
+        try {
+          const tx = db.transaction(STORE_NAME, mode);
+          const req = op(tx.objectStore(STORE_NAME));
+          tx.oncomplete = () => {
+            try { db.close(); } catch {}
+            resolve(pick(req));
+          };
+          tx.onerror = () => {
+            console.warn('[ZeroBox ResilientStore] Raw record transaction error:', tx.error);
+            try { db.close(); } catch {}
+            resolve(fallback);
+          };
+          tx.onabort = () => {
+            console.warn('[ZeroBox ResilientStore] Raw record transaction aborted:', tx.error);
+            try { db.close(); } catch {}
+            resolve(fallback);
+          };
+        } catch (err) {
+          console.warn('[ZeroBox ResilientStore] Raw record error:', err);
+          try { db.close(); } catch {}
+          resolve(fallback);
+        }
+      })
+  );
+}
+
+/** Write a raw string record; resolves true only once the transaction has committed. */
+export function putResilientRecord(key: string, value: string): Promise<boolean> {
+  if (isSchemaWriteGated()) return Promise.resolve(false);
+  return runRawRequest('readwrite', (store) => { store.put(value, key); }, () => true, false);
+}
+
+export function getResilientRecord(key: string): Promise<string | null> {
+  return runRawRequest(
+    'readonly',
+    (store) => store.get(key),
+    (req) => {
+      const v = req ? (req as IDBRequest).result : null;
+      return typeof v === 'string' ? v : null;
+    },
+    null
+  );
+}
+
+export function listResilientRecordKeys(prefix: string): Promise<string[]> {
+  return runRawRequest(
+    'readonly',
+    (store) => store.getAllKeys(),
+    (req) => ((req ? (req as IDBRequest).result : []) as IDBValidKey[])
+      .filter((k): k is string => typeof k === 'string' && k.startsWith(prefix)),
+    [] as string[]
+  );
+}
+
+export function deleteResilientRecord(key: string): Promise<boolean> {
+  if (isSchemaWriteGated()) return Promise.resolve(false);
+  return runRawRequest('readwrite', (store) => { store.delete(key); }, () => true, false);
 }
