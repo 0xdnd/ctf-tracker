@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { Modal } from '../common/Modal';
 import { 
   X, 
   Zap, 
@@ -312,22 +313,15 @@ export const ReconAutomationModal: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
-      onClick={() => setReconAutomationModalOpen(false)}
+    <Modal
+      open
+      onClose={() => setReconAutomationModalOpen(false)}
+      labelledBy="recon-automation-title"
+      size="full"
+      className="!bg-black/85 backdrop-blur-md max-sm:!p-0"
+      panelClassName="!max-w-5xl !shadow-2xl max-sm:!mx-0 max-sm:!rounded-none max-sm:!border-0 max-sm:!h-full max-sm:!max-h-none sm:h-[92dvh] sm:!max-h-[860px]"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98, y: 8 }}
-        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full sm:max-w-5xl h-full sm:h-[92vh] max-h-none sm:max-h-[860px] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-subtle bg-surface-card shadow-2xl overflow-hidden relative z-10"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col h-full min-h-0">
         {/* Modal Header */}
         <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-subtle bg-surface-sunken">
           <div className="flex items-center gap-2.5">
@@ -336,7 +330,7 @@ export const ReconAutomationModal: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-primary">
+                <h2 id="recon-automation-title" className="text-sm font-semibold text-primary">
                   ZEROBOX TACTICAL AUTOMATION HUB
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-card border border-subtle text-secondary font-semibold">
@@ -1022,7 +1016,7 @@ export const ReconAutomationModal: React.FC = () => {
             Close
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </Modal>
   );
 };

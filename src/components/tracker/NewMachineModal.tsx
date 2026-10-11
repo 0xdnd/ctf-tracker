@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { X, Plus, Server, Lock } from 'lucide-react';
 import { useCtfStore, KNOWN_ACTIVE_SEASONAL_NAMES } from '../../store/useCtfStore';
 import { Platform, OperatingSystem, Difficulty } from '../../types';
@@ -7,6 +6,7 @@ import { playCyberSound, sanitizeExternalUrl } from '../../utils/helpers';
 import { OsBadge, OsIcon } from '../common/OsBadge';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { Modal } from '../common/Modal';
 
 const PLATFORM_OPTIONS: CyberSelectOption<Platform>[] = [
   { value: 'HTB', label: 'Hack The Box', icon: <PlatformIcon platform="HTB" /> },
@@ -50,18 +50,6 @@ export const NewMachineModal: React.FC = () => {
   const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(name.trim().toLowerCase());
   const effectiveIsActive = isActive || isKnownActive;
 
-  useEffect(() => {
-    if (newMachineModalOpen) {
-      const orig = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = orig;
-      };
-    }
-  }, [newMachineModalOpen]);
-
-  if (!newMachineModalOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -98,19 +86,21 @@ export const NewMachineModal: React.FC = () => {
     setIsActive(false);
   };
 
-  const modalContent = (
-    <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-surface-inverse/85 backdrop-blur-md animate-fade-in font-sans overflow-y-auto"
-      onClick={() => setNewMachineModalOpen(false)}
+  return (
+    <Modal
+      open={newMachineModalOpen}
+      onClose={() => setNewMachineModalOpen(false)}
+      labelledBy="new-machine-title"
+      size="lg"
+      zIndex="modal"
+      className="backdrop-blur-md !bg-surface-inverse/85"
+      panelClassName="!shadow-2xl"
     >
-      <div 
-        className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-subtle bg-surface-card shadow-2xl overflow-hidden my-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-sunken/95">
           <div className="flex items-center gap-2">
             <Server className="w-5 h-5 text-callout-success-fg" />
-            <h3 className="text-base font-semibold text-primary">Add new target</h3>
+            <h3 id="new-machine-title" className="text-base font-semibold text-primary">Add new target</h3>
           </div>
           <button aria-label="Close dialog"
             onClick={() => setNewMachineModalOpen(false)}
@@ -312,8 +302,6 @@ export const NewMachineModal: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

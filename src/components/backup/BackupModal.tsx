@@ -23,6 +23,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { Modal } from '../common/Modal';
 import { confirmAction } from '../../store/useConfirmStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
@@ -390,16 +391,21 @@ export const BackupModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-surface-inverse/60 backdrop-blur-md animate-fade-in font-sans">
-      <div 
-        className="w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-subtle bg-surface-card shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      open
+      onClose={() => setBackupModalOpen(false)}
+      labelledBy="backup-modal-title"
+      size="xl"
+      closeOnBackdrop={false}
+      className="backdrop-blur-md !bg-surface-inverse/60 max-sm:!p-0"
+      panelClassName="!shadow-2xl max-sm:!mx-0 max-sm:!rounded-none max-sm:!border-0 max-sm:!h-full max-sm:!max-h-none"
+    >
+      <div className="flex flex-col max-sm:h-full sm:max-h-[90dvh] min-h-0">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-card">
           <div className="flex items-center gap-2.5">
             <Database className="w-5 h-5 text-secondary" />
-            <h3 className="text-base font-semibold tracking-[-0.01em] text-primary">
+            <h3 id="backup-modal-title" className="text-base font-semibold tracking-[-0.01em] text-primary">
               Backup and bulk import
             </h3>
           </div>
@@ -1091,6 +1097,6 @@ export const BackupModal: React.FC = () => {
 
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
