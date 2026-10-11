@@ -451,7 +451,7 @@ export const BackupModal: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 text-xs scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-5 max-sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-5 text-xs scrollbar-thin">
           
           {activeTab === 'backup' ? (
             <>

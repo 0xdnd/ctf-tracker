@@ -106,7 +106,7 @@ const ModalSurface: React.FC<SurfaceProps> = ({
   }, [isPresent, initialFocusRef]);
 
   const backdropClass = [
-    'fixed inset-0 flex justify-center py-4 bg-surface-inverse/70 font-sans',
+    'fixed inset-0 flex justify-center pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-surface-inverse/70 font-sans',
     placement === 'top' ? 'items-start pt-[12dvh]' : 'items-center',
     Z_CLASS[zIndex],
     className,

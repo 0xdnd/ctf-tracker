@@ -134,9 +134,9 @@ export const NewMachineModal: React.FC = () => {
               ? 'border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg' 
               : 'border-subtle bg-surface-sunken'
           }`}>
-            <label className="flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Lock className={`w-4 h-4 ${effectiveIsActive ? 'text-callout-warn-fg' : 'text-tertiary'}`} />
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <div className="flex items-center gap-2 min-w-0">
+                <Lock className={`w-4 h-4 shrink-0 ${effectiveIsActive ? 'text-callout-warn-fg' : 'text-tertiary'}`} />
                 <div>
                   <span className="font-semibold text-xs text-primary block">
                     Active Seasonal Lab (In-Season HTB / THM)
@@ -154,7 +154,7 @@ export const NewMachineModal: React.FC = () => {
                 checked={effectiveIsActive}
                 disabled={isKnownActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded border-strong text-callout-warn-fg focus:ring-callout-warn-border bg-surface-card cursor-pointer"
+                className="w-4 h-4 shrink-0 rounded border-strong text-callout-warn-fg focus:ring-callout-warn-border bg-surface-card cursor-pointer"
               />
             </label>
             {effectiveIsActive && (
@@ -210,6 +210,7 @@ export const NewMachineModal: React.FC = () => {
                     variant="emerald"
                     size="md"
                     className="w-full"
+                    wrapLabel
                     triggerClassName="w-full bg-surface-sunken"
                     soundEnabled={soundEnabled}
                   />

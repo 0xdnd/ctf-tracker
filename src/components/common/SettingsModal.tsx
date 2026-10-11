@@ -143,7 +143,7 @@ export const SettingsModal: React.FC = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/70 font-sans"
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-surface-inverse/70 font-sans"
       onClick={() => setSettingsModalOpen(false)}
     >
       <motion.div
@@ -155,7 +155,7 @@ export const SettingsModal: React.FC = () => {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.98, opacity: 0, y: 8, transition: { duration: 0.12 } }}
         transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="relative w-full max-w-2xl bg-surface-card border border-subtle rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-surface-card border border-subtle rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header Bar */}
@@ -186,7 +186,7 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           {/* Modal Body */}
-          <div className="p-6 overflow-y-auto space-y-5 text-xs text-secondary">
+          <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-5 text-xs text-secondary">
             
             {/* Section 1: Themes & Presets */}
             <div className="space-y-3">
@@ -481,9 +481,10 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           {/* Footer Bar */}
-          <div className="px-6 py-3.5 bg-surface-sunken border-t border-subtle flex items-center justify-between">
+          <div className="sticky bottom-0 z-10 flex-shrink-0 px-6 py-3.5 bg-surface-sunken border-t border-subtle flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
+                aria-label="Backup database"
                 type="button"
                 onClick={() => {
                   setSettingsModalOpen(false);
@@ -497,6 +498,7 @@ export const SettingsModal: React.FC = () => {
               </button>
 
               <button
+                aria-label="View license"
                 type="button"
                 onClick={() => {
                   setSettingsModalOpen(false);

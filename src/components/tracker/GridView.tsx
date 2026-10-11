@@ -33,7 +33,7 @@ const REVEAL =
   'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150';
 
 const ICON_BTN =
-  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
+  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
 
 interface GridCardProps {
   machine: Machine;
@@ -297,7 +297,7 @@ const GridCard = React.memo<GridCardProps>(({
       </div>
 
       {/* Footer: flags + engage stay visible, utility actions reveal on hover/focus */}
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-subtle pt-3" onClick={(e) => e.stopPropagation()}>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-3" onClick={(e) => e.stopPropagation()}>
         {m.isActive ? (
           <div className="flex items-center gap-1.5 text-[11px] text-muted font-mono">
             <Lock className="h-3 w-3 text-callout-warn-fg" />
@@ -326,8 +326,8 @@ const GridCard = React.memo<GridCardProps>(({
           </div>
         )}
 
-        <div className="flex items-center gap-0.5">
-          <div className={`flex items-center gap-0.5 ${REVEAL}`}>
+        <div className="flex flex-wrap items-center justify-end gap-0.5">
+          <div className={`flex flex-wrap items-center justify-end gap-0.5 ${REVEAL}`}>
             {!m.isActive && (
               <button
                 type="button"

@@ -28,6 +28,8 @@ export interface CyberSelectProps<T extends string = string> {
   disabled?: boolean;
   className?: string;
   triggerClassName?: string;
+  /** Let the selected label wrap instead of truncating (use for long labels in narrow fields). */
+  wrapLabel?: boolean;
   menuClassName?: string;
   align?: 'left' | 'right';
   position?: 'bottom' | 'top' | 'auto';
@@ -51,6 +53,7 @@ export function CyberSelect<T extends string = string>({
   disabled = false,
   className = '',
   triggerClassName = '',
+  wrapLabel = false,
   menuClassName = '',
   align = 'left',
   position = 'auto',
@@ -266,7 +269,7 @@ export function CyberSelect<T extends string = string>({
               isOpen ? 'border-accent ring-1 ring-accent/40' : ''
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
           >
-            <span className="flex items-center gap-2 truncate">
+            <span className={`flex items-center gap-2 ${wrapLabel ? 'min-w-0 text-left' : 'truncate'}`}>
               {/* Option Color Indicator Dot */}
               {selectedOption?.color && (
                 <span
@@ -281,7 +284,7 @@ export function CyberSelect<T extends string = string>({
               )}
 
               {/* Label Text */}
-              <span className="truncate">
+              <span className={wrapLabel ? 'whitespace-normal break-words leading-tight' : 'truncate'}>
                 {selectedOption ? selectedOption.label : <span className="text-muted">{placeholder}</span>}
               </span>
             </span>
