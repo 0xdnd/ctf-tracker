@@ -9,19 +9,30 @@ import {
   ShieldCheck,
   Radar,
   Zap,
-  Calendar
+  Calendar,
+  Trophy
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useCtfStore } from '../../store/useCtfStore';
 import { formatSeconds, formatDurationHuman } from '../../utils/helpers';
 import { Difficulty, Platform } from '../../types';
 import { classifyMachine } from '../../utils/categoryUtils';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
+import { CyberButton } from '../common/CyberButton';
+import { AnalyticsEmptyState } from './AnalyticsEmptyState';
+import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore';
+import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
 import { PageHeader } from '../common/PageHeader';
-import { buildHeatmapWeeks, toLocalDateKey, WEEKDAY_LONG, WEEKDAY_SHORT, type HeatLevel } from '../../utils/analyticsHeatmap';
+import { buildHeatmapWeeks, WEEKDAY_LONG, WEEKDAY_SHORT, type HeatLevel } from '../../utils/analyticsHeatmap';
 
 // Theme-token paint for SVG attributes (Tailwind has no stroke/fill utilities for the text/border token sets).
 const RADAR_GRID_STYLE: React.CSSProperties = { stroke: 'rgb(var(--border-strong))' };
 const RADAR_LABEL_STYLE: React.CSSProperties = { fill: 'rgb(var(--text-muted))' };
+
+// Matches the --ease-out CSS token.
+const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+// Per-item stagger: at most 40ms per item, capped at 6 items.
+const stagger = (i: number) => Math.min(i, 6) * 0.04;
 
 const CARD = 'p-5 rounded-2xl border border-subtle bg-surface-card machined-edge';
 
@@ -155,6 +166,12 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ counts }) => {
 export const AnalyticsView: React.FC = () => {
   const machines = useCtfStore((s) => s.machines);
   const activitySessions = useCtfStore((s) => s.activitySessions);
+  const restoreDanielSolves = useCtfStore((s) => s.restoreDanielSolves);
+  const weeklyRootTarget = useGoalsStore((s) => s.weeklyRootTarget);
+  const setWeeklyRootTarget = useGoalsStore((s) => s.setWeeklyRootTarget);
+  const navigate = useNavigate();
+  const [goalDraft, setGoalDraft] = useState('');
+  const [editingGoal, setEditingGoal] = useState(false);
   const radarId = useId();
   const radarTitleId = `${radarId}-title`;
   const radarDescId = `${radarId}-desc`;
@@ -309,9 +326,10 @@ export const AnalyticsView: React.FC = () => {
 
         {/* Animated Radar Polygon */}
         <motion.polygon
-          initial={{ opacity: 0, scale: 0.2 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          transition={{ duration: 0.3, ease: EASE_OUT }}
+          style={{ transformOrigin: `${center}px ${center}px` }}
           points={points}
           className="fill-accent/20 stroke-accent"
           strokeWidth="2"
@@ -334,9 +352,10 @@ export const AnalyticsView: React.FC = () => {
             return (
               <g key={i}>
                 <motion.circle
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.4 + i * 0.1 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2, ease: EASE_OUT, delay: stagger(i) }}
+                  style={{ transformOrigin: `${x}px ${y}px` }}
                   cx={x}
                   cy={y}
                   r="4"
@@ -360,29 +379,44 @@ export const AnalyticsView: React.FC = () => {
     );
   };
 
-  // Activity heatmap counts (past 90 days): study-timer sessions plus machine user/root pwn dates.
-  const heatmapCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const s of activitySessions) {
-      counts[s.date] = (counts[s.date] || 0) + 1;
-    }
-    for (const m of machines) {
-      for (const stamp of [m.rootPwnedAt, m.userPwnedAt]) {
-        if (!stamp) continue;
-        const parsed = new Date(stamp);
-        if (Number.isNaN(parsed.getTime())) continue;
-        const d = toLocalDateKey(parsed);
-        counts[d] = (counts[d] || 0) + 1;
-      }
-    }
-    return counts;
-  }, [activitySessions, machines]);
+  // Activity counts (past 90 days): study-timer sessions plus machine user/root pwn dates.
+  // Shared with the streak engine so the streak always agrees with the heatmap.
+  const heatmapCounts = useMemo(
+    () => buildActivityCounts(activitySessions, machines),
+    [activitySessions, machines],
+  );
+
+  const streak = useMemo(() => computeStreaks(heatmapCounts, new Date()), [heatmapCounts]);
+  const weekly = useMemo(() => weeklyProgress(machines, startOfWeek(new Date())), [machines]);
+  const goalPct = weeklyRootTarget ? Math.min(100, Math.round((weekly.rootedThisWeek / weeklyRootTarget) * 100)) : 0;
+
+  const hasData =
+    activitySessions.length > 0 ||
+    rootedMachines.length > 0 ||
+    footholdsCount > 0 ||
+    totalSecondsTracked > 0 ||
+    Object.keys(heatmapCounts).length > 0;
+  const hasRooted = rootedMachines.length > 0;
+
+  const saveGoal = () => {
+    const n = Number(goalDraft);
+    setWeeklyRootTarget(Number.isFinite(n) && n >= 1 ? n : null);
+    setEditingGoal(false);
+  };
 
   const kpis = [
     { label: 'Total pwned', val: `${rootedMachines.length} / ${machines.length}`, icon: Award, sub: `${machines.length > 0 ? Math.round((rootedMachines.length / machines.length) * 100) : 0}% catalog completed` },
     { label: 'Engagement time', val: formatDurationHuman(totalSecondsTracked), icon: Clock, sub: `${formatSeconds(totalSecondsTracked)} exact timer` },
-    { label: 'Avg time to user', val: avgTimeToUser > 0 ? formatDurationHuman(avgTimeToUser) : 'N/A', icon: Target, sub: 'Initial foothold benchmark' },
-    { label: 'Avg time to root', val: avgTimeToRoot > 0 ? formatDurationHuman(avgTimeToRoot) : 'N/A', icon: Zap, sub: 'Privesc benchmark' },
+    { label: 'Avg time to user', val: avgTimeToUser > 0 ? formatDurationHuman(avgTimeToUser) : 'N/A', icon: Target, sub: avgTimeToUser > 0 ? 'Initial foothold benchmark' : 'Appears after a timed user flag' },
+    { label: 'Avg time to root', val: avgTimeToRoot > 0 ? formatDurationHuman(avgTimeToRoot) : 'N/A', icon: Zap, sub: avgTimeToRoot > 0 ? 'Privesc benchmark' : 'Appears after a timed root' },
+    {
+      label: 'Streak',
+      val: `${streak.current} ${streak.current === 1 ? 'day' : 'days'}`,
+      icon: Flame,
+      sub: `Longest ${streak.longest} ${streak.longest === 1 ? 'day' : 'days'}`,
+      active: streak.activeToday,
+      wide: true,
+    },
   ];
 
   return (
@@ -403,18 +437,25 @@ export const AnalyticsView: React.FC = () => {
         </div>
       </PageHeader>
 
-      {/* Top 4 KPI Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {!hasData ? (
+        <AnalyticsEmptyState
+          onOpenTracker={() => navigate('/tracker')}
+          onLoadDemo={() => { void restoreDanielSolves(); }}
+        />
+      ) : (
+      <>
+      {/* KPI Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
             <motion.div
               key={kpi.label}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 8 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ ...TACTICAL_SPRING, delay: idx * 0.05 }}
-              className="p-3 sm:p-4 rounded-2xl border border-subtle bg-surface-card machined-edge min-w-0"
+              transition={{ ...TACTICAL_SPRING, delay: stagger(idx) }}
+              className={`p-3 sm:p-4 rounded-2xl border border-subtle bg-surface-card machined-edge min-w-0 ${'wide' in kpi && kpi.wide ? 'col-span-2 lg:col-span-1' : ''}`}
             >
               <div className="flex items-center justify-between gap-2 text-muted text-xs mb-1.5">
                 <span className="font-medium text-xs truncate">{kpi.label}</span>
@@ -423,18 +464,107 @@ export const AnalyticsView: React.FC = () => {
                 </div>
               </div>
               <div className="text-xl sm:text-2xl font-semibold font-mono text-primary tabular-nums tracking-tight truncate">{kpi.val}</div>
-              <div className="text-[11px] text-muted mt-1 tabular-nums truncate">{kpi.sub}</div>
+              <div className="text-[11px] text-muted mt-1 tabular-nums flex items-center gap-1.5 min-w-0">
+                <span className="truncate">{kpi.sub}</span>
+                {'active' in kpi && kpi.active && (
+                  <span className="inline-flex items-center gap-1 text-secondary shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
+                    Active today
+                  </span>
+                )}
+              </div>
             </motion.div>
           );
         })}
       </div>
+
+      {/* Weekly goal */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={TACTICAL_SPRING}
+        className={`${CARD} space-y-3`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-3">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-muted" aria-hidden="true" />
+            <h2 className="font-semibold text-primary text-sm">Weekly goal</h2>
+          </div>
+          <span className="text-xs text-muted">Resets Monday</span>
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-xl font-semibold font-mono text-primary tabular-nums tracking-tight" data-testid="weekly-goal-value">
+              {weeklyRootTarget
+                ? `${weekly.rootedThisWeek} / ${weeklyRootTarget}`
+                : `${weekly.rootedThisWeek}`}
+              <span className="ml-2 text-xs font-sans font-normal text-muted">boxes rooted this week</span>
+            </div>
+            <div className="text-[11px] text-muted mt-1 tabular-nums">
+              {weekly.flagsThisWeek} {weekly.flagsThisWeek === 1 ? 'flag' : 'flags'} captured this week
+            </div>
+          </div>
+
+          {editingGoal || !weeklyRootTarget ? (
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(e) => { e.preventDefault(); saveGoal(); }}
+            >
+              <label htmlFor="weekly-goal-input" className="sr-only">Boxes to root per week</label>
+              <input
+                id="weekly-goal-input"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_WEEKLY_ROOT_TARGET}
+                value={goalDraft}
+                onChange={(e) => setGoalDraft(e.target.value)}
+                placeholder="Boxes per week"
+                className="h-8 w-32 px-2.5 rounded-md bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              />
+              <CyberButton type="submit" size="md" variant="primary" disabled={!goalDraft}>Set goal</CyberButton>
+              {weeklyRootTarget && (
+                <CyberButton size="md" variant="ghost" onClick={() => setEditingGoal(false)}>Cancel</CyberButton>
+              )}
+            </form>
+          ) : (
+            <div className="flex items-center gap-2">
+              <CyberButton size="sm" variant="secondary" onClick={() => { setGoalDraft(String(weeklyRootTarget)); setEditingGoal(true); }}>Edit goal</CyberButton>
+              <CyberButton size="sm" variant="ghost" onClick={() => { setWeeklyRootTarget(null); setGoalDraft(''); }}>Clear</CyberButton>
+            </div>
+          )}
+        </div>
+
+        {weeklyRootTarget ? (
+          <div
+            role="progressbar"
+            aria-label="Weekly rooted boxes"
+            aria-valuemin={0}
+            aria-valuemax={weeklyRootTarget}
+            aria-valuenow={Math.min(weekly.rootedThisWeek, weeklyRootTarget)}
+            className="w-full bg-surface-sunken h-2 rounded-full border border-subtle overflow-hidden"
+          >
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: goalPct / 100 }}
+              transition={{ duration: 0.3, ease: EASE_OUT }}
+              style={{ transformOrigin: 'left' }}
+              className="h-full w-full bg-accent"
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-muted">Set a weekly target to track how many boxes you root.</p>
+        )}
+      </motion.div>
 
       {/* Main Grid: Skill Radar Chart + Difficulty Progress Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Left: Skill Radar Chart */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={TACTICAL_SPRING}
@@ -454,6 +584,11 @@ export const AnalyticsView: React.FC = () => {
             </p>
 
             <div className="py-4">{renderRadarChart()}</div>
+            {!hasRooted && (
+              <p className="text-xs text-muted text-center -mt-2 mb-2">
+                The radar fills in once you root a box. Each axis shows a 10% baseline until then.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-4 border-t border-subtle text-[11px]">
@@ -474,10 +609,10 @@ export const AnalyticsView: React.FC = () => {
 
           {/* Difficulty Tier Progress Matrix */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ ...TACTICAL_SPRING, delay: 0.1 }}
+            transition={{ ...TACTICAL_SPRING, delay: 0.04 }}
             className={`${CARD} space-y-4`}
           >
             <div className="flex items-center justify-between border-b border-subtle pb-3">
@@ -489,7 +624,7 @@ export const AnalyticsView: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {difficultyMatrix.map((item) => (
+              {difficultyMatrix.map((item, i) => (
                 <div key={item.tier} className="space-y-1 text-xs">
                   <div className="flex items-center justify-between font-medium">
                     <span className="text-primary flex items-center gap-2">
@@ -503,11 +638,12 @@ export const AnalyticsView: React.FC = () => {
 
                   <div className="w-full bg-surface-sunken h-2 rounded-full border border-subtle overflow-hidden">
                     <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${item.percentage}%` }}
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: item.percentage / 100 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.7, ease: 'easeOut' }}
-                      className={`h-full ${TIER_COLOR[item.tier]}`}
+                      transition={{ duration: 0.3, ease: EASE_OUT, delay: stagger(i) }}
+                      style={{ transformOrigin: 'left' }}
+                      className={`h-full w-full ${TIER_COLOR[item.tier]}`}
                     />
                   </div>
                 </div>
@@ -517,10 +653,10 @@ export const AnalyticsView: React.FC = () => {
 
           {/* Platform Distribution Card */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ ...TACTICAL_SPRING, delay: 0.15 }}
+            transition={{ ...TACTICAL_SPRING, delay: 0.08 }}
             className={`${CARD} space-y-3`}
           >
             <div className="flex items-center justify-between border-b border-subtle pb-2.5">
@@ -555,7 +691,7 @@ export const AnalyticsView: React.FC = () => {
 
       {/* Activity Heatmap: weekday rows by week columns */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={TACTICAL_SPRING}
@@ -575,6 +711,8 @@ export const AnalyticsView: React.FC = () => {
 
         <ActivityHeatmap counts={heatmapCounts} />
       </motion.div>
+      </>
+      )}
 
     </div>
   );
