@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 // Bundle-size budget. Run after `vite build`.
-// Fails if the largest entry chunk (index-*.js) exceeds 800 KB raw, or if the
+// Fails if the largest entry chunk (index-*.js) exceeds 470 KB raw, or if the
 // total JS under dist/assets exceeds the recorded baseline + 5%.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const KB = 1024;
-const MAX_ENTRY_BYTES = 800 * KB;
-// Total JS measured on 2026-10-11 (41 files). Update deliberately when the app grows.
-const BASELINE_TOTAL_BYTES = 2_745_438;
+// Entry measured at 425.8 KB on 2026-10-11 (after lazy-loading overlays/views); limit = +10%, rounded up to 10 KB.
+const MAX_ENTRY_BYTES = 470 * KB;
+// Total JS measured on 2026-10-11 (58 files). Update deliberately when the app grows.
+const BASELINE_TOTAL_BYTES = 2_753_962;
 const MAX_TOTAL_BYTES = Math.floor(BASELINE_TOTAL_BYTES * 1.05);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
