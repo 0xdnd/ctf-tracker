@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '../common/Modal';
 import { 
   FileText, 
   Upload, 
@@ -348,24 +348,15 @@ export const NotesImportModal: React.FC = () => {
   const totalCommands = userNotes.reduce((acc, n) => acc + (n.commands?.length || 0), 0);
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-        {/* Backdrop */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleClose}
-          className="absolute inset-0 bg-black/85 backdrop-blur-md"
-        />
-
-        {/* Modal Window */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.98, y: 10 }}
-          className="relative w-full max-w-2xl bg-surface-card border border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        >
+    <Modal
+      open
+      onClose={handleClose}
+      labelledBy="notes-import-title"
+      size="xl"
+      className="!bg-black/85 backdrop-blur-md"
+      panelClassName="!shadow-2xl"
+    >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
           {/* Header */}
           <div className="px-6 py-4 border-b border-subtle bg-accent-muted flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -373,7 +364,7 @@ export const NotesImportModal: React.FC = () => {
                 <Database size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-primary flex items-center gap-2">
+                <h2 id="notes-import-title" className="text-base font-semibold text-primary flex items-center gap-2">
                   <span>Notes vault</span>
                   <span className="px-2 py-0.5 text-[10px] bg-surface-sunken text-secondary border border-subtle rounded">
                     Local-First
@@ -700,8 +691,7 @@ export const NotesImportModal: React.FC = () => {
               Close
             </button>
           </div>
-        </motion.div>
       </div>
-    </AnimatePresence>
+    </Modal>
   );
 };

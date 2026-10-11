@@ -25,6 +25,7 @@ import {
   validateFlagFormat,
   isDomainControllerBox
 } from '../../utils/examComplianceUtils';
+import { Modal } from '../common/Modal';
 import { createScreenshotProof } from '../../utils/examProofImages';
 
 export interface ExamEvidenceDropzoneProps {
@@ -636,12 +637,14 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
       )}
 
       {/* 5. Expanded Modal Preview if user clicked image */}
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-50 bg-surface-inverse/60 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setPreviewImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh] bg-surface-card border border-subtle rounded-2xl overflow-hidden p-2">
+      <Modal
+        open={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        ariaLabel="Screenshot preview"
+        size="2xl"
+        className="!bg-surface-inverse/60 backdrop-blur-md"
+        panelClassName="!w-auto p-2"
+      >
             <button aria-label="Close screenshot preview"
               type="button"
               onClick={() => setPreviewImage(null)}
@@ -650,13 +653,11 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
               <X className="w-4 h-4" />
             </button>
             <img
-              src={previewImage}
+              src={previewImage ?? undefined}
               alt="Expanded proof preview"
               className="max-h-[85vh] max-w-full object-contain rounded"
             />
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

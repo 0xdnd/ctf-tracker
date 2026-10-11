@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { Modal } from './Modal';
 import { 
   X, 
   Download, 
@@ -91,18 +92,6 @@ export const OperatorFlexCardModal: React.FC = () => {
     if (!flexCardModalOpen) return;
     renderCanvas();
   }, [flexCardModalOpen, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
-
-  useEffect(() => {
-    if (!flexCardModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setFlexCardModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [flexCardModalOpen, setFlexCardModalOpen]);
-
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -337,19 +326,21 @@ export const OperatorFlexCardModal: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   };
 
-  if (!flexCardModalOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-surface-inverse/60 backdrop-blur-md animate-fade-in font-sans" onClick={() => setFlexCardModalOpen(false)}>
-      <div 
-        className="w-full max-w-4xl max-h-[95vh] flex flex-col rounded-2xl border border-subtle bg-surface-card shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      open={flexCardModalOpen}
+      onClose={() => setFlexCardModalOpen(false)}
+      labelledBy="flex-card-title"
+      size="2xl"
+      className="backdrop-blur-md !bg-surface-inverse/60"
+      panelClassName="!shadow-2xl !max-h-[95dvh]"
+    >
+      <div className="flex flex-col max-h-[95dvh] min-h-0">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle px-4 py-3 bg-surface-card">
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-muted" />
-            <h2 className="font-semibold text-primary text-sm tracking-[-0.01em]">
+            <h2 id="flex-card-title" className="font-semibold text-primary text-sm tracking-[-0.01em]">
               Achievement card
             </h2>
           </div>
@@ -429,6 +420,6 @@ export const OperatorFlexCardModal: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
