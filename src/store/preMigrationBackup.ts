@@ -2,8 +2,8 @@
  * preMigrationBackup.ts
  * Automatic snapshot of the raw persisted strings taken right before a schema migration, stored in the
  * existing IndexedDB `zerobox_resilient_store_v1` database (workspaces store) under
- * `premigration_{fromVersion}_{timestamp}`. At most MAX_PREMIGRATION_BACKUPS are kept, deduped by a content
- * hash so repeated boots never pile up identical copies. Restore writes the exact strings back and reloads;
+ * `premigration_{fromVersion}_{timestamp}`. At most MAX_PREMIGRATION_BACKUPS are kept (the oldest is pinned, the
+ * rest rotate), deduped by a content hash so repeated boots never pile up identical copies. Restore writes the exact strings back and reloads;
  * the migration is idempotent, so it simply reruns.
  *
  * Dependency-free with respect to useCtfStore (no import cycle): useCtfStore calls in from `migrate`.
@@ -123,7 +123,10 @@ async function persistRecord(prefix: string, rec: PreMigrationBackupRecord, keep
   const ok = await putResilientRecord(rec.key, JSON.stringify(rec));
   if (!ok) return 'failed';
   const all = newestFirst(Array.from(new Set([...existing, rec.key])));
-  for (const old of all.slice(keep)) await deleteResilientRecord(old);
+  // With room for 2+, the oldest record is pinned: it is the genuine pre-update copy. Only the newer ones rotate,
+  // so an old tab that keeps writing v2 blobs (re-triggering migrate) can never push the original out.
+  const retained = new Set(keep >= 2 ? [...all.slice(0, keep - 1), all[all.length - 1]] : all.slice(0, keep));
+  for (const old of all) if (!retained.has(old)) await deleteResilientRecord(old);
   return 'saved';
 }
 

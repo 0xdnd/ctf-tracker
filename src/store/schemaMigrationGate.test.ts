@@ -116,7 +116,7 @@ describe('(6) v2 -> v3 migration takes a pre-migration backup', () => {
     expect(localStorage.getItem('zerobox_schema_version')).toBe('3');
   });
 
-  it('dedupes identical content and keeps at most 2 backups across three migrations', async () => {
+  it('dedupes identical content and keeps at most 2 backups (oldest pinned) across three migrations', async () => {
     seedV2('same');
     await (await boot()).whenPreMigrationBackupSettled();
     localStorage.clear();
@@ -134,7 +134,8 @@ describe('(6) v2 -> v3 migration takes a pre-migration backup', () => {
     const list = await app.listPreMigrationBackups();
     expect(list).toHaveLength(2);
     const notes = list.map((s) => JSON.parse(JSON.parse(idb.records.get(s.key)!).entries.zerobox_operator_profile_guest).machines[0].quickNotes);
-    expect(notes).toEqual(['three', 'two']); // newest first, oldest evicted
+    // newest first; the original (oldest) pre-update copy is pinned, only newer ones rotate
+    expect(notes).toEqual(['three', 'same']);
   });
 
   it('restore round-trips the exact raw strings, keeps a safety copy, and blocks the unload flush', async () => {

@@ -70,7 +70,7 @@ import {
   initSchemaVersionGate,
   recordSchemaVersion,
 } from '../utils/schemaWriteGate';
-import { takePreMigrationBackup } from './preMigrationBackup';
+import { takePreMigrationBackup, whenPreMigrationBackupSettled } from './preMigrationBackup';
 import { useToastStore } from './useToastStore';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
@@ -592,37 +592,61 @@ export const saveCustomMachinesToStorage = (machines: Machine[], profileId: stri
 /**
  * One-time cleanup of the isolated custom-machine keys: older builds stamped catalog machines with progress as
  * `isCustom` and mirrored their full (heavy) catalog payload here. Only rows that are now present in `machines` as
- * normal catalog rows are removed, and `beforeWrite` (a profile flush) runs first so the progress they carry is
- * already persisted in the profile key. Genuine customs are never touched.
+ * normal catalog rows are candidates. `beforeWrite` (a profile flush) runs first, and the prune aborts (returns -1,
+ * nothing written) unless the profile key actually on disk (raw localStorage, not the in-memory quota fallback)
+ * contains every row about to be removed. Genuine customs are never touched.
  */
 export const pruneMisstampedCustomMachines = (
   machines: Machine[],
   profileId: string = 'guest',
   beforeWrite?: () => void
 ): number => {
-  if (typeof window === 'undefined' || !Array.isArray(machines)) return 0;
+  if (typeof window === 'undefined' || !Array.isArray(machines) || isSchemaWriteGated()) return -1;
   const normalizedCatalogIds = new Set(
     machines.filter((m) => m && !m.isCustom && !isGenuineCustom(m)).map((m) => m.id)
   );
-  let removed = 0;
-  let flushed = false;
+  const plans: { key: string; kept: Machine[]; removedIds: string[] }[] = [];
   for (const key of [getCustomMachinesStorageKey(profileId), CUSTOM_MACHINES_STORAGE_KEY]) {
     try {
       const raw = safeLocalStorage.getItem(key);
       if (!raw) continue;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) continue;
-      const kept = parsed.filter(
-        (m: Machine) =>
-          !(m && typeof m.id === 'string' && !isGenuineCustom(m) && normalizedCatalogIds.has(m.id))
-      );
-      if (kept.length === parsed.length) continue;
-      if (!flushed) {
-        beforeWrite?.();
-        flushed = true;
-      }
-      safeLocalStorage.setItem(key, JSON.stringify(kept));
-      removed += parsed.length - kept.length;
+      const isStale = (m: Machine) =>
+        Boolean(m && typeof m.id === 'string' && !isGenuineCustom(m) && normalizedCatalogIds.has(m.id));
+      const removedIds = parsed.filter(isStale).map((m: Machine) => m.id);
+      if (removedIds.length > 0) plans.push({ key, kept: parsed.filter((m: Machine) => !isStale(m)), removedIds });
+    } catch (err) {
+      console.warn('[ZeroBox] Failed to read custom machines for pruning:', err);
+    }
+  }
+  if (plans.length === 0) return 0;
+
+  beforeWrite?.();
+  // Verify the replacement copy really reached disk before deleting anything.
+  let onDisk: Set<string>;
+  try {
+    if (safeLocalStorage.isEphemeral()) return -1;
+    const raw = localStorage.getItem(getWriteProfileStorageKey(profileId));
+    const parsed = raw ? JSON.parse(raw) : null;
+    onDisk = new Set(
+      (Array.isArray(parsed?.machines) ? parsed.machines : [])
+        .filter((m: Machine) => m && typeof m.id === 'string')
+        .map((m: Machine) => m.id)
+    );
+  } catch {
+    return -1;
+  }
+  if (!plans.every((p) => p.removedIds.every((id) => onDisk.has(id)))) {
+    console.warn('[ZeroBox] Profile save not confirmed on disk; keeping isolated custom copies.');
+    return -1;
+  }
+
+  let removed = 0;
+  for (const p of plans) {
+    try {
+      localStorage.setItem(p.key, JSON.stringify(p.kept));
+      removed += p.removedIds.length;
     } catch (err) {
       console.warn('[ZeroBox] Failed to prune mis-stamped custom machines:', err);
     }
@@ -1097,9 +1121,10 @@ export const useCtfStore = create<CtfStoreState>()(
             isCatalogLoading: false,
           });
           // Full catalog is in: every mis-stamped catalog row is now normalized, so drop their stale custom copies once.
-          if (!customStoragePruned) {
-            customStoragePruned = true;
-            pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
+          // Never before the pre-migration snapshot exists; a failed/unconfirmed prune is retried next session.
+          if (!customStoragePruned && (await whenPreMigrationBackupSettled()) !== 'failed') {
+            const removed = pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
+            if (removed >= 0) customStoragePruned = true;
           }
         } catch (err) {
           console.error('Failed to lazy load machinesCatalog:', err);

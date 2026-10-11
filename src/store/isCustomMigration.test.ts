@@ -300,6 +300,40 @@ describe('(4b) loadCatalog rewrites the isolated custom keys once', () => {
   });
 });
 
+describe('(4c) the prune never deletes a copy whose replacement did not reach disk', () => {
+  it('keeps the isolated custom rows when the profile write hits the storage quota', async () => {
+    const genuine = box({ id: 'custom-1-corp', name: 'Corp DC', isCustom: true });
+    const customKey = getCustomMachinesStorageKey('guest');
+    // The stamped row exists ONLY in the isolated custom keys (profile copy lost earlier).
+    const stored = JSON.stringify([genuine, stamped(NON_STARTER_ID)]);
+    localStorage.setItem(customKey, stored);
+    localStorage.setItem(CUSTOM_MACHINES_STORAGE_KEY, stored);
+    localStorage.setItem('zerobox_operator_profile_guest', JSON.stringify({ machines: [genuine], userSolvesReset: false }));
+    const profileBefore = localStorage.getItem('zerobox_operator_profile_guest');
+
+    vi.resetModules();
+    const { useCtfStore } = await import('./useCtfStore');
+    expect(useCtfStore.getState().machines.find((m) => m.id === NON_STARTER_ID)?.userFlag).toBe('HTB{user_flag_proof}');
+
+    const realSetItem = Storage.prototype.setItem;
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
+      if (k.startsWith('zerobox_operator_profile_') || k.startsWith('specter_ctf_profile_')) {
+        throw new DOMException('quota', 'QuotaExceededError');
+      }
+      return realSetItem.call(this, k, v);
+    });
+    try {
+      await useCtfStore.getState().loadCatalog();
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(localStorage.getItem('zerobox_operator_profile_guest')).toBe(profileBefore);
+    expect(localStorage.getItem(customKey)).toBe(stored);
+    expect(localStorage.getItem(CUSTOM_MACHINES_STORAGE_KEY)).toBe(stored);
+  });
+});
+
 describe('(9) cross-tab storage event carrying a stamped payload', () => {
   it('is normalized on receipt', async () => {
     vi.resetModules();
