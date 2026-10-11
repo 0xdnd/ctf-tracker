@@ -735,7 +735,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
                             type="button"
                             onClick={() => handleToggleReveal(item.id)}
-                            className="p-1.5 max-sm:p-3 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
+                            className="p-1.5 tap-target rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
                             title={isRevealed ? 'Mask secret' : 'Reveal secret'}
                           >
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -755,7 +755,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             aria-label="Copy secret to clipboard"
                             type="button"
                             onClick={() => handleCopy(item.secret, item.id)}
-                            className={`p-1.5 max-sm:p-3 rounded-md border text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] ${
+                            className={`p-1.5 tap-target rounded-md border text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] ${
  isCopied
  ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
  : 'bg-surface-sunken border-subtle text-secondary hover:border-accent hover:text-accent'
@@ -770,7 +770,7 @@ export const EvidenceVaultPage: React.FC = () => {
                               aria-label="Inspect target details"
                               type="button"
                               onClick={() => navigate(`/target/${item.targetId}`)}
-                              className="p-1.5 max-sm:p-3 rounded-md border border-subtle bg-surface-sunken text-secondary hover:border-accent hover:text-accent transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 tap-target rounded-md border border-subtle bg-surface-sunken text-secondary hover:border-accent hover:text-accent transition-colors cursor-pointer active:scale-[0.97]"
                               title="Inspect target details"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -781,7 +781,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteCustomLoot(item.id)}
-                              className="p-1.5 max-sm:p-3 rounded-md border border-subtle bg-surface-sunken text-muted hover:text-callout-danger-fg hover:border-callout-danger-border transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 tap-target rounded-md border border-subtle bg-surface-sunken text-muted hover:text-callout-danger-fg hover:border-callout-danger-border transition-colors cursor-pointer active:scale-[0.97]"
                               title="Delete custom loot entry"
                               aria-label="Delete custom loot entry"
                             >

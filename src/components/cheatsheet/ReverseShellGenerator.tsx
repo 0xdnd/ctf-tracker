@@ -264,7 +264,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () =>
 
       {/* 2. Platform filters and search */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:max-w-full sm:px-0">
+        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:max-w-full sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {(
               [

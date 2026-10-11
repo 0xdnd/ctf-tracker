@@ -251,7 +251,7 @@ export const MethodologyPage: React.FC = () => {
         }
       >
         {/* View mode: reference playbook vs live target checklist */}
-        <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0">
+        <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {([
               { id: 'playbook', label: 'Playbook', icon: <BookOpen className="h-3.5 w-3.5" /> },
@@ -456,7 +456,7 @@ export const MethodologyPage: React.FC = () => {
             </div>
 
             {/* Phase chips: single line, scrollable */}
-            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0">
+            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
               <div className="flex min-w-max items-center gap-1.5 py-0.5">
                 <button
                   onClick={() => setSelectedPhaseNumber('all')}
@@ -483,7 +483,7 @@ export const MethodologyPage: React.FC = () => {
 
             {/* Service branch chips */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0">
+              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
                 <div className="flex min-w-max items-center gap-1.5 py-0.5">
                   <span className="mr-1 flex-shrink-0 text-xs text-muted">Branches</span>
                   <button

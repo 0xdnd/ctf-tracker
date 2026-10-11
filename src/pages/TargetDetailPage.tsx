@@ -399,7 +399,7 @@ export const TargetDetailPage: React.FC = () => {
       ) : (
         <>
           {/* Navigation tabs: single line, horizontally scrollable */}
-          <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0">
+          <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
             <div className="flex min-w-max items-center gap-1">
               {tabs.map((tab) => {
                 const selected = activeTab === tab.id;

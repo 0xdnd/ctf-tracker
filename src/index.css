@@ -515,6 +515,24 @@
   pointer-events: none;
 }
 
+/* Coarse-pointer hit-area expansion: keeps visual size, grows the tappable area to >= 40px */
+@media (pointer: coarse) {
+  .tap-target,
+  .tap-target-sm {
+    position: relative;
+  }
+  .tap-target::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+  .tap-target-sm::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+}
+
 /* Exact Dimension Dim-Pulse Skeleton (No Dazzling Shimmer) */
 @keyframes skeleton-dim {
   0%, 100% {
