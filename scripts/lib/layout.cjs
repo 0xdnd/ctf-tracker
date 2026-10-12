@@ -18,7 +18,7 @@ const OG_IMAGE_ALT ='ZeroBox logo, a glowing blue open box, above the tagline Fr
 
 // Stylesheet sources, concatenated in this exact order (later files override earlier ones).
 const CSS_DIR = path.join(__dirname, '..', 'site', 'css');
-const CSS_FILES = ['00-tokens.css', '10-base.css', '20-chrome.css', '30-content.css', '40-landing.css', '50-motion.css', '60-light.css'];
+const CSS_FILES = ['00-tokens.generated.css', '00-tokens.css', '10-base.css', '20-chrome.css', '30-content.css', '40-landing.css', '50-motion.css', '60-light.css'];
 const STATIC_CSS = CSS_FILES.map((f) => {
   const file = path.join(CSS_DIR, f);
   if (!fs.existsSync(file)) throw new Error(`layout: missing CSS source ${path.relative(process.cwd(), file)}`);
