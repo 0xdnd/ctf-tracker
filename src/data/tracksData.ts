@@ -1,4 +1,10 @@
 import { Machine } from '../types';
+import { normalizeMachineSlug } from '../store/machineNormalization';
+import oscpSource from './trackSources/offsec-oscp.json';
+import osepSource from './trackSources/offsec-osep.json';
+import osweSource from './trackSources/offsec-oswe.json';
+import adSource from './trackSources/htb-active-directory.json';
+import ippsecSource from './trackSources/ippsec-videos.json';
 
 export interface PracticeTrack {
   id: string;
@@ -11,72 +17,124 @@ export interface PracticeTrack {
   filterFn: (machine: Machine) => boolean;
 }
 
-// Canonical TJ_Null OSCP NetSec targets across HTB and THM
-const TJ_NULL_OSCP_NAMES = new Set([
-  'lame', 'brainfuck', 'shocker', 'bashed', 'nibbles', 'beep', 'cronos', 'optimum',
-  'bastard', 'granny', 'grandpa', 'arctic', 'devel', 'netmon', 'blue', 'jerry',
-  'active', 'forest', 'cascade', 'sauna', 'buff', 'cap', 'knife', 'sense', 'secnotes',
-  'enterprise', 'jeeves', 'solidstate', 'popcorn', 'fortune', 'traverxec', 'resolute',
-  'forwardslash', 'tartarsauce', 'poison', 'valentine', 'bank', 'sunday', 'bastion',
-  'haircut', 'mirai', 'friendzone', 'swagshop', 'postman', 'passage', 'registry',
-  'doctor', 'heist', 'openadmin', 'tabby', 'traceback', 'ready', 'scriptkiddie',
-  'tenet', 'armageddon', 'pit', 'seal', 'dynastore', 'routerspace', 'node', 'carrier',
-  'help', 'stratosphere', 'obscurity', 'previse', 'delivery', 'horizontall', 'silo',
-  'bounty', 'curling', 'fluxcapacitor', 'haystack', 'irked', 'jarvis', 'calamity',
-  'europa', 'jail',
-  // TryHackMe TJ_Null OSCP list
-  'rootme', 'kenobi', 'steel mountain', 'vulnversity', 'game zone', 'skynet',
-  'alfred', 'hackpark', 'internal', 'blaster', 'retro', 'anthem', 'postbook',
-  'bounty hacker', 'ignite', 'pickle rick', 'agent sudo', 'simple ctf', 'brooklyn nine nine'
-]);
+/** Machine names per platform. A name only ever matches a row on the platform it is listed under. */
+export interface TrackNameList {
+  HTB: readonly string[];
+  THM: readonly string[];
+}
 
-// HTB CWEE (Certified Web Exploitation Expert) & Advanced Web Exploitation targets
-const CWEE_NAMES = new Set([
-  'craft', 'sau', 'pretense', 'cozyhosting', 'mailing', 'runner', 'monitorstwo',
-  'zipper', 'metatwo', 'pilgrimage', 'visual', 'brokencrystal', 'boardlight',
-  'editor', 'perfection', 'hospital', 'bizness', 'headless', 'greenhorn',
-  'clicker', 'devvortex', 'analytics', 'sandworm', 'surveillance', 'permx',
-  'icpc', 'codify', 'usage', 'caption', 'sightless', 'builder', 'previse',
-  'delivery', 'horizontall', 'tabby', 'openadmin', 'swagshop', 'friendzone',
-  'haircut', 'popcorn', 'valentine', 'poison', 'cronos', 'shocker', 'bashed', 'nibbles'
-]);
+/** "Active (2018 Retired)" -> "active": trailing parenthetical dropped, then letters and digits only. */
+export const trackNameSlug = (name: string): string => normalizeMachineSlug(name.replace(/\s*\([^)]*\)\s*$/, ''));
 
-// Iconic machines with dedicated IppSec video masterclasses & deep dives
-const IPPSEC_NAMES = new Set([
-  'lame', 'blue', 'devel', 'optimum', 'bastard', 'granny', 'grandpa', 'beep', 'jerry',
-  'netmon', 'bashed', 'nibbles', 'shocker', 'active', 'forest', 'sauna', 'cascade',
-  'reddish', 'hawk', 'dab', 'nightmare', 'stratosphere', 'fortune', 'poison', 'valentine',
-  'popcorn', 'jeeves', 'solidstate', 'tartarsauce', 'haircut', 'help', 'bank', 'bastion',
-  'heist', 'resolute', 'traverxec', 'buff', 'cap', 'knife', 'previse', 'delivery',
-  'horizontall', 'armageddon', 'tenet', 'scriptkiddie', 'ready', 'tabby', 'openadmin',
-  'doctor', 'registry', 'passage', 'postman', 'swagshop', 'friendzone', 'mirai',
-  'sunday', 'secnotes', 'sense', 'arctic', 'cronos', 'brainfuck', 'curling', 'irked'
-]);
+/**
+ * Every name list a track matches on, keyed by list id. HTB lists come from src/data/trackSources/
+ * (as-of date and source URL in each file); the THM lists are TJ_Null-era classics kept by hand.
+ */
+export const TRACK_NAME_LISTS: Record<'oscp' | 'osep' | 'oswe' | 'ad' | 'ippsec' | 'cwee' | 'popular', TrackNameList> = {
+  // HTB: 0xdf's current OSCP+ (PEN-200 2023+) Like + Harder list. THM: TJ_Null's OSCP rooms.
+  oscp: {
+    HTB: oscpSource.names.HTB,
+    THM: [
+      'RootMe', 'Kenobi', 'Steel Mountain', 'Vulnversity', 'Game Zone', 'Skynet', 'Alfred', 'HackPark',
+      'Internal', 'Blaster', 'Retro', 'Anthem', 'Bounty Hacker', 'Ignite', 'Pickle Rick', 'Agent Sudo',
+      'Simple CTF', 'Brooklyn Nine Nine',
+    ],
+  },
+  osep: { HTB: osepSource.names.HTB, THM: [] },
+  oswe: { HTB: osweSource.names.HTB, THM: [] },
+  ad: { HTB: adSource.names.HTB, THM: [] },
+  ippsec: { HTB: ippsecSource.names.HTB, THM: [] },
+  // HTB CWEE (Certified Web Exploitation Expert) & advanced web exploitation targets
+  cwee: {
+    HTB: [
+      'Craft', 'Sau', 'CozyHosting', 'Mailing', 'Runner', 'MonitorsTwo', 'Zipper', 'MetaTwo', 'Pilgrimage',
+      'Visual', 'BoardLight', 'Editor', 'Perfection', 'Hospital', 'Bizness', 'Headless', 'GreenHorn',
+      'Clicker', 'Devvortex', 'Analytics', 'Sandworm', 'Surveillance', 'PermX', 'Codify', 'Usage', 'Caption',
+      'Sightless', 'Builder', 'Previse', 'Delivery', 'Horizontall', 'Tabby', 'OpenAdmin', 'SwagShop',
+      'FriendZone', 'Haircut', 'Popcorn', 'Valentine', 'Poison', 'Cronos', 'Shocker', 'Bashed', 'Nibbles',
+    ],
+    THM: [],
+  },
+  // Legendary community classics & hall of fame targets in HTB & THM history
+  popular: {
+    HTB: [
+      'Lame', 'Blue', 'Devel', 'Jerry', 'Netmon', 'Optimum', 'Beep', 'Bashed', 'Nibbles', 'Shocker', 'Active',
+      'Forest', 'Sauna', 'Cascade', 'Cap', 'Knife', 'Buff', 'CozyHosting', 'Sau', 'Analytics', 'BoardLight',
+      'Perfection', 'Headless', 'GreenHorn', 'Previse', 'Delivery', 'Horizontall', 'Armageddon', 'Ready',
+      'OpenAdmin', 'Passage', 'Postman', 'Heist', 'Resolute', 'Bastion', 'Bank', 'Valentine', 'Poison',
+      'Popcorn', 'Jeeves',
+    ],
+    THM: [
+      'RootMe', 'Kenobi', 'Steel Mountain', 'Vulnversity', 'Pickle Rick', 'Agent Sudo', 'Simple CTF', 'Alfred',
+      'HackPark', 'Skynet', 'Internal', 'Ignite', 'Bounty Hacker',
+    ],
+  },
+};
 
-// Legendary Community Classics & Hall of Fame targets in HTB & THM history
-const POPULAR_NAMES = new Set([
-  'lame', 'blue', 'devel', 'jerry', 'netmon', 'optimum', 'beep', 'bashed', 'nibbles',
-  'shocker', 'active', 'forest', 'sauna', 'cascade', 'cap', 'knife', 'buff', 'rootme',
-  'kenobi', 'steel mountain', 'vulnversity', 'pickle rick', 'agent sudo', 'simple ctf',
-  'alfred', 'hackpark', 'skynet', 'internal', 'ignite', 'bounty hacker', 'cozyhosting',
-  'sau', 'analytics', 'boardlight', 'perfection', 'headless', 'greenhorn', 'previse',
-  'delivery', 'horizontall', 'armageddon', 'ready', 'openadmin', 'passage', 'postman',
-  'heist', 'resolute', 'bastion', 'bank', 'valentine', 'poison', 'popcorn', 'jeeves'
-]);
+type NameSet = { HTB: Set<string>; THM: Set<string> };
+const toSet = (...lists: TrackNameList[]): NameSet => ({
+  HTB: new Set(lists.flatMap((l) => l.HTB.map(trackNameSlug))),
+  THM: new Set(lists.flatMap((l) => l.THM.map(trackNameSlug))),
+});
 
-export const PRACTICE_TRACKS: PracticeTrack[] = [
+const slugCache = new Map<string, string>();
+const cachedSlug = (name: string): string => {
+  let s = slugCache.get(name);
+  if (s === undefined) {
+    s = trackNameSlug(name);
+    slugCache.set(name, s);
+  }
+  return s;
+};
+
+/** True when the row's name is listed for the row's own platform (HTB or THM). */
+const listed = (set: NameSet, m: Machine): boolean =>
+  (m.platform === 'HTB' || m.platform === 'THM') && typeof m.name === 'string' && set[m.platform].has(cachedSlug(m.name));
+
+const L = TRACK_NAME_LISTS;
+const OSCP = toSet(L.oscp);
+const OSEP = toSet(L.osep);
+const OSWE = toSet(L.oswe);
+const AD = toSet(L.ad);
+const IPPSEC = toSet(L.ippsec);
+const CWEE = toSet(L.cwee, L.oswe);
+const POPULAR = toSet(L.popular);
+
+const TRACKS: PracticeTrack[] = [
   {
     id: 'tjnull-oscp',
     name: "TJ_Null's OSCP NetSec Preparation",
     shortName: 'OSCP Track',
     category: 'certification',
-    description: 'The definitive OffSec Certified Professional machine curriculum curated by TJ_Null across HTB and THM.',
+    description: "OffSec Certified Professional prep: the current OSCP+ (PEN-200 2023+) list of HTB machines, as of Oct 2026, plus TJ_Null's classic TryHackMe rooms.",
     badgeColor: 'border-cyber-emerald/40 bg-cyber-emerald/10 text-cyber-emerald',
     accentColor: '#10B981',
-    filterFn: (m) => 
-      TJ_NULL_OSCP_NAMES.has(m.name.toLowerCase()) ||
-      m.certifications?.includes('OSCP') || 
-      m.tags?.some(t => ['oscp', 'tjnull', 'tj-null', 'offsec', 'pwk', 'pen-200'].includes(t.toLowerCase())),
+    // HTB rows: the current list only. Other platforms (THM, custom targets) may also opt in by OSCP cert or tag.
+    filterFn: (m) =>
+      listed(OSCP, m) ||
+      (m.platform !== 'HTB' &&
+        (m.certifications?.includes('OSCP') ||
+          m.tags?.some(t => ['oscp', 'tjnull', 'tj-null', 'offsec', 'pwk', 'pen-200'].includes(t.toLowerCase())))),
+  },
+  {
+    id: 'osep',
+    name: 'OSEP Evasion & Lateral Movement Preparation',
+    shortName: 'OSEP Track',
+    category: 'certification',
+    description: 'OffSec Experienced Penetration Tester (PEN-300) prep: the OSEP Like and Harder HTB machines, as of Oct 2026.',
+    badgeColor: 'border-rose-400/40 bg-rose-400/10 text-rose-400',
+    accentColor: '#FB7185',
+    filterFn: (m) => listed(OSEP, m),
+  },
+  {
+    id: 'oswe',
+    name: 'OSWE Web Exploitation & Code Review Preparation',
+    shortName: 'OSWE Track',
+    category: 'certification',
+    description: 'OffSec Web Expert (WEB-300) prep: the OSWE Like and Harder HTB machines, as of Oct 2026.',
+    badgeColor: 'border-orange-400/40 bg-orange-400/10 text-orange-400',
+    accentColor: '#FB923C',
+    filterFn: (m) => listed(OSWE, m),
   },
   {
     id: 'cpts-path',
@@ -98,8 +156,8 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
     description: 'Certified Web Exploitation Expert & Specialist (CWEE/CWES): code review, SSRF, Deserialization, SQLi, SSTI, and auth bypass.',
     badgeColor: 'border-amber-400/40 bg-amber-400/10 text-amber-400',
     accentColor: '#F59E0B',
-    filterFn: (m) => 
-      CWEE_NAMES.has(m.name.toLowerCase()) ||
+    filterFn: (m) =>
+      listed(CWEE, m) ||
       m.certifications?.some(c => ['cwee', 'cwes', 'cwt', 'oswe', 'ewpt'].includes(c.toUpperCase())) ||
       m.tags?.some(t => ['cwee', 'cwes', 'cwt', 'oswe', 'deserialization', 'ssti', 'ssrf', 'sqli', 'prototype pollution', 'graphql', 'jwt', 'xxe'].includes(t.toLowerCase())),
   },
@@ -111,19 +169,17 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
     description: 'The most celebrated, legendary, and widely completed CTF targets in Hack The Box and TryHackMe history.',
     badgeColor: 'border-yellow-400/40 bg-yellow-400/10 text-yellow-400',
     accentColor: '#EAB308',
-    filterFn: (m) => POPULAR_NAMES.has(m.name.toLowerCase()),
+    filterFn: (m) => listed(POPULAR, m),
   },
   {
     id: 'ippsec-vault',
     name: 'IppSec Video Walkthrough Masterclass',
     shortName: 'IppSec Track',
     category: 'curated',
-    description: 'Iconic machines broken down step-by-step by IppSec on ippsec.rocks with reverse engineering and pivoting masterclasses.',
+    description: 'Every retired HTB machine IppSec has a video walkthrough for on ippsec.rocks, as of Oct 2026.',
     badgeColor: 'border-cyan-400/40 bg-cyan-400/10 text-cyan-400',
     accentColor: '#22D3EE',
-    filterFn: (m) => 
-      IPPSEC_NAMES.has(m.name.toLowerCase()) ||
-      `${m.name} ${m.tags?.join(' ')} ${m.hint || ''} ${m.officialSynopsis || ''}`.toLowerCase().includes('ippsec'),
+    filterFn: (m) => listed(IPPSEC, m),
   },
   {
     id: 'crto-ad',
@@ -133,7 +189,8 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
     description: 'Enterprise domain exploitation: Kerberoasting, AS-REP, BloodHound, GPO abuse, ADCS, and DCSync.',
     badgeColor: 'border-cyber-purple/40 bg-cyber-purple/10 text-cyber-purple',
     accentColor: '#A855F7',
-    filterFn: (m) => 
+    filterFn: (m) =>
+      listed(AD, m) ||
       m.certifications?.includes('CRTO') ||
       m.tags?.some(t => ['kerberos', 'ad', 'ldap', 'domain', 'bloodhound', 'active directory', 'gpo', 'adcs'].includes(t.toLowerCase())),
   },
@@ -197,3 +254,9 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
     filterFn: (m) => m.difficulty === 'Hard' || m.difficulty === 'Insane',
   },
 ];
+
+/** Active HTB machines never appear in a track (HTB AUP §8.2: no walkthrough-linked lists for active content). */
+export const PRACTICE_TRACKS: PracticeTrack[] = TRACKS.map((t) => {
+  const match = t.filterFn;
+  return { ...t, filterFn: (m: Machine) => !m.isActive && match(m) };
+});

@@ -1,0 +1,8 @@
+{
+  "asOf": "2026-10-12",
+  "source": "https://0xdf.gitlab.io/cheatsheets/offsec",
+  "section": "OSWE (WEB-300): OSWE Like + OSWE Harder",
+  "names": {
+    "HTB": ["Fingerprint", "Fulcrum", "Stacked", "Monitors", "Sink", "Schooled", "Unobtainium", "Cereal", "CrossFit", "Magic", "Blocky", "Popcorn", "Mango", "Json", "Unattended", "Help", "Vault", "Zipper", "Celestial", "Falafel", "Holiday", "Arkham", "Hackback"]
+  }
+}

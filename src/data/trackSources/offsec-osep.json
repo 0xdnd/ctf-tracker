@@ -1,0 +1,8 @@
+{
+  "asOf": "2026-10-12",
+  "source": "https://0xdf.gitlab.io/cheatsheets/offsec",
+  "section": "OSEP (PEN-300): OSEP Like + OSEP Harder",
+  "names": {
+    "HTB": ["Haze", "EscapeTwo", "Escape", "Absolute", "Flight", "Sekhmet", "Support", "Outdated", "Hathor", "Scrambled", "StreamIO", "Timelapse", "Forge", "Seal", "APT", "Multimaster", "Magic", "Monteverde", "OpenAdmin", "Control", "Forest", "Querier", "Scepter", "Search", "Anubis", "PivotAPI", "Sizzle"]
+  }
+}
