@@ -123,7 +123,7 @@ export const TrackerView: React.FC = () => {
   const [filterDrawerSeen, setFilterDrawerSeen] = useState(filterDrawerOpen);
   if (filterDrawerOpen && !filterDrawerSeen) setFilterDrawerSeen(true);
 
-  // The catalog swap (a few hundred -> ~930 machines) re-derives every list below. Rendering from a deferred
+  // The catalog swap (starter rows -> the full catalog of 1000+ machines) re-derives every list below. Rendering from a deferred
   // copy lets React keep the UI responsive and interrupt that re-render. (startTransition around a zustand
   // set() would not, since the store is read through useSyncExternalStore.)
   const machines = React.useDeferredValue(liveMachines);

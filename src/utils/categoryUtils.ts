@@ -348,7 +348,7 @@ const VULN_PATTERNS: Record<string, RegExp[]> = {
   ],
 };
 
-// Ultra-fast memoization cache to guarantee 120 FPS performance across 931 machines.
+// Ultra-fast memoization cache to guarantee 120 FPS performance across the full machine catalog.
 // Keyed by machine object identity: a re-render or catalog re-merge only re-classifies machine objects that
 // actually changed (unchanged ones keep their reference), and entries are GC'd with their machine.
 let classificationCache = new WeakMap<Machine, ClassificationResult>();
