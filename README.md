@@ -13,7 +13,7 @@
 [![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
 [![GitHub Stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=for-the-badge&color=F59E0B&logo=github)](https://github.com/0xdnd/ctf-tracker/stargazers)
-[![Machines](https://img.shields.io/badge/Machines-971-10B981?style=for-the-badge)](https://ctftracker.com/)
+[![Machines](https://img.shields.io/badge/Machines-1090-10B981?style=for-the-badge)](https://ctftracker.com/)
 [![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-130%2B-EF4444?style=for-the-badge)](https://ctftracker.com/)
 [![Live at ctftracker.com](https://img.shields.io/badge/Live_at-ctftracker.com-10B981?style=flat-square&logo=cloudflare)](https://ctftracker.com/)
 [![Creator](https://img.shields.io/badge/Creator-Daniel%20Dayan%20(@0xdnd)-10B981?style=flat-square&logo=github)](https://0xdnd.github.io/)
@@ -41,7 +41,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 
 | Instead of… | ZeroBox gives you… |
 |:---|:---|
-| 📋 A messy spreadsheet of boxes | **971 HTB & THM machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
+| 📋 A messy spreadsheet of boxes | **1090 HTB & THM machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
 | 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
 | 🐚 Googling "python reverse shell" again | **130+ reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
@@ -56,7 +56,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ## 🚀 Core Modules
 
 ### 1. 🛡️ Lab & Machine Tracker
-- **971-machine catalog:** 437 retired HTB machines and Starting Point labs, 20 active HTB machines (metadata only), 514 THM CTF rooms, plus your own custom targets, Pro Labs and exams.
+- **1090-machine catalog:** 556 retired HTB machines and Starting Point labs, 20 active HTB machines (metadata only), 514 THM CTF rooms, plus your own custom targets, Pro Labs and exams.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
 - **Four views:** Kanban board, dense sortable table, card grid, and an attack **graph view** with an edge inspector for pivots between hosts.
 - **Target dossier:** per-machine detail page with Nmap/scan import, methodology checklist, flags, and user/root timers.
@@ -163,7 +163,7 @@ Yes. It's free for personal and educational use, needs no account, and has no pa
 Everything is stored locally in your browser (LocalStorage + IndexedDB). There is no backend and nothing is uploaded. You can export a JSON backup at any time.
 
 **Which platforms does it cover?**
-437 retired Hack The Box machines and Starting Point labs, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 514 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
+556 retired Hack The Box machines and Starting Point labs, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 514 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
 
 **Can I use it to prepare for OSCP or CPTS?**
 Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
@@ -194,7 +194,7 @@ ZeroBox is engineered to strictly uphold the Terms of Service, Acceptable Use Po
 
 ### 1. 🛡️ Hack The Box Acceptable Use Policy (§8.2 & §8.3)
 - **Zero Active Content Disclosure:** In strict accordance with HTB AUP §8.2 (*"Sharing solutions, write-ups, flags, or hints for active content is strictly prohibited"*), active machines appear only as metadata-only entries: name, OS, difficulty, release date (recorded in `src/data/activeMachines.json`) and a link to the official machine page. Every hint, solution, flag, tag and note is stripped from them, including anything typed in by the user. The active list is maintained by hand and may lag behind Hack The Box.
-- **Retired Content Unchanged:** The 437 retired HTB machines and Starting Point educational labs stay in the catalog; 22 recently retired machines are listed by name, OS, difficulty and link only. HTB AUP §8.3 explicitly permits community walkthroughs, educational write-ups, and streaming for content that has been retired.
+- **Retired Content Unchanged:** The 556 retired HTB machines and Starting Point educational labs stay in the catalog; 141 of them (mostly retired since 2024) are listed by name, OS, difficulty and link only. HTB AUP §8.3 explicitly permits community walkthroughs, educational write-ups, and streaming for content that has been retired.
 - **Pro Labs & Exams Not Bundled:** No Pro Lab, Fortress or certification exam names or content ship with ZeroBox. Users can only add them as personal targets that they name and fill in themselves.
 - **Anti-Scraping / No-Crawling:** ZeroBox contains zero scrapers, bots, or automated crawlers targeting HTB servers (HTB UA §6.1).
 
