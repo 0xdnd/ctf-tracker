@@ -48,7 +48,7 @@ const DEBUG_DIR = path.join(os.tmpdir(), 'landing-shots-debug');
 // Private build output: other tooling rebuilding ./dist mid-run cannot break the capture.
 const DIST_DIR = path.join(ROOT, '.landing-shots-dist');
 
-const PORT = 4173;
+const PORT = Number(process.env.LANDING_SHOTS_PORT) || 4173;
 const BASE = `http://localhost:${PORT}`;
 const VIEW_TRACKER = { width: 1100, height: 760 };
 // hero-app: the app's narrowest desktop layout (1024 is where the sidebar and side-by-side lanes appear).
@@ -58,6 +58,8 @@ const VIEW_GRAPH = { width: 1440, height: 1200 };
 const VIEW_EXAM = { width: 1024, height: 900 };
 // Width the app is laid out at for hero-app (rail 58px + two lanes of ~210px); chosen so the crop is <= 533 CSS px.
 const HERO_LAYOUT_W = 600;
+// Cards kept per lane in the hero-app crop.
+const HERO_CARDS = 3;
 const SCALE = 3;
 const T0 = new Date('2026-10-01T09:00:00Z');
 const PAUSE_AT = new Date('2026-10-01T09:00:30Z');
@@ -540,6 +542,25 @@ async function main() {
         if (!r) throw new Error(`lane "${title}" not found`);
         return r;
       };
+      // The lanes now hold many cards of unequal height, so no common card gap exists near the crop end. Keep the first
+      // HERO_CARDS cards of each visible lane so both lanes end together and the crop can end below them.
+      await page.evaluate((keep) => {
+        const byLane = new Map();
+        for (const e of document.querySelectorAll('.cyber-kanban-contain')) {
+          const r = e.getBoundingClientRect();
+          if (r.height === 0) continue;
+          const k = Math.round(r.left);
+          if (!byLane.has(k)) byLane.set(k, []);
+          byLane.get(k).push({ e, top: r.top });
+        }
+        // Paging chrome (the "Showing x of y" footer and the header "Show all" button) is dropped from the crop.
+        for (const b of document.querySelectorAll('button')) {
+          if (b.textContent.trim() === 'Show all' && b.title === 'Render all targets in this lane immediately') b.style.display = 'none';
+        }
+        for (const e of document.querySelectorAll('div.machined-edge.border-t')) if (/Showing .* of .* targets/.test(e.textContent)) e.style.display = 'none';
+        for (const list of byLane.values()) list.sort((a, b) => a.top - b.top).slice(keep).forEach((c) => (c.e.style.display = 'none'));
+      }, HERO_CARDS);
+      await settle(page, 600);
       const completed = await lane('Completed');
       const foothold = await lane('Foothold');
       const laneBottom = Math.min(completed.y + completed.height, foothold.y + foothold.height);
@@ -554,7 +575,8 @@ async function main() {
         }),
       );
       // End the crop in a gap between cards (in both lanes), near a 5:4 ratio.
-      const aim = y0 + Math.round(w * 1.25);
+      const lastBottom = Math.max(...cards.filter((c) => c.bottom > c.top).map((c) => c.bottom));
+      const aim = Math.ceil(lastBottom) + 14;
       let end = null;
       for (let d = 0; d <= 320 && end === null; d++) {
         for (const y of [aim - d, aim + d]) {
@@ -778,7 +800,7 @@ async function main() {
       await settle(page, 1500);
       await statusPill('All').click();
       await settle(page, 1500);
-      await page.getByRole('button', { name: /Evidence & Loot Vault/ }).click();
+      await page.getByRole('button', { name: /^Vault( |$)/ }).click();
       await until(page, page.getByRole('button', { name: 'Reveal secret' }));
       await untilOpaque(page, page.getByRole('button', { name: 'Reveal secret' }));
       await settle(page, 1500);
