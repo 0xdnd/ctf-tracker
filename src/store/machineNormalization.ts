@@ -12,6 +12,15 @@ export const normalizeMachineSlug = (str?: string): string => {
 };
 
 /**
+ * Name slugs shared by an HTB and a THM catalog row before the 2024-26 retired HTB rows were added
+ * (origin/main at 3a71573). Name-only lookups keep their original winner for these; the newer pairs
+ * (Retro, Watcher, Reset, Compiled) prefer the THM room so legacy rows don't move to the new HTB row.
+ */
+export const LEGACY_CROSS_PLATFORM_NAME_SLUGS: ReadonlySet<string> = new Set([
+  'blue', 'enterprise', 'broker', 'pressed', 'heist', 'hackback', 'olympus',
+]);
+
+/**
  * A machine the operator created themselves (addCustomMachine always mints a `custom-` id; multi-host
  * scan imports use platform 'Custom'). Deliberately does NOT look at the `isCustom` flag: older builds
  * stamped that flag onto catalog machines that had progress, so the flag alone is not trustworthy.
