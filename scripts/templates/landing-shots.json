@@ -79,7 +79,7 @@
     "name": "vault",
     "alt": "ZeroBox pentest evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.",
     "width": 1350,
-    "height": 1050,
+    "height": 1053,
     "cssWidth": 450,
     "srcset": [
       {

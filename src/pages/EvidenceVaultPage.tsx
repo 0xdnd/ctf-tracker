@@ -704,7 +704,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             <div className="font-semibold text-primary flex items-center gap-1.5">
                               <span>{item.targetName}</span>
                               {item.isCustom && (
-                                <CyberBadge variant="warning" size="xs">Custom</CyberBadge>
+                                <span title="Added by you"><CyberBadge variant="warning" size="xs">Logged</CyberBadge></span>
                               )}
                             </div>
                             <EditableIpBadge machineId={item.targetId} initialIp={item.targetIp} size="xs" className="mt-0.5 font-mono tabular-nums" />
