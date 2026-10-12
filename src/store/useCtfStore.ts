@@ -732,6 +732,14 @@ export const KNOWN_ACTIVE_SEASONAL_NAMES = new Set(
   ACTIVE_MACHINES.machines.map((m) => normalizeMachineSlug(m.name))
 );
 
+/**
+ * Name-based active detection. Never applies to the operator's own custom targets (custom- id or
+ * platform Custom): a custom "Management" is their data, not the HTB machine, and must keep its notes.
+ * Customs are only sanitized when explicitly marked isActive.
+ */
+const isKnownActiveByName = (m: Pick<Machine, 'id' | 'name' | 'platform'>): boolean =>
+  !isGenuineCustom(m) && KNOWN_ACTIVE_SEASONAL_NAMES.has(m.name.toLowerCase().trim());
+
 export const CATALOG_MACHINE_ALIASES: Record<string, string> = {
   // Legacy or alternate IDs mapped to canonical catalog machine IDs
   'devel-box': 'htb-devel',
@@ -967,8 +975,7 @@ export const mergeMachinesWithCatalog = (
 
   // Enforce Hack The Box Terms of Service compliance: Active machines MUST ONLY have name and room link (no spoilers/recon)
   map.forEach((machine) => {
-    const norm = machine.name.toLowerCase().trim();
-    if (KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
+    if (isKnownActiveByName(machine)) {
       machine.isActive = true;
     }
     if (machine.isActive) {
@@ -1386,8 +1393,7 @@ export const useCtfStore = create<CtfStoreState>()(
             machines: state.machines.map((m) => {
               if (m.id !== id) return m;
               const merged = { ...m, ...updates, updatedAt: new Date().toISOString() };
-              const norm = merged.name.toLowerCase().trim();
-              if (KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
+              if (isKnownActiveByName(merged)) {
                 merged.isActive = true;
               }
               if (merged.isActive) {
@@ -1410,9 +1416,8 @@ export const useCtfStore = create<CtfStoreState>()(
       addCustomMachine: (data) => {
         const id = 'custom-' + Date.now() + '-' + data.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
         const now = new Date().toISOString();
-        const norm = data.name.toLowerCase().trim();
-        const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(norm);
-        const isActive = Boolean(data.isActive || isKnownActive);
+        // Customs are never flagged by name alone; only an explicit isActive makes them name-only.
+        const isActive = Boolean(data.isActive);
 
         const baseMachine: Machine = {
           ...data,

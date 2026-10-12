@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ACTIVE_MACHINES, appendActiveMachines } from '../../data/activeMachines';
 import { loadMachinesCatalog } from '../../data/loadMachinesCatalog';
 import { STARTER_MACHINES } from '../../data/starterMachines';
-import { mergeMachinesWithCatalog } from '../../store/useCtfStore';
+import { mergeMachinesWithCatalog, useCtfStore } from '../../store/useCtfStore';
 import type { Machine } from '../../types';
 
 const box = (over: Partial<Machine>): Machine => ({
@@ -80,14 +80,64 @@ describe('merging active catalog rows with stored machines', () => {
     expect(mine.isCustom).toBe(true);
     expect(mine.status).toBe('foothold');
     expect(mine.timeSpentSeconds).toBe(3600);
-    // Name-based AUP §8.2 enforcement still marks it active (spoiler fields stripped).
-    expect(mine.isActive).toBe(true);
+    // The operator's own target is never flagged active by name alone.
+    expect(mine.isActive).toBeFalsy();
     const catalogRow = merged.find((m) => m.id === 'htb-stream')!;
     expect(catalogRow.isCustom).toBeFalsy();
     expect(catalogRow.status).toBe('backlog');
     expect(catalogRow.timeSpentSeconds).toBe(0);
     // Customs are anchored first.
     expect(merged[0].id).toBe(custom.id);
+  });
+
+  it('a custom "Management" keeps notes, flags and tags across merge and updateMachine', () => {
+    const custom = box({
+      id: 'custom-1700000000001-management',
+      name: 'Management',
+      isCustom: true,
+      status: 'root',
+      tags: ['internal'],
+      quickNotes: 'my own notes',
+      userFlag: 'FLAG{u}',
+      rootFlag: 'FLAG{r}',
+      ip: '192.168.56.10',
+    });
+    const merged = mergeMachinesWithCatalog([custom], false, CATALOG);
+    const mine = merged.find((m) => m.id === custom.id)!;
+    expect(mine).toMatchObject({ isCustom: true, tags: ['internal'], quickNotes: 'my own notes', userFlag: 'FLAG{u}', rootFlag: 'FLAG{r}', ip: '192.168.56.10' });
+    expect(mine.isActive).toBeFalsy();
+
+    useCtfStore.setState({ machines: merged });
+    useCtfStore.getState().updateMachine(custom.id, { quickNotes: 'updated notes' });
+    const updated = useCtfStore.getState().machines.find((m) => m.id === custom.id)!;
+    expect(updated).toMatchObject({ quickNotes: 'updated notes', userFlag: 'FLAG{u}', tags: ['internal'], ip: '192.168.56.10' });
+    expect(updated.isActive).toBeFalsy();
+  });
+
+  it('addCustomMachine does not flag a custom by name, but honours an explicit isActive', () => {
+    useCtfStore.setState({ machines: [] });
+    const input = {
+      name: 'Management', ip: '192.168.56.10', os: 'Linux' as const, platform: 'Custom' as const,
+      difficulty: 'Easy' as const, status: 'backlog' as const, tags: ['internal'], certifications: [], timeSpentSeconds: 0,
+    };
+    useCtfStore.getState().addCustomMachine(input);
+    const plain = useCtfStore.getState().machines[0];
+    expect(plain.isActive).toBeFalsy();
+    expect(plain.tags).toEqual(['internal']);
+    expect(plain.ip).toBe('192.168.56.10');
+
+    useCtfStore.getState().addCustomMachine({ ...input, isActive: true });
+    const explicit = useCtfStore.getState().machines[0];
+    expect(explicit.isActive).toBe(true);
+    expect(explicit.tags).toEqual([]);
+    expect(explicit.ip).toBe('');
+  });
+
+  it('the catalog "Management" row is still sanitized, including stored progress fields', () => {
+    const stored = box({ id: 'htb-management', name: 'Management', status: 'recon', quickNotes: 'spoiler', userFlag: 'HTB{x}', tags: ['sqli'] });
+    const merged = mergeMachinesWithCatalog([stored], false, appendActiveMachines(STARTER_MACHINES));
+    const row = merged.find((m) => m.id === 'htb-management')!;
+    expect(row).toMatchObject({ isActive: true, status: 'recon', quickNotes: '', userFlag: '', tags: [], ip: '' });
   });
 
   it('a catalog-matched active row keeps its user progress', () => {
