@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import { appendActiveMachines } from '../../data/activeMachines';
-import { PRACTICE_TRACKS, TRACK_NAME_LISTS, trackNameSlug } from '../../data/tracksData';
+import { LIST_BASED_TRACK_IDS, PRACTICE_TRACKS, TRACK_NAME_LISTS, trackNameSlug } from '../../data/tracksData';
 import oscp from '../../data/trackSources/offsec-oscp.json';
 import osep from '../../data/trackSources/offsec-osep.json';
 import oswe from '../../data/trackSources/offsec-oswe.json';
@@ -43,12 +43,27 @@ describe('practice track sources', () => {
 });
 
 describe('practice track membership', () => {
-  it('no active machine is in any track', () => {
+  it('no active machine is in any list-based track', () => {
     const active = CATALOG.filter((m) => m.isActive);
     expect(active.length).toBeGreaterThan(0);
-    for (const t of PRACTICE_TRACKS) {
+    const listBased = PRACTICE_TRACKS.filter((t) => LIST_BASED_TRACK_IDS.has(t.id));
+    expect(listBased.map((t) => t.id).sort()).toEqual(
+      ['cpts-path', 'crto-ad', 'cwee-web', 'ippsec-vault', 'osep', 'oswe', 'popular-classics', 'tjnull-oscp']
+    );
+    for (const t of listBased) {
       expect(active.filter(t.filterFn).map((m) => m.name), t.id).toEqual([]);
     }
+  });
+
+  it('pure difficulty/OS filters still include matching active machines', () => {
+    const active = CATALOG.filter((m) => m.isActive);
+    const easy = active.filter((m) => m.difficulty === 'Easy');
+    expect(easy.length).toBeGreaterThan(0);
+    expect(easy.every(track('beginner-essentials').filterFn)).toBe(true);
+    const windows = active.filter((m) => m.os === 'Windows');
+    expect(windows.every(track('windows-privesc').filterFn)).toBe(true);
+    const hard = active.filter((m) => m.difficulty === 'Hard' || m.difficulty === 'Insane');
+    expect(hard.every(track('insane-hardcore').filterFn)).toBe(true);
   });
 
   it('names are platform-aware: THM Retro is in the OSCP track, HTB Retro is not', () => {

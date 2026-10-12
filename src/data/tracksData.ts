@@ -255,8 +255,16 @@ const TRACKS: PracticeTrack[] = [
   },
 ];
 
-/** Active HTB machines never appear in a track (HTB AUP §8.2: no walkthrough-linked lists for active content). */
+/**
+ * List-based tracks (curated name lists and cert prep) never include an active HTB machine
+ * (HTB AUP §8.2: no walkthrough-linked lists for active content). Pure difficulty/OS/technique filters may.
+ */
+export const LIST_BASED_TRACK_IDS: ReadonlySet<string> = new Set([
+  'tjnull-oscp', 'osep', 'oswe', 'cwee-web', 'popular-classics', 'ippsec-vault', 'crto-ad', 'cpts-path',
+]);
+
 export const PRACTICE_TRACKS: PracticeTrack[] = TRACKS.map((t) => {
+  if (!LIST_BASED_TRACK_IDS.has(t.id)) return t;
   const match = t.filterFn;
   return { ...t, filterFn: (m: Machine) => !m.isActive && match(m) };
 });
