@@ -1,4 +1,5 @@
 import type { Machine } from '../types';
+import { appendActiveMachines } from './activeMachines';
 
 let cached: Machine[] | null = null;
 let inflight: Promise<Machine[]> | null = null;
@@ -17,7 +18,8 @@ export function loadMachinesCatalog(): Promise<Machine[]> {
   if (!inflight) {
     inflight = import('./machinesCatalog')
       .then((mod) => {
-        cached = mod.INITIAL_MACHINES;
+        // Active HTB machines (activeMachines.json) join as metadata-only rows.
+        cached = appendActiveMachines(mod.INITIAL_MACHINES);
         return cached;
       })
       .finally(() => {

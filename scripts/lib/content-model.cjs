@@ -57,7 +57,13 @@ function getModel() {
 
   // ---- Machines ----
   const used = new Set();
-  const machines = d.INITIAL_MACHINES.map((m) => {
+  // Active HTB machines (src/data/activeMachines.json): listed by name/os/difficulty/room link only, never a page.
+  const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const known = new Set(d.INITIAL_MACHINES.map((m) => norm(m.name)));
+  const active = require(path.join(rootDir, 'src', 'data', 'activeMachines.json'))
+    .machines.filter((a) => !known.has(norm(a.name)))
+    .map((a) => ({ id: `htb-${norm(a.name)}`, name: a.name, platform: 'HTB', os: a.os, difficulty: a.difficulty, tags: [], certifications: [], roomUrl: `https://app.hackthebox.com/machines/${a.name}`, isActive: true }));
+  const machines = [...d.INITIAL_MACHINES, ...active].map((m) => {
     let slug = slugify(`${m.platform}-${m.name}`);
     if (!slug || used.has(slug)) slug = slugify(m.id) || slug;
     const base = slug;
