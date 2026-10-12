@@ -2366,7 +2366,7 @@ export const useCtfStore = create<CtfStoreState>()(
           return;
         }
 
-        // Fresh slate for new operator: all 929 catalog targets ready to be pwned with 0 solves (zero custom machine leak)
+        // Fresh slate for new operator: every catalog target ready to be pwned with 0 solves (zero custom machine leak)
         const freshMachines = mergeMachinesWithCatalog([], true);
         const graphState = loadInitialAttackGraphState(profileId);
 
