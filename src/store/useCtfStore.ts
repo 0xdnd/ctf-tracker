@@ -844,8 +844,14 @@ export const mergeMachinesWithCatalog = (
       platformNameMap.set(`${m.platform}:${normName}`, entry);
       if (nameSlug) platformSlugMap.set(`${m.platform}:${nameSlug}`, entry);
     }
-    nameMap.set(normName, entry);
-    if (nameSlug && !slugMap.has(nameSlug)) {
+    // Platform-less name tiers: an HTB row never displaces another platform's row of the same name,
+    // so a legacy row without a platform keeps resolving to e.g. THM "Retro" rather than HTB "Retro".
+    const prevByName = nameMap.get(normName);
+    if (!prevByName || m.platform !== 'HTB' || prevByName.platform === 'HTB') {
+      nameMap.set(normName, entry);
+    }
+    const prevBySlug = nameSlug ? slugMap.get(nameSlug) : undefined;
+    if (nameSlug && (!prevBySlug || (prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))) {
       slugMap.set(nameSlug, entry);
     }
     if (idSlug && !idSlugMap.has(idSlug)) {
@@ -879,9 +885,11 @@ export const mergeMachinesWithCatalog = (
         }
       }
 
-      if (!catalogMachine && !genuineCustom && m.platform) {
-        if (normName) catalogMachine = platformNameMap.get(`${m.platform}:${normName}`);
-        if (!catalogMachine && nameSlug) catalogMachine = platformSlugMap.get(`${m.platform}:${nameSlug}`);
+      // A row without a platform still names one through a legacy "htb-"/"thm-" id prefix.
+      const platform = m.platform || (/^htb-/i.test(m.id) ? 'HTB' : /^thm-/i.test(m.id) ? 'THM' : undefined);
+      if (!catalogMachine && !genuineCustom && platform) {
+        if (normName) catalogMachine = platformNameMap.get(`${platform}:${normName}`);
+        if (!catalogMachine && nameSlug) catalogMachine = platformSlugMap.get(`${platform}:${nameSlug}`);
       }
 
       if (!catalogMachine && !genuineCustom && normName) {
