@@ -491,7 +491,7 @@ export const BackupModal: React.FC = () => {
   const handleResetSolvesToZero = async () => {
     const ok = await confirmAction({
       title: 'Start fresh CTF journey?',
-      body: "This will reset all 945 targets to unsolved (0% progress) so you can track your own personal solves from scratch. You can restore Daniel Dayan's 63 baseline solves at any time with 1 click.",
+      body: "This will reset all 1090 targets to unsolved (0% progress) so you can track your own personal solves from scratch. You can restore Daniel Dayan's 63 baseline solves at any time with 1 click.",
       confirmLabel: 'Reset to 0%',
       tone: 'danger',
     });
@@ -1141,7 +1141,7 @@ export const BackupModal: React.FC = () => {
                 </div>
                 <p className="text-muted text-[11px] leading-relaxed">
                   Paste a list of machines you have already solved on <strong>Hack The Box</strong> or <strong>TryHackMe</strong> (comma separated, line-by-line, or exported CSV). 
-                  ZeroBox matches them against the 945-target catalog and marks them solved.
+                  ZeroBox matches them against the 1090-target catalog and marks them solved.
                 </p>
               </div>
 

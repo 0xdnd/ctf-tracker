@@ -3408,8 +3408,8 @@ export const INITIAL_MACHINES: Machine[] = [
     "isActive": false
   },
   {
-    "id": "htb-codetwo",
-    "name": "CodeTwo",
+    "id": "htb-codeparttwo",
+    "name": "CodePartTwo",
     "ip": "10.10.10.x",
     "os": "Linux",
     "platform": "HTB",
@@ -3417,7 +3417,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "status": "backlog",
     "tags": [],
     "certifications": [],
-    "roomUrl": "https://app.hackthebox.com/machines/CodeTwo",
+    "roomUrl": "https://app.hackthebox.com/machines/CodePartTwo",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
@@ -3921,7 +3921,7 @@ export const INITIAL_MACHINES: Machine[] = [
   },
   {
     "id": "htb-soulmate",
-    "name": "soulmate",
+    "name": "Soulmate",
     "ip": "10.10.10.x",
     "os": "Linux",
     "platform": "HTB",
@@ -3929,7 +3929,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "status": "backlog",
     "tags": [],
     "certifications": [],
-    "roomUrl": "https://app.hackthebox.com/machines/soulmate",
+    "roomUrl": "https://app.hackthebox.com/machines/Soulmate",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
@@ -5540,7 +5540,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.11.51",
     "os": "Windows",
     "platform": "HTB",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "ActiveDirectory",
@@ -5786,7 +5786,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.11.160",
     "os": "Windows",
     "platform": "HTB",
-    "difficulty": "Medium",
+    "difficulty": "Hard",
     "status": "backlog",
     "tags": [
       "CPTS",
@@ -6413,7 +6413,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.10.134",
     "os": "Windows",
     "platform": "HTB",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "Exploiting-MRemoteNG",
@@ -9143,7 +9143,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.10.x",
     "os": "Linux",
     "platform": "HTB",
-    "difficulty": "Hard",
+    "difficulty": "Medium",
     "status": "backlog",
     "tags": [
       "HTB"
@@ -12267,7 +12267,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "id": "htb-luke",
     "name": "Luke",
     "ip": "10.10.10.x",
-    "os": "Linux",
+    "os": "BSD",
     "platform": "HTB",
     "difficulty": "Medium",
     "status": "backlog",
@@ -13697,7 +13697,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "id": "htb-sunday",
     "name": "Sunday",
     "ip": "10.10.10.x",
-    "os": "Linux",
+    "os": "Other",
     "platform": "HTB",
     "difficulty": "Easy",
     "status": "backlog",

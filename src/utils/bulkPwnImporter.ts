@@ -93,21 +93,35 @@ export function extractCandidateNames(raw: string): string[] {
   return Array.from(candidates);
 }
 
+/** Platform named by a candidate's prefix, e.g. "HTB - Retro", "[THM] Retro", "tryhackme: Retro". */
+function platformHint(raw: string): Platform | undefined {
+  const m = /^\s*\[?(htb|hackthebox|thm|tryhackme)\b/i.exec(raw);
+  if (!m) return undefined;
+  return /^(htb|hackthebox)$/i.test(m[1]) ? 'HTB' : 'THM';
+}
+
 /**
- * Matches candidate names against the catalog of 931 targets.
+ * Matches candidate names against the machine catalog.
+ * A name shared by several platforms (e.g. Retro on HTB and THM) resolves to the platform the
+ * candidate names in its prefix, else to the first such row in catalog order.
  */
 export function matchCandidateNamesToCatalog(
   candidates: string[],
   catalog: Machine[]
 ): BulkPwnParseResult {
-  const normMap = new Map<string, Machine>();
+  const normMap = new Map<string, Machine[]>();
   const idMap = new Map<string, Machine>();
 
-  // Build lookup index
+  // Build lookup index (catalog order is kept, so "first match" is deterministic)
   for (const m of catalog) {
     idMap.set(m.id.toLowerCase(), m);
-    normMap.set(normalizeTargetName(m.name), m);
+    const key = normalizeTargetName(m.name);
+    const rows = normMap.get(key);
+    if (rows) rows.push(m);
+    else normMap.set(key, [m]);
   }
+  const pick = (rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined =>
+    rows && ((hint && rows.find((m) => m.platform === hint)) || rows[0]);
 
   const allMatches: BulkPwnMatch[] = [];
   const newSolves: BulkPwnMatch[] = [];
@@ -118,22 +132,23 @@ export function matchCandidateNamesToCatalog(
   for (const raw of candidates) {
     const norm = normalizeTargetName(raw);
     if (!norm) continue;
+    const hint = platformHint(raw);
 
-    // 1. Exact normalized name match
-    let match = normMap.get(norm);
+    // 1. Exact catalog id (e.g. "thm-retro"), then exact normalized name match
+    let match = idMap.get(raw.trim().toLowerCase()) || pick(normMap.get(norm), hint);
     let confidence = 1.0;
 
-    // 2. Exact ID match (e.g. "htb-lame" or "thm-pickle-rick")
+    // 2. Derived ID match (e.g. "Pickle Rick" -> "thm-picklerick")
     if (!match) {
-      match = idMap.get(raw.toLowerCase()) || idMap.get(`htb-${norm}`) || idMap.get(`thm-${norm}`);
+      match = idMap.get(`htb-${norm}`) || idMap.get(`thm-${norm}`);
       if (match) confidence = 0.95;
     }
 
     // 3. Substring match fallback
     if (!match) {
-      for (const [catNorm, m] of normMap.entries()) {
+      for (const [catNorm, rows] of normMap.entries()) {
         if (catNorm.length >= 4 && (catNorm.includes(norm) || norm.includes(catNorm))) {
-          match = m;
+          match = pick(rows, hint);
           confidence = 0.85;
           break;
         }
