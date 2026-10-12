@@ -362,7 +362,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
               </span>
             )}
             {item.isCustom && (
-              <CyberBadge variant="warning" size="xs">Custom</CyberBadge>
+              <span title="Added by you"><CyberBadge variant="warning" size="xs">Logged</CyberBadge></span>
             )}
           </div>
 
