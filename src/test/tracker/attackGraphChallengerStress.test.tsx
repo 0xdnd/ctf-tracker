@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,13 +6,10 @@ import {
   AttackNodeCard, 
   getCanvasThemeTokens, 
   extractMachinePorts, 
-  getDifficultyColors, 
-  computeCanvasDelta,
-  GraphNode,
   CanvasThemeTokens 
 } from '../../components/tracker/GraphView';
 import { useCtfStore, safeLocalStorage, ATTACK_GRAPH_STORAGE_KEY } from '../../store/useCtfStore';
-import { Machine, OperatingSystem, Difficulty, Platform } from '../../types';
+import { Machine } from '../../types';
 
 // Mock window.matchMedia for headless test environment
 if (typeof window !== 'undefined' && !window.matchMedia) {

@@ -80,8 +80,10 @@ export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!el) return;
 
     let ticking = false;
-    let lastIsScrolled = el.scrollTop > 180;
-    setIsScrolled(lastIsScrolled);
+    // Do not read scrollTop synchronously here (forces layout); the rAF-batched handleScroll() below
+    // reads it and corrects state on the first frame.
+    let lastIsScrolled = false;
+    setIsScrolled(false);
 
     const handleScroll = () => {
       if (!ticking) {

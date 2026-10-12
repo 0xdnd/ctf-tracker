@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -12,7 +11,7 @@ import {
 import { useCtfStore, safeLocalStorage } from '../../store/useCtfStore';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { Machine } from '../../types';
-import { AttackGraphEdge, ATTACK_EDGE_TYPES, ATTACK_EDGE_META } from '../../types/graph';
+import { AttackGraphEdge } from '../../types/graph';
 
 // Mock window.matchMedia for headless JSDOM environment
 if (typeof window !== 'undefined' && !window.matchMedia) {
@@ -199,8 +198,6 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
       svg.setAttribute('height', '600');
       document.body.appendChild(svg);
 
-      const appendSpy = vi.spyOn(document.body, 'appendChild');
-      const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
       const result = exportToSvg('test-export-svg-id', 'test-graph');
       expect(result.success).toBe(true);

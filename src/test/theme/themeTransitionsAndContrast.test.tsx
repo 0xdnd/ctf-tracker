@@ -4,14 +4,10 @@ import { renderHook, act } from '@testing-library/react';
 import {
   useTheme,
   ThemeProvider,
-  applyThemeToDOM,
   extractCoordinates,
-  getSystemTheme,
-  getPrefersReducedMotion,
   RippleCoordinates,
 } from '../../hooks/useTheme';
 import { getCanvasThemeTokens, getDifficultyColors } from '../../components/tracker/GraphView';
-import { normalizeThemePreset } from '../../store/useCtfStore';
 
 // WCAG 2.1 Relative Luminance & Contrast Calculation Utilities
 export function getChannelLuminance(val: number): number {
@@ -297,10 +293,8 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
 
   describe('3. View Transitions API & Circular Ripple Invariants (useTheme.ts)', () => {
     it('executes circular ripple clipPath animation when View Transitions API is available', async () => {
-      let updateCallback: (() => void) | null = null;
       const mockReady = Promise.resolve();
-      const mockStartViewTransition = vi.fn().mockImplementation((cb: () => void) => {
-        updateCallback = cb;
+      const mockStartViewTransition = vi.fn().mockImplementation(() => {
         return {
           ready: mockReady,
           finished: Promise.resolve(),

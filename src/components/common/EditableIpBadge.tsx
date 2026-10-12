@@ -234,7 +234,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
             type="button"
             onClick={handleCopy}
             aria-label="Copy IP"
-            className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 cursor-pointer"
+            className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 touch:opacity-100 cursor-pointer"
             title="Copy IP"
           >
             <Copy className={sizeClasses.icon} />
@@ -246,7 +246,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
           type="button"
           onClick={handleStartEdit}
           aria-label="Change target IP"
-          className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] ml-0.5 opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 cursor-pointer"
+          className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] ml-0.5 opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 touch:opacity-100 cursor-pointer"
           title="Change / Update Target IP"
         >
           <Pencil className={sizeClasses.icon} />

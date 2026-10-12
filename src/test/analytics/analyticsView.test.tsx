@@ -1,6 +1,6 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AnalyticsView } from '../../components/analytics/AnalyticsView';
 import { useCtfStore } from '../../store/useCtfStore';
 import { buildHeatmapWeeks, toLocalDateKey, WEEKDAY_SHORT } from '../../utils/analyticsHeatmap';
@@ -103,7 +103,7 @@ describe('AnalyticsView', () => {
   });
 
   it('exposes the radar as an image with an accessible name', () => {
-    render(<AnalyticsView />);
+    render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
     const radar = screen.getByRole('img', { name: /offensive skill radar/i });
     expect(radar).toBeInTheDocument();
     expect(radar.querySelector('title')).not.toBeNull();
@@ -138,13 +138,13 @@ describe('AnalyticsView', () => {
         machines: [{ id: 'm1', rootPwnedAt: '2026-10-06T23:30:00Z' }] as never,
         activitySessions: [],
       });
-      render(<AnalyticsView />);
+      render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     });
   });
 
   it('renders the heatmap as a grid with roving tabindex and skips placeholders', () => {
-    render(<AnalyticsView />);
+    render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
     const grid = screen.getByRole('grid');
     expect(within(grid).getAllByRole('row')).toHaveLength(7);
 

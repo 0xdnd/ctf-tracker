@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MarkdownEditor } from '../../components/cheatsheet/MarkdownEditor';
@@ -172,7 +171,7 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
       expect(lastCall).toContain('10.10.14.42');
     });
 
-    it('supports keyboard shortcuts Ctrl+B and Ctrl+S', () => {
+    it('supports keyboard shortcuts Ctrl+B and Ctrl+S', async () => {
       const onContentChange = vi.fn();
       const onSave = vi.fn();
       render(
@@ -195,12 +194,14 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
 
       // Trigger Ctrl+S
       fireEvent.keyDown(textarea, { key: 's', ctrlKey: true });
+      // onSave fires once the (async) store update resolves
+      await act(async () => {});
       expect(onSave).toHaveBeenCalled();
     });
   });
 
   describe('R2: Debounced Auto-Saving & Store Integration', () => {
-    it('debounces auto-save to store after 600ms of typing inactivity', () => {
+    it('debounces auto-save to store after 600ms of typing inactivity', async () => {
       const updateNoteContentSpy = vi.spyOn(useCtfStore.getState(), 'updateNoteContent');
       const onContentChange = vi.fn();
 
@@ -228,13 +229,39 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
       act(() => {
         vi.advanceTimersByTime(650);
       });
+      await act(async () => {});
 
       // Now updateNoteContent must have been called
       expect(updateNoteContentSpy).toHaveBeenCalledWith(sampleNote.id, '# Updated Title By Operator');
       expect(screen.getByText(/Saved/i)).toBeInTheDocument();
     });
 
-    it('flushes pending debounced save immediately on manual save button click', () => {
+    it('keeps the edit marked unsaved and skips onSave when the store update rejects', async () => {
+      vi.spyOn(useCtfStore.getState(), 'updateNoteContent').mockRejectedValueOnce(new Error('chunk import failed'));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const onSave = vi.fn();
+
+      render(
+        <MarkdownEditor
+          noteId={sampleNote.id}
+          initialContent="# Will Fail"
+          onContentChange={vi.fn()}
+          onSave={onSave}
+          globalVars={mockGlobalVars}
+          soundEnabled={false}
+        />
+      );
+
+      fireEvent.change(screen.getByTestId('markdown-editor-textarea'), { target: { value: '# Will Fail Again' } });
+      fireEvent.click(screen.getByTitle('Save Note Now (Ctrl+S)'));
+      await act(async () => {});
+
+      expect(onSave).not.toHaveBeenCalled();
+      expect(screen.getByText(/Unsaved/i)).toBeInTheDocument();
+      warn.mockRestore();
+    });
+
+    it('flushes pending debounced save immediately on manual save button click', async () => {
       const updateNoteContentSpy = vi.spyOn(useCtfStore.getState(), 'updateNoteContent');
       const onSave = vi.fn();
 
@@ -254,6 +281,7 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
 
       const saveBtn = screen.getByTitle('Save Note Now (Ctrl+S)');
       fireEvent.click(saveBtn);
+      await act(async () => {});
 
       expect(updateNoteContentSpy).toHaveBeenCalledWith(sampleNote.id, '# Urgent Save Before Reload');
       expect(onSave).toHaveBeenCalled();
@@ -329,25 +357,45 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
       expect(screen.getAllByText(/Crucial AD reconnaissance methodology/i).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('provides quick Edit Note button in reading view header that switches to split mode', () => {
-      const onViewModeChange = vi.fn();
-      render(
-        <ObsidianTabContent
-          note={sampleNote}
-          isActive={true}
-          globalVars={mockGlobalVars}
-          soundEnabled={false}
-          onNavigateToNote={vi.fn()}
-          viewMode="reading"
-          onViewModeChange={onViewModeChange}
-        />
-      );
+    describe('quick Edit button viewport behavior', () => {
+      const originalWidth = window.innerWidth;
+      const setWidth = (w: number) =>
+        Object.defineProperty(window, 'innerWidth', { value: w, configurable: true, writable: true });
+      afterEach(() => setWidth(originalWidth));
 
-      const editBtn = screen.getByTitle('Switch to Split Edit View');
-      expect(editBtn).toBeInTheDocument();
+      const renderReading = (onViewModeChange: () => void) =>
+        render(
+          <ObsidianTabContent
+            note={sampleNote}
+            isActive={true}
+            globalVars={mockGlobalVars}
+            soundEnabled={false}
+            onNavigateToNote={vi.fn()}
+            viewMode="reading"
+            onViewModeChange={onViewModeChange}
+          />
+        );
 
-      fireEvent.click(editBtn);
-      expect(onViewModeChange).toHaveBeenCalledWith('split');
+      it('switches to split mode at desktop width', () => {
+        setWidth(1024);
+        const onViewModeChange = vi.fn();
+        renderReading(onViewModeChange);
+
+        const editBtn = screen.getByTitle('Switch to Edit View');
+        expect(editBtn).toBeInTheDocument();
+
+        fireEvent.click(editBtn);
+        expect(onViewModeChange).toHaveBeenCalledWith('split');
+      });
+
+      it('switches to raw mode at mobile width', () => {
+        setWidth(375);
+        const onViewModeChange = vi.fn();
+        renderReading(onViewModeChange);
+
+        fireEvent.click(screen.getByTitle('Switch to Edit View'));
+        expect(onViewModeChange).toHaveBeenCalledWith('raw');
+      });
     });
   });
 

@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from './Modal';
 import { 
   Scale, 
   ShieldCheck, 
-  AlertTriangle, 
   CheckCircle2, 
   XCircle, 
   X, 
   ExternalLink, 
-  Globe, 
   Copy, 
   Check, 
   Terminal,
-  Lock,
   UserCheck,
   Coffee
 } from 'lucide-react';
@@ -75,19 +72,8 @@ export const LicenseModal: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (licenseModalOpen) {
-      if (soundEnabled) playCyberSound('engage');
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          e.stopPropagation();
-          setLicenseModalOpen(false);
-        }
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [licenseModalOpen, setLicenseModalOpen, soundEnabled]);
+    if (licenseModalOpen && soundEnabled) playCyberSound('engage');
+  }, [licenseModalOpen, soundEnabled]);
 
   const handleCopyLicense = async () => {
     await safeCopyToClipboard(FULL_LICENSE_TEXT);
@@ -116,30 +102,20 @@ export const LicenseModal: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.12 } }}
-        transition={{ duration: 0.15 }}
-        className="fixed inset-0 bg-surface-inverse/70"
-        onClick={() => setLicenseModalOpen(false)}
-      />
-
-      {/* Modal container */}
-      <motion.div
-        initial={{ scale: 0.98, opacity: 0, y: 8 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.98, opacity: 0, y: 8, transition: { duration: 0.12 } }}
-        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="relative w-full max-w-3xl my-auto bg-surface-card border border-subtle rounded-2xl shadow-xl text-primary overflow-hidden z-10 flex flex-col max-h-[90vh] font-sans text-xs"
-      >
+    <Modal
+      open={licenseModalOpen}
+      onClose={() => setLicenseModalOpen(false)}
+      labelledBy="license-modal-title"
+      size="xl"
+      className="!bg-surface-inverse/70"
+      panelClassName="!max-w-3xl text-primary text-xs"
+    >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
         {/* Header */}
         <div className="px-4 py-3 bg-surface-card border-b border-subtle flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
             <Scale className="w-4 h-4 text-muted" />
-            <span className="font-semibold text-primary text-sm tracking-tight">License and attribution</span>
+            <span id="license-modal-title" className="font-semibold text-primary text-sm tracking-tight">License and attribution</span>
             <span className="px-1.5 py-0.5 rounded text-[11px] font-medium font-mono bg-surface-sunken text-secondary border border-subtle">
               ZNSL-1.0
             </span>
@@ -318,7 +294,7 @@ export const LicenseModal: React.FC = () => {
             </button>
           </div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </Modal>
   );
 };

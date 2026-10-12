@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EASE_OUT } from '../../utils/motion';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { playCyberSound } from '../../utils/helpers';
 
@@ -28,6 +29,8 @@ export interface CyberSelectProps<T extends string = string> {
   disabled?: boolean;
   className?: string;
   triggerClassName?: string;
+  /** Let the selected label wrap instead of truncating (use for long labels in narrow fields). */
+  wrapLabel?: boolean;
   menuClassName?: string;
   align?: 'left' | 'right';
   position?: 'bottom' | 'top' | 'auto';
@@ -51,6 +54,7 @@ export function CyberSelect<T extends string = string>({
   disabled = false,
   className = '',
   triggerClassName = '',
+  wrapLabel = false,
   menuClassName = '',
   align = 'left',
   position = 'auto',
@@ -147,6 +151,13 @@ export function CyberSelect<T extends string = string>({
       setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
     }
   }, [isOpen, value]);
+
+  // Reset highlighted index to top matching option when typing in search input
+  useEffect(() => {
+    if (isOpen && searchQuery.trim()) {
+      setHighlightedIndex(0);
+    }
+  }, [searchQuery, isOpen]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -266,7 +277,7 @@ export function CyberSelect<T extends string = string>({
               isOpen ? 'border-accent ring-1 ring-accent/40' : ''
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${triggerClassName}`}
           >
-            <span className="flex items-center gap-2 truncate">
+            <span className={`flex items-center gap-2 ${wrapLabel ? 'min-w-0 text-left' : 'truncate'}`}>
               {/* Option Color Indicator Dot */}
               {selectedOption?.color && (
                 <span
@@ -281,7 +292,7 @@ export function CyberSelect<T extends string = string>({
               )}
 
               {/* Label Text */}
-              <span className="truncate">
+              <span className={wrapLabel ? 'whitespace-normal break-words leading-tight' : 'truncate'}>
                 {selectedOption ? selectedOption.label : <span className="text-muted">{placeholder}</span>}
               </span>
             </span>
@@ -303,7 +314,7 @@ export function CyberSelect<T extends string = string>({
             initial={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
-            transition={{ duration: 0.12, ease: 'easeOut' }}
+            transition={{ duration: 0.12, ease: EASE_OUT }}
             role="listbox"
             id={`${id}-listbox`}
             aria-label={ariaLabel || label || placeholder}
@@ -312,7 +323,9 @@ export function CyberSelect<T extends string = string>({
                 ? 'rounded-lg border border-subtle bg-surface-elevated text-primary shadow-lg machined-edge'
                 : 'rounded-xl border border-subtle bg-surface-elevated shadow-lg machined-edge text-primary'
             } p-1.5 text-xs ${
-              align === 'right' ? 'right-0' : 'left-0'
+              align === 'right'
+                ? `right-0 ${openUpward ? 'origin-bottom-right' : 'origin-top-right'}`
+                : `left-0 ${openUpward ? 'origin-bottom-left' : 'origin-top-left'}`
             } ${menuClassName}`}
           >
             {/* Search Filter Header (when searchable or > 8 options) */}
@@ -645,7 +658,7 @@ export function CyberMultiSelect<T extends string = string>({
             initial={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
-            transition={{ duration: 0.12, ease: 'easeOut' }}
+            transition={{ duration: 0.12, ease: EASE_OUT }}
             role="listbox"
             id={`${id}-listbox`}
             aria-label={ariaLabel || label || placeholder}
@@ -654,7 +667,9 @@ export function CyberMultiSelect<T extends string = string>({
                 ? 'rounded-lg border border-subtle bg-surface-elevated text-primary shadow-lg machined-edge'
                 : 'rounded-xl border border-subtle bg-surface-elevated shadow-lg machined-edge text-primary'
             } p-1 text-xs ${
-              align === 'right' ? 'right-0' : 'left-0'
+              align === 'right'
+                ? `right-0 ${openUpward ? 'origin-bottom-right' : 'origin-top-right'}`
+                : `left-0 ${openUpward ? 'origin-bottom-left' : 'origin-top-left'}`
             } ${menuClassName}`}
           >
             <div className="px-1 pt-0.5 pb-1.5 border-b border-subtle mb-1 space-y-1.5">

@@ -10,20 +10,17 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  Zap,
   Plus,
   Terminal,
   Shield,
   Check,
-  Pause,
-  Play,
   RotateCcw,
   FileDown,
 } from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { formatSecondsToHms } from '../../utils/examPacingUtils';
-import { validateFlagFormat, EXAM_TRACK_CONFIGS } from '../../utils/examComplianceUtils';
+import { validateFlagFormat } from '../../utils/examComplianceUtils';
 import { ExamReportModal } from './ExamReportModal';
 import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 
@@ -34,11 +31,9 @@ export const ExamQuickActionDrawer: React.FC = () => {
     isQuickDrawerOpen,
     setQuickDrawerOpen,
     track,
-    status,
     boxes,
     activeBreak,
     milestones,
-    remainingSeconds,
     getRemainingSeconds,
     getBreakRemainingSeconds,
     getScore,
@@ -119,10 +114,8 @@ export const ExamQuickActionDrawer: React.FC = () => {
   const flagValidation = validateFlagFormat(flagInput.trim());
   const score = getScore();
   const passingStatus = getPassingStatus();
-  const trackConfig = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
   const breakRemaining = getBreakRemainingSeconds();
   const isPassing = passingStatus === 'Passing';
-  const isCritical = passingStatus === 'Critical';
 
   // Handle Flag Submission
   const handleFlagSubmit = (e: React.FormEvent) => {

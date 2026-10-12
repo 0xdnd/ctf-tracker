@@ -1,17 +1,25 @@
 // ZeroBox Tactical CTF Tracker — Offline Service Worker
 // Versioned precache with offline SPA navigation fallback and zero external egress
-const CACHE_VERSION = 'zerobox-v2.1.0';
-const CORE_SHELL = ['./', './index.html', './manifest.webmanifest'];
+// The build hash is injected by scripts/prerender.cjs from the shell asset list and app-shell.html.
+const CACHE_VERSION = 'zerobox-' + /*__BUILD_HASH__*/'dev';
+// /app-shell.html is the SPA shell emitted by scripts/prerender.cjs; / is the static landing page.
+const APP_SHELL = '/app-shell.html';
+// Hashed JS/CSS referenced by the shell; scripts/prerender.cjs replaces the placeholder at build time.
+const SHELL_ASSETS = /*__SHELL_ASSETS__*/[];
+const CORE_SHELL = ['/', APP_SHELL, '/manifest.webmanifest', ...SHELL_ASSETS];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_VERSION);
       await cache.addAll(CORE_SHELL);
-      // Skip waiting to immediately activate for offline readiness
-      await self.skipWaiting();
     })()
   );
+});
+
+// A waiting worker only takes over when the page asks (user clicked Reload in the update toast).
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -37,19 +45,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // SPA navigation fallback: when online, fetch fresh index.html; when offline, serve cached shell
+  // Navigations: network-first, cached under their own URL; offline falls back to that URL, then the app shell
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
           if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put('./index.html', clone));
+            // Clone synchronously, before the body is handed to the page
+            const pageCopy = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => {
+              cache.put(event.request, pageCopy);
+            });
           }
           return response;
         })
         .catch(async () => {
-          const cached = await caches.match('./index.html');
+          const exact = await caches.match(event.request);
+          if (exact) return exact;
+          // App routes fall back to the SPA shell; the landing page (/) falls back to its own copy first
+          const isLanding = url.pathname === '/' || url.pathname === '/index.html';
+          const cached = (await caches.match(APP_SHELL)) || (isLanding ? await caches.match('/') : null);
           return cached || Response.error();
         })
     );

@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -56,14 +55,14 @@ describe('ZEROBOX Audit & Polish Verification Suite', () => {
     expect(htmlContent).toContain('<meta name="twitter:image"');
   });
 
-  it('R2 (Sidebar): navigation label is updated to Snippets & Vault to prevent truncation', () => {
+  it('R2 (Sidebar): navigation label is Snippets & Cheatsheets', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>
     );
 
-    const navItem = screen.getByText('Snippets & Vault');
+    const navItem = screen.getByText('Snippets & Cheatsheets');
     expect(navItem).toBeInTheDocument();
     // Badge shows combined snippets + vault notes: 85 + 12 = 97
     expect(screen.getByText('97')).toBeInTheDocument();

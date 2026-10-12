@@ -3,10 +3,7 @@ import {
   useCtfStore, 
   mergeMachinesWithCatalog, 
   loadCustomMachinesFromStorage, 
-  saveCustomMachinesToStorage,
-  CUSTOM_MACHINES_STORAGE_KEY,
-  getCustomMachinesStorageKey
-} from '../../store/useCtfStore';
+  saveCustomMachinesToStorage} from '../../store/useCtfStore';
 import { Machine } from '../../types';
 
 describe('Custom Machine Persistence & Update Safety', () => {
@@ -171,7 +168,6 @@ describe('Custom Machine Persistence & Update Safety', () => {
       timeSpentSeconds: 500,
     });
 
-    const beforeCount = useCtfStore.getState().machines.length;
     expect(useCtfStore.getState().machines.some((m) => m.name === 'UnwipableTarget')).toBe(true);
 
     // Call restoreDanielSolves

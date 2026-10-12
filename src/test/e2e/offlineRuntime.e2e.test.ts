@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useCtfStore } from '../../store/useCtfStore';
-import { useAuthStore, DEFAULT_AVATAR_DATA_URI } from '../../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import {
   extractDeepWriteups,
   stripDeepFieldsFromMachines,
@@ -18,7 +18,6 @@ import {
 import {
   exportWriteupToHtml,
   downloadWriteupHtml,
-  parseMarkdownToHtml,
 } from '../../utils/writeupHtmlExporter';
 import {
   exportWorkspaceToJson,
@@ -26,7 +25,7 @@ import {
   triggerWorkspaceDownload,
   sanitizeFilename,
 } from '../../utils/workspaceStorage';
-import type { Machine, GlobalVariables } from '../../types';
+import type { Machine } from '../../types';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 
 const initialStoreState = useCtfStore.getState();

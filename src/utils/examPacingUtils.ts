@@ -8,7 +8,14 @@
  * - >90-minute rabbit hole detector to alert stuck operators to pivot
  */
 
-import { ExamBox } from './examComplianceUtils';
+import { ExamBox, ExamTrackConfig } from './examComplianceUtils';
+import { RABBIT_HOLE_THRESHOLDS } from './rabbitHoleConfig';
+
+/** Track parameters the pacing engine scales against (defaults to the 24h / 100-pt OSCP exam). */
+export type PacingTrackConfig = Pick<ExamTrackConfig, 'maxScore' | 'durationSeconds'> &
+  Partial<Pick<ExamTrackConfig, 'scoringModel' | 'reportWindowSeconds' | 'debriefMinutes'>>;
+
+const DEFAULT_PACING_TRACK: PacingTrackConfig = { maxScore: 100, durationSeconds: 86400 };
 
 export interface PacingAnalysis {
   elapsedSeconds: number;
@@ -41,7 +48,9 @@ export interface BreakCountdownResult {
 }
 
 /**
- * Computes dynamic exam pacing, velocity, projected score, and tactical recommendations
+ * Computes dynamic exam pacing, velocity, projected score, and tactical recommendations.
+ * Thresholds scale with the track's duration and max score (pass EXAM_TRACK_CONFIGS[track]);
+ * omitted, they default to the 24h / 100-pt OSCP exam.
  */
 export function computeExamPacing(
   session: {
@@ -56,8 +65,10 @@ export function computeExamPacing(
     totalScore: number;
     passThreshold: number;
   },
-  currentTime: number = Date.now()
+  currentTime: number = Date.now(),
+  trackConfig: PacingTrackConfig = DEFAULT_PACING_TRACK
 ): PacingAnalysis {
+  const { maxScore, durationSeconds: trackDurationSeconds } = trackConfig;
   const startedAt = session.examStartedAt || currentTime;
   const elapsedSeconds = Math.max(1, Math.floor((currentTime - startedAt) / 1000));
 
@@ -67,7 +78,7 @@ export function computeExamPacing(
   } else if (session.timerPausedRemainingSeconds !== null) {
     remainingSeconds = Math.max(0, session.timerPausedRemainingSeconds);
   } else {
-    remainingSeconds = session.totalDurationSeconds ?? session.examDurationSeconds ?? 86400;
+    remainingSeconds = session.totalDurationSeconds ?? session.examDurationSeconds ?? trackDurationSeconds;
   }
 
   const currentScore = scoreData.totalScore;
@@ -80,7 +91,7 @@ export function computeExamPacing(
   const requiredPacePtsPerHour = Number((pointsNeeded / remainingHours).toFixed(2));
   const currentPacePtsPerHour = Number((currentScore / elapsedHours).toFixed(2));
   const projectedFinalScore = Math.min(
-    100,
+    maxScore,
     Math.round(currentScore + currentPacePtsPerHour * remainingHours)
   );
 
@@ -99,15 +110,33 @@ export function computeExamPacing(
     pacingStatus = 'PASSED';
     recommendation =
       'PASSING THRESHOLD ACHIEVED. Verify all screenshot proofs, whoami logs, and begin report generation!';
-  } else if (remainingSeconds <= 6 * 3600 && pointsNeeded > 20) {
+  } else if (remainingSeconds <= trackDurationSeconds * 0.25 && pointsNeeded > maxScore * 0.2) {
     pacingStatus = 'CRITICAL';
     recommendation = `CRITICAL TIME PRESSURE: ${(remainingSeconds / 3600).toFixed(1)}h remaining. Focus on highest-yield targets immediately!`;
   } else if (
     (currentPacePtsPerHour > 0 && requiredPacePtsPerHour > currentPacePtsPerHour * 1.5) ||
-    requiredPacePtsPerHour > 15
+    (currentPacePtsPerHour === 0 && elapsedSeconds >= trackDurationSeconds * 0.15)
   ) {
     pacingStatus = 'BEHIND_SCHEDULE';
     recommendation = `Pacing alert: Required pace is ${requiredPacePtsPerHour.toFixed(1)} pts/hr. If stuck on current target, pivot immediately!`;
+  }
+
+  if (trackConfig.scoringModel === 'objective') {
+    // Objective-based exams: pace against the objective chain, and remind about the report/debrief.
+    const totalObjectives = session.boxes.filter((b) => b.userPoints > 0 || b.rootPoints > 0).length;
+    const doneObjectives = totalObjectives - unrootedBoxesCount;
+    const reportHours = trackConfig.reportWindowSeconds ? Math.round(trackConfig.reportWindowSeconds / 3600) : 0;
+    const reportNote = reportHours ? ` The ${reportHours}h report window follows the lab.` : '';
+    const debriefNote = trackConfig.debriefMinutes ? ` Prepare the ${trackConfig.debriefMinutes}-minute live debrief.` : '';
+    if (pacingStatus === 'PASSED') {
+      recommendation = `ALL OBJECTIVES COMPLETE (${doneObjectives}/${totalObjectives}). Verify evidence, then write the report.${reportNote}${debriefNote}`;
+    } else if (pacingStatus === 'CRITICAL') {
+      recommendation = `CRITICAL TIME PRESSURE: ${(remainingSeconds / 3600).toFixed(1)}h of lab time left with ${unrootedBoxesCount} of ${totalObjectives} objectives open. Prioritise the next link in the chain.`;
+    } else if (pacingStatus === 'BEHIND_SCHEDULE') {
+      recommendation = `Behind schedule: ${doneObjectives}/${totalObjectives} objectives done. Required pace is ${requiredPacePtsPerHour.toFixed(1)} progress pts/hr; revisit your enumeration notes.`;
+    } else {
+      recommendation = `On track: ${doneObjectives}/${totalObjectives} objectives done. Keep notes and screenshots as you go; they feed the report.${reportNote}`;
+    }
   }
 
   return {
@@ -134,7 +163,7 @@ export function checkRabbitHole(
   targetName: string,
   targetActiveSinceMs: number | null,
   isPwned: boolean = false,
-  thresholdMinutes: number = 90,
+  thresholdMinutes: number = RABBIT_HOLE_THRESHOLDS.examMinutes,
   currentTime: number = Date.now()
 ): RabbitHoleWarning {
   const thresholdSeconds = thresholdMinutes * 60;

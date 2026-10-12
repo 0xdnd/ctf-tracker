@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -9,7 +8,7 @@ import { ToastContainer } from '../../components/common/ToastContainer';
 import { useToastStore, toast } from '../../store/useToastStore';
 import { UnifiedHeader } from '../../components/layout/UnifiedHeader';
 import { useCtfStore, applyThemePreset, ThemePreset } from '../../store/useCtfStore';
-import { useTheme, ThemeProvider, applyThemeToDOM } from '../../hooks/useTheme';
+import { applyThemeToDOM } from '../../hooks/useTheme';
 
 // Relative Luminance and WCAG 2.1 Contrast Calculation Utilities
 function getChannelLuminance(val: number): number {

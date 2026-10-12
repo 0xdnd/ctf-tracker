@@ -10,5 +10,13 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     testTimeout: 60000,
     hookTimeout: 60000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'json-summary'],
+      include: ['src/**/*.{ts,tsx}'],
+      // Floors: measured level (stmts 61.9, branches 57.3, funcs 55.7, lines 64.6) rounded down to 5%.
+      thresholds: { statements: 60, branches: 55, functions: 55, lines: 60 },
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test/**', 'src/data/**', 'src/**/*.d.ts'],
+    },
   },
 });

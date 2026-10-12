@@ -62,12 +62,46 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(document.getElementById('tracker-cert-select')).toBeNull();
     });
 
-    it('opens the filter drawer from the Filters button and applies OS / difficulty / platform filters from it', () => {
+    it('filters targets when a track is selected from the track select dropdown', () => {
+      wrap(<TrackerView />);
+      const selectBtn = document.getElementById('tracker-track-select');
+      expect(selectBtn).not.toBeNull();
+      fireEvent.click(selectBtn!);
+
+      // Click OSCP track option
+      const oscpOption = screen.getByRole('option', { name: /OSCP/i });
+      fireEvent.click(oscpOption);
+
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('tjnull-oscp');
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual(['tjnull-oscp']);
+      expect(screen.getByText('Track: OSCP Track')).toBeInTheDocument();
+    });
+
+    it('synchronizes selectedTrack and selectedTracks bidirectionally in useCtfStore', () => {
+      const store = useCtfStore.getState();
+      
+      // Setting single track syncs array
+      store.setFilters({ selectedTrack: 'cpts-path' });
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('cpts-path');
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual(['cpts-path']);
+
+      // Resetting to ALL clears array
+      store.setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('ALL');
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual([]);
+
+      // Multiple tracks normalizes selectedTrack to MULTI
+      store.setFilters({ selectedTracks: ['tjnull-oscp', 'cpts-path'] });
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('MULTI');
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual(['tjnull-oscp', 'cpts-path']);
+    });
+
+    it('opens the filter drawer from the Filters button and applies OS / difficulty / platform filters from it', async () => {
       wrap(<TrackerView />);
       fireEvent.click(screen.getAllByRole('button', { name: /^Filters/ })[1]);
       expect(useCtfStore.getState().filterDrawerOpen).toBe(true);
 
-      const dialog = screen.getByRole('dialog', { name: /Advanced filters drawer/i });
+      const dialog = await screen.findByRole('dialog', { name: /Advanced filters drawer/i }, { timeout: 10000 });
       fireEvent.click(within(within(dialog).getByRole('group', { name: 'Operating system' })).getByRole('button', { name: 'Windows' }));
       expect(useCtfStore.getState().filters.selectedOs).toBe('Windows');
 

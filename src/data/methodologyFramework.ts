@@ -1,4 +1,4 @@
-import { MethodologyPhase, ServiceBranchType, ChecklistItem } from '../types/checklist';
+import { MethodologyPhase, ServiceBranchType } from '../types/checklist';
 import { Machine } from '../types';
 
 export interface ServiceBranchDefinition {

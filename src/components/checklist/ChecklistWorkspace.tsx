@@ -16,24 +16,21 @@ import {
   Terminal, 
   ChevronDown, 
   ChevronRight,
-  ExternalLink,
-  Zap,
-  Tag,
-  FolderGit2,
-  Filter
-} from 'lucide-react';
+  Zap} from 'lucide-react';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { toast } from '../../store/useToastStore';
 import { Machine } from '../../types';
-import { ChecklistItemStatus, ChecklistItem, MethodologyPhase } from '../../types/checklist';
+import { ChecklistItemStatus } from '../../types/checklist';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { generateApplicablePhases, SERVICE_BRANCHES } from '../../data/methodologyFramework';
-import { parseNmapScanOutput } from '../../utils/nmapParser';
+import { generateApplicablePhases } from '../../data/methodologyFramework';
+import { detectAndParseScan } from '../../utils/scanParserUtils';
+import { Modal } from '../common/Modal';
 import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter';
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
 import { interpolateCommand, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
+import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 
 interface ChecklistWorkspaceProps {
   machine: Machine;
@@ -42,7 +39,6 @@ interface ChecklistWorkspaceProps {
 
 export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   machine,
-  onOpenInWriteup,
 }) => {
   const {
     setMachineOpenPorts,
@@ -61,6 +57,9 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
       soundEnabled: s.soundEnabled,
     }))
   );
+
+  // Engaged target's IP wins over the global RHOST (shared precedence helper).
+  const effectiveVars = useEffectiveGlobalVars(globalVars);
 
   const [expandedPhaseId, setExpandedPhaseId] = useState<string>('phase-01-surface-mapping');
   const [nmapModalOpen, setNmapModalOpen] = useState(false);
@@ -153,7 +152,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
   const handleApplyNmapScan = () => {
     if (!nmapInputText.trim()) return;
-    const { ports } = parseNmapScanOutput(nmapInputText);
+    const ports = detectAndParseScan(nmapInputText)?.ports.map((p) => p.port) ?? [];
     if (ports.length > 0) {
       const merged = Array.from(new Set([...openPorts, ...ports])).sort((a, b) => a - b);
       setMachineOpenPorts(machine.id, merged);
@@ -178,7 +177,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   };
 
   const handleCopySnippet = (rawSnippet: string, itemId: string) => {
-    const interpolated = interpolateCommand(rawSnippet, globalVars);
+    const interpolated = interpolateCommand(rawSnippet, effectiveVars);
     navigator.clipboard?.writeText(interpolated);
     toast.success('Command copied to clipboard');
     setCopiedItemId(itemId);
@@ -703,7 +702,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                 {item.commandSnippet && (
                                   <div className="mt-2 flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-card border border-subtle text-[11px] font-mono">
                                     <span className="truncate text-primary select-all">
-                                      {interpolateCommand(item.commandSnippet, globalVars)}
+                                      {interpolateCommand(item.commandSnippet, effectiveVars)}
                                     </span>
                                     <button
                                       onClick={() => handleCopySnippet(item.commandSnippet!, item.id)}
@@ -757,15 +756,24 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
       </div>
 
       {/* MODAL: IMPORT NMAP SCAN RESULTS */}
-      {nmapModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
-          <div className="w-full max-w-xl rounded-2xl border border-subtle bg-surface-card shadow-2xl p-6 space-y-4">
+      <Modal
+        open={nmapModalOpen}
+        onClose={() => setNmapModalOpen(false)}
+        labelledBy="nmap-import-title"
+        size="lg"
+        zIndex="modalNested"
+        closeOnBackdrop={false}
+        className="!bg-black/80"
+        panelClassName="!max-w-xl !shadow-2xl"
+      >
+          <div className="p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-subtle pb-2.5">
               <div className="flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-muted " />
-                <h3 className="font-semibold text-primary text-sm">Import Nmap scan output</h3>
+                <h3 id="nmap-import-title" className="font-semibold text-primary text-sm">Import Nmap scan output</h3>
               </div>
               <button
+                aria-label="Close Nmap import"
                 onClick={() => setNmapModalOpen(false)}
                 className="p-1 rounded-lg text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.98]"
               >
@@ -804,8 +812,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               </button>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
 
     </div>
   );

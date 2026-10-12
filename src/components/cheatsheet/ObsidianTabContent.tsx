@@ -15,10 +15,8 @@ import {
   CheckCircle2, 
   BookOpen, 
   Link as LinkIcon, 
-  ArrowRight, 
   Clock, 
   List, 
-  FileCode,
   Search,
   Edit3 
 } from 'lucide-react';
@@ -27,11 +25,10 @@ import {
   parseObsidianNote, 
   resolveWikilink, 
   getBacklinksForNote,
-  ObsidianCallout,
-  ObsidianChecklistItem
-} from '../../utils/obsidianManualUtils';
+  ObsidianCallout} from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
-import { sanitizeHtml, sanitizeSvg } from '../../utils/securityUtils';
+import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import { sanitizeSvg } from '../../utils/securityUtils';
 import { GlobalVariables } from '../../types';
 import { OpenNoteOptions } from '../../types/workspace';
 import { slugifyHeading } from '../../utils/workspaceLinkInterceptor';
@@ -55,7 +52,6 @@ export interface ObsidianTabContentProps {
 
 export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
   note,
-  isActive,
   globalVars,
   soundEnabled,
   onNavigateToNote,
@@ -88,6 +84,9 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
   useEffect(() => {
     setLiveContent(note.rawMarkdown || (note as any).content || '');
   }, [note.id, note.rawMarkdown, (note as any).content]);
+
+  // Engaged target's IP wins over the global RHOST (shared precedence helper).
+  const effectiveVars = useEffectiveGlobalVars(globalVars);
 
   // Real-time on-the-fly markdown parse (updates preview smoothly as user types)
   const parsed = useMemo(() => parseObsidianNote(deferredContent), [deferredContent]);
@@ -358,7 +357,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
     const flushCodeBlock = (idx: number) => {
       if (codeBuffer.length === 0) return;
       const rawCode = codeBuffer.join('\n');
-      const interpCode = interpolateCommand(rawCode, globalVars);
+      const interpCode = interpolateCommand(rawCode, effectiveVars);
       const isCopied = copiedId === `code-${idx}`;
 
       elements.push(
@@ -374,7 +373,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
             <button
               type="button"
               onClick={() => handleCopyText(`code-${idx}`, interpCode)}
-              className="flex items-center gap-1 px-2 py-0.5 rounded text-on-inverse-muted hover:bg-surface-inverse hover:text-on-inverse transition-colors cursor-pointer text-[11px]"
+              className="active:scale-[0.97] flex items-center gap-1 px-2 py-0.5 rounded text-on-inverse-muted hover:bg-surface-inverse hover:text-on-inverse transition-interactive cursor-pointer text-[11px]"
               title="Copy interpolated code"
             >
               {isCopied ? (
@@ -676,7 +675,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                     if (soundEnabled) playCyberSound('click');
                   }
                 }}
-                className="px-2.5 py-1 rounded bg-surface-hover hover:bg-surface-hover border border-strong text-primary hover:text-on-accent text-xs flex-shrink-0 transition-colors cursor-pointer"
+                className="active:scale-[0.97] px-2.5 py-1 rounded bg-surface-hover hover:bg-surface-hover border border-strong text-primary hover:text-on-accent text-xs flex-shrink-0 transition-interactive cursor-pointer"
               >
                 {toc.text}
               </button>
@@ -717,7 +716,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                     onNavigateToNote(b.id);
                   }
                 }}
-                className="p-2 rounded-xl bg-accent-muted hover:bg-accent-muted border border-accent/30 hover:border-accent text-left transition-colors cursor-pointer group"
+                className="active:scale-[0.97] p-2 rounded-xl bg-accent-muted hover:bg-accent-muted border border-accent/30 hover:border-accent text-left transition-interactive cursor-pointer group"
               >
                 <div className="text-xs font-semibold text-accent group-hover:text-accent truncate">
                   {b.titleEn || b.title}
@@ -774,11 +773,12 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onViewModeChange('split');
+                  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+                  onViewModeChange(isMobile ? 'raw' : 'split');
                   if (soundEnabled) playCyberSound('click');
                 }}
-                className="px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-colors flex items-center gap-1 cursor-pointer"
-                title="Switch to Split Edit View"
+                className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-interactive flex items-center gap-1 cursor-pointer"
+                title="Switch to Edit View"
               >
                 <Edit3 className="w-2.5 h-2.5" />
                 <span>Edit Note</span>
@@ -827,7 +827,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           onContentChange={setLiveContent}
           globalVars={globalVars}
           soundEnabled={soundEnabled}
-          minHeight="550px"
+          minHeight={typeof window !== 'undefined' && window.innerWidth < 768 ? '300px' : '550px'}
         />
       )}
 
@@ -842,7 +842,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               globalVars={globalVars}
               soundEnabled={soundEnabled}
               isSplitView={true}
-              minHeight="600px"
+              minHeight={typeof window !== 'undefined' && window.innerWidth < 768 ? '260px' : '600px'}
             />
           </div>
           <div className="min-w-0 rounded-xl border border-strong bg-surface-card p-4 sm:p-5 overflow-y-auto max-h-[850px] space-y-4">

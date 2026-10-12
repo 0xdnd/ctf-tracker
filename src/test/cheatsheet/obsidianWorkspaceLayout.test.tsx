@@ -1,9 +1,9 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { CheatsheetView } from '../../components/cheatsheet/CheatsheetView';
 import { useCtfStore } from '../../store/useCtfStore';
+import { seedImportedNotes } from '../fixtures/userNoteFixtures';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -40,7 +40,11 @@ describe('Obsidian Workspace Architecture in CheatsheetView', () => {
         interface: 'tun0',
         customVars: {},
       },
+      customNotes: [],
+      deletedNoteIds: [],
     });
+    // The app ships no notes; these tests exercise the workspace with notes the user imported.
+    seedImportedNotes();
   });
 
   afterEach(() => {

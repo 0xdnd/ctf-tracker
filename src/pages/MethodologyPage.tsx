@@ -24,13 +24,15 @@ import {
   Plus
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
+import { useActiveTargetIp } from '../hooks/useActiveTargetIp';
 import { 
   MASTER_METHODOLOGY_FRAMEWORK, 
   SERVICE_BRANCHES, 
   generateApplicablePhases 
 } from '../data/methodologyFramework';
-import { ServiceBranchType, MethodologyPhase, ChecklistItem } from '../types/checklist';
-import { interpolateCommand, playCyberSound } from '../utils/helpers';
+import { ServiceBranchType } from '../types/checklist';
+import { playCyberSound } from '../utils/helpers';
+import { resolveTemplate, contextFromGlobalVars } from '../utils/variableSubstitution';
 import { toast } from '../store/useToastStore';
 import { PlatformIcon } from '../components/common/PlatformBadge';
 import { CyberSelect } from '../components/common/CyberSelect';
@@ -38,7 +40,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { useShallow } from 'zustand/react/shallow';
-import { TACTICAL_SPRING, TACTILE_TAP_CLASS, CASCADE_STAGGER_DELAY } from '../utils/motionTokens';
+import { TACTICAL_SPRING } from '../utils/motionTokens';
 import { SyntaxHighlightedCommand } from '../components/common/SyntaxHighlightedCommand';
 
 export const MethodologyPage: React.FC = () => {
@@ -65,6 +67,13 @@ export const MethodologyPage: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<'playbook' | 'checklist'>('playbook');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Active engaged target's IP takes priority over the global RHOST.
+  const activeTargetIp = useActiveTargetIp();
+  const substitutionContext = useMemo(
+    () => contextFromGlobalVars(globalVars, { activeTargetIp }),
+    [globalVars, activeTargetIp]
+  );
   const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number | 'all'>('all');
   const [selectedBranch, setSelectedBranch] = useState<ServiceBranchType | 'all'>('all');
   const [expandedPhases, setExpandedPhases] = useState<Record<string, boolean>>({
@@ -162,7 +171,7 @@ export const MethodologyPage: React.FC = () => {
 
   // Command Copy Handler
   const handleCopy = (commandSnippet: string, id: string) => {
-    const finalCmd = interpolateCommand(commandSnippet, globalVars);
+    const finalCmd = resolveTemplate(commandSnippet, substitutionContext, { legacyAliases: true }).text;
     navigator.clipboard?.writeText(finalCmd);
     toast.success('Command copied to clipboard');
     setCopiedId(id);
@@ -192,7 +201,7 @@ export const MethodologyPage: React.FC = () => {
           md += `- [ ] **${item.title}**\n`;
           md += `  - *Description:* ${item.description}\n`;
           if (item.commandSnippet) {
-            const interpolated = interpolateCommand(item.commandSnippet, globalVars);
+            const interpolated = resolveTemplate(item.commandSnippet, substitutionContext, { legacyAliases: true }).text;
             md += `  - *Execution:* \`${interpolated}\`\n`;
           }
           md += `\n`;
@@ -251,7 +260,7 @@ export const MethodologyPage: React.FC = () => {
         }
       >
         {/* View mode: reference playbook vs live target checklist */}
-        <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0">
+        <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {([
               { id: 'playbook', label: 'Playbook', icon: <BookOpen className="h-3.5 w-3.5" /> },
@@ -456,7 +465,7 @@ export const MethodologyPage: React.FC = () => {
             </div>
 
             {/* Phase chips: single line, scrollable */}
-            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0">
+            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
               <div className="flex min-w-max items-center gap-1.5 py-0.5">
                 <button
                   onClick={() => setSelectedPhaseNumber('all')}
@@ -483,7 +492,7 @@ export const MethodologyPage: React.FC = () => {
 
             {/* Service branch chips */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0">
+              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
                 <div className="flex min-w-max items-center gap-1.5 py-0.5">
                   <span className="mr-1 flex-shrink-0 text-xs text-muted">Branches</span>
                   <button
@@ -626,7 +635,7 @@ export const MethodologyPage: React.FC = () => {
                                             className="min-w-0 flex-1 select-all overflow-x-auto no-scrollbar whitespace-nowrap rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                           >
                                             <SyntaxHighlightedCommand
-                                              command={interpolateCommand(item.commandSnippet, globalVars)}
+                                              command={resolveTemplate(item.commandSnippet, substitutionContext, { legacyAliases: true }).text}
                                               className="text-[12px]"
                                             />
                                           </div>

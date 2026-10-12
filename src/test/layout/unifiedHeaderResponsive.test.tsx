@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -220,11 +219,11 @@ describe('UnifiedHeader Responsive Density & Direct Inline Variables', () => {
   it('resets checkmark indicator after 1500ms and cleans up on rapid clicks', () => {
     vi.spyOn(helpers, 'safeCopyToClipboard').mockResolvedValue(true);
 
-    const { container } = render(
-      <MemoryRouter>
-        <UnifiedHeader />
-      </MemoryRouter>
-    );
+    render(
+          <MemoryRouter>
+              <UnifiedHeader />
+          </MemoryRouter>
+      );
 
     const copyLhostBtn = screen.getByLabelText('Copy LHOST');
 

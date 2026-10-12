@@ -5,13 +5,8 @@ import {
   Pin, 
   Maximize2, 
   Minimize2, 
-  Languages, 
   Type, 
-  ExternalLink,
-  ChevronDown,
-  Layers,
-  Sparkles
-} from 'lucide-react';
+  Layers} from 'lucide-react';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -29,7 +24,6 @@ export const PersistentNotesWorkspace: React.FC = () => {
     fontSize,
     openTabIds,
     activeTabId,
-    toggleOpen,
     setIsOpen,
     togglePinned,
     toggleDockSize,
@@ -37,7 +31,6 @@ export const PersistentNotesWorkspace: React.FC = () => {
     setLanguage,
     setFontSize,
     openNote,
-    setActiveTab,
   } = useNotesWorkspaceStore(
     useShallow((s) => ({
       isOpen: s.isOpen,
@@ -60,17 +53,20 @@ export const PersistentNotesWorkspace: React.FC = () => {
     }))
   );
 
-  const { globalVars, soundEnabled } = useCtfStore(
+  const { globalVars, soundEnabled, customNotes, userNotes } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
       soundEnabled: s.soundEnabled,
+      customNotes: s.customNotes,
+      userNotes: s.userNotes,
     }))
   );
 
   const getActiveNote = useNotesWorkspaceStore((s) => s.getActiveNote);
   const getOpenNotes = useNotesWorkspaceStore((s) => s.getOpenNotes);
-  const activeNote = useMemo(() => getActiveNote(), [activeTabId, getActiveNote]);
-  const openNotes = useMemo(() => getOpenNotes(), [openTabIds, getOpenNotes]);
+  // customNotes / userNotes are listed so the lookups re-run when the user's notes change
+  const activeNote = useMemo(() => getActiveNote(), [activeTabId, openTabIds, customNotes, userNotes, getActiveNote]);
+  const openNotes = useMemo(() => getOpenNotes(), [openTabIds, customNotes, userNotes, getOpenNotes]);
 
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
@@ -78,7 +74,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
   useEffect(() => {
     if (prevPathRef.current !== location.pathname) {
       prevPathRef.current = location.pathname;
-      if (!isPinned && isOpen) {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      if ((isMobile || !isPinned) && isOpen) {
         setIsOpen(false);
       }
     }
@@ -137,7 +134,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('reading')}
-                className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
                   viewMode === 'reading'
                     ? 'bg-accent-muted text-accent font-semibold border border-accent'
                     : 'text-muted hover:text-primary'
@@ -149,7 +146,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('split')}
-                className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
                   viewMode === 'split'
                     ? 'bg-accent-muted text-accent font-semibold border border-accent'
                     : 'text-muted hover:text-primary'
@@ -161,7 +158,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('raw')}
-                className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
                   viewMode === 'raw'
                     ? 'bg-accent-muted text-accent font-semibold border border-accent'
                     : 'text-muted hover:text-primary'
@@ -176,7 +173,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="px-2 py-1 rounded-md text-[10px] font-semibold hover:bg-surface-hover text-secondary hover:text-primary transition-colors cursor-pointer border border-transparent hover:border-subtle"
+              className="active:scale-[0.97] px-2 py-1 rounded-md text-[10px] font-semibold hover:bg-surface-hover text-secondary hover:text-primary transition-interactive cursor-pointer border border-transparent hover:border-subtle"
               title="Toggle English / Hebrew"
             >
               {language === 'en' ? 'EN' : 'עב'}
@@ -186,7 +183,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={cycleFontSize}
-              className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
+              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer"
               title={`Cycle font size (Current: ${fontSize.toUpperCase()})`}
             >
               <Type className="w-3.5 h-3.5" />
@@ -196,7 +193,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={toggleDockSize}
-              className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
+              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer"
               title={dockSize === 'expanded' ? 'Collapse Width (50%)' : 'Expand Width (70%)'}
             >
               {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -206,7 +203,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={togglePinned}
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+              className={`active:scale-[0.97] p-1.5 rounded-md transition-interactive cursor-pointer ${
                 isPinned
                   ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
                   : 'hover:bg-surface-hover text-muted'
@@ -220,7 +217,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg transition-colors cursor-pointer ml-1"
+              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg transition-interactive cursor-pointer ml-1"
               title="Close Notes Workspace"
             >
               <X className="w-3.5 h-3.5" />
@@ -276,39 +273,85 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
       {/* ========================================================
           MOBILE SLIDE-UP BOTTOM SHEET (< 768px)
-          Large, spacious bottom sheet (75vh/88vh) with tabs and no full-screen takeover.
+          Large, spacious bottom sheet (75vh/88vh) with tabs, backdrop, and proper safe-area docking.
          ======================================================== */}
+      {/* Mobile Backdrop */}
+      <div
+        className="md:hidden fixed inset-0 z-30 bg-surface-inverse/50 backdrop-blur-xs transition-opacity duration-200"
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+      />
+
       <div
         aria-label="Mobile Notes Workspace"
-        className={`md:hidden fixed bottom-14 left-0 right-0 z-40 bg-surface-card border-t border-subtle shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-mono ${
-          dockSize === 'expanded' ? 'h-[88vh]' : 'h-[75vh]'
+        className={`md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-surface-card border-t border-subtle shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-sans ${
+          dockSize === 'expanded' ? 'h-[88vh] max-h-[calc(100dvh-4.5rem)]' : 'h-[75vh] max-h-[calc(100dvh-4.5rem)]'
         }`}
       >
         {/* Mobile Drag Header */}
         <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-xs font-semibold text-primary truncate max-w-[150px]">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+            <span className="text-xs font-semibold text-primary truncate max-w-[120px] sm:max-w-[180px]">
               {activeNote?.title || 'Field Notes'}
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* View Mode Switcher (Read | Raw) */}
+            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
+              <button
+                type="button"
+                onClick={() => setViewMode('reading')}
+                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
+                  viewMode === 'reading'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
+                }`}
+                title="Rich Reading View"
+              >
+                Read
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('raw')}
+                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
+                  viewMode === 'raw' || viewMode === 'split'
+                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
+                    : 'text-muted hover:text-primary'
+                }`}
+                title="Raw Markdown Editor"
+              >
+                Raw
+              </button>
+            </div>
+
             {/* Height Expand/Collapse */}
             <button
               type="button"
               onClick={toggleDockSize}
-              className="p-1.5 rounded-md hover:bg-surface-hover text-secondary"
+              className="transition-transform active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-secondary cursor-pointer"
               title="Toggle Height"
             >
               {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Font Size Toggle */}
+            <button
+              type="button"
+              onClick={cycleFontSize}
+              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer"
+              title={`Cycle font size (Current: ${fontSize.toUpperCase()})`}
+            >
+              <Type className="w-3.5 h-3.5" />
             </button>
 
             {/* Language Switch */}
             <button
               type="button"
               onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="px-2 py-1 rounded-md text-[10px] font-semibold bg-surface-hover text-primary"
+              className="transition-transform active:scale-[0.97] px-2 py-1 rounded-md text-[10px] font-semibold bg-surface-hover text-primary cursor-pointer"
+              title="Toggle English / Hebrew"
             >
               {language === 'en' ? 'EN' : 'עב'}
             </button>
@@ -317,7 +360,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg"
+              className="transition-transform active:scale-[0.97] p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg cursor-pointer"
               title="Close Workspace"
             >
               <X className="w-4 h-4" />
@@ -329,7 +372,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
         <NotesWorkspaceTabStrip />
 
         {/* Mobile Note Stage (DOM Keep-Alive) */}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-surface-card p-1">
+        <div className="flex-1 min-h-0 bg-surface-card p-1 overflow-hidden flex flex-col">
           {openNotes.length > 0 ? (
             openNotes.map((tabNote) => {
               const isActive = tabNote.id === activeNote?.id;
@@ -338,8 +381,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
                   key={tabNote.id}
                   data-testid={`mobile-dock-tab-content-${tabNote.id}`}
                   data-tab-note-id={tabNote.id}
-                  className={isActive ? 'h-full w-full flex-1 min-h-0 overflow-y-auto' : 'hidden'}
-                  style={{ display: isActive ? undefined : 'none' }}
+                  className={isActive ? 'h-full w-full flex-1 min-h-0 overflow-y-auto overscroll-contain' : 'hidden'}
+                  style={{ display: isActive ? undefined : 'none', WebkitOverflowScrolling: 'touch' }}
                 >
                   <ObsidianTabContent
                     note={tabNote}
@@ -349,8 +392,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
                     onNavigateToNote={handleNavigateToNote}
                     onOpenNote={(targetId) => openNote(targetId)}
                     defaultLanguage={language}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
+                    viewMode={viewMode === 'split' ? 'raw' : viewMode}
+                    onViewModeChange={(m) => setViewMode(m === 'split' ? 'raw' : m)}
                     fontSize={fontSize}
                     isMaximized={dockSize === 'expanded'}
                   />

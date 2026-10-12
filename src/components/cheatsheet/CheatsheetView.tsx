@@ -1,6 +1,7 @@
+import { isTauriTarget } from '../../utils/runtimeTarget';
 import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Terminal, 
   Copy, 
@@ -9,57 +10,39 @@ import {
   Star, 
   Plus, 
   Trash2, 
-  Radio, 
   Code,
   BookOpen,
   Sparkles,
   ChevronDown,
-  ChevronUp,
-  ChevronRight,
-  Layers,
-  Compass,
-  FileText,
-  Languages,
-  ArrowRightLeft,
   Folder,
   FolderOpen,
   Table,
   LayoutList,
-  Zap,
-  Filter,
-  ShieldCheck,
   Upload,
   Hash,
   ArrowUpDown,
   RotateCcw,
-  PanelRight,
   PanelLeft,
-  SlidersHorizontal,
-  Maximize2,
-  ExternalLink
-} from 'lucide-react';
+  Maximize2} from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
   CHEATSHEET_CATEGORIES 
 } from '../../data/cheatsheetsData';
 import { interpolateCommand, playCyberSound } from '../../utils/helpers';
-import { 
-  CPTS_NOTES, 
-  CptsNoteEntry, 
-  CptsTopicGroup,
+import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import {
+  CptsNoteEntry,
   CptsTreeNode,
-  getCptsCategories, 
   getCategoryTopicGroups,
-  parseSubCategory,
   searchCptsNotes,
   getNoteById,
   buildCptsFileTree,
-  getAllNotesInTreeNode,
   CptsSortOrder,
   sortNotesByNumber,
   formatNoteNumberBadge,
   getAllCptsNotes,
+  mergeUserNotePools,
 } from '../../utils/obsidianManualUtils';
 import { ObsidianNoteViewer } from './ObsidianNoteViewer';
 import { SplitOrientation } from '../../types/workspace';
@@ -70,6 +53,7 @@ import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { PageHeader } from '../common/PageHeader';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 import { CyberButton } from '../common/CyberButton';
+import { EmptyState } from '../common/EmptyState';
 import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 
@@ -90,7 +74,7 @@ interface CheatsheetViewProps {
   defaultMode?: 'tactical' | 'cpts-manual';
 }
 
-export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) => {
+const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) => {
   const location = useLocation();
   const {
     cheatsheets,
@@ -128,6 +112,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }))
   );
 
+  // Engaged target's IP wins over the global RHOST (shared precedence helper).
+  const effectiveVars = useEffectiveGlobalVars(globalVars);
+
   const navigate = useNavigate();
   const isManualRoute = defaultMode === 'cpts-manual' || 
     location.pathname.includes('note') || 
@@ -140,9 +127,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCptsCategory, setSelectedCptsCategory] = useState('ALL');
   const [selectedCptsSubCategory, setSelectedCptsSubCategory] = useState<string>('ALL');
-  const [expandedSidebarCategories, setExpandedSidebarCategories] = useState<Record<string, boolean>>({
-    '01 Information Gathering & Recon': true,
-  });
   const [selectedTreePath, setSelectedTreePath] = useState<string | null>(null);
   const [expandedTreeFolders, setExpandedTreeFolders] = useState<Record<string, boolean>>(() => {
     try {
@@ -174,14 +158,9 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [newNoteInitialDir, setNewNoteInitialDir] = useState<string | undefined>(undefined);
   const [cptsDisplayLayout, setCptsDisplayLayout] = useState<CptsDisplayLayout>('cards');
   const [cptsSortOrder, setCptsSortOrder] = useState<CptsSortOrder>('number');
-  const [expandedIndexRows, setExpandedIndexRows] = useState<Record<string, boolean>>({});
-  const [collapsedGroupSections, setCollapsedGroupSections] = useState<Record<string, boolean>>({});
   const [jumpDropdownOpen, setJumpDropdownOpen] = useState(false);
-  const [hudOptionsOpen, setHudOptionsOpen] = useState(false);
   const [jumpSearchQuery, setJumpSearchQuery] = useState('');
-  const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null);
   const [cptsLimit, setCptsLimit] = useState(30);
-  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -341,13 +320,10 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     if (soundEnabled) playCyberSound('click');
   }, [soundEnabled]);
 
-  // Active Notes Pool (Reconciling user private notes, custom notes, and deleted notes)
+  // Active Notes Pool: only the user's own notes (authored + imported), minus deleted ones
   const allActiveNotes = useMemo(() => {
     const deletedSet = new Set(deletedNoteIds);
-    const source = userNotes && userNotes.length > 0 ? userNotes : CPTS_NOTES;
-    const baseline = source.filter((n) => !deletedSet.has(n.id));
-    const activeCustom = customNotes.filter((n) => !deletedSet.has(n.id));
-    return [...activeCustom, ...baseline];
+    return mergeUserNotePools(customNotes, userNotes).filter((n) => !deletedSet.has(n.id));
   }, [deletedNoteIds, customNotes, userNotes]);
 
   const activeObsidianNote = useMemo(() => {
@@ -459,7 +435,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [newDesc, setNewDesc] = useState('');
   const [newTemplate, setNewTemplate] = useState('');
   const [newTags, setNewTags] = useState('');
-  const [notesTextDirection, setNotesTextDirection] = useState<'auto' | 'rtl' | 'ltr'>('auto');
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -470,11 +445,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }, 2000);
   };
 
-  const handleCopyAllNoteCommands = (note: CptsNoteEntry) => {
-    if (!note.commands || note.commands.length === 0) return;
-    const interpolated = note.commands.map(cmd => interpolateCommand(cmd, globalVars)).join('\n\n');
-    handleCopy(interpolated, `all-${note.id}`);
-  };
 
   const handleCreateCustom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -537,7 +507,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   }, [allActiveNotes, treeSearchQuery]);
 
   const cptsFileTree = useMemo(() => buildCptsFileTree(filteredTreeNotes), [filteredTreeNotes]);
-  const cptsCategories = useMemo(() => getCptsCategories(allActiveNotes), [allActiveNotes]);
 
   // Persist expanded tree folders
   useEffect(() => {
@@ -750,7 +719,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           onNewTab={handleOpenObsidianNote}
           onCloseAllTabs={handleCloseAllObsidianTabs}
           allAvailableNotes={allActiveNotes}
-          globalVars={globalVars}
+          globalVars={effectiveVars}
           soundEnabled={soundEnabled}
           onClose={handleCloseAllObsidianTabs}
           onNavigateToNote={(noteId) => {
@@ -768,7 +737,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           isMaximized={mode === 'docked' ? isDockedMaximized : isModalMaximized}
           onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : handleToggleModalMaximize}
           onPopoutWindow={() => {
-            const popoutUrl = `${window.location.origin}${window.location.pathname}#/field-manual?note=${activeObsidianNote.id}&popout=true`;
+            const popoutUrl = (isTauriTarget() ? `${window.location.origin}${window.location.pathname}#/field-manual?note=${activeObsidianNote.id}&popout=true` : `${window.location.origin}/field-manual?note=${activeObsidianNote.id}&popout=true`);
             window.open(popoutUrl, `ZeroBoxFieldManual_${activeObsidianNote.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
           }}
           isSplitView={isSplitView}
@@ -799,7 +768,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             onNewTab={handleOpenObsidianNote}
             onCloseAllTabs={handleCloseAllObsidianTabs}
             allAvailableNotes={allActiveNotes}
-            globalVars={globalVars}
+            globalVars={effectiveVars}
             soundEnabled={soundEnabled}
             onClose={handleCloseAllObsidianTabs}
             onNavigateToNote={(noteId) => {
@@ -832,7 +801,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             onNewTab={handleOpenSecondaryNote}
             onCloseAllTabs={handleCloseSecondaryPane}
             allAvailableNotes={allActiveNotes}
-            globalVars={globalVars}
+            globalVars={effectiveVars}
             soundEnabled={soundEnabled}
             onClose={handleCloseSecondaryPane}
             onNavigateToNote={(noteId) => {
@@ -905,34 +874,12 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     return getCategoryTopicGroups(selectedCptsCategory, allActiveNotes);
   }, [selectedCptsCategory, allActiveNotes]);
 
-  const activeTopicLeaves = useMemo(() => {
-    if (selectedCptsSubCategory === 'ALL') return [];
-    const group = activeCategoryTopicGroups.find(g => g.group === selectedCptsSubCategory);
-    return group ? group.leaves : [];
-  }, [activeCategoryTopicGroups, selectedCptsSubCategory]);
 
-  const groupedCptsNotes = useMemo(() => {
-    if (cptsDisplayLayout !== 'grouped') return [];
-    const map: Record<string, CptsNoteEntry[]> = {};
-    for (const note of filteredCptsNotes) {
-      const { group } = parseSubCategory(note.subCategory);
-      if (!map[group]) map[group] = [];
-      map[group].push(note);
-    }
-    return Object.entries(map).map(([group, notes]) => ({
-      group,
-      count: notes.length,
-      notes
-    })).sort((a, b) => b.count - a.count);
-  }, [filteredCptsNotes, cptsDisplayLayout]);
 
   const visibleCptsNotes = useMemo(() => {
     return filteredCptsNotes.slice(0, cptsLimit);
   }, [filteredCptsNotes, cptsLimit]);
 
-  const totalCptsCommands = useMemo(() => {
-    return filteredCptsNotes.reduce((sum, n) => sum + (n.commands ? n.commands.length : 0), 0);
-  }, [filteredCptsNotes]);
 
   // Tree action handlers
   const handleSelectTreeFolder = (fullPath: string) => {
@@ -1016,43 +963,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     if (soundEnabled) playCyberSound('root');
   };
 
-  const handleJumpToNote = (note: CptsNoteEntry) => {
-    setJumpDropdownOpen(false);
-    setJumpSearchQuery('');
-    setHighlightedNoteId(note.id);
-    if (soundEnabled) playCyberSound('root');
-
-    // If note is in another category or subcategory, switch so it is visible
-    if (selectedCptsCategory !== 'ALL' && selectedCptsCategory !== note.category) {
-      setSelectedCptsCategory(note.category);
-      setSelectedCptsSubCategory('ALL');
-    } else if (selectedCptsSubCategory !== 'ALL') {
-      const { group } = parseSubCategory(note.subCategory);
-      if (selectedCptsSubCategory !== group) {
-        setSelectedCptsSubCategory('ALL');
-      }
-    }
-
-    // Ensure note is within pagination window
-    setCptsLimit((prev) => Math.max(prev, 60));
-
-    // Auto expand row if in quick-index mode
-    if (cptsDisplayLayout === 'quick-index') {
-      setExpandedIndexRows((prev) => ({ ...prev, [note.id]: true }));
-    }
-
-    // Scroll smoothly to element
-    setTimeout(() => {
-      const el = document.getElementById(`cpts-note-${note.id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 150);
-
-    setTimeout(() => {
-      setHighlightedNoteId(null);
-    }, 3000);
-  };
 
   // Standalone detached pop-out window view (e.g. secondary monitor or external browser window)
   if (isPopout && activeObsidianNote) {
@@ -1269,7 +1179,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             {cptsFileTree.length === 0 ? (
               <div className="p-4 rounded-lg bg-accent-muted border border-accent/40 text-center space-y-2.5 my-2">
                 <FolderOpen className="w-8 h-8 text-accent mx-auto" />
-                <div className="text-xs font-semibold text-primary">Vault Empty (0 Notes)</div>
+                <div className="text-xs font-semibold text-primary">No notes here</div>
                 <p className="text-[10px] text-secondary">
                   Import your notes directory from disk or create a custom note.
                 </p>
@@ -1464,13 +1374,13 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     </button>
                     <BookOpen className="w-4 h-4 text-accent" />
                     <span className="text-primary font-semibold">
-                      Field manual notes
+                      Your notes
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted text-accent font-semibold">
                       {selectedCptsCategory === 'ALL'
                         ? allActiveNotes.length > 0
                           ? `All notes (${allActiveNotes.length})`
-                          : 'Vault empty'
+                          : 'No notes yet'
                         : selectedCptsCategory}
                     </span>
                     {selectedCptsSubCategory !== 'ALL' && (
@@ -1922,7 +1832,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               variant="primary"
               size="md"
               iconLeft={<Upload className="h-3.5 w-3.5" />}
-              title="Import or manage your local private offensive field notes vault (IndexedDB)"
+              title="Import or manage your own notes (stored only in this browser)"
               onClick={() => {
                 if (soundEnabled) playCyberSound('click');
                 setNotesImportModalOpen(true);
@@ -1965,7 +1875,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               ]
         }
       >
-        <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0">
+        <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-3 sm:min-w-0 sm:flex-wrap">
             <div
               role="group"
@@ -2055,7 +1965,35 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       </PageHeader>
 
       {viewMode === 'cpts-manual' ? (
-        renderObsidianWorkspace()
+        allActiveNotes.length === 0 ? (
+          <div
+            data-testid="notes-empty-state"
+            className="rounded-2xl border border-subtle bg-surface-card"
+          >
+            <EmptyState
+              icon={BookOpen}
+              title="No notes yet"
+              description="Import your own Obsidian vault or markdown notes, or write a new note."
+              action={{
+                label: 'Import notes',
+                icon: Upload,
+                onClick: () => {
+                  if (soundEnabled) playCyberSound('click');
+                  setNotesImportModalOpen(true);
+                },
+              }}
+              secondaryAction={{
+                label: 'New note',
+                onClick: () => {
+                  setNewNoteInitialDir(undefined);
+                  setIsNewCptsModalOpen(true);
+                },
+              }}
+            />
+          </div>
+        ) : (
+          renderObsidianWorkspace()
+        )
       ) : (
         <>
           {/* Parameter injection: LHOST / LPORT / target */}
@@ -2110,7 +2048,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 <span className="tabular-nums">{cheatsheets.length}</span>
               </div>
 
-              <div className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
+              <div className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0 max-lg:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-lg:pr-14 lg:[mask-image:none]">
                 {CHEATSHEET_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
@@ -2181,7 +2119,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   </div>
                 ) : (
                   filteredCommands.map((cmd, idx) => {
-                    const interpolated = interpolateCommand(cmd.commandTemplate, globalVars);
+                    const interpolated = interpolateCommand(cmd.commandTemplate, effectiveVars);
                     const isCopied = copiedId === cmd.id;
 
                     return (
@@ -2416,7 +2354,7 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       {/* Authentic Obsidian Personal Note Viewer Modal (Modal Mode) */}
       {activeObsidianNote && noteViewerMode === 'modal' && renderWorkspacePanes('modal')}
 
-      {/* New Custom CPTS Note Modal */}
+      {/* New note modal */}
       <NewCptsNoteModal
         isOpen={isNewCptsModalOpen}
         onClose={() => {
@@ -2430,3 +2368,6 @@ export const CheatsheetView: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     </div>
   );
 };
+
+/** The app ships no bundled notes, so the view mounts straight away with the user's own notes. */
+export const CheatsheetView: React.FC<CheatsheetViewProps> = (props) => <CheatsheetViewContent {...props} />;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   Crosshair, 
   Compass, 
@@ -41,7 +42,6 @@ export const MobileNav: React.FC = () => {
   const location = useLocation();
 
   const {
-    activeTab,
     setActiveTab,
     machines,
     reconAutomationModalOpen,
@@ -88,6 +88,21 @@ export const MobileNav: React.FC = () => {
   const [copiedVar, setCopiedVar] = React.useState<'lhost' | 'lport' | null>(null);
   const [justSavedMobile, setJustSavedMobile] = React.useState(false);
 
+  const drawerRef = useFocusTrap<HTMLDivElement>({
+    isActive: mobileMenuOpen,
+    onClose: () => setMobileMenuOpen(false),
+  });
+
+  // Lock page scroll while the drawer is open.
+  React.useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileMenuOpen]);
+
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
   const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
@@ -112,6 +127,7 @@ export const MobileNav: React.FC = () => {
     setActiveTab(tabId);
     navigate(path);
     setMobileMenuOpen(false);
+    useNotesWorkspaceStore.getState().setIsOpen(false);
     if (soundEnabled) playCyberSound('click');
   };
 
@@ -237,6 +253,10 @@ export const MobileNav: React.FC = () => {
 
             {/* Sliding panel */}
             <motion.div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%', transition: { duration: 0.15, ease: 'easeOut' } }}
@@ -378,7 +398,7 @@ export const MobileNav: React.FC = () => {
                   >
                     <div className="flex items-center gap-2.5">
                       <Database className={iconCls} />
-                      <span>Evidence & Loot Vault</span>
+                      <span>Vault</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>

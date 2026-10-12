@@ -4,7 +4,6 @@ import {
   ATTACK_GRAPH_STORAGE_KEY,
   safeLocalStorage,
   loadInitialAttackGraphState,
-  saveAttackGraphState,
 } from '../../store/useCtfStore';
 import { AttackGraphEdge, AttackNodePosition } from '../../types';
 

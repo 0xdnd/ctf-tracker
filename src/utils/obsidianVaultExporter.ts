@@ -179,11 +179,6 @@ ${m.userPwnedAt ? `- **User Foothold Achieved:** \`${m.userPwnedAt}\`\n` : ''}${
       doc += `${m.skillsLearned.map((s) => `- **${s}**`).join('\n')}\n`;
     }
 
-    // Official Walkthrough
-    if (m.officialWalkthrough) {
-      doc += `\n---\n\n## 📖 Official Exploitation Walkthrough\n\n${m.officialWalkthrough}\n`;
-    }
-
     // Quick Field Notes
     if (m.quickNotes) {
       doc += `\n---\n\n## 📝 Operator Field Notes\n\n${m.quickNotes}\n`;

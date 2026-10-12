@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CyberLogo } from './CyberLogo';
@@ -17,7 +16,7 @@ describe('CyberLogo component', () => {
     const img = screen.getByRole('img');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - zerobox');
-    expect(img).toHaveAttribute('src', './logo-zerobox.png');
+    expect(img).toHaveAttribute('src', '/logo-zerobox.webp');
 
     const container = screen.getByTitle('ZeroBox (zerobox)');
     expect(container).toBeInTheDocument();
@@ -29,7 +28,7 @@ describe('CyberLogo component', () => {
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - htb');
-    expect(img).toHaveAttribute('src', './logo-htb.png');
+    expect(img).toHaveAttribute('src', '/logo-htb.webp');
     expect(screen.getByTitle('ZeroBox (htb)').className).not.toContain('drop-shadow');
   });
 
@@ -38,7 +37,7 @@ describe('CyberLogo component', () => {
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - midnight-blue');
-    expect(img).toHaveAttribute('src', './logo-midnight.png');
+    expect(img).toHaveAttribute('src', '/logo-midnight.webp');
   });
 
   it('renders the OLED logo when theme is oled', () => {
@@ -46,7 +45,7 @@ describe('CyberLogo component', () => {
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('alt', 'ZeroBox logo - oled');
-    expect(img).toHaveAttribute('src', './logo-oled.png');
+    expect(img).toHaveAttribute('src', '/logo-oled.webp');
   });
 
   it('reactively updates when store themePreset changes', () => {
@@ -78,9 +77,11 @@ describe('CyberLogo component', () => {
   });
 
   it('has fetchpriority="high" and decoding="async" for optimal LCP performance', () => {
-    render(<CyberLogo />);
+    render(<CyberLogo size="sm" />);
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('fetchpriority', 'high');
+    expect(img).toHaveAttribute('srcset', expect.stringContaining('/logo-zerobox-64.webp 64w'));
+    expect(img).toHaveAttribute('width', '32');
     expect(img).toHaveAttribute('decoding', 'async');
   });
 });

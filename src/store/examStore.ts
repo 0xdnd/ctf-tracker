@@ -9,6 +9,8 @@
  * - Dual-clock bio-break management with audio cyber alarms
  * - Soak endurance invariant: 1Hz clock ticks NEVER trigger localStorage writes
  * - Passing status indicator: Passing / In Progress / Critical
+ * - Proof screenshots: image bytes live in IndexedDB (utils/examProofImages.ts); persisted state
+ *   keeps only ScreenshotProof.imageRef. Legacy inline Base64 is migrated on hydrate.
  */
 
 import { create } from 'zustand';
@@ -27,6 +29,9 @@ import {
   isDomainControllerBox,
 } from '../utils/examComplianceUtils';
 import { playCyberAlert } from '../utils/audioAlerts';
+import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
+import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
+import type { Finding } from '../types/findings';
 
 let examAlertChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -85,6 +90,14 @@ export interface ExamSessionState {
   isQuickDrawerOpen: boolean;
   scratchNotes: string;
   includeBonusPoints: boolean;
+  /** Box the operator is currently working (rabbit-hole clock). */
+  activeBoxId: string | null;
+  /** Effective ms timestamp the active box session began (shifted forward across pauses). */
+  activeBoxSince: number | null;
+  activeBoxPausedAt: number | null;
+  rabbitHoleSnoozeUntil: number | null;
+  /** Structured report findings for this exam session (additive; absent in older payloads). */
+  findings: Finding[];
 }
 
 export interface ExamStoreActions {
@@ -114,6 +127,15 @@ export interface ExamStoreActions {
   setScratchNotes: (notes: string) => void;
   setIncludeBonusPoints: (include: boolean) => void;
 
+  // Rabbit-hole clock
+  setActiveBox: (boxId: string | null) => void;
+  snoozeRabbitHole: (minutes?: number) => void;
+
+  // Report findings
+  addFinding: (finding?: Partial<Omit<Finding, 'id'>>) => string;
+  updateFinding: (id: string, patch: Partial<Omit<Finding, 'id'>>) => void;
+  deleteFinding: (id: string) => void;
+
   // UI State
   setQuickDrawerOpen: (open: boolean) => void;
   toggleQuickDrawer: () => void;
@@ -142,6 +164,30 @@ const DEFAULT_BREAK_STATE: ExamBreakState = {
   expiresAt: null,
 };
 
+const NO_ACTIVE_BOX = {
+  activeBoxId: null,
+  activeBoxSince: null,
+  activeBoxPausedAt: null,
+  rabbitHoleSnoozeUntil: null,
+} as const;
+
+/** Progress on the active box (new flag) restarts its rabbit-hole clock. */
+function rabbitHoleProgressReset(state: ExamSessionState, boxId: string): Partial<ExamSessionState> {
+  if (state.activeBoxId !== boxId) return {};
+  return { activeBoxSince: state.activeBoxPausedAt ?? Date.now(), rabbitHoleSnoozeUntil: null };
+}
+
+/** Shift the rabbit-hole clock forward by the pause duration so paused time does not count. */
+function resumedRabbitHoleClock(state: ExamSessionState, now: number): Partial<ExamSessionState> {
+  if (!state.activeBoxId || state.activeBoxPausedAt === null) return { activeBoxPausedAt: null };
+  const paused = Math.max(0, now - state.activeBoxPausedAt);
+  return {
+    activeBoxPausedAt: null,
+    activeBoxSince: state.activeBoxSince === null ? null : state.activeBoxSince + paused,
+    rabbitHoleSnoozeUntil: state.rabbitHoleSnoozeUntil === null ? null : state.rabbitHoleSnoozeUntil + paused,
+  };
+}
+
 function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
   const config = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
   const boxes = generateExamTargetsForTrack(track);
@@ -165,6 +211,8 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
     isQuickDrawerOpen: false,
     scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n- administrator : P@ssw0rd2024!\n\n## Active Tunnels & Pivots\n- Chisel SOCKS5 proxy on 127.0.0.1:1080 -> 172.16.1.0/24`,
     includeBonusPoints: false,
+    findings: [],
+    ...NO_ACTIVE_BOX,
   };
 }
 
@@ -219,6 +267,7 @@ export const useExamStore = create<ExamStore>()(
         const duration = trackConfig.durationSeconds;
         const expiresAt = now + duration * 1000;
         const boxes = generateExamTargetsForTrack(selectedTrack);
+        const previousBoxes = get().boxes;
 
         set({
           id: `exam_${now}_${Math.random().toString(36).substring(2, 7)}`,
@@ -235,6 +284,7 @@ export const useExamStore = create<ExamStore>()(
           osid: config?.osid || get().osid,
           activeBreak: { ...DEFAULT_BREAK_STATE },
           breakHistory: [],
+          ...NO_ACTIVE_BOX,
           milestones: [
             {
               id: `ms_${now}_start`,
@@ -246,6 +296,7 @@ export const useExamStore = create<ExamStore>()(
           ],
         });
 
+        purgeRemovedProofImages(previousBoxes, boxes);
         playCyberAlert('flag_captured');
       },
 
@@ -263,6 +314,7 @@ export const useExamStore = create<ExamStore>()(
           examExpiresAt: null,
           timerPausedRemainingSeconds: remaining,
           remainingSeconds: remaining,
+          activeBoxPausedAt: state.activeBoxId ? now : null,
         });
 
         playCyberAlert('tick');
@@ -281,6 +333,7 @@ export const useExamStore = create<ExamStore>()(
           examExpiresAt: expiresAt,
           timerPausedRemainingSeconds: null,
           remainingSeconds: remaining,
+          ...resumedRabbitHoleClock(state, now),
         });
 
         playCyberAlert('tick');
@@ -288,7 +341,10 @@ export const useExamStore = create<ExamStore>()(
 
       resetExam: (track) => {
         const targetTrack = track || get().track;
-        set(createInitialSession(targetTrack));
+        const previousBoxes = get().boxes;
+        const session = createInitialSession(targetTrack);
+        set(session);
+        purgeRemovedProofImages(previousBoxes, session.boxes);
         playCyberAlert('tick');
       },
 
@@ -297,13 +353,18 @@ export const useExamStore = create<ExamStore>()(
           console.warn('[ExamStore] Cannot switch track while an exam is actively running.');
           return;
         }
-        set(createInitialSession(track));
+        const previousBoxes = get().boxes;
+        const session = createInitialSession(track);
+        set(session);
+        purgeRemovedProofImages(previousBoxes, session.boxes);
       },
 
       shuffleTargets: () => {
         const currentTrack = get().track;
+        const previousBoxes = get().boxes;
         const newBoxes = generateExamTargetsForTrack(currentTrack);
         set({ boxes: newBoxes });
+        purgeRemovedProofImages(previousBoxes, newBoxes);
         playCyberAlert('tick');
       },
 
@@ -399,6 +460,7 @@ export const useExamStore = create<ExamStore>()(
         set({
           boxes: updatedBoxes,
           milestones: newMilestones,
+          ...(!wasAlreadyPwned ? rabbitHoleProgressReset(state, boxId) : {}),
         });
 
         return true;
@@ -450,10 +512,13 @@ export const useExamStore = create<ExamStore>()(
           playCyberAlert('tick');
         }
 
-        set({ boxes: updatedBoxes });
+        const nowPwned = updatedBoxes.find((b) => b.id === boxId);
+        const gained = flagType === 'user' ? nowPwned?.userPwned : nowPwned?.rootPwned;
+        set({ boxes: updatedBoxes, ...(gained ? rabbitHoleProgressReset(state, boxId) : {}) });
       },
 
       updateProof: (boxId, flagType, proofUpdate) => {
+        const previousBoxes = get().boxes;
         set((state) => ({
           boxes: state.boxes.map((b) => {
             if (b.id !== boxId) return b;
@@ -467,6 +532,7 @@ export const useExamStore = create<ExamStore>()(
             };
           }),
         }));
+        if (proofUpdate.screenshots) purgeRemovedProofImages(previousBoxes, get().boxes);
       },
 
       addScreenshot: (boxId, flagType, screenshot) => {
@@ -490,6 +556,7 @@ export const useExamStore = create<ExamStore>()(
       },
 
       removeScreenshot: (boxId, flagType, screenshotId) => {
+        const previousBoxes = get().boxes;
         set((state) => ({
           boxes: state.boxes.map((b) => {
             if (b.id !== boxId) return b;
@@ -506,6 +573,7 @@ export const useExamStore = create<ExamStore>()(
             };
           }),
         }));
+        purgeRemovedProofImages(previousBoxes, get().boxes);
       },
 
       startBreak: (type, customMinutes) => {
@@ -620,6 +688,49 @@ export const useExamStore = create<ExamStore>()(
 
       toggleQuickDrawer: () => {
         set((state) => ({ isQuickDrawerOpen: !state.isQuickDrawerOpen }));
+      },
+
+      setActiveBox: (boxId) => {
+        const state = get();
+        if (state.status !== 'running' && state.status !== 'paused') return;
+        if (state.activeBoxId === boxId) return;
+        set({
+          activeBoxId: boxId,
+          activeBoxSince: boxId ? state.activeBoxPausedAt ?? Date.now() : null,
+          activeBoxPausedAt: boxId && state.status === 'paused' ? state.activeBoxPausedAt ?? Date.now() : null,
+          rabbitHoleSnoozeUntil: null,
+        });
+      },
+
+      snoozeRabbitHole: (minutes = RABBIT_HOLE_THRESHOLDS.snoozeMinutes) => {
+        const state = get();
+        const ref = state.activeBoxPausedAt ?? Date.now();
+        set({ rabbitHoleSnoozeUntil: ref + minutes * 60_000 });
+      },
+
+      addFinding: (finding) => {
+        const id = `fnd_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const created: Finding = {
+          title: '',
+          severity: 'info',
+          affectedHosts: [],
+          description: '',
+          evidenceRefs: [],
+          ...finding,
+          id,
+        };
+        set((state) => ({ findings: [...(state.findings || []), created] }));
+        return id;
+      },
+
+      updateFinding: (id, patch) => {
+        set((state) => ({
+          findings: (state.findings || []).map((f) => (f.id === id ? { ...f, ...patch, id } : f)),
+        }));
+      },
+
+      deleteFinding: (id) => {
+        set((state) => ({ findings: (state.findings || []).filter((f) => f.id !== id) }));
       },
 
       // 1Hz tick: Pure in-memory derivation, excluded from partialize and selective storage
@@ -744,6 +855,12 @@ export const useExamStore = create<ExamStore>()(
     {
       name: EXAM_STORAGE_KEY,
       storage: createJSONStorage(() => selectiveExamStorage),
+      // v1: ScreenshotProof gained optional `imageRef` (bytes in IndexedDB) and `dataUrl` became
+      // optional. The shape change is additive, so older payloads need no sync transformation;
+      // inline Base64 is moved to IndexedDB asynchronously after hydration.
+      // `findings` is likewise additive: older payloads lack it and keep the initial `[]`.
+      version: 1,
+      migrate: (persistedState) => persistedState as ExamSessionState,
       // Crucial: Only persist discrete state mutations!
       // Exclude rapid transient in-memory properties so 1Hz ticks do not cause write amplification
       partialize: (state) => ({
@@ -770,6 +887,11 @@ export const useExamStore = create<ExamStore>()(
         milestones: state.milestones,
         scratchNotes: state.scratchNotes,
         includeBonusPoints: state.includeBonusPoints,
+        findings: state.findings,
+        activeBoxId: state.activeBoxId,
+        activeBoxSince: state.activeBoxSince,
+        activeBoxPausedAt: state.activeBoxPausedAt,
+        rabbitHoleSnoozeUntil: state.rabbitHoleSnoozeUntil,
         isQuickDrawerOpen: state.isQuickDrawerOpen,
       }),
       onRehydrateStorage: () => (state) => {
@@ -781,8 +903,34 @@ export const useExamStore = create<ExamStore>()(
         if (state.activeBreak && state.activeBreak.isActive && state.activeBreak.expiresAt) {
           state.activeBreak.remainingSeconds = Math.max(0, Math.floor((state.activeBreak.expiresAt - now) / 1000));
         }
+        // Deferred: during synchronous hydration `useExamStore` is not assigned yet.
+        void Promise.resolve().then(() => migrateExamProofImages());
       },
     }
   )
 );
+
+let proofImageMigration: Promise<number> | null = null;
+
+/**
+ * Moves legacy inline Base64 proof screenshots into IndexedDB (idempotent, safe to call repeatedly).
+ * A screenshot's Base64 is replaced by its imageRef only after its IndexedDB write resolved; if the
+ * write fails the Base64 stays in the store. Resolves with the number of screenshots migrated.
+ */
+export function migrateExamProofImages(): Promise<number> {
+  if (!proofImageMigration) {
+    proofImageMigration = migrateLegacyProofImages(
+      () => useExamStore.getState().boxes,
+      (update) => useExamStore.setState((state) => ({ boxes: update(state.boxes) }))
+    )
+      .catch((err) => {
+        console.warn('[ExamStore] Proof image migration failed; inline Base64 kept:', err);
+        return 0;
+      })
+      .finally(() => {
+        proofImageMigration = null;
+      });
+  }
+  return proofImageMigration;
+}
 

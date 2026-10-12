@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -18,7 +18,8 @@ import {
   ShieldAlert,
   Search,
   Copy,
-  Check
+  Check,
+  BookOpen
 } from 'lucide-react';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
@@ -28,6 +29,7 @@ import { SettingsDropdown } from './SettingsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 
 const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
   const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
@@ -40,7 +42,6 @@ const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
 
 export const UnifiedHeader: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const {
     activeTargetId,
@@ -84,6 +85,10 @@ export const UnifiedHeader: React.FC = () => {
 
   const user = useAuthStore((s) => s.user);
   const setOperatorProfileModalOpen = useAuthStore((s) => s.setOperatorProfileModalOpen);
+
+  const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const operatorRootedCount = useMemo(() => {
     return machines.filter((m) => m.status === 'root' || m.status === 'completed').length;
@@ -207,7 +212,7 @@ export const UnifiedHeader: React.FC = () => {
   const ghostBtn =
     'items-center justify-center gap-1.5 h-8 px-2 rounded-lg text-secondary hover:bg-surface-hover hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
   const copyReveal =
-    'p-0.5 rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100';
+    'p-0.5 rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100';
   const segmentCls = 'group flex items-center gap-1 h-6 px-1.5 rounded-md hover:bg-surface-hover focus-within:bg-surface-card';
   const segmentLabelCls = 'text-[10px] font-medium text-muted flex-shrink-0 cursor-pointer select-none';
   const segmentInputCls =
@@ -620,6 +625,27 @@ export const UnifiedHeader: React.FC = () => {
         >
           <Terminal className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="hidden 2xl:inline">Snippets</span>
+        </button>
+
+        {/* Field Notes Workspace Sidecar */}
+        <button
+          onClick={() => {
+            toggleNotesWorkspace();
+            if (soundEnabled) playCyberSound('click');
+          }}
+          className={`hidden md:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
+          title="Toggle Notes Workspace Sidecar (Alt+N)"
+          aria-label="Toggle Field Notes Sidecar"
+        >
+          <div className="relative flex items-center justify-center">
+            <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+            {openNotesCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 min-w-[12px] h-3 text-center text-[9px] leading-[12px] px-0.5 rounded-full bg-accent text-on-accent font-medium tabular-nums">
+                {openNotesCount}
+              </span>
+            )}
+          </div>
+          <span className="hidden lg:inline">Notes</span>
         </button>
 
         {/* Command palette trigger */}

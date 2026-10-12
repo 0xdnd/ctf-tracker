@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ObsidianNoteViewer } from '../../components/cheatsheet/ObsidianNoteViewer';
 import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { GlobalVariables } from '../../types';
@@ -63,24 +63,6 @@ Check \`sudo -l\` for commands runnable as root.
 `,
 };
 
-const mockNoteC: CptsNoteEntry = {
-  id: 'note-active-directory',
-  title: 'Active Directory Attacks',
-  titleEn: 'Active Directory Attacks',
-  category: 'Active Directory',
-  rawCategory: 'Active Directory',
-  subCategory: 'Kerberos',
-  tags: ['ad', 'kerberos'],
-  difficulty: 'Insane',
-  summary: 'Active Directory domain compromise paths.',
-  commands: ['impacket-GetNPUsers domain.local/ -usersfile users.txt -no-pass'],
-  relPath: 'ad/attacks.md',
-  rawMarkdown: `# Active Directory Attacks
-
-## Kerberos
-Kerberoasting and AS-REP Roasting tactics.
-`,
-};
 
 describe('Master In-Window Multi-Tab & Split-View Workspace Engine', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { Machine, PipelineStatus, Platform } from '../types';
 
-export interface BulkPwnMatch {
+interface BulkPwnMatch {
   rawInput: string;
   machineId: string;
   machineName: string;
@@ -22,7 +22,7 @@ export interface BulkPwnParseResult {
  * Normalizes a machine name for high-accuracy fuzzy matching.
  * e.g. "HTB - Pickle Rick (Retired)" -> "picklerick"
  */
-export function normalizeTargetName(name: string): string {
+function normalizeTargetName(name: string): string {
   return name
     .toLowerCase()
     .replace(/^(\[?(htb|thm|hackthebox|tryhackme)\]?[\s\-_:]*)/i, '')

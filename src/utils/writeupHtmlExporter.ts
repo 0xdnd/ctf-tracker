@@ -305,7 +305,7 @@ export function parseMarkdownToHtml(markdown: string): string {
  * Returns complete CSS styling embedded into the offline HTML document.
  * Includes dark tactical cyber theme, clean light theme, and high-contrast @media print rules.
  */
-export function getEmbeddedStyles(): string {
+function getEmbeddedStyles(): string {
   return `
     :root {
       --bg: #07090e;
@@ -866,7 +866,7 @@ export function getEmbeddedStyles(): string {
 /**
  * Returns embedded vanilla JS scripts for client-side interactivity in the offline HTML report.
  */
-export function getEmbeddedScript(rawMarkdown: string): string {
+function getEmbeddedScript(rawMarkdown: string): string {
   // Safe base64 encoded markdown payload for copy feature
   let encodedMarkdown = '';
   try {

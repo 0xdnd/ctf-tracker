@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { 
   Clock, 
@@ -7,9 +7,7 @@ import {
   AlertTriangle, 
   Zap, 
   Coffee, 
-  Pause,
-  Play
-} from 'lucide-react';
+  Pause} from 'lucide-react';
 import { useExamStore } from '../../store/examStore';
 import { formatSecondsToHms } from '../../utils/examPacingUtils';
 
@@ -18,14 +16,12 @@ export const ExamHeaderCapsule: React.FC = () => {
     status,
     track,
     activeBreak,
-    remainingSeconds,
     isQuickDrawerOpen,
     toggleQuickDrawer,
     getRemainingSeconds,
     getBreakRemainingSeconds,
     getScore,
     getPassingStatus,
-    tick,
   } = useExamStore(
     useShallow((s) => ({
       status: s.status,

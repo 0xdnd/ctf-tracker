@@ -1,5 +1,5 @@
-import confetti from 'canvas-confetti';
 import { GlobalVariables } from '../types';
+import { contextFromGlobalVars, resolveTemplate, SubstitutionContext } from './variableSubstitution';
 
 export function formatSeconds(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) return '00:00:00';
@@ -23,76 +23,40 @@ export function escapeRegex(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Legacy callers (cheatsheet, checklist, writeup, machine modal) share the
+ * engine in `variableSubstitution.ts` but keep the historical alias table:
+ * `{ip}` is the TARGET (case-insensitive) and `{port}`/`{shell}` are not
+ * variables. Hence `legacyAliases: true`. Placeholder values stored in the
+ * vars (`10.10.14.X`, `10.10.10.X`) count as "not set".
+ */
+function legacyContext(vars: GlobalVariables): SubstitutionContext {
+  return { ...contextFromGlobalVars(vars) };
+}
+
 export function interpolateCommand(template: string, vars: GlobalVariables): string {
   if (!template) return '';
-  let result = template;
-  const target = vars.targetIp || '10.10.10.X';
-  const lhost = vars.lhost || '10.10.14.X';
-  const lport = vars.lport || '4444';
-  const iface = vars.interface || 'tun0';
-
-  // Standard curly tokens
-  result = result.replace(/\{(?:TARGET_IP|TARGET|IP)\}/gi, target);
-  result = result.replace(/\{LHOST\}/gi, lhost);
-  result = result.replace(/\{LPORT\}/gi, lport);
-  result = result.replace(/\{INTERFACE\}/gi, iface);
-
-  // Obsidian Field Manual angle tokens (<IP>, <TARGET>, <TARGET_IP>, <LHOST>, <LPORT>)
-  result = result.replace(/<(?:TARGET_IP|TARGET|IP|Target-IP)>/gi, target);
-  result = result.replace(/<LHOST>/gi, lhost);
-  result = result.replace(/<LPORT>/gi, lport);
-  result = result.replace(/<INTERFACE>/gi, iface);
-
-  if (vars.customVars) {
-    Object.entries(vars.customVars).forEach(([key, val]) => {
-      if (!key) return;
-      const safeKey = escapeRegex(key);
-      const reg = new RegExp(`\\{${safeKey}\\}`, 'gi');
-      result = result.replace(reg, val);
-      const regAngle = new RegExp(`<${safeKey}>`, 'gi');
-      result = result.replace(regAngle, val);
-    });
-  }
-  return result;
+  return resolveTemplate(template, legacyContext(vars), { legacyAliases: true }).text;
 }
 
 export function getUnresolvedTokens(template: string, vars: GlobalVariables): string[] {
   if (!template) return [];
-  const missing: string[] = [];
-
-  // Check critical attacker IP (LHOST)
-  if ((/\{LHOST\}|<LHOST>/i.test(template)) && (!vars.lhost || vars.lhost === '10.10.14.X')) {
-    missing.push('LHOST');
-  }
-
-  // Check critical target IP (RHOST / TARGET)
-  if ((/\{(?:TARGET_IP|TARGET|IP)\}|<(?:TARGET_IP|TARGET|IP|Target-IP)>/i.test(template)) && (!vars.targetIp || vars.targetIp === '10.10.10.X')) {
-    missing.push('TARGET_IP');
-  }
-
-  // Check LPORT if empty
-  if ((/\{LPORT\}|<LPORT>/i.test(template)) && !vars.lport) {
-    missing.push('LPORT');
-  }
-
-  // Check any generic un-interpolated curly/angle tokens like {VARIABLE} or <VARIABLE>
-  const interpolated = interpolateCommand(template, vars);
-  const remainingCurly = interpolated.match(/\{([A-Za-z0-9_-]{2,})\}/g) || [];
-  const remainingAngle = interpolated.match(/<([A-Za-z0-9_-]{2,})>/g) || [];
-
-  for (const token of [...remainingCurly, ...remainingAngle]) {
-    const clean = token.replace(/[{<}>]/g, '');
-    if (!missing.includes(clean)) {
-      missing.push(clean);
-    }
-  }
-
-  return missing;
+  const ctx = legacyContext(vars);
+  if (ctx.lhost === '10.10.14.X') ctx.lhost = '';
+  if (ctx.rhost === '10.10.10.X') ctx.rhost = '';
+  const { unresolved } = resolveTemplate(template, ctx, { legacyAliases: true });
+  // Historical report order: LHOST, TARGET_IP, LPORT first, then anything else
+  // in order of appearance. INTERFACE was never reported (it falls back to tun0).
+  const priority = ['LHOST', 'TARGET_IP', 'LPORT'];
+  return [
+    ...priority.filter((p) => unresolved.includes(p)),
+    ...unresolved.filter((u) => !priority.includes(u) && u !== 'INTERFACE'),
+  ];
 }
 
 let sharedCyberAudioCtx: AudioContext | null = null;
 
-export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'copy' | 'flag' | 'export' | 'shuffle' | 'engage') {
+export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'copy' | 'flag' | 'export' | 'shuffle' | 'engage' | 'alert') {
   if (typeof window === 'undefined') return;
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
@@ -152,6 +116,15 @@ export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'co
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
       osc.start(now);
       osc.stop(now + 0.15);
+    } else if (type === 'alert') {
+      // Descending two-tone error cue
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.setValueAtTime(220, now + 0.1);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.start(now);
+      osc.stop(now + 0.22);
     } else if (type === 'export' || type === 'shuffle') {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(500, now);
@@ -185,12 +158,17 @@ export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'co
 }
 
 export function triggerRootCelebration() {
-  confetti({
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 },
-    colors: ['#10B981', '#06B6D4', '#EF4444', '#8B5CF6', '#F59E0B']
-  });
+  // Loaded on demand so canvas-confetti stays out of the entry preload graph.
+  import('canvas-confetti')
+    .then(({ default: confetti }) => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#10B981', '#06B6D4', '#EF4444', '#8B5CF6', '#F59E0B']
+      });
+    })
+    .catch(() => {});
 }
 
 export async function safeCopyToClipboard(text: string): Promise<boolean> {

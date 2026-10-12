@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Check, X, Clipboard, Globe, Shield, Terminal, ArrowRight } from 'lucide-react';
+import { Crosshair, X, Clipboard, Globe, ArrowRight } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { PlatformBadge } from './PlatformBadge';
 import { OsBadge } from './OsBadge';
+import { Modal } from './Modal';
 
 export const QuickAssignIpModal: React.FC = () => {
   const {
@@ -105,31 +104,19 @@ export const QuickAssignIpModal: React.FC = () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleConfirm();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      handleClose();
     }
   };
 
-  const content = (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.12 } }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-surface-inverse/70 font-sans overflow-y-auto"
-      onClick={handleClose}
-      onKeyDown={handleKeyDown}
+  return (
+    <Modal
+      open
+      onClose={handleClose}
+      labelledBy="quick-assign-ip-title"
+      size="lg"
+      zIndex="modalNested"
+      className="!bg-surface-inverse/70"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98, y: 8, transition: { duration: 0.12 } }}
-        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        onClick={(e) => e.stopPropagation()}
-        data-testid="quick-assign-ip-modal"
-        className="w-full max-w-lg rounded-2xl border border-subtle bg-surface-card shadow-xl overflow-hidden relative"
-      >
+      <div data-testid="quick-assign-ip-modal" onKeyDown={handleKeyDown}>
         {/* Header Strip */}
         <div className="flex items-center justify-between border-b border-subtle p-4 bg-surface-card">
           <div className="flex items-center gap-2.5">
@@ -137,7 +124,7 @@ export const QuickAssignIpModal: React.FC = () => {
               <Crosshair className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-primary flex items-center gap-1.5">
+              <h3 id="quick-assign-ip-title" className="text-sm font-semibold text-primary flex items-center gap-1.5">
                 <span>Assign spawned target IP</span>
                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-secondary font-medium border border-subtle">
                   Live instance
@@ -286,9 +273,7 @@ export const QuickAssignIpModal: React.FC = () => {
             </button>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 };

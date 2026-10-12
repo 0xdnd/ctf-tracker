@@ -6,13 +6,9 @@ import {
   ShieldCheck, 
   Award, 
   Terminal, 
-  Code2, 
   BookOpen, 
   Cpu, 
-  CheckCircle2, 
-  Sparkles,
   Zap,
-  Target,
   Scale,
   Copy,
   Check,
@@ -20,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
+import { Modal } from './Modal';
 
 export const OperatorDossierModal: React.FC = () => {
   const operatorModalOpen = useCtfStore((s) => s.operatorModalOpen);
@@ -38,34 +35,24 @@ export const OperatorDossierModal: React.FC = () => {
   };
 
   useEffect(() => {
-    if (operatorModalOpen) {
-      if (soundEnabled) playCyberSound('engage');
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') setOperatorModalOpen(false);
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [operatorModalOpen, setOperatorModalOpen, soundEnabled]);
-
-  if (!operatorModalOpen) return null;
+    if (operatorModalOpen && soundEnabled) playCyberSound('engage');
+  }, [operatorModalOpen, soundEnabled]);
 
   const links = CREATOR_PROFILE_LINKS;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
-      {/* Dark Backdrop */}
-      <div 
-        className="fixed inset-0 bg-surface-inverse/60 transition-opacity animate-in fade-in"
-        onClick={() => setOperatorModalOpen(false)}
-      />
-
-      {/* Modal Dossier Card */}
-      <div className="relative w-full max-w-3xl my-auto bg-surface-card border border-subtle rounded-2xl text-primary overflow-hidden z-10 flex flex-col max-h-[90vh] shadow-2xl">
-        
+    <Modal
+      open={operatorModalOpen}
+      onClose={() => setOperatorModalOpen(false)}
+      labelledBy="operator-dossier-title"
+      size="xl"
+      className="!bg-surface-inverse/60"
+      panelClassName="!max-w-3xl !shadow-2xl text-primary"
+    >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
         {/* Header */}
         <div className="px-4 py-3 bg-surface-card border-b border-subtle flex items-center justify-between select-none">
-          <h2 className="text-sm font-semibold text-primary tracking-[-0.01em]">
+          <h2 id="operator-dossier-title" className="text-sm font-semibold text-primary tracking-[-0.01em]">
             Creator dossier
           </h2>
 
@@ -344,9 +331,9 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-0.5">
-                <div className="text-primary font-semibold text-base">Zero egress</div>
+                <div className="text-primary font-semibold text-base">Local-first</div>
                 <div className="text-primary font-medium text-xs">Local-first engine</div>
-                <div className="text-[11px] text-muted">Offline-first Zustand state. No data leaves this machine.</div>
+                <div className="text-[11px] text-muted">Offline-first Zustand state. No telemetry. Optional AI uses your own key and only runs when you send.</div>
               </div>
             </div>
           </div>
@@ -434,6 +421,6 @@ export const OperatorDossierModal: React.FC = () => {
         </div>
 
       </div>
-    </div>
+    </Modal>
   );
 };

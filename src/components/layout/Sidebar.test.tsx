@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
@@ -39,14 +38,14 @@ describe('Sidebar component', () => {
     expect(screen.getByRole('button', { name: /Expand Sidebar/i })).toBeInTheDocument();
   });
 
-  it('renders Evidence & Loot Vault navigation link', () => {
+  it('renders Vault navigation link', () => {
     render(
       <BrowserRouter>
         <Sidebar />
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Evidence & Loot Vault')).toBeInTheDocument();
+    expect(screen.getByText('Vault')).toBeInTheDocument();
   });
 });
 

@@ -1,4 +1,5 @@
 import { Machine } from '../types';
+import { isSchemaWriteGated } from './schemaWriteGate';
 
 export interface DeepWriteupEntry {
   writeupMarkdown?: string;
@@ -148,6 +149,7 @@ export async function saveDeepProfileData(
     customNotes?: any[];
   }
 ): Promise<void> {
+  if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
   try {
     const activeDb = await openDeepDatabase();
@@ -191,6 +193,35 @@ export async function saveDeepProfileData(
     console.warn('[ZeroBox Deep Storage] Could not persist to IndexedDB:', err);
     try { db?.close(); } catch {}
   }
+}
+
+/**
+ * Writes a deep profile payload back verbatim while restoring a snapshot. Deliberately NOT gated: the
+ * restoring tab has engaged the write gate on itself, and this is its own restore write. Nothing else may call
+ * it. Resolves true only once the transaction completed.
+ */
+export async function restoreDeepProfileData(profileId: string, payload: DeepProfilePayload): Promise<boolean> {
+  const db = await openDeepDatabase();
+  if (!db) return false;
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    const done = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch {}
+      resolve(ok);
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.oncomplete = () => done(true);
+      tx.onerror = () => done(false);
+      tx.onabort = () => done(false);
+      tx.objectStore(STORE_NAME).put(payload, profileId || 'guest');
+    } catch (err) {
+      console.warn('[ZeroBox Deep Storage] Restore write failed:', err);
+      done(false);
+    }
+  });
 }
 
 /**
@@ -241,6 +272,7 @@ export async function loadDeepProfileData(profileId: string): Promise<DeepProfil
  * Deletes deep profile data from IndexedDB.
  */
 export async function clearDeepProfileData(profileId: string): Promise<void> {
+  if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
   try {
     const activeDb = await openDeepDatabase();
@@ -278,6 +310,7 @@ export async function clearDeepProfileData(profileId: string): Promise<void> {
  * Deletes a single machine's writeup and notes entry from a deep profile in IndexedDB.
  */
 export async function deleteMachineDeepData(profileId: string, machineId: string): Promise<void> {
+  if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
   try {
     const activeDb = await openDeepDatabase();
@@ -321,4 +354,89 @@ export async function deleteMachineDeepData(profileId: string, machineId: string
     console.warn('[ZeroBox Deep Storage] Could not delete machine deep data:', err);
     try { db?.close(); } catch {}
   }
+}
+
+/**
+ * Exam proof images (binary blobs).
+ *
+ * Stored in the same object store under a reserved key prefix, so no DB_VERSION bump / schema
+ * migration is needed and older builds opening the database keep working. All helpers resolve
+ * (never throw); writes resolve `true` only once the transaction has COMPLETED.
+ */
+const PROOF_IMAGE_KEY_PREFIX = 'exam_proof_image:';
+
+interface ProofImageRecord {
+  blob: Blob;
+  mime: string;
+  size: number;
+  savedAt: string;
+}
+
+export function isProofImageStorageAvailable(): boolean {
+  return isIndexedDbSupported();
+}
+
+async function runProofImageTx<T>(
+  mode: IDBTransactionMode,
+  fallback: T,
+  run: (store: IDBObjectStore, setResult: (value: T) => void) => void
+): Promise<T> {
+  const db = await openDeepDatabase();
+  if (!db) return fallback;
+  return new Promise<T>((resolve) => {
+    let result = fallback;
+    let settled = false;
+    const done = (value: T) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch {}
+      resolve(value);
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, mode);
+      tx.oncomplete = () => done(result);
+      tx.onerror = () => done(fallback);
+      tx.onabort = () => done(fallback);
+      run(tx.objectStore(STORE_NAME), (value) => { result = value; });
+    } catch (err) {
+      console.warn('[ZeroBox Deep Storage] Proof image transaction failed:', err);
+      done(fallback);
+    }
+  });
+}
+
+/** Persists one proof image blob. Resolves `true` only after the write transaction completed. */
+export function saveProofImageBlob(id: string, blob: Blob): Promise<boolean> {
+  if (isSchemaWriteGated()) return Promise.resolve(false);
+  return runProofImageTx<boolean>('readwrite', false, (store, setResult) => {
+    const record: ProofImageRecord = {
+      blob,
+      mime: blob.type,
+      size: blob.size,
+      savedAt: new Date().toISOString(),
+    };
+    store.put(record, PROOF_IMAGE_KEY_PREFIX + id);
+    setResult(true);
+  });
+}
+
+/** Loads one proof image blob, or null when missing / IndexedDB unavailable. */
+export function loadProofImageBlob(id: string): Promise<Blob | null> {
+  return runProofImageTx<Blob | null>('readonly', null, (store, setResult) => {
+    const req = store.get(PROOF_IMAGE_KEY_PREFIX + id);
+    req.onsuccess = () => {
+      const record = req.result as ProofImageRecord | undefined;
+      setResult(record && record.blob instanceof Blob ? record.blob : null);
+    };
+  });
+}
+
+/** Deletes proof image blobs by id (missing ids are ignored). */
+export async function deleteProofImageBlobs(ids: string[]): Promise<void> {
+  if (isSchemaWriteGated()) return;
+  if (ids.length === 0) return;
+  await runProofImageTx<boolean>('readwrite', false, (store, setResult) => {
+    ids.forEach((id) => store.delete(PROOF_IMAGE_KEY_PREFIX + id));
+    setResult(true);
+  });
 }

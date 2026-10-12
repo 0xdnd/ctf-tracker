@@ -1,7 +1,8 @@
 import { Machine, CheatsheetCommand, GlobalVariables, ActivitySession } from '../types';
 import { CptsNoteEntry } from './obsidianManualUtils';
+import { MAX_WEEKLY_ROOT_TARGET } from '../store/useGoalsStore';
 
-export interface WorkspaceExportPayload {
+interface WorkspaceExportPayload {
   version: string;
   exportedAt: string;
   appBrand: string;
@@ -15,6 +16,33 @@ export interface WorkspaceExportPayload {
   deletedNoteIds?: string[];
   userSolvesReset?: boolean;
   themePreset?: string;
+  graphEdges?: any[];
+  graphNodePositions?: Record<string, { x: number; y: number }>;
+  credentials?: any[];
+  credAttempts?: any[];
+  lootItems?: any[];
+  /** Optional (added after 2.0.0 shipped; older builds ignore it, older backups lack it). */
+  goals?: BackupGoals;
+}
+
+export interface BackupGoals {
+  weeklyRootTarget: number | null;
+}
+
+
+
+/**
+ * The optional `goals` block of a backup. weeklyRootTarget must be a positive integer up to MAX_WEEKLY_ROOT_TARGET (99), or null
+ * (no goal). Missing or invalid yields undefined, which means "leave the current goals untouched".
+ */
+export function parseBackupGoals(raw: unknown): BackupGoals | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !('weeklyRootTarget' in raw)) return undefined;
+  const target = (raw as { weeklyRootTarget: unknown }).weeklyRootTarget;
+  if (target === null) return { weeklyRootTarget: null };
+  if (typeof target === 'number' && Number.isInteger(target) && target >= 1 && target <= MAX_WEEKLY_ROOT_TARGET) {
+    return { weeklyRootTarget: target };
+  }
+  return undefined;
 }
 
 export interface WorkspaceImportResult {
@@ -121,6 +149,12 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
     deletedNoteIds: Array.isArray(root.deletedNoteIds) ? root.deletedNoteIds : undefined,
     userSolvesReset: Boolean(root.userSolvesReset),
     themePreset: typeof root.themePreset === 'string' ? root.themePreset : undefined,
+    graphEdges: Array.isArray(root.graphEdges) ? root.graphEdges.map((item: any) => sanitizeObjectKeys(item)) : undefined,
+    graphNodePositions: root.graphNodePositions && typeof root.graphNodePositions === 'object' && !Array.isArray(root.graphNodePositions) ? sanitizeObjectKeys(root.graphNodePositions) : undefined,
+    credentials: Array.isArray(root.credentials) ? root.credentials.map((item: any) => sanitizeObjectKeys(item)) : undefined,
+    credAttempts: Array.isArray(root.credAttempts) ? root.credAttempts.map((item: any) => sanitizeObjectKeys(item)) : undefined,
+    lootItems: Array.isArray(root.lootItems) ? root.lootItems.map((item: any) => sanitizeObjectKeys(item)) : undefined,
+    goals: parseBackupGoals(root.goals),
   };
 
   return {

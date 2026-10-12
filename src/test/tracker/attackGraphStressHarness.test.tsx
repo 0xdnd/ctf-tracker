@@ -1,13 +1,9 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { 
   GraphView, 
-  computeCanvasDelta,
-  GraphNode,
-  getCanvasThemeTokens 
-} from '../../components/tracker/GraphView';
+  computeCanvasDelta} from '../../components/tracker/GraphView';
 import { useCtfStore, safeLocalStorage, ATTACK_GRAPH_STORAGE_KEY } from '../../store/useCtfStore';
 import { Machine } from '../../types';
 
@@ -25,7 +21,7 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
   }));
 }
 
-function createTestMachine(id: string, name: string, ip: string, x?: number, y?: number): Machine {
+function createTestMachine(id: string, name: string, ip: string): Machine {
   return {
     id,
     name,

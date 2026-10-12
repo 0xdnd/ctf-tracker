@@ -474,8 +474,10 @@
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-micro);
 }
-.interactive-surface:hover {
-  background-color: rgb(var(--surface-hover));
+@media (hover: hover) and (pointer: fine) {
+  .interactive-surface:hover {
+    background-color: rgb(var(--surface-hover));
+  }
 }
 .interactive-surface:focus-visible {
   outline: none;
@@ -494,8 +496,10 @@
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-micro);
 }
-.interactive-button:hover {
-  background-color: rgb(var(--surface-hover));
+@media (hover: hover) and (pointer: fine) {
+  .interactive-button:hover {
+    background-color: rgb(var(--surface-hover));
+  }
 }
 .interactive-button:active {
   transform: scale(0.97);
@@ -509,6 +513,24 @@
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Coarse-pointer hit-area expansion: keeps visual size, guarantees a >= 44x44 tappable area */
+@media (pointer: coarse) {
+  .tap-target,
+  .tap-target-sm {
+    position: relative;
+  }
+  .tap-target::after,
+  .tap-target-sm::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* Exact Dimension Dim-Pulse Skeleton (No Dazzling Shimmer) */
@@ -527,8 +549,29 @@
   border-radius: var(--radius-xs, 2px);
 }
 
+/* Card entrance (Kanban + Grid): compositor-only CSS replacement for per-card framer-motion springs.
+   Per-card stagger is set inline via animation-delay. */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-enter {
+  animation: card-enter 220ms ease-out backwards;
+}
+
 /* Accessibility & Web Interface Guidelines: Reduced Motion (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
+  .card-enter {
+    animation: none !important;
+  }
+
   *,
   *::before,
   *::after {
@@ -714,13 +757,17 @@ html:not(.dark) .text-white:not(button *):not(button):not(.bg-cyber-crimson *):n
 }
 
 /* Light Mode hover:text-white Invisibility Neutralization */
-html:not(.dark) .hover\:text-white:hover:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
-  color: rgb(var(--text-primary)) !important;
+@media (hover: hover) and (pointer: fine) {
+  html:not(.dark) .hover\:text-white:hover:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
+    color: rgb(var(--text-primary)) !important;
+  }
 }
 
 /* Light Mode group-hover:text-white Neutralization */
-html:not(.dark) .group:hover .group-hover\:text-white:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
-  color: rgb(var(--text-primary)) !important;
+@media (hover: hover) and (pointer: fine) {
+  html:not(.dark) .group:hover .group-hover\:text-white:not(.bg-cyber-crimson):not(.bg-cyber-crimson *):not(.bg-red-500):not(.bg-red-600):not(.bg-emerald-600):not(.bg-blue-600):not(.bg-purple-600):not(.bg-purple-700):not(.keep-white):not([data-keep-white="true"]) {
+    color: rgb(var(--text-primary)) !important;
+  }
 }
 
 html:not(.dark) .bg-black\/40,

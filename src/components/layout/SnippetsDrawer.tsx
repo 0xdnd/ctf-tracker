@@ -8,13 +8,13 @@ import {
   Check, 
   Star, 
   ExternalLink,
-  Code2,
-  Sparkles,
   AlertTriangle
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useActiveTargetIp } from '../../hooks/useActiveTargetIp';
 import { useShallow } from 'zustand/react/shallow';
-import { interpolateCommand, getUnresolvedTokens, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { resolveTemplate, contextFromGlobalVars } from '../../utils/variableSubstitution';
 import { CHEATSHEET_CATEGORIES } from '../../data/cheatsheetsData';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,6 +36,14 @@ export const SnippetsDrawer: React.FC = () => {
       soundEnabled: s.soundEnabled,
       toggleStarCommand: s.toggleStarCommand,
     }))
+  );
+
+  // Active engaged target's IP takes priority over the global RHOST.
+  const activeTargetIp = useActiveTargetIp();
+
+  const substitutionContext = useMemo(
+    () => contextFromGlobalVars(globalVars, { activeTargetIp }),
+    [globalVars, activeTargetIp]
   );
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -153,7 +161,7 @@ export const SnippetsDrawer: React.FC = () => {
                 LPORT <strong className="font-mono tabular-nums font-medium text-on-inverse">{globalVars.lport || '4444'}</strong>
               </span>
               <span className="px-1.5 py-0.5 rounded bg-surface-inverse-elevated border border-inverse text-on-inverse-muted">
-                RHOST <strong className="font-mono tabular-nums font-medium text-on-inverse">{globalVars.targetIp || '10.10.10.X'}</strong>
+                RHOST <strong className="font-mono tabular-nums font-medium text-on-inverse">{activeTargetIp || globalVars.targetIp || '10.10.10.X'}</strong>
               </span>
             </div>
           </div>
@@ -183,8 +191,11 @@ export const SnippetsDrawer: React.FC = () => {
           {/* Snippet list */}
           <div className="p-3 space-y-2.5 overflow-y-auto flex-1">
             {filteredCommands.map((cmd) => {
-              const interpolated = interpolateCommand(cmd.commandTemplate, globalVars);
-              const unresolved = getUnresolvedTokens(cmd.commandTemplate, globalVars);
+              // Cheatsheet content: legacy mode ({ip} = TARGET). Unresolved-token
+              // reporting below comes from this same call, so the modes always match.
+              const resolved = resolveTemplate(cmd.commandTemplate, substitutionContext, { legacyAliases: true });
+              const interpolated = resolved.text;
+              const unresolved = resolved.unresolved;
               const isCopied = copiedId === cmd.id;
 
               return (
