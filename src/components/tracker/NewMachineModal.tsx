@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Server, Lock } from 'lucide-react';
-import { useCtfStore, KNOWN_ACTIVE_SEASONAL_NAMES } from '../../store/useCtfStore';
+import { useCtfStore, KNOWN_ACTIVE_SEASONAL_NAMES, normalizeMachineSlug } from '../../store/useCtfStore';
 import { Platform, OperatingSystem, Difficulty } from '../../types';
 import { playCyberSound, sanitizeExternalUrl } from '../../utils/helpers';
 import { OsBadge, OsIcon } from '../common/OsBadge';
@@ -54,7 +54,7 @@ export const NewMachineModal: React.FC = () => {
   // Pro Labs and exams are personal targets: platform Custom plus a marker tag, no bundled content.
   const isPersonal = targetType !== 'machine';
   // A matching name only suggests name-only mode: the operator's own target is never forced into it.
-  const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(name.trim().toLowerCase());
+  const isKnownActive = platform === 'HTB' && KNOWN_ACTIVE_SEASONAL_NAMES.has(normalizeMachineSlug(name));
   const effectiveIsActive = !isPersonal && isActive;
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -140,6 +140,27 @@ describe('merging active catalog rows with stored machines', () => {
     expect(row).toMatchObject({ isActive: true, status: 'recon', quickNotes: '', userFlag: '', tags: [], ip: '' });
   });
 
+  it('a THM room named "Stream" is not flagged active and does not block the HTB row', () => {
+    const thm = box({ id: 'thm-stream', name: 'Stream', platform: 'THM', quickNotes: 'room notes', tags: ['web'] });
+    const catalog = appendActiveMachines([thm]);
+    expect(catalog.find((m) => m.id === 'htb-stream')).toBeDefined();
+    const merged = mergeMachinesWithCatalog([{ ...thm, status: 'recon' }], false, catalog);
+    const room = merged.find((m) => m.id === 'thm-stream')!;
+    expect(room.isActive).toBeFalsy();
+    expect(room).toMatchObject({ quickNotes: 'room notes', tags: ['web'], status: 'recon' });
+    expect(merged.find((m) => m.id === 'htb-stream')!.isActive).toBe(true);
+  });
+
+  it('an HTB catalog row named "Dark Zero Returns" matches by slug and is sanitized', () => {
+    const row = box({ id: 'htb-dark-zero-returns', name: 'Dark Zero Returns', hint: 'spoiler', tags: ['ad'] });
+    const merged = mergeMachinesWithCatalog(
+      [{ ...row, status: 'recon', quickNotes: 'notes', userFlag: 'HTB{x}' }],
+      false,
+      [row]
+    );
+    expect(merged[0]).toMatchObject({ isActive: true, status: 'recon', hint: '', tags: [], quickNotes: '', userFlag: '' });
+  });
+
   it('a catalog-matched active row keeps its user progress', () => {
     const stored = box({ id: 'htb-stream', name: 'Stream', status: 'recon', timeSpentSeconds: 1200, rating: 4 });
     const merged = mergeMachinesWithCatalog([stored], false, CATALOG);

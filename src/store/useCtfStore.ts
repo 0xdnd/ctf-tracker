@@ -735,10 +735,11 @@ export const KNOWN_ACTIVE_SEASONAL_NAMES = new Set(
 /**
  * Name-based active detection. Never applies to the operator's own custom targets (custom- id or
  * platform Custom): a custom "Management" is their data, not the HTB machine, and must keep its notes.
- * Customs are only sanitized when explicitly marked isActive.
+ * Customs are only sanitized when explicitly marked isActive. Only HTB rows can match (a THM room
+ * called "Stream" is not the HTB machine); names compare by slug so "Dark Zero Returns" matches.
  */
 const isKnownActiveByName = (m: Pick<Machine, 'id' | 'name' | 'platform'>): boolean =>
-  !isGenuineCustom(m) && KNOWN_ACTIVE_SEASONAL_NAMES.has(m.name.toLowerCase().trim());
+  m.platform === 'HTB' && !isGenuineCustom(m) && KNOWN_ACTIVE_SEASONAL_NAMES.has(normalizeMachineSlug(m.name));
 
 export const CATALOG_MACHINE_ALIASES: Record<string, string> = {
   // Legacy or alternate IDs mapped to canonical catalog machine IDs
