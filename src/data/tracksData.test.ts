@@ -19,15 +19,15 @@ describe('PRACTICE_TRACKS Configuration', () => {
     expect(ids).toContain('crto-ad');
   });
 
-  it('accurately identifies TJ_Null OSCP boxes', () => {
+  it('accurately identifies OSCP+ list and TJ_Null THM boxes', () => {
     const oscpTrack = PRACTICE_TRACKS.find((t) => t.id === 'tjnull-oscp')!;
     expect(oscpTrack).toBeDefined();
 
     const sampleBox1: Machine = {
-      id: 'htb-lame',
-      name: 'Lame',
-      ip: '10.10.10.3',
-      os: 'Linux',
+      id: 'htb-forest',
+      name: 'Forest',
+      ip: '10.10.10.161',
+      os: 'Windows',
       platform: 'HTB',
       difficulty: 'Easy',
       status: 'completed',
