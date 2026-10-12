@@ -54,7 +54,8 @@
     "share": "npx --yes localtunnel@2.0.2 --port 3000",
     "preview": "vite preview",
     "lighthouse:a11y": "node scripts/lighthouse_a11y.mjs",
-    "check:active": "node scripts/check-active-machines.mjs"
+    "check:active": "node scripts/check-active-machines.mjs",
+    "stats:catalog": "node scripts/catalog-stats.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

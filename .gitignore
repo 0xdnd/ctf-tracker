@@ -19,7 +19,8 @@ pids
 # Build artifacts
 dist
 dist-ssr
-docs/
+docs/*
+!docs/CATALOG_STATS.md
 release/
 src-tauri/target/
 dist-electron/
