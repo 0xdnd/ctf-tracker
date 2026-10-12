@@ -27,10 +27,29 @@ const box = (id: string, extra: Partial<Machine> = {}): Machine =>
 
 type StoreModule = typeof import('../../store/useCtfStore');
 
-const boot = async (): Promise<StoreModule> => {
-  vi.resetModules();
-  return import('../../store/useCtfStore');
+// Every boot leaves window listeners behind; retire older instances so they can't write into later tests.
+const live: StoreModule[] = [];
+const noopStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+const retireAll = () => {
+  for (const mod of live.splice(0)) {
+    mod.useCtfStore.persist.setOptions({ storage: noopStorage });
+    mod.useCtfStore.setState({ currentProfileId: '' });
+  }
 };
+
+const boot = async (): Promise<StoreModule> => {
+  retireAll();
+  vi.resetModules();
+  const mod = await import('../../store/useCtfStore');
+  live.push(mod);
+  return mod;
+};
+
+/** Another tab saved this profile copy. */
+const otherTabWrites = (machines: Machine[], activeTargetId: string) =>
+  window.dispatchEvent(
+    new StorageEvent('storage', { key: PROFILE_KEY, newValue: JSON.stringify({ machines, activeTargetId }) })
+  );
 
 const storedProfile = () => JSON.parse(localStorage.getItem(PROFILE_KEY) as string);
 const storedSeconds = (id: string) =>
@@ -66,6 +85,7 @@ beforeEach(() => {
 
 afterEach(() => {
   stopTicking();
+  retireAll();
   vi.useRealTimers();
 });
 
@@ -188,6 +208,90 @@ describe('timer autosave', () => {
     expect(s().activeTimerSeconds).toBe(4000);
     s().setActiveTarget('custom-b');
     expect(storedSeconds('custom-a')).toBe(4000);
+  });
+
+  it('a pause writes the profile exactly once', async () => {
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    startTicking(mod);
+    s().startTimer();
+    vi.advanceTimersByTime(10_000);
+    const spy = vi.spyOn(Storage.prototype, 'setItem');
+    s().pauseTimer();
+    vi.advanceTimersByTime(6_000);
+    expect(spy.mock.calls.filter((c) => c[0] === PROFILE_KEY)).toHaveLength(1);
+    spy.mockRestore();
+  });
+
+  it('two running tabs on one target converge on the larger time and do not echo writes back', async () => {
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    startTicking(mod);
+    s().startTimer();
+    vi.advanceTimersByTime(100_000); // checkpoint at 60 s
+    const spy = vi.spyOn(Storage.prototype, 'setItem');
+
+    otherTabWrites([box('custom-a', { timeSpentSeconds: 300 }), box('custom-b', { timeSpentSeconds: 30 })], 'custom-a');
+    expect(s().isTimerRunning).toBe(true);
+    expect(s().activeTimerSeconds).toBe(300);
+    vi.advanceTimersByTime(5_000);
+    expect(spy.mock.calls.filter((c) => c[0] === PROFILE_KEY)).toHaveLength(0); // no echo write back
+    spy.mockRestore();
+
+    otherTabWrites([box('custom-a', { timeSpentSeconds: 50 }), box('custom-b', { timeSpentSeconds: 30 })], 'custom-a');
+    expect(s().activeTimerSeconds).toBe(305); // a running timer never goes down
+    // Its next tick checkpoints the larger time back over the other tab's 50.
+    vi.advanceTimersByTime(1_000);
+    expect(storedSeconds('custom-a')).toBe(306);
+  });
+
+  it('when another tab switches target, this tab keeps its seconds on the old target and stops', async () => {
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    startTicking(mod);
+    s().startTimer();
+    vi.advanceTimersByTime(100_000); // saved 60, shown 100
+
+    otherTabWrites([box('custom-a', { timeSpentSeconds: 60 }), box('custom-b', { timeSpentSeconds: 30 })], 'custom-b');
+    expect(s().activeTargetId).toBe('custom-b');
+    expect(s().isTimerRunning).toBe(false);
+    expect(s().activeTimerSeconds).toBe(30);
+    expect(s().machines.find((m) => m.id === 'custom-a')?.timeSpentSeconds).toBe(100);
+    expect(storedSeconds('custom-a')).toBe(100);
+  });
+
+  it('importing a backup with more time for the active target reseeds the timer', async () => {
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    startTicking(mod);
+    s().startTimer();
+    vi.advanceTimersByTime(100_000);
+    s().pauseTimer();
+
+    const backup = JSON.parse(s().exportBackup());
+    backup.machines = backup.machines.map((m: Machine) => (m.id === 'custom-a' ? { ...m, timeSpentSeconds: 10_800 } : m));
+    expect(s().importBackup(JSON.stringify(backup))).toBe(true);
+    expect(s().activeTimerSeconds).toBe(10_800);
+    s().setActiveTarget('custom-b');
+    expect(s().machines.find((m) => m.id === 'custom-a')?.timeSpentSeconds).toBe(10_800);
+  });
+
+  it('timer overlays and folds never lower the saved time', async () => {
+    seedStorage([box('custom-a', { timeSpentSeconds: 500 }), box('custom-b')], 'custom-a');
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    mod.useCtfStore.setState({ activeTimerSeconds: 100 }); // stale display
+    mod.flushProfileSave();
+    expect(storedSeconds('custom-a')).toBe(500);
+    const exported = JSON.parse(s().exportBackup());
+    expect(exported.machines.find((m: Machine) => m.id === 'custom-a').timeSpentSeconds).toBe(500);
+    s().setActiveTarget('custom-b');
+    expect(s().machines.find((m) => m.id === 'custom-a')?.timeSpentSeconds).toBe(500);
+    expect(storedSeconds('custom-a')).toBe(500);
+
+    // Lowering stays possible on purpose: reset (and an explicit time edit).
+    s().resetTimer('custom-a');
+    expect(storedSeconds('custom-a')).toBe(0);
   });
 
   it('writes nothing while idle', async () => {
