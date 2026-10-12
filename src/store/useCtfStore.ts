@@ -43,7 +43,8 @@ import {
   redactLootState
 } from './lootPersistence';
 import { STARTER_MACHINES } from '../data/starterMachines';
-import { hasUserProgress, isGenuineCustom } from './machineNormalization';
+import { hasUserProgress, isGenuineCustom, normalizeMachineSlug } from './machineNormalization';
+import { ACTIVE_MACHINES } from '../data/activeMachines';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
 import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
@@ -724,17 +725,12 @@ export const loadInitialProfileData = (profileId: string) => {
   return null;
 };
 
-export const KNOWN_ACTIVE_SEASONAL_NAMES = new Set([
-  'scaffold', 'blocksynergy', 'danglingtree', 'cohort', 'darkzeroreturns', 
-  'bedside', 'paperwork', 'makesense', 'enigma', 'nimbus', 'checkpoint', 
-  'connected', 'devhub', 'reactor', 'smarthire', 'pingpong', 'silentium', 
-  'garfield', 'eloquia', 'hercules'
-]);
+export { normalizeMachineSlug };
 
-export const normalizeMachineSlug = (str?: string): string => {
-  if (!str) return '';
-  return str.toLowerCase().replace(/[^a-z0-9]/g, '');
-};
+/** Normalized slugs of the currently active HTB machines, derived from src/data/activeMachines.json. */
+export const KNOWN_ACTIVE_SEASONAL_NAMES = new Set(
+  ACTIVE_MACHINES.machines.map((m) => normalizeMachineSlug(m.name))
+);
 
 export const CATALOG_MACHINE_ALIASES: Record<string, string> = {
   // Legacy or alternate IDs mapped to canonical catalog machine IDs
