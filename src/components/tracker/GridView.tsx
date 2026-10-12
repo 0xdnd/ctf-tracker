@@ -27,6 +27,8 @@ import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
+import { TargetTypeBadge } from '../common/TargetTypeBadge';
+import { isTargetTypeTag } from '../../utils/targetType';
 
 /** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
 const REVEAL =
@@ -135,7 +137,7 @@ const GridCard = React.memo<GridCardProps>(({
   const metaBadges: React.ReactNode[] = [
     <OsBadge key="os" os={m.os} size="xs" />,
     <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-    ...m.tags.map((t) => (
+    ...m.tags.filter((t) => !isTargetTypeTag(m, t)).map((t) => (
       <span
         key={`tag-${t}`}
         className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
@@ -198,6 +200,7 @@ const GridCard = React.memo<GridCardProps>(({
                 Active
               </span>
             )}
+            <TargetTypeBadge machine={m} size="sm" />
           </div>
           {isActiveTarget && (
             <span className="flex flex-shrink-0 items-center gap-1 text-xs font-medium text-accent">

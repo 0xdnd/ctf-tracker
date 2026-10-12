@@ -7,6 +7,9 @@ import { OsBadge, OsIcon } from '../common/OsBadge';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { Modal } from '../common/Modal';
+import { TARGET_TYPE_LABELS, TARGET_TYPE_TAGS, type TargetType } from '../../utils/targetType';
+
+const TARGET_TYPES: TargetType[] = ['machine', 'pro-lab', 'exam'];
 
 const PLATFORM_OPTIONS: CyberSelectOption<Platform>[] = [
   { value: 'HTB', label: 'Hack The Box', icon: <PlatformIcon platform="HTB" /> },
@@ -46,9 +49,12 @@ export const NewMachineModal: React.FC = () => {
   const [tags, setTags] = useState('');
   const [hint, setHint] = useState('');
   const [isActive, setIsActive] = useState(false);
+  const [targetType, setTargetType] = useState<TargetType>('machine');
 
+  // Pro Labs and exams are personal targets: platform Custom plus a marker tag, no bundled content.
+  const isPersonal = targetType !== 'machine';
   const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(name.trim().toLowerCase());
-  const effectiveIsActive = isActive || isKnownActive;
+  const effectiveIsActive = (!isPersonal && isActive) || isKnownActive;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,12 +64,16 @@ export const NewMachineModal: React.FC = () => {
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean);
+    if (isPersonal) {
+      const marker = TARGET_TYPE_TAGS[targetType];
+      if (!tagList.some((t) => t.toLowerCase() === marker)) tagList.unshift(marker);
+    }
 
     addCustomMachine({
       name: name.trim(),
       ip: effectiveIsActive ? '' : (ip.trim() || '10.10.x.x'),
       os: effectiveIsActive ? 'Other' : os,
-      platform,
+      platform: isPersonal ? 'Custom' : platform,
       difficulty: effectiveIsActive ? 'Medium' : difficulty,
       status: 'backlog',
       isActive: effectiveIsActive,
@@ -84,6 +94,7 @@ export const NewMachineModal: React.FC = () => {
     setTags('');
     setHint('');
     setIsActive(false);
+    setTargetType('machine');
   };
 
   return (
@@ -111,9 +122,38 @@ export const NewMachineModal: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs scrollbar-thin">
+          <fieldset>
+            <legend className="block text-muted mb-1 font-semibold">Target type</legend>
+            <div className="inline-flex rounded-lg border border-subtle bg-surface-sunken p-0.5">
+              {TARGET_TYPES.map((t) => (
+                <label
+                  key={t}
+                  className={`cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
+                    targetType === t ? 'bg-surface-card text-primary shadow-xs' : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="new-machine-target-type"
+                    value={t}
+                    checked={targetType === t}
+                    onChange={() => setTargetType(t)}
+                    className="sr-only"
+                  />
+                  {TARGET_TYPE_LABELS[t]}
+                </label>
+              ))}
+            </div>
+            {isPersonal && (
+              <p className="mt-1.5 text-tertiary">
+                Track your own progress here. ZeroBox doesn't include any Pro Lab or exam content.
+              </p>
+            )}
+          </fieldset>
+
           <div>
             <label htmlFor="new-machine-name-input" className="block text-muted mb-1 font-semibold">
-              Machine / Room Name *
+              {isPersonal ? `${TARGET_TYPE_LABELS[targetType]} name *` : 'Machine / Room Name *'}
             </label>
             <input
               id="new-machine-name-input"
@@ -123,12 +163,13 @@ export const NewMachineModal: React.FC = () => {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Blackfield, Lame, Kioptrix"
+              placeholder={isPersonal ? 'Type your own name for it' : 'e.g. Blackfield, Lame, Kioptrix'}
               className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
             />
           </div>
 
-          {/* Active Lab ToS Safeguard Control */}
+          {/* Active Lab ToS Safeguard Control (machines only, unless the name is a known active machine) */}
+          {(!isPersonal || isKnownActive) && (
           <div className={`p-3 rounded-lg border transition-colors ${
             effectiveIsActive 
               ? 'border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg' 
@@ -163,6 +204,7 @@ export const NewMachineModal: React.FC = () => {
               </p>
             )}
           </div>
+          )}
 
           <div>
             <label htmlFor="new-machine-url-input" className="block text-muted mb-1 font-semibold">
@@ -199,6 +241,7 @@ export const NewMachineModal: React.FC = () => {
                   />
                 </div>
 
+                {!isPersonal && (
                 <div>
                   <label className="block text-muted mb-1 font-semibold">
                     Platform
@@ -215,6 +258,7 @@ export const NewMachineModal: React.FC = () => {
                     soundEnabled={soundEnabled}
                   />
                 </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

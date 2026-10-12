@@ -30,6 +30,7 @@ import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
 import { TargetReconDropzone } from '../components/tracker/TargetReconDropzone';
 import { PageHeader } from '../components/common/PageHeader';
 import { BadgeOverflow } from '../components/common/BadgeOverflow';
+import { TargetTypeBadge } from '../components/common/TargetTypeBadge';
 import { CyberButton } from '../components/common/CyberButton';
 import { EmptyState } from '../components/common/EmptyState';
 import { Skeleton, SkeletonRegion, SkeletonText } from '../components/common/Skeleton';
@@ -351,6 +352,7 @@ export const TargetDetailPage: React.FC = () => {
           }
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <TargetTypeBadge machine={machine} size="sm" />
             {machine.isActive ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg">
                 <Lock className="h-3 w-3" aria-hidden="true" />
