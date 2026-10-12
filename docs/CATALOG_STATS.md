@@ -79,7 +79,7 @@
 
 ## מסלולי תרגול
 
-מספר המכונות בכל מסלול, מחושב על הקטלוג כולו. מכונה פעילה לעולם אינה נכללת במסלול.
+מספר המכונות בכל מסלול, מחושב על הקטלוג כולו. מכונה פעילה לעולם אינה נכללת במסלול שמבוסס על רשימה (הכנה להסמכה או רשימה אוצרת); מסלולי רמת קושי, מערכת הפעלה וטכניקה הם מסננים בלבד ועשויים לכלול גם מכונות פעילות.
 
 | מזהה | שם המסלול | קטגוריה | HTB | THM | סה"כ |
 | --- | --- | --- | --- | --- | --- |
@@ -93,9 +93,9 @@
 | `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 77 | 29 | **106** |
 | `web-master` | Web Exploitation Master Pathway | technique | 56 | 33 | **89** |
 | `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 31 | **39** |
-| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 164 | 83 | **247** |
-| `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 185 | 173 | **358** |
-| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 181 | 96 | **277** |
+| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 173 | 83 | **256** |
+| `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 173 | **364** |
+| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 189 | 96 | **285** |
 
 רשימות השמות של המסלולים נשמרות ב-`src/data/trackSources/` (שמות בלבד, עם תאריך ומקור):
 
@@ -117,6 +117,6 @@
 
 ## הערת תנאי שימוש
 
-- **מכונות פעילות:** מוצגות כמטא-דאטה בלבד (שם, מערכת הפעלה, רמת קושי, תאריך שחרור וקישור לדף הרשמי). אין רמזים, פתרונות, דגלים, תגיות או הערות, ומה שהמשתמש מקליד עבורן נמחק (HTB AUP §8.2). הן גם אינן נכללות באף מסלול תרגול.
+- **מכונות פעילות:** מוצגות כמטא-דאטה בלבד (שם, מערכת הפעלה, רמת קושי, תאריך שחרור וקישור לדף הרשמי). אין רמזים, פתרונות, דגלים, תגיות או הערות, ומה שהמשתמש מקליד עבורן נמחק (HTB AUP §8.2). הן גם אינן נכללות באף מסלול שמבוסס על רשימת מכונות.
 - **מכונות מפורשות:** HTB AUP §8.3 מתיר הדרכות ו-writeups קהילתיים לתוכן מפורש.
 - **Pro Labs ומבחנים:** ZeroBox אינו כולל שמות או תוכן של Pro Labs, Fortresses או מבחני הסמכה. המשתמש יכול להוסיף אותם רק כמטרות אישיות שהוא יוצר וממלא בעצמו.
