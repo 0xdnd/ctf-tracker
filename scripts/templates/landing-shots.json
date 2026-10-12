@@ -3,7 +3,7 @@
     "name": "hero-app",
     "alt": "ZeroBox CTF tracker kanban board of Hack The Box and TryHackMe machines, with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes.",
     "width": 1575,
-    "height": 1719,
+    "height": 1749,
     "cssWidth": 525,
     "srcset": [
       {
