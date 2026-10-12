@@ -23,6 +23,11 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "framer-motion"
         update-types: ["version-update:semver-major"]
+      # ESLint 10 is blocked until eslint-plugin-jsx-a11y supports it.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
