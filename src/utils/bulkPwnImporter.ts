@@ -1,4 +1,5 @@
 import { Machine, PipelineStatus, Platform } from '../types';
+import { LEGACY_CROSS_PLATFORM_NAME_SLUGS } from '../store/machineNormalization';
 
 interface BulkPwnMatch {
   rawInput: string;
@@ -102,8 +103,9 @@ function platformHint(raw: string): Platform | undefined {
 
 /**
  * Matches candidate names against the machine catalog.
- * A name shared by several platforms (e.g. Retro on HTB and THM) resolves to the platform the
- * candidate names in its prefix, else to the first such row in catalog order.
+ * A name shared by several platforms resolves to the platform the candidate names in its prefix.
+ * Without a prefix, pairs that predate the 2024-26 HTB rows (Blue, Enterprise, ...) keep the original
+ * winner (the last row in catalog order); newer pairs (Retro, Watcher, Reset, Compiled) take the first.
  */
 export function matchCandidateNamesToCatalog(
   candidates: string[],
@@ -120,8 +122,10 @@ export function matchCandidateNamesToCatalog(
     if (rows) rows.push(m);
     else normMap.set(key, [m]);
   }
-  const pick = (rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined =>
-    rows && ((hint && rows.find((m) => m.platform === hint)) || rows[0]);
+  const pick = (key: string, rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined =>
+    rows &&
+    ((hint && rows.find((m) => m.platform === hint)) ||
+      (LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(key) ? rows[rows.length - 1] : rows[0]));
 
   const allMatches: BulkPwnMatch[] = [];
   const newSolves: BulkPwnMatch[] = [];
@@ -135,7 +139,7 @@ export function matchCandidateNamesToCatalog(
     const hint = platformHint(raw);
 
     // 1. Exact catalog id (e.g. "thm-retro"), then exact normalized name match
-    let match = idMap.get(raw.trim().toLowerCase()) || pick(normMap.get(norm), hint);
+    let match = idMap.get(raw.trim().toLowerCase()) || pick(norm, normMap.get(norm), hint);
     let confidence = 1.0;
 
     // 2. Derived ID match (e.g. "Pickle Rick" -> "thm-picklerick")
@@ -148,7 +152,7 @@ export function matchCandidateNamesToCatalog(
     if (!match) {
       for (const [catNorm, rows] of normMap.entries()) {
         if (catNorm.length >= 4 && (catNorm.includes(norm) || norm.includes(catNorm))) {
-          match = pick(rows, hint);
+          match = pick(catNorm, rows, hint);
           confidence = 0.85;
           break;
         }

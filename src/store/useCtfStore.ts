@@ -43,7 +43,7 @@ import {
   redactLootState
 } from './lootPersistence';
 import { STARTER_MACHINES } from '../data/starterMachines';
-import { hasUserProgress, isGenuineCustom, normalizeMachineSlug } from './machineNormalization';
+import { hasUserProgress, isGenuineCustom, LEGACY_CROSS_PLATFORM_NAME_SLUGS, normalizeMachineSlug } from './machineNormalization';
 import { ACTIVE_MACHINES } from '../data/activeMachines';
 import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
@@ -844,14 +844,16 @@ export const mergeMachinesWithCatalog = (
       platformNameMap.set(`${m.platform}:${normName}`, entry);
       if (nameSlug) platformSlugMap.set(`${m.platform}:${nameSlug}`, entry);
     }
-    // Platform-less name tiers: an HTB row never displaces another platform's row of the same name,
-    // so a legacy row without a platform keeps resolving to e.g. THM "Retro" rather than HTB "Retro".
+    // Platform-less name tiers. Pairs that predate the 2024-26 retired HTB rows keep the original
+    // order rules (name: last wins, slug: first wins). For newer pairs an HTB row never displaces another
+    // platform's row, so a legacy row without a platform keeps resolving to THM "Retro", not HTB "Retro".
+    const legacyPair = LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(nameSlug);
     const prevByName = nameMap.get(normName);
-    if (!prevByName || m.platform !== 'HTB' || prevByName.platform === 'HTB') {
+    if (legacyPair || !prevByName || m.platform !== 'HTB' || prevByName.platform === 'HTB') {
       nameMap.set(normName, entry);
     }
     const prevBySlug = nameSlug ? slugMap.get(nameSlug) : undefined;
-    if (nameSlug && (!prevBySlug || (prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))) {
+    if (nameSlug && (!prevBySlug || (!legacyPair && prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))) {
       slugMap.set(nameSlug, entry);
     }
     if (idSlug && !idSlugMap.has(idSlug)) {
