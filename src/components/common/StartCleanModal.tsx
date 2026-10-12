@@ -107,7 +107,7 @@ export const StartCleanModal: React.FC<StartCleanModalProps> = ({ isOpen, onClos
                 </div>
                 <div className="font-semibold text-sm text-primary">Start clean</div>
                 <p className="text-[11px] text-secondary leading-relaxed">
-                  Track your own personal CTF journey from 0%. All 929 Hack The Box & TryHackMe machines start in your Backlog with empty flags and clean metrics.
+                  Track your own personal CTF journey from 0%. All 949 Hack The Box & TryHackMe machines start in your Backlog with empty flags and clean metrics.
                 </p>
               </div>
 
