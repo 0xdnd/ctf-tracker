@@ -11,6 +11,7 @@ import {
   mergeMachinesWithCatalog,
   saveAttackGraphState,
   saveCustomMachinesToStorage,
+  timerSecondsFor,
   withTimeSpent,
   type MergeBackupResult,
 } from './useCtfStore';
@@ -124,8 +125,11 @@ export async function mergeBackup(jsonStr: string, resolutions?: Record<string, 
       // isolated, failures become warnings, and RESTORED is always posted so the other tabs reload onto it
       // instead of re-flushing their pre-merge state over it.
       // Device-local data (globalVars, theme, goals, node positions, cheatsheets, active target) is untouched.
-      set({
+      set((s) => ({
         machines,
+        // The remote side may have more time on the active target (e.g. 3 h from another device): reseed the
+        // timer so this tab's stale seconds are never folded back over it.
+        activeTimerSeconds: Math.max(s.activeTimerSeconds, timerSecondsFor(machines, s.activeTargetId)),
         deletedMachineIds: m.deletedMachineIds,
         customNotes: m.customNotes,
         userNotes: m.userNotes,
@@ -136,7 +140,7 @@ export async function mergeBackup(jsonStr: string, resolutions?: Record<string, 
         credentials: m.credentials,
         credAttempts: m.credAttempts,
         lootItems: m.lootItems,
-      });
+      }));
       const warnings: string[] = [];
       const attempt = async (label: string, run: () => unknown) => {
         try {
