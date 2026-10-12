@@ -49,6 +49,7 @@ import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { DifficultyBadge } from '../common/DifficultyBadge';
+import { TargetTypeBadge } from '../common/TargetTypeBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { classifyMachine, VULN_CATEGORIES } from '../../utils/categoryUtils';
@@ -334,6 +335,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-semibold text-primary tracking-tight font-sans">{machine.name}</h2>
+              <TargetTypeBadge machine={machine} size="sm" />
               {machine.isActive ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg border border-callout-warn-border bg-callout-warn-bg px-2 py-0.5 rounded-md">
                   <Lock className="w-3 h-3" />

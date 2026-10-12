@@ -24,6 +24,7 @@ import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
+import { TargetTypeBadge } from '../common/TargetTypeBadge';
 
 import {
   DndContext,
@@ -196,6 +197,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         >
           {m.name}
         </button>
+        <TargetTypeBadge machine={m} />
 
         <div className={`flex shrink-0 items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
           {prevLane && (
