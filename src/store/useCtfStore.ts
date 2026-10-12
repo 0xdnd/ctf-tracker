@@ -783,19 +783,30 @@ export function withTimeSpent(m: Machine, seconds: number, now: string = new Dat
 /** While the timer runs, the shown seconds are folded into the active machine (and saved) at least this often. */
 export const TIMER_CHECKPOINT_SECONDS = 60;
 
-/** Folds the timer's seconds into the active machine; returns the same array when nothing would change. */
-function foldActiveTimer(
-  state: Pick<CtfStoreState, 'machines' | 'activeTargetId' | 'activeTimerSeconds'>,
-  seconds: number = state.activeTimerSeconds
-): Machine[] {
+type TimerSlice = Pick<CtfStoreState, 'machines' | 'activeTargetId' | 'activeTimerSeconds'>;
+
+/**
+ * Folds the timer's seconds into the active machine (stamping updatedAt); returns the same array when nothing
+ * would change. Never lowers the saved time: only resetTimer and an explicit time edit may do that.
+ */
+function foldActiveTimer(state: TimerSlice, seconds: number = state.activeTimerSeconds): Machine[] {
   if (!state.activeTargetId || seconds <= 0) return state.machines;
   const active = state.machines.find((m) => m.id === state.activeTargetId);
-  if (!active || active.timeSpentSeconds === seconds) return state.machines;
+  if (!active || seconds <= (active.timeSpentSeconds || 0)) return state.machines;
   return state.machines.map((m) => (m === active ? withTimeSpent(m, seconds) : m));
 }
 
+/** Write-time overlay of the live timer (no updatedAt stamp, never lowers), for saves and exports. */
+function overlayActiveTimer(state: TimerSlice): Machine[] {
+  const seconds = state.activeTimerSeconds;
+  if (!state.activeTargetId || seconds <= 0) return state.machines;
+  return state.machines.map((m) =>
+    m.id === state.activeTargetId && seconds > (m.timeSpentSeconds || 0) ? { ...m, timeSpentSeconds: seconds } : m
+  );
+}
+
 /** The paused timer shows the active machine's saved time (timer fields are transient and never persisted). */
-function timerSecondsFor(machines: Machine[], activeTargetId: string | null | undefined): number {
+export function timerSecondsFor(machines: Machine[], activeTargetId: string | null | undefined): number {
   if (!activeTargetId) return 0;
   return machines.find((m) => m.id === activeTargetId)?.timeSpentSeconds || 0;
 }
@@ -1672,9 +1683,7 @@ export const useCtfStore = create<CtfStoreState>()(
           // Flush current timer to active target before switching
           let updatedMachines = state.machines;
           if (state.activeTargetId) {
-            updatedMachines = updatedMachines.map((m) =>
-              m.id === state.activeTargetId ? withTimeSpent(m, state.activeTimerSeconds) : m
-            );
+            updatedMachines = foldActiveTimer(state);
           }
 
           if (!id) {
@@ -1700,7 +1709,7 @@ export const useCtfStore = create<CtfStoreState>()(
             unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
         });
-        flushProfileSave();
+        flushPendingProfileSave();
       },
 
       startTimer: () => set({ isTimerRunning: true, timerLastTick: Date.now() }),
@@ -1710,14 +1719,21 @@ export const useCtfStore = create<CtfStoreState>()(
           if (!state.activeTargetId) return { isTimerRunning: false, timerLastTick: null };
           const now = Date.now();
           const extra = state.timerLastTick ? Math.round((now - state.timerLastTick) / 1000) : 0;
-          const finalSeconds = state.activeTimerSeconds + (extra > 0 ? extra : 0);
-          const updated = state.machines.map((m) =>
-            m.id === state.activeTargetId ? withTimeSpent(m, finalSeconds) : m
+          // Never below the saved time (another tab or a sync may have saved more).
+          const finalSeconds = Math.max(
+            state.activeTimerSeconds + (extra > 0 ? extra : 0),
+            timerSecondsFor(state.machines, state.activeTargetId)
           );
-          return { machines: updated, activeTimerSeconds: finalSeconds, isTimerRunning: false, timerLastTick: null };
+          return {
+            machines: foldActiveTimer(state, finalSeconds),
+            activeTimerSeconds: finalSeconds,
+            isTimerRunning: false,
+            timerLastTick: null,
+          };
         });
-        // Stopping is a save point: write now rather than after the debounce.
-        flushProfileSave();
+        // Stopping is a save point. Pausing a running timer was already written by the store subscription
+        // (running -> stopped); this only covers whatever is still pending, so a pause writes exactly once.
+        flushPendingProfileSave();
       },
 
       resetTimer: (machineId) => {
@@ -1734,7 +1750,7 @@ export const useCtfStore = create<CtfStoreState>()(
             timerLastTick: null,
           };
         });
-        flushProfileSave();
+        flushPendingProfileSave();
       },
 
       tickTimer: () => {
@@ -1761,7 +1777,7 @@ export const useCtfStore = create<CtfStoreState>()(
             timerLastTick: now,
           };
         });
-        if (checkpointed) flushProfileSave();
+        if (checkpointed) flushPendingProfileSave();
       },
 
       setGlobalVars: (vars) => {
@@ -2166,12 +2182,7 @@ export const useCtfStore = create<CtfStoreState>()(
 
       exportBackup: (options?: { redactSecrets?: boolean }) => {
         const state = get();
-        let exportMachines = state.machines;
-        if (state.activeTargetId && state.activeTimerSeconds > 0) {
-          exportMachines = state.machines.map((m) =>
-            m.id === state.activeTargetId ? { ...m, timeSpentSeconds: state.activeTimerSeconds } : m
-          );
-        }
+        let exportMachines = overlayActiveTimer(state);
 
         let exportGlobalVars = state.globalVars;
         if (options?.redactSecrets) {
@@ -2287,6 +2298,12 @@ export const useCtfStore = create<CtfStoreState>()(
             const importedLoot = mergeImportedLoot(get(), data);
             set((state) => ({
               machines: normalizedMachines,
+              // The backup may hold more time for the active target than this tab shows; never show (and later
+              // fold back) less than either side.
+              activeTimerSeconds: Math.max(
+                state.activeTimerSeconds,
+                timerSecondsFor(normalizedMachines, state.activeTargetId)
+              ),
               ...(nextThemePreset ? { themePreset: nextThemePreset } : {}),
               globalVars: (data.globalVars as GlobalVariables) || state.globalVars,
               cheatsheets: Array.isArray(data.cheatsheets) ? data.cheatsheets : state.cheatsheets,
@@ -2465,12 +2482,7 @@ export const useCtfStore = create<CtfStoreState>()(
         const state = get();
         const targetId = profileId || state.currentProfileId || 'guest';
         const targetKey = getWriteProfileStorageKey(targetId);
-        let persistedMachines = state.machines;
-        if (state.activeTargetId && state.activeTimerSeconds > 0) {
-          persistedMachines = state.machines.map((m) =>
-            m.id === state.activeTargetId ? { ...m, timeSpentSeconds: state.activeTimerSeconds } : m
-          );
-        }
+        const persistedMachines = overlayActiveTimer(state);
 
         // Dual-tier: asynchronously save deep payloads (writeups & notes) to IndexedDB
         const deepWriteups = extractDeepWriteups(persistedMachines);
@@ -2744,6 +2756,39 @@ let lastSavedDeletedMachineIds = useCtfStore.getState().deletedMachineIds;
 let lastSavedUserSolvesReset = useCtfStore.getState().userSolvesReset;
 let saveDebounceTimer: any = null;
 let maxWaitTimer: any = null;
+/** True while this tab applies profile data another tab just wrote (see the storage listener). */
+let applyingExternalProfile = false;
+
+function markProfileSaved(state: CtfStoreState) {
+  lastSavedMachines = state.machines;
+  lastSavedTargetId = state.activeTargetId;
+  lastSavedGlobalVars = state.globalVars;
+  lastSavedCheatsheets = state.cheatsheets;
+  lastSavedSessions = state.activitySessions;
+  lastSavedCustomNotes = state.customNotes;
+  lastSavedDeletedNoteIds = state.deletedNoteIds;
+  lastSavedDeletedMachineIds = state.deletedMachineIds;
+  lastSavedUserSolvesReset = state.userSolvesReset;
+}
+
+function hasUnsavedProfileChanges(state: CtfStoreState) {
+  return (
+    state.machines !== lastSavedMachines ||
+    state.activeTargetId !== lastSavedTargetId ||
+    state.globalVars !== lastSavedGlobalVars ||
+    state.cheatsheets !== lastSavedCheatsheets ||
+    state.activitySessions !== lastSavedSessions ||
+    state.customNotes !== lastSavedCustomNotes ||
+    state.deletedNoteIds !== lastSavedDeletedNoteIds ||
+    state.deletedMachineIds !== lastSavedDeletedMachineIds ||
+    state.userSolvesReset !== lastSavedUserSolvesReset
+  );
+}
+
+/** Save point (stop, switch, reset, checkpoint): write now, but only if something is still unsaved. */
+function flushPendingProfileSave() {
+  if (hasUnsavedProfileChanges(useCtfStore.getState())) flushProfileSave();
+}
 
 export function flushProfileSave() {
   if (saveDebounceTimer) {
@@ -2762,12 +2807,7 @@ export function flushProfileSave() {
   if (!state.currentProfileId) return;
 
   const targetKey = getWriteProfileStorageKey(state.currentProfileId);
-  let persistedMachines = state.machines;
-  if (state.activeTargetId && state.activeTimerSeconds > 0) {
-    persistedMachines = state.machines.map((m) =>
-      m.id === state.activeTargetId ? { ...m, timeSpentSeconds: state.activeTimerSeconds } : m
-    );
-  }
+  const persistedMachines = overlayActiveTimer(state);
 
   // Optimize localStorage footprint: Strip large static catalog walkthroughs & synopses
   // from storage payload since they are deterministically rehydrated from INITIAL_MACHINES on load.
@@ -2798,15 +2838,7 @@ export function flushProfileSave() {
     saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, payload).catch(() => {});
     safeLocalStorage.setItem(targetKey, serialized);
     safeLocalStorage.setItem(`specter_ctf_profile_${state.currentProfileId}`, serialized);
-    lastSavedMachines = state.machines;
-    lastSavedTargetId = state.activeTargetId;
-    lastSavedGlobalVars = state.globalVars;
-    lastSavedCheatsheets = state.cheatsheets;
-    lastSavedSessions = state.activitySessions;
-    lastSavedCustomNotes = state.customNotes;
-    lastSavedDeletedNoteIds = state.deletedNoteIds;
-    lastSavedDeletedMachineIds = state.deletedMachineIds;
-    lastSavedUserSolvesReset = state.userSolvesReset;
+    markProfileSaved(state);
     broadcastCrossTabMessage('WRITEUPS_UPDATED', { profileId: state.currentProfileId });
   } catch (err: any) {
     if (err?.name === 'QuotaExceededError' || err?.code === 22 || (typeof err?.message === 'string' && err.message.toLowerCase().includes('quota'))) {
@@ -2838,20 +2870,12 @@ const profileFieldsDiffer = (a: CtfStoreState, b: CtfStoreState) =>
 useCtfStore.subscribe((state, prev) => {
   if (typeof window === 'undefined' || !state.currentProfileId) return;
 
+  // Data another tab just saved is already in storage: writing it back would only bounce between the tabs.
+  if (applyingExternalProfile) return;
+
   // Selective Persistence Check: Only trigger if persisted data actually changed!
   // Prevents 1Hz timer ticks (activeTimerSeconds) from ever touching localStorage!
-  const hasChanged =
-    state.machines !== lastSavedMachines ||
-    state.activeTargetId !== lastSavedTargetId ||
-    state.globalVars !== lastSavedGlobalVars ||
-    state.cheatsheets !== lastSavedCheatsheets ||
-    state.activitySessions !== lastSavedSessions ||
-    state.customNotes !== lastSavedCustomNotes ||
-    state.deletedNoteIds !== lastSavedDeletedNoteIds ||
-    state.deletedMachineIds !== lastSavedDeletedMachineIds ||
-    state.userSolvesReset !== lastSavedUserSolvesReset;
-
-  if (!hasChanged) return;
+  if (!hasUnsavedProfileChanges(state)) return;
 
   // The timer just stopped (pause, root/completed, target cleared): that is a save point, write now.
   if (prev.isTimerRunning && !state.isTimerRunning) {
@@ -2914,25 +2938,43 @@ if (typeof window !== 'undefined') {
         const data = parsed.state || parsed;
         if (data && Array.isArray(data.machines)) {
           const userSolvesReset = Boolean(data.userSolvesReset);
-          useCtfStore.setState((state) => {
-            const machines = mergeMachinesWithCatalog(data.machines, userSolvesReset);
-            const activeTargetId = 'activeTargetId' in data ? (data.activeTargetId ?? null) : state.activeTargetId;
-            return {
+          const state = useCtfStore.getState();
+          const incoming = mergeMachinesWithCatalog(data.machines, userSolvesReset);
+          const activeTargetId = 'activeTargetId' in data ? (data.activeTargetId ?? null) : state.activeTargetId;
+          const targetChanged = activeTargetId !== state.activeTargetId;
+          // The other tab switched target: keep this tab's seconds on the old target (never lowering it), then
+          // stop and show the new target's saved time.
+          const machines = targetChanged
+            ? foldActiveTimer({ machines: incoming, activeTargetId: state.activeTargetId, activeTimerSeconds: state.activeTimerSeconds })
+            : incoming;
+          const savedSeconds = timerSecondsFor(machines, activeTargetId);
+          // Same target: a running timer never goes down (two running tabs converge on the larger value); a
+          // paused one mirrors the saved time (another tab may have checkpointed or reset it).
+          const timer = targetChanged
+            ? { isTimerRunning: false, timerLastTick: null, activeTimerSeconds: savedSeconds }
+            : { activeTimerSeconds: state.isTimerRunning ? Math.max(state.activeTimerSeconds, savedSeconds) : savedSeconds };
+          // Nothing of ours to add and nothing pending: what we apply is already stored, so don't write it back.
+          const echoOnly = machines === incoming && !saveDebounceTimer && !maxWaitTimer;
+          applyingExternalProfile = echoOnly;
+          try {
+            useCtfStore.setState((s) => ({
               userSolvesReset,
               machines,
               activeTargetId,
-              // A paused timer mirrors the saved time (another tab may have checkpointed it); a running one keeps going.
-              ...(state.isTimerRunning ? {} : { activeTimerSeconds: timerSecondsFor(machines, activeTargetId) }),
-              globalVars: data.globalVars || state.globalVars,
-              cheatsheets: data.cheatsheets || state.cheatsheets,
-              activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : state.activitySessions,
-              customNotes: Array.isArray(data.customNotes) ? data.customNotes : state.customNotes,
-              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
+              ...timer,
+              globalVars: data.globalVars || s.globalVars,
+              cheatsheets: data.cheatsheets || s.cheatsheets,
+              activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : s.activitySessions,
+              customNotes: Array.isArray(data.customNotes) ? data.customNotes : s.customNotes,
+              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : s.deletedNoteIds,
               deletedMachineIds: Array.isArray(data.deletedMachineIds)
                 ? normalizeMachineTombstones(data.deletedMachineIds)
-                : state.deletedMachineIds,
-            };
-          });
+                : s.deletedMachineIds,
+            }));
+          } finally {
+            applyingExternalProfile = false;
+          }
+          if (echoOnly) markProfileSaved(useCtfStore.getState());
         }
       } catch (err) {
         console.warn('[ZeroBox] Failed to synchronize cross-tab storage event', err);

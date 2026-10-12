@@ -143,6 +143,26 @@ describe('mergeBackup (store)', () => {
     expect(JSON.stringify(get().machines)).toBe(before); // invariant 4
   });
 
+  it('a merge bringing more time for the active target reseeds the timer, so stale local seconds never overwrite it', async () => {
+    useCtfStore.setState((s) => ({
+      machines: s.machines.map((m) => (m.id === 'custom-2-bravo' ? { ...m, timeSpentSeconds: 3600 } : m)),
+      activeTargetId: 'custom-2-bravo',
+      activeTimerSeconds: 3600,
+    }));
+    const file = JSON.parse(await get().exportSyncFile());
+    file.deviceId = 'laptop';
+    file.machines = file.machines.map((m: Machine) =>
+      m.id === 'custom-2-bravo' ? { ...m, timeSpentSeconds: 10800, updatedAt: '2026-10-01T00:00:00.000Z' } : m
+    );
+    const res = await get().mergeBackup(JSON.stringify(file));
+    expect(res.status).toBe('merged');
+    expect(machine('custom-2-bravo')!.timeSpentSeconds).toBe(10800);
+    expect(get().activeTimerSeconds).toBe(10800);
+    get().pauseTimer();
+    get().setActiveTarget(null);
+    expect(machine('custom-2-bravo')!.timeSpentSeconds).toBe(10800);
+  });
+
   it('takes a pre-sync snapshot of the pre-merge data before writing, and records the peer baseline', async () => {
     const file = JSON.parse(await get().exportSyncFile());
     file.deviceId = 'other-device';
