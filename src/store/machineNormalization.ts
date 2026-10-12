@@ -5,6 +5,12 @@ import type { Machine } from '../types';
  * Dependency-free so they can be unit tested and imported without booting the store.
  */
 
+/** Lowercase alphanumeric slug of a machine name or id ("Dark Zero" -> "darkzero"). */
+export const normalizeMachineSlug = (str?: string): string => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
 /**
  * A machine the operator created themselves (addCustomMachine always mints a `custom-` id; multi-host
  * scan imports use platform 'Custom'). Deliberately does NOT look at the `isCustom` flag: older builds
