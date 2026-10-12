@@ -53,8 +53,9 @@ export const NewMachineModal: React.FC = () => {
 
   // Pro Labs and exams are personal targets: platform Custom plus a marker tag, no bundled content.
   const isPersonal = targetType !== 'machine';
+  // A matching name only suggests name-only mode: the operator's own target is never forced into it.
   const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(name.trim().toLowerCase());
-  const effectiveIsActive = (!isPersonal && isActive) || isKnownActive;
+  const effectiveIsActive = !isPersonal && isActive;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,8 +169,8 @@ export const NewMachineModal: React.FC = () => {
             />
           </div>
 
-          {/* Active Lab ToS Safeguard Control (machines only, unless the name is a known active machine) */}
-          {(!isPersonal || isKnownActive) && (
+          {/* Active Lab ToS Safeguard Control (machines only) */}
+          {!isPersonal && (
           <div className={`p-3 rounded-lg border transition-colors ${
             effectiveIsActive 
               ? 'border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg' 
@@ -184,7 +185,7 @@ export const NewMachineModal: React.FC = () => {
                   </span>
                   <span className="text-xs text-tertiary">
                     {isKnownActive 
-                      ? 'Known in-season HTB machine detected. Name-only mode engaged.'
+                      ? 'This name matches an active HTB machine. Turn this on to keep it name-only.'
                       : 'Enforce Hack The Box Terms of Service (Name only, no spoilers/recon).'}
                   </span>
                 </div>
@@ -193,7 +194,6 @@ export const NewMachineModal: React.FC = () => {
                 type="checkbox"
                 id="active-lab-checkbox"
                 checked={effectiveIsActive}
-                disabled={isKnownActive}
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="w-4 h-4 shrink-0 rounded border-strong text-callout-warn-fg focus:ring-callout-warn-border bg-surface-card cursor-pointer"
               />
