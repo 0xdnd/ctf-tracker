@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "scripts/**/*.{js,cjs,mjs,ts}",
+    "e2e/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "src/test/setup.ts",
+    "src/**/*.{test,spec}.{ts,tsx}"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{js,cjs,mjs,ts}", "e2e/**/*.ts"],
+  "ignore": ["src/data/**"]
+}

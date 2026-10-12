@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useExamStore, EXAM_STORAGE_KEY } from '../../store/examStore';
+import { useExamStore } from '../../store/examStore';
 import {
   playCyberAlert,
   setAudioMuted,
-  isAudioMuted,
-  audioAlertEngine,
   _resetAudioContextForTesting,
 } from '../../utils/audioAlerts';
 import {

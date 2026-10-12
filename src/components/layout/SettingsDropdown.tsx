@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Settings, 
-  Sun, 
-  Moon, 
   Volume2, 
   VolumeX, 
   ZoomIn, 
@@ -14,10 +12,13 @@ import {
   Terminal,
   ShieldCheck, 
   SlidersHorizontal,
-  Users
+  Users,
+  Film,
+  BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
@@ -41,6 +42,7 @@ export const SettingsDropdown: React.FC = () => {
     setLicenseModalOpen,
     setBackupModalOpen,
     setSettingsModalOpen,
+    setShowcaseModalOpen,
     exportWorkspace,
     importWorkspace,
     unexportedChangesCount,
@@ -57,6 +59,7 @@ export const SettingsDropdown: React.FC = () => {
       setLicenseModalOpen: s.setLicenseModalOpen,
       setBackupModalOpen: s.setBackupModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
+      setShowcaseModalOpen: s.setShowcaseModalOpen,
       exportWorkspace: s.exportWorkspace,
       importWorkspace: s.importWorkspace,
       unexportedChangesCount: s.unexportedChangesCount,
@@ -299,6 +302,22 @@ export const SettingsDropdown: React.FC = () => {
             <kbd className="text-[11px] text-muted font-mono">?</kbd>
           </button>
 
+          {/* Field notes workspace */}
+          <button
+            onClick={() => {
+              useNotesWorkspaceStore.getState().toggleOpen();
+              setIsOpen(false);
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className={itemCls}
+          >
+            <span className="flex items-center gap-2">
+              <BookOpen className={iconCls} />
+              <span>Notes Workspace Sidecar</span>
+            </span>
+            <kbd className="text-[11px] text-muted font-mono">Alt+N</kbd>
+          </button>
+
           {/* Switch operator */}
           <button
             onClick={() => {
@@ -313,6 +332,26 @@ export const SettingsDropdown: React.FC = () => {
               <span>Switch Operator / Log In</span>
             </span>
             <kbd className="text-[11px] text-muted font-mono">Alt+O</kbd>
+          </button>
+
+          {/* AI Video Showcase */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowcaseModalOpen(true);
+              setIsOpen(false);
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className={itemCls}
+            title="Watch 1080p ZeroBox Showcase Video generated with Google Nano Banana AI"
+          >
+            <div className="flex items-center gap-2">
+              <Film className="w-4 h-4 text-cyber-emerald" />
+              <span>Watch ZeroBox Reel</span>
+            </div>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">
+              AI 1080p
+            </span>
           </button>
 
           {/* About */}
@@ -348,11 +387,16 @@ export const SettingsDropdown: React.FC = () => {
             </span>
           </button>
 
+          <div className="px-2 py-1 text-[11px] text-muted flex items-center gap-3">
+            <a href="https://ctftracker.com/privacy/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline">Privacy</a>
+            <a href="https://ctftracker.com/terms/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline">Terms</a>
+          </div>
+
           <div className="h-px bg-surface-hover my-1" />
 
           {/* Offline footer */}
           <div className="px-2 py-1 text-[11px] text-muted flex items-center justify-between">
-            <span>Offline, zero egress</span>
+            <span>Local-first, no telemetry</span>
             <span className="text-callout-success-fg font-medium">Verified</span>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
@@ -6,10 +6,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { PlatformIcon } from '../components/common/PlatformBadge';
 import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
+import { EmptyState } from '../components/common/EmptyState';
 import { CyberBadge } from '../components/common/CyberBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
 import { playCyberSound, safeCopyToClipboard } from '../utils/helpers';
-import { Platform } from '../types';
+import { Platform, Machine, Credential, CredentialType, LootItem } from '../types';
 import { LootTimeline } from '../components/loot/LootTimeline';
 import { AddLootModal } from '../components/loot/AddLootModal';
 import { ExportLootDrawer } from '../components/loot/ExportLootDrawer';
@@ -32,19 +33,8 @@ export interface VaultEvidenceItem {
   isCustom?: boolean;
 }
 
-export const STORAGE_KEY_CUSTOM_LOOT = 'zerobox_vault_custom_loot_v1';
-
-export const getVaultCustomLootStorageKey = (profileId: string = 'guest'): string => {
-  const pid = profileId || 'guest';
-  const specificKey = `zerobox_vault_custom_loot_v1_${pid}`;
-  if (typeof window !== 'undefined') {
-    const specific = localStorage.getItem(specificKey);
-    if (specific) return specificKey;
-    const legacy = localStorage.getItem(STORAGE_KEY_CUSTOM_LOOT);
-    if (legacy) return STORAGE_KEY_CUSTOM_LOOT;
-  }
-  return specificKey;
-};
+// Custom loot now lives in the store (src/store/lootPersistence.ts); this key is only the legacy migration source.
+export { LEGACY_LOOT_KEY as STORAGE_KEY_CUSTOM_LOOT } from '../store/lootPersistence';
 
 export const formatIsoTimestamp = (dateInput: string | number | Date): string => {
   const d = new Date(dateInput);
@@ -52,58 +42,89 @@ export const formatIsoTimestamp = (dateInput: string | number | Date): string =>
   return d.toISOString().replace('T', ' ').substring(0, 19) + 'Z';
 };
 
+// Store credential types shown under the page's legacy category buckets (ticket/other have no bucket of their own yet).
+const CREDENTIAL_CATEGORY: Record<CredentialType, EvidenceCategory> = {
+  password: 'password',
+  hash: 'hash',
+  key: 'ssh_key',
+  token: 'token',
+  ticket: 'token',
+  other: 'token',
+};
+
+const CREDENTIAL_TYPE_LABEL: Record<CredentialType, string> = {
+  password: 'Password',
+  hash: 'Hash',
+  key: 'SSH Key',
+  token: 'Access Token',
+  ticket: 'Ticket',
+  other: 'Credential',
+};
+
+const CATEGORY_CREDENTIAL_TYPE: Partial<Record<EvidenceCategory, CredentialType>> = {
+  password: 'password',
+  hash: 'hash',
+  ssh_key: 'key',
+  token: 'token',
+};
+
+const resolveEvidenceTarget = (machines: Machine[], machineId?: string) => {
+  const m = machineId ? machines.find((x) => x.id === machineId) : undefined;
+  return {
+    targetId: m ? m.id : 'global',
+    targetName: m ? m.name : 'Global / Unscoped',
+    targetIp: m ? m.ip || '0.0.0.0' : '0.0.0.0',
+    platform: (m ? m.platform : 'HTB') as Platform,
+  };
+};
+
+export const credentialToEvidenceItem = (c: Credential, machines: Machine[]): VaultEvidenceItem => ({
+  id: c.id,
+  ...resolveEvidenceTarget(machines, c.sourceMachineId),
+  category: CREDENTIAL_CATEGORY[c.type],
+  typeLabel: CREDENTIAL_TYPE_LABEL[c.type],
+  username: c.domain && c.username ? `${c.domain}\\${c.username}` : c.username,
+  secret: c.secret,
+  discoveredAt: c.createdAt,
+  notes: c.notes ?? '',
+  isCustom: true,
+});
+
+export const lootItemToEvidenceItem = (l: LootItem, machines: Machine[]): VaultEvidenceItem => ({
+  id: l.id,
+  ...resolveEvidenceTarget(machines, l.machineId),
+  // file/note loot has no dedicated page bucket yet; it is listed with the proof ('flag') items.
+  category: l.category === 'service' ? 'service' : 'flag',
+  typeLabel: l.title,
+  username: l.username ?? '',
+  secret: l.value,
+  discoveredAt: l.createdAt,
+  notes: l.notes ?? '',
+  isCustom: true,
+});
+
 export const EvidenceVaultPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const { machines, globalVars, soundEnabled, currentProfileId } = useCtfStore(
+  const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
-      globalVars: s.globalVars,
       soundEnabled: s.soundEnabled,
-      currentProfileId: s.currentProfileId,
+      credentials: s.credentials,
+      lootItems: s.lootItems,
+      addCredential: s.addCredential,
+      addLootItem: s.addLootItem,
     }))
   );
 
-  // Custom user-logged credentials partitioned per operator
-  const [customLoot, setCustomLoot] = useState<VaultEvidenceItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const key = getVaultCustomLootStorageKey(currentProfileId);
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const prevProfileIdRef = useRef(currentProfileId);
-
-  // Load custom loot when profile changes; persist only when editing current profile
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (prevProfileIdRef.current !== currentProfileId) {
-      // Profile switched: load new profile data without saving stale in-memory state
-      prevProfileIdRef.current = currentProfileId;
-      try {
-        const key = getVaultCustomLootStorageKey(currentProfileId);
-        const stored = localStorage.getItem(key);
-        setCustomLoot(stored ? JSON.parse(stored) : []);
-      } catch {
-        setCustomLoot([]);
-      }
-      return;
-    }
-
-    // Persist edits to the active profile
-    try {
-      const pid = currentProfileId || 'guest';
-      const key = `zerobox_vault_custom_loot_v1_${pid}`;
-      localStorage.setItem(key, JSON.stringify(customLoot));
-    } catch (err) {
-      console.error('Failed to persist vault loot:', err);
-    }
-  }, [customLoot, currentProfileId]);
+  // User-logged credentials and loot come from the per-profile store slice, newest first
+  const customLoot = useMemo<VaultEvidenceItem[]>(() => {
+    const items = [
+      ...[...credentials].reverse().map((c) => credentialToEvidenceItem(c, machines)),
+      ...[...lootItems].reverse().map((l) => lootItemToEvidenceItem(l, machines)),
+    ];
+    return items.sort((a, b) => Date.parse(b.discoveredAt) - Date.parse(a.discoveredAt));
+  }, [credentials, lootItems, machines]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -276,8 +297,32 @@ export const EvidenceVaultPage: React.FC = () => {
   }, [soundEnabled]);
 
   const handleSaveCustomLoot = useCallback((newItem: VaultEvidenceItem) => {
-    setCustomLoot((prev) => [newItem, ...prev]);
-  }, []);
+    const machineId = newItem.targetId && newItem.targetId !== 'global' ? newItem.targetId : undefined;
+    const notes = newItem.notes || undefined;
+    const credentialType = CATEGORY_CREDENTIAL_TYPE[newItem.category];
+    if (credentialType) {
+      addCredential({
+        id: newItem.id,
+        type: credentialType,
+        username: newItem.username,
+        secret: newItem.secret,
+        sourceMachineId: machineId,
+        notes,
+        createdAt: newItem.discoveredAt,
+      });
+    } else {
+      addLootItem({
+        id: newItem.id,
+        category: newItem.category === 'flag' || newItem.category === 'service' ? newItem.category : 'note',
+        title: newItem.typeLabel,
+        value: newItem.secret,
+        username: newItem.username || undefined,
+        notes,
+        machineId,
+        createdAt: newItem.discoveredAt,
+      });
+    }
+  }, [addCredential, addLootItem]);
 
   const handleDeleteCustomLoot = useCallback(async (id: string) => {
     const ok = await confirmAction({
@@ -287,7 +332,9 @@ export const EvidenceVaultPage: React.FC = () => {
       tone: 'danger',
     });
     if (!ok) return;
-    setCustomLoot((prev) => prev.filter((i) => i.id !== id));
+    const { credentials: current, deleteCredential, deleteLootItem } = useCtfStore.getState();
+    if (current.some((c) => c.id === id)) deleteCredential(id);
+    else deleteLootItem(id);
     if (soundEnabled) playCyberSound('toggle');
   }, [soundEnabled]);
 
@@ -689,7 +736,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
                             type="button"
                             onClick={() => handleToggleReveal(item.id)}
-                            className="p-1.5 max-sm:p-3 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
+                            className="p-1.5 tap-target rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
                             title={isRevealed ? 'Mask secret' : 'Reveal secret'}
                           >
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -709,7 +756,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             aria-label="Copy secret to clipboard"
                             type="button"
                             onClick={() => handleCopy(item.secret, item.id)}
-                            className={`p-1.5 max-sm:p-3 rounded-md border text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] ${
+                            className={`p-1.5 tap-target rounded-md border text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] ${
  isCopied
  ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border'
  : 'bg-surface-sunken border-subtle text-secondary hover:border-accent hover:text-accent'
@@ -724,7 +771,7 @@ export const EvidenceVaultPage: React.FC = () => {
                               aria-label="Inspect target details"
                               type="button"
                               onClick={() => navigate(`/target/${item.targetId}`)}
-                              className="p-1.5 max-sm:p-3 rounded-md border border-subtle bg-surface-sunken text-secondary hover:border-accent hover:text-accent transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 tap-target rounded-md border border-subtle bg-surface-sunken text-secondary hover:border-accent hover:text-accent transition-colors cursor-pointer active:scale-[0.97]"
                               title="Inspect target details"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -735,7 +782,7 @@ export const EvidenceVaultPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteCustomLoot(item.id)}
-                              className="p-1.5 max-sm:p-3 rounded-md border border-subtle bg-surface-sunken text-muted hover:text-callout-danger-fg hover:border-callout-danger-border transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 tap-target rounded-md border border-subtle bg-surface-sunken text-muted hover:text-callout-danger-fg hover:border-callout-danger-border transition-colors cursor-pointer active:scale-[0.97]"
                               title="Delete custom loot entry"
                               aria-label="Delete custom loot entry"
                             >
@@ -751,28 +798,30 @@ export const EvidenceVaultPage: React.FC = () => {
                 {filteredItems.length === 0 && (
                   <tr role="row" className="block sm:table-row">
                     <td role="cell" colSpan={6} className="block sm:table-cell py-12 text-center text-muted">
-                      <Database className="w-8 h-8 mx-auto mb-2 text-dim" />
-                      <div className="font-semibold text-sm text-secondary">No evidence matches these filters</div>
-                      <div className="text-xs mt-1 mb-4">Capture a flag, import a scan, or log a credential by hand.</div>
-                      <div className="flex items-center justify-center gap-2">
-                        {(selectedCategory !== 'all' || searchQuery || selectedPlatform !== 'all' || selectedTargetId !== 'all') && (
-                          <CyberButton
-                            variant="secondary"
-                            size="md"
-                            onClick={() => {
+                      {evidenceItems.length === 0 ? (
+                        <EmptyState
+                          icon={Database}
+                          title="Your vault is empty"
+                          description="Flags, loot and other evidence you collect on targets will be stored here."
+                          action={{ label: 'Log new evidence', icon: Plus, onClick: () => setIsAddModalOpen(true) }}
+                        />
+                      ) : (
+                        <EmptyState
+                          icon={Search}
+                          title="No evidence matches these filters"
+                          description="Try a different search or loosen the filters to see more of your vault."
+                          action={{
+                            label: 'Clear filters',
+                            onClick: () => {
                               setSelectedCategory('all');
                               setSearchQuery('');
                               setSelectedPlatform('all');
                               setSelectedTargetId('all');
-                            }}
-                          >
-                            Reset filters
-                          </CyberButton>
-                        )}
-                        <CyberButton variant="primary" size="md" onClick={() => setIsAddModalOpen(true)} iconLeft={<Plus className="w-3.5 h-3.5" />}>
-                          Log evidence
-                        </CyberButton>
-                      </div>
+                            },
+                          }}
+                          secondaryAction={{ label: 'Log new evidence', onClick: () => setIsAddModalOpen(true) }}
+                        />
+                      )}
                     </td>
                   </tr>
                 )}

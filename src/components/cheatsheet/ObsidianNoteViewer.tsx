@@ -1,3 +1,4 @@
+import { isTauriTarget } from '../../utils/runtimeTarget';
 import { motion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
@@ -31,8 +32,9 @@ import {
   getNoteById 
 } from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import { GlobalVariables } from '../../types';
-import { OpenNoteOptions, SplitOrientation } from '../../types/workspace';
+import { SplitOrientation } from '../../types/workspace';
 import { ShareLinkButton } from '../common/ShareLinkButton';
 import { ObsidianTabContent } from './ObsidianTabContent';
 import { handleWorkspaceLinkClick, scrollToHeadingAnchor } from '../../utils/workspaceLinkInterceptor';
@@ -97,12 +99,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   splitOrientation = 'horizontal',
   onToggleSplit,
   onMoveTabToOtherPane,
-  paneId,
   isPaneActive = true,
   onFocusPane,
   isSidebarOpen = true,
   onToggleSidebar,
-  onSwitchToCards,
 }) => {
   const [viewMode, setViewMode] = useState<ObsidianViewMode>('reading');
   const [langMode, setLangMode] = useState<ObsidianNoteLanguage>(defaultLanguage);
@@ -487,14 +487,17 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     }
   }, [handleContainerLinkClick]);
 
+  // Engaged target's IP wins over the global RHOST (shared precedence helper).
+  const effectiveVars = useEffectiveGlobalVars(globalVars);
+
   const handleCopyAllCommands = useCallback(() => {
     if (!note.commands || note.commands.length === 0) return;
-    const all = note.commands.map((cmd) => interpolateCommand(cmd, globalVars)).join('\n\n');
+    const all = note.commands.map((cmd) => interpolateCommand(cmd, effectiveVars)).join('\n\n');
     safeCopyToClipboard(all);
     setCopiedId('all-cmds-' + note.id);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopiedId(null), 2000);
-  }, [note.commands, note.id, globalVars, soundEnabled]);
+  }, [note.commands, note.id, effectiveVars, soundEnabled]);
 
   const handleCopyRawMarkdown = useCallback(() => {
     const raw = note.rawMarkdown || (note as any).content || '';
@@ -525,7 +528,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               if (soundEnabled) playCyberSound('click');
               onToggleSidebar();
             }}
-            className="p-1 mr-1.5 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-colors flex-shrink-0 cursor-pointer"
+            className="active:scale-[0.97] p-1 mr-1.5 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-interactive flex-shrink-0 cursor-pointer"
             title={isSidebarOpen ? "Collapse sidebar (Ctrl+B)" : "Expand sidebar (Ctrl+B)"}
             aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
@@ -537,7 +540,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsLeft}
-          className="p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-colors flex-shrink-0"
+          className="active:scale-[0.97] p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-interactive flex-shrink-0"
           title="Scroll tabs left"
           aria-label="Scroll tabs left"
         >
@@ -606,7 +609,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       e.stopPropagation();
                       togglePinTab(tab.id);
                     }}
-                    className="text-accent hover:text-callout-danger-fg transition-colors flex-shrink-0 p-0.5"
+                    className="active:scale-[0.97] text-accent hover:text-callout-danger-fg transition-interactive flex-shrink-0 p-0.5"
                     title="Unpin tab"
                   >
                     <Pin className="w-3.5 h-3.5 fill-accent rotate-45" />
@@ -631,7 +634,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       if (soundEnabled) playCyberSound('click');
                       handleCloseSpecificTab(tab.id);
                     }}
-                    className="p-0.5 rounded opacity-60 group-hover:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
+                    className="active:scale-[0.97] p-0.5 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
                     title="Close tab (Alt+W)"
                     aria-label={`Close tab ${tab.titleEn || tab.title}`}
                   >
@@ -647,7 +650,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsRight}
-          className="p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-colors flex-shrink-0"
+          className="active:scale-[0.97] p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-interactive flex-shrink-0"
           title="Scroll tabs right"
           aria-label="Scroll tabs right"
         >
@@ -660,7 +663,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             type="button"
             data-testid="new-tab-button"
             onClick={() => setIsPickerOpen((prev) => !prev)}
-            className="h-8 px-2.5 rounded-lg bg-accent-muted hover:bg-accent-muted border border-accent text-accent hover:text-primary transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 text-xs cursor-pointer flex-shrink-0"
+            className="active:scale-[0.97] h-8 px-2.5 rounded-lg bg-accent-muted hover:bg-accent-muted border border-accent text-accent hover:text-primary transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 text-xs cursor-pointer flex-shrink-0"
             title="Open new tab (Ctrl+T / Alt+T)"
             aria-label="Open note in new tab"
           >
@@ -735,7 +738,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                           }
                           setIsPickerOpen(false);
                         }}
-                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs hover:bg-accent-muted hover:text-primary transition-colors border border-transparent hover:border-accent cursor-pointer"
+                        className="active:scale-[0.97] w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs hover:bg-accent-muted hover:text-primary transition-interactive border border-transparent hover:border-accent cursor-pointer"
                       >
                         <div className="truncate flex-1">
                           <div className="font-semibold text-secondary truncate">
@@ -772,7 +775,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="toggle-tabs-drawer"
               onClick={() => setIsTabsDrawerOpen((prev) => !prev)}
-              className={`h-7 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`active:scale-[0.97] h-7 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-interactive cursor-pointer ${
                 isTabsDrawerOpen
                   ? 'bg-accent-muted border-accent text-primary'
                   : 'bg-accent-muted hover:bg-accent-muted border-subtle hover:border-accent text-accent hover:text-primary'
@@ -802,7 +805,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                         onCloseAllTabs();
                         setIsTabsDrawerOpen(false);
                       }}
-                      className="text-[10px] text-callout-danger-fg hover:text-callout-danger-fg transition-colors cursor-pointer"
+                      className="active:scale-[0.97] text-[10px] text-callout-danger-fg hover:text-callout-danger-fg transition-interactive cursor-pointer"
                     >
                       Close All
                     </button>
@@ -828,7 +831,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                             onSelectNote?.(tab.id);
                             setIsTabsDrawerOpen(false);
                           }}
-                          className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
+                          className="transition-transform active:scale-[0.97] flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
                         >
                           <span className="text-accent text-xs flex-shrink-0">
                             {tab.stage ? '🎯' : '📝'}
@@ -841,7 +844,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                           <button
                             type="button"
                             onClick={() => togglePinTab(tab.id)}
-                            className={`p-1 rounded hover:bg-surface-card ${
+                            className={`transition-transform active:scale-[0.97] p-1 rounded hover:bg-surface-card ${
                               isPinned ? 'text-accent' : 'text-muted'
                             }`}
                             title={isPinned ? 'Unpin tab' : 'Pin tab'}
@@ -859,7 +862,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                                   handleCloseSpecificTab(tab.id);
                                 }
                               }}
-                              className="p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg"
+                              className="transition-transform active:scale-[0.97] p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg"
                               title="Close tab"
                             >
                               <X className="w-3 h-3" />
@@ -882,7 +885,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="close-all-tabs-button"
               onClick={onCloseAllTabs}
-              className="hidden sm:inline px-1.5 py-0.5 rounded hover:bg-callout-danger-bg hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-colors cursor-pointer"
+              className="active:scale-[0.97] hidden sm:inline px-1.5 py-0.5 rounded hover:bg-callout-danger-bg hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-interactive cursor-pointer"
               title="Close all tabs"
             >
               Close All
@@ -917,7 +920,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('reading')}
-              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
                 viewMode === 'reading'
                   ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
@@ -929,7 +932,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('split')}
-              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
                 viewMode === 'split'
                   ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
@@ -941,7 +944,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('raw')}
-              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
                 viewMode === 'raw'
                   ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
@@ -958,7 +961,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="modal-lang-en"
               onClick={() => setLangMode('en')}
-              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
                 langMode === 'en'
                   ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
@@ -971,7 +974,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="modal-lang-he"
               onClick={() => setLangMode('he')}
-              className={'px-2.5 py-1 rounded transition-colors cursor-pointer ' + (
+              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
                 langMode === 'he'
                   ? 'bg-accent text-on-accent font-semibold'
                   : 'text-secondary hover:text-primary'
@@ -989,7 +992,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               data-testid="decrease-font-size-button"
               onClick={handleDecreaseFontSize}
               disabled={fontSize === 'sm'}
-              className="px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-colors cursor-pointer"
+              className="active:scale-[0.97] px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-interactive cursor-pointer"
               title="Decrease note font size"
               aria-label="Decrease note font size"
             >
@@ -1006,7 +1009,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               data-testid="increase-font-size-button"
               onClick={handleIncreaseFontSize}
               disabled={fontSize === 'xl'}
-              className="px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-colors cursor-pointer"
+              className="active:scale-[0.97] px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-interactive cursor-pointer"
               title="Increase note font size"
               aria-label="Increase note font size"
             >
@@ -1019,7 +1022,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             <button
               type="button"
               onClick={handleCopyAllCommands}
-              className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-colors cursor-pointer"
+              className="active:scale-[0.97] hidden md:flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-interactive cursor-pointer"
               title="Copy all commands in note"
             >
               {copiedId === 'all-cmds-' + note.id ? (
@@ -1046,7 +1049,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           <button
             type="button"
             onClick={handleCopyRawMarkdown}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-primary hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
+            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-primary hover:border-accent text-xs font-semibold transition-interactive cursor-pointer"
             title="Copy raw markdown to paste into your Obsidian vault"
           >
             {copiedId === 'raw-md-' + note.id ? (
@@ -1072,7 +1075,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   if (soundEnabled) playCyberSound('click');
                   onToggleSplit('horizontal');
                 }}
-                className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-colors cursor-pointer ${
+                className={`active:scale-[0.97] flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-interactive cursor-pointer ${
                   isSplitView && splitOrientation === 'horizontal'
                     ? 'bg-accent-muted border-accent text-accent'
                     : 'bg-surface-sunken border-cyber-border text-muted hover:text-accent hover:border-accent'
@@ -1091,7 +1094,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   if (soundEnabled) playCyberSound('click');
                   onToggleSplit('vertical');
                 }}
-                className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-colors cursor-pointer ${
+                className={`active:scale-[0.97] flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-interactive cursor-pointer ${
                   isSplitView && splitOrientation === 'vertical'
                     ? 'bg-accent-muted border-accent text-accent'
                     : 'bg-surface-sunken border-cyber-border text-muted hover:text-accent hover:border-accent'
@@ -1114,7 +1117,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 if (soundEnabled) playCyberSound('click');
                 onMoveTabToOtherPane(note.id);
               }}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-surface-sunken border border-accent text-accent hover:text-primary hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
+              className="active:scale-[0.97] flex items-center gap-1 px-2 py-1 rounded bg-surface-sunken border border-accent text-accent hover:text-primary hover:border-accent text-xs font-semibold transition-interactive cursor-pointer"
               title="Move active tab to other pane"
               aria-label="Move tab to other pane"
             >
@@ -1134,7 +1137,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               if (soundEnabled) playCyberSound('click');
               onClose();
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
+            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
             title="Dock to all pages (Stays open while navigating between pages)"
             aria-label="Dock to all pages"
           >
@@ -1151,7 +1154,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 if (soundEnabled) playCyberSound('click');
                 onToggleDisplayMode();
               }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
+              className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
               title={displayMode === 'docked' ? "Float in Modal (Alt+M)" : "Dock Side-by-Side in Page (Alt+M)"}
               aria-label={displayMode === 'docked' ? "Float in Modal" : "Dock Side-by-Side in Page"}
             >
@@ -1174,7 +1177,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             type="button"
             data-testid="toggle-maximize-button"
             onClick={handleToggleMaximize}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
+            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
             title={effectiveMaximized ? "Restore view (Alt+F)" : "Maximize full-width workspace (Alt+F)"}
             aria-label={effectiveMaximized ? "Restore view" : "Maximize workspace"}
           >
@@ -1200,11 +1203,11 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               if (onPopoutWindow) {
                 onPopoutWindow();
               } else {
-                const popoutUrl = `${window.location.origin}${window.location.pathname}#/field-manual?note=${note.id}&popout=true`;
+                const popoutUrl = (isTauriTarget() ? `${window.location.origin}${window.location.pathname}#/field-manual?note=${note.id}&popout=true` : `${window.location.origin}/field-manual?note=${note.id}&popout=true`);
                 window.open(popoutUrl, `ZeroBoxFieldManual_${note.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
               }
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-accent hover:border-accent text-xs font-semibold transition-colors cursor-pointer"
+            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-accent hover:border-accent text-xs font-semibold transition-interactive cursor-pointer"
             title="Pop out note into standalone window"
             aria-label="Open in standalone window"
           >
@@ -1227,7 +1230,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   onDeleteNote(note.id, title);
                 }
               }}
-              className="p-1.5 rounded hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-colors cursor-pointer"
+              className="active:scale-[0.97] p-1.5 rounded hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-interactive cursor-pointer"
               title="Delete custom note"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -1237,7 +1240,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-colors cursor-pointer"
+            className="active:scale-[0.97] p-1 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-interactive cursor-pointer"
             title="Close viewer (Escape)"
             aria-label="Close viewer"
           >

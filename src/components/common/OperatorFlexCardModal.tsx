@@ -1,16 +1,12 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { Modal } from './Modal';
 import { 
   X, 
   Download, 
   Copy, 
   Check, 
   Share2, 
-  Sparkles, 
-  ShieldCheck, 
-  Award, 
-  Terminal, 
-  ExternalLink 
-} from 'lucide-react';
+  Award} from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -51,7 +47,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
-  const [rendering, setRendering] = useState(false);
+  const [, setRendering] = useState(false);
 
   // Compute operator gamification
   const gamification = useMemo(() => {
@@ -67,7 +63,7 @@ export const OperatorFlexCardModal: React.FC = () => {
   const initials = callsign.slice(0, 2).toUpperCase();
 
   // Compute live operator metrics
-  const { totalMachines, rootedMachines, footholdMachines, totalPwned } = useMemo(() => {
+  const { totalMachines, totalPwned } = useMemo(() => {
     const total = machines.length;
     const rooted = machines.filter((m) => m.status === 'root' || m.status === 'completed');
     const foothold = machines.filter((m) => m.status === 'foothold');
@@ -96,18 +92,6 @@ export const OperatorFlexCardModal: React.FC = () => {
     if (!flexCardModalOpen) return;
     renderCanvas();
   }, [flexCardModalOpen, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
-
-  useEffect(() => {
-    if (!flexCardModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setFlexCardModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [flexCardModalOpen, setFlexCardModalOpen]);
-
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -290,7 +274,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
     ctx.fillStyle = C.muted;
     ctx.font = `13px ${MONO}`;
-    ctx.fillText('0xdnd.github.io/ctf-tracker', W - 310, 535);
+    ctx.fillText('ctftracker.com', W - 180, 535);
 
     setRendering(false);
   };
@@ -332,30 +316,31 @@ export const OperatorFlexCardModal: React.FC = () => {
   };
 
   const handleShareLinkedIn = () => {
-    const text = encodeURIComponent('Tracking my offensive security machine solves, OSCP/CPTS prep, and penetration testing labs with ZeroBox by Daniel Dayan (@0xdnd)! Check it out: https://0xdnd.github.io/ctf-tracker/');
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://0xdnd.github.io/ctf-tracker/`, '_blank');
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://ctftracker.com/`, '_blank');
     if (soundEnabled) playCyberSound('click');
   };
 
   const handleShareTwitter = () => {
     const text = encodeURIComponent('Tracking my offensive security labs and CTF solves on ZeroBox by @0xdnd! Check out the open platform:');
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=https://0xdnd.github.io/ctf-tracker/`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=https://ctftracker.com/`, '_blank');
     if (soundEnabled) playCyberSound('click');
   };
 
-  if (!flexCardModalOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-surface-inverse/60 backdrop-blur-md animate-fade-in font-sans" onClick={() => setFlexCardModalOpen(false)}>
-      <div 
-        className="w-full max-w-4xl max-h-[95vh] flex flex-col rounded-2xl border border-subtle bg-surface-card shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      open={flexCardModalOpen}
+      onClose={() => setFlexCardModalOpen(false)}
+      labelledBy="flex-card-title"
+      size="2xl"
+      className="backdrop-blur-md !bg-surface-inverse/60"
+      panelClassName="!shadow-2xl !max-h-[95dvh]"
+    >
+      <div className="flex flex-col max-h-[95dvh] min-h-0">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle px-4 py-3 bg-surface-card">
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-muted" />
-            <h2 className="font-semibold text-primary text-sm tracking-[-0.01em]">
+            <h2 id="flex-card-title" className="font-semibold text-primary text-sm tracking-[-0.01em]">
               Achievement card
             </h2>
           </div>
@@ -435,6 +420,6 @@ export const OperatorFlexCardModal: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

@@ -1,13 +1,9 @@
-import React, { useRef, useEffect, Suspense, lazy, useMemo } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { useRef, useEffect, useState, Suspense, lazy, useMemo } from 'react';
+import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { UnifiedHeader } from './components/layout/UnifiedHeader';
-import { FloatingPayloadBar } from './components/common/FloatingPayloadBar';
-import { SnippetsDrawer } from './components/layout/SnippetsDrawer';
-import { RevShellModal } from './components/common/RevShellModal';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
-import { CommandPalette } from './components/layout/CommandPalette';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTopButton } from './components/common/BackToTopButton';
 import { ScrollProvider, useScrollActions } from './context/ScrollContext';
@@ -16,17 +12,19 @@ import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { ViewSkeleton } from './components/common/Skeleton';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
-import { useCtfStore, mergeMachinesWithCatalog, UiScale } from './store/useCtfStore';
+import { useCtfStore, UiScale } from './store/useCtfStore';
 import { useExamStore } from './store/examStore';
+import { useNotesWorkspaceStore } from './store/useNotesWorkspaceStore';
 import { useAuthStore } from './store/useAuthStore';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
-import { ExamQuickActionDrawer } from './components/exam/ExamQuickActionDrawer';
-import { PersistentNotesWorkspace } from './components/workspace/PersistentNotesWorkspace';
 import { ensurePersistence, bindExportGuard } from './utils/resilientStorage';
 import { StartCleanModal } from './components/common/StartCleanModal';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
 import { AlertTriangle, Database } from 'lucide-react';
+import { isTauriTarget } from './utils/runtimeTarget';
+import { useRouteMeta } from './hooks/useRouteMeta';
+import { LegacyNotesRedirect } from './components/common/LegacyNotesRedirect';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -42,6 +40,22 @@ const KeyboardShortcutsModal = lazy(() => import('./components/common/KeyboardSh
 const BackupModal = lazy(() => import('./components/backup/BackupModal').then(m => ({ default: m.BackupModal })));
 const ReconAutomationModal = lazy(() => import('./components/automation/ReconAutomationModal').then(m => ({ default: m.ReconAutomationModal })));
 const SettingsModal = lazy(() => import('./components/common/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const ZeroBoxShowcaseModal = lazy(() => import('./components/common/ZeroBoxShowcaseModal').then(m => ({ default: m.ZeroBoxShowcaseModal })));
+
+// Code-split global overlays: mounted (and fetched) only once they are first needed
+const SnippetsDrawer = lazy(() => import('./components/layout/SnippetsDrawer').then(m => ({ default: m.SnippetsDrawer })));
+const RevShellModal = lazy(() => import('./components/common/RevShellModal').then(m => ({ default: m.RevShellModal })));
+const CommandPalette = lazy(() => import('./components/layout/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const ExamQuickActionDrawer = lazy(() => import('./components/exam/ExamQuickActionDrawer').then(m => ({ default: m.ExamQuickActionDrawer })));
+const PersistentNotesWorkspace = lazy(() => import('./components/workspace/PersistentNotesWorkspace').then(m => ({ default: m.PersistentNotesWorkspace })));
+const FloatingPayloadBar = lazy(() => import('./components/common/FloatingPayloadBar').then(m => ({ default: m.FloatingPayloadBar })));
+
+/** Stays true once `flag` has been true, so lazy overlays keep their state and exit animations. */
+const useEverTrue = (flag: boolean): boolean => {
+  const [seen, setSeen] = useState(flag);
+  if (flag && !seen) setSeen(true);
+  return seen || flag;
+};
 
 // Code-Split Route Modules (Zero-overhead on initial tracker load)
 const CheatsheetView = lazy(() => import('./components/cheatsheet/CheatsheetView').then(m => ({ default: m.CheatsheetView })));
@@ -51,6 +65,7 @@ const TargetDetailPage = lazy(() => import('./pages/TargetDetailPage').then(m =>
 const MethodologyPage = lazy(() => import('./pages/MethodologyPage').then(m => ({ default: m.MethodologyPage })));
 const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m => ({ default: m.ExamSimulatorPage })));
 const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const CyberRouteLoader: React.FC = () => <ViewSkeleton />;
 
@@ -82,6 +97,7 @@ const TimerController: React.FC = () => {
 const MainAppContent: React.FC = () => {
   const { setScrollElement } = useScrollActions();
   const location = useLocation();
+  useRouteMeta();
   const isPopout = useMemo(() => new URLSearchParams(location.search).get('popout') === 'true', [location.search]);
   const setActiveTab = useCtfStore((s) => s.setActiveTab);
   const selectedMachineId = useCtfStore((s) => s.selectedMachineId);
@@ -97,7 +113,17 @@ const MainAppContent: React.FC = () => {
   const flexCardModalOpen = useCtfStore((s) => s.flexCardModalOpen);
   const shortcutsModalOpen = useCtfStore((s) => s.shortcutsModalOpen);
   const settingsModalOpen = useCtfStore((s) => s.settingsModalOpen);
+  const showcaseModalOpen = useCtfStore((s) => s.showcaseModalOpen);
   const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
+  const snippetsDrawerOpen = useCtfStore((s) => s.snippetsDrawerOpen);
+  const revShellModalOpen = useCtfStore((s) => s.revShellModalOpen);
+  const examDrawerOpen = useExamStore((s) => s.isQuickDrawerOpen);
+  const notesWorkspaceOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  const mountCommandPalette = useEverTrue(commandPaletteOpen);
+  const mountSnippetsDrawer = useEverTrue(snippetsDrawerOpen);
+  const mountRevShell = useEverTrue(revShellModalOpen);
+  const mountExamDrawer = useEverTrue(examDrawerOpen);
+  const mountNotesWorkspace = useEverTrue(notesWorkspaceOpen);
   const operatorProfileModalOpen = useAuthStore((s) => s.operatorProfileModalOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
@@ -155,7 +181,8 @@ const MainAppContent: React.FC = () => {
           notesImportModalOpen ||
           flexCardModalOpen ||
           shortcutsModalOpen ||
-          settingsModalOpen
+          settingsModalOpen ||
+          showcaseModalOpen
         );
         if (!isAnyModalOpen) {
           setFocusMode(false);
@@ -201,52 +228,59 @@ const MainAppContent: React.FC = () => {
       return '1.0';
     };
 
+    // Writing zoom / --app-zoom invalidates style and layout for the whole document, so only write
+    // when the computed value actually differs from what is already applied, and do it inside rAF.
+    const rootStyle = document.documentElement.style as CSSStyleDeclaration & { zoom?: string };
+    const writeZoom = (zoom: string) => {
+      if (rootStyle.zoom === zoom && rootStyle.getPropertyValue('--app-zoom') === zoom) return;
+      rootStyle.zoom = zoom;
+      rootStyle.setProperty('--app-zoom', zoom);
+    };
+
     if (uiScale === 'auto') {
       let rafId: number | null = null;
-      const applyAutoZoom = () => {
-        const zoom = getAutoZoom(window.innerWidth);
-        (document.documentElement.style as CSSStyleDeclaration & { zoom?: string }).zoom = zoom;
-        document.documentElement.style.setProperty('--app-zoom', zoom);
-      };
-
-      applyAutoZoom();
-
-      const handleResize = () => {
-        if (rafId !== null) cancelAnimationFrame(rafId);
+      const scheduleAutoZoom = () => {
+        if (rafId !== null) return;
         rafId = requestAnimationFrame(() => {
-          applyAutoZoom();
           rafId = null;
+          writeZoom(getAutoZoom(window.innerWidth));
         });
       };
 
-      window.addEventListener('resize', handleResize);
+      scheduleAutoZoom();
+
+      window.addEventListener('resize', scheduleAutoZoom);
       return () => {
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('resize', scheduleAutoZoom);
         if (rafId !== null) cancelAnimationFrame(rafId);
       };
     } else {
       const zoomVal = zoomMap[uiScale] || '1.0';
-      (document.documentElement.style as CSSStyleDeclaration & { zoom?: string }).zoom = zoomVal;
-      document.documentElement.style.setProperty('--app-zoom', zoomVal);
+      const rafId = requestAnimationFrame(() => writeZoom(zoomVal));
+      return () => cancelAnimationFrame(rafId);
     }
   }, [uiScale]);
 
-  // Guarantee that all 45 completed HTB targets are populated in active state and profile,
-  // and force brand to ZEROBOX if still set to legacy rootvector or specter
+  // The persist `merge` already merges machines with the catalog and forces the ZEROBOX brand on
+  // rehydrate, and the store's profile auto-save subscriber persists later changes, so no extra
+  // merge / saveProfileData pass is needed here.
   useEffect(() => {
-    const state = useCtfStore.getState();
-    const current = state.machines;
-    const merged = mergeMachinesWithCatalog(current, state.userSolvesReset);
-    const updates: Partial<typeof state> = { machines: merged };
-    if (state.appBrand !== 'zerobox') {
-      updates.appBrand = 'zerobox';
-    }
-    useCtfStore.setState(updates);
-    useCtfStore.getState().saveProfileData();
     // Auto-hydrate private field manual notes and wikilinks from local IndexedDB
     useCtfStore.getState().loadUserNotesFromDb();
-    // Asynchronously hydrate full master catalog in background without blocking cold boot TTI
-    useCtfStore.getState().loadCatalog();
+    // Hydrate the full master catalog (separate ~600 KB chunk) off the critical path:
+    // wait for browser idle so it never competes with first paint / route chunks.
+    // Routes that need it (tracker, target detail) trigger loadCatalog() themselves.
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const hydrate = () => { useCtfStore.getState().loadCatalog(); };
+    if (typeof w.requestIdleCallback === 'function') {
+      const idleId = w.requestIdleCallback(hydrate, { timeout: 3000 });
+      return () => w.cancelIdleCallback?.(idleId);
+    }
+    const timerId = window.setTimeout(hydrate, 1500);
+    return () => window.clearTimeout(timerId);
   }, []);
 
   // Sync store activeTab with route
@@ -328,7 +362,7 @@ const MainAppContent: React.FC = () => {
       </AnimatePresence>
 
       {/* Global Quick Command Palette (Ctrl+K) */}
-      <CommandPalette />
+      {mountCommandPalette && <Suspense fallback={null}><CommandPalette /></Suspense>}
 
       {/* Heavy Tactical Modals (Deferred Lazy Loading - Fetched strictly when triggered) */}
       <RouteErrorBoundary>
@@ -379,6 +413,9 @@ const MainAppContent: React.FC = () => {
           <AnimatePresence>
             {settingsModalOpen && <SettingsModal key="settings-modal" />}
           </AnimatePresence>
+          <AnimatePresence>
+            {showcaseModalOpen && <ZeroBoxShowcaseModal key="showcase-modal" />}
+          </AnimatePresence>
         </Suspense>
       </RouteErrorBoundary>
 
@@ -386,13 +423,13 @@ const MainAppContent: React.FC = () => {
       <TimerController />
 
       {/* Slide-over Cheatsheet & Snippets Drawer (Alt+S) */}
-      <SnippetsDrawer />
+      {mountSnippetsDrawer && <Suspense fallback={null}><SnippetsDrawer /></Suspense>}
 
       {/* Slide-over Exam Mission Quick Action Drawer (Alt+E) */}
-      <ExamQuickActionDrawer />
+      {mountExamDrawer && <Suspense fallback={null}><ExamQuickActionDrawer /></Suspense>}
 
       {/* Rapid Reverse Shell Crafter Modal */}
-      <RevShellModal />
+      {mountRevShell && <Suspense fallback={null}><RevShellModal /></Suspense>}
 
       {/* Ephemeral Memory Fallback Storage Alert Banner */}
       <EphemeralStorageBanner />
@@ -430,7 +467,7 @@ const MainAppContent: React.FC = () => {
                   useCtfStore.getState().exportWorkspace();
                   setStorageAlert(null);
                 }}
-                className="px-3 py-1 bg-cyber-emerald text-black font-bold rounded-lg text-xs hover:brightness-110 active:scale-[0.97] transition-all flex items-center gap-1.5 cursor-pointer shadow-glow-emerald"
+                className="px-3 py-1 bg-cyber-emerald text-black font-bold rounded-lg text-xs hover:brightness-110 active:scale-[0.97] transition-[filter,transform] flex items-center gap-1.5 cursor-pointer shadow-glow-emerald"
               >
                 <Database className="w-3.5 h-3.5" />
                 <span>Export Backup Now</span>
@@ -476,7 +513,7 @@ const MainAppContent: React.FC = () => {
               <RouteErrorBoundary resetKey={location.pathname}>
                 <Suspense fallback={<CyberRouteLoader />}>
                   <Routes location={location} key={location.pathname}>
-                    <Route path="/" element={<Navigate to="/tracker" replace />} />
+                    <Route path="/" element={<Navigate to="/tracker/" replace />} />
                     <Route path="/tracker" element={<TrackerView />} />
                     <Route path="/target/:id" element={<TargetDetailPage />} />
                     <Route path="/target/:id/focus" element={<TargetDetailPage />} />
@@ -487,8 +524,9 @@ const MainAppContent: React.FC = () => {
                     <Route path="/cheatsheet" element={<CheatsheetView />} />
                     <Route path="/notes" element={<CheatsheetView defaultMode="cpts-manual" />} />
                     <Route path="/field-manual" element={<CheatsheetView defaultMode="cpts-manual" />} />
-                    <Route path="/cpts" element={<CheatsheetView defaultMode="cpts-manual" />} />
-                    <Route path="/cpts-manual" element={<CheatsheetView defaultMode="cpts-manual" />} />
+                    {/* Old notes URLs: redirect so bookmarks still resolve */}
+                    <Route path="/cpts" element={<LegacyNotesRedirect />} />
+                    <Route path="/cpts-manual" element={<LegacyNotesRedirect />} />
                     <Route path="/writeup" element={<WriteupStudio />} />
                     <Route path="/writeup/:id" element={<WriteupStudio />} />
                     <Route path="/writeups" element={<Navigate to="/writeup" replace />} />
@@ -498,7 +536,7 @@ const MainAppContent: React.FC = () => {
                     <Route path="/vault" element={<EvidenceVaultPage />} />
                     <Route path="/evidence" element={<EvidenceVaultPage />} />
                     <Route path="/loot" element={<EvidenceVaultPage />} />
-                    <Route path="*" element={<Navigate to="/tracker" replace />} />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Suspense>
               </RouteErrorBoundary>
@@ -506,11 +544,11 @@ const MainAppContent: React.FC = () => {
           </AnimatePresence>
         </main>
         {/* Global Persistent Multi-Tab Notes Workspace Sidecar (Non-blocking) */}
-        {!isPopout && <PersistentNotesWorkspace />}
+        {!isPopout && mountNotesWorkspace && <Suspense fallback={null}><PersistentNotesWorkspace /></Suspense>}
       </div>
 
       {/* Global Floating LHOST/LPORT Payload Bar - Hidden in Popout Mode */}
-      {!isPopout && <FloatingPayloadBar />}
+      {!isPopout && <Suspense fallback={null}><FloatingPayloadBar /></Suspense>}
 
       {/* Tactical Mobile Bottom Navigation Bar (md:hidden) */}
       {!focusMode && !isPopout && <MobileNav />}
@@ -523,15 +561,17 @@ const MainAppContent: React.FC = () => {
 };
 
 export const App: React.FC = () => {
+  // Desktop (Tauri) keeps hash routing; the web build uses clean URLs.
+  const Router = isTauriTarget() ? HashRouter : BrowserRouter;
   return (
     <MotionConfig reducedMotion="user">
-      <HashRouter>
+      <Router>
         <ScrollProvider>
           <ThemeProvider>
             <MainAppContent />
           </ThemeProvider>
         </ScrollProvider>
-      </HashRouter>
+      </Router>
     </MotionConfig>
   );
 };

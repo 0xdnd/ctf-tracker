@@ -1,6 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MachineDetailModal } from './MachineDetailModal';
 import { useCtfStore } from '../../store/useCtfStore';
 import { MemoryRouter } from 'react-router-dom';

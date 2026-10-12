@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
+import { EASE_OUT } from '../../utils/motion';
+
+/** Hover delay before opening; mirrors Tooltip. Focus and click open immediately. */
+const HOVER_DELAY_MS = 400;
+/** Moving between overflow pills within this window skips the delay (Tooltip skip-delay). */
+const SKIP_DELAY_WINDOW_MS = 300;
+let lastClosedAt = -Infinity;
 
 export interface BadgeOverflowProps {
   /** Badge nodes, in priority order. */
@@ -14,7 +21,7 @@ export interface BadgeOverflowProps {
 
 /**
  * BadgeOverflow - caps inline badges and groups the rest behind a compact "+N" pill.
- * The pill is a real button: focus or hover reveals the remaining badges, Enter/Space/click
+ * The pill is a real button: focus reveals (hover after a short delay, like Tooltip) the remaining badges, Enter/Space/click
  * pins them open on touch, Escape or an outside press closes. Exit is <= 150ms.
  */
 export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
@@ -28,6 +35,35 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
   const popoverId = useId();
   const rootRef = useRef<HTMLSpanElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHoverTimer = useCallback(() => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+  }, []);
+
+  const openNow = useCallback(() => {
+    clearHoverTimer();
+    setOpen(true);
+  }, [clearHoverTimer]);
+
+  const closeNow = useCallback(() => {
+    clearHoverTimer();
+    setOpen((was) => {
+      if (was) lastClosedAt = Date.now();
+      return false;
+    });
+  }, [clearHoverTimer]);
+
+  const openOnHover = useCallback(() => {
+    clearHoverTimer();
+    if (Date.now() - lastClosedAt < SKIP_DELAY_WINDOW_MS) setOpen(true);
+    else hoverTimer.current = setTimeout(() => setOpen(true), HOVER_DELAY_MS);
+  }, [clearHoverTimer]);
+
+  useEffect(() => clearHoverTimer, [clearHoverTimer]);
 
   const visible = React.Children.toArray(badges).filter(Boolean);
   const limit = Math.max(0, max);
@@ -37,7 +73,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) closeNow();
     };
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('touchstart', onPointerDown);
@@ -45,18 +81,18 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('touchstart', onPointerDown);
     };
-  }, [open]);
+  }, [open, closeNow]);
 
   const handleBlur = useCallback((e: React.FocusEvent<HTMLSpanElement>) => {
-    if (!rootRef.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
-  }, []);
+    if (!rootRef.current?.contains(e.relatedTarget as Node | null)) closeNow();
+  }, [closeNow]);
 
   if (visible.length === 0) return null;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
     if (e.key === 'Escape' && open) {
       e.stopPropagation();
-      setOpen(false);
+      closeNow();
       pillRef.current?.focus();
     }
   };
@@ -72,9 +108,9 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
         <span
           ref={rootRef}
           className="relative inline-flex"
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-          onFocus={() => setOpen(true)}
+          onMouseEnter={openOnHover}
+          onMouseLeave={closeNow}
+          onFocus={openNow}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         >
@@ -84,8 +120,8 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
             aria-label={`${rest.length} more`}
             aria-describedby={open ? popoverId : undefined}
             aria-expanded={open}
-            onClick={() => setOpen(true)}
-            className="inline-flex h-5 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
+            onClick={openNow}
+            className="inline-flex h-6 -my-0.5 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
           >
             +{rest.length}
           </button>
@@ -96,7 +132,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
                 role="tooltip"
                 initial={skipMotion ? false : { opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, transition: { duration: skipMotion ? 0 : 0.1, ease: 'easeOut' } }}
+                exit={{ opacity: 0, transition: { duration: skipMotion ? 0 : 0.1, ease: EASE_OUT } }}
                 transition={skipMotion ? { duration: 0 } : TACTICAL_SPRING}
                 className={`absolute top-full z-[100] mt-1 flex w-max max-w-[16rem] flex-wrap items-center gap-1 rounded-lg border border-subtle bg-surface-elevated p-1.5 shadow-lg machined-edge ${
                   align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left'

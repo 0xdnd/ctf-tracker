@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../utils/helpers';
-import { generateObsidianVaultZip } from '../utils/obsidianVaultExporter';
 import { ViewMode } from '../types';
 
 export function useTacticalHotkeys() {
@@ -28,7 +28,6 @@ export function useTacticalHotkeys() {
     setShortcutsModalOpen,
     setBackupModalOpen,
     setFlexCardModalOpen,
-    reportMachineId,
     setReportMachineId,
     setNotesImportModalOpen,
     setOperatorModalOpen,
@@ -174,6 +173,15 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // Alt+N: Toggle Field Notes Workspace Sidecar
+      if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        e.stopPropagation();
+        useNotesWorkspaceStore.getState().toggleOpen();
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
       // Alt+F: Toggle Focus Mode
       if (e.altKey && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault();
@@ -193,6 +201,11 @@ export function useTacticalHotkeys() {
           setReportMachineId(targetId);
           if (soundEnabled) playCyberSound('click');
         }
+        return;
+      }
+
+      // The command palette owns plain typing while open; never fall through to single-key hotkeys.
+      if (useCtfStore.getState().commandPaletteOpen && !e.ctrlKey && !e.altKey && !e.metaKey) {
         return;
       }
 
@@ -293,6 +306,7 @@ export function useTacticalHotkeys() {
           e.preventDefault();
           try {
             const currentStore = useCtfStore.getState();
+            const { generateObsidianVaultZip } = await import('../utils/obsidianVaultExporter');
             const zipBlob = await generateObsidianVaultZip(currentStore.machines, currentStore.cheatsheets);
             const url = URL.createObjectURL(zipBlob);
             const link = document.createElement('a');

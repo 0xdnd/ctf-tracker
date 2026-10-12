@@ -17,7 +17,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = React.memo(({
   status,
   size = 'xs',
   className = '',
-  variant = 'default',
 }) => {
   const normalized = (status || 'backlog').toLowerCase();
 

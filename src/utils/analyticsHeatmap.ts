@@ -12,7 +12,7 @@ const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 
 export type HeatLevel = 0 | 1 | 2 | 3;
 
-export interface HeatmapCell {
+interface HeatmapCell {
   /** Local calendar date, YYYY-MM-DD. */
   date: string;
   count: number;
@@ -39,14 +39,14 @@ export function toLocalDateKey(d: Date): string {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export function heatLevel(count: number): HeatLevel {
+function heatLevel(count: number): HeatLevel {
   if (count <= 0) return 0;
   if (count === 1) return 1;
   if (count === 2) return 2;
   return 3;
 }
 
-export function describeDay(date: Date, count: number): string {
+function describeDay(date: Date, count: number): string {
   const weekday = WEEKDAY_SHORT[(date.getDay() + 6) % 7];
   return `${weekday} ${date.getDate()} ${MONTH_SHORT[date.getMonth()]}: ${count} ${count === 1 ? 'activity' : 'activities'}`;
 }

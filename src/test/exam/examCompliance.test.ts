@@ -9,7 +9,7 @@ import {
   calculateExamScore,
   validateFlagFormat,
   generateExamTargetsForTrack,
-  ExamTrack,
+  EXAM_TRACK_CONFIGS,
   ExamBox,
   ExamTargetProof,
 } from '../../utils/examComplianceUtils';
@@ -311,6 +311,31 @@ describe('Certification Exam Compliance & Scoring Engine (R2 & R3)', () => {
       expect(result.totalScore).toBe(100);
       expect(result.isPassing).toBe(true);
       expect(result.pointsNeeded).toBe(0);
+    });
+  });
+
+  describe('OSEP Default Lab', () => {
+    it('OSEP-01: has its own dedicated lab (not the CRTP fallback) with flags totalling maxScore', () => {
+      const boxes = generateExamTargetsForTrack('OSEP');
+      expect(boxes.length).toBeGreaterThan(0);
+      expect(boxes.every((b) => b.id.startsWith('osep-'))).toBe(true);
+      expect(boxes.some((b) => b.id.startsWith('crtp-'))).toBe(false);
+      const total = boxes.reduce((sum, b) => sum + b.userPoints + b.rootPoints, 0);
+      expect(total).toBe(EXAM_TRACK_CONFIGS.OSEP.maxScore);
+    });
+
+    it('OSEP-02: capturing every flag reaches the config pass mark; missing one does not', () => {
+      const boxes = generateExamTargetsForTrack('OSEP').map((b) => ({
+        ...b,
+        userPwned: b.userPoints > 0,
+        rootPwned: b.rootPoints > 0,
+      }));
+      const full = calculateExamScore('OSEP', boxes);
+      expect(full.passThreshold).toBe(EXAM_TRACK_CONFIGS.OSEP.passThreshold);
+      expect(full.isPassing).toBe(true);
+
+      boxes[0] = { ...boxes[0], rootPwned: false };
+      expect(calculateExamScore('OSEP', boxes).isPassing).toBe(false);
     });
   });
 

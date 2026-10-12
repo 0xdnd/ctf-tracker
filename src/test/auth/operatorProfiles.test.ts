@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore, DEFAULT_DANIEL_PROFILE } from '../../store/useAuthStore';
-import { useCtfStore, safeLocalStorage, getProfileStorageKey, mergeMachinesWithCatalog } from '../../store/useCtfStore';
+import { useCtfStore, mergeMachinesWithCatalog } from '../../store/useCtfStore';
 import { DEMO_SOLVED_ROSTER } from '../../data/demoSolvedRoster';
 import { Machine } from '../../types';
 

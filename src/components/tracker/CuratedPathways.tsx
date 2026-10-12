@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Target, ChevronDown, ChevronUp, Check, Layers, X, Sparkles } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
+import { PRACTICE_TRACKS } from '../../data/tracksData';
 import { playCyberSound } from '../../utils/helpers';
 
 export const CuratedPathways: React.FC = () => {

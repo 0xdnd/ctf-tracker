@@ -12,7 +12,7 @@ import {
   Database
 } from 'lucide-react';
 import { VaultEvidenceItem } from '../../pages/EvidenceVaultPage';
-import { DRAWER_SLIDE_TRANSITION, DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
+import { DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 
 export interface ExportLootDrawerProps {

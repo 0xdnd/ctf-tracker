@@ -3,16 +3,12 @@ import {
   X, 
   Plus, 
   FileText, 
-  Search, 
-  Trash2, 
-  Pin, 
-  Layers 
-} from 'lucide-react';
+  Search} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
-import { getAllCptsNotes, CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { mergeUserNotePools } from '../../utils/obsidianManualUtils';
 
 export const NotesWorkspaceTabStrip: React.FC = () => {
   const {
@@ -24,8 +20,9 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
     openNote,
   } = useNotesWorkspaceStore();
 
-  const customNotes = useCtfStore((s) => s.customNotes || []);
-  const allNotes = React.useMemo(() => getAllCptsNotes(), [customNotes]);
+  const customNotes = useCtfStore((s) => s.customNotes);
+  const userNotes = useCtfStore((s) => s.userNotes);
+  const allNotes = React.useMemo(() => mergeUserNotePools(customNotes, userNotes), [customNotes, userNotes]);
   const notesMap = React.useMemo(() => new Map(allNotes.map((n) => [n.id, n])), [allNotes]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -71,7 +68,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
         {openTabIds.map((tabId) => {
           const note = notesMap.get(tabId);
           const isActive = tabId === activeTabId;
-          const title = note?.title || tabId.replace(/_/g, ' ');
+          const title = note?.title || tabId.replace(/[_-]/g, ' ');
 
           return (
             <div
@@ -101,8 +98,8 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   e.stopPropagation();
                   closeTab(tabId);
                 }}
-                className={`relative p-0.5 rounded-sm hover:bg-surface-hover text-muted hover:text-secondary transition-colors flex-shrink-0 ${
-                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
+                className={`active:scale-[0.97] relative p-1 rounded-sm hover:bg-surface-hover text-muted hover:text-secondary transition-interactive flex-shrink-0 min-w-[20px] min-h-[20px] flex items-center justify-center cursor-pointer ${
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100'
                 }`}
                 title="Close Tab"
                 aria-label={`Close tab ${title}`}
@@ -112,13 +109,16 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             </div>
           );
         })}
+      </div>
 
+      {/* Tab Strip Controls (New Tab + Close All) */}
+      <div className="flex items-center gap-1 flex-shrink-0 pl-1">
         {/* New Tab Button */}
         <div className="relative" ref={searchContainerRef}>
           <button
             type="button"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors flex-shrink-0 cursor-pointer"
+            className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive flex-shrink-0 cursor-pointer"
             title="Open Note in Tab"
             aria-label="Open Note in Tab"
           >
@@ -127,7 +127,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
 
           {/* Quick Search Dropdown */}
           {isSearchOpen && (
-            <div className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl bg-surface-card border border-strong shadow-2xl p-2.5 z-50 space-y-2">
+            <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl bg-surface-card border border-strong shadow-2xl p-2.5 z-50 space-y-2 max-w-[calc(100vw-1.5rem)]">
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface-sunken border border-subtle">
                 <Search className="w-3.5 h-3.5 text-muted flex-shrink-0" />
                 <input
@@ -142,14 +142,14 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                   <button aria-label="Clear search"
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="text-muted hover:text-secondary"
+                    className="transition-transform active:scale-[0.97] text-muted hover:text-secondary"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 )}
               </div>
 
-              <div className="max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin">
+              <div className="max-h-[48vh] sm:max-h-56 overflow-y-auto space-y-0.5 scrollbar-thin overscroll-contain">
                 {filteredNotes.map((note) => {
                   const isAlreadyOpen = openTabIds.includes(note.id);
                   return (
@@ -160,8 +160,11 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
                         openNote(note.id);
                         setIsSearchOpen(false);
                         setSearchQuery('');
+                        if (searchInputRef.current) {
+                          searchInputRef.current.blur();
+                        }
                       }}
-                      className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
+                      className={`active:scale-[0.97] w-full p-2 rounded-lg flex items-center justify-between text-left transition-interactive text-xs cursor-pointer ${
                         isAlreadyOpen
                           ? 'bg-accent-muted text-accent'
                           : 'hover:bg-surface-sunken text-secondary'
@@ -186,19 +189,19 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Tab Strip Right Actions: Close All */}
-      {openTabIds.length > 1 && (
-        <button
-          type="button"
-          onClick={closeAllTabs}
-          className="px-1.5 py-1 rounded-md text-[10px] text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-colors flex-shrink-0 cursor-pointer ml-1"
-          title="Close All Tabs"
-        >
-          Close All
-        </button>
-      )}
+        {/* Tab Strip Right Actions: Close All */}
+        {openTabIds.length > 1 && (
+          <button
+            type="button"
+            onClick={closeAllTabs}
+            className="active:scale-[0.97] px-1.5 py-1 rounded-md text-[10px] text-muted hover:text-callout-danger-fg hover:bg-surface-hover transition-interactive flex-shrink-0 cursor-pointer"
+            title="Close All Tabs"
+          >
+            Close All
+          </button>
+        )}
+      </div>
     </div>
   );
 };

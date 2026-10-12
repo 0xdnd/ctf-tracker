@@ -1,4 +1,3 @@
-import cptsNotesData from '../data/cptsNotesIndex.json';
 import { Machine } from '../types';
 import { classifyMachine } from './categoryUtils';
 import { useCtfStore } from '../store/useCtfStore';
@@ -11,14 +10,14 @@ export interface ObsidianCallout {
   isFoldedByDefault?: boolean;
 }
 
-export interface ObsidianTocItem {
+interface ObsidianTocItem {
   level: number;
   text: string;
   id: string;
   isHebrew: boolean;
 }
 
-export interface ObsidianChecklistItem {
+interface ObsidianChecklistItem {
   text: string;
   checked: boolean;
   raw: string;
@@ -61,30 +60,34 @@ export interface CptsNoteEntry {
   rawMarkdown?: string;
 }
 
-interface CptsRawPayload {
-  notes?: CptsNoteEntry[];
-  wikilinkMap?: Record<string, string>;
+/**
+ * Merges the user's own notes into one pool: authored notes (customNotes) first,
+ * then imported vault notes (userNotes). An authored copy wins over an imported
+ * note with the same id. The app ships no bundled notes.
+ */
+export function mergeUserNotePools(
+  customNotes: readonly CptsNoteEntry[] | undefined,
+  userNotes: readonly CptsNoteEntry[] | undefined
+): CptsNoteEntry[] {
+  const custom = customNotes || [];
+  const imported = userNotes || [];
+  if (custom.length === 0) return imported.slice();
+  if (imported.length === 0) return custom.slice();
+  const seen = new Set(custom.map((n) => n.id));
+  return [...custom, ...imported.filter((n) => !seen.has(n.id))];
 }
 
-const rawData = cptsNotesData as unknown as CptsRawPayload | CptsNoteEntry[];
-export const CPTS_NOTES: CptsNoteEntry[] = Array.isArray(rawData) ? rawData : (rawData.notes || []);
-export const WIKILINK_MAP: Record<string, string> = Array.isArray(rawData) ? {} : (rawData.wikilinkMap || {});
-
 /**
- * Returns active CPTS field manual notes:
- * Prioritizes user's private notes from store/IndexedDB if imported,
- * falls back to static catalog bundle.
+ * Returns every note the user has: authored notes plus imported vault notes.
+ * Empty until the user writes or imports something.
  */
 export function getAllCptsNotes(): CptsNoteEntry[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const userNotes = useCtfStore.getState()?.userNotes;
-      if (userNotes && userNotes.length > 0) {
-        return userNotes;
-      }
-    } catch {}
+  try {
+    const state = useCtfStore.getState();
+    return mergeUserNotePools(state?.customNotes, state?.userNotes);
+  } catch {
+    return [];
   }
-  return CPTS_NOTES;
 }
 
 /**
@@ -97,7 +100,7 @@ export function getNoteById(id: string, notes?: CptsNoteEntry[]): CptsNoteEntry 
 
 /**
  * Resolves an Obsidian wikilink (e.g. "07 Kerberos (88)", "1 Nmap", "ffuf")
- * to the corresponding note in the CPTS Field Manual.
+ * to the corresponding note among the user's own notes.
  */
 export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { targetNoteId?: string; label: string; exists: boolean } {
   if (!rawTarget) return { label: '', exists: false };
@@ -105,16 +108,14 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
   const lower = target.toLowerCase();
   const stripped = lower.replace(/^\d+[\s_.-]*/, '').trim();
 
-  // Combine store userWikilinkMap with static WIKILINK_MAP
-  let activeMap = WIKILINK_MAP;
-  if (typeof window !== 'undefined') {
-    try {
-      const userMap = useCtfStore.getState()?.userWikilinkMap;
-      if (userMap && Object.keys(userMap).length > 0) {
-        activeMap = userMap;
-      }
-    } catch {}
-  }
+  // Wikilink map of the user's imported vault (empty when nothing is imported)
+  let activeMap: Record<string, string> = {};
+  try {
+    const userMap = useCtfStore.getState()?.userWikilinkMap;
+    if (userMap && Object.keys(userMap).length > 0) {
+      activeMap = userMap;
+    }
+  } catch {}
 
   // 1. Direct check in precomputed wikilinkMap
   if (activeMap[lower]) {
@@ -359,7 +360,7 @@ export interface CptsTreeNode {
 /**
  * Extracts a numeric prefix from a filename or directory name (e.g. "01", "1.2", "02 FTP (21)")
  */
-export function extractLeadingNumber(str: string): number | null {
+function extractLeadingNumber(str: string): number | null {
   if (!str) return null;
   const match = str.trim().match(/^(\d+(?:\.\d+)?)/);
   return match ? parseFloat(match[1]) : null;
@@ -370,7 +371,7 @@ export function extractLeadingNumber(str: string): number | null {
  * Items with numbers sort strictly in ascending numerical order.
  * Items without numbers sort alphabetically after numbered items.
  */
-export function compareTreeNodesByNumber(a: CptsTreeNode, b: CptsTreeNode): number {
+function compareTreeNodesByNumber(a: CptsTreeNode, b: CptsTreeNode): number {
   const numA = extractLeadingNumber(a.name);
   const numB = extractLeadingNumber(b.name);
 
@@ -510,7 +511,7 @@ export function getNotesByCategory(category: string, notes: CptsNoteEntry[] = ge
   return notes.filter((n) => n.category === category);
 }
 
-export interface CptsTopicLeaf {
+interface CptsTopicLeaf {
   leaf: string;
   rawSub: string;
   count: number;
@@ -522,11 +523,11 @@ export interface CptsTopicGroup {
   leaves: CptsTopicLeaf[];
 }
 
-export function cleanSubCategorySegment(s: string): string {
+function cleanSubCategorySegment(s: string): string {
   return s.replace(/^\d+[\s_.-]*/, '').replace(/_/g, ' ').trim();
 }
 
-export function parseSubCategory(sub?: string): { group: string; leaf: string; full: string } {
+function parseSubCategory(sub?: string): { group: string; leaf: string; full: string } {
   if (!sub) return { group: 'Overview & Index', leaf: 'General Notes', full: '' };
   const parts = sub.split(' / ').map(cleanSubCategorySegment).filter(Boolean);
   const group = parts[0] || 'Overview';
@@ -667,7 +668,7 @@ export type CptsSortOrder = 'topic' | 'number' | 'title';
  * Extracts a hierarchical array of integers for sorting notes by number across all folders.
  * Uses Infinity for unnumbered segments to avoid NaN sort instabilities per Fable Advisor doctrine.
  */
-export function extractNoteSortTuple(note: CptsNoteEntry): number[] {
+function extractNoteSortTuple(note: CptsNoteEntry): number[] {
   const rel = note.relPath || '';
   const parts = rel.split('/');
   const nums: number[] = [];

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { validateWorkspacePayload, sanitizeObjectKeys, sanitizeFilename } from '../../utils/workspaceStorage';
-import { parseMarkdownToHtml, escapeHtml, parseInlineMarkdown } from '../../utils/writeupHtmlExporter';
+import { parseMarkdownToHtml, parseInlineMarkdown } from '../../utils/writeupHtmlExporter';
 
 describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () => {
   it('FC-1: validateWorkspacePayload never throws and enforces strict schema invariants over 10,000 arbitrary payloads', () => {

@@ -5,7 +5,7 @@ import {
   formatIsoTimestamp 
 } from '../../pages/EvidenceVaultPage';
 import { CyberBadge } from '../common/CyberBadge';
-import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { playCyberSound } from '../../utils/helpers';
 
 export interface LootTimelineProps {
   items: VaultEvidenceItem[];
@@ -291,7 +291,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
       ) : (
         /* ================= Chronological Stream View ================= */
         <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-px before:bg-surface-hover">
-          {chronologicalItems.map((item, index) => {
+          {chronologicalItems.map((item) => {
             const isRevealed = Boolean(revealedIds[item.id]);
             const isCopied = copiedId === item.id;
             const phaseId = assignKillChainPhase(item);
@@ -382,7 +382,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onToggleReveal}
-              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 tap-target rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
               title={isRevealed ? 'Mask secret' : 'Reveal secret'}
               aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
             >
@@ -393,7 +393,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
           <button
             type="button"
             onClick={onCopy}
-            className={`p-1.5 max-sm:p-3 rounded-lg text-xs font-medium transition-interactive flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
+            className={`p-1.5 tap-target rounded-lg text-xs font-medium transition-interactive flex items-center gap-1 active:scale-[0.97] cursor-pointer ${
  isCopied
  ? 'bg-callout-success-bg text-callout-success-fg px-2'
  : 'text-muted hover:text-primary hover:bg-surface-hover'
@@ -414,7 +414,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onDelete}
-              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 tap-target rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
               title="Delete custom loot"
               aria-label="Delete custom loot"
             >

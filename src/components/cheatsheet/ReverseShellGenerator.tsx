@@ -1,16 +1,18 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Copy,
   Check,
   Download,
   Search,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useActiveTargetIp } from '../../hooks/useActiveTargetIp';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
-import { ALL_SHELL_ITEMS, ShellCategory, ShellItem } from '../../data/revshellsData';
+import { ALL_SHELL_ITEMS, ShellCategory } from '../../data/revshellsData';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
+import { resolveTemplate, contextFromGlobalVars } from '../../utils/variableSubstitution';
 
 interface ReverseShellGeneratorProps {
   initialCategory?: ShellCategory;
@@ -32,11 +34,11 @@ const LISTENER_TYPES = [
   { id: 'powercat', label: 'powercat' },
 ];
 
-export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ initialCategory }) => {
+export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () => {
   const globalVars = useCtfStore((s) => s.globalVars);
   const setGlobalVars = useCtfStore((s) => s.setGlobalVars);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
-  const lhost = globalVars.lhost || '10.10.14.x';
+  const activeMachineIp = useActiveTargetIp();
   const lport = globalVars.lport || '4444';
   const setLport = (val: string) => setGlobalVars({ lport: val });
 
@@ -100,12 +102,19 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
     return list;
   }, [platformFilter, searchQuery]);
 
-  // Interpolated payload
+  // Interpolated payload via the shared variable-substitution engine
+  const resolvedCommand = useMemo(() => {
+    const ctx = contextFromGlobalVars(globalVars, { activeTargetIp: activeMachineIp, shell: shellBinary });
+    // Substitution rule: revshell templates use the NON-legacy mode
+    // ({ip} = LHOST); all user, cheatsheet and methodology content uses
+    // { legacyAliases: true } ({ip} = TARGET).
+    return resolveTemplate(activeShell.command, ctx);
+  }, [activeShell, globalVars, activeMachineIp, shellBinary]);
+
+  const unresolvedVars = resolvedCommand.unresolved;
+
   const resolvedPayload = useMemo(() => {
-    const raw = activeShell.command
-      .replace(/{ip}/g, lhost || '10.10.14.x')
-      .replace(/{port}/g, lport || '4444')
-      .replace(/{shell}/g, shellBinary || '/bin/bash');
+    const raw = resolvedCommand.text;
 
     // Apply wrapper
     let wrapped = raw;
@@ -145,7 +154,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
     }
 
     return wrapped;
-  }, [activeShell, lhost, lport, shellBinary, wrapper, encoding]);
+  }, [resolvedCommand, wrapper, encoding]);
 
   // Listener command
   const listenerCommand = useMemo(() => {
@@ -265,7 +274,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
 
       {/* 2. Platform filters and search */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:max-w-full sm:px-0">
+        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:max-w-full sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {(
               [
@@ -369,6 +378,15 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = ({ in
             {activeShell.notes && (
               <span className="hidden truncate text-[11px] text-muted md:inline">
                 ({activeShell.notes})
+              </span>
+            )}
+            {unresolvedVars.length > 0 && (
+              <span
+                className="text-[11px] px-1.5 py-0.5 rounded border border-syntax-number/50 text-syntax-number font-medium flex items-center gap-1"
+                title={`Unresolved variable: ${unresolvedVars.join(', ')} — check LHOST/Target IP in cockpit header`}
+              >
+                <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                <span>Missing: <span className="font-mono">{unresolvedVars.join(', ')}</span></span>
               </span>
             )}
           </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FloatingPayloadBar } from './FloatingPayloadBar';
@@ -121,7 +120,7 @@ describe('FloatingPayloadBar component', () => {
     expect(lhostBtn.className).toContain('opacity-0');
     expect(lhostBtn.className).toContain('group-hover:opacity-100');
     expect(lhostBtn.className).toContain('group-focus-within:opacity-100');
-    expect(lhostBtn.className).toContain('[@media(hover:none)]:opacity-100');
+    expect(lhostBtn.className).toContain('touch:opacity-100');
   });
 
   it('collapses the expanded controller with Escape', async () => {

@@ -1,4 +1,5 @@
 import type { CptsNoteEntry } from './obsidianManualUtils';
+import { isSchemaWriteGated } from './schemaWriteGate';
 
 export interface VaultPayload {
   notes: CptsNoteEntry[];
@@ -36,12 +37,13 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 /**
- * Save user's private CPTS field manual notes into local browser IndexedDB
+ * Save the user's imported notes into local browser IndexedDB
  */
 export async function saveVaultToIndexedDb(data: {
   notes: CptsNoteEntry[];
   wikilinkMap?: Record<string, string>;
 }): Promise<void> {
+  if (isSchemaWriteGated()) return;
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     try {
@@ -65,7 +67,7 @@ export async function saveVaultToIndexedDb(data: {
 }
 
 /**
- * Load user's private CPTS field manual notes from local browser IndexedDB
+ * Load the user's imported notes from local browser IndexedDB
  */
 export async function loadVaultFromIndexedDb(): Promise<VaultPayload | null> {
   try {
@@ -94,9 +96,10 @@ export async function loadVaultFromIndexedDb(): Promise<VaultPayload | null> {
 }
 
 /**
- * Completely wipe local user CPTS vault notes from browser IndexedDB
+ * Completely wipe the user's imported notes from browser IndexedDB
  */
 export async function clearVaultFromIndexedDb(): Promise<void> {
+  if (isSchemaWriteGated()) return;
   try {
     const db = await openDatabase();
     return new Promise((resolve, reject) => {

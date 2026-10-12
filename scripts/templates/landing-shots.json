@@ -1,0 +1,116 @@
+[
+  {
+    "name": "hero-app",
+    "alt": "ZeroBox CTF tracker kanban board of Hack The Box and TryHackMe machines, with the sidebar collapsed to an icon rail, the filter bar, and the Foothold and Completed lanes.",
+    "width": 1575,
+    "height": 1719,
+    "cssWidth": 525,
+    "srcset": [
+      {
+        "src": "/images/landing/hero-app-1575.webp",
+        "w": 1575
+      },
+      {
+        "src": "/images/landing/hero-app-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "burn-chart",
+    "alt": "ZeroBox exam burn-down chart against the 70 point pass line.",
+    "width": 1353,
+    "height": 573,
+    "cssWidth": 451,
+    "srcset": [
+      {
+        "src": "/images/landing/burn-chart-1353.webp",
+        "w": 1353
+      },
+      {
+        "src": "/images/landing/burn-chart-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "graph",
+    "alt": "ZeroBox attack graph after Auto layout: the Included, Bike, Unified and Funnel host nodes linked by SSH tunnel, chisel and ligolo edges.",
+    "width": 1600,
+    "height": 520,
+    "cssWidth": 1120,
+    "srcset": [
+      {
+        "src": "/images/landing/graph-2400.webp",
+        "w": 2400
+      },
+      {
+        "src": "/images/landing/graph-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/graph-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "table",
+    "alt": "ZeroBox CTF tracker table view with three rows selected and the bulk action bar showing Set status, Add tag and Remove tag.",
+    "width": 1600,
+    "height": 1464,
+    "cssWidth": 646,
+    "srcset": [
+      {
+        "src": "/images/landing/table-1938.webp",
+        "w": 1938
+      },
+      {
+        "src": "/images/landing/table-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/table-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "vault",
+    "alt": "ZeroBox pentest evidence vault rows listing a target, its principal and a masked secret behind a reveal toggle.",
+    "width": 1350,
+    "height": 1050,
+    "cssWidth": 450,
+    "srcset": [
+      {
+        "src": "/images/landing/vault-1350.webp",
+        "w": 1350
+      },
+      {
+        "src": "/images/landing/vault-800.webp",
+        "w": 800
+      }
+    ]
+  },
+  {
+    "name": "exam",
+    "alt": "ZeroBox OSCP exam simulator three hours in: the OSCP track, total score, countdown clock and the first Active Directory targets.",
+    "width": 1600,
+    "height": 1475,
+    "cssWidth": 742,
+    "srcset": [
+      {
+        "src": "/images/landing/exam-2226.webp",
+        "w": 2226
+      },
+      {
+        "src": "/images/landing/exam-1600.webp",
+        "w": 1600
+      },
+      {
+        "src": "/images/landing/exam-800.webp",
+        "w": 800
+      }
+    ]
+  }
+]

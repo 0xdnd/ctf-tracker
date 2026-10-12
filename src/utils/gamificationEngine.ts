@@ -3,12 +3,10 @@ import {
   OperatorRank, 
   TrophyDefinition, 
   EvaluatedTrophy, 
-  OperatorStatsSummary, 
   OperatorGamificationState 
 } from '../types/gamification';
-import { isDomainControllerBox, isActiveDirectoryBox } from './examComplianceUtils';
 
-export const OPERATOR_RANKS: OperatorRank[] = [
+const OPERATOR_RANKS: OperatorRank[] = [
   {
     tier: 1,
     title: 'NOVICE PROBE',
@@ -77,7 +75,7 @@ export const OPERATOR_RANKS: OperatorRank[] = [
   },
 ];
 
-export const TROPHY_DEFINITIONS: TrophyDefinition[] = [
+const TROPHY_DEFINITIONS: TrophyDefinition[] = [
   {
     id: 'first_blood',
     title: 'First Blood',

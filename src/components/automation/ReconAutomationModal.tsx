@@ -1,20 +1,18 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Modal } from '../common/Modal';
 import { 
   X, 
   Zap, 
   Terminal, 
   Copy, 
   Check, 
-  FileText, 
   Search, 
   ShieldAlert, 
   Flame, 
   Cpu, 
-  ExternalLink,
   RotateCcw,
   Sparkles,
-  Layers,
   ArrowRight,
   Upload,
   FileCode,
@@ -28,19 +26,15 @@ import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
-import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { CyberSelect } from '../common/CyberSelect';
 import { 
   detectAndParseScan, 
-  ScanImportResult, 
-  ParsedPort 
-} from '../../utils/scanParserUtils';
+  ScanImportResult} from '../../utils/scanParserUtils';
 import { 
   getTacticalPayloads, 
   applyBypassEncoder, 
   ENCODER_OPTIONS, 
-  BypassEncoderType, 
-  TacticalPayload 
-} from '../../utils/payloadCrafterUtils';
+  BypassEncoderType} from '../../utils/payloadCrafterUtils';
 
 const SAMPLE_LINUX_SCAN = `# Nmap 7.94 scan initiated Wed Sep 2 22:00:00 2026 as: nmap -sC -sV -p- -oN scan.log 10.10.10.3
 Nmap scan report for 10.10.10.3
@@ -127,7 +121,6 @@ const SAMPLE_NMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const ReconAutomationModal: React.FC = () => {
   const { 
-    reconAutomationModalOpen, 
     setReconAutomationModalOpen, 
     machines, 
     selectedMachineId, 
@@ -156,9 +149,13 @@ export const ReconAutomationModal: React.FC = () => {
     }))
   );
 
+  const availableMachines = useMemo(() => {
+    return machines.filter((m) => !m.isActive);
+  }, [machines]);
+
   const [activeTab, setActiveTab] = useState<'parser' | 'payloads' | 'rules'>('parser');
   const [scanText, setScanText] = useState('');
-  const [targetMachineId, setTargetMachineId] = useState<string>(selectedMachineId || activeTargetId || machines[0]?.id || '');
+  const [targetMachineId, setTargetMachineId] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const [appliedSuccess, setAppliedSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,20 +166,22 @@ export const ReconAutomationModal: React.FC = () => {
   const [payloadSearch, setPayloadSearch] = useState('');
   const [copiedPayloadKey, setCopiedPayloadKey] = useState<string | null>(null);
 
-  // Auto-tune target machine selection when modal opens
+  // Auto-tune target machine selection when modal opens (strictly excluding active machines)
   React.useEffect(() => {
-    if (selectedMachineId) {
-      setTargetMachineId(selectedMachineId);
-    } else if (activeTargetId) {
-      setTargetMachineId(activeTargetId);
-    } else if (machines.length > 0 && !targetMachineId) {
-      setTargetMachineId(machines[0].id);
+    const selected = machines.find((m) => m.id === selectedMachineId);
+    const active = machines.find((m) => m.id === activeTargetId);
+    if (selected && !selected.isActive) {
+      setTargetMachineId(selected.id);
+    } else if (active && !active.isActive) {
+      setTargetMachineId(active.id);
+    } else if (availableMachines.length > 0 && (!targetMachineId || !availableMachines.some((m) => m.id === targetMachineId))) {
+      setTargetMachineId(availableMachines[0].id);
     }
-  }, [selectedMachineId, activeTargetId, machines]);
+  }, [selectedMachineId, activeTargetId, machines, availableMachines, targetMachineId]);
 
   const targetMachine = useMemo(() => {
-    return machines.find(m => m.id === targetMachineId) || machines[0];
-  }, [machines, targetMachineId]);
+    return availableMachines.find((m) => m.id === targetMachineId) || availableMachines[0];
+  }, [availableMachines, targetMachineId]);
 
   // Frozen Solve Protection Guard: Daniel Dayan's completed solves cannot be overwritten
   const isTargetFrozen = useMemo(() => {
@@ -197,8 +196,8 @@ export const ReconAutomationModal: React.FC = () => {
   // Check if detected IP matches another machine in the catalog
   const autoMatchedTarget = useMemo(() => {
     if (!parsedResults?.detectedIp) return null;
-    return machines.find(m => m.ip === parsedResults.detectedIp && m.id !== targetMachineId) || null;
-  }, [parsedResults?.detectedIp, machines, targetMachineId]);
+    return availableMachines.find((m) => m.ip === parsedResults.detectedIp && m.id !== targetMachineId) || null;
+  }, [parsedResults?.detectedIp, availableMachines, targetMachineId]);
 
   // File Drop Handler
   const handleDrop = (e: React.DragEvent) => {
@@ -229,9 +228,9 @@ export const ReconAutomationModal: React.FC = () => {
     }
   };
 
-  // Safe Apply Automation to Target Machine (Guarded from mutating completed solves)
+  // Safe Apply Automation to Target Machine (Guarded from mutating completed solves or active ToS-protected targets)
   const handleApplyToMachine = () => {
-    if (!targetMachine || !parsedResults || isTargetFrozen) return;
+    if (!targetMachine || !parsedResults || isTargetFrozen || targetMachine.isActive) return;
 
     const portNumbers = parsedResults.ports.map(p => p.port);
     
@@ -314,22 +313,15 @@ export const ReconAutomationModal: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
-      onClick={() => setReconAutomationModalOpen(false)}
+    <Modal
+      open
+      onClose={() => setReconAutomationModalOpen(false)}
+      labelledBy="recon-automation-title"
+      size="full"
+      className="!bg-black/85 backdrop-blur-md max-sm:!p-0"
+      panelClassName="!max-w-5xl !shadow-2xl max-sm:!mx-0 max-sm:!rounded-none max-sm:!border-0 max-sm:!h-full max-sm:!max-h-none sm:h-[92dvh] sm:!max-h-[860px]"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98, y: 8 }}
-        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full sm:max-w-5xl h-full sm:h-[92vh] max-h-none sm:max-h-[860px] flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-subtle bg-surface-card shadow-2xl overflow-hidden relative z-10"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col h-full min-h-0">
         {/* Modal Header */}
         <div className="flex-shrink-0 flex items-center justify-between p-3.5 border-b border-subtle bg-surface-sunken">
           <div className="flex items-center gap-2.5">
@@ -338,7 +330,7 @@ export const ReconAutomationModal: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-primary">
+                <h2 id="recon-automation-title" className="text-sm font-semibold text-primary">
                   ZEROBOX TACTICAL AUTOMATION HUB
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-card border border-subtle text-secondary font-semibold">
@@ -366,7 +358,7 @@ export const ReconAutomationModal: React.FC = () => {
             <CyberSelect
               value={targetMachineId}
               onChange={setTargetMachineId}
-              options={machines.map((m) => ({
+              options={availableMachines.map((m) => ({
                 value: m.id,
                 label: `${m.status === 'completed' ? '🔒 ' : ''}${m.name} (${m.platform})`,
                 icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
@@ -1024,7 +1016,7 @@ export const ReconAutomationModal: React.FC = () => {
             Close
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </Modal>
   );
 };

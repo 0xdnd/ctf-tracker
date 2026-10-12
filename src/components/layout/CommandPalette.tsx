@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   Search, 
@@ -8,7 +8,6 @@ import {
   ShieldAlert, 
   Plus, 
   Database, 
-  Palette, 
   FileText, 
   X, 
   ChevronRight, 
@@ -16,23 +15,50 @@ import {
   Sun,
   Compass, 
   Zap, 
-  Globe,
   Award,
   Radio,
   Crosshair,
   Copy,
   Settings,
   Users,
-  Keyboard
+  Keyboard,
+  Film,
+  BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
-import { CREATOR_PROFILE_LINKS, safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
+import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
+import { getSearchIndex, searchDocs, type Range, type SearchHit, type SearchSection } from '../../utils/searchIndex';
+
+/** Renders text with <mark> around the given ranges (token-styled, no raw HTML). */
+const Highlight: React.FC<{ text: string; ranges: Range[] }> = ({ text, ranges }) => {
+  if (ranges.length === 0) return <>{text}</>;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  ranges.forEach(([a, b], i) => {
+    if (a > cursor) parts.push(text.slice(cursor, a));
+    parts.push(
+      <mark key={i} className="bg-accent-muted text-primary rounded-sm px-0.5">
+        {text.slice(a, b)}
+      </mark>
+    );
+    cursor = b;
+  });
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+};
+
+const SEARCH_SECTIONS: { key: SearchSection; label: string }[] = [
+  { key: 'notes', label: 'Notes' },
+  { key: 'writeups', label: 'Writeups' },
+  { key: 'vault', label: 'Vault' },
+];
 
 interface PaletteItem {
   id: string;
-  type: 'action' | 'machine' | 'cheat';
+  type: 'action' | 'machine' | 'cheat' | 'note' | 'writeup' | 'vault';
   execute: () => void;
 }
 
@@ -53,11 +79,15 @@ export const CommandPalette: React.FC = () => {
     setFlexCardModalOpen,
     setShortcutsModalOpen,
     setSettingsModalOpen,
+    setShowcaseModalOpen,
     globalVars,
-    activeTargetId,
     setSnippetsDrawerOpen,
     setRevShellModalOpen,
     soundEnabled,
+    customNotes,
+    userNotes,
+    lootItems,
+    credentials,
   } = useCtfStore(
     useShallow((s) => ({
       commandPaletteOpen: s.commandPaletteOpen,
@@ -74,11 +104,16 @@ export const CommandPalette: React.FC = () => {
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
+      setShowcaseModalOpen: s.setShowcaseModalOpen,
       globalVars: s.globalVars,
       activeTargetId: s.activeTargetId,
       setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
       setRevShellModalOpen: s.setRevShellModalOpen,
       soundEnabled: s.soundEnabled,
+      customNotes: s.customNotes,
+      userNotes: s.userNotes,
+      lootItems: s.lootItems,
+      credentials: s.credentials,
     }))
   );
 
@@ -91,20 +126,7 @@ export const CommandPalette: React.FC = () => {
   });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard shortcut listener for Ctrl+K / Cmd+K / Escape
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        if (e.repeat) return;
-        e.preventDefault();
-        setCommandPaletteOpen(!commandPaletteOpen);
-      } else if (e.key === 'Escape' && commandPaletteOpen) {
-        setCommandPaletteOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [commandPaletteOpen, setCommandPaletteOpen]);
+  // Ctrl+K toggling lives in useTacticalHotkeys; Esc is handled by useFocusTrap.
 
   // Filtered results
   const filteredMachines = useMemo(() => {
@@ -134,6 +156,42 @@ export const CommandPalette: React.FC = () => {
       )
       .slice(0, 6);
   }, [query, cheatsheets]);
+
+  // Full-text hits. The index is built lazily (palette open + non-empty query) and memoized on state identity.
+  // Notes come only from the user's own authored and imported notes.
+  const searchHits = useMemo<SearchHit[]>(() => {
+    const q = query.trim();
+    if (!commandPaletteOpen || q.length < 2) return [];
+    const index = getSearchIndex({
+      machines,
+      customNotes,
+      userNotes,
+      lootItems,
+      credentials,
+    });
+    return searchDocs(index, q, 5);
+  }, [commandPaletteOpen, query, machines, customNotes, userNotes, lootItems, credentials]);
+
+  const executeHit = React.useCallback(
+    (hit: SearchHit) => {
+      const ref = hit.doc.ref;
+      setCommandPaletteOpen(false);
+      if (ref.kind === 'note') {
+        useNotesWorkspaceStore.getState().openNote(ref.id);
+      } else if (ref.kind === 'machine-note') {
+        setSelectedMachineId(ref.id);
+        navigate(`/target/${ref.id}`);
+      } else if (ref.kind === 'writeup') {
+        setSelectedMachineId(ref.id);
+        setActiveTab('writeup');
+        navigate(`/writeup/${ref.id}`);
+      } else {
+        setActiveTab('vault');
+        navigate('/vault');
+      }
+    },
+    [navigate, setCommandPaletteOpen, setSelectedMachineId, setActiveTab]
+  );
 
   // Define Quick Actions
   const quickActions = useMemo(
@@ -171,6 +229,17 @@ export const CommandPalette: React.FC = () => {
         execute: () => {
           setCommandPaletteOpen(false);
           setSnippetsDrawerOpen(true);
+        },
+      },
+      {
+        id: 'action-notes-workspace',
+        label: 'Toggle Field Notes Workspace Sidecar (Alt+N)',
+        icon: BookOpen,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          useNotesWorkspaceStore.getState().toggleOpen();
         },
       },
       {
@@ -226,6 +295,17 @@ export const CommandPalette: React.FC = () => {
         execute: () => {
           setCommandPaletteOpen(false);
           setOperatorModalOpen(true);
+        },
+      },
+      {
+        id: 'action-showcase-video',
+        label: 'Watch ZeroBox Reel / Demo Video (Nano Banana AI 1080p)',
+        icon: Film,
+        colorClass: 'text-cyber-emerald',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setShowcaseModalOpen(true);
         },
       },
       {
@@ -416,6 +496,14 @@ export const CommandPalette: React.FC = () => {
       });
     });
 
+    searchHits.forEach((h) => {
+      list.push({
+        id: `hit-${h.doc.id}`,
+        type: h.doc.section === 'notes' ? 'note' : h.doc.section === 'writeups' ? 'writeup' : 'vault',
+        execute: () => executeHit(h),
+      });
+    });
+
     filteredCheats.forEach((c) => {
       list.push({
         id: `cheat-${c.id}`,
@@ -429,7 +517,7 @@ export const CommandPalette: React.FC = () => {
     });
 
     return list;
-  }, [filteredActions, filteredMachines, filteredCheats, setSelectedMachineId, setCommandPaletteOpen, setActiveTab, navigate]);
+  }, [filteredActions, filteredMachines, searchHits, executeHit, filteredCheats, setSelectedMachineId, setCommandPaletteOpen, setActiveTab, navigate]);
 
   // Reset selectedIndex to 0 on query change
   useEffect(() => {
@@ -475,23 +563,16 @@ export const CommandPalette: React.FC = () => {
     }
   }, [selectedIndex, commandPaletteOpen]);
 
-  return (
-    <AnimatePresence>
-      {commandPaletteOpen && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
+  // z-popover (130): above Modal's z-modal/z-modalNested, so Ctrl+K inside Settings or MachineDetail renders
+  // on top of the dialog that its focus trap now outranks; below toasts. Instant, no animation.
+  const palette = commandPaletteOpen ? (
+        <div
+          data-command-palette-backdrop
+          className="fixed inset-0 z-popover flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
           onClick={() => setCommandPaletteOpen(false)}
         >
-          <motion.div 
+          <div
             ref={trapRef}
-            initial={{ opacity: 0, scale: 0.96, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: -4, transition: { duration: 0.12 } }}
-            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -508,7 +589,7 @@ export const CommandPalette: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search commands, machines, IPs, tags..."
+            placeholder="Search commands, machines, notes, writeups..."
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
             autoFocus
           />
@@ -618,6 +699,47 @@ export const CommandPalette: React.FC = () => {
             </div>
           </div>
 
+          {/* Full-text hits: Notes, Writeups, Vault */}
+          {SEARCH_SECTIONS.map(({ key, label }) => {
+            const sectionHits = searchHits.filter((h) => h.doc.section === key);
+            if (sectionHits.length === 0) return null;
+            return (
+              <div key={key} role="group" aria-label={label}>
+                <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center justify-between">
+                  <span>{label}</span>
+                  <span className="text-[10px] text-muted tabular-nums">{sectionHits.length} matches</span>
+                </div>
+                <div className="space-y-1">
+                  {sectionHits.map((h) => {
+                    const itemIndex = allItems.findIndex((i) => i.id === `hit-${h.doc.id}`);
+                    const isSelected = itemIndex === selectedIndex;
+                    return (
+                      <button
+                        key={h.doc.id}
+                        data-palette-index={itemIndex}
+                        onClick={() => executeHit(h)}
+                        className={`w-full p-2 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.97] text-left cursor-pointer ${
+                          isSelected
+                            ? 'bg-surface-hover ring-1 ring-accent border-transparent'
+                            : 'hover:bg-surface-hover border-transparent'
+                        }`}
+                      >
+                        <div className="font-medium text-primary truncate">
+                          <Highlight text={h.doc.title} ranges={h.titleRanges} />
+                        </div>
+                        {h.snippet && (
+                          <div className="text-[11px] text-muted truncate">
+                            <Highlight text={h.snippet} ranges={h.snippetRanges} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
           {/* Cheatsheet Commands */}
           {filteredCheats.length > 0 && (
             <div>
@@ -670,9 +792,10 @@ export const CommandPalette: React.FC = () => {
           </div>
           <span>ZeroBox command palette</span>
         </div>
-      </motion.div>
-    </motion.div>
-    )}
-  </AnimatePresence>
-  );
+      </div>
+    </div>
+  ) : null;
+
+  // Portaled to <body> like Modal, so no ancestor stacking context can trap it below a modal.
+  return typeof document !== 'undefined' ? createPortal(palette, document.body) : palette;
 };

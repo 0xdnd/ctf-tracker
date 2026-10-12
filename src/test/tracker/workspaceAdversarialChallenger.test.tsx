@@ -1,8 +1,7 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { GraphView, computeCanvasDelta } from '../../components/tracker/GraphView';
+import { GraphView } from '../../components/tracker/GraphView';
 import { ObsidianNoteViewer } from '../../components/cheatsheet/ObsidianNoteViewer';
 import { CheatsheetView } from '../../components/cheatsheet/CheatsheetView';
 import { 
@@ -14,6 +13,7 @@ import { useCtfStore, safeLocalStorage, ATTACK_GRAPH_STORAGE_KEY } from '../../s
 import { Machine, GlobalVariables, PipelineStatus } from '../../types';
 import { AttackGraphEdge } from '../../types/graph';
 import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { seedImportedNotes } from '../fixtures/userNoteFixtures';
 
 // Mock window.matchMedia for headless JSDOM environment
 if (typeof window !== 'undefined' && !window.matchMedia) {
@@ -457,6 +457,8 @@ describe('Adversarial Challenger Verification: Interactive Workspaces & Exporter
   // =========================================================================
   describe('Invariant 4: Atomic Tab Closure & Zero Resurrection', () => {
     it('demonstrates atomic tab closure and seamless active note transfer across multiple tabs', async () => {
+      useCtfStore.setState({ customNotes: [], deletedNoteIds: [] });
+      seedImportedNotes();
       render(
         <MemoryRouter initialEntries={['/field-manual?note=01-recon-port-scanning']}>
           <CheatsheetView defaultMode="cpts-manual" />

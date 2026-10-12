@@ -9,19 +9,19 @@ export interface CyberLogoProps {
 }
 
 const THEME_LOGO_MAP: Record<string, string> = {
-  obsidian: './logo-zerobox.png',
-  monolith: './logo-zerobox.png',
-  industrial: './logo-oled.png',
-  zerobox: './logo-zerobox.png',
-  neon: './logo-zerobox.png',
-  htb: './logo-htb.png',
-  'midnight-blue': './logo-midnight.png',
-  slate: './logo-midnight.png',
-  oled: './logo-oled.png',
-  light: './logo-zerobox.png',
+  obsidian: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  monolith: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  industrial: `${import.meta.env.BASE_URL}logo-oled.webp`,
+  zerobox: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  neon: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
+  htb: `${import.meta.env.BASE_URL}logo-htb.webp`,
+  'midnight-blue': `${import.meta.env.BASE_URL}logo-midnight.webp`,
+  slate: `${import.meta.env.BASE_URL}logo-midnight.webp`,
+  oled: `${import.meta.env.BASE_URL}logo-oled.webp`,
+  light: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
 };
 
-const DEFAULT_LOGO = './logo-zerobox.png';
+const DEFAULT_LOGO = `${import.meta.env.BASE_URL}logo-zerobox.webp`;
 
 export const CyberLogo: React.FC<CyberLogoProps> = ({ 
   size = 'lg', 
@@ -33,6 +33,8 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
   const activePreset = explicitTheme || currentStoreTheme;
 
   const currentLogo = THEME_LOGO_MAP[activePreset] || DEFAULT_LOGO;
+  const base = currentLogo.replace(/\.webp$/, '');
+  const srcSet = `${base}-64.webp 64w, ${base}-128.webp 128w, ${base}-224.webp 224w`;
 
   const containerSizeMap = {
     sm: 'w-8 h-8',
@@ -42,6 +44,15 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
     '2xl': 'w-24 h-24 sm:w-28 sm:h-28',
   };
 
+  const sizesMap = {
+    sm: '32px',
+    md: '44px',
+    lg: '(min-width: 640px) 56px, 52px',
+    xl: '(min-width: 640px) 80px, 72px',
+    '2xl': '(min-width: 640px) 112px, 96px',
+  };
+  const pxMap = { sm: 32, md: 44, lg: 56, xl: 80, '2xl': 112 };
+
   return (
     <div
       className={`relative flex-shrink-0 flex items-center justify-center transition-[transform,background-color,border-color,color] duration-300 group-hover:scale-105 ${containerSizeMap[size]} ${className}`}
@@ -49,9 +60,13 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
     >
       <img
         src={currentLogo}
+        srcSet={srcSet}
+        sizes={sizesMap[size]}
+        width={pxMap[size]}
+        height={pxMap[size]}
         alt={`ZeroBox logo - ${activePreset}`}
         key={activePreset}
-        {...({ fetchpriority: 'high' } as any)}
+        {...(size === 'sm' ? ({ fetchpriority: 'high' } as any) : {})}
         decoding="async"
         className="w-full h-full object-contain select-none"
       />

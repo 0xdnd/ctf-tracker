@@ -198,6 +198,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem(`zerobox_custom_machines_v1_${profileId}`);
           localStorage.removeItem(`zerobox_graph_state_${profileId}`);
           localStorage.removeItem(`zerobox_vault_custom_loot_v1_${profileId}`);
+          localStorage.removeItem(`zerobox_loot_v2_${profileId}`);
           clearDeepProfileData(profileId).catch((err) => {
             console.warn('[ZeroBox] Failed to clear IndexedDB deep storage for profile', profileId, err);
           });

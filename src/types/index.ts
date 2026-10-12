@@ -55,8 +55,15 @@ export interface Machine {
   updatedAt: string;
 }
 
+/** Record of a hard-deleted machine, so a sync merge does not bring it back. */
+export interface MachineTombstone {
+  id: string;
+  deletedAt: string;
+}
+
 export * from './checklist';
 export * from './graph';
+export * from './loot';
 
 export interface CheatsheetCommand {
   id: string;

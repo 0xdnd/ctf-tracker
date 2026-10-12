@@ -9,8 +9,6 @@ import {
   Copy, 
   Check, 
   RotateCcw, 
-  Sparkles, 
-  ExternalLink,
   Code,
   Eye,
   BookOpen,
@@ -19,16 +17,17 @@ import {
   X,
   Search,
   Plus,
-  Globe
+  Globe,
+  Lock
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
-import { playCyberSound, interpolateCommand, safeCopyToClipboard } from '../../utils/helpers';
+import { playCyberSound, interpolateCommand } from '../../utils/helpers';
 import { downloadWriteupHtml } from '../../utils/writeupHtmlExporter';
 import { sanitizeFilename } from '../../utils/workspaceStorage';
 import { PentestReportModal } from './PentestReportModal';
-import { CPTS_NOTES, CptsNoteEntry, searchCptsNotes, getRecommendedNotesForMachine } from '../../utils/obsidianManualUtils';
+import { CptsNoteEntry, searchCptsNotes, getRecommendedNotesForMachine, mergeUserNotePools } from '../../utils/obsidianManualUtils';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect } from '../common/CyberSelect';
 import { PageHeader } from '../common/PageHeader';
@@ -303,8 +302,10 @@ export const computeWriteupTelemetry = (text: string) => {
 
 export const WriteupStudio: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand, isDeepStorageLoaded } = useCtfStore(
+  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand, isDeepStorageLoaded, customNotes, userNotes } = useCtfStore(
     useShallow((s) => ({
+      customNotes: s.customNotes,
+      userNotes: s.userNotes,
       machines: s.machines,
       writeupMachineId: s.writeupMachineId,
       setWriteupMachineId: s.setWriteupMachineId,
@@ -322,7 +323,8 @@ export const WriteupStudio: React.FC = () => {
     }
   }, [id, machines, setWriteupMachineId]);
 
-  const selectedMachine = machines.find((m) => m.id === writeupMachineId) || machines[0];
+  const retiredMachines = useMemo(() => machines.filter((m) => !m.isActive), [machines]);
+  const selectedMachine = machines.find((m) => m.id === writeupMachineId) || retiredMachines[0] || machines[0];
 
   const [copied, setCopied] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -330,7 +332,6 @@ export const WriteupStudio: React.FC = () => {
   const [cptsDrawerOpen, setCptsDrawerOpen] = useState(false);
   const [cptsSearch, setCptsSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
   // Debounce search query by 150ms to maintain 120 FPS
   useEffect(() => {
@@ -341,12 +342,18 @@ export const WriteupStudio: React.FC = () => {
   }, [cptsSearch]);
 
   // Capped at top 20 matches as mandated by Fable Advisor
+  // Recommendations and search use only the user's own notes; the section hides when there are none.
+  const userNotePool = useMemo(() => mergeUserNotePools(customNotes, userNotes), [customNotes, userNotes]);
+  const hasUserNotes = userNotePool.length > 0;
   const matchingNotes = useMemo(() => {
+    if (userNotePool.length === 0) return [];
     if (!debouncedSearch.trim()) {
-      return selectedMachine ? getRecommendedNotesForMachine(selectedMachine, 20) : CPTS_NOTES.slice(0, 20);
+      return selectedMachine
+        ? getRecommendedNotesForMachine(selectedMachine, 20, userNotePool)
+        : userNotePool.slice(0, 20);
     }
-    return searchCptsNotes(debouncedSearch, 'ALL').slice(0, 20);
-  }, [debouncedSearch, selectedMachine]);
+    return searchCptsNotes(debouncedSearch, 'ALL', null, userNotePool).slice(0, 20);
+  }, [debouncedSearch, selectedMachine, userNotePool]);
 
   const handleInsertNote = (note: CptsNoteEntry) => {
     if (!selectedMachine) return;
@@ -485,6 +492,12 @@ cat /root/root.txt
   useEffect(() => {
     if (!selectedMachine) return;
 
+    if (selectedMachine.isActive) {
+      flushDebouncedSave();
+      setEditorContent('');
+      return;
+    }
+
     if (selectedMachine.writeupMarkdown) {
       flushDebouncedSave();
       setEditorContent(selectedMachine.writeupMarkdown);
@@ -497,7 +510,7 @@ cat /root/root.txt
       setEditorContent(tmpl);
       updateMachine(selectedMachine.id, { writeupMarkdown: tmpl });
     }
-  }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, isDeepStorageLoaded]);
+  }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, selectedMachine?.isActive, isDeepStorageLoaded]);
 
   const telemetry = useMemo(() => computeWriteupTelemetry(editorContent), [editorContent]);
 
@@ -568,22 +581,17 @@ cat /root/root.txt
   };
 
 
-  const appendOfficialIntel = () => {
-    if (!selectedMachine || !selectedMachine.officialWalkthrough) return;
-    const injection = `\n\n---\n\n## Official Hack The Box walkthrough\n${selectedMachine.officialWalkthrough}\n`;
-    const updated = editorContent + injection;
-    setEditorContent(updated);
-    updateMachine(selectedMachine.id, { writeupMarkdown: updated });
-    if (soundEnabled) playCyberSound('engage');
-  };
-
   const overflowItems: OverflowItem[] = [
-    {
-      id: 'field-manual',
-      label: cptsDrawerOpen ? 'Hide field manual' : `Field manual (${matchingNotes.length})`,
-      icon: <BookOpen className="w-3.5 h-3.5" />,
-      onSelect: () => setCptsDrawerOpen((prev) => !prev),
-    },
+    ...(hasUserNotes
+      ? [
+          {
+            id: 'field-manual',
+            label: cptsDrawerOpen ? 'Hide your notes' : `Your notes (${matchingNotes.length})`,
+            icon: <BookOpen className="w-3.5 h-3.5" />,
+            onSelect: () => setCptsDrawerOpen((prev) => !prev),
+          },
+        ]
+      : []),
     {
       id: 'executive-report',
       label: 'Executive report',
@@ -602,16 +610,6 @@ cat /root/root.txt
       icon: <Download className="w-3.5 h-3.5" />,
       onSelect: handleDownloadMarkdown,
     },
-    ...(selectedMachine?.officialWalkthrough
-      ? [
-          {
-            id: 'official-intel',
-            label: 'Append official HTB walkthrough',
-            icon: <Sparkles className="w-3.5 h-3.5" />,
-            onSelect: appendOfficialIntel,
-          } as OverflowItem,
-        ]
-      : []),
     {
       id: 'reset-template',
       label: 'Reset to template',
@@ -631,67 +629,73 @@ cat /root/root.txt
         description="Write in Markdown with a live preview. Exports to Obsidian and GitBook."
         icon={<FileText />}
         primaryAction={
-          <CyberButton
-            variant="primary"
-            size="md"
-            className="max-sm:h-11 max-sm:flex-1"
-            onClick={handleDownloadHtml}
-            title="Export a self-contained HTML writeup with one-click Print to PDF"
-            iconLeft={<Globe className="w-3.5 h-3.5" />}
-          >
-            Export HTML
-          </CyberButton>
+          selectedMachine?.isActive ? undefined : (
+            <CyberButton
+              variant="primary"
+              size="md"
+              className="max-sm:h-11 max-sm:flex-1"
+              onClick={handleDownloadHtml}
+              title="Export a self-contained HTML writeup with one-click Print to PDF"
+              iconLeft={<Globe className="w-3.5 h-3.5" />}
+            >
+              Export HTML
+            </CyberButton>
+          )
         }
         actions={
-          <>
-            <button
-              type="button"
-              onClick={handleCopyMarkdown}
-              className={toolbarBtn}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-callout-success-fg" />
-                  <span className="text-callout-success-fg">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy raw</span>
-                </>
+          selectedMachine?.isActive ? null : (
+            <>
+              <button
+                type="button"
+                onClick={handleCopyMarkdown}
+                className={toolbarBtn}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-callout-success-fg" />
+                    <span className="text-callout-success-fg">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy raw</span>
+                  </>
+                )}
+              </button>
+              {hasUserNotes && (
+                <button
+                  type="button"
+                  onClick={() => setCptsDrawerOpen((prev) => !prev)}
+                  aria-pressed={cptsDrawerOpen}
+                  className={`${toolbarBtn} ${cptsDrawerOpen ? 'border-accent text-primary' : ''}`}
+                  title="Toggle the quick reference from your notes"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Your notes (<span className="tabular-nums">{matchingNotes.length}</span>)</span>
+                </button>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setCptsDrawerOpen((prev) => !prev)}
-              aria-pressed={cptsDrawerOpen}
-              className={`${toolbarBtn} ${cptsDrawerOpen ? 'border-accent text-primary' : ''}`}
-              title="Toggle the field manual quick reference"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Field manual (<span className="tabular-nums">{matchingNotes.length}</span>)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setReportModalOpen(true)}
-              className={toolbarBtn}
-              title="Generate a print-ready executive penetration testing report"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Executive report</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadMarkdown}
-              className={toolbarBtn}
+              <button
+                type="button"
+                onClick={() => setReportModalOpen(true)}
+                className={toolbarBtn}
+                title="Generate a print-ready executive penetration testing report"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Executive report</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadMarkdown}
+                className={toolbarBtn}
               title="Export raw Markdown (.md) for Obsidian or GitBook"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export .md</span>
             </button>
           </>
+          )
         }
-        overflow={overflowItems}
+        overflow={selectedMachine?.isActive ? [] : overflowItems}
       >
         {/* Machine selector + official walkthrough shortcut: one row */}
         <div className="flex flex-wrap items-center gap-2.5">
@@ -700,7 +704,7 @@ cat /root/root.txt
             <CyberSelect
               value={selectedMachine?.id || ''}
               onChange={setWriteupMachineId}
-              options={machines.map((m) => ({
+              options={retiredMachines.map((m) => ({
                 value: m.id,
                 label: `${m.name} (${m.platform})`,
                 icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
@@ -715,23 +719,12 @@ cat /root/root.txt
             />
           </div>
 
-          {Boolean(selectedMachine?.officialWalkthrough) && (
-            <button
-              type="button"
-              onClick={appendOfficialIntel}
-              className={`${toolbarBtn} max-sm:hidden`}
-              title="Append the official Hack The Box walkthrough to this writeup"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Append HTB walkthrough</span>
-            </button>
-          )}
         </div>
       </PageHeader>
 
       {/* Field Manual Quick Reference Drawer */}
       <AnimatePresence initial={false}>
-      {cptsDrawerOpen && (
+      {cptsDrawerOpen && hasUserNotes && (
         <motion.div
           key="cpts-drawer"
           initial={{ opacity: 0, y: -8 }}
@@ -742,7 +735,7 @@ cat /root/root.txt
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-muted" />
               <span className="font-semibold text-primary text-xs">
-                Field manual quick reference
+                Quick reference from your notes
               </span>
               <span className="text-xs px-2 py-0.5 rounded bg-surface-sunken text-muted border border-subtle font-mono tabular-nums">
                 {matchingNotes.length} matches (max 20)
@@ -765,7 +758,7 @@ cat /root/root.txt
               type="text"
               id="writeup-notes-search"
               name="writeup-notes-search"
-              aria-label="Search field manual notes and commands"
+              aria-label="Search your notes and commands"
               value={cptsSearch}
               onChange={(e) => setCptsSearch(e.target.value)}
               placeholder="Search notes and commands (kerberoast, suid, lfi, bloodhound)..."
@@ -774,10 +767,10 @@ cat /root/root.txt
           </div>
 
           {/* Matching Notes Grid */}
-          <div tabIndex={0} role="region" aria-label="Matching field manual notes" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+          <div tabIndex={0} role="region" aria-label="Matching notes" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
             {matchingNotes.length === 0 ? (
               <div className="col-span-full p-4 text-center text-xs text-muted">
-                No matching field manual notes found.
+                No matching notes found.
               </div>
             ) : (
               matchingNotes.map((note) => (
@@ -827,47 +820,61 @@ cat /root/root.txt
       )}
       </AnimatePresence>
 
-      {/* Dual-Pane Editor Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch lg:min-h-[calc(100vh-250px)]">
-        
-        {/* Left Pane: Raw Markdown Editor */}
-        <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden" style={{ contain: 'content' }}>
-          <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
-            <span className="font-semibold text-primary flex items-center gap-2">
-              <Code className="w-4 h-4 text-muted" /> Markdown
-            </span>
-            <span className="text-[11px] text-muted font-mono tabular-nums">
-              {telemetry.chars} chars · {telemetry.lines} lines
-            </span>
+      {/* Dual-Pane Editor Workspace or HTB ToS Active Target Lockout */}
+      {selectedMachine?.isActive ? (
+        <div className="rounded-2xl border border-subtle bg-surface-card p-8 sm:p-12 text-center space-y-4 max-w-2xl mx-auto my-8">
+          <div className="w-12 h-12 rounded-xl bg-callout-warn-bg border border-callout-warn-border flex items-center justify-center text-callout-warn-fg mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-semibold text-primary">Writeups Prohibited for Active Targets</h3>
+          <p className="text-xs text-secondary max-w-md mx-auto leading-relaxed">
+            Under Hack The Box Terms of Service (AUP §8.2) and Community Rules, authoring or publishing writeups, walkthroughs, attack vectors, or solutions for active seasonal machines is strictly prohibited. Only retired machines may be documented.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch lg:min-h-[calc(100vh-250px)]">
+            
+            {/* Left Pane: Raw Markdown Editor */}
+            <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden" style={{ contain: 'content' }}>
+              <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
+                <span className="font-semibold text-primary flex items-center gap-2">
+                  <Code className="w-4 h-4 text-muted" /> Markdown
+                </span>
+                <span className="text-[11px] text-muted font-mono tabular-nums">
+                  {telemetry.chars} chars · {telemetry.lines} lines
+                </span>
+              </div>
+
+              <textarea
+                id="writeup-markdown-editor"
+                name="writeup-markdown-editor"
+                aria-label="Markdown report editor"
+                value={editorContent}
+                onChange={handleEditorChange}
+                onBlur={flushDebouncedSave}
+                placeholder="Write your penetration testing report or paste notes here..."
+                className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
+                spellCheck={false}
+              />
+            </div>
+
+            {/* Right Pane: Live Rendered Preview (Deferred AST tokenization) */}
+            <DeferredMarkdownPreviewPane content={editorContent} />
+
           </div>
 
-          <textarea
-            id="writeup-markdown-editor"
-            name="writeup-markdown-editor"
-            aria-label="Markdown report editor"
-            value={editorContent}
-            onChange={handleEditorChange}
-            onBlur={flushDebouncedSave}
-            placeholder="Write your penetration testing report or paste notes here..."
-            className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
-            spellCheck={false}
-          />
-        </div>
-
-        {/* Right Pane: Live Rendered Preview (Deferred AST tokenization) */}
-        <DeferredMarkdownPreviewPane content={editorContent} />
-
-      </div>
-
-      {/* Footer Telemetry Strip */}
-      <div
-        data-testid="writeup-telemetry"
-        className="flex items-center justify-end gap-4 px-4 py-2 rounded-lg border border-subtle bg-surface-sunken text-[11px] text-muted font-mono tabular-nums"
-      >
-        <span data-testid="writeup-telemetry-chars">{telemetry.chars} chars</span>
-        <span data-testid="writeup-telemetry-words">{telemetry.words} words</span>
-        <span data-testid="writeup-telemetry-lines">{telemetry.lines} lines</span>
-      </div>
+          {/* Footer Telemetry Strip */}
+          <div
+            data-testid="writeup-telemetry"
+            className="flex items-center justify-end gap-4 px-4 py-2 rounded-lg border border-subtle bg-surface-sunken text-[11px] text-muted font-mono tabular-nums"
+          >
+            <span data-testid="writeup-telemetry-chars">{telemetry.chars} chars</span>
+            <span data-testid="writeup-telemetry-words">{telemetry.words} words</span>
+            <span data-testid="writeup-telemetry-lines">{telemetry.lines} lines</span>
+          </div>
+        </>
+      )}
 
       {/* Executive Pentest Report Modal */}
       <PentestReportModal

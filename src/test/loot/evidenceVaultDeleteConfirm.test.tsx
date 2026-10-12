@@ -1,8 +1,8 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { EvidenceVaultPage, STORAGE_KEY_CUSTOM_LOOT } from '../../pages/EvidenceVaultPage';
+import { EvidenceVaultPage } from '../../pages/EvidenceVaultPage';
+import { getLootStorageKey } from '../../store/lootPersistence';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useConfirmStore } from '../../store/useConfirmStore';
@@ -20,32 +20,25 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
   }));
 }
 
-const CUSTOM_ITEM = {
+const CUSTOM_CRED = {
   id: 'custom-loot-confirm-1',
-  targetId: 'manual',
-  targetName: 'ConfirmTarget',
-  targetIp: '10.10.10.99',
-  platform: 'HackTheBox',
-  category: 'password',
-  typeLabel: 'Password',
+  type: 'password' as const,
   username: 'svc_confirm',
   secret: 'S3cret!confirm',
-  discoveredAt: new Date('2025-01-01T00:00:00Z').toISOString(),
-  notes: '',
-  isCustom: true,
+  createdAt: new Date('2025-01-01T00:00:00Z').toISOString(),
 };
 
-const profileKey = () =>
-  `${STORAGE_KEY_CUSTOM_LOOT}_${useCtfStore.getState().currentProfileId || 'guest'}`;
-
-// The page persists edits to the profile-scoped key (legacy key is read-only fallback).
-const storedCount = () => JSON.parse(localStorage.getItem(profileKey()) || '[]').length;
+// Custom loot is persisted per profile under the v2 key by the store (the page no longer touches storage).
+const storedCount = () => {
+  const raw = localStorage.getItem(getLootStorageKey(useCtfStore.getState().currentProfileId));
+  return raw ? JSON.parse(raw).credentials.length : 0;
+};
 
 describe('EvidenceVaultPage: delete custom loot confirmation', () => {
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem(profileKey(), JSON.stringify([CUSTOM_ITEM]));
-    useCtfStore.setState({ soundEnabled: false });
+    useCtfStore.setState({ soundEnabled: false, credentials: [], credAttempts: [], lootItems: [] });
+    useCtfStore.getState().addCredential(CUSTOM_CRED);
   });
 
   afterEach(() => {

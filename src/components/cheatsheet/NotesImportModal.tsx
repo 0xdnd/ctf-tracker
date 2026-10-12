@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '../common/Modal';
 import { 
   FileText, 
   Upload, 
@@ -13,8 +13,7 @@ import {
   Database,
   Terminal,
   RefreshCw,
-  Archive,
-  Sparkles
+  Archive
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -257,51 +256,6 @@ export const NotesImportModal: React.FC = () => {
     }
   };
 
-  const handleAutoLoadDesktopVault = async () => {
-    setIsProcessing(true);
-    setFeedback(null);
-    setZipProgress({
-      current: 0,
-      total: 404,
-      currentFile: 'Scanning Desktop CPTS Field Manual...',
-      phase: 'parsing',
-    });
-
-    try {
-      const res = await fetch('/api/local-vault');
-      if (!res.ok) {
-        throw new Error('Local desktop vault not found at C:\\Users\\DANIEL\\Desktop\\CPTS Field Manual.');
-      }
-      const data = await res.json();
-      if (!data.success || !data.notes) {
-        throw new Error(data.error || 'Failed to parse desktop vault.');
-      }
-
-      await saveVaultToIndexedDb({
-        notes: data.notes,
-        wikilinkMap: data.wikilinkMap,
-      });
-
-      setUserNotes(data.notes);
-      setUserWikilinkMap(data.wikilinkMap);
-
-      if (soundEnabled) playCyberSound('flag');
-      setFeedback({
-        type: 'success',
-        message: `Successfully loaded all ${data.summary.totalNotes} notes (${data.summary.totalCommands.toLocaleString()} commands) from Desktop into local browser IndexedDB!`,
-      });
-    } catch (err: any) {
-      if (soundEnabled) playCyberSound('toggle');
-      setFeedback({
-        type: 'error',
-        message: err?.message || 'Failed to auto-load local desktop vault. Please use "Select Folder / Dir" or select "CPTS-Field-Manual.zip".',
-      });
-    } finally {
-      setIsProcessing(false);
-      setZipProgress(null);
-    }
-  };
-
   const handleExportBackup = async () => {
     try {
       const vault = await loadVaultFromIndexedDb();
@@ -348,24 +302,15 @@ export const NotesImportModal: React.FC = () => {
   const totalCommands = userNotes.reduce((acc, n) => acc + (n.commands?.length || 0), 0);
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-        {/* Backdrop */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleClose}
-          className="absolute inset-0 bg-black/85 backdrop-blur-md"
-        />
-
-        {/* Modal Window */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.98, y: 10 }}
-          className="relative w-full max-w-2xl bg-surface-card border border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        >
+    <Modal
+      open
+      onClose={handleClose}
+      labelledBy="notes-import-title"
+      size="xl"
+      className="!bg-black/85 backdrop-blur-md"
+      panelClassName="!shadow-2xl"
+    >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
           {/* Header */}
           <div className="px-6 py-4 border-b border-subtle bg-accent-muted flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -373,7 +318,7 @@ export const NotesImportModal: React.FC = () => {
                 <Database size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-primary flex items-center gap-2">
+                <h2 id="notes-import-title" className="text-base font-semibold text-primary flex items-center gap-2">
                   <span>Notes vault</span>
                   <span className="px-2 py-0.5 text-[10px] bg-surface-sunken text-secondary border border-subtle rounded">
                     Local-First
@@ -573,21 +518,8 @@ export const NotesImportModal: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* 1-Click Local Desktop Vault Auto-Import */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={handleAutoLoadDesktopVault}
-                        disabled={isProcessing}
-                        className="w-full py-2.5 px-3 rounded-lg text-primary font-semibold text-xs transition-[box-shadow,background-color,border-color,color] flex items-center justify-center gap-2 cursor-pointer border border-subtle"
-                      >
-                        <Sparkles size={16} className="text-callout-warn-fg" />
-                        <span>⚡ 1-Click Load Desktop CPTS Field Manual (404 Notes)</span>
-                      </button>
-                    </div>
-
                     <div className="text-[11px] text-tertiary pt-1">
-                      Works directly with <code className="text-secondary font-semibold">CPTS Field Manual</code> folder or <code className="text-secondary font-semibold">CPTS-Field-Manual.zip</code> on Desktop.
+                      Works with any Obsidian vault folder, a .zip of it, or a notes .json export. Files stay in this browser.
                     </div>
                   </div>
 
@@ -626,7 +558,7 @@ export const NotesImportModal: React.FC = () => {
                   <ul className="list-disc list-inside space-y-1 text-secondary">
                     <li><strong>Direct Folder:</strong> Click <strong className="text-secondary">Select Folder / Dir</strong> to import your notes folder directly from disk without needing to zip it first.</li>
                     <li><strong>Nested Sub-directories:</strong> Preserves arbitrary folder depths (00 Methodology, 01 Recon, etc.) with automatic category grouping.</li>
-                    <li><strong>Zero-Egress:</strong> All markdown notes, frontmatter, and commands are parsed in-browser and cached in your private IndexedDB.</li>
+                    <li><strong>Local-first:</strong> All markdown notes, frontmatter, and commands are parsed in-browser and cached in your private IndexedDB. No telemetry.</li>
                     <li><strong>Persistence:</strong> Stored locally on this browser and retained across reloads.</li>
                   </ul>
                 </div>
@@ -700,8 +632,7 @@ export const NotesImportModal: React.FC = () => {
               Close
             </button>
           </div>
-        </motion.div>
       </div>
-    </AnimatePresence>
+    </Modal>
   );
 };

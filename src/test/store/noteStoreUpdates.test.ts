@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useCtfStore, getProfileStorageKey, safeLocalStorage } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
-import { CPTS_NOTES, CptsNoteEntry } from '../../utils/obsidianManualUtils';
-import { saveVaultToIndexedDb } from '../../utils/indexedDbVault';
+import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { loadVaultFromIndexedDb, saveVaultToIndexedDb } from '../../utils/indexedDbVault';
 
 // Snapshot clean store states for isolation
 const initialCtfState = useCtfStore.getState();
@@ -162,58 +162,74 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 3. Baseline Catalog Promotion & Immutability
+  // 3. Imported Note Edit Safety
   // --------------------------------------------------------------------------
-  describe('3. Baseline Catalog Promotion & Immutability', () => {
-    it('promotes baseline CPTS_NOTES entry to customNotes without mutating baseline static catalog', () => {
-      expect(CPTS_NOTES.length).toBeGreaterThan(0);
-      const baselineNote = CPTS_NOTES[0];
-      const baselineId = baselineNote.id;
-      const originalBaselineMarkdown = baselineNote.rawMarkdown || baselineNote.summary;
+  describe('3. Imported note edits are never dropped (no bundled catalog)', () => {
+    const importedNote: CptsNoteEntry = {
+      id: 'imported-recon-101',
+      title: 'Recon checklist',
+      titleEn: 'Recon checklist',
+      category: 'Recon',
+      rawCategory: 'Recon',
+      subCategory: 'Scanning',
+      tags: ['nmap'],
+      difficulty: 'Easy',
+      summary: 'My recon steps',
+      commands: ['nmap -sC -sV $TARGET'],
+      relPath: 'Recon/Recon checklist.md',
+      rawMarkdown: '# Recon\n\nOriginal body.',
+    };
+    const wikilinkMap = { 'recon checklist': 'imported-recon-101' };
 
-      // Ensure customNotes is empty initially
-      useCtfStore.setState({
-        customNotes: [],
-        userNotes: [],
+    it('saves repeated edits to an imported note in place, without duplicates or customNotes copies', async () => {
+      useCtfStore.setState({ customNotes: [], userNotes: [importedNote], userWikilinkMap: wikilinkMap });
+
+      await useCtfStore.getState().updateNoteContent(importedNote.id, 'First edit');
+      await useCtfStore.getState().updateNoteContent(importedNote.id, 'Second edit');
+
+      const state = useCtfStore.getState();
+      expect(state.userNotes).toHaveLength(1);
+      expect(state.userNotes[0].rawMarkdown).toBe('Second edit');
+      expect(state.userNotes[0].title).toBe('Recon checklist');
+      expect(state.customNotes).toEqual([]);
+      expect(saveVaultToIndexedDb).toHaveBeenLastCalledWith({
+        notes: [expect.objectContaining({ id: importedNote.id, rawMarkdown: 'Second edit' })],
+        wikilinkMap,
       });
 
-      const editedMarkdown = '# Customized Baseline Guide\n\nAdded custom flags and notes.';
-      useCtfStore.getState().updateNoteContent(baselineId, editedMarkdown);
-
-      // Invariant 1: Static CPTS_NOTES catalog remains completely IMMUTABLE
-      const baselineAfter = CPTS_NOTES.find((n) => n.id === baselineId);
-      expect(baselineAfter).toBeDefined();
-      expect(baselineAfter?.rawMarkdown || baselineAfter?.summary).toBe(originalBaselineMarkdown);
-      expect(baselineAfter?.rawMarkdown).not.toBe(editedMarkdown);
-
-      // Invariant 2: Note has been promoted into customNotes
-      const customNotes = useCtfStore.getState().customNotes;
-      expect(customNotes.length).toBe(1);
-      const promoted = customNotes.find((n) => n.id === baselineId);
-      expect(promoted).toBeDefined();
-      expect(promoted?.rawMarkdown).toBe(editedMarkdown);
-      expect(promoted?.title).toBe(baselineNote.title);
-      expect(promoted?.dateModified).toBeDefined();
-
-      // Invariant 3: getActiveNote in workspace returns the promoted custom note over baseline
-      useNotesWorkspaceStore.setState({ activeTabId: baselineId });
-      const activeNote = useNotesWorkspaceStore.getState().getActiveNote();
-      expect(activeNote).toBeDefined();
-      expect(activeNote?.rawMarkdown).toBe(editedMarkdown);
+      // The workspace resolves the edited imported note
+      useNotesWorkspaceStore.setState({ openTabIds: [importedNote.id], activeTabId: importedNote.id });
+      expect(useNotesWorkspaceStore.getState().getActiveNote()?.rawMarkdown).toBe('Second edit');
     });
 
-    it('subsequent edits to a promoted note update customNotes without creating duplicate entries', () => {
-      const baselineId = CPTS_NOTES[0].id;
-      useCtfStore.setState({ customNotes: [], userNotes: [] });
+    it('saves an edit made before the imported vault has hydrated from IndexedDB', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.mocked(loadVaultFromIndexedDb).mockResolvedValueOnce({ notes: [importedNote], wikilinkMap } as never);
+      useCtfStore.setState({ customNotes: [], userNotes: [], userWikilinkMap: {} });
 
-      // First edit promotes
-      useCtfStore.getState().updateNoteContent(baselineId, 'First edit');
-      expect(useCtfStore.getState().customNotes.length).toBe(1);
+      await useCtfStore.getState().updateNoteContent(importedNote.id, '# Edited early');
 
-      // Second edit updates the promoted record
-      useCtfStore.getState().updateNoteContent(baselineId, 'Second edit');
-      expect(useCtfStore.getState().customNotes.length).toBe(1);
-      expect(useCtfStore.getState().customNotes[0].rawMarkdown).toBe('Second edit');
+      const state = useCtfStore.getState();
+      expect(state.userNotes).toHaveLength(1);
+      expect(state.userNotes[0].rawMarkdown).toBe('# Edited early');
+      expect(state.userWikilinkMap).toEqual(wikilinkMap);
+      expect(state.customNotes).toEqual([]);
+      expect(saveVaultToIndexedDb).toHaveBeenCalledWith({
+        notes: [expect.objectContaining({ id: importedNote.id, rawMarkdown: '# Edited early' })],
+        wikilinkMap,
+      });
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('keeps editing legacy notes that were promoted into customNotes by older versions', async () => {
+      const legacyPromoted: CptsNoteEntry = { ...importedNote, id: '01-recon-port-scanning', rawMarkdown: 'Old edit' };
+      useCtfStore.setState({ customNotes: [legacyPromoted], userNotes: [] });
+
+      await useCtfStore.getState().updateNoteContent('01-recon-port-scanning', 'Newer edit');
+
+      expect(useCtfStore.getState().customNotes).toHaveLength(1);
+      expect(useCtfStore.getState().customNotes[0].rawMarkdown).toBe('Newer edit');
     });
   });
 
@@ -254,14 +270,14 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
   // 5. Defensive Edge Cases & Invariants
   // --------------------------------------------------------------------------
   describe('5. Defensive Edge Cases', () => {
-    it('gracefully handles non-existent note ID without crashing or corrupting state', () => {
+    it('gracefully handles non-existent note ID without crashing or corrupting state', async () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const initialCustom = useCtfStore.getState().customNotes;
       const initialUser = useCtfStore.getState().userNotes;
 
-      expect(() => {
-        useCtfStore.getState().updateNoteContent('ghost-note-404', 'Some content');
-      }).not.toThrow();
+      await expect(
+        Promise.resolve(useCtfStore.getState().updateNoteContent('ghost-note-404', 'Some content'))
+      ).resolves.not.toThrow();
 
       expect(useCtfStore.getState().customNotes).toEqual(initialCustom);
       expect(useCtfStore.getState().userNotes).toEqual(initialUser);
