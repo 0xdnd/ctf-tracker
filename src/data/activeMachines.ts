@@ -25,11 +25,12 @@ export const ACTIVE_MACHINES = raw as ActiveMachinesList;
 
 /**
  * Metadata-only catalog rows for active machines the catalog does not already list (deduped by
- * normalized name). No tags, hint, synopsis, writeup, pdf, flags or skills: HTB AUP §8.2.
+ * HTB platform + normalized name). No tags, hint, synopsis, writeup, pdf, flags or skills: HTB AUP §8.2.
  * Ids are `htb-<slug>`, falling back to `htb-active-<slug>[-n]` if that id is already taken.
  */
 export function appendActiveMachines(catalog: Machine[], list: ActiveMachinesList = ACTIVE_MACHINES): Machine[] {
-  const names = new Set(catalog.map((m) => normalizeMachineSlug(m.name)));
+  // Only an HTB row with the same slug counts as "already listed": a THM room named "Stream" does not.
+  const names = new Set(catalog.filter((m) => m.platform === 'HTB').map((m) => normalizeMachineSlug(m.name)));
   const ids = new Set(catalog.map((m) => m.id));
   const extra: Machine[] = [];
   for (const e of list.machines) {
