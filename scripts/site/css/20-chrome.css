@@ -22,7 +22,7 @@
 .theme-toggle:focus-visible{outline:2px solid transparent;outline-offset:2px;box-shadow:0 0 0 2px var(--ring-offset),0 0 0 4px var(--focus)}
 @media(hover:hover) and (pointer:fine){.theme-toggle:hover{color:var(--text);background:var(--hover)}}
 @media(max-width:767px){.theme-toggle::before{content:"";position:absolute;inset:-4px}}
-.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;border-radius:6px;color:var(--link);font-weight:600;text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 calc(50% + .85em)/0% 1px no-repeat;transition:color .15s,background-size 220ms ease}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;border-radius:6px;color:var(--link);font-weight:600;text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 calc(50% + .85em)/0% 1px no-repeat;transition:color .15s,background-size 220ms ease,transform var(--press) var(--ease)}
 .link-arrow .ico{flex:none;width:16px;height:16px;transition:transform var(--spring-dur) var(--spring)}
 .link-arrow:focus-visible{outline:2px solid transparent;box-shadow:0 0 0 2px var(--ring-offset),0 0 0 4px var(--focus)}
 @media(hover:hover) and (pointer:fine){

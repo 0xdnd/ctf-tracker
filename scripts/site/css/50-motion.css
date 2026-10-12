@@ -1,12 +1,12 @@
 /* 50-motion: CSS-only motion. No transition:all, no infinite loops, no opacity animation on the h1 or the LCP image (the hero window is static; only the pacing card enters). */
 @keyframes rise{from{opacity:0;transform:translateY(8px)}}
-@keyframes pace-in{from{opacity:0;transform:translate(-18px,16px)}}
+@keyframes pace-in{from{opacity:0;transform:translate(-12px,12px)}}
 @keyframes fade{from{opacity:0}}
 @media(prefers-reduced-motion:no-preference){
-.pace{animation:pace-in 560ms var(--spring) 80ms backwards}
-.hero .lead{animation:rise 420ms var(--spring) 60ms backwards}
-.hero .cta-row{animation:rise 420ms var(--spring) 120ms backwards}
-.proof li{animation:rise 360ms var(--spring) backwards}
+.pace{animation:pace-in 300ms var(--ease) 80ms backwards}
+.hero .lead{animation:rise 300ms var(--ease) 60ms backwards}
+.hero .cta-row{animation:rise 300ms var(--ease) 120ms backwards}
+.proof li{animation:rise 280ms var(--ease) backwards}
 .proof li:nth-child(2){animation-delay:50ms}
 .proof li:nth-child(3){animation-delay:100ms}
 .proof li:nth-child(4){animation-delay:150ms}
@@ -25,7 +25,7 @@
 body.landing::before{content:"";position:fixed;inset:0 0 auto 0;z-index:60;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:0 50%;pointer-events:none;animation:bar linear both;animation-timeline:scroll(root)}
 @media(min-width:640px){
 /* Hero depth on scroll: the pacing card drifts over the static window (independent `translate`, so hover and entrance transforms are untouched). */
-.pace{animation:pace-in 560ms var(--spring) 80ms backwards,drift-pace linear both;animation-timeline:auto,scroll(root);animation-range:normal,0 640px}
+.pace{animation:pace-in 300ms var(--ease) 80ms backwards,drift-pace linear both;animation-timeline:auto,scroll(root);animation-range:normal,0 640px}
 }
 }
 .lb[open]{animation:lb-in 220ms var(--ease)}

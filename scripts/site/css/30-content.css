@@ -61,4 +61,4 @@ tbody tr:hover{background:var(--card)}
 .nf-term{max-width:34rem;margin-bottom:var(--s7)}
 .nf-st{color:var(--text);font-weight:600}
 .nf .chips a{min-height:44px}
-@media(prefers-reduced-motion:no-preference){.nf-term{animation:rise 420ms var(--spring) 80ms backwards}}
+@media(prefers-reduced-motion:no-preference){.nf-term{animation:rise 300ms var(--ease) 80ms backwards}}
