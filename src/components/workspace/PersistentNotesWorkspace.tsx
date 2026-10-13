@@ -7,7 +7,8 @@ import {
   Minimize2, 
   Type, 
   Layers,
-  PanelLeft} from 'lucide-react';
+  PanelLeft,
+  Wand2} from 'lucide-react';
 import { useNotesWorkspaceStore, resolvedTabId, type ResolvedTab } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -17,6 +18,7 @@ import { DockQuickSwitcher } from './DockQuickSwitcher';
 import { DockNotesList } from './DockNotesList';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
 import { playCyberSound } from '../../utils/helpers';
+import { TemplatizeNotesModal } from '../cheatsheet/TemplatizeNotesModal';
 
 /** Below this dock width the Notes list no longer fits beside a note, so it opens as an overlay instead. */
 const NARROW_DOCK_PX = 520;
@@ -91,6 +93,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
   );
   const activeResolvedId = activeTab ? resolvedTabId(activeTab) : null;
   const activeTitle = activeTab ? (activeTab.kind === 'note' ? activeTab.note.title : activeTab.entry.title) : null;
+  // IP templating applies to notes only (snippet tabs are read-only catalog entries)
+  const activeNote = activeTab?.kind === 'note' ? activeTab.note : null;
 
   // Drop tabs whose target is gone. Snippet tabs are checked immediately; note tabs only once the
   // IndexedDB vault has hydrated (the store enforces this), so a slow load never discards valid tabs.
@@ -138,6 +142,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
   const listDocked = !isNarrowDock && !notesListCollapsed;
   const listToggled = isNarrowDock ? overlayListOpen : !notesListCollapsed;
   const toggleList = () => (isNarrowDock ? setOverlayListOpen((v) => !v) : toggleNotesList());
+
+  const [templatizeOpen, setTemplatizeOpen] = useState(false);
 
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
@@ -261,6 +267,18 @@ export const PersistentNotesWorkspace: React.FC = () => {
               title="Toggle English / Hebrew"
             >
               {language === 'en' ? 'EN' : 'עב'}
+            </button>
+
+            {/* Replace hard-coded IPs with {TARGET}/{LHOST} */}
+            <button
+              type="button"
+              onClick={() => setTemplatizeOpen(true)}
+              disabled={!activeNote}
+              aria-label="Replace IPs with placeholders"
+              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer disabled:opacity-40"
+              title="Replace hard-coded IPs in this note with {TARGET} / {LHOST}"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
             </button>
 
             {/* Font Size Toggle */}
@@ -432,6 +450,18 @@ export const PersistentNotesWorkspace: React.FC = () => {
               {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
 
+            {/* Replace hard-coded IPs with {TARGET}/{LHOST} */}
+            <button
+              type="button"
+              onClick={() => setTemplatizeOpen(true)}
+              disabled={!activeNote}
+              aria-label="Replace IPs with placeholders"
+              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer disabled:opacity-40"
+              title="Replace hard-coded IPs in this note with {TARGET} / {LHOST}"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+            </button>
+
             {/* Font Size Toggle */}
             <button
               type="button"
@@ -514,6 +544,15 @@ export const PersistentNotesWorkspace: React.FC = () => {
           )}
         </div>
       </div>
+
+      {activeNote && (
+        <TemplatizeNotesModal
+          open={templatizeOpen}
+          onClose={() => setTemplatizeOpen(false)}
+          noteIds={[activeNote.id]}
+          scopeLabel={activeNote.title}
+        />
+      )}
     </>
   );
 };

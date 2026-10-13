@@ -13,7 +13,8 @@ import {
   Database,
   Terminal,
   RefreshCw,
-  Archive
+  Archive,
+  Wand2
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -22,6 +23,7 @@ import { confirmAction } from '../../store/useConfirmStore';
 import { loadVaultFromIndexedDb, saveVaultToIndexedDb } from '../../utils/indexedDbVault';
 import { parseObsidianVaultZip, VaultZipImportProgress } from '../../utils/zipVaultImporter';
 import { parseObsidianVaultDirectory, extractFilesFromDataTransfer } from '../../utils/directoryVaultImporter';
+import { TemplatizeNotesModal } from './TemplatizeNotesModal';
 
 export const NotesImportModal: React.FC = () => {
   const { 
@@ -54,6 +56,7 @@ export const NotesImportModal: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const [templatizeOpen, setTemplatizeOpen] = useState(false);
 
   if (!notesImportModalOpen) return null;
 
@@ -364,6 +367,16 @@ export const NotesImportModal: React.FC = () => {
             </div>
 
             {userNotes.length > 0 && (
+              <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTemplatizeOpen(true)}
+                className="min-h-11 md:min-h-0 px-3 py-1.5 text-xs rounded border transition-colors flex items-center gap-1.5 bg-surface-card text-secondary border-subtle hover:text-primary hover:bg-surface-hover"
+                title="Replace hard-coded IPs in imported notes with {TARGET} / {LHOST}"
+              >
+                <Wand2 size={13} />
+                <span>Replace IPs</span>
+              </button>
               <button
                 onClick={handleWipeVault}
                 className="px-3 py-1.5 text-xs rounded border transition-colors flex items-center gap-1.5 bg-callout-danger-bg text-callout-danger-fg border-callout-danger-border hover:bg-callout-danger-bg"
@@ -371,6 +384,7 @@ export const NotesImportModal: React.FC = () => {
                 <Trash2 size={13} />
                 <span>Wipe Vault</span>
               </button>
+              </div>
             )}
           </div>
 
@@ -633,6 +647,12 @@ export const NotesImportModal: React.FC = () => {
             </button>
           </div>
       </div>
+      <TemplatizeNotesModal
+        open={templatizeOpen}
+        onClose={() => setTemplatizeOpen(false)}
+        noteIds={userNotes.map((n) => n.id)}
+        scopeLabel={`vault (${userNotes.length} notes)`}
+      />
     </Modal>
   );
 };

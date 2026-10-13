@@ -60,6 +60,7 @@ import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
 import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
+import { extractCommands, parseFrontmatterAndBody } from '../utils/markdownFrontmatter';
 import { 
   extractDeepWriteups, 
   stripDeepFieldsFromMachines, 
@@ -361,6 +362,14 @@ interface CtfStoreState {
   userSolvesReset: boolean;
   addCustomNote: (note: Partial<CptsNoteEntry> & { title: string }) => void;
   updateNoteContent: (noteId: string, rawMarkdown: string) => void | Promise<void>;
+  /**
+   * Rewrite several notes' markdown at once (IP templating apply / undo). Same semantics as
+   * updateNoteContent — dateModified stamped, customNotes flushed, vault save awaited — plus
+   * `commands` re-derived from the new markdown. An authored copy wins over an imported note.
+   */
+  applyNoteContentBatch: (
+    edits: { noteId: string; rawMarkdown: string }[]
+  ) => Promise<{ updated: string[]; missing: string[] }>;
   deleteNote: (noteId: string) => void;
   restoreDeletedNotes: () => void;
   resetSolvesToZero: () => void;
@@ -2702,6 +2711,41 @@ export const useCtfStore = create<CtfStoreState>()(
         }
 
         console.warn(`[ZeroBox] Note with id "${noteId}" not found for update.`);
+      },
+
+      applyNoteContentBatch: async (edits) => {
+        const state = get();
+        const now = new Date().toISOString();
+        const byId = new Map(edits.map((e) => [e.noteId, e.rawMarkdown]));
+        const updated = new Set<string>();
+        const rewrite = (n: CptsNoteEntry): CptsNoteEntry => {
+          const rawMarkdown = byId.get(n.id);
+          if (rawMarkdown === undefined) return n;
+          updated.add(n.id);
+          const commands = extractCommands(parseFrontmatterAndBody(rawMarkdown).body);
+          return { ...n, rawMarkdown, commands, dateModified: now };
+        };
+
+        const customIds = new Set(state.customNotes.map((n) => n.id));
+        const customHit = state.customNotes.some((n) => byId.has(n.id));
+        const userNotes = state.userNotes || [];
+        const userHit = userNotes.some((n) => byId.has(n.id) && !customIds.has(n.id));
+
+        if (customHit) {
+          set({ customNotes: state.customNotes.map(rewrite) });
+          flushProfileSave();
+        }
+        if (userHit) {
+          const updatedUserNotes = userNotes.map((n) => (customIds.has(n.id) ? n : rewrite(n)));
+          set({ userNotes: updatedUserNotes });
+          // Awaited, and a failure rejects, exactly like updateNoteContent.
+          await saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap: state.userWikilinkMap || {} });
+        }
+
+        return {
+          updated: Array.from(updated),
+          missing: edits.map((e) => e.noteId).filter((id) => !updated.has(id)),
+        };
       },
 
       deleteNote: (noteId) => {
