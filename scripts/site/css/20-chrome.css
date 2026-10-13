@@ -89,3 +89,13 @@
 @media(min-width:900px){.footer-grid{grid-template-columns:2fr 3fr;gap:var(--s7)}.footer-nav{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(hover:hover) and (pointer:fine){.footer-nav a:hover{color:var(--text);text-decoration:underline}}
 @media(min-width:960px) and (max-width:1099px){.bar{gap:var(--s2)}.nav-inline a{padding:6px 5px}}
+@media(min-width:1440px){
+.nav-inline a{font-size:calc(.875rem + 2*var(--f));padding:6px calc(8px + 4*var(--f))}
+.nav-inline{gap:calc(2px + 2*var(--f))}
+.site-header .btn-sm{min-height:calc(36px + 6*var(--f));padding:0 calc(14px + 6*var(--f));font-size:calc(.875rem + 2*var(--f))}
+.brand{font-size:calc(1rem + 3*var(--f))}.brand img{width:calc(32px + 6*var(--f));height:calc(32px + 6*var(--f))}
+.icon-link,.theme-toggle{width:calc(36px + 6*var(--f));height:calc(36px + 6*var(--f))}
+.btn{min-height:calc(44px + 10*var(--f));padding:0 calc(20px + 8*var(--f));font-size:calc(.9375rem + 3*var(--f))}
+.btn .ico{width:calc(16px + 3*var(--f));height:calc(16px + 3*var(--f))}
+.site-footer{font-size:calc(.875rem + 1.5*var(--f))}
+}

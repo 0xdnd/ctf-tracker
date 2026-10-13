@@ -323,7 +323,7 @@ Nmap scan report for 10.129.14.21
         dlg.opener = f;
         dlg.showModal();
       }
-      frames.forEach(function (f) {
+      frames.concat([].slice.call(d.querySelectorAll('.hero .win'))).forEach(function (f) {
         var img = f.querySelector('img');
         if (!img) return;
         f.setAttribute('role', 'button');
