@@ -40,6 +40,36 @@ describe('ipTemplatizer — matching', () => {
     ]);
   });
 
+  it('keeps 4-part versions after ==, word- and package-manager = / @', () => {
+    const md =
+      '```\npip install x==1.2.3.4\nwget pkg-1.2.3.5.tar.gz\nnpm i lib@1.2.3.6\napt install tool=1.2.3.7\n```';
+    const { changes, kept } = analyzeIps(md);
+    expect(changes).toEqual([]);
+    expect(kept.map((k) => [k.ip, k.reason])).toEqual([
+      ['1.2.3.4', 'version string'],
+      ['1.2.3.5', 'version string'],
+      ['1.2.3.6', 'version string'],
+      ['1.2.3.7', 'version string'],
+    ]);
+  });
+
+  it('still replaces IPs after = and @ outside package-manager lines', () => {
+    const out = templatize('```\nssh user@10.129.4.4\ncurl http://x/?host=10.129.4.4\n```');
+    expect(out).toBe('```\nssh user@{TARGET}\ncurl http://x/?host={TARGET}\n```');
+  });
+
+  it('keeps network addresses and ranges', () => {
+    const md = '```\nnmap 10.129.4.0\nnmap 10.129.4.1-254\nnmap 10.129.5.1-10.129.5.9\n```';
+    const { changes, kept } = analyzeIps(md);
+    expect(changes).toEqual([]);
+    expect(kept.map((k) => [k.ip, k.reason])).toEqual([
+      ['10.129.4.0', 'network address'],
+      ['10.129.4.1', 'address range'],
+      ['10.129.5.1', 'address range'],
+      ['10.129.5.9', 'address range'],
+    ]);
+  });
+
   it('never touches frontmatter', () => {
     const md = '---\nip: 10.10.10.5\n---\n```\nnmap 10.10.10.5\n```';
     const out = templatize(md);

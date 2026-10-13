@@ -20,6 +20,7 @@ import {
   type IpTemplatizeAnalysis,
 } from './ipTemplatizer';
 import { isSchemaWriteGated } from './schemaWriteGate';
+import { useCtfStore } from '../store/useCtfStore';
 
 export interface NoteTemplatePlan {
   noteId: string;
@@ -136,6 +137,11 @@ const DB_NAME = 'zerobox_note_templating_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'undo_batches';
 const BATCHES_KEY = 'batches';
+
+/** Undo history is per profile: `batches:<profileId>`. */
+function batchesKey(): string {
+  return `${BATCHES_KEY}:${useCtfStore.getState().currentProfileId || 'guest'}`;
+}
 export const MAX_UNDO_BATCHES = 10;
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -158,12 +164,12 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-async function readBatches(): Promise<TemplateUndoBatch[]> {
+async function readBatches(key: string): Promise<TemplateUndoBatch[]> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(STORE_NAME, 'readonly');
-      const req = tx.objectStore(STORE_NAME).get(BATCHES_KEY);
+      const req = tx.objectStore(STORE_NAME).get(key);
       req.onsuccess = () => {
         const value = req.result as TemplateUndoBatch[] | undefined;
         resolve(Array.isArray(value) ? value : []);
@@ -177,7 +183,7 @@ async function readBatches(): Promise<TemplateUndoBatch[]> {
   });
 }
 
-async function writeBatches(batches: TemplateUndoBatch[]): Promise<void> {
+async function writeBatches(batches: TemplateUndoBatch[], key: string): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -193,7 +199,7 @@ async function writeBatches(batches: TemplateUndoBatch[]): Promise<void> {
       tx.oncomplete = () => done();
       tx.onerror = () => done(tx.error || new Error('Failed to save undo batches'));
       tx.onabort = () => done(tx.error || new Error('Saving undo batches was aborted'));
-      tx.objectStore(STORE_NAME).put(batches, BATCHES_KEY);
+      tx.objectStore(STORE_NAME).put(batches, key);
     } catch (err) {
       done(err || new Error('Failed to save undo batches'));
     }
@@ -226,15 +232,16 @@ export async function saveUndoBatch(
         afterHash: hashContent(e.rawMarkdown),
       })),
   };
-  const existing = await readBatches().catch(() => [] as TemplateUndoBatch[]);
-  await writeBatches([batch, ...existing].slice(0, MAX_UNDO_BATCHES));
+  const key = batchesKey();
+  const existing = await readBatches(key).catch(() => [] as TemplateUndoBatch[]);
+  await writeBatches([batch, ...existing].slice(0, MAX_UNDO_BATCHES), key);
   return batch;
 }
 
 /** Most recent batch first. */
 export async function listUndoBatches(): Promise<TemplateUndoBatch[]> {
   try {
-    return await readBatches();
+    return await readBatches(batchesKey());
   } catch (err) {
     console.warn('[ZeroBox] Could not read IP templating undo history', err);
     return [];
@@ -243,8 +250,9 @@ export async function listUndoBatches(): Promise<TemplateUndoBatch[]> {
 
 export async function deleteUndoBatch(batchId: string): Promise<void> {
   if (isSchemaWriteGated()) return;
-  const existing = await readBatches();
-  await writeBatches(existing.filter((b) => b.id !== batchId));
+  const key = batchesKey();
+  const existing = await readBatches(key);
+  await writeBatches(existing.filter((b) => b.id !== batchId), key);
 }
 
 export interface UndoPlan {

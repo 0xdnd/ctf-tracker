@@ -104,6 +104,16 @@ export const TemplatizeNotesModal: React.FC<TemplatizeNotesModalProps> = ({ open
       // Undo pre-images are written first; if that fails nothing is changed.
       const batch = await saveUndoBatch(edits, beforeById);
       const res = await applyNoteContentBatch(edits);
+      if (res.updated.length === 0) {
+        // Nothing was written, so the undo record would restore nothing.
+        if (batch) await deleteUndoBatch(batch.id).catch(() => undefined);
+        if (soundEnabled) playCyberSound('toggle');
+        setFeedback({
+          type: 'error',
+          message: 'No notes were changed. They may have been edited or removed since the preview; review them and try again.',
+        });
+        return;
+      }
       if (batch) setLastBatch(batch);
       if (soundEnabled) playCyberSound('flag');
       const stale = plans.length - fresh.length;

@@ -179,4 +179,35 @@ describe('TemplatizeNotesModal', () => {
     fireEvent.click(row.querySelectorAll('button')[1]); // {LHOST}
     expect(screen.getByTestId('ip-template-summary').textContent).toContain('2 replacements in 2 of 2 notes');
   });
+
+  it('reports an error, not success, when no note was updated', async () => {
+    const realApply = useCtfStore.getState().applyNoteContentBatch;
+    act(() => useCtfStore.setState({ applyNoteContentBatch: async () => ({ updated: [], missing: ['scan'] }) }));
+    try {
+      renderModal();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /Replace 3 IPs/ }));
+      });
+      await waitFor(() => expect(screen.getByRole('status').textContent).toContain('No notes were changed'));
+      expect(screen.queryByRole('button', { name: /Undo last replacement/ })).toBeNull();
+      expect(await listUndoBatches()).toHaveLength(0);
+    } finally {
+      act(() => useCtfStore.setState({ applyNoteContentBatch: realApply }));
+    }
+  });
+
+  it('keeps undo history per profile', async () => {
+    const original = useCtfStore.getState().currentProfileId;
+    try {
+      act(() => useCtfStore.setState({ currentProfileId: 'profile-a' }));
+      await saveUndoBatch([{ noteId: 'a', rawMarkdown: 'v1' }], { a: { title: 'A', rawMarkdown: 'v0' } });
+      expect(await listUndoBatches()).toHaveLength(1);
+      act(() => useCtfStore.setState({ currentProfileId: 'profile-b' }));
+      expect(await listUndoBatches()).toHaveLength(0);
+      act(() => useCtfStore.setState({ currentProfileId: 'profile-a' }));
+      expect(await listUndoBatches()).toHaveLength(1);
+    } finally {
+      act(() => useCtfStore.setState({ currentProfileId: original }));
+    }
+  });
 });

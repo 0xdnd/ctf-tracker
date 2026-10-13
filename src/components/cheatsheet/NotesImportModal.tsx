@@ -100,13 +100,13 @@ export const NotesImportModal: React.FC = () => {
     wikilinkMap: Record<string, string>,
     message: string,
     kind: PendingImport['kind']
-  ) => {
+  ): Promise<boolean> => {
     if (kind === 'json') {
       const res = await importNotesFromJson(JSON.stringify({ notes, wikilinkMap }));
       if (!res.success) {
         if (soundEnabled) playCyberSound('toggle');
         setFeedback({ type: 'error', message: res.error || 'Failed to parse notes JSON.' });
-        return;
+        return false;
       }
     } else {
       // Save directly to local IndexedDB, then hydrate the in-memory store
@@ -116,6 +116,7 @@ export const NotesImportModal: React.FC = () => {
     }
     if (soundEnabled) playCyberSound('flag');
     setFeedback({ type: 'success', message });
+    return true;
   };
 
   /** Show the IP placeholder review first when the parsed notes contain IPs; otherwise save right away. */
@@ -170,8 +171,8 @@ export const NotesImportModal: React.FC = () => {
       const replaced = useReplacements ? countSelectedReplacements(p.plans, p.selections).occurrences : 0;
       const notes = replaced > 0 ? templatizeParsedNotes(p.notes, p.plans, p.selections) : p.notes;
       const suffix = replaced > 0 ? ` Replaced ${replaced} IP${replaced === 1 ? '' : 's'} with placeholders.` : '';
-      setPendingImport(null);
-      await finishImport(notes, p.wikilinkMap, p.message + suffix, p.kind);
+      // Keep the review open (and the parsed notes) unless the save succeeded.
+      if (await finishImport(notes, p.wikilinkMap, p.message + suffix, p.kind)) setPendingImport(null);
     } catch (err: any) {
       if (soundEnabled) playCyberSound('toggle');
       setFeedback({ type: 'error', message: err?.message || 'Error saving imported notes.' });
