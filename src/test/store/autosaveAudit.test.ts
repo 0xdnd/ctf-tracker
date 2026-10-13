@@ -528,6 +528,28 @@ describe('advisor 1+2: deep-record hydration is profile-guarded and failure-awar
   });
 });
 
+describe("advisor 3: another tab's write supersedes the in-memory copy", () => {
+  it("a STATE_UPDATED reload after a failed write reads the other tab's data, not this tab's stale memory copy", async () => {
+    const row = (id: string) => box(id, { platform: 'HTB', isCustom: undefined });
+    seedStorage([row('htb-zz-a'), row('htb-zz-old')]);
+    const mod = await boot();
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw Object.assign(new Error('quota'), { name: 'QuotaExceededError' });
+    });
+    mod.useCtfStore.getState().updateMachine('htb-zz-a', { ip: '10.10.6.6' });
+    mod.flushProfileSave(); // fails: held in memory
+    spy.mockRestore();
+    expect(JSON.parse(mod.safeLocalStorage.getItem(PROFILE_KEY) as string).machines.some((m: Machine) => m.id === 'htb-zz-old')).toBe(true);
+
+    // Another tab resets: it writes a profile without custom-old, then broadcasts STATE_UPDATED.
+    const reset = JSON.stringify({ machines: [row('htb-zz-a')], activeTargetId: null });
+    localStorage.setItem(PROFILE_KEY, reset);
+    window.dispatchEvent(new StorageEvent('storage', { key: PROFILE_KEY, newValue: reset }));
+    expect(mod.safeLocalStorage.getItem(PROFILE_KEY)).toBe(reset);
+    expect(mod.loadInitialProfileData('guest').machines.some((m: Machine) => m.id === 'htb-zz-old')).toBe(false);
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);
