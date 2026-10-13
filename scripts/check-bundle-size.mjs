@@ -10,7 +10,9 @@ const KB = 1024;
 // Entry measured at 425.8 KB on 2026-10-11 (after lazy-loading overlays/views); limit = +10%, rounded up to 10 KB.
 const MAX_ENTRY_BYTES = 470 * KB;
 // Total JS measured on 2026-10-11 (58 files). Update deliberately when the app grows.
-const BASELINE_TOTAL_BYTES = 2_753_962;
+// re-baselined 2026-10-13: +141 catalog rows (lazy catalog-data) and notes IP templating
+// (CI total 2834.3 KB; exact bytes unknown, so rounded up to 2_902_400).
+const BASELINE_TOTAL_BYTES = 2_902_400;
 const MAX_TOTAL_BYTES = Math.floor(BASELINE_TOTAL_BYTES * 1.05);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
