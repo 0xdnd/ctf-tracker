@@ -351,7 +351,9 @@ export const useAuthStore = create<AuthState>()(
           const parsed = JSON.parse(guestDataStr);
           const payload = parsed.state || parsed;
           const targetKey = `zerobox_operator_profile_${destId}`;
-          localStorage.setItem(targetKey, JSON.stringify(payload));
+          // A fresh stamp: guest's savedAt says nothing about this profile, and an older one would let the
+          // destination's stale IndexedDB copy win at the next boot (restoreFromResilientCopy).
+          localStorage.setItem(targetKey, JSON.stringify({ ...payload, savedAt: new Date().toISOString() }));
           useCtfStore.getState().loadProfileData(destId);
           set({ guestDataMigrated: true });
           const count = Array.isArray(payload.machines) ? payload.machines.length : 0;
