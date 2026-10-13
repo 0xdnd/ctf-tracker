@@ -1046,6 +1046,9 @@ export const mergeMachinesWithCatalog = (
             ...catalogMachine,
             ...m,
             ...customFlag,
+            // Catalog wins for catalog rows: a machine stored as active that retired since (left activeMachines.json,
+            // now a plain catalog row) stops being name-only. Still-active names are re-flagged below.
+            isActive: catalogMachine.isActive === true,
             status: m.status || 'unsolved',
             userFlag: m.userFlag,
             rootFlag: m.rootFlag,
@@ -1080,6 +1083,9 @@ export const mergeMachinesWithCatalog = (
             ...catalogMachine,
             ...m,
             ...customFlag,
+            // Catalog wins for catalog rows: a machine stored as active that retired since (left activeMachines.json,
+            // now a plain catalog row) stops being name-only. Still-active names are re-flagged below.
+            isActive: catalogMachine.isActive === true,
             status: userHasProgress ? mStatus : 'backlog',
             userFlag: m.userFlag || '',
             rootFlag: m.rootFlag || '',
