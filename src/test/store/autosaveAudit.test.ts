@@ -2,7 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Machine } from '../../types';
 import { SCHEMA_VERSION } from '../../utils/schemaWriteGate';
 
-const idb = vi.hoisted(() => ({ workspace: new Map<string, unknown>() }));
+const idb = vi.hoisted(() => ({ workspace: new Map<string, unknown>(), deep: new Map<string, any>() }));
+vi.mock('../../utils/indexedDbDeepStorage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/indexedDbDeepStorage')>()),
+  loadDeepProfileData: vi.fn(async (id: string) => idb.deep.get(id) ?? null),
+  saveDeepProfileData: vi.fn(async (id: string, data: unknown) => {
+    idb.deep.set(id, JSON.parse(JSON.stringify(data)));
+  }),
+}));
 vi.mock('../../utils/resilientStorage', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../utils/resilientStorage')>()),
   loadWorkspaceFromIdb: vi.fn(async (key: string) => idb.workspace.get(key) ?? null),
@@ -67,6 +74,7 @@ const ids = (machines: Machine[]) => machines.map((m) => m.id);
 beforeEach(() => {
   localStorage.clear();
   idb.workspace.clear();
+  idb.deep.clear();
 });
 
 afterEach(() => {
@@ -319,6 +327,40 @@ describe('item 7: attack graph storage is per profile', () => {
     expect(localStorage.getItem('zerobox_graph_state_p1')).toBeNull();
     const reloaded = await boot();
     expect(edgeIds(reloaded)).toEqual([]);
+  });
+});
+
+describe('item 8: deleted writeups and notes stay deleted', () => {
+  it('clearing the last writeup writes an empty deep record, so a reload does not refill it', async () => {
+    seedStorage([box('custom-mine', { writeupMarkdown: 'old body' })]);
+    idb.deep.set('guest', { writeups: { 'custom-mine': { writeupMarkdown: 'old body' } }, customNotes: [] });
+    const mod = await boot();
+    await vi.waitFor(() => expect(mod.useCtfStore.getState().isDeepStorageLoaded).toBe(true));
+    mod.useCtfStore.getState().updateMachine('custom-mine', { writeupMarkdown: '' });
+    mod.flushProfileSave();
+    expect(idb.deep.get('guest').writeups).toEqual({});
+
+    const reloaded = await boot();
+    await vi.waitFor(() => expect(reloaded.useCtfStore.getState().isDeepStorageLoaded).toBe(true));
+    expect(reloaded.useCtfStore.getState().machines.find((m) => m.id === 'custom-mine')?.writeupMarkdown || '').toBe('');
+  });
+
+  it('an intentionally empty notes list is not refilled from the deep record', async () => {
+    seedStorage([box('custom-mine')]);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ machines: [box('custom-mine')], customNotes: [] }));
+    idb.deep.set('guest', { writeups: {}, customNotes: [{ id: 'note-deleted', title: 'gone' }] });
+    const mod = await boot();
+    await vi.waitFor(() => expect(mod.useCtfStore.getState().isDeepStorageLoaded).toBe(true));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mod.useCtfStore.getState().customNotes).toEqual([]);
+  });
+
+  it('does not write the deep record before it has loaded (would erase IndexedDB-only bodies)', async () => {
+    seedStorage([box('custom-mine')]);
+    const mod = await boot();
+    mod.useCtfStore.setState({ isDeepStorageLoaded: false });
+    mod.flushProfileSave();
+    expect(idb.deep.has('guest')).toBe(false);
   });
 });
 
