@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ZoomIn, 
@@ -25,7 +25,7 @@ import { EditableIpBadge } from '../common/EditableIpBadge';
 import { LINUX_TUX_PATH } from '../common/OsBadge';
 import { classifyMachine } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
-import { AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
+import { AttackNodePosition, AttackGraphEdge, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
 import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
 import { computeAutoLayout } from '../../utils/graphAutoLayout';
@@ -55,6 +55,34 @@ export interface ClusterDef {
   angle: number;
   radius: number;
   color: string;
+  /** Explicit hub position (SHOW ALL layout); the scoped layout derives it from angle/radius. */
+  x?: number;
+  y?: number;
+}
+
+export interface ClusterTemplate {
+  id: string;
+  name: string;
+  color: string;
+  matcher: (m: Machine) => boolean;
+}
+
+export interface WorldBounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+// Scoped layout lives entirely inside the 1600x1200 SVG basis
+const SCOPED_BOUNDS: WorldBounds = { minX: 0, minY: 0, maxX: 1600, maxY: 1200 };
+
+// Hub position of a cluster in world coordinates (rig is at 800, 600)
+export function getClusterHub(c: ClusterDef): { x: number; y: number } {
+  return {
+    x: c.x ?? 800 + Math.cos(c.angle) * c.radius,
+    y: c.y ?? 600 + Math.sin(c.angle) * c.radius,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -390,16 +418,173 @@ const ANDROID_PATH = "M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.99
 const BSD_PATH = "M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm-2.2 4.5c.5 0 .9.2 1.2.5.3.3.4.7.4 1.1 0 .6-.3 1.2-.7 1.6-.4.4-1 .6-1.6.6-.7 0-1.3-.2-1.7-.7-.4-.5-.6-1.1-.6-1.8 0-.4.1-.7.4-.9.3-.2.7-.4 1-.4zm6.4 0c.4 0 .8.2 1.1.4.3.2.4.5.4.9 0 .7-.2 1.3-.6 1.8-.4.5-1 .7-1.7.7-.6 0-1.2-.2-1.6-.6-.4-.4-.7-1-.7-1.6 0-.4.1-.8.4-1.1.3-.3.7-.5 1.3-.5zM12 18.2c-3.1 0-5.5-2-5.7-4.7h11.4c-.2 2.7-2.6 4.7-5.7 4.7z";
 
 // ---------------------------------------------------------------------------
+// Large-graph performance thresholds
+// ---------------------------------------------------------------------------
+// Below this committed zoom (and above LARGE_GRAPH_NODE_COUNT nodes) distant cards render compact.
+export const LOD_SCALE_THRESHOLD = 0.6;
+// Above this many visible nodes: pulse animations stop and off-screen cards are culled.
+export const LARGE_GRAPH_NODE_COUNT = 60;
+// Below this zoom (large graphs only) cards collapse to a bare status-coloured rect.
+export const LOD_DOT_SCALE_THRESHOLD = 0.3;
+// SHOW ALL spans a much larger world, so it may zoom out further than the scoped view (0.2).
+const MIN_SCALE_SCOPED = 0.2;
+const MIN_SCALE_SHOW_ALL = 0.05;
+
+// ---------------------------------------------------------------------------
+// SHOW ALL layout: every machine in its matching cluster (no capacity cap), packed in a
+// grid of cells around the cluster hub. Deterministic; positions never overlap.
+// ---------------------------------------------------------------------------
+export const SHOW_ALL_CELL_W = 200;
+export const SHOW_ALL_CELL_H = 104;
+const SHOW_ALL_HUB_GAP = 110;
+const SHOW_ALL_BOUNDS_PADDING = 80;
+
+export interface ShowAllLayout {
+  positions: Record<string, AttackNodePosition>;
+  clusters: ClusterDef[];
+  clusterOf: Record<string, string>;
+  bounds: WorldBounds;
+}
+
+export function computeShowAllLayout(machines: Machine[], templates: ClusterTemplate[]): ShowAllLayout {
+  const positions: Record<string, AttackNodePosition> = {};
+  const clusterOf: Record<string, string> = {};
+  if (machines.length === 0 || templates.length === 0) {
+    return { positions, clusters: [], clusterOf, bounds: SCOPED_BOUNDS };
+  }
+
+  const buckets = new Map<string, Machine[]>();
+  templates.forEach((t) => buckets.set(t.id, []));
+  const fallback = templates[templates.length - 1];
+  machines.forEach((m) => {
+    const t = templates.find((c) => c.matcher(m)) ?? fallback;
+    buckets.get(t.id)!.push(m);
+    clusterOf[m.id] = t.id;
+  });
+
+  const active = templates.filter((t) => buckets.get(t.id)!.length > 0);
+  const count = active.length;
+  const blocks = active.map((t, idx) => {
+    const list = buckets.get(t.id)!;
+    const cols = Math.ceil(Math.sqrt(list.length));
+    const rows = Math.ceil(list.length / cols);
+    return {
+      t,
+      list,
+      cols,
+      w: cols * SHOW_ALL_CELL_W,
+      h: rows * SHOW_ALL_CELL_H,
+      angle: -Math.PI / 2 + (idx * 2 * Math.PI) / count,
+    };
+  });
+
+  type Box = { l: number; t: number; r: number; b: number };
+  const overlaps = (a: Box, b: Box, margin: number) =>
+    a.l < b.r + margin && b.l < a.r + margin && a.t < b.b + margin && b.t < a.b + margin;
+  const rigBox: Box = { l: 800 - 130, t: 600 - 100, r: 800 + 130, b: 600 + 100 };
+
+  // Hubs sit on a ring; each block extends outward from its hub (clear of the hub label)
+  const place = (ringRadius: number) =>
+    blocks.map((b) => {
+      const dx = Math.cos(b.angle);
+      const dy = Math.sin(b.angle);
+      const hubX = Math.round(800 + dx * ringRadius);
+      const hubY = Math.round(600 + dy * ringRadius);
+      const reach = Math.abs(dx) * (b.w / 2) + Math.abs(dy) * (b.h / 2) + SHOW_ALL_HUB_GAP;
+      const left = Math.round(hubX + dx * reach - b.w / 2);
+      const top = Math.round(hubY + dy * reach - b.h / 2);
+      const block: Box = { l: left, t: top, r: left + b.w, b: top + b.h };
+      const hubBox: Box = { l: hubX - 90, t: hubY - 50, r: hubX + 90, b: hubY + 50 };
+      const foot: Box = {
+        l: Math.min(block.l, hubBox.l),
+        t: Math.min(block.t, hubBox.t),
+        r: Math.max(block.r, hubBox.r),
+        b: Math.max(block.b, hubBox.b),
+      };
+      return { hubX, hubY, block, foot };
+    });
+
+  // Smallest ring (50-unit steps) where no two cluster footprints touch each other or the rig
+  let ringRadius = 300;
+  let placed = place(ringRadius);
+  const isClear = (p: typeof placed) => {
+    for (let i = 0; i < p.length; i++) {
+      if (overlaps(p[i].foot, rigBox, 40)) return false;
+      for (let j = i + 1; j < p.length; j++) {
+        if (overlaps(p[i].foot, p[j].foot, 60)) return false;
+      }
+    }
+    return true;
+  };
+  while (!isClear(placed) && ringRadius < 200000) {
+    ringRadius += 50;
+    placed = place(ringRadius);
+  }
+
+  const clusters: ClusterDef[] = [];
+  let minX = rigBox.l;
+  let minY = rigBox.t;
+  let maxX = rigBox.r;
+  let maxY = rigBox.b;
+  blocks.forEach((b, i) => {
+    const p = placed[i];
+    clusters.push({
+      id: b.t.id,
+      name: b.t.name,
+      angle: b.angle,
+      radius: ringRadius,
+      color: b.t.color,
+      x: p.hubX,
+      y: p.hubY,
+    });
+    b.list.forEach((m, idx) => {
+      const col = idx % b.cols;
+      const row = Math.floor(idx / b.cols);
+      positions[m.id] = {
+        x: p.block.l + SHOW_ALL_CELL_W / 2 + col * SHOW_ALL_CELL_W,
+        y: p.block.t + SHOW_ALL_CELL_H / 2 + row * SHOW_ALL_CELL_H,
+      };
+    });
+    minX = Math.min(minX, p.foot.l);
+    minY = Math.min(minY, p.foot.t);
+    maxX = Math.max(maxX, p.foot.r);
+    maxY = Math.max(maxY, p.foot.b);
+  });
+
+  return {
+    positions,
+    clusters,
+    clusterOf,
+    bounds: {
+      minX: minX - SHOW_ALL_BOUNDS_PADDING,
+      minY: minY - SHOW_ALL_BOUNDS_PADDING,
+      maxX: maxX + SHOW_ALL_BOUNDS_PADDING,
+      maxY: maxY + SHOW_ALL_BOUNDS_PADDING,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Pure SVG Machine Node Card (<AttackNodeCard>)
 // ---------------------------------------------------------------------------
 export interface AttackNodeCardProps {
   node: GraphNode;
+  /** Live world position; falls back to node.x / node.y so node identity can stay stable across drags. */
+  x?: number;
+  y?: number;
+  /** Render SMIL pulse animations (disabled on large graphs). */
+  animate?: boolean;
+  /** Level-of-detail tier; selected / hovered / focused / connecting-source cards always render full. */
+  lod?: 'full' | 'compact' | 'dot';
+  isFocused?: boolean;
   isSelected: boolean;
   isHovered: boolean;
   isConnectingSource?: boolean;
   tokens: CanvasThemeTokens;
   onSelect: (node: GraphNode) => void;
   onHover: (nodeId: string | null) => void;
+  /** Keyboard focus tracking so the focused card is never culled out from under the user. */
+  onFocusChange?: (nodeId: string | null) => void;
   onPointerDown: (e: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
   onPointerMove?: (e: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
   onPointerUp?: (e: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
@@ -407,12 +592,18 @@ export interface AttackNodeCardProps {
 
 export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
   node,
+  x: xProp,
+  y: yProp,
+  animate = true,
+  lod = 'full',
+  isFocused = false,
   isSelected,
   isHovered,
   isConnectingSource,
   tokens,
   onSelect,
   onHover,
+  onFocusChange,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -431,9 +622,14 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
   const diffColors = getDifficultyColors(node.difficulty, isDark);
   const ports = extractMachinePorts(node.machine);
 
-  // Card geometry: 180w x 84h centered at (node.x, node.y)
-  const cardX = node.x - 90;
-  const cardY = node.y - 42;
+  // Card geometry: 180w x 84h centered at (x, y)
+  const x = xProp ?? node.x;
+  const y = yProp ?? node.y;
+  const cardX = x - 90;
+  const cardY = y - 42;
+  // Compact name: 10 glyphs max at 16px (<= ~160px even for wide letters) so it stays inside the 180px rect
+  const compactName = node.name.length > 10 ? `${node.name.slice(0, 9)}…` : node.name;
+  const tier = isSelected || isHovered || isConnectingSource || isFocused ? 'full' : lod;
 
   return (
     <g
@@ -448,6 +644,8 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       onPointerDown={(e) => onPointerDown(e, node)}
       onPointerMove={(e) => onPointerMove?.(e, node)}
       onPointerUp={(e) => onPointerUp?.(e, node)}
+      onFocus={() => onFocusChange?.(node.id)}
+      onBlur={() => onFocusChange?.(null)}
       onMouseEnter={() => onHover(node.id)}
       onMouseLeave={() => onHover(null)}
       onClick={(e) => {
@@ -462,6 +660,47 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         }
       }}
     >
+      {tier === 'dot' ? (
+        /* LOD (far zoom): same footprint, bare status-colored rect, no text */
+        <rect
+          x={cardX}
+          y={cardY}
+          width="180"
+          height="84"
+          rx="8"
+          fill={statusColor}
+          fillOpacity="0.85"
+          stroke={statusColor}
+          strokeWidth="1.5"
+        />
+      ) : tier === 'compact' ? (
+        <>
+          {/* LOD: same 180x84 footprint, status-colored outline, name only */}
+          <rect
+            x={cardX}
+            y={cardY}
+            width="180"
+            height="84"
+            rx="8"
+            fill={tokens.cardBg}
+            stroke={statusColor}
+            strokeWidth="1.5"
+          />
+          <text
+            x={x}
+            y={y + 6}
+            fill={tokens.textPrimary}
+            fontSize="16"
+            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            fontWeight="600"
+            textAnchor="middle"
+            className="pointer-events-none select-none"
+          >
+            {compactName}
+          </text>
+        </>
+      ) : (
+      <>
       {/* Connecting Source Pulse Ring */}
       {isConnectingSource && (
         <rect
@@ -594,7 +833,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
 
       {/* Status Beacon (Hardware-grade concentric LED beacon with subtle pulse) */}
       <g transform={`translate(${cardX + 164}, ${cardY + 16})`} className="pointer-events-none">
-        {isRooted && (
+        {isRooted && animate && (
           <circle
             cx="0"
             cy="0"
@@ -687,7 +926,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       {/* Row 3: Active Open Ports Preview */}
       {ports.length === 0 ? (
         <text
-          x={node.x}
+          x={x}
           y={cardY + 70}
           fill={tokens.textMuted}
           fontSize="7.5"
@@ -770,16 +1009,47 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       )}
 
       {/* Cardinal Docking Anchors (Top, Right, Bottom, Left) - Ready for Milestone 3 Edges */}
-      <circle cx={node.x} cy={cardY} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-      <circle cx={cardX + 180} cy={node.y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-      <circle cx={node.x} cy={cardY + 84} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-      <circle cx={cardX} cy={node.y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
+      <circle cx={x} cy={cardY} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
+      <circle cx={cardX + 180} cy={y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
+      <circle cx={x} cy={cardY + 84} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
+      <circle cx={cardX} cy={y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
 
       {/* Native Browser Tooltip */}
       <title>{`${node.name} (${node.ip}) · ${node.os} · ${node.difficulty} · ${node.status}`}</title>
+      </>
+      )}
     </g>
   );
 });
+
+// ---------------------------------------------------------------------------
+// Viewport culling predicate: true when the 180x84 card at (x, y) lies fully outside rect.
+// Exempt cards (selected, hovered, focused, connecting source, being dragged) are never culled.
+// ---------------------------------------------------------------------------
+export function isNodeCulled(
+  rect: { minX: number; maxX: number; minY: number; maxY: number } | null,
+  x: number,
+  y: number,
+  exempt: boolean
+): boolean {
+  if (!rect || exempt) return false;
+  return x + 90 < rect.minX || x - 90 > rect.maxX || y + 42 < rect.minY || y - 42 > rect.maxY;
+}
+
+// Three-way culling: 'culled' (outside the margin-expanded rect), 'ring' (inside the margin
+// but outside the real visible rect, rendered cheap) or 'visible'. Exempt cards are always visible.
+export function nodeVisibility(
+  rect: { minX: number; maxX: number; minY: number; maxY: number } | null,
+  innerRect: { minX: number; maxX: number; minY: number; maxY: number } | null,
+  x: number,
+  y: number,
+  exempt: boolean
+): 'culled' | 'ring' | 'visible' {
+  if (!rect || exempt) return 'visible';
+  if (isNodeCulled(rect, x, y, false)) return 'culled';
+  if (!innerRect || !isNodeCulled(innerRect, x, y, false)) return 'visible';
+  return 'ring';
+}
 
 // ---------------------------------------------------------------------------
 // Analytical Coordinate Delta Fallback Helper
@@ -802,6 +1072,114 @@ export function computeCanvasDelta(
 }
 
 // ---------------------------------------------------------------------------
+// Minimap static layers (memoized: unaffected by pan/zoom commits)
+// ---------------------------------------------------------------------------
+interface MinimapStaticLayersProps {
+  tokens: CanvasThemeTokens;
+  clusters: ClusterDef[];
+  graphEdges: AttackGraphEdge[];
+  allNodes: GraphNode[];
+  visibleNodes: GraphNode[];
+  graphNodePositions: Record<string, AttackNodePosition>;
+  defaultNodePositions: Record<string, AttackNodePosition>;
+  transientNodePos: { id: string; x: number; y: number } | null;
+  selectedNodeId: string | null;
+  /** World rect shown by the minimap (4:3) and the size multiplier of its fixed-size glyphs. */
+  bounds: { x: number; y: number; w: number; h: number };
+  unit: number;
+}
+
+const MinimapStaticLayers = React.memo(({
+  tokens,
+  clusters,
+  graphEdges,
+  allNodes,
+  visibleNodes,
+  graphNodePositions,
+  defaultNodePositions,
+  transientNodePos,
+  selectedNodeId,
+  bounds,
+  unit,
+}: MinimapStaticLayersProps) => {
+  const nodeById = useMemo(() => new Map(allNodes.map((n) => [n.id, n])), [allNodes]);
+
+  return (
+    <>
+      {/* Radar grid rings */}
+      <circle cx="800" cy="600" r={300 * unit} fill="none" stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
+      <circle cx="800" cy="600" r={520 * unit} fill="none" stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
+      <line x1="800" y1={bounds.y} x2="800" y2={bounds.y + bounds.h} stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
+      <line x1={bounds.x} y1="600" x2={bounds.x + bounds.w} y2="600" stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
+
+      {/* Subnet cluster hubs on radar */}
+      {clusters.map((c) => {
+        const hub = getClusterHub(c);
+        return (
+          <circle key={`mini-cluster-${c.id}`} cx={hub.x} cy={hub.y} r={28 * unit} fill={c.color} opacity="0.4" />
+        );
+      })}
+
+      {/* Operator Rig on radar */}
+      <circle cx="800" cy="600" r={28 * unit} fill="#10B981" opacity="0.8" />
+
+      {/* Attack Vectors on radar */}
+      {graphEdges.map((e) => {
+        const s = nodeById.get(e.sourceId);
+        const t = nodeById.get(e.targetId);
+        if (!s || !t) return null;
+        const sx = graphNodePositions[s.id]?.x ?? defaultNodePositions[s.id]?.x ?? s.x;
+        const sy = graphNodePositions[s.id]?.y ?? defaultNodePositions[s.id]?.y ?? s.y;
+        const tx = graphNodePositions[t.id]?.x ?? defaultNodePositions[t.id]?.x ?? t.x;
+        const ty = graphNodePositions[t.id]?.y ?? defaultNodePositions[t.id]?.y ?? t.y;
+        const m = ATTACK_EDGE_META[e.type];
+        return (
+          <line
+            key={`mini-edge-${e.id}`}
+            x1={sx}
+            y1={sy}
+            x2={tx}
+            y2={ty}
+            stroke={m?.color || '#00F0FF'}
+            strokeWidth={8 * unit}
+            opacity="0.7"
+          />
+        );
+      })}
+
+      {/* Machine nodes on radar */}
+      {visibleNodes.map((n) => {
+        const nx = transientNodePos?.id === n.id
+          ? transientNodePos.x
+          : (graphNodePositions[n.id]?.x ?? defaultNodePositions[n.id]?.x ?? n.x);
+        const ny = transientNodePos?.id === n.id
+          ? transientNodePos.y
+          : (graphNodePositions[n.id]?.y ?? defaultNodePositions[n.id]?.y ?? n.y);
+
+        const isRoot = n.status === 'root' || n.status === 'completed';
+        const isFoot = n.status === 'foothold';
+        const dotColor = isRoot ? tokens.statusRoot : isFoot ? tokens.statusFoothold : tokens.statusUnsolved;
+        const isSel = selectedNodeId === n.id;
+
+        return (
+          <circle
+            key={`mini-node-${n.id}`}
+            cx={nx}
+            cy={ny}
+            r={(isSel ? 28 : 18) * unit}
+            fill={dotColor}
+            opacity={isSel ? '1' : '0.85'}
+            stroke={isSel ? '#FFFFFF' : 'none'}
+            strokeWidth={4 * unit}
+          />
+        );
+      })}
+    </>
+  );
+});
+MinimapStaticLayers.displayName = 'MinimapStaticLayers';
+
+// ---------------------------------------------------------------------------
 // Primary Attack Graph Component (<GraphView>)
 // ---------------------------------------------------------------------------
 export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) => {
@@ -811,7 +1189,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   
   // Zustand Store Slice for M1/M2 coordinate persistence & M3 edges
   const allMachines = useCtfStore((s) => s.machines);
-  const graphNodePositions = useCtfStore((s) => s.graphNodePositions);
+  const storedNodePositions = useCtfStore((s) => s.graphNodePositions);
   const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
   const graphEdges = useCtfStore((s) => s.graphEdges);
   // Undo/redo: recorded replacements for the store's edge + node-position mutators
@@ -841,12 +1219,43 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const [isCanvasDragging, setIsCanvasDragging] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMinimapOpen, setIsMinimapOpen] = useState(true);
   const [showAllNodes, setShowAllNodes] = useState(false);
+  // SHOW ALL has its own world: it ignores the persisted (scoped) positions and keeps drags local,
+  // so neither view can leak coordinates into the other. Cleared when SHOW ALL is turned off.
+  const [showAllDragPositions, setShowAllDragPositions] = useState<Record<string, AttackNodePosition>>({});
+  const showAllRef = useRef(false);
+  showAllRef.current = showAllNodes;
+  // Single mode-aware source of user-moved positions for every position read below
+  const graphNodePositions = showAllNodes ? showAllDragPositions : storedNodePositions;
 
   // Transient local node dragging position buffer (120 FPS performance)
   const [transientNodePos, setTransientNodePos] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  // Live viewport engine: during pan/wheel gestures the view lives in viewRef and is written
+  // straight to the DOM; pan/scale state is committed at gesture end (see commitLiveView).
+  const viewRef = useRef({ x: 0, y: 0, scale: 1 });
+  const viewportGRef = useRef<SVGGElement>(null);
+  const minimapRectRef = useRef<SVGRectElement>(null);
+  const viewDirtyRef = useRef(false);
+  const panRafRef = useRef<number | null>(null);
+  const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCullAtRef = useRef(0);
+  // True while the graph is large: gestures then refresh the throttled live view (LOD tier + culling)
+  const liveViewEnabledRef = useRef(false);
+  // View + SVG size the last render's LOD tier / culling were computed from
+  const appliedViewRef = useRef({ x: 0, y: 0, scale: 1 });
+  const viewSizeRef = useRef<{ w: number; h: number } | null>(null);
+  const minScaleRef = useRef(MIN_SCALE_SCOPED);
+  const layoutBoundsRef = useRef<WorldBounds>(SCOPED_BOUNDS);
+  // Scoped view saved when SHOW ALL is entered, restored when leaving it
+  const scopedViewRef = useRef<{ x: number; y: number; scale: number } | null>(null);
+  // Throttled view used only for culling while a gesture is in flight (null when idle)
+  const [liveCullView, setLiveCullView] = useState<{ x: number; y: number; scale: number } | null>(null);
+  // Measured SVG size; null when unmeasurable (jsdom), which keeps culling off
+  const [viewSize, setViewSize] = useState<{ w: number; h: number } | null>(null);
 
   // Canvas Panning Ref
   const canvasPanRef = useRef<{
@@ -902,9 +1311,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     return allMachines.length > 0 ? allMachines : filteredMachines;
   }, [allMachines, filteredMachines]);
 
-  const { clusters, defaultNodePositions, allNodes } = useMemo(() => {
+  const { clusters, defaultNodePositions, allNodes, layoutBounds } = useMemo(() => {
     const sample = showAllNodes ? universeMachines : universeMachines.slice(0, 48);
-    if (sample.length === 0) return { clusters: [], defaultNodePositions: {}, allNodes: [] };
+    if (sample.length === 0) return { clusters: [], defaultNodePositions: {}, allNodes: [], layoutBounds: SCOPED_BOUNDS };
 
     // Subnet Templates
     const hasOnlyWeb = sample.every(m => classifyMachine(m).primary.startsWith('Web'));
@@ -914,7 +1323,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     const htbCount = sample.filter(m => m.platform === 'HTB').length;
     const isMajorityHtb = htbCount >= sample.length * 0.55;
 
-    type RawCluster = { id: string; name: string; color: string; matcher: (m: Machine) => boolean };
+    type RawCluster = ClusterTemplate;
     let clusterTemplates: RawCluster[] = [];
 
     if (hasOnlyWeb) {
@@ -962,6 +1371,30 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         { id: 'ad-forest', name: 'CORP.LOCAL [Active Directory]', color: '#A855F7', matcher: (m) => classifyMachine(m).isAD },
         { id: 'internal-lab', name: '192.168.x.x [Internal Pivots]', color: '#F59E0B', matcher: () => true },
       ];
+    }
+
+    // SHOW ALL: dedicated packed layout (the scoped layout below is untouched)
+    if (showAllNodes) {
+      const layout = computeShowAllLayout(sample, clusterTemplates);
+      const showAllNodesList: GraphNode[] = sample.map((m) => ({
+        id: m.id,
+        name: m.name,
+        ip: m.ip,
+        os: m.os,
+        platform: m.platform,
+        difficulty: m.difficulty,
+        status: m.status,
+        cluster: layout.clusterOf[m.id],
+        x: layout.positions[m.id].x,
+        y: layout.positions[m.id].y,
+        machine: m,
+      }));
+      return {
+        clusters: layout.clusters,
+        defaultNodePositions: layout.positions,
+        allNodes: showAllNodesList,
+        layoutBounds: layout.bounds,
+      };
     }
 
     const MAX_CAPACITY = 8;
@@ -1108,7 +1541,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       positions[m.id] = { x, y };
     });
 
-    return { clusters: activeClusters, defaultNodePositions: positions, allNodes: initialNodes };
+    return { clusters: activeClusters, defaultNodePositions: positions, allNodes: initialNodes, layoutBounds: SCOPED_BOUNDS };
   }, [universeMachines, showAllNodes]);
 
   // Set of machine IDs currently matching active search/tag filters
@@ -1120,6 +1553,93 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const visibleNodes = useMemo(() => {
     return allNodes.filter((n) => visibleMachineIds.has(n.id));
   }, [allNodes, visibleMachineIds]);
+
+  // Cluster hub lookup (id -> cluster + hub coordinates), replaces per-node clusters.find()
+  const clusterHubs = useMemo(() => {
+    const map = new Map<string, { cluster: ClusterDef; x: number; y: number }>();
+    clusters.forEach((c) => {
+      const hub = getClusterHub(c);
+      map.set(c.id, { cluster: c, x: hub.x, y: hub.y });
+    });
+    return { map, first: clusters.length > 0 ? map.get(clusters[0].id) : undefined };
+  }, [clusters]);
+
+  // Cluster of the hovered node (drives hub highlight without a per-cluster scan)
+  const hoveredClusterId = hoveredNodeId
+    ? visibleNodes.find((n) => n.id === hoveredNodeId)?.cluster
+    : undefined;
+
+  // Large-graph performance modes
+  const isLargeGraph = visibleNodes.length > LARGE_GRAPH_NODE_COUNT;
+  // LOD tier follows the throttled live view during gestures, the committed scale otherwise
+  const tierScale = liveCullView?.scale ?? scale;
+  const lodTier: 'full' | 'compact' | 'dot' = !isLargeGraph
+    ? 'full'
+    : tierScale < LOD_DOT_SCALE_THRESHOLD
+    ? 'dot'
+    : tierScale < LOD_SCALE_THRESHOLD
+    ? 'compact'
+    : 'full';
+  const animatePulses = !isLargeGraph;
+  liveViewEnabledRef.current = isLargeGraph;
+  appliedViewRef.current = liveCullView ?? { x: pan.x, y: pan.y, scale };
+  viewSizeRef.current = viewSize;
+  const minScale = showAllNodes ? MIN_SCALE_SHOW_ALL : MIN_SCALE_SCOPED;
+  minScaleRef.current = minScale;
+  layoutBoundsRef.current = layoutBounds;
+
+  // World bounds: layout bounds extended by persisted (user-moved) positions. Scoped stays 1600x1200.
+  const worldBounds = useMemo<WorldBounds>(() => {
+    if (!showAllNodes) return SCOPED_BOUNDS;
+    let { minX, minY, maxX, maxY } = layoutBounds;
+    allNodes.forEach((n) => {
+      const p = graphNodePositions[n.id];
+      if (!p) return;
+      minX = Math.min(minX, p.x - 90 - SHOW_ALL_BOUNDS_PADDING);
+      maxX = Math.max(maxX, p.x + 90 + SHOW_ALL_BOUNDS_PADDING);
+      minY = Math.min(minY, p.y - 42 - SHOW_ALL_BOUNDS_PADDING);
+      maxY = Math.max(maxY, p.y + 42 + SHOW_ALL_BOUNDS_PADDING);
+    });
+    return { minX, minY, maxX, maxY };
+  }, [showAllNodes, layoutBounds, allNodes, graphNodePositions]);
+
+  // Minimap shows the whole world, expanded to the 4:3 basis so it never letterboxes
+  const minimapBounds = useMemo(() => {
+    let x = worldBounds.minX;
+    let y = worldBounds.minY;
+    let w = worldBounds.maxX - worldBounds.minX;
+    let h = worldBounds.maxY - worldBounds.minY;
+    if (w * 3 > h * 4) {
+      const newH = (w * 3) / 4;
+      y -= (newH - h) / 2;
+      h = newH;
+    } else {
+      const newW = (h * 4) / 3;
+      x -= (newW - w) / 2;
+      w = newW;
+    }
+    return { x, y, w, h, unit: w / 1600 };
+  }, [worldBounds]);
+
+  // World-space rect (visible area + one viewport margin per side) used to cull off-screen cards
+  const cullRect = useMemo(() => {
+    if (!isLargeGraph || !viewSize) return null;
+    const v = liveCullView ?? { x: pan.x, y: pan.y, scale };
+    // SVG viewBox 1600x1200 with default xMidYMid meet
+    const aspect = Math.min(viewSize.w / 1600, viewSize.h / 1200) || 1;
+    const ox = (viewSize.w - 1600 * aspect) / 2;
+    const oy = (viewSize.h - 1200 * aspect) / 2;
+    const minX = (-ox / aspect - v.x) / v.scale;
+    const maxX = ((viewSize.w - ox) / aspect - v.x) / v.scale;
+    const minY = (-oy / aspect - v.y) / v.scale;
+    const maxY = ((viewSize.h - oy) / aspect - v.y) / v.scale;
+    const mw = maxX - minX;
+    const mh = maxY - minY;
+    return {
+      outer: { minX: minX - mw, maxX: maxX + mw, minY: minY - mh, maxY: maxY + mh },
+      inner: { minX, maxX, minY, maxY },
+    };
+  }, [isLargeGraph, viewSize, liveCullView, pan, scale]);
 
   // ---------------------------------------------------------------------------
   // 2. Coordinate Delta Translation Engine
@@ -1133,15 +1653,123 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           const dxSvg = screenDx * inv.a + screenDy * inv.c;
           const dySvg = screenDx * inv.b + screenDy * inv.d;
           return {
-            dx: dxSvg / scale,
-            dy: dySvg / scale,
+            dx: dxSvg / viewRef.current.scale,
+            dy: dySvg / viewRef.current.scale,
           };
         } catch {}
       }
     }
     const rect = containerRef.current?.getBoundingClientRect();
-    return computeCanvasDelta(screenDx, screenDy, scale, rect);
-  }, [scale]);
+    return computeCanvasDelta(screenDx, screenDy, viewRef.current.scale, rect);
+  }, []);
+
+  // Keeps dragged cards inside the layout's world (scoped: 90..1510 x 50..1150)
+  const clampNodePos = useCallback((x: number, y: number) => {
+    const b = layoutBoundsRef.current;
+    return {
+      x: Math.round(Math.max(b.minX + 90, Math.min(b.maxX - 90, x))),
+      y: Math.round(Math.max(b.minY + 50, Math.min(b.maxY - 50, y))),
+    };
+  }, []);
+
+  // Pushes the live view to the viewport <g> (and the minimap frame) without a React render
+  const applyViewToDom = useCallback(() => {
+    const v = viewRef.current;
+    viewportGRef.current?.setAttribute('transform', `translate(${v.x}, ${v.y}) scale(${v.scale})`);
+    const r = minimapRectRef.current;
+    if (r) {
+      r.setAttribute('x', String(-v.x / v.scale));
+      r.setAttribute('y', String(-v.y / v.scale));
+      r.setAttribute('width', String(1600 / v.scale));
+      r.setAttribute('height', String(1200 / v.scale));
+    }
+  }, []);
+
+  // Commit the live view into React state (gesture end / wheel idle)
+  const commitLiveView = useCallback(() => {
+    if (wheelTimerRef.current !== null) {
+      clearTimeout(wheelTimerRef.current);
+      wheelTimerRef.current = null;
+    }
+    if (panRafRef.current !== null) {
+      cancelAnimationFrame(panRafRef.current);
+      panRafRef.current = null;
+    }
+    const v = viewRef.current;
+    viewDirtyRef.current = false;
+    applyViewToDom();
+    setScale(v.scale);
+    setPan({ x: v.x, y: v.y });
+    setLiveCullView(null);
+  }, [applyViewToDom]);
+
+  // Throttled (~200ms) culling-rect refresh while a gesture is in flight
+  const refreshLiveCull = useCallback(() => {
+    if (!liveViewEnabledRef.current) return;
+    // Skip re-renders that could not change anything: same LOD tier, same zoom neighbourhood,
+    // and still well inside the one-viewport culling margin
+    const a = appliedViewRef.current;
+    const cur = viewRef.current;
+    const tierOf = (sc: number) => (sc < LOD_DOT_SCALE_THRESHOLD ? 2 : sc < LOD_SCALE_THRESHOLD ? 1 : 0);
+    const size = viewSizeRef.current;
+    const ratio = cur.scale / a.scale;
+    // At full-card zoom the margin ring is rendered compact, so panning must keep upgrading cards
+    // entering the view: only the compact / dot tiers may skip refreshes
+    if (tierOf(cur.scale) !== 0 && tierOf(a.scale) === tierOf(cur.scale) && ratio < 1.5 && ratio > 1 / 1.5) {
+      const aspect = size ? Math.min(size.w / 1600, size.h / 1200) || 1 : 1;
+      const visibleW = (size ? size.w / aspect : 1600) / cur.scale;
+      const visibleH = (size ? size.h / aspect : 1200) / cur.scale;
+      const movedX = Math.abs(cur.x / cur.scale - a.x / a.scale);
+      const movedY = Math.abs(cur.y / cur.scale - a.y / a.scale);
+      if (movedX < visibleW * 0.5 && movedY < visibleH * 0.5) return;
+    }
+    const now = performance.now();
+    if (now - lastCullAtRef.current < 200) return;
+    lastCullAtRef.current = now;
+    const v = viewRef.current;
+    setLiveCullView({ x: v.x, y: v.y, scale: v.scale });
+  }, []);
+
+  // Keep the ref + DOM transform in lockstep with committed state (programmatic changes, commits)
+  useLayoutEffect(() => {
+    viewRef.current = { x: pan.x, y: pan.y, scale };
+    viewDirtyRef.current = false;
+    if (wheelTimerRef.current !== null) {
+      clearTimeout(wheelTimerRef.current);
+      wheelTimerRef.current = null;
+    }
+    applyViewToDom();
+    setLiveCullView(null);
+  }, [pan, scale, applyViewToDom]);
+
+  useEffect(() => () => {
+    if (wheelTimerRef.current !== null) clearTimeout(wheelTimerRef.current);
+    if (panRafRef.current !== null) cancelAnimationFrame(panRafRef.current);
+  }, []);
+
+  // Track the rendered SVG size for viewport culling
+  useLayoutEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const w = Math.round(r.width);
+      const h = Math.round(r.height);
+      if (w > 0 && h > 0) {
+        setViewSize((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
+      } else {
+        setViewSize(null);
+      }
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Base view for programmatic zoom: the live view if a gesture is still uncommitted
+  const getBaseView = () => (viewDirtyRef.current ? viewRef.current : { x: pan.x, y: pan.y, scale });
 
   // ---------------------------------------------------------------------------
   // 3. Canvas Background Panning Handlers
@@ -1163,7 +1791,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       isPanning: true,
       startClientX: e.clientX,
       startClientY: e.clientY,
-      initialPan: { x: pan.x, y: pan.y },
+      initialPan: { x: viewRef.current.x, y: viewRef.current.y },
     };
     setIsCanvasDragging(true);
     if (typeof containerRef.current?.setPointerCapture === 'function') {
@@ -1184,10 +1812,19 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       const h = rect && rect.height > 0 ? rect.height : 1200;
       const aspect = Math.min(w / 1600, h / 1200) || 1;
 
-      setPan({
+      viewRef.current = {
         x: canvasPanRef.current.initialPan.x + screenDx / aspect,
         y: canvasPanRef.current.initialPan.y + screenDy / aspect,
-      });
+        scale: viewRef.current.scale,
+      };
+      viewDirtyRef.current = true;
+      if (panRafRef.current === null) {
+        panRafRef.current = requestAnimationFrame(() => {
+          panRafRef.current = null;
+          applyViewToDom();
+        });
+      }
+      refreshLiveCull();
     }
 
     // Node drag motion fallback if captured on canvas
@@ -1202,8 +1839,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
       if (nodeDragRef.current.isDragging) {
         const { dx, dy } = getCanvasDelta(screenDx, screenDy);
-        const newX = Math.round(Math.max(90, Math.min(1510, nodeDragRef.current.initialPos.x + dx)));
-        const newY = Math.round(Math.max(50, Math.min(1150, nodeDragRef.current.initialPos.y + dy)));
+        const newX = clampNodePos(nodeDragRef.current.initialPos.x + dx, nodeDragRef.current.initialPos.y + dy).x;
+        const newY = clampNodePos(nodeDragRef.current.initialPos.x + dx, nodeDragRef.current.initialPos.y + dy).y;
 
         nodeDragRef.current.currentPos = { x: newX, y: newY };
 
@@ -1216,10 +1853,34 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     }
   };
 
+  // Interrupted gesture (pointercancel / lost capture): commit the live view, drop any node drag
+  const handleCanvasPointerCancel = () => {
+    if (canvasPanRef.current.isPanning) {
+      canvasPanRef.current.isPanning = false;
+      setIsCanvasDragging(false);
+      if (viewDirtyRef.current) commitLiveView();
+      setLiveCullView(null);
+    }
+    if (nodeDragRef.current.isDown) {
+      nodeDragRef.current = {
+        isDown: false,
+        isDragging: false,
+        nodeId: null,
+        pointerId: -1,
+        startClientX: 0,
+        startClientY: 0,
+        initialPos: { x: 0, y: 0 },
+        currentPos: { x: 0, y: 0 },
+      };
+      setTransientNodePos(null);
+    }
+  };
+
   const handleCanvasPointerUp = (e: React.PointerEvent) => {
     if (canvasPanRef.current.isPanning) {
       canvasPanRef.current.isPanning = false;
       setIsCanvasDragging(false);
+      if (viewDirtyRef.current) commitLiveView();
       if (typeof containerRef.current?.releasePointerCapture === 'function') {
         try {
           containerRef.current.releasePointerCapture(e.pointerId);
@@ -1231,7 +1892,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (nodeDragRef.current.isDown && nodeDragRef.current.nodeId) {
       const nodeId = nodeDragRef.current.nodeId;
       if (nodeDragRef.current.isDragging) {
-        setGraphNodePosition(nodeId, nodeDragRef.current.currentPos);
+        commitNodePosition(nodeId, nodeDragRef.current.currentPos);
       }
       nodeDragRef.current = {
         isDown: false,
@@ -1280,7 +1941,28 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // ---------------------------------------------------------------------------
   // 4. Freeform Node Dragging Handlers
   // ---------------------------------------------------------------------------
-  const handleNodePointerDown = (e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
+  // Latest-value refs keep the node callbacks identity-stable so AttackNodeCard's memo holds
+  const selectRef = useRef(handleNodeSelect);
+  const positionsRef = useRef({ graphNodePositions, defaultNodePositions });
+  const setGraphNodePositionRef = useRef(setGraphNodePosition);
+  useLayoutEffect(() => {
+    selectRef.current = handleNodeSelect;
+    positionsRef.current = { graphNodePositions, defaultNodePositions };
+    setGraphNodePositionRef.current = setGraphNodePosition;
+  });
+
+  // Scoped: persisted + undoable. SHOW ALL: component-local only (never touches the store/history).
+  const commitNodePosition = useCallback((id: string, pos: AttackNodePosition) => {
+    if (showAllRef.current) {
+      setShowAllDragPositions((prev) => ({ ...prev, [id]: pos }));
+    } else {
+      setGraphNodePositionRef.current(id, pos);
+    }
+  }, []);
+
+  const handleNodeSelectStable = useCallback((node: GraphNode) => selectRef.current(node), []);
+
+  const handleNodePointerDown = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (e.button !== 0) return;
     e.stopPropagation();
 
@@ -1290,8 +1972,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       } catch {}
     }
 
-    const currentX = graphNodePositions[node.id]?.x ?? defaultNodePositions[node.id]?.x ?? node.x;
-    const currentY = graphNodePositions[node.id]?.y ?? defaultNodePositions[node.id]?.y ?? node.y;
+    const { graphNodePositions: storedPositions, defaultNodePositions: basePositions } = positionsRef.current;
+    const currentX = storedPositions[node.id]?.x ?? basePositions[node.id]?.x ?? node.x;
+    const currentY = storedPositions[node.id]?.y ?? basePositions[node.id]?.y ?? node.y;
 
     nodeDragRef.current = {
       isDown: true,
@@ -1303,9 +1986,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       initialPos: { x: currentX, y: currentY },
       currentPos: { x: currentX, y: currentY },
     };
-  };
+  }, []);
 
-  const handleNodePointerMove = (e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
+  const handleNodePointerMove = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (!nodeDragRef.current.isDown || nodeDragRef.current.nodeId !== node.id) return;
 
     const screenDx = e.clientX - nodeDragRef.current.startClientX;
@@ -1318,8 +2001,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
     if (nodeDragRef.current.isDragging) {
       const { dx, dy } = getCanvasDelta(screenDx, screenDy);
-      const newX = Math.round(Math.max(90, Math.min(1510, nodeDragRef.current.initialPos.x + dx)));
-      const newY = Math.round(Math.max(50, Math.min(1150, nodeDragRef.current.initialPos.y + dy)));
+      const newX = clampNodePos(nodeDragRef.current.initialPos.x + dx, nodeDragRef.current.initialPos.y + dy).x;
+      const newY = clampNodePos(nodeDragRef.current.initialPos.x + dx, nodeDragRef.current.initialPos.y + dy).y;
 
       nodeDragRef.current.currentPos = { x: newX, y: newY };
 
@@ -1329,9 +2012,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         y: newY,
       });
     }
-  };
+  }, [getCanvasDelta, clampNodePos]);
 
-  const handleNodePointerUp = (e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
+  const handleNodePointerUp = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (!nodeDragRef.current.isDown || nodeDragRef.current.nodeId !== node.id) return;
     e.stopPropagation();
 
@@ -1342,10 +2025,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     }
 
     if (nodeDragRef.current.isDragging) {
-      setGraphNodePosition(node.id, nodeDragRef.current.currentPos);
+      commitNodePosition(node.id, nodeDragRef.current.currentPos);
     } else if (!nodeDragRef.current.isDragging) {
       // Clean click without movement threshold: select node or connect vector
-      handleNodeSelect(node);
+      selectRef.current(node);
     }
 
     nodeDragRef.current = {
@@ -1359,7 +2042,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       currentPos: { x: 0, y: 0 },
     };
     setTransientNodePos(null);
-  };
+  }, [commitNodePosition]);
 
   // ---------------------------------------------------------------------------
   // 5. Wheel Zoom-To-Cursor Handler
@@ -1370,9 +2053,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      const view = viewRef.current;
       const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-      const newScale = Math.min(Math.max(scale * zoomFactor, 0.2), 3.0);
-      if (newScale === scale) return;
+      const newScale = Math.min(Math.max(view.scale * zoomFactor, minScaleRef.current), 3.0);
+      if (newScale === view.scale) return;
 
       // Compute cursor in SVG root coordinate space:
       let cursorX = 800;
@@ -1400,16 +2084,21 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
       // Exact zoom-to-cursor formula:
       // newPan = cursor - (cursor - pan) * (newScale / oldScale)
-      const newPanX = cursorX - (cursorX - pan.x) * (newScale / scale);
-      const newPanY = cursorY - (cursorY - pan.y) * (newScale / scale);
+      const newPanX = cursorX - (cursorX - view.x) * (newScale / view.scale);
+      const newPanY = cursorY - (cursorY - view.y) * (newScale / view.scale);
 
-      setScale(newScale);
-      setPan({ x: newPanX, y: newPanY });
+      // Live update: DOM only; React state is committed once the wheel goes idle
+      viewRef.current = { x: newPanX, y: newPanY, scale: newScale };
+      viewDirtyRef.current = true;
+      applyViewToDom();
+      refreshLiveCull();
+      if (wheelTimerRef.current !== null) clearTimeout(wheelTimerRef.current);
+      wheelTimerRef.current = setTimeout(commitLiveView, 150);
     };
 
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [scale, pan]);
+  }, [applyViewToDom, commitLiveView, refreshLiveCull]);
 
   // Touch Pinch Zoom Handler
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -1418,7 +2107,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      touchStartScaleRef.current = scale;
+      // Fold any uncommitted pan/zoom into state, then pinch relative to the live view
+      if (viewDirtyRef.current) commitLiveView();
+      touchStartScaleRef.current = viewRef.current.scale;
     }
   };
 
@@ -1429,8 +2120,20 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         e.touches[0].clientY - e.touches[1].clientY
       );
       const factor = currentDist / touchStartDistRef.current;
-      const newScale = Math.min(Math.max(touchStartScaleRef.current * factor, 0.2), 3.0);
-      setScale(newScale);
+      const newScale = Math.min(Math.max(touchStartScaleRef.current * factor, minScaleRef.current), 3.0);
+      if (newScale === viewRef.current.scale) return;
+      // Live update (DOM only); committed in handleTouchEnd
+      viewRef.current = { ...viewRef.current, scale: newScale };
+      viewDirtyRef.current = true;
+      applyViewToDom();
+      refreshLiveCull();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      touchStartDistRef.current = 0;
+      if (viewDirtyRef.current && !canvasPanRef.current.isPanning) commitLiveView();
     }
   };
 
@@ -1438,21 +2141,23 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // 6. Navigation Controls Toolbar Actions
   // ---------------------------------------------------------------------------
   const handleZoomIn = () => {
-    const newScale = Math.min(scale * 1.2, 3.0);
+    const base = getBaseView();
+    const newScale = Math.min(base.scale * 1.2, 3.0);
     const cursorX = 800;
     const cursorY = 600;
-    const newPanX = cursorX - (cursorX - pan.x) * (newScale / scale);
-    const newPanY = cursorY - (cursorY - pan.y) * (newScale / scale);
+    const newPanX = cursorX - (cursorX - base.x) * (newScale / base.scale);
+    const newPanY = cursorY - (cursorY - base.y) * (newScale / base.scale);
     setScale(newScale);
     setPan({ x: newPanX, y: newPanY });
   };
 
   const handleZoomOut = () => {
-    const newScale = Math.max(scale / 1.2, 0.2);
+    const base = getBaseView();
+    const newScale = Math.max(base.scale / 1.2, minScale);
     const cursorX = 800;
     const cursorY = 600;
-    const newPanX = cursorX - (cursorX - pan.x) * (newScale / scale);
-    const newPanY = cursorY - (cursorY - pan.y) * (newScale / scale);
+    const newPanX = cursorX - (cursorX - base.x) * (newScale / base.scale);
+    const newPanY = cursorY - (cursorY - base.y) * (newScale / base.scale);
     setScale(newScale);
     setPan({ x: newPanX, y: newPanY });
   };
@@ -1486,11 +2191,21 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       minY = Math.min(minY, y - 47);
       maxY = Math.max(maxY, y + 47);
     });
+    // SHOW ALL: hubs (with their label pills) are part of the world being framed
+    if (showAllNodes) {
+      clusters.forEach((c) => {
+        const hub = getClusterHub(c);
+        minX = Math.min(minX, hub.x - 95);
+        maxX = Math.max(maxX, hub.x + 95);
+        minY = Math.min(minY, hub.y - 55);
+        maxY = Math.max(maxY, hub.y + 55);
+      });
+    }
 
     const padding = 80;
     const bboxW = (maxX - minX) + padding * 2;
     const bboxH = (maxY - minY) + padding * 2;
-    const targetScale = Math.min(Math.max(Math.min(1600 / bboxW, 1200 / bboxH), 0.2), 1.8);
+    const targetScale = Math.min(Math.max(Math.min(1600 / bboxW, 1200 / bboxH), minScale), 1.8);
     const bboxCenterX = (minX + maxX) / 2;
     const bboxCenterY = (minY + maxY) / 2;
 
@@ -1500,6 +2215,26 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       y: 600 - bboxCenterY * targetScale,
     });
   };
+
+  // Toggling SHOW ALL: fit the whole world on entry; on exit restore the scoped view the user had
+  // (the previous behaviour left the view untouched, so restoring it is the closest match)
+  const fitRef = useRef(handleFitToScreen);
+  const prevShowAllRef = useRef(showAllNodes);
+  useLayoutEffect(() => {
+    fitRef.current = handleFitToScreen;
+  });
+  useLayoutEffect(() => {
+    if (prevShowAllRef.current === showAllNodes) return;
+    prevShowAllRef.current = showAllNodes;
+    if (showAllNodes) {
+      fitRef.current();
+    } else {
+      setShowAllDragPositions({});
+      const v = scopedViewRef.current ?? { x: 0, y: 0, scale: 1 };
+      setScale(v.scale);
+      setPan({ x: v.x, y: v.y });
+    }
+  }, [showAllNodes]);
 
   const handleCenterSelection = () => {
     let targetX = 800;
@@ -1514,7 +2249,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         : (graphNodePositions[selectedNode.id]?.y ?? defaultNodePositions[selectedNode.id]?.y ?? selectedNode.y);
     }
 
-    const targetScale = Math.max(scale, 1.0);
+    const targetScale = Math.max(getBaseView().scale, 1.0);
     setScale(targetScale);
     setPan({
       x: 800 - targetX * targetScale,
@@ -1565,10 +2300,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
   // Auto layout: layered left-to-right by edge direction, applied as one undoable entry
   const handleAutoLayout = useCallback(() => {
+    // The auto-layout box (1510x1150) cannot hold the SHOW ALL world; it is a scoped-view tool
+    if (showAllNodes) return;
     const positions = computeAutoLayout(allNodes.map((n) => n.id), graphEdges, { maxX: 1510, maxY: 1150 });
     applyNodePositions(positions, 'Auto layout');
     if (soundEnabled) playCyberSound('click');
-  }, [allNodes, graphEdges, applyNodePositions, soundEnabled]);
+  }, [allNodes, graphEdges, applyNodePositions, soundEnabled, showAllNodes]);
 
   // Keyboard shortcut listener
   useEffect(() => {
@@ -1590,26 +2327,32 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (rect.width <= 0 || rect.height <= 0) return;
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
-    const targetWorldX = (clickX / rect.width) * 1600;
-    const targetWorldY = (clickY / rect.height) * 1200;
+    const targetWorldX = minimapBounds.x + (clickX / rect.width) * minimapBounds.w;
+    const targetWorldY = minimapBounds.y + (clickY / rect.height) * minimapBounds.h;
 
+    const liveScale = getBaseView().scale;
+    setScale(liveScale);
     setPan({
-      x: 800 - targetWorldX * scale,
-      y: 600 - targetWorldY * scale,
+      x: 800 - targetWorldX * liveScale,
+      y: 600 - targetWorldY * liveScale,
     });
   };
 
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full rounded-2xl border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
+      className={`relative w-full rounded-2xl border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none touch-none transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen' : 'h-[720px]'
       }`}
       onPointerDown={handleCanvasPointerDown}
       onPointerMove={handleCanvasPointerMove}
       onPointerUp={handleCanvasPointerUp}
+      onPointerCancel={handleCanvasPointerCancel}
+      onLostPointerCapture={handleCanvasPointerCancel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
       {/* Top HUD Legend & Telemetry Capsule */}
       <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 pointer-events-auto">
@@ -1628,6 +2371,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             <button
               type="button"
               onClick={() => {
+                if (!showAllNodes) scopedViewRef.current = { ...getBaseView() };
                 setShowAllNodes(!showAllNodes);
                 if (soundEnabled) playCyberSound('toggle');
               }}
@@ -1747,10 +2491,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           type="button"
           data-testid="graph-auto-layout"
           onClick={handleAutoLayout}
-          disabled={allNodes.length === 0}
+          disabled={allNodes.length === 0 || showAllNodes}
+          aria-disabled={allNodes.length === 0 || showAllNodes ? true : undefined}
           aria-label="Auto layout"
           className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
-          title="Auto layout: arrange nodes by attack path (undoable)"
+          title={showAllNodes ? 'Auto layout is available in scoped view' : 'Auto layout: arrange nodes by attack path (undoable)'}
         >
           <Workflow className="w-4 h-4" />
         </button>
@@ -1868,10 +2613,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               </button>
             </div>
 
-            <div className="w-full h-32 rounded-lg bg-surface-sunken border border-subtle overflow-hidden relative">
+            <div className="w-full aspect-[4/3] rounded-lg bg-surface-sunken border border-subtle overflow-hidden relative">
               <svg
                 data-testid="graph-minimap-svg"
-                viewBox="0 0 1600 1200"
+                viewBox={`${minimapBounds.x} ${minimapBounds.y} ${minimapBounds.w} ${minimapBounds.h}`}
                 className="w-full h-full cursor-crosshair"
                 onPointerDown={(e) => {
                   e.stopPropagation();
@@ -1887,77 +2632,23 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   isMinimapDraggingRef.current = false;
                 }}
               >
-                {/* Radar grid rings */}
-                <circle cx="800" cy="600" r="300" fill="none" stroke={tokens.gridColor} strokeWidth="1" opacity="0.12" />
-                <circle cx="800" cy="600" r="520" fill="none" stroke={tokens.gridColor} strokeWidth="1" opacity="0.12" />
-                <line x1="800" y1="0" x2="800" y2="1200" stroke={tokens.gridColor} strokeWidth="1" opacity="0.12" />
-                <line x1="0" y1="600" x2="1600" y2="600" stroke={tokens.gridColor} strokeWidth="1" opacity="0.12" />
-
-                {/* Subnet cluster hubs on radar */}
-                {clusters.map((c) => {
-                  const cx = 800 + Math.cos(c.angle) * c.radius;
-                  const cy = 600 + Math.sin(c.angle) * c.radius;
-                  return (
-                    <circle key={`mini-cluster-${c.id}`} cx={cx} cy={cy} r="28" fill={c.color} opacity="0.4" />
-                  );
-                })}
-
-                {/* Operator Rig on radar */}
-                <circle cx="800" cy="600" r="28" fill="#10B981" opacity="0.8" />
-
-                {/* Attack Vectors on radar */}
-                {graphEdges.map((e) => {
-                  const s = allNodes.find((n) => n.id === e.sourceId);
-                  const t = allNodes.find((n) => n.id === e.targetId);
-                  if (!s || !t) return null;
-                  const sx = graphNodePositions[s.id]?.x ?? defaultNodePositions[s.id]?.x ?? s.x;
-                  const sy = graphNodePositions[s.id]?.y ?? defaultNodePositions[s.id]?.y ?? s.y;
-                  const tx = graphNodePositions[t.id]?.x ?? defaultNodePositions[t.id]?.x ?? t.x;
-                  const ty = graphNodePositions[t.id]?.y ?? defaultNodePositions[t.id]?.y ?? t.y;
-                  const m = ATTACK_EDGE_META[e.type];
-                  return (
-                    <line
-                      key={`mini-edge-${e.id}`}
-                      x1={sx}
-                      y1={sy}
-                      x2={tx}
-                      y2={ty}
-                      stroke={m?.color || '#00F0FF'}
-                      strokeWidth="8"
-                      opacity="0.7"
-                    />
-                  );
-                })}
-
-                {/* Machine nodes on radar */}
-                {visibleNodes.map((n) => {
-                  const nx = transientNodePos?.id === n.id 
-                    ? transientNodePos.x 
-                    : (graphNodePositions[n.id]?.x ?? defaultNodePositions[n.id]?.x ?? n.x);
-                  const ny = transientNodePos?.id === n.id 
-                    ? transientNodePos.y 
-                    : (graphNodePositions[n.id]?.y ?? defaultNodePositions[n.id]?.y ?? n.y);
-
-                  const isRoot = n.status === 'root' || n.status === 'completed';
-                  const isFoot = n.status === 'foothold';
-                  const dotColor = isRoot ? tokens.statusRoot : isFoot ? tokens.statusFoothold : tokens.statusUnsolved;
-
-                  return (
-                    <circle
-                      key={`mini-node-${n.id}`}
-                      cx={nx}
-                      cy={ny}
-                      r={selectedNode?.id === n.id ? '28' : '18'}
-                      fill={dotColor}
-                      opacity={selectedNode?.id === n.id ? '1' : '0.85'}
-                      stroke={selectedNode?.id === n.id ? '#FFFFFF' : 'none'}
-                      strokeWidth="4"
-                    />
-                  );
-                })}
+                <MinimapStaticLayers
+                  tokens={tokens}
+                  clusters={clusters}
+                  graphEdges={graphEdges}
+                  allNodes={allNodes}
+                  visibleNodes={visibleNodes}
+                  graphNodePositions={graphNodePositions}
+                  defaultNodePositions={defaultNodePositions}
+                  transientNodePos={transientNodePos}
+                  selectedNodeId={selectedNode?.id ?? null}
+                  bounds={minimapBounds}
+                  unit={minimapBounds.unit}
+                />
 
                 {/* Dynamic Viewport Framing Rectangle */}
                 <rect
+                  ref={minimapRectRef}
                   data-testid="minimap-viewport-rect"
                   x={-pan.x / scale}
                   y={-pan.y / scale}
@@ -1965,9 +2656,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   height={1200 / scale}
                   fill="rgba(6, 182, 212, 0.16)"
                   stroke="#06B6D4"
-                  strokeWidth="10"
-                  strokeDasharray="24 12"
-                  rx="12"
+                  strokeWidth={10 * minimapBounds.unit}
+                  strokeDasharray={`${24 * minimapBounds.unit} ${12 * minimapBounds.unit}`}
+                  rx={12 * minimapBounds.unit}
                   className="cursor-move"
                 />
               </svg>
@@ -2041,7 +2732,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           <rect width="1600" height="1200" fill="url(#graph-grid)" className="pointer-events-none" />
 
           {/* INNER VIEWPORT TRANSFORM GROUP */}
-          <g 
+          <g
+            ref={viewportGRef}
             id="canvas-viewport"
             data-testid="canvas-viewport"
             transform={`translate(${pan.x}, ${pan.y}) scale(${scale})`}
@@ -2049,9 +2741,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           >
             {/* Subnet Cluster Hubs & Radiating Background Paths */}
             {clusters.map((cluster) => {
-              const clusterX = centerX + Math.cos(cluster.angle) * cluster.radius;
-              const clusterY = centerY + Math.sin(cluster.angle) * cluster.radius;
-              const isSubnetHovered = hoveredNodeId && visibleNodes.some(n => n.id === hoveredNodeId && n.cluster === cluster.id);
+              const { x: clusterX, y: clusterY } = getClusterHub(cluster);
+              const isSubnetHovered = hoveredClusterId === cluster.id;
 
               return (
                 <g key={cluster.id} className="transition-opacity">
@@ -2113,9 +2804,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
             {/* Tactical Edges from Subnet Hubs to Target Nodes */}
             {visibleNodes.map((node) => {
-              const clusterObj = clusters.find((c) => c.id === node.cluster) || clusters[0];
-              const clusterX = clusterObj ? centerX + Math.cos(clusterObj.angle) * clusterObj.radius : centerX;
-              const clusterY = clusterObj ? centerY + Math.sin(clusterObj.angle) * clusterObj.radius : centerY;
+              const hub = clusterHubs.map.get(node.cluster) ?? clusterHubs.first;
+              const clusterX = hub ? hub.x : centerX;
+              const clusterY = hub ? hub.y : centerY;
 
               const currentX = transientNodePos?.id === node.id 
                 ? transientNodePos.x 
@@ -2303,22 +2994,38 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 ? transientNodePos.y 
                 : (graphNodePositions[node.id]?.y ?? defaultNodePositions[node.id]?.y ?? node.y);
 
-              const activeNodeData: GraphNode = {
-                ...node,
-                x: currentX,
-                y: currentY,
-              };
+              const isSelected = selectedNode?.id === node.id;
+              const isHovered = hoveredNodeId === node.id;
+              const isConnectingSource = connectingSourceId === node.id;
+
+              // Viewport culling: skip cards fully outside the margin-expanded visible rect
+              const visibility = nodeVisibility(
+                cullRect?.outer ?? null,
+                cullRect?.inner ?? null,
+                currentX,
+                currentY,
+                isSelected || isHovered || isConnectingSource || focusedNodeId === node.id || transientNodePos?.id === node.id
+              );
+              if (visibility === 'culled') return null;
+              // Margin-ring cards are never on screen yet: render them at most compact
+              const cardLod = visibility === 'ring' && lodTier === 'full' ? 'compact' : lodTier;
 
               return (
                 <AttackNodeCard
                   key={node.id}
-                  node={activeNodeData}
-                  isSelected={selectedNode?.id === node.id}
-                  isHovered={hoveredNodeId === node.id}
-                  isConnectingSource={connectingSourceId === node.id}
+                  node={node}
+                  x={currentX}
+                  y={currentY}
+                  animate={animatePulses}
+                  lod={cardLod}
+                  isFocused={focusedNodeId === node.id}
+                  isSelected={isSelected}
+                  isHovered={isHovered}
+                  isConnectingSource={isConnectingSource}
                   tokens={tokens}
-                  onSelect={handleNodeSelect}
-                  onHover={(id) => setHoveredNodeId(id)}
+                  onSelect={handleNodeSelectStable}
+                  onHover={setHoveredNodeId}
+                  onFocusChange={setFocusedNodeId}
                   onPointerDown={handleNodePointerDown}
                   onPointerMove={handleNodePointerMove}
                   onPointerUp={handleNodePointerUp}
