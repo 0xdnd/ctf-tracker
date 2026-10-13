@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   Bold, 
   Italic, 
@@ -25,7 +25,8 @@ import {
   Columns
 } from 'lucide-react';
 import { GlobalVariables } from '../../types';
-import { playCyberSound } from '../../utils/helpers';
+import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import { useCtfStore } from '../../store/useCtfStore';
 import { sanitizeHtml } from '../../utils/securityUtils';
 import { parseMarkdownToHtml } from '../../utils/writeupHtmlExporter';
@@ -61,8 +62,61 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const [showSplitPreview, setShowSplitPreview] = useState<boolean>(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const updateNoteContent = useCtfStore((s) => s.updateNoteContent);
+  const storeGlobalVars = useCtfStore((s) => s.globalVars);
+  // Engaged target's IP wins over the global RHOST (shared precedence helper).
+  const effectiveVars = useEffectiveGlobalVars(globalVars ?? storeGlobalVars);
+  const previewHtml = useMemo(() => sanitizeHtml(parseMarkdownToHtml(content)), [content]);
+  const showPreview = showSplitPreview && !isSplitView;
+
+  // Give every <pre> in the sanitized preview a Copy button. React never
+  // reconciles inside dangerouslySetInnerHTML, so decorating the DOM here is
+  // safe; it re-runs whenever the preview HTML is replaced.
+  useEffect(() => {
+    const root = previewRef.current;
+    if (!root) return;
+    root.querySelectorAll('pre').forEach((pre) => {
+      if (pre.parentElement?.hasAttribute('data-code-wrapper')) return;
+      const wrapper = document.createElement('div');
+      wrapper.setAttribute('data-code-wrapper', '');
+      wrapper.className = 'relative';
+      pre.replaceWith(wrapper);
+      wrapper.appendChild(pre);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('data-copy-code', '');
+      button.setAttribute('aria-label', 'Copy resolved command');
+      button.title = 'Copy with variables filled in';
+      button.textContent = 'Copy';
+      button.className =
+        'absolute top-1 right-1 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-subtle bg-surface-card px-2 text-[11px] font-medium text-secondary hover:bg-surface-hover hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer';
+      wrapper.appendChild(button);
+    });
+  }, [previewHtml, showPreview]);
+
+  // Delegated click handler for those buttons; reads the latest vars via a ref.
+  const copyVarsRef = useRef({ effectiveVars, soundEnabled });
+  copyVarsRef.current = { effectiveVars, soundEnabled };
+  useEffect(() => {
+    const root = previewRef.current;
+    if (!root) return;
+    const onClick = (e: MouseEvent) => {
+      const button = (e.target as Element | null)?.closest?.('button[data-copy-code]');
+      const pre = button?.parentElement?.querySelector('pre');
+      if (!button || !pre) return;
+      const { effectiveVars: vars, soundEnabled: sound } = copyVarsRef.current;
+      safeCopyToClipboard(interpolateCommand(pre.textContent || '', vars));
+      if (sound) playCyberSound('copy');
+      button.textContent = 'Copied';
+      setTimeout(() => {
+        button.textContent = 'Copy';
+      }, 2000);
+    };
+    root.addEventListener('click', onClick);
+    return () => root.removeEventListener('click', onClick);
+  }, [showPreview]);
 
   // Sync initial content if noteId changes externally
   useEffect(() => {
@@ -560,7 +614,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
       {/* 2. Textarea Code Input & Dual-Pane Live Sanitized Preview */}
       <div className="relative flex-1 min-h-[300px]">
-        {showSplitPreview && !isSplitView ? (
+        {showPreview ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 h-full p-2.5">
             <textarea
               ref={textareaRef}
@@ -583,9 +637,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 </span>
               </div>
               <div
+                ref={previewRef}
                 data-testid="markdown-split-preview"
                 className="prose prose-sm dark:prose-invert max-w-none font-sans text-xs sm:text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(parseMarkdownToHtml(content)) }}
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
             </div>
           </div>

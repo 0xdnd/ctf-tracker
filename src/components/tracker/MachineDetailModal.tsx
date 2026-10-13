@@ -55,6 +55,8 @@ import { BadgeOverflow } from '../common/BadgeOverflow';
 import { classifyMachine, VULN_CATEGORIES } from '../../utils/categoryUtils';
 import { getRecommendedNotesForMachine, mergeUserNotePools } from '../../utils/obsidianManualUtils';
 import { QuickCommandsTab } from './QuickCommandsTab';
+import { QuickNotesField } from './QuickNotesField';
+import { ObsidianMarkdownBody } from '../cheatsheet/ObsidianMarkdownBody';
 import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { AiScanIntelTab } from '../automation/AiScanIntelTab';
@@ -664,7 +666,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 {machine.quickNotes && (
                   <div className="p-3 rounded-lg bg-surface-card border border-subtle space-y-1 machined-edge">
                     <div className="text-xs text-tertiary font-semibold">Assessor Field Notes:</div>
-                    <div className="text-secondary whitespace-pre-wrap">{machine.quickNotes}</div>
+                    <div className="text-secondary">
+                      <ObsidianMarkdownBody
+                        content={machine.quickNotes}
+                        globalVars={globalVars}
+                        soundEnabled={soundEnabled}
+                        fontSize="sm"
+                        targetIp={machine.ip || undefined}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1145,12 +1155,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 Auto-saved to target dossier
               </span>
             </div>
-            <textarea
+            <QuickNotesField
               id={`machine-field-notes-${machine.id}`}
               name="machine-field-notes"
               aria-label="Target Field Notes"
               value={machine.quickNotes || ''}
-              onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
+              onChange={(quickNotes) => updateMachine(machine.id, { quickNotes })}
+              globalVars={globalVars}
+              soundEnabled={soundEnabled}
+              targetIp={machine.ip || undefined}
               placeholder="Jot down credentials, hashes, local discovery findings, and exploit notes here..."
               rows={4}
               className="w-full p-3 rounded-md border border-subtle bg-surface-sunken text-primary placeholder:text-tertiary text-xs font-sans leading-relaxed focus:outline-none focus:border-accent selection:bg-accent/20 resize-y shadow-xs"
