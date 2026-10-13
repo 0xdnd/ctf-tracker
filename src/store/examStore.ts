@@ -102,6 +102,8 @@ export interface ExamSessionState {
   seed: string;
   /** Official (default), weighted (redistributed by difficulty) or legacy (pre-Nov 2024 OSCP bonus). */
   scoringMode: ExamScoringMode;
+  /** Report header date (YYYY-MM-DD) the operator set for this session; null = derive from startedAt. */
+  reportExamDate: string | null;
   /** Box the operator is currently working (rabbit-hole clock). */
   activeBoxId: string | null;
   /** Effective ms timestamp the active box session began (shifted forward across pauses). */
@@ -146,7 +148,7 @@ export interface ExamStoreActions {
 
   // Milestones & Candidate Data
   addMilestone: (targetId: string, type: ExamMilestone['type'], notes: string) => void;
-  setCandidateInfo: (info: { candidateName?: string; candidateCallsign?: string; osid?: string }) => void;
+  setCandidateInfo: (info: { candidateName?: string; candidateCallsign?: string; osid?: string; reportExamDate?: string | null }) => void;
   setScratchNotes: (notes: string) => void;
   setIncludeBonusPoints: (include: boolean, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
 
@@ -257,6 +259,7 @@ function createInitialSession(track: ExamTrack = 'OSCP', options: InitialSession
     includeBonusPoints: scoringMode === 'legacy',
     seed,
     scoringMode,
+    reportExamDate: null,
     findings: [],
     ...NO_ACTIVE_BOX,
   };
@@ -376,6 +379,7 @@ export const useExamStore = create<ExamStore>()(
           osid: config?.osid || get().osid,
           activeBreak: { ...DEFAULT_BREAK_STATE },
           breakHistory: [],
+          reportExamDate: null,
           ...NO_ACTIVE_BOX,
           milestones: [
             {
@@ -802,6 +806,7 @@ export const useExamStore = create<ExamStore>()(
           candidateName: info.candidateName !== undefined ? info.candidateName : state.candidateName,
           candidateCallsign: info.candidateCallsign !== undefined ? info.candidateCallsign : state.candidateCallsign,
           osid: info.osid !== undefined ? info.osid : state.osid,
+          reportExamDate: info.reportExamDate !== undefined ? info.reportExamDate : state.reportExamDate,
         }));
       },
 
@@ -1031,6 +1036,7 @@ export const useExamStore = create<ExamStore>()(
         includeBonusPoints: state.includeBonusPoints,
         seed: state.seed,
         scoringMode: state.scoringMode,
+        reportExamDate: state.reportExamDate,
         findings: state.findings,
         activeBoxId: state.activeBoxId,
         activeBoxSince: state.activeBoxSince,
