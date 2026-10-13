@@ -65,6 +65,25 @@ describe('NotesImportModal — IP review before saving', () => {
     expect(useCtfStore.getState().userNotes[0].rawMarkdown).toBe(SCAN_MD);
   });
 
+  it('keeps the pending import for retry when saving fails', async () => {
+    vi.mocked(saveVaultToIndexedDb).mockRejectedValueOnce(new Error('disk full'));
+    render(<NotesImportModal />);
+    await selectFolder([mdFile('vault/scan.md', SCAN_MD)]);
+    await waitFor(() => screen.getByTestId('import-ip-review'));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Import with replacements' }));
+    });
+    await waitFor(() => expect(screen.getByText('disk full')).toBeTruthy());
+    expect(screen.getByTestId('import-ip-review')).toBeTruthy();
+    expect(useCtfStore.getState().userNotes).toHaveLength(0);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Import with replacements' }));
+    });
+    await waitFor(() => expect(useCtfStore.getState().userNotes).toHaveLength(1));
+    expect(screen.queryByTestId('import-ip-review')).toBeNull();
+  });
+
   it('cancelling saves nothing', async () => {
     render(<NotesImportModal />);
     await selectFolder([mdFile('vault/scan.md', SCAN_MD)]);

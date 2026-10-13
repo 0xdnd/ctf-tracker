@@ -83,6 +83,15 @@ const OCTET = '(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)';
 const IPV4_RE = new RegExp(`(?<![\\w.])(?:${OCTET}\\.){3}${OCTET}(?![\\w]|\\.\\d)`, 'g');
 const VERSION_PREFIX_RE = /\b(?:v|ver|version|release|build)\s*[:=]?\s*$/i;
 const CIDR_SUFFIX_RE = /^\/\d{1,2}(?!\d)/;
+// Package pins and versioned names: `pkg==1.2.3.4`, `pkg-1.2.3.4`.
+const VERSION_SEPARATOR_RE = /(?:==|[A-Za-z_]-)$/;
+// `=` / `@` alone also introduce real IPs (`LHOST=...`, `ssh user@...`), so they
+// only mark a version on a package-manager line (`npm i pkg@1.2.3.4`).
+const PIN_SEPARATOR_RE = /[=@]$/;
+const PACKAGE_CONTEXT_RE = /\b(?:pip3?|pipx|npm|npx|yarn|pnpm|gem|apt(?:-get)?|cargo|conda|poetry|install)\b/i;
+// Ranges: `10.10.10.1-254`, and the end of `10.10.10.1-10.10.10.9`.
+const RANGE_SUFFIX_RE = /^-\d/;
+const RANGE_PREFIX_RE = /\d-$/;
 const LHOST_OPTION_PREFIX_RE = /(?:^|[^\w])-{0,2}lhost\s*[=:]?\s*["']?$/i;
 const FRONTMATTER_RE = /^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
 const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
@@ -155,7 +164,15 @@ function keepReason(ip: string, before: string, after: string): string | null {
   if (o[0] >= 224) return 'multicast / reserved';
   if (o[3] === 255) return 'broadcast';
   if (CIDR_SUFFIX_RE.test(after)) return 'CIDR range';
-  if (VERSION_PREFIX_RE.test(before)) return 'version string';
+  if (o[3] === 0) return 'network address';
+  if (RANGE_SUFFIX_RE.test(after) || RANGE_PREFIX_RE.test(before)) return 'address range';
+  if (
+    VERSION_PREFIX_RE.test(before) ||
+    VERSION_SEPARATOR_RE.test(before) ||
+    (PIN_SEPARATOR_RE.test(before) && PACKAGE_CONTEXT_RE.test(before))
+  ) {
+    return 'version string';
+  }
   return null;
 }
 
