@@ -40,6 +40,8 @@ export interface Machine {
   rating?: number; // 1 to 5 stars
   quickNotes?: string;
   writeupMarkdown?: string;
+  /** The operator emptied the writeup on purpose; the template is only seeded when this is unset. */
+  writeupCleared?: boolean;
   skillsLearned?: string[];
   officialPdf?: string;
   officialSynopsis?: string;

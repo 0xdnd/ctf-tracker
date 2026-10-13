@@ -20,7 +20,7 @@ import {
   Globe,
   Lock
 } from 'lucide-react';
-import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
+import { useCtfStore, BRAND_THEMES, flushProfileSave } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
 import { playCyberSound, interpolateCommand } from '../../utils/helpers';
@@ -470,21 +470,46 @@ cat /root/root.txt
   const pendingMachineIdRef = useRef<string | null>(null);
   const pendingContentRef = useRef<string>('');
 
-  const flushDebouncedSave = () => {
+  // Saves editor text. An emptied writeup is kept empty: `writeupCleared` tells the sync effect below not to
+  // refill it with the template, which is only for a writeup that was never written.
+  const saveWriteup = (machineId: string, content: string) => {
+    updateMachine(machineId, { writeupMarkdown: content, writeupCleared: content === '' ? true : undefined });
+  };
+
+  /** Writes a pending debounced edit now. Returns true when there was one. */
+  const flushDebouncedSave = (): boolean => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-    if (pendingMachineIdRef.current && pendingContentRef.current !== '') {
-      updateMachine(pendingMachineIdRef.current, { writeupMarkdown: pendingContentRef.current });
+    if (pendingMachineIdRef.current) {
+      const machineId = pendingMachineIdRef.current;
       pendingMachineIdRef.current = null;
+      saveWriteup(machineId, pendingContentRef.current);
+      return true;
     }
+    return false;
   };
+  const flushDebouncedSaveRef = useRef(flushDebouncedSave);
+  flushDebouncedSaveRef.current = flushDebouncedSave;
 
-  // Flush debounced writeup updates on unmount
+  // Flush debounced writeup updates on unmount, and when the tab is hidden or the page is being unloaded
+  // (the store's own close-time save runs first, so push the profile copy out again after a late flush).
   useEffect(() => {
+    const flushForUnload = () => {
+      if (flushDebouncedSaveRef.current()) flushProfileSave();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushForUnload();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flushForUnload);
+    window.addEventListener('beforeunload', flushForUnload);
     return () => {
-      flushDebouncedSave();
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flushForUnload);
+      window.removeEventListener('beforeunload', flushForUnload);
+      flushDebouncedSaveRef.current();
     };
   }, []);
 
@@ -504,13 +529,20 @@ cat /root/root.txt
       return;
     }
 
+    // The operator emptied this writeup on purpose: show it empty, never re-seed the template.
+    if (selectedMachine.writeupCleared) {
+      flushDebouncedSave();
+      setEditorContent('');
+      return;
+    }
+
     if (isDeepStorageLoaded && !selectedMachine.writeupMarkdown) {
       flushDebouncedSave();
       const tmpl = generateTemplate(selectedMachine);
       setEditorContent(tmpl);
       updateMachine(selectedMachine.id, { writeupMarkdown: tmpl });
     }
-  }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, selectedMachine?.isActive, isDeepStorageLoaded]);
+  }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, selectedMachine?.writeupCleared, selectedMachine?.isActive, isDeepStorageLoaded]);
 
   const telemetry = useMemo(() => computeWriteupTelemetry(editorContent), [editorContent]);
 
@@ -524,9 +556,10 @@ cat /root/root.txt
         clearTimeout(debounceTimerRef.current);
       }
       debounceTimerRef.current = setTimeout(() => {
+        debounceTimerRef.current = null;
         if (selectedMachine) {
-          updateMachine(selectedMachine.id, { writeupMarkdown: val });
           pendingMachineIdRef.current = null;
+          saveWriteup(selectedMachine.id, val);
         }
       }, 400);
     }
