@@ -2452,23 +2452,8 @@ export const useCtfStore = create<CtfStoreState>()(
               ...loadLootState(profileId),
             });
 
-            // Asynchronously enrich with deep writeups from IndexedDB
-            loadDeepProfileData(profileId).then((deep) => {
-              if (gen !== profileLoadGeneration || get().currentProfileId !== profileId) {
-                return; // Discard stale load from previous rapid profile switch
-              }
-              if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
-                const currentMachines = get().machines;
-                const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
-                set({ machines: merged, isDeepStorageLoaded: true });
-              } else {
-                set({ isDeepStorageLoaded: true });
-              }
-            }).catch(() => {
-              if (gen === profileLoadGeneration && get().currentProfileId === profileId) {
-                set({ isDeepStorageLoaded: true });
-              }
-            });
+            // Asynchronously enrich with deep writeups from IndexedDB (guarded against later switches)
+            hydrateDeepProfile(profileId, gen);
 
             return;
           } catch (e) {
@@ -2832,6 +2817,41 @@ const bootHasNotesList = (() => {
   }
   return false;
 })();
+
+const DEEP_LOAD_RETRY_DELAYS_MS = [2_000, 10_000, 30_000];
+
+/**
+ * Loads a profile's deep record (writeup/quick-note bodies, custom notes) into the store. Applied only while the
+ * same profile load is still current (no later switch: generation + profile id), and isDeepStorageLoaded only
+ * turns true once the read really succeeded: until then flushes skip the deep write, so a failed read can never
+ * lead to an empty deep record erasing bodies that only live in IndexedDB. A failed read is retried a few times.
+ */
+function hydrateDeepProfile(profileId: string, gen: number, options: { refillNotes?: boolean } = {}, attempt = 0) {
+  const isCurrent = () =>
+    gen === profileLoadGeneration && (useCtfStore.getState().currentProfileId || 'guest') === profileId;
+  loadDeepProfileData(profileId).then(
+    (deep) => {
+      if (!isCurrent()) return;
+      const state = useCtfStore.getState();
+      const patch: Partial<CtfStoreState> = { isDeepStorageLoaded: true };
+      if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
+        const merged = mergeDeepPayloadsIntoMachines(state.machines, deep.writeups);
+        if (merged !== state.machines) patch.machines = merged;
+      }
+      // Only for a workspace saved without a notes list (older or quota-stripped copies); an empty list is a deletion.
+      if (options.refillNotes && deep?.customNotes?.length && state.customNotes.length === 0) {
+        patch.customNotes = deep.customNotes;
+      }
+      useCtfStore.setState(patch);
+    },
+    (err) => {
+      if (!isCurrent()) return;
+      console.warn('[ZeroBox] Could not read deep storage; deep saves stay off until it loads.', err);
+      const delay = DEEP_LOAD_RETRY_DELAYS_MS[attempt];
+      if (delay !== undefined) setTimeout(() => hydrateDeepProfile(profileId, gen, options, attempt + 1), delay);
+    }
+  );
+}
 
 async function restoreFromResilientCopy(profileId: string, check: 'missing' | number | null) {
   if (check === null) return;
@@ -3252,27 +3272,7 @@ if (typeof window !== 'undefined') {
   });
 
   // Asynchronously hydrate deep writeup payloads from IndexedDB
-  loadDeepProfileData(bootProfileId).then((deep) => {
-    if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
-      const currentMachines = useCtfStore.getState().machines;
-      const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
-      useCtfStore.setState({ machines: merged, isDeepStorageLoaded: true });
-    } else {
-      useCtfStore.setState({ isDeepStorageLoaded: true });
-    }
-    // Only for a workspace saved without a notes list (older or quota-stripped copies); an empty list is a deletion.
-    if (
-      !bootHasNotesList &&
-      deep?.customNotes &&
-      deep.customNotes.length > 0 &&
-      useCtfStore.getState().customNotes.length === 0
-    ) {
-      useCtfStore.setState({ customNotes: deep.customNotes });
-    }
-  }).catch((err) => {
-    console.warn('[ZeroBox] Could not hydrate deep payloads from IndexedDB', err);
-    useCtfStore.setState({ isDeepStorageLoaded: true });
-  });
+  hydrateDeepProfile(bootProfileId, profileLoadGeneration, { refillNotes: !bootHasNotesList });
 }
 
 
