@@ -17,8 +17,13 @@ import { SnippetTabContent } from './SnippetTabContent';
 import { DockQuickSwitcher } from './DockQuickSwitcher';
 import { DockNotesList } from './DockNotesList';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
-import { playCyberSound } from '../../utils/helpers';
+import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { TemplatizeNotesModal } from '../cheatsheet/TemplatizeNotesModal';
+import { NewCptsNoteModal } from '../cheatsheet/NewCptsNoteModal';
+import { NotesWorkspaceTargetBar } from './NotesWorkspaceTargetBar';
+import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import { useToastStore } from '../../store/useToastStore';
+import { CptsNoteEntry, mergeUserNotePools } from '../../utils/obsidianManualUtils';
 
 /** Below this dock width the Notes list no longer fits beside a note, so it opens as an overlay instead. */
 const NARROW_DOCK_PX = 520;
@@ -42,6 +47,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
     openNote,
     notesListCollapsed,
     toggleNotesList,
+    setSwitcherOpen,
   } = useNotesWorkspaceStore(
     useShallow((s) => ({
       isOpen: s.isOpen,
@@ -63,10 +69,11 @@ export const PersistentNotesWorkspace: React.FC = () => {
       notesListCollapsed: s.notesListCollapsed,
       toggleNotesList: s.toggleNotesList,
       setActiveTab: s.setActiveTab,
+      setSwitcherOpen: s.setSwitcherOpen,
     }))
   );
 
-  const { globalVars, soundEnabled, customNotes, userNotes, cheatsheets, userNotesHydrated } = useCtfStore(
+  const { globalVars, soundEnabled, customNotes, userNotes, cheatsheets, userNotesHydrated, addCustomNote } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
       soundEnabled: s.soundEnabled,
@@ -74,8 +81,10 @@ export const PersistentNotesWorkspace: React.FC = () => {
       userNotes: s.userNotes,
       cheatsheets: s.cheatsheets,
       userNotesHydrated: s.userNotesHydrated,
+      addCustomNote: s.addCustomNote,
     }))
   );
+  const effectiveVars = useEffectiveGlobalVars(globalVars);
 
   const getActiveTab = useNotesWorkspaceStore((s) => s.getActiveTab);
   const getOpenTabs = useNotesWorkspaceStore((s) => s.getOpenTabs);
@@ -144,6 +153,69 @@ export const PersistentNotesWorkspace: React.FC = () => {
   const toggleList = () => (isNarrowDock ? setOverlayListOpen((v) => !v) : toggleNotesList());
 
   const [templatizeOpen, setTemplatizeOpen] = useState(false);
+  const [newNoteOpen, setNewNoteOpen] = useState(false);
+
+  const allNotes = useMemo(() => mergeUserNotePools(customNotes, userNotes), [customNotes, userNotes]);
+  const existingDirectories = useMemo(() => {
+    const dirs = new Set<string>();
+    for (const n of allNotes) {
+      if (n.relPath && n.relPath.includes('/')) dirs.add(n.relPath.split('/').slice(0, -1).join('/'));
+    }
+    return Array.from(dirs).sort();
+  }, [allNotes]);
+
+  // Search reuses the dock's "Open anything" switcher (Alt+K is bound globally in useTacticalHotkeys).
+  const openSearch = useCallback(() => setSwitcherOpen(true), [setSwitcherOpen]);
+
+  const handleSaveNewNote = useCallback(
+    (note: Partial<CptsNoteEntry> & { title: string }) => {
+      addCustomNote(note);
+      // addCustomNote prepends the new note.
+      const created = useCtfStore.getState().customNotes[0];
+      if (created) openNote(created.id);
+      setNewNoteOpen(false);
+      if (soundEnabled) playCyberSound('root');
+    },
+    [addCustomNote, openNote, soundEnabled]
+  );
+
+  const activeCommands = activeNote?.commands ?? [];
+  const handleCopyAll = useCallback(() => {
+    const commands = (activeNote?.commands ?? []).filter((c) => c.trim());
+    if (commands.length === 0) return;
+    safeCopyToClipboard(commands.map((c) => interpolateCommand(c, effectiveVars)).join('\n'));
+    if (soundEnabled) playCyberSound('copy');
+    useToastStore.getState().addToast({
+      type: 'success',
+      message: `Copied ${commands.length} command${commands.length === 1 ? '' : 's'} with variables filled in`,
+    });
+  }, [activeNote, effectiveVars, soundEnabled]);
+
+  // Workspace shortcuts: Alt combos the global hotkeys (Alt+K/N/S/E/F/O/P/T, Ctrl+K…) leave free.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.repeat) return;
+      let action: (() => void) | null = null;
+      if (e.code === 'Equal' || e.code === 'NumpadAdd') action = () => setNewNoteOpen(true);
+      else if (e.code === 'KeyC') action = handleCopyAll;
+      if (!action) return;
+      e.preventDefault();
+      e.stopPropagation();
+      action();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, handleCopyAll]);
+
+  const targetBar = (
+    <NotesWorkspaceTargetBar
+      onSearch={openSearch}
+      onNewNote={() => setNewNoteOpen(true)}
+      onCopyAll={handleCopyAll}
+      canCopyAll={activeCommands.some((c) => c.trim())}
+    />
+  );
 
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
@@ -327,6 +399,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
           </div>
         </div>
 
+        {targetBar}
+
         {/* Multi-Tab Strip */}
         <NotesWorkspaceTabStrip />
 
@@ -494,6 +568,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
           </div>
         </div>
 
+        {targetBar}
+
         {/* Tab Strip */}
         <NotesWorkspaceTabStrip />
 
@@ -553,6 +629,13 @@ export const PersistentNotesWorkspace: React.FC = () => {
           scopeLabel={activeNote.title}
         />
       )}
+
+      <NewCptsNoteModal
+        isOpen={newNoteOpen}
+        onClose={() => setNewNoteOpen(false)}
+        onSave={handleSaveNewNote}
+        existingDirectories={existingDirectories}
+      />
     </>
   );
 };
