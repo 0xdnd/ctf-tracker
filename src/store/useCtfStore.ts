@@ -842,7 +842,12 @@ export const mergeMachinesWithCatalog = (
   userSolvesReset: boolean = false,
   catalogSource?: Machine[]
 ): Machine[] => {
-  const catalog = catalogSource || getLoadedMachinesCatalog() || STARTER_MACHINES;
+  const fullCatalog = catalogSource || getLoadedMachinesCatalog();
+  const catalog = fullCatalog || STARTER_MACHINES;
+  // Against the boot STARTER list an unmatched row may still be a real catalog machine: keep it as stored until
+  // the full catalog merges, which then matches it or applies the normal drop rule. Dropping it here lost
+  // user fields that hasUserProgress doesn't count (ip, tags, writeupUrl, ...), and loadCatalog saved the loss.
+  const keepUnmatched = !fullCatalog;
   const catalogIds = new Set(catalog.map((c) => c.id));
   const map = new Map<string, Machine>();
   const nameMap = new Map<string, Machine>();
@@ -1005,7 +1010,7 @@ export const mergeMachinesWithCatalog = (
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
           });
         }
-      } else if (m.isCustom || genuineCustom || hasUserProgress(m)) {
+      } else if (m.isCustom || genuineCustom || keepUnmatched || hasUserProgress(m)) {
         // Genuine custom machine, legacy isCustom row, or catalog machine (not in the loaded catalog yet) with
         // user progress: keep the row as stored. Only genuine customs get the flag (same rule as toLeanMachines);
         // never stamp anything else (it would stick once the full catalog matches) and never remove a stamp

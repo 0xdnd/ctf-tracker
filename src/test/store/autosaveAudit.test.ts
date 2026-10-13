@@ -63,6 +63,45 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('item 2: boot merge against STARTER_MACHINES', () => {
+  // htb-dancing is in the full catalog but not in STARTER_MACHINES; this row has no "progress" per hasUserProgress.
+  const dancing = () =>
+    box('htb-dancing', {
+      name: 'Dancing',
+      platform: 'HTB',
+      isCustom: undefined,
+      status: 'backlog',
+      ip: '10.129.77.7',
+      tags: ['my-own-tag'],
+      writeupUrl: 'https://notes.example/dancing',
+    });
+
+  it('keeps edits on a not-yet-loaded catalog machine through boot and the full catalog merge', async () => {
+    seedStorage([dancing()]);
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    // Boot (STARTER only): the row rides along unchanged, and the persisted blob keeps it too.
+    expect(s().machines.find((m) => m.id === 'htb-dancing')?.ip).toBe('10.129.77.7');
+    mod.useCtfStore.setState({ viewMode: 'list' }); // any persisted write
+    const blob = JSON.parse(localStorage.getItem(STORE_KEY) as string);
+    expect(blob.state.machines.find((m: Machine) => m.id === 'htb-dancing')?.ip).toBe('10.129.77.7');
+
+    await s().loadCatalog();
+    const merged = s().machines.find((m) => m.id === 'htb-dancing');
+    expect(merged?.ip).toBe('10.129.77.7');
+    expect(merged?.writeupUrl).toBe('https://notes.example/dancing');
+    expect(merged?.tags).toContain('my-own-tag');
+  });
+
+  it('the full catalog merge still drops idle rows that match nothing', () => {
+    return boot().then((mod) => {
+      const ghost = box('htb-zz-not-a-machine', { name: 'ZZ Ghost', platform: 'HTB', isCustom: undefined, status: 'backlog' });
+      expect(ids(mod.mergeMachinesWithCatalog([ghost]))).toContain(ghost.id); // partial: kept for now
+      expect(ids(mod.mergeMachinesWithCatalog([ghost], false, mod.useCtfStore.getState().machines))).not.toContain(ghost.id);
+    });
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);
