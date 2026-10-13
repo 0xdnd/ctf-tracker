@@ -3067,6 +3067,8 @@ function checkpointTimerAndFlush() {
 // Flush immediately on tab close or backgrounding
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', checkpointTimerAndFlush);
+  // pagehide also fires where beforeunload doesn't (mobile Safari, bfcache navigations): same save as hidden.
+  window.addEventListener('pagehide', checkpointTimerAndFlush);
   // An aborted restore in another tab released our gate: save whatever was held back while it was engaged.
   onRestoreLockReleased(flushProfileSave);
   document.addEventListener('visibilitychange', () => {
