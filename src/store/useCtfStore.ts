@@ -444,44 +444,70 @@ let profileLoadGeneration = 0;
 export { SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY } from '../utils/schemaWriteGate';
 export { restorePreMigrationBackup, listPreMigrationBackups } from './preMigrationBackup';
 
+export const STORAGE_FULL_MESSAGE = 'Storage is full — changes are kept in memory only; export a backup.';
+/** Keys whose last write failed; the alert fires once per key until a write to it succeeds again. */
+const failingStorageKeys = new Set<string>();
+
 // Every write below is a no-op while the schema write gate is engaged (newer ZeroBox in another tab, or restore).
 export const safeLocalStorage = {
   getItem: (name: string): string | null => {
     if (typeof window === 'undefined') return null;
+    // A value held in memory is newer than the disk copy (its write failed), so it wins.
+    const held = inMemoryFallbackStorage.get(name);
+    if (held !== undefined) return held;
     try {
-      const val = localStorage.getItem(name);
-      return val !== null ? val : (inMemoryFallbackStorage.get(name) || null);
+      return localStorage.getItem(name);
     } catch {
       isStorageEphemeral = true;
-      return inMemoryFallbackStorage.get(name) || null;
+      return null;
     }
   },
-  setItem: (name: string, value: string): void => {
-    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
+  /** Disk write only: true once it landed (any memory-held copy is dropped). No fallback, no alert. */
+  tryWrite: (name: string, value: string): boolean => {
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
     try {
       localStorage.setItem(name, value);
+      inMemoryFallbackStorage.delete(name);
+      failingStorageKeys.delete(name);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  /** Returns false when the value could only be kept in memory (quota or storage error); the user is alerted. */
+  setItem: (name: string, value: string): boolean => {
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
+    try {
+      localStorage.setItem(name, value);
+      inMemoryFallbackStorage.delete(name);
+      failingStorageKeys.delete(name);
+      return true;
     } catch (e: any) {
       isStorageEphemeral = true;
       inMemoryFallbackStorage.set(name, value);
+      if (failingStorageKeys.has(name)) return false;
+      failingStorageKeys.add(name);
       const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.number === -2147024882;
       try {
         window.dispatchEvent(
           new CustomEvent('zerobox:storage', {
             detail: isQuota
-              ? { kind: 'quota', message: 'Storage full — writeups moved to deep storage. Export a backup now.' }
-              : { kind: 'error', message: String(e?.message || e) },
+              ? { kind: 'quota', message: STORAGE_FULL_MESSAGE, sticky: true }
+              : { kind: 'error', message: `Could not save to browser storage (${String(e?.message || e)}). Changes are kept in memory only; export a backup.`, sticky: true },
           })
         );
       } catch {}
+      return false;
     }
   },
   removeItem: (name: string): void => {
     if (typeof window === 'undefined' || isSchemaWriteGated()) return;
+    inMemoryFallbackStorage.delete(name);
+    failingStorageKeys.delete(name);
     try {
       localStorage.removeItem(name);
     } catch {
       isStorageEphemeral = true;
-      inMemoryFallbackStorage.delete(name);
     }
   },
   isEphemeral: (): boolean => {
@@ -498,6 +524,31 @@ export const safeLocalStorage = {
     }
   }
 };
+
+/**
+ * Writes a profile payload to its key. On quota it retries without writeup/quick-note bodies (those also live in
+ * IndexedDB deep storage); if that fails too the full payload is held in memory (and the user alerted) and this
+ * returns false so callers don't treat it as saved. The legacy specter_ctf_profile_* mirror is still read
+ * (getProfileStorageKey fallback, backups), so it is kept in step, best effort: a mirror that can't be replaced is
+ * removed rather than left stale.
+ */
+function writeProfilePayload(profileId: string, payload: { machines: Machine[] } & Record<string, unknown>): boolean {
+  const key = getWriteProfileStorageKey(profileId);
+  const serialized = JSON.stringify(payload);
+  let written = serialized;
+  if (!safeLocalStorage.tryWrite(key, serialized)) {
+    const lean = JSON.stringify({ ...payload, machines: stripDeepFieldsFromMachines(payload.machines) });
+    if (!safeLocalStorage.tryWrite(key, lean)) {
+      safeLocalStorage.setItem(key, serialized);
+      return false;
+    }
+    console.warn('[ZeroBox] LocalStorage quota reached: saved the profile without writeup bodies (kept in IndexedDB).');
+    written = lean;
+  }
+  const mirror = `specter_ctf_profile_${profileId || 'guest'}`;
+  if (!safeLocalStorage.tryWrite(mirror, written)) safeLocalStorage.removeItem(mirror);
+  return true;
+}
 
 export const ATTACK_GRAPH_STORAGE_KEY = 'zerobox-attack-graph-state';
 
@@ -1049,6 +1100,7 @@ export const mergeMachinesWithCatalog = (
 let lastPartialize: { inputs: unknown[]; snapshot: Record<string, unknown> } | null = null;
 let lastPersistedSnapshot: unknown;
 let lastPersistedVersion: number | undefined;
+let lastFailedSnapshot: unknown;
 // pruneMisstampedCustomMachines runs once per session, after the first full-catalog merge
 let customStoragePruned = false;
 
@@ -2486,7 +2538,6 @@ export const useCtfStore = create<CtfStoreState>()(
       saveProfileData: (profileId?: string) => {
         const state = get();
         const targetId = profileId || state.currentProfileId || 'guest';
-        const targetKey = getWriteProfileStorageKey(targetId);
         const persistedMachines = overlayActiveTimer(state);
 
         // Dual-tier: asynchronously save deep payloads (writeups & notes) to IndexedDB
@@ -2509,29 +2560,7 @@ export const useCtfStore = create<CtfStoreState>()(
           deletedMachineIds: state.deletedMachineIds,
           userSolvesReset: state.userSolvesReset,
         };
-        try {
-          const serialized = JSON.stringify(payload);
-          safeLocalStorage.setItem(targetKey, serialized);
-          safeLocalStorage.setItem(`specter_ctf_profile_${targetId}`, serialized);
-        } catch (e: any) {
-          // Quota guard: prune writeups from localStorage if quota exceeded (safely stored in IndexedDB)
-          if (e?.name === 'QuotaExceededError' || e?.code === 22 || (typeof e?.message === 'string' && e.message.toLowerCase().includes('quota'))) {
-            console.warn('[ZeroBox] LocalStorage quota reached. Pruning writeup bodies from localStorage (safely stored in IndexedDB).');
-            try {
-              const leanPayload = {
-                ...payload,
-                machines: stripDeepFieldsFromMachines(payload.machines),
-              };
-              const serializedLean = JSON.stringify(leanPayload);
-              safeLocalStorage.setItem(targetKey, serializedLean);
-              safeLocalStorage.setItem(`specter_ctf_profile_${targetId}`, serializedLean);
-            } catch (innerErr) {
-              console.error('Failed to save even stripped profile data:', innerErr);
-            }
-          } else {
-            console.error('Failed to save profile data:', e);
-          }
-        }
+        writeProfilePayload(targetId, payload);
       },
 
       resetAllProgress: async () => {
@@ -2600,9 +2629,15 @@ export const useCtfStore = create<CtfStoreState>()(
         },
         setItem: (name: string, value: StorageValue<any>): void => {
           if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
-          safeLocalStorage.setItem(name, JSON.stringify(value));
-          lastPersistedSnapshot = value.state;
-          lastPersistedVersion = value.version;
+          // A failed write (quota) is retried on the next real change, not on every transient set() (timer ticks).
+          if (value.state === lastFailedSnapshot) return;
+          if (safeLocalStorage.setItem(name, JSON.stringify(value))) {
+            lastPersistedSnapshot = value.state;
+            lastPersistedVersion = value.version;
+            lastFailedSnapshot = undefined;
+          } else {
+            lastFailedSnapshot = value.state;
+          }
         },
         removeItem: (name: string): void => {
           lastPersistedSnapshot = undefined;
@@ -2825,7 +2860,6 @@ export function flushProfileSave() {
   const state = useCtfStore.getState();
   if (!state.currentProfileId) return;
 
-  const targetKey = getWriteProfileStorageKey(state.currentProfileId);
   const persistedMachines = overlayActiveTimer(state);
 
   // Optimize localStorage footprint: Strip large static catalog walkthroughs & synopses
@@ -2852,25 +2886,11 @@ export function flushProfileSave() {
     deletedMachineIds: state.deletedMachineIds,
     userSolvesReset: state.userSolvesReset,
   };
-  try {
-    const serialized = JSON.stringify(payload);
-    saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, payload).catch(() => {});
-    safeLocalStorage.setItem(targetKey, serialized);
-    safeLocalStorage.setItem(`specter_ctf_profile_${state.currentProfileId}`, serialized);
+  saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, payload).catch(() => {});
+  // Only a write that reached disk is a save: on failure the markers stay put, so the next save point retries.
+  if (writeProfilePayload(state.currentProfileId, payload)) {
     markProfileSaved(state);
     broadcastCrossTabMessage('WRITEUPS_UPDATED', { profileId: state.currentProfileId });
-  } catch (err: any) {
-    if (err?.name === 'QuotaExceededError' || err?.code === 22 || (typeof err?.message === 'string' && err.message.toLowerCase().includes('quota'))) {
-      console.warn('[ZeroBox] LocalStorage quota reached in flushProfileSave. Pruning writeup bodies from localStorage.');
-      try {
-        const leanPayload = {
-          ...payload,
-          machines: stripDeepFieldsFromMachines(payload.machines),
-        };
-        safeLocalStorage.setItem(targetKey, JSON.stringify(leanPayload));
-        lastSavedMachines = state.machines;
-      } catch {}
-    }
   }
 }
 

@@ -59,6 +59,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   retireAll();
   vi.useRealTimers();
 });
@@ -82,7 +83,7 @@ describe('item 2: boot merge against STARTER_MACHINES', () => {
     const s = () => mod.useCtfStore.getState();
     // Boot (STARTER only): the row rides along unchanged, and the persisted blob keeps it too.
     expect(s().machines.find((m) => m.id === 'htb-dancing')?.ip).toBe('10.129.77.7');
-    mod.useCtfStore.setState({ viewMode: 'list' }); // any persisted write
+    mod.useCtfStore.setState({ crtOverlay: true }); // any persisted write
     const blob = JSON.parse(localStorage.getItem(STORE_KEY) as string);
     expect(blob.state.machines.find((m: Machine) => m.id === 'htb-dancing')?.ip).toBe('10.129.77.7');
 
@@ -158,6 +159,63 @@ describe('item 4: auth profile differs from the persisted profile', () => {
     s().addLootItem({ category: 'note', title: 'new', value: 'x' });
     expect(JSON.parse(localStorage.getItem('zerobox_loot_v2_p1') as string).lootItems.map((l: { id: string }) => l.id)).toEqual(['loot-p1']);
     expect(JSON.parse(localStorage.getItem('zerobox_loot_v2_p2') as string).lootItems).toHaveLength(2);
+  });
+});
+
+describe('item 5: storage quota', () => {
+  const quota = () => Object.assign(new Error('quota'), { name: 'QuotaExceededError' });
+
+  it('setItem reports failure, keeps the value in memory and getItem prefers it over the stale disk copy', async () => {
+    const mod = await boot();
+    localStorage.setItem('zb-test-key', 'old');
+    const alerts: any[] = [];
+    const onAlert = (e: Event) => alerts.push((e as CustomEvent).detail);
+    window.addEventListener('zerobox:storage', onAlert);
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw quota();
+    });
+    expect(mod.safeLocalStorage.setItem('zb-test-key', 'new')).toBe(false);
+    spy.mockRestore();
+    window.removeEventListener('zerobox:storage', onAlert);
+
+    expect(mod.safeLocalStorage.getItem('zb-test-key')).toBe('new');
+    expect(alerts).toEqual([{ kind: 'quota', message: mod.STORAGE_FULL_MESSAGE, sticky: true }]);
+    expect(mod.STORAGE_FULL_MESSAGE).toBe('Storage is full — changes are kept in memory only; export a backup.');
+
+    expect(mod.safeLocalStorage.setItem('zb-test-key', 'newer')).toBe(true);
+    expect(localStorage.getItem('zb-test-key')).toBe('newer');
+  });
+
+  it('retries the profile save without writeup bodies when the full payload does not fit', async () => {
+    seedStorage([box('custom-mine')]);
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    s().updateMachine('custom-mine', { writeupMarkdown: 'HUGE-WRITEUP-BODY' });
+    const real = Storage.prototype.setItem;
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
+      if (String(v).includes('HUGE-WRITEUP-BODY')) throw quota();
+      return real.call(this, k, v);
+    });
+    mod.flushProfileSave();
+    spy.mockRestore();
+    const row = storedProfile().machines.find((m: Machine) => m.id === 'custom-mine');
+    expect(row).toBeTruthy();
+    expect(row.writeupMarkdown).toBeUndefined();
+  });
+
+  it('a profile save that fails completely is not marked saved, so the next save point retries it', async () => {
+    seedStorage([box('custom-mine')]);
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw quota();
+    });
+    s().updateMachine('custom-mine', { ip: '10.10.99.99' });
+    mod.flushProfileSave();
+    spy.mockRestore();
+    expect(storedProfile().machines[0].ip).toBe('10.10.10.5'); // disk still old
+    s().pauseTimer(); // a save point: writes only when something is still unsaved
+    expect(storedProfile().machines.find((m: Machine) => m.id === 'custom-mine').ip).toBe('10.10.99.99');
   });
 });
 

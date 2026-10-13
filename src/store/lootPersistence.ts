@@ -72,7 +72,7 @@ const lootStorage = {
         window.dispatchEvent(
           new CustomEvent('zerobox:storage', {
             detail: isQuota
-              ? { kind: 'quota', message: 'Storage full — credentials and loot could not be saved. Export a backup now.' }
+              ? { kind: 'quota', message: 'Storage is full — credentials and loot are kept in memory only; export a backup.', sticky: true }
               : { kind: 'error', message: String(e?.message || e) },
           })
         );
