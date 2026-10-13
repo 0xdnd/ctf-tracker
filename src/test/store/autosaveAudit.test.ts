@@ -2,6 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Machine } from '../../types';
 import { SCHEMA_VERSION } from '../../utils/schemaWriteGate';
 
+const idb = vi.hoisted(() => ({ workspace: new Map<string, unknown>() }));
+vi.mock('../../utils/resilientStorage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/resilientStorage')>()),
+  loadWorkspaceFromIdb: vi.fn(async (key: string) => idb.workspace.get(key) ?? null),
+  saveWorkspaceToIdb: vi.fn(async (key: string, data: unknown) => {
+    idb.workspace.set(key, JSON.parse(JSON.stringify(data)));
+    return true;
+  }),
+}));
+
 // Autosave audit regressions. Each test boots a fresh store module against a prepared localStorage.
 const PROFILE_KEY = 'zerobox_operator_profile_guest';
 const STORE_KEY = 'zerobox-tactical-store';
@@ -56,6 +66,7 @@ const ids = (machines: Machine[]) => machines.map((m) => m.id);
 
 beforeEach(() => {
   localStorage.clear();
+  idb.workspace.clear();
 });
 
 afterEach(() => {
@@ -216,6 +227,46 @@ describe('item 5: storage quota', () => {
     expect(storedProfile().machines[0].ip).toBe('10.10.10.5'); // disk still old
     s().pauseTimer(); // a save point: writes only when something is still unsaved
     expect(storedProfile().machines.find((m: Machine) => m.id === 'custom-mine').ip).toBe('10.10.99.99');
+  });
+});
+
+describe('item 6: restore from the IndexedDB workspace copy', () => {
+  const copy = (machines: Machine[], savedAt: string) => ({ machines, activeTargetId: null, customNotes: [], savedAt });
+
+  it('restores when localStorage has no workspace at all', async () => {
+    idb.workspace.set('zb:workspace:guest', copy([box('custom-from-idb')], '2026-10-01T00:00:00.000Z'));
+    const mod = await boot();
+    await vi.waitFor(() => expect(ids(mod.useCtfStore.getState().machines)).toContain('custom-from-idb'));
+    expect(ids(storedProfile().machines)).toContain('custom-from-idb');
+  });
+
+  it('restores when the localStorage copy is older than the IndexedDB copy', async () => {
+    seedStorage([box('custom-mine')]);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ machines: [box('custom-mine')], savedAt: '2026-10-01T00:00:00.000Z' }));
+    idb.workspace.set('zb:workspace:guest', copy([box('custom-mine', { ip: '10.10.20.20' })], '2026-10-02T00:00:00.000Z'));
+    const mod = await boot();
+    await vi.waitFor(() =>
+      expect(mod.useCtfStore.getState().machines.find((m) => m.id === 'custom-mine')?.ip).toBe('10.10.20.20')
+    );
+  });
+
+  it('keeps localStorage when it is as new or newer, or has no stamp', async () => {
+    seedStorage([box('custom-mine')]);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ machines: [box('custom-mine')], savedAt: '2026-10-03T00:00:00.000Z' }));
+    idb.workspace.set('zb:workspace:guest', copy([box('custom-mine', { ip: '10.10.20.20' })], '2026-10-02T00:00:00.000Z'));
+    const mod = await boot();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mod.useCtfStore.getState().machines.find((m) => m.id === 'custom-mine')?.ip).toBe('10.10.10.5');
+  });
+
+  it('every profile save stamps the same savedAt on both copies', async () => {
+    seedStorage([box('custom-mine')]);
+    const mod = await boot();
+    mod.useCtfStore.getState().updateMachine('custom-mine', { ip: '10.10.30.30' });
+    mod.flushProfileSave();
+    const stamp = storedProfile().savedAt;
+    expect(typeof stamp).toBe('string');
+    expect((idb.workspace.get('zb:workspace:guest') as { savedAt: string }).savedAt).toBe(stamp);
   });
 });
 
