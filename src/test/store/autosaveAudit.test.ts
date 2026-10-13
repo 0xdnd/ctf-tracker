@@ -329,6 +329,40 @@ describe('item 7: attack graph storage is per profile', () => {
     expect(localStorage.getItem('zerobox_graph_state_p1')).toContain('edge-legacy');
   });
 
+  it('the legacy graph is claimed once, globally, only by the profile the store blob was on', async () => {
+    asP1();
+    localStorage.setItem(GLOBAL, graphOf('edge-legacy'));
+    localStorage.setItem('zerobox_operator_profile_p2', JSON.stringify({ machines: [box('custom-p2')] }));
+    const mod = await boot();
+    expect(edgeIds(mod)).toEqual(['edge-legacy']);
+    mod.useCtfStore.getState().loadProfileData('p2'); // an existing profile without its own graph key
+    expect(edgeIds(mod)).toEqual([]);
+    expect(localStorage.getItem('zerobox_graph_state_p2')).toBeNull();
+
+    // A later boot on p2 (blob now names p2) does not claim it either.
+    localStorage.removeItem('zerobox_graph_state_p1');
+    localStorage.setItem('rootvector_auth_session', JSON.stringify({ state: { user: { id: 'p2' } } }));
+    seedStorage([box('custom-p2')], 'p2');
+    const again = await boot();
+    expect(edgeIds(again)).toEqual([]);
+  });
+
+  it('no claim once guest has saved to the unscoped key under this build', async () => {
+    asP1();
+    localStorage.setItem(GLOBAL, graphOf('edge-guest-new'));
+    localStorage.setItem('zerobox_graph_guest_written_v2', '1');
+    const mod = await boot();
+    expect(edgeIds(mod)).toEqual([]);
+    expect(localStorage.getItem('zerobox_graph_state_p1')).toBeNull();
+  });
+
+  it('a guest save before the claim has run marks the unscoped key as guest-owned', async () => {
+    const mod = await boot(); // guest; the claim flag is set at boot...
+    localStorage.removeItem('zerobox_graph_legacy_claimed'); // ...simulate a gated boot that could not set it
+    mod.useCtfStore.getState().addGraphEdge({ id: 'edge-g', sourceId: 'a', targetId: 'b', type: 'pivot-ssh', status: 'potential' });
+    expect(localStorage.getItem('zerobox_graph_guest_written_v2')).toBe('1');
+  });
+
   it("resetAllProgress removes the profile's graph key and a reload does not bring it back", async () => {
     asP1();
     localStorage.setItem(GLOBAL, graphOf('edge-legacy'));
