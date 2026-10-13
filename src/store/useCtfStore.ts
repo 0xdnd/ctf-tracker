@@ -82,6 +82,7 @@ import {
   isNewerSchemaVersion,
   engageSchemaWriteGate,
   onSchemaWriteGateEngaged,
+  onSchemaWriteGateReleased,
   initSchemaVersionGate,
   recordSchemaVersion,
 } from '../utils/schemaWriteGate';
@@ -3178,6 +3179,9 @@ export const useCtfStore = create<CtfStoreState>()(
         },
         setItem: (name: string, value: StorageValue<any>): void => {
           if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
+          // Gated (newer schema / restore): nothing is written and nothing is recorded, neither as persisted nor
+          // as failed, so the release listener below re-flushes this snapshot once the gate lifts.
+          if (isSchemaWriteGated()) return;
           // A failed write (quota) is retried on the next real change, not on every transient set() (timer ticks).
           if (value.state === lastFailedSnapshot) return;
           if (safeLocalStorage.setItem(name, JSON.stringify(value))) {
@@ -3649,6 +3653,14 @@ useCtfStore.subscribe((state, prev) => {
   saveDebounceTimer = setTimeout(flushProfileSave, 1200);
 });
 
+/** Writes the current persisted snapshot of the tactical store (no-op when unchanged or still gated). */
+function flushTacticalBlob() {
+  if (isSchemaWriteGated()) return;
+  const { storage, partialize, name, version } = useCtfStore.persist.getOptions();
+  if (!storage || !partialize || !name) return;
+  void storage.setItem(name, { state: partialize(useCtfStore.getState()), version });
+}
+
 /**
  * Close/background save: fold the live timer into the active machine first, so the persisted store blob (which
  * wins at boot) carries the exact seconds too, not just the profile copy. Then write through the usual path.
@@ -3667,6 +3679,8 @@ if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', checkpointTimerAndFlush);
   // An aborted restore in another tab released our gate: save whatever was held back while it was engaged.
   onRestoreLockReleased(flushProfileSave);
+  // Same for the tactical persist blob: changes made while gated were never written (see storage.setItem).
+  onSchemaWriteGateReleased(flushTacticalBlob);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       checkpointTimerAndFlush();

@@ -99,9 +99,23 @@ export function engageSchemaWriteGate(reason: SchemaWriteGateReason): void {
   });
 }
 
+const releaseListeners = new Set<() => void>();
+
+/** Called after a 'restoring' gate was released, so writers can flush what they held back while it was engaged. */
+export function onSchemaWriteGateReleased(cb: () => void): () => void {
+  releaseListeners.add(cb);
+  return () => releaseListeners.delete(cb);
+}
+
 /** Only a restore lock can be released (e.g. after a failed restore was rolled back). */
 export function releaseRestoreWriteGate(): void {
-  if (gateReason === 'restoring') gateReason = null;
+  if (gateReason !== 'restoring') return;
+  gateReason = null;
+  releaseListeners.forEach((cb) => {
+    try {
+      cb();
+    } catch {}
+  });
 }
 
 export const parseSchemaVersion = (raw: string | null | undefined): number | null => {
