@@ -2936,7 +2936,11 @@ if (typeof window !== 'undefined') {
       try {
         const parsed = JSON.parse(event.newValue);
         const data = parsed.state || parsed;
-        if (data && Array.isArray(data.machines)) {
+        // The persisted store blob is shared by every tab: one on another profile must not hand us its data,
+        // or our next save would write it under this profile's keys.
+        const fromOtherProfile =
+          event.key === 'zerobox-tactical-store' && (data?.currentProfileId || 'guest') !== currentProfileId;
+        if (!fromOtherProfile && data && Array.isArray(data.machines)) {
           const userSolvesReset = Boolean(data.userSolvesReset);
           const state = useCtfStore.getState();
           const incoming = mergeMachinesWithCatalog(data.machines, userSolvesReset);
