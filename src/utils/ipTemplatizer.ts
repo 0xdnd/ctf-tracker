@@ -84,7 +84,7 @@ const IPV4_RE = new RegExp(`(?<![\\w.])(?:${OCTET}\\.){3}${OCTET}(?![\\w]|\\.\\d
 const VERSION_PREFIX_RE = /\b(?:v|ver|version|release|build)\s*[:=]?\s*$/i;
 const CIDR_SUFFIX_RE = /^\/\d{1,2}(?!\d)/;
 const LHOST_OPTION_PREFIX_RE = /(?:^|[^\w])-{0,2}lhost\s*[=:]?\s*["']?$/i;
-const FRONTMATTER_RE = /^﻿?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
+const FRONTMATTER_RE = /^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
 const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
 
 /** Length of the YAML frontmatter block (0 when absent). */
@@ -339,7 +339,7 @@ export function recordOriginalIps(markdown: string, originals: Record<IpRole, st
 
   const fmMatch = markdown.match(FRONTMATTER_RE);
   const eol = markdown.includes('\r\n') ? '\r\n' : '\n';
-  const bom = markdown.startsWith('﻿') ? '﻿' : '';
+  const bom = markdown.startsWith('\uFEFF') ? '\uFEFF' : '';
 
   if (!fmMatch) {
     const lines = roles.map((r) => `${ORIGINAL_KEYS[r]}: ${originals[r].join(', ')}`);
@@ -347,7 +347,7 @@ export function recordOriginalIps(markdown: string, originals: Record<IpRole, st
   }
 
   const block = fmMatch[0];
-  const inner = block.replace(/^﻿?---\r?\n/, '').replace(/\r?\n---(?:\r?\n)?$/, '');
+  const inner = block.replace(/^\uFEFF?---\r?\n/, '').replace(/\r?\n---(?:\r?\n)?$/, '');
   const lines = inner.split(/\r?\n/);
   for (const role of roles) {
     const key = ORIGINAL_KEYS[role];
