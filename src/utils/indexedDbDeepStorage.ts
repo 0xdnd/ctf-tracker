@@ -225,47 +225,51 @@ export async function restoreDeepProfileData(profileId: string, payload: DeepPro
 }
 
 /**
- * Asynchronously loads deep profile payloads from IndexedDB.
+ * Asynchronously loads deep profile payloads from IndexedDB. Resolves null only when there is no record (or no
+ * IndexedDB in this environment, so nothing can live there); REJECTS when the database can't be opened or read,
+ * so callers can tell "nothing stored" from "couldn't look" and never treat a failed read as an empty record.
  */
 export async function loadDeepProfileData(profileId: string): Promise<DeepProfilePayload | null> {
-  let db: IDBDatabase | null = null;
-  try {
-    const activeDb = await openDeepDatabase();
-    if (!activeDb) return null;
-    db = activeDb;
-    return await new Promise<DeepProfilePayload | null>((resolve) => {
-      let isResolved = false;
-      const safeDone = (res: DeepProfilePayload | null) => {
-        if (!isResolved) {
-          isResolved = true;
-          try { activeDb.close(); } catch {}
-          resolve(res);
-        }
+  if (!isIndexedDbSupported()) return null;
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME);
       };
-
-      try {
-        const tx = activeDb.transaction(STORE_NAME, 'readonly');
-        tx.onerror = () => safeDone(null);
-        tx.onabort = () => safeDone(null);
-
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(profileId || 'guest');
-
-        req.onsuccess = () => {
-          const result = req.result as DeepProfilePayload | undefined;
-          safeDone(result || null);
+      request.onblocked = () => reject(new Error('Deep storage database is blocked by another tab'));
+      request.onsuccess = () => {
+        const opened = request.result;
+        opened.onversionchange = () => {
+          try { opened.close(); } catch {}
         };
-        req.onerror = () => safeDone(null);
-      } catch (err) {
-        console.warn('[ZeroBox Deep Storage] Synchronous read error:', err);
-        safeDone(null);
-      }
-    });
-  } catch (err) {
-    console.warn('[ZeroBox Deep Storage] Could not read from IndexedDB:', err);
-    try { db?.close(); } catch {}
-    return null;
-  }
+        resolve(opened);
+      };
+      request.onerror = () => reject(request.error || new Error('Failed to open deep storage'));
+    } catch (err) {
+      reject(err);
+    }
+  });
+  return new Promise<DeepProfilePayload | null>((resolve, reject) => {
+    let settled = false;
+    const done = (err: unknown, res: DeepProfilePayload | null = null) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch {}
+      if (err) reject(err);
+      else resolve(res);
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      tx.onerror = () => done(tx.error || new Error('Deep storage read failed'));
+      tx.onabort = () => done(tx.error || new Error('Deep storage read aborted'));
+      const req = tx.objectStore(STORE_NAME).get(profileId || 'guest');
+      req.onsuccess = () => done(null, (req.result as DeepProfilePayload | undefined) || null);
+      req.onerror = () => done(req.error || new Error('Deep storage read failed'));
+    } catch (err) {
+      done(err || new Error('Deep storage read failed'));
+    }
+  });
 }
 
 /**

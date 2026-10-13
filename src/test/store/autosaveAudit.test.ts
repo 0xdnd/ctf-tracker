@@ -2,17 +2,26 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Machine } from '../../types';
 import { SCHEMA_VERSION } from '../../utils/schemaWriteGate';
 
-const idb = vi.hoisted(() => ({ workspace: new Map<string, unknown>(), deep: new Map<string, any>() }));
+const idb = vi.hoisted(() => ({
+  workspace: new Map<string, unknown>(),
+  deep: new Map<string, any>(),
+  /** When set, replaces the deep-record read (to delay or fail it). */
+  deepLoader: null as null | ((id: string) => Promise<any>),
+  /** When set, replaces the IndexedDB workspace-copy read (to delay it). */
+  workspaceLoader: null as null | ((key: string) => Promise<any>),
+}));
 vi.mock('../../utils/indexedDbDeepStorage', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../utils/indexedDbDeepStorage')>()),
-  loadDeepProfileData: vi.fn(async (id: string) => idb.deep.get(id) ?? null),
+  loadDeepProfileData: vi.fn(async (id: string) => (idb.deepLoader ? idb.deepLoader(id) : (idb.deep.get(id) ?? null))),
   saveDeepProfileData: vi.fn(async (id: string, data: unknown) => {
     idb.deep.set(id, JSON.parse(JSON.stringify(data)));
   }),
 }));
 vi.mock('../../utils/resilientStorage', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../utils/resilientStorage')>()),
-  loadWorkspaceFromIdb: vi.fn(async (key: string) => idb.workspace.get(key) ?? null),
+  loadWorkspaceFromIdb: vi.fn(async (key: string) =>
+    idb.workspaceLoader ? idb.workspaceLoader(key) : (idb.workspace.get(key) ?? null)
+  ),
   saveWorkspaceToIdb: vi.fn(async (key: string, data: unknown) => {
     idb.workspace.set(key, JSON.parse(JSON.stringify(data)));
     return true;
@@ -75,6 +84,8 @@ beforeEach(() => {
   localStorage.clear();
   idb.workspace.clear();
   idb.deep.clear();
+  idb.deepLoader = null;
+  idb.workspaceLoader = null;
 });
 
 afterEach(() => {
@@ -465,6 +476,55 @@ describe('pagehide flushes like visibilitychange hidden', () => {
     const row = storedProfile().machines.find((m: Machine) => m.id === 'custom-a');
     expect(row.ip).toBe('10.10.4.4');
     expect(row.timeSpentSeconds).toBe(42);
+  });
+});
+
+describe('advisor 1+2: deep-record hydration is profile-guarded and failure-aware', () => {
+  const deferred = () => {
+    let resolve!: (v: any) => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<any>((res, rej) => ((resolve = res), (reject = rej)));
+    return { promise, resolve, reject };
+  };
+
+  it("a slow boot read never lands in (or marks loaded) the profile the tab switched to", async () => {
+    seedStorage([box('custom-shared')]);
+    localStorage.setItem('zerobox_operator_profile_p2', JSON.stringify({ machines: [box('custom-shared')] }));
+    const reads: Record<string, ReturnType<typeof deferred>> = { guest: deferred(), p2: deferred() };
+    idb.deepLoader = (id) => reads[id].promise;
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+
+    s().loadProfileData('p2');
+    reads.guest.resolve({ writeups: { 'custom-shared': { writeupMarkdown: 'GUEST BODY' } }, customNotes: [] });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(s().currentProfileId).toBe('p2');
+    expect(s().machines.find((m) => m.id === 'custom-shared')?.writeupMarkdown || '').toBe('');
+    expect(s().isDeepStorageLoaded).toBe(false);
+
+    reads.p2.resolve(null);
+    await vi.waitFor(() => expect(s().isDeepStorageLoaded).toBe(true));
+  });
+
+  it('a failed deep read keeps deep saves off (no empty record over IndexedDB-only bodies), then retries', async () => {
+    seedStorage([box('custom-a')]);
+    idb.deep.set('guest', { writeups: { 'custom-a': { writeupMarkdown: 'ONLY IN IDB' } }, customNotes: [] });
+    let fail = true;
+    idb.deepLoader = async (id) => {
+      if (fail) throw new Error('IndexedDB blocked');
+      return idb.deep.get(id) ?? null;
+    };
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(s().isDeepStorageLoaded).toBe(false);
+    s().updateMachine('custom-a', { ip: '10.10.5.5' });
+    mod.flushProfileSave();
+    expect(idb.deep.get('guest').writeups['custom-a'].writeupMarkdown).toBe('ONLY IN IDB');
+
+    fail = false;
+    await vi.waitFor(() => expect(s().isDeepStorageLoaded).toBe(true), { timeout: 4_000 });
+    expect(s().machines.find((m) => m.id === 'custom-a')?.writeupMarkdown).toBe('ONLY IN IDB');
   });
 });
 
