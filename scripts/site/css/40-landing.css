@@ -144,6 +144,8 @@
 /* Enlargeable screenshots (script adds role=button) and the preview dialog. */
 .frame[role="button"]{cursor:zoom-in;-webkit-tap-highlight-color:transparent}
 .frame[role="button"]:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.win[role="button"]{cursor:zoom-in;-webkit-tap-highlight-color:transparent}
+.win[role="button"]:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .frame::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgb(255 255 255/.09),transparent 62%);transition:opacity .3s}
 .lb{max-width:96vw;max-height:94vh;margin:auto;padding:0;overflow:hidden;border:0;border-radius:var(--r-lg);background:var(--card);color:var(--text);box-shadow:0 0 0 1px rgb(255 255 255/.14),0 40px 90px -20px rgb(0 0 0/.9)}
 .lb::backdrop{background:rgb(5 5 8/.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -153,3 +155,23 @@
 @media(hover:hover) and (pointer:fine){.lb button:hover{background:rgb(39 39 42/.95)}}
 .lb button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.frame,.frame::after,.fl,.mod h3{transition:none}.social-link:active,.link-arrow:active,.lb button:active{transform:none}}
+@media(min-width:1440px){
+.hero{padding:calc(48px + 16*var(--f)) 0 calc(40px + 16*var(--f))}
+.hero h1,.display{font-size:calc(3.25rem + 16*var(--f));line-height:1.06}
+.hero-grid{grid-template-columns:minmax(0,45fr) minmax(0,55fr);gap:calc(48px + 32*var(--f));align-items:center}
+.hero-media{margin-bottom:calc(40px + 8*var(--f))}
+.win img{aspect-ratio:1575/1290;height:auto;object-fit:cover;object-position:top}
+.pace{width:calc(320px + 120*var(--f));left:calc(-44px - 16*var(--f));bottom:calc(-40px - 10*var(--f))}
+.pace-h{font-size:calc(12px + 3*var(--f));padding:calc(9px + 3*var(--f)) calc(12px + 4*var(--f))}
+.chip{font-size:calc(11px + 2*var(--f))}
+.hero .lead{max-width:56ch;font-size:calc(1.125rem + 3.5*var(--f))}
+.social-link,.social-note{font-size:calc(.875rem + 2*var(--f))}
+.landing h3{font-size:calc(1.0625rem + 4*var(--f))}
+.feat-txt h3{font-size:calc(1.125rem + 5*var(--f))}
+.feat-txt p,.ticks li,.faq p,.facts-panel dd{font-size:calc(.9375rem + 2*var(--f))}
+.proof .num{font-size:calc(1.75rem + 8*var(--f))}.proof .lbl{font-size:calc(.875rem + 2*var(--f))}
+.mod h3{font-size:calc(1rem + 3*var(--f))}.mod p{font-size:calc(.875rem + 2*var(--f))}
+.g-d,.g-n{font-size:calc(.875rem + 2*var(--f))}
+.faq summary{font-size:calc(1rem + 2*var(--f))}
+.sec-head{max-width:72ch}
+}
