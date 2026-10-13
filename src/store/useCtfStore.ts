@@ -568,30 +568,46 @@ export const getAttackGraphStorageKey = (profileId: string = 'guest'): string =>
   return id === 'guest' ? ATTACK_GRAPH_STORAGE_KEY : `zerobox_graph_state_${id}`;
 };
 
-/** Set once a profile's one-time legacy fallback (below) has been evaluated, so a later reset can't resurrect it. */
-const graphLegacyCheckedKey = (profileId: string) => `zerobox_graph_legacy_checked_${profileId}`;
+/** Set once the one-time legacy graph claim (claimLegacyAttackGraphOnce) has run; it never runs again. */
+export const GRAPH_LEGACY_CLAIMED_KEY = 'zerobox_graph_legacy_claimed';
+/** Set when the guest profile saves its graph under this build: from then on the unscoped key is guest's own data. */
+export const GRAPH_GUEST_WRITTEN_KEY = 'zerobox_graph_guest_written_v2';
+
+/**
+ * Older builds wrote every profile's graph to the unscoped key as well, and read it when a profile key was missing.
+ * Once, globally: hand that graph to the profile the persisted store blob was last on (the profile that wrote it
+ * last), if that profile has no graph key of its own and guest hasn't saved to the unscoped key under this build.
+ * Every other profile, and every later boot, ignores the unscoped key; it stays guest's key.
+ */
+function claimLegacyAttackGraphOnce(): void {
+  if (typeof window === 'undefined' || safeLocalStorage.getItem(GRAPH_LEGACY_CLAIMED_KEY)) return;
+  try {
+    const legacy = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
+    let blobProfileId: unknown = null;
+    try {
+      blobProfileId = JSON.parse(safeLocalStorage.getItem('zerobox-tactical-store') || 'null')?.state?.currentProfileId;
+    } catch {}
+    if (
+      legacy &&
+      typeof blobProfileId === 'string' &&
+      blobProfileId &&
+      blobProfileId !== 'guest' &&
+      !safeLocalStorage.getItem(GRAPH_GUEST_WRITTEN_KEY) &&
+      !safeLocalStorage.getItem(getAttackGraphStorageKey(blobProfileId))
+    ) {
+      safeLocalStorage.setItem(getAttackGraphStorageKey(blobProfileId), legacy);
+    }
+  } finally {
+    safeLocalStorage.setItem(GRAPH_LEGACY_CLAIMED_KEY, '1');
+  }
+}
 
 export function loadInitialAttackGraphState(profileId: string = 'guest'): AttackGraphPersistedState {
   if (typeof window === 'undefined') {
     return { graphNodePositions: {}, graphEdges: [] };
   }
   try {
-    const id = profileId || 'guest';
-    const key = getAttackGraphStorageKey(id);
-    let raw = safeLocalStorage.getItem(key);
-    // One-time fallback for existing users: older builds wrote every profile's graph to the unscoped key too
-    // (and read it when the profile key was missing). Claim it into the profile key, then never read it again.
-    if (!raw && id !== 'guest' && !safeLocalStorage.getItem(graphLegacyCheckedKey(id))) {
-      const legacy = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
-      const existingUser = Boolean(
-        safeLocalStorage.getItem(`zerobox_operator_profile_${id}`) || safeLocalStorage.getItem(`specter_ctf_profile_${id}`)
-      );
-      if (legacy && existingUser) {
-        raw = legacy;
-        safeLocalStorage.setItem(key, legacy);
-      }
-      safeLocalStorage.setItem(graphLegacyCheckedKey(id), '1');
-    }
+    const raw = safeLocalStorage.getItem(getAttackGraphStorageKey(profileId));
     if (raw) {
       const parsed = JSON.parse(raw);
       const positions = parsed.graphNodePositions !== undefined ? parsed.graphNodePositions : (parsed.nodePositions || {});
@@ -625,7 +641,11 @@ export function saveAttackGraphState(
       edges,
     };
     // Only this profile's key: writing the shared unscoped key too let one profile's graph leak into others.
-    safeLocalStorage.setItem(getAttackGraphStorageKey(profileId), JSON.stringify(payload));
+    const id = profileId || 'guest';
+    if (id === 'guest' && !safeLocalStorage.getItem(GRAPH_LEGACY_CLAIMED_KEY)) {
+      safeLocalStorage.setItem(GRAPH_GUEST_WRITTEN_KEY, '1');
+    }
+    safeLocalStorage.setItem(getAttackGraphStorageKey(id), JSON.stringify(payload));
   } catch (err) {
     console.warn('[ZeroBox] Failed to save attack graph state to storage:', err);
   }
@@ -1132,6 +1152,7 @@ initRestoreLockGate();
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
+claimLegacyAttackGraphOnce();
 const initialAttackGraphData = loadInitialAttackGraphState(initialProfileId);
 const initialLootData = loadLootState(initialProfileId);
 
@@ -2577,7 +2598,6 @@ export const useCtfStore = create<CtfStoreState>()(
         await clearDeepProfileData(targetId);
         await clearVaultFromIndexedDb();
         safeLocalStorage.removeItem(getAttackGraphStorageKey(targetId));
-        if (targetId !== 'guest') safeLocalStorage.setItem(graphLegacyCheckedKey(targetId), '1');
         clearLootState(targetId);
         set(() => ({
           machines: mergeMachinesWithCatalog([], true, catalog),
