@@ -584,6 +584,48 @@ describe("advisor 3: another tab's write supersedes the in-memory copy", () => {
   });
 });
 
+describe('advisor 5: IndexedDB copy restore and stamps', () => {
+  it('does not restore over edits the user made before the IndexedDB read finished', async () => {
+    let release!: (v: unknown) => void;
+    idb.workspaceLoader = () => new Promise((r) => (release = r));
+    const mod = await boot(); // localStorage empty: restore would apply
+    mod.useCtfStore.getState().setGlobalVars({ targetIp: '10.10.77.77' });
+    release({ machines: [box('custom-from-idb')], activeTargetId: null, savedAt: '2026-10-01T00:00:00.000Z' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(ids(mod.useCtfStore.getState().machines)).not.toContain('custom-from-idb');
+    expect(mod.useCtfStore.getState().globalVars.targetIp).toBe('10.10.77.77');
+  });
+
+  it('still restores when the only change since boot was the catalog/deep hydration', async () => {
+    let release!: (v: unknown) => void;
+    idb.workspaceLoader = () => new Promise((r) => (release = r));
+    const mod = await boot();
+    await mod.useCtfStore.getState().loadCatalog();
+    release({ machines: [box('custom-from-idb')], activeTargetId: null, savedAt: '2026-10-01T00:00:00.000Z' });
+    await vi.waitFor(() => expect(ids(mod.useCtfStore.getState().machines)).toContain('custom-from-idb'));
+  });
+
+  it('saveProfileData updates the IndexedDB copy with the same savedAt', async () => {
+    seedStorage([box('custom-mine')]);
+    const mod = await boot();
+    mod.useCtfStore.getState().updateMachine('custom-mine', { ip: '10.10.8.8' });
+    mod.useCtfStore.getState().saveProfileData();
+    const copy = idb.workspace.get('zb:workspace:guest') as { savedAt: string; machines: Machine[] };
+    expect(copy.savedAt).toBe(storedProfile().savedAt);
+    expect(copy.machines.find((m) => m.id === 'custom-mine')?.ip).toBe('10.10.8.8');
+  });
+
+  it("migrateGuestData stamps the destination fresh instead of copying guest's savedAt", async () => {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ machines: [box('custom-g')], savedAt: '2020-01-01T00:00:00.000Z' }));
+    await boot();
+    const { useAuthStore } = await import('../../store/useAuthStore');
+    await useAuthStore.getState().migrateGuestData('p9');
+    const dest = JSON.parse(localStorage.getItem('zerobox_operator_profile_p9') as string);
+    expect(dest.savedAt).not.toBe('2020-01-01T00:00:00.000Z');
+    expect(Date.parse(dest.savedAt)).toBeGreaterThan(Date.parse('2026-01-01T00:00:00.000Z'));
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);

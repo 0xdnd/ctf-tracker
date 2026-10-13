@@ -2587,7 +2587,9 @@ export const useCtfStore = create<CtfStoreState>()(
           deletedMachineIds: state.deletedMachineIds,
           userSolvesReset: state.userSolvesReset,
         };
-        writeProfilePayload(targetId, payload);
+        // Keep the IndexedDB copy in step (same savedAt), or boot would see it as older/newer than it is.
+        const { savedAt } = writeProfilePayload(targetId, payload);
+        saveWorkspaceToIdb(`zb:workspace:${targetId}`, { ...payload, savedAt }).catch(() => {});
       },
 
       resetAllProgress: async () => {
@@ -2880,6 +2882,31 @@ function hydrateDeepProfile(profileId: string, gen: number, options: { refillNot
   );
 }
 
+/** The hydrated workspace, to tell user edits from boot-time changes (catalog merge, deep hydration). */
+const bootProfileSnapshot = useCtfStore.getState();
+
+/** True once the user changed profile data after boot (machine edits stamp updatedAt; new customs are added). */
+function profileEditedSinceBoot(state: CtfStoreState): boolean {
+  const b = bootProfileSnapshot;
+  if (
+    state.activeTargetId !== b.activeTargetId ||
+    state.globalVars !== b.globalVars ||
+    state.cheatsheets !== b.cheatsheets ||
+    state.activitySessions !== b.activitySessions ||
+    state.customNotes !== b.customNotes ||
+    state.deletedNoteIds !== b.deletedNoteIds ||
+    state.deletedMachineIds !== b.deletedMachineIds ||
+    state.userSolvesReset !== b.userSolvesReset
+  ) {
+    return true;
+  }
+  const atBoot = new Map(b.machines.map((m) => [m.id, m] as const));
+  return state.machines.some((m) => {
+    const was = atBoot.get(m.id);
+    return was ? isoMs(m.updatedAt) > isoMs(was.updatedAt) : isGenuineCustom(m);
+  });
+}
+
 async function restoreFromResilientCopy(profileId: string, check: 'missing' | number | null) {
   if (check === null) return;
   const copy = await loadWorkspaceFromIdb<Record<string, any>>(`zb:workspace:${profileId}`).catch(() => null);
@@ -2887,6 +2914,8 @@ async function restoreFromResilientCopy(profileId: string, check: 'missing' | nu
   if (check !== 'missing' && !(Date.parse(copy.savedAt) > check)) return;
   // Gated (newer schema or a restore in progress) or switched profile meanwhile: leave everything alone.
   if (isSchemaWriteGated() || (useCtfStore.getState().currentProfileId || 'guest') !== profileId) return;
+  // The user already worked in this tab: restoring would replace those edits. Keep them (they get saved).
+  if (profileEditedSinceBoot(useCtfStore.getState())) return;
   const userSolvesReset = Boolean(copy.userSolvesReset);
   const machines = mergeMachinesWithCatalog(copy.machines, userSolvesReset);
   const activeTargetId = typeof copy.activeTargetId === 'string' ? copy.activeTargetId : null;
