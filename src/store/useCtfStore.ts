@@ -2556,7 +2556,8 @@ export const useCtfStore = create<CtfStoreState>()(
 
         // Dual-tier: asynchronously save deep payloads (writeups & notes) to IndexedDB
         const deepWriteups = extractDeepWriteups(persistedMachines);
-        if (Object.keys(deepWriteups).length > 0 || (state.customNotes && state.customNotes.length > 0)) {
+        // Always written, even empty, so clearing every writeup or note sticks (see flushProfileSave).
+        if (state.isDeepStorageLoaded) {
           saveDeepProfileData(targetId, {
             writeups: deepWriteups,
             customNotes: state.customNotes,
@@ -2818,6 +2819,18 @@ const bootResilientCheck: 'missing' | number | null = (() => {
   }
 })();
 
+/** Whether the stored workspace carries its own customNotes list (then an empty one means "all deleted"). */
+const bootHasNotesList = (() => {
+  if (typeof window === 'undefined') return false;
+  for (const key of [getProfileStorageKey(bootProfileId), 'zerobox-tactical-store']) {
+    try {
+      const parsed = JSON.parse(safeLocalStorage.getItem(key) || 'null');
+      if (Array.isArray((parsed?.state || parsed)?.customNotes)) return true;
+    } catch {}
+  }
+  return false;
+})();
+
 async function restoreFromResilientCopy(profileId: string, check: 'missing' | number | null) {
   if (check === null) return;
   const copy = await loadWorkspaceFromIdb<Record<string, any>>(`zb:workspace:${profileId}`).catch(() => null);
@@ -2929,7 +2942,10 @@ export function flushProfileSave() {
 
   // Dual-tier: asynchronously save deep payloads (writeups & notes) to IndexedDB
   const deepWriteups = extractDeepWriteups(persistedMachines);
-  if (Object.keys(deepWriteups).length > 0 || (state.customNotes && state.customNotes.length > 0)) {
+  // Always written, even when empty: skipping the empty case left the old record in place, and it refilled the
+  // cleared writeups/notes on the next load. Not before this profile's deep data has loaded, though: until then
+  // the machines may lack bodies that only live in IndexedDB (lean quota saves), and writing would erase them.
+  if (state.isDeepStorageLoaded) {
     saveDeepProfileData(state.currentProfileId, {
       writeups: deepWriteups,
       customNotes: state.customNotes,
@@ -3195,7 +3211,13 @@ if (typeof window !== 'undefined') {
     } else {
       useCtfStore.setState({ isDeepStorageLoaded: true });
     }
-    if (deep?.customNotes && deep.customNotes.length > 0 && useCtfStore.getState().customNotes.length === 0) {
+    // Only for a workspace saved without a notes list (older or quota-stripped copies); an empty list is a deletion.
+    if (
+      !bootHasNotesList &&
+      deep?.customNotes &&
+      deep.customNotes.length > 0 &&
+      useCtfStore.getState().customNotes.length === 0
+    ) {
       useCtfStore.setState({ customNotes: deep.customNotes });
     }
   }).catch((err) => {
