@@ -579,8 +579,12 @@ export const GRAPH_GUEST_WRITTEN_KEY = 'zerobox_graph_guest_written_v2';
  * last), if that profile has no graph key of its own and guest hasn't saved to the unscoped key under this build.
  * Every other profile, and every later boot, ignores the unscoped key; it stays guest's key.
  */
-function claimLegacyAttackGraphOnce(): void {
-  if (typeof window === 'undefined' || safeLocalStorage.getItem(GRAPH_LEGACY_CLAIMED_KEY)) return;
+function claimLegacyAttackGraphOnce(): string | null {
+  // Runs after hydration, so a newer-schema blob or a restore has engaged the write gate first (then: next boot).
+  if (typeof window === 'undefined' || isSchemaWriteGated() || safeLocalStorage.getItem(GRAPH_LEGACY_CLAIMED_KEY)) {
+    return null;
+  }
+  let claimedFor: string | null = null;
   try {
     const legacy = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
     let blobProfileId: unknown = null;
@@ -595,11 +599,12 @@ function claimLegacyAttackGraphOnce(): void {
       !safeLocalStorage.getItem(GRAPH_GUEST_WRITTEN_KEY) &&
       !safeLocalStorage.getItem(getAttackGraphStorageKey(blobProfileId))
     ) {
-      safeLocalStorage.setItem(getAttackGraphStorageKey(blobProfileId), legacy);
+      if (safeLocalStorage.setItem(getAttackGraphStorageKey(blobProfileId), legacy)) claimedFor = blobProfileId;
     }
   } finally {
     safeLocalStorage.setItem(GRAPH_LEGACY_CLAIMED_KEY, '1');
   }
+  return claimedFor;
 }
 
 export function loadInitialAttackGraphState(profileId: string = 'guest'): AttackGraphPersistedState {
@@ -1152,7 +1157,6 @@ initRestoreLockGate();
 
 const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
-claimLegacyAttackGraphOnce();
 const initialAttackGraphData = loadInitialAttackGraphState(initialProfileId);
 const initialLootData = loadLootState(initialProfileId);
 
@@ -2804,8 +2808,11 @@ recordSchemaVersion();
 // one (it wins during hydration). Reload them for the profile this tab actually ended up on, or the next loot or
 // graph save would write that profile's data under another profile's key.
 const bootProfileId = useCtfStore.getState().currentProfileId || 'guest';
+const legacyGraphClaimedFor = claimLegacyAttackGraphOnce();
 if (bootProfileId !== initialProfileId) {
   useCtfStore.setState({ ...loadInitialAttackGraphState(bootProfileId), ...loadLootState(bootProfileId) });
+} else if (legacyGraphClaimedFor === bootProfileId) {
+  useCtfStore.setState(loadInitialAttackGraphState(bootProfileId));
 }
 
 /**
