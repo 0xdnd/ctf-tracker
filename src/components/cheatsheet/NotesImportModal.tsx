@@ -24,6 +24,27 @@ import { loadVaultFromIndexedDb, saveVaultToIndexedDb } from '../../utils/indexe
 import { parseObsidianVaultZip, VaultZipImportProgress } from '../../utils/zipVaultImporter';
 import { parseObsidianVaultDirectory, extractFilesFromDataTransfer } from '../../utils/directoryVaultImporter';
 import { TemplatizeNotesModal } from './TemplatizeNotesModal';
+import { IpTemplatePreview, countSelectedReplacements } from './IpTemplatePreview';
+import { useActiveTargetIp } from '../../hooks/useActiveTargetIp';
+import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import type { IpSelection } from '../../utils/ipTemplatizer';
+import {
+  defaultPlanSelections,
+  planNotesTemplating,
+  templatizeParsedNotes,
+  type NoteTemplatePlan,
+} from '../../utils/noteIpTemplating';
+
+interface PendingImport {
+  notes: CptsNoteEntry[];
+  wikilinkMap: Record<string, string>;
+  /** Success message shown once the import is saved. */
+  message: string;
+  /** 'json' imports go through the store's importNotesFromJson; parsed vaults save directly. */
+  kind: 'vault' | 'json';
+  plans: NoteTemplatePlan[];
+  selections: Record<string, IpSelection>;
+}
 
 export const NotesImportModal: React.FC = () => {
   const { 
@@ -33,8 +54,9 @@ export const NotesImportModal: React.FC = () => {
     setUserNotes,
     setUserWikilinkMap,
     importNotesFromJson, 
-    clearUserNotes, 
-    soundEnabled 
+    clearUserNotes,
+    soundEnabled,
+    globalVars,
   } = useCtfStore(
     useShallow((s) => ({
       notesImportModalOpen: s.notesImportModalOpen,
@@ -45,8 +67,10 @@ export const NotesImportModal: React.FC = () => {
       importNotesFromJson: s.importNotesFromJson,
       clearUserNotes: s.clearUserNotes,
       soundEnabled: s.soundEnabled,
+      globalVars: s.globalVars,
     }))
   );
+  const activeTargetIp = useActiveTargetIp();
 
   const [activeTab, setActiveTab] = useState<'upload' | 'paste' | 'export'>('upload');
   const [pastedJson, setPastedJson] = useState('');
@@ -57,6 +81,7 @@ export const NotesImportModal: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const [templatizeOpen, setTemplatizeOpen] = useState(false);
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 
   if (!notesImportModalOpen) return null;
 
@@ -66,6 +91,93 @@ export const NotesImportModal: React.FC = () => {
     setFeedback(null);
     setZipProgress(null);
     setIsDragging(false);
+    setPendingImport(null);
+  };
+
+  /** Save parsed notes (the last step of every import path). */
+  const finishImport = async (
+    notes: CptsNoteEntry[],
+    wikilinkMap: Record<string, string>,
+    message: string,
+    kind: PendingImport['kind']
+  ) => {
+    if (kind === 'json') {
+      const res = await importNotesFromJson(JSON.stringify({ notes, wikilinkMap }));
+      if (!res.success) {
+        if (soundEnabled) playCyberSound('toggle');
+        setFeedback({ type: 'error', message: res.error || 'Failed to parse notes JSON.' });
+        return;
+      }
+    } else {
+      // Save directly to local IndexedDB, then hydrate the in-memory store
+      await saveVaultToIndexedDb({ notes, wikilinkMap });
+      setUserNotes(notes);
+      setUserWikilinkMap(wikilinkMap);
+    }
+    if (soundEnabled) playCyberSound('flag');
+    setFeedback({ type: 'success', message });
+  };
+
+  /** Show the IP placeholder review first when the parsed notes contain IPs; otherwise save right away. */
+  const stageImport = async (
+    notes: CptsNoteEntry[],
+    wikilinkMap: Record<string, string>,
+    message: string,
+    kind: PendingImport['kind']
+  ) => {
+    const plans = planNotesTemplating(notes, {
+      knownTargetIps: [activeTargetIp, globalVars.targetIp],
+      lhost: globalVars.lhost,
+    });
+    if (plans.length === 0) {
+      await finishImport(notes, wikilinkMap, message, kind);
+      return;
+    }
+    setPendingImport({ notes, wikilinkMap, message, kind, plans, selections: defaultPlanSelections(plans) });
+  };
+
+  const stageJsonImport = async (text: string, message: (count: number) => string) => {
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = null;
+    }
+    const notes: CptsNoteEntry[] | null = parsed
+      ? Array.isArray(parsed) ? parsed : Array.isArray(parsed.notes) ? parsed.notes : null
+      : null;
+    if (!notes || notes.length === 0) {
+      // Let the store report its usual error for malformed payloads.
+      const res = await importNotesFromJson(text);
+      if (res.success) {
+        if (soundEnabled) playCyberSound('flag');
+        setFeedback({ type: 'success', message: message(res.count) });
+      } else {
+        if (soundEnabled) playCyberSound('toggle');
+        setFeedback({ type: 'error', message: res.error || 'Failed to parse notes JSON.' });
+      }
+      return;
+    }
+    await stageImport(notes, (!Array.isArray(parsed) && parsed.wikilinkMap) || {}, message(notes.length), 'json');
+  };
+
+  const handleCommitPending = async (useReplacements: boolean) => {
+    if (!pendingImport) return;
+    const p = pendingImport;
+    setIsProcessing(true);
+    setFeedback(null);
+    try {
+      const replaced = useReplacements ? countSelectedReplacements(p.plans, p.selections).occurrences : 0;
+      const notes = replaced > 0 ? templatizeParsedNotes(p.notes, p.plans, p.selections) : p.notes;
+      const suffix = replaced > 0 ? ` Replaced ${replaced} IP${replaced === 1 ? '' : 's'} with placeholders.` : '';
+      setPendingImport(null);
+      await finishImport(notes, p.wikilinkMap, p.message + suffix, p.kind);
+    } catch (err: any) {
+      if (soundEnabled) playCyberSound('toggle');
+      setFeedback({ type: 'error', message: err?.message || 'Error saving imported notes.' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,36 +197,20 @@ export const NotesImportModal: React.FC = () => {
           setZipProgress(p);
         });
 
-        // Save directly to local IndexedDB
-        await saveVaultToIndexedDb({
-          notes: result.notes,
-          wikilinkMap: result.wikilinkMap,
-        });
-
-        // Hydrate in-memory store
-        setUserNotes(result.notes);
-        setUserWikilinkMap(result.wikilinkMap);
-
-        if (soundEnabled) playCyberSound('flag');
-        setFeedback({
-          type: 'success',
-          message: `Successfully unzipped and cached ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands across ${result.summary.categories.length} categories) into local browser IndexedDB!`,
-        });
-      } 
+        await stageImport(
+          result.notes,
+          result.wikilinkMap,
+          `Successfully unzipped and cached ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands across ${result.summary.categories.length} categories) into local browser IndexedDB!`,
+          'vault'
+        );
+      }  
       // CASE 2: JSON Backup / Export
       else {
         const text = await file.text();
-        const res = await importNotesFromJson(text);
-        if (res.success) {
-          if (soundEnabled) playCyberSound('flag');
-          setFeedback({ 
-            type: 'success', 
-            message: `Successfully imported and cached ${res.count} field manual notes into local browser IndexedDB!` 
-          });
-        } else {
-          if (soundEnabled) playCyberSound('toggle');
-          setFeedback({ type: 'error', message: res.error || 'Failed to parse notes JSON.' });
-        }
+        await stageJsonImport(
+          text,
+          (count) => `Successfully imported and cached ${count} field manual notes into local browser IndexedDB!`
+        );
       }
     } catch (err: any) {
       if (soundEnabled) playCyberSound('toggle');
@@ -139,21 +235,12 @@ export const NotesImportModal: React.FC = () => {
         setZipProgress(p);
       });
 
-      // Save directly to local IndexedDB
-      await saveVaultToIndexedDb({
-        notes: result.notes,
-        wikilinkMap: result.wikilinkMap,
-      });
-
-      // Hydrate in-memory store
-      setUserNotes(result.notes);
-      setUserWikilinkMap(result.wikilinkMap);
-
-      if (soundEnabled) playCyberSound('flag');
-      setFeedback({
-        type: 'success',
-        message: `Successfully imported ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands across ${result.summary.categories.length} directories) directly from folder into local IndexedDB!`,
-      });
+      await stageImport(
+        result.notes,
+        result.wikilinkMap,
+        `Successfully imported ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands across ${result.summary.categories.length} directories) directly from folder into local IndexedDB!`,
+        'vault'
+      );
     } catch (err: any) {
       if (soundEnabled) playCyberSound('toggle');
       setFeedback({ type: 'error', message: err?.message || 'Error processing notes folder.' });
@@ -182,27 +269,19 @@ export const NotesImportModal: React.FC = () => {
       // Check if a single ZIP file was dropped
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
         const result = await parseObsidianVaultZip(files[0], (p) => setZipProgress(p));
-        await saveVaultToIndexedDb({ notes: result.notes, wikilinkMap: result.wikilinkMap });
-        setUserNotes(result.notes);
-        setUserWikilinkMap(result.wikilinkMap);
-        if (soundEnabled) playCyberSound('flag');
-        setFeedback({
-          type: 'success',
-          message: `Successfully unzipped and cached ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands) from ZIP archive!`,
-        });
+        await stageImport(
+          result.notes,
+          result.wikilinkMap,
+          `Successfully unzipped and cached ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands) from ZIP archive!`,
+          'vault'
+        );
         return;
       }
 
       // Check if a single JSON file was dropped
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.json')) {
         const text = await files[0].text();
-        const res = await importNotesFromJson(text);
-        if (res.success) {
-          if (soundEnabled) playCyberSound('flag');
-          setFeedback({ type: 'success', message: `Successfully imported ${res.count} notes from JSON!` });
-        } else {
-          setFeedback({ type: 'error', message: res.error || 'Failed to parse JSON file.' });
-        }
+        await stageJsonImport(text, (count) => `Successfully imported ${count} notes from JSON!`);
         return;
       }
 
@@ -210,14 +289,12 @@ export const NotesImportModal: React.FC = () => {
       const extracted = await extractFilesFromDataTransfer(e.dataTransfer);
       if (extracted.length > 0) {
         const result = await parseObsidianVaultDirectory(extracted, (p) => setZipProgress(p));
-        await saveVaultToIndexedDb({ notes: result.notes, wikilinkMap: result.wikilinkMap });
-        setUserNotes(result.notes);
-        setUserWikilinkMap(result.wikilinkMap);
-        if (soundEnabled) playCyberSound('flag');
-        setFeedback({
-          type: 'success',
-          message: `Successfully scanned and indexed ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands) from dropped directory!`,
-        });
+        await stageImport(
+          result.notes,
+          result.wikilinkMap,
+          `Successfully scanned and indexed ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands) from dropped directory!`,
+          'vault'
+        );
       } else {
         throw new Error('No markdown (.md or .markdown) notes were found in the dropped items.');
       }
@@ -239,18 +316,11 @@ export const NotesImportModal: React.FC = () => {
     setIsProcessing(true);
     setFeedback(null);
     try {
-      const res = await importNotesFromJson(pastedJson);
-      if (res.success) {
-        if (soundEnabled) playCyberSound('flag');
-        setFeedback({ 
-          type: 'success', 
-          message: `Successfully imported and cached ${res.count} field manual notes into local browser IndexedDB!` 
-        });
-        setPastedJson('');
-      } else {
-        if (soundEnabled) playCyberSound('toggle');
-        setFeedback({ type: 'error', message: res.error || 'Invalid JSON format.' });
-      }
+      await stageJsonImport(
+        pastedJson,
+        (count) => `Successfully imported and cached ${count} field manual notes into local browser IndexedDB!`
+      );
+      setPastedJson('');
     } catch (err: any) {
       if (soundEnabled) playCyberSound('toggle');
       setFeedback({ type: 'error', message: err?.message || 'Invalid JSON syntax.' });
@@ -471,7 +541,55 @@ export const NotesImportModal: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'upload' && (
+            {pendingImport && (
+              <div className="p-4 rounded-xl border border-subtle bg-surface-sunken/40 space-y-3" data-testid="import-ip-review">
+                <div>
+                  <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                    <Wand2 size={15} className="text-accent" />
+                    <span>Replace hard-coded IPs before saving?</span>
+                  </h3>
+                  <p className="text-xs text-muted mt-1">
+                    {pendingImport.plans.length} of {pendingImport.notes.length} notes contain IPs. Selected ones become{' '}
+                    <code className="font-mono">{'{TARGET}'}</code> / <code className="font-mono">{'{LHOST}'}</code> so the
+                    commands follow whatever target you engage. Nothing is saved until you choose.
+                  </p>
+                </div>
+                <IpTemplatePreview
+                  plans={pendingImport.plans}
+                  selections={pendingImport.selections}
+                  onChange={(selections) => setPendingImport((p) => (p ? { ...p, selections } : p))}
+                  disabled={isProcessing}
+                />
+                <div className="flex flex-wrap items-center gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPendingImport(null)}
+                    disabled={isProcessing}
+                    className="min-h-11 md:min-h-0 px-3 py-1.5 rounded-lg text-xs text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
+                  >
+                    Cancel import
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCommitPending(false)}
+                    disabled={isProcessing}
+                    className="min-h-11 md:min-h-0 px-3 py-1.5 rounded-lg border border-subtle text-xs text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
+                  >
+                    Import as-is
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCommitPending(true)}
+                    disabled={isProcessing}
+                    className="min-h-11 md:min-h-0 px-3 py-1.5 rounded-lg bg-accent text-on-accent text-xs font-semibold hover:brightness-105 transition-[box-shadow,background-color,border-color,color] disabled:opacity-40"
+                  >
+                    Import with replacements
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'upload' && !pendingImport && (
               <div className="space-y-4">
                 {/* Drag & Drop Unified Zone */}
                 <div
