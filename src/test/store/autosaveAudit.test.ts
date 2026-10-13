@@ -398,6 +398,62 @@ describe('item 9: vault note saves surface failure', () => {
   });
 });
 
+describe('item 11: same profile in two tabs merges per machine', () => {
+  const NEWER = '2030-01-01T00:00:00.000Z';
+  const otherTabWrites = (machines: Machine[], extra: Record<string, unknown> = {}) =>
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: PROFILE_KEY, newValue: JSON.stringify({ machines, activeTargetId: null, ...extra }) })
+    );
+  const byId = (mod: StoreModule, id: string) => mod.useCtfStore.getState().machines.find((m) => m.id === id);
+
+  it("keeps this tab's unsaved newer edit and takes the other tab's edit to another machine", async () => {
+    seedStorage([box('custom-a'), box('custom-b')]);
+    const mod = await boot();
+    mod.useCtfStore.getState().updateMachine('custom-a', { ip: '10.10.1.1' }); // pending (debounced) edit
+
+    otherTabWrites([box('custom-a'), box('custom-b', { ip: '10.10.2.2', updatedAt: '2025-01-01T00:00:00.000Z' })]);
+    expect(byId(mod, 'custom-a')?.ip).toBe('10.10.1.1');
+    expect(byId(mod, 'custom-b')?.ip).toBe('10.10.2.2');
+
+    mod.flushProfileSave();
+    const stored = storedProfile().machines;
+    expect(stored.find((m: Machine) => m.id === 'custom-a').ip).toBe('10.10.1.1');
+    expect(stored.find((m: Machine) => m.id === 'custom-b').ip).toBe('10.10.2.2');
+  });
+
+  it('a newer row from the other tab still wins over an older unsaved row here', async () => {
+    seedStorage([box('custom-a')]);
+    const mod = await boot();
+    mod.useCtfStore.getState().updateMachine('custom-a', { ip: '10.10.1.1' });
+    otherTabWrites([box('custom-a', { ip: '10.10.9.9', updatedAt: NEWER })]);
+    expect(byId(mod, 'custom-a')?.ip).toBe('10.10.9.9');
+  });
+
+  it('keeps an unsaved machine only this tab has, unless the other tab tombstoned it', async () => {
+    seedStorage([box('custom-a')]);
+    const mod = await boot();
+    mod.useCtfStore.setState((s) => ({ machines: [box('custom-new'), ...s.machines] })); // not saved yet
+    otherTabWrites([box('custom-a')]);
+    expect(byId(mod, 'custom-new')).toBeTruthy();
+
+    mod.useCtfStore.setState((s) => ({ machines: [box('custom-new2'), ...s.machines] }));
+    otherTabWrites([box('custom-a')], { deletedMachineIds: [{ id: 'custom-new2', deletedAt: NEWER }] });
+    expect(byId(mod, 'custom-new2')).toBeUndefined();
+  });
+
+  it('rows already saved here defer to the other tab, and applying that writes nothing back', async () => {
+    seedStorage([box('custom-a'), box('custom-b')]);
+    const mod = await boot();
+    mod.useCtfStore.getState().updateMachine('custom-a', { ip: '10.10.1.1' });
+    mod.flushProfileSave(); // saved: no longer a pending edit
+    const spy = vi.spyOn(Storage.prototype, 'setItem');
+    otherTabWrites([box('custom-a'), box('custom-b')]); // e.g. a reset/revert written there after our save
+    expect(byId(mod, 'custom-a')?.ip).toBe('10.10.10.5');
+    await new Promise((r) => setTimeout(r, 1_400));
+    expect(spy.mock.calls.filter((c) => c[0] === PROFILE_KEY)).toHaveLength(0);
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);

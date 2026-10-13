@@ -2976,6 +2976,43 @@ export function flushProfileSave() {
   }
 }
 
+const isoMs = (iso: unknown): number => {
+  const t = typeof iso === 'string' ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) ? t : 0;
+};
+
+/**
+ * Cross-tab merge of another tab's machines into ours. Only rows this tab changed since its last save
+ * (`saved` holds the rows it last wrote) can win: a pending row strictly newer by updatedAt than the incoming
+ * one is kept, and a pending row the other tab doesn't have is kept unless tombstoned. Everything already saved
+ * defers to the newer write (so e.g. a reset there isn't undone here). Returns `incoming` itself when nothing
+ * of ours is kept, which the listener treats as an echo of data already in storage.
+ */
+export function mergeIncomingMachines(
+  local: Machine[],
+  incoming: Machine[],
+  saved: ReadonlySet<Machine>,
+  tombstones: MachineTombstone[] = []
+): Machine[] {
+  const pending = new Map(local.filter((m) => !saved.has(m)).map((m) => [m.id, m] as const));
+  if (pending.size === 0) return incoming;
+  let keptOurs = false;
+  const incomingIds = new Set<string>();
+  const merged = incoming.map((m) => {
+    incomingIds.add(m.id);
+    const mine = pending.get(m.id);
+    if (mine && isoMs(mine.updatedAt) > isoMs(m.updatedAt)) {
+      keptOurs = true;
+      return mine;
+    }
+    return m;
+  });
+  const dead = new Set(tombstones.map((t) => t.id));
+  const localOnly = [...pending.values()].filter((m) => !incomingIds.has(m.id) && !dead.has(m.id));
+  if (!keptOurs && localOnly.length === 0) return incoming;
+  return [...localOnly, ...merged];
+}
+
 /** Profile-persisted fields: a change to any of these needs a profile save. */
 const profileFieldsDiffer = (a: CtfStoreState, b: CtfStoreState) =>
   a.machines !== b.machines ||
@@ -3064,7 +3101,15 @@ if (typeof window !== 'undefined') {
         if (!fromOtherProfile && data && Array.isArray(data.machines)) {
           const userSolvesReset = Boolean(data.userSolvesReset);
           const state = useCtfStore.getState();
-          const incoming = mergeMachinesWithCatalog(data.machines, userSolvesReset);
+          // Same profile in two tabs: this tab's not-yet-saved edits survive per machine when newer (else the
+          // last writer replaced every machine). Returns `incoming` itself when nothing of ours is kept.
+          const theirs = mergeMachinesWithCatalog(data.machines, userSolvesReset);
+          const incoming = mergeIncomingMachines(
+            state.machines,
+            theirs,
+            new Set(lastSavedMachines),
+            [...normalizeMachineTombstones(data.deletedMachineIds), ...state.deletedMachineIds]
+          );
           const activeTargetId = 'activeTargetId' in data ? (data.activeTargetId ?? null) : state.activeTargetId;
           const targetChanged = activeTargetId !== state.activeTargetId;
           // The other tab switched target: keep this tab's seconds on the old target (never lowering it), then
@@ -3079,7 +3124,7 @@ if (typeof window !== 'undefined') {
             ? { isTimerRunning: false, timerLastTick: null, activeTimerSeconds: savedSeconds }
             : { activeTimerSeconds: state.isTimerRunning ? Math.max(state.activeTimerSeconds, savedSeconds) : savedSeconds };
           // Nothing of ours to add and nothing pending: what we apply is already stored, so don't write it back.
-          const echoOnly = machines === incoming && !saveDebounceTimer && !maxWaitTimer;
+          const echoOnly = machines === theirs && !saveDebounceTimer && !maxWaitTimer;
           applyingExternalProfile = echoOnly;
           try {
             useCtfStore.setState((s) => ({
