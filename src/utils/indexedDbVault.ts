@@ -37,7 +37,8 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 /**
- * Save the user's imported notes into local browser IndexedDB
+ * Save the user's imported notes into local browser IndexedDB. Resolves only once the transaction has committed;
+ * rejects when it errors or aborts (e.g. QuotaExceededError), so callers never report an unsaved edit as saved.
  */
 export async function saveVaultToIndexedDb(data: {
   notes: CptsNoteEntry[];
@@ -46,22 +47,27 @@ export async function saveVaultToIndexedDb(data: {
   if (isSchemaWriteGated()) return;
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const done = (err?: unknown) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch {}
+      if (err) reject(err);
+      else resolve();
+    };
     try {
       const tx = db.transaction(STORE_NAME, 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
       const payload: VaultPayload = {
         notes: data.notes || [],
         wikilinkMap: data.wikilinkMap || {},
         importedAt: new Date().toISOString(),
       };
-      const req = store.put(payload, VAULT_KEY);
-
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error || new Error('Failed to save vault to IndexedDB'));
-      tx.oncomplete = () => db.close();
+      tx.oncomplete = () => done();
+      tx.onerror = () => done(tx.error || new Error('Failed to save vault to IndexedDB'));
+      tx.onabort = () => done(tx.error || new Error('Saving the vault to IndexedDB was aborted'));
+      tx.objectStore(STORE_NAME).put(payload, VAULT_KEY);
     } catch (err) {
-      db.close();
-      reject(err);
+      done(err || new Error('Failed to save vault to IndexedDB'));
     }
   });
 }

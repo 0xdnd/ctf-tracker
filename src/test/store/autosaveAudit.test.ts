@@ -364,6 +364,40 @@ describe('item 8: deleted writeups and notes stay deleted', () => {
   });
 });
 
+describe('item 9: vault note saves surface failure', () => {
+  it('updateNoteContent rejects when the vault write fails, and resolves only after it committed', async () => {
+    const mod = await boot();
+    const vault = await import('../../utils/indexedDbVault'); // the setup.ts mock instance of this boot
+    const s = () => mod.useCtfStore.getState();
+    s().setUserNotes([{ id: 'vault-note', title: 'V', rawMarkdown: 'a' } as any]);
+
+    vi.mocked(vault.saveVaultToIndexedDb).mockRejectedValueOnce(new Error('aborted'));
+    await expect(s().updateNoteContent('vault-note', 'b')).rejects.toThrow('aborted');
+
+    let commit!: () => void;
+    vi.mocked(vault.saveVaultToIndexedDb).mockImplementationOnce(() => new Promise<void>((r) => (commit = r)));
+    let done = false;
+    const pending = Promise.resolve(s().updateNoteContent('vault-note', 'c')).then(() => (done = true));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(done).toBe(false);
+    commit();
+    await pending;
+    expect(done).toBe(true);
+  });
+
+  it('the not-yet-hydrated vault path rejects on a failed write too', async () => {
+    const mod = await boot();
+    const vault = await import('../../utils/indexedDbVault');
+    vi.mocked(vault.loadVaultFromIndexedDb).mockResolvedValueOnce({
+      notes: [{ id: 'late-note', title: 'L', rawMarkdown: 'a' } as any],
+      wikilinkMap: {},
+      importedAt: '2026-01-01T00:00:00.000Z',
+    });
+    vi.mocked(vault.saveVaultToIndexedDb).mockRejectedValueOnce(new Error('aborted'));
+    await expect(mod.useCtfStore.getState().updateNoteContent('late-note', 'b')).rejects.toThrow('aborted');
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);
