@@ -45,6 +45,8 @@ import {
   passphraseStrength,
   type PassphraseStrength,
 } from '../../utils/backupCrypto';
+import { buildBackupFile, checkBackupIntegrity, importBackupFile, isV3BackupText } from '../../store/backupFile';
+import { isChecksumAvailable } from '../../utils/backupChecksum';
 
 const STRENGTH_LABEL: Record<PassphraseStrength, string> = {
   'too-short': 'Too short',
@@ -62,6 +64,8 @@ const STRENGTH_CLASS: Record<PassphraseStrength, string> = {
 
 const describeCryptoError = (err: unknown): string =>
   err instanceof BackupCryptoError ? err.message : WRONG_PASSPHRASE_MESSAGE;
+
+const EXPORT_BUILD_ERROR = 'Could not read your notes from IndexedDB, so no backup was made. Try again.';
 
 const MERGE_ERROR: Partial<Record<MergeBackupResult['status'], string>> = {
   invalid: 'Invalid backup format. Ensure it contains a valid "machines" array.',
@@ -89,7 +93,6 @@ export const BackupModal: React.FC = () => {
   const {
     backupModalOpen,
     setBackupModalOpen,
-    exportBackup,
     importBackup,
     exportSyncFile,
     mergeBackup,
@@ -105,7 +108,6 @@ export const BackupModal: React.FC = () => {
     useShallow((s) => ({
       backupModalOpen: s.backupModalOpen,
       setBackupModalOpen: s.setBackupModalOpen,
-      exportBackup: s.exportBackup,
       importBackup: s.importBackup,
       exportSyncFile: s.exportSyncFile,
       mergeBackup: s.mergeBackup,
@@ -136,6 +138,7 @@ export const BackupModal: React.FC = () => {
   const [isExportingVault, setIsExportingVault] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
 
   // Optional passphrase encryption (export) and decryption (import)
   const [encryptExport, setEncryptExport] = useState(false);
@@ -231,7 +234,7 @@ export const BackupModal: React.FC = () => {
 
   /** Encrypts the current backup JSON; resolves null when blocked, abandoned, or failed. */
   const buildEncryptedExport = async (
-    makePlaintext: () => string | Promise<string> = () => exportBackup({ redactSecrets })
+    makePlaintext: () => string | Promise<string> = () => buildBackupFile({ redactSecrets })
   ): Promise<string | null> => {
     if (cryptoBusyRef.current || !exportPassphraseValid) return null;
     const token = ++cryptoOpToken.current;
@@ -267,9 +270,23 @@ export const BackupModal: React.FC = () => {
     if (soundEnabled) playCyberSound('root');
   };
 
+  /** The full 3.0.0 plaintext (exam data, notes, checksum); null after reporting a failure. */
+  const buildPlainExport = async (): Promise<string | null> => {
+    if (cryptoBusyRef.current) return null;
+    setExportError('');
+    try {
+      return await buildBackupFile({ redactSecrets });
+    } catch (err) {
+      console.error('Failed to build the backup file:', err);
+      setExportError(EXPORT_BUILD_ERROR);
+      return null;
+    }
+  };
+
   const handleDownloadBackup = async () => {
     if (!encrypting) {
-      triggerBackupDownload(exportBackup({ redactSecrets }), false);
+      const text = await buildPlainExport();
+      if (text !== null) triggerBackupDownload(text, false);
       return;
     }
     const envelope = await buildEncryptedExport();
@@ -321,7 +338,7 @@ export const BackupModal: React.FC = () => {
   };
 
   const handleCopyBackup = async () => {
-    const text = encrypting ? await buildEncryptedExport() : exportBackup({ redactSecrets });
+    const text = encrypting ? await buildEncryptedExport() : await buildPlainExport();
     if (text === null) return;
     try {
       await navigator.clipboard.writeText(text);
@@ -378,6 +395,12 @@ export const BackupModal: React.FC = () => {
       }
       if (cryptoOpToken.current !== token) return;
     }
+    setImportWarnings([]);
+    // 3.0.0 files are checksum-verified before anything is merged or replaced.
+    if (isV3BackupText(payload)) {
+      await runVerifiedImport(payload);
+      return;
+    }
     if (importMode === 'merge') {
       await runMerge(payload);
       return;
@@ -400,6 +423,37 @@ export const BackupModal: React.FC = () => {
     } catch {
       setImportStatus('error');
       setErrorMessage('Malformed JSON syntax. Please check the imported text.');
+    }
+  };
+
+  const runVerifiedImport = async (payload: string) => {
+    if (importMode === 'merge') {
+      const integrity = await checkBackupIntegrity(payload);
+      if (integrity) {
+        setImportStatus('error');
+        setErrorMessage(integrity.message);
+        return;
+      }
+      await runMerge(payload);
+      return;
+    }
+    const result = await importBackupFile(payload);
+    if (!result.ok) {
+      setImportStatus('error');
+      setErrorMessage(result.message);
+      return;
+    }
+    setImportStatus('success');
+    setErrorMessage('');
+    setImportPassphrase('');
+    setImportWarnings(result.warnings);
+    if (soundEnabled) playCyberSound('root');
+    // Warnings stay on screen until the user closes the modal.
+    if (result.warnings.length === 0) {
+      setTimeout(() => {
+        setBackupModalOpen(false);
+        setImportStatus('idle');
+      }, 1500);
     }
   };
 
@@ -590,6 +644,11 @@ export const BackupModal: React.FC = () => {
                     <span className="font-semibold text-primary text-sm block">Export state (JSON)</span>
                     <span className="text-muted text-[11px]">
                       Snapshot of machine flags, writeups, custom boxes, timers and payloads.
+                    </span>
+                    <span id="backup-export-contents-note" className="text-muted text-[11px] block mt-0.5">
+                      {isChecksumAvailable()
+                        ? 'Also includes your exam simulator data and notes, with a checksum that is verified on import.'
+                        : 'Also includes your exam simulator data and notes. This page cannot add a checksum (open ZeroBox over HTTPS or on localhost for a verified backup).'}
                     </span>
                   </div>
                 </div>
@@ -953,6 +1012,20 @@ export const BackupModal: React.FC = () => {
                   <div className="flex items-center gap-2 text-callout-success-fg text-xs">
                     <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                     <span>State restored. Refreshing...</span>
+                  </div>
+                )}
+
+                {importStatus === 'success' && importWarnings.length > 0 && (
+                  <div
+                    role="status"
+                    className="p-2.5 rounded-lg bg-callout-warn-bg border border-callout-warn-border text-[11px] text-callout-warn-fg flex items-start gap-2"
+                  >
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <ul className="list-disc pl-4">
+                      {importWarnings.map((w) => (
+                        <li key={w}>{w}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 

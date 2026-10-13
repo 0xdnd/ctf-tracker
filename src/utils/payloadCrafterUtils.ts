@@ -4,6 +4,12 @@
  * Generates reverse shells, web exploit vectors, and multi-format bypass encoders.
  */
 
+import { encodeUtf16LeBase64 } from './shellEncoders';
+
+// Re-exported so existing imports of the UTF-16LE Base64 encoder from this module
+// keep working — the implementation now lives in shellEncoders.ts.
+export { encodeUtf16LeBase64 };
+
 export type BypassEncoderType =
   | 'raw'
   | 'url'
@@ -62,24 +68,8 @@ export function applyBypassEncoder(text: string, encoder: BypassEncoderType): st
         return btoa(text);
       }
 
-    case 'powershell-base64': {
-      // Call-stack safe UTF-16LE Base64 conversion
-      const utf16Bytes: number[] = [];
-      for (let i = 0; i < text.length; i++) {
-        const code = text.charCodeAt(i);
-        utf16Bytes.push(code & 0xff);
-        utf16Bytes.push((code >> 8) & 0xff);
-      }
-
-      // Chunked conversion to prevent call stack overflow on large commands
-      let binaryStr = '';
-      const chunkSize = 8192;
-      for (let i = 0; i < utf16Bytes.length; i += chunkSize) {
-        const chunk = utf16Bytes.slice(i, i + chunkSize);
-        binaryStr += String.fromCharCode.apply(null, chunk);
-      }
-      return btoa(binaryStr);
-    }
+    case 'powershell-base64':
+      return encodeUtf16LeBase64(text);
 
     case 'hex-slash': {
       let result = '';

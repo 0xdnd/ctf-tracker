@@ -18,7 +18,9 @@ import {
   Search,
   Plus,
   Globe,
-  Lock
+  Lock,
+  ImageOff,
+  ListChecks
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -33,6 +35,64 @@ import { CyberSelect } from '../common/CyberSelect';
 import { PageHeader } from '../common/PageHeader';
 import type { OverflowItem } from '../common/PageHeader';
 import { CyberButton } from '../common/CyberButton';
+import { INLINE_TOKEN_REGEX } from '../../utils/backlinks';
+import { IMAGE_URL_SCHEME, compressToWebp, getImage, newImageId, putImage } from '../../utils/imageStore';
+import { buildLabSummaryMarkdown } from '../../utils/labMarkdownSummary';
+import { BacklinksPanel, buildBacklinkDocs, getBacklinks } from './BacklinksPanel';
+
+// Whole-line pasted screenshot: ![alt](zerobox-img://<id>)
+const IMAGE_LINE_REGEX = /^!\[([^\]]*)\]\(zerobox-img:\/\/([A-Za-z0-9_-]+)\)\s*$/;
+const IMAGE_ID_REGEX = /zerobox-img:\/\/([A-Za-z0-9_-]+)/g;
+
+/** Resolved object URL per image id; null = not found in the store, absent = still loading. */
+type ImageUrlMap = ReadonlyMap<string, string | null>;
+
+/**
+ * Resolves `zerobox-img://` ids in the Markdown to object URLs. Every URL created for an id set is
+ * revoked when the set changes or the component unmounts.
+ */
+export const useResolvedImageUrls = (content: string, profileId: string): ImageUrlMap => {
+  const idsKey = useMemo(() => {
+    if (!content.includes(IMAGE_URL_SCHEME)) return '';
+    return Array.from(new Set(Array.from(content.matchAll(IMAGE_ID_REGEX), (m) => m[1]))).sort().join(',');
+  }, [content]);
+  const [urls, setUrls] = useState<ImageUrlMap>(() => new Map());
+
+  useEffect(() => {
+    if (!idsKey) {
+      setUrls((prev) => (prev.size === 0 ? prev : new Map()));
+      return;
+    }
+    let cancelled = false;
+    const created: string[] = [];
+    (async () => {
+      const next = new Map<string, string | null>();
+      for (const id of idsKey.split(',')) {
+        try {
+          const blob = await getImage(profileId, id);
+          if (cancelled) return;
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            created.push(url);
+            next.set(id, url);
+          } else {
+            next.set(id, null);
+          }
+        } catch {
+          if (cancelled) return;
+          next.set(id, null);
+        }
+      }
+      if (!cancelled) setUrls(next);
+    })();
+    return () => {
+      cancelled = true;
+      created.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [idsKey, profileId]);
+
+  return urls;
+};
 export const renderInlineMarkdown = (text: string, keyPrefix: string | number): React.ReactNode => {
   if (!text) return text;
 
@@ -42,8 +102,7 @@ export const renderInlineMarkdown = (text: string, keyPrefix: string | number): 
   }
 
   // Tokenize: wikilinks, inline code, bold (** or __), links [text](url), italic (* or _)
-  const tokenRegex = /(\[\[[^\]]+\]\]|`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\[[^\]\n]+\]\(https?:\/\/[^\s)]+\)|\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))/g;
-  const parts = text.split(tokenRegex);
+  const parts = text.split(INLINE_TOKEN_REGEX);
 
   return parts.map((part, i) => {
     if (!part) return null;
@@ -125,7 +184,7 @@ const renderLineWithWikilinks = (text: string, keyPrefix: string | number) => {
   return renderInlineMarkdown(text, keyPrefix);
 };
 
-const renderMarkdownPreview = (text: string) => {
+const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
   const lines = text.split('\n');
   let inFrontmatter = false;
   let frontmatterLines: string[] = [];
@@ -187,6 +246,32 @@ const renderMarkdownPreview = (text: string) => {
 
     if (inCodeBlock) {
       codeBlockLines.push(line);
+      return;
+    }
+
+    // Pasted screenshot stored in the local image store
+    const imageMatch = line.match(IMAGE_LINE_REGEX);
+    if (imageMatch) {
+      const url = imageUrls?.get(imageMatch[2]);
+      elements.push(
+        url ? (
+          <img
+            key={idx}
+            src={url}
+            alt={imageMatch[1] || 'screenshot'}
+            loading="lazy"
+            className="my-2 max-w-full h-auto rounded-lg border border-subtle"
+          />
+        ) : (
+          <div
+            key={idx}
+            className="my-2 flex items-center gap-2 rounded-lg border border-subtle bg-surface-sunken px-3 py-2 text-[11px] text-muted"
+          >
+            <ImageOff className="w-3.5 h-3.5" />
+            {url === null ? 'Image not found in this browser' : 'Loading image...'}
+          </div>
+        )
+      );
       return;
     }
 
@@ -262,9 +347,12 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
   const deferredContent = useDeferredValue(content);
   const isStale = deferredContent !== content;
 
+  const profileId = useCtfStore((s) => s.currentProfileId) || 'guest';
+  const imageUrls = useResolvedImageUrls(deferredContent, profileId);
+
   const renderedPreview = useMemo(() => {
-    return renderMarkdownPreview(deferredContent);
-  }, [deferredContent]);
+    return renderMarkdownPreview(deferredContent, imageUrls);
+  }, [deferredContent, imageUrls]);
 
   return (
     <div
@@ -302,10 +390,11 @@ export const computeWriteupTelemetry = (text: string) => {
 
 export const WriteupStudio: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand, isDeepStorageLoaded, customNotes, userNotes } = useCtfStore(
+  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand, isDeepStorageLoaded, customNotes, userNotes, currentProfileId } = useCtfStore(
     useShallow((s) => ({
       customNotes: s.customNotes,
       userNotes: s.userNotes,
+      currentProfileId: s.currentProfileId,
       machines: s.machines,
       writeupMachineId: s.writeupMachineId,
       setWriteupMachineId: s.setWriteupMachineId,
@@ -532,6 +621,85 @@ cat /root/root.txt
     }
   };
 
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorContentRef = useRef('');
+  editorContentRef.current = editorContent;
+  const selectedMachineIdRef = useRef<string | undefined>(undefined);
+  selectedMachineIdRef.current = selectedMachine?.id;
+  const profileId = currentProfileId || 'guest';
+
+  // Insert at the textarea cursor (or replace its selection); appends when the editor never had focus.
+  const insertAtCursor = (snippet: string, range?: { start: number; end: number }) => {
+    if (!selectedMachine || selectedMachine.isActive) return;
+    const current = editorContentRef.current;
+    const el = editorRef.current;
+    const start = Math.min(range?.start ?? el?.selectionStart ?? current.length, current.length);
+    const end = Math.min(range?.end ?? el?.selectionEnd ?? start, current.length);
+    const updated = current.slice(0, start) + snippet + current.slice(end);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    pendingMachineIdRef.current = null;
+    editorContentRef.current = updated;
+    setEditorContent(updated);
+    updateMachine(selectedMachine.id, { writeupMarkdown: updated });
+    const caret = start + snippet.length;
+    requestAnimationFrame(() => {
+      const target = editorRef.current;
+      if (!target) return;
+      target.focus();
+      target.setSelectionRange(caret, caret);
+    });
+  };
+
+  const labSummary = useMemo(
+    () => (selectedMachine && !selectedMachine.isActive ? buildLabSummaryMarkdown(selectedMachine) : ''),
+    [selectedMachine]
+  );
+
+  const handleInsertLabSummary = (markdown: string = labSummary) => {
+    if (!markdown) return;
+    const current = editorContentRef.current;
+    const pos = Math.min(editorRef.current?.selectionStart ?? current.length, current.length);
+    const before = current.slice(0, pos);
+    const lead = before === '' || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+    insertAtCursor(`${lead}${markdown}\n\n`, { start: pos, end: pos });
+    if (soundEnabled) playCyberSound('root');
+  };
+
+  // Pasted screenshots are compressed into the local image store and referenced by id, never inlined as base64.
+  // Text (or mixed text + image) pastes are left to the browser.
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData?.items ?? []);
+    if (items.some((it) => it.kind === 'string' && it.type === 'text/plain')) return;
+    const imageItem = items.find((it) => it.kind === 'file' && it.type.startsWith('image/'));
+    const file = imageItem?.getAsFile();
+    if (!file || !selectedMachine || selectedMachine.isActive) return;
+
+    e.preventDefault();
+    const machineId = selectedMachine.id;
+    const range = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd };
+    void (async () => {
+      try {
+        const compressed = await compressToWebp(file);
+        const imageId = newImageId();
+        await putImage(profileId, imageId, compressed);
+        // The user may have switched machines while the image was being compressed.
+        if (selectedMachineIdRef.current !== machineId) return;
+        insertAtCursor(`![screenshot](${IMAGE_URL_SCHEME}${imageId})`, range);
+      } catch (err) {
+        console.warn('Could not store pasted image', err);
+      }
+    })();
+  };
+
+  const backlinkDocs = useMemo(() => buildBacklinkDocs(userNotePool, machines), [userNotePool, machines]);
+  const backlinks = useMemo(
+    () => (selectedMachine && !selectedMachine.isActive ? getBacklinks(backlinkDocs, selectedMachine.name) : []),
+    [backlinkDocs, selectedMachine?.name, selectedMachine?.isActive]
+  );
+
   const handleResetToTemplate = async () => {
     if (!selectedMachine) return;
     const ok = await confirmAction({
@@ -589,6 +757,16 @@ cat /root/root.txt
             label: cptsDrawerOpen ? 'Hide your notes' : `Your notes (${matchingNotes.length})`,
             icon: <BookOpen className="w-3.5 h-3.5" />,
             onSelect: () => setCptsDrawerOpen((prev) => !prev),
+          },
+        ]
+      : []),
+    ...(labSummary
+      ? [
+          {
+            id: 'lab-summary',
+            label: 'Insert lab summary',
+            icon: <ListChecks className="w-3.5 h-3.5" />,
+            onSelect: () => handleInsertLabSummary(),
           },
         ]
       : []),
@@ -674,6 +852,20 @@ cat /root/root.txt
                   <span>Your notes (<span className="tabular-nums">{matchingNotes.length}</span>)</span>
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => handleInsertLabSummary()}
+                disabled={!labSummary}
+                className={`${toolbarBtn} disabled:opacity-50 disabled:cursor-not-allowed`}
+                title={
+                  labSummary
+                    ? 'Insert ports, triage notes, findings and timeline at the cursor'
+                    : 'No ports, triage notes, findings or timeline recorded for this lab yet'
+                }
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                <span>Insert lab summary</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setReportModalOpen(true)}
@@ -847,11 +1039,13 @@ cat /root/root.txt
               </div>
 
               <textarea
+                ref={editorRef}
                 id="writeup-markdown-editor"
                 name="writeup-markdown-editor"
                 aria-label="Markdown report editor"
                 value={editorContent}
                 onChange={handleEditorChange}
+                onPaste={handlePaste}
                 onBlur={flushDebouncedSave}
                 placeholder="Write your penetration testing report or paste notes here..."
                 className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
@@ -863,6 +1057,9 @@ cat /root/root.txt
             <DeferredMarkdownPreviewPane content={editorContent} />
 
           </div>
+
+          {/* Entries (notes, writeups, lab notes) whose [[wikilinks]] point at this box */}
+          <BacklinksPanel backlinks={backlinks} title={selectedMachine?.name ?? ''} />
 
           {/* Footer Telemetry Strip */}
           <div
@@ -881,6 +1078,10 @@ cat /root/root.txt
         machine={selectedMachine || machines[0] || null}
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
+        onInsertSummary={(markdown) => {
+          handleInsertLabSummary(markdown);
+          setReportModalOpen(false);
+        }}
       />
     </div>
   );

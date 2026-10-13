@@ -541,3 +541,365 @@ export function detectAndParseScan(rawInput: string): ScanImportResult | null {
 
   return null;
 }
+
+/**
+ * Multi-host scan intake: keeps every host discovered in a paste instead of collapsing
+ * to a single primary target. Note: named ParsedMultiHost (not ParsedHost) to avoid
+ * colliding with the existing exported ParsedHost shape (ip optional, hostname singular)
+ * already consumed elsewhere in the codebase.
+ */
+export interface ParsedMultiHost {
+  ip: string;
+  hostnames: string[];
+  os?: string;
+  ports: ParsedPort[];
+}
+
+const MAX_MULTI_HOSTS = 256;
+const MAX_PORTS_PER_MULTI_HOST = 512;
+
+function addMultiHost(
+  map: Map<string, ParsedMultiHost>,
+  dedupeKey: string,
+  ip: string,
+  hostname: string | undefined,
+  os: string | undefined,
+  ports: ParsedPort[]
+): void {
+  if (!ip && ports.length === 0) return;
+  let existing = map.get(dedupeKey);
+  if (!existing) {
+    if (map.size >= MAX_MULTI_HOSTS) return;
+    existing = { ip, hostnames: [], os, ports: [] };
+    map.set(dedupeKey, existing);
+  }
+  if (hostname && !existing.hostnames.includes(hostname)) existing.hostnames.push(hostname);
+  if (!existing.os && os) existing.os = os;
+  for (const p of ports) {
+    if (existing.ports.length >= MAX_PORTS_PER_MULTI_HOST) break;
+    existing.ports.push(p);
+  }
+}
+
+function parseMultiHostPortBlock(content: string): ParsedPort[] {
+  const ports: ParsedPort[] = [];
+  let currentPort: ParsedPort | null = null;
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const pMatch = trimmed.match(PORT_LINE_REGEX);
+    if (pMatch) {
+      const portNum = parseInt(pMatch[1], 10);
+      if (!isValidPort(portNum)) {
+        currentPort = null;
+        continue;
+      }
+      if (ports.length >= MAX_PORTS_PER_MULTI_HOST) {
+        currentPort = null;
+        continue;
+      }
+      const proto = pMatch[2].toLowerCase();
+      const state = pMatch[3].toLowerCase();
+      const service = pMatch[4].toLowerCase();
+      const version = pMatch[5].trim() || 'Unknown Version';
+      const { tools, cve } = getServiceIntelligence(portNum, service, version);
+      const newPort: ParsedPort = {
+        port: portNum,
+        protocol: proto,
+        state,
+        service,
+        version,
+        suggestedTools: tools,
+        cveNotes: cve,
+        scripts: {},
+      };
+      currentPort = newPort;
+      ports.push(newPort);
+      continue;
+    }
+
+    const nse = line.match(NSE_LINE_REGEX);
+    if (nse && currentPort) {
+      currentPort.scripts = currentPort.scripts || {};
+      currentPort.scripts[nse[1]] = nse[2].trim();
+      continue;
+    }
+
+    const nseSub = line.match(NSE_SUB_LINE_REGEX);
+    if (nseSub && currentPort && currentPort.scripts) {
+      const keys = Object.keys(currentPort.scripts);
+      if (keys.length > 0) currentPort.scripts[keys[keys.length - 1]] += `\n${nseSub[1].trim()}`;
+    }
+  }
+  return ports;
+}
+
+function normalizeJsonPort(raw: unknown): ParsedPort | null {
+  if (raw == null) return null;
+  let portNum: number;
+  let protocol = 'tcp';
+  let state = 'open';
+  let service = 'unknown';
+  let version = 'Unknown Version';
+
+  if (typeof raw === 'number' || typeof raw === 'string') {
+    portNum = parseInt(String(raw), 10);
+  } else if (typeof raw === 'object') {
+    const o = raw as Record<string, unknown>;
+    portNum = parseInt(String(o.port ?? o.portid ?? o.id ?? ''), 10);
+    protocol = String(o.protocol ?? o.proto ?? 'tcp').toLowerCase();
+    state = String(o.state ?? o.status ?? 'open').toLowerCase();
+    service = String(o.service ?? o.name ?? o.serviceName ?? 'unknown').toLowerCase();
+    version = String(o.version ?? o.product ?? o.banner ?? 'Unknown Version');
+  } else {
+    return null;
+  }
+
+  if (!isValidPort(portNum)) return null;
+  if (state && state !== 'open' && state !== 'open|filtered') return null;
+
+  const { tools, cve } = getServiceIntelligence(portNum, service, version);
+  return {
+    port: portNum,
+    protocol,
+    state: state || 'open',
+    service,
+    version,
+    suggestedTools: tools,
+    cveNotes: cve,
+  };
+}
+
+function parseMultiHostJson(trimmed: string): ParsedMultiHost[] | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+
+  const map = new Map<string, ParsedMultiHost>();
+  let noIpCounter = 0;
+
+  const ingest = (entry: unknown, keyHint?: string): void => {
+    if (!entry || typeof entry !== 'object') return;
+    const o = entry as Record<string, unknown>;
+    const ip = String(o.ip ?? o.address ?? o.host ?? o.addr ?? keyHint ?? '').trim();
+
+    let hostnames: string[] = [];
+    if (Array.isArray(o.hostnames)) hostnames = o.hostnames.map((h) => String(h)).filter(Boolean);
+    else if (Array.isArray(o.names)) hostnames = o.names.map((h) => String(h)).filter(Boolean);
+    else if (typeof o.hostname === 'string' && o.hostname) hostnames = [o.hostname];
+    else if (typeof o.name === 'string' && o.name && keyHint === undefined) hostnames = [o.name];
+
+    const os = typeof o.os === 'string' ? o.os : typeof o.osName === 'string' ? o.osName : undefined;
+
+    const rawPorts = Array.isArray(o.ports) ? o.ports : [];
+    const ports: ParsedPort[] = [];
+    for (const rp of rawPorts) {
+      if (ports.length >= MAX_PORTS_PER_MULTI_HOST) break;
+      const p = normalizeJsonPort(rp);
+      if (p) ports.push(p);
+    }
+
+    if (!ip && ports.length === 0) return;
+    const dedupeKey = ip || `__noip_${noIpCounter++}__`;
+    addMultiHost(map, dedupeKey, ip, hostnames[0], os, ports);
+    const existing = map.get(dedupeKey);
+    if (existing) {
+      for (const hn of hostnames.slice(1)) {
+        if (!existing.hostnames.includes(hn)) existing.hostnames.push(hn);
+      }
+    }
+  };
+
+  if (Array.isArray(data)) {
+    for (const entry of data) {
+      if (map.size >= MAX_MULTI_HOSTS) break;
+      ingest(entry);
+    }
+  } else if (data && typeof data === 'object') {
+    for (const [key, entry] of Object.entries(data as Record<string, unknown>)) {
+      if (map.size >= MAX_MULTI_HOSTS) break;
+      ingest(entry, key);
+    }
+  } else {
+    return null;
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Parse every host out of a pasted scan, regardless of format, instead of collapsing to
+ * one primary target. Accepts the same four shapes the single-host parsers understand:
+ * Nmap XML, greppable .gnmap, plain Nmap text, and JSON (array or ip-keyed object).
+ * Never throws — malformed input resolves to an empty array. Capped at 256 hosts and
+ * 512 ports per host.
+ */
+export function parseMultiHostScan(raw: string): ParsedMultiHost[] {
+  try {
+    const trimmed = (raw ?? '').trim();
+    if (!trimmed) return [];
+
+    const map = new Map<string, ParsedMultiHost>();
+
+    // 1. Nmap XML — multiple <host> elements
+    if (trimmed.startsWith('<?xml') || trimmed.includes('<nmaprun') || trimmed.includes('<host>')) {
+      if (typeof window === 'undefined' || typeof DOMParser === 'undefined') return [];
+
+      const sanitizedXml = trimmed
+        .replace(/<!DOCTYPE\b[^>\[]*\[[\s\S]*?\][^>]*>/gi, '')
+        .replace(/<!DOCTYPE\b[^>]*>/gi, '')
+        .replace(/<!ENTITY\b[\s\S]*?>/gi, '')
+        .replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)[a-zA-Z0-9_-]+;/gi, '');
+
+      const doc = new DOMParser().parseFromString(sanitizedXml, 'text/xml');
+      if (doc.querySelector('parsererror') || !doc.querySelector('nmaprun')) return [];
+
+      const hostNodes = doc.querySelectorAll('host');
+      let noIpCounter = 0;
+      hostNodes.forEach((hostNode) => {
+        if (map.size >= MAX_MULTI_HOSTS) return;
+        const addressNode =
+          hostNode.querySelector('address[addrtype="ipv4"]') ||
+          hostNode.querySelector('address[addrtype="ipv6"]') ||
+          hostNode.querySelector('address');
+        const ip = addressNode?.getAttribute('addr') || '';
+
+        const hostnames: string[] = [];
+        hostNode.querySelectorAll('hostname').forEach((h) => {
+          const n = h.getAttribute('name');
+          if (n && !hostnames.includes(n)) hostnames.push(n);
+        });
+
+        const osMatchNode = hostNode.querySelector('osmatch');
+        const os = osMatchNode?.getAttribute('name') || undefined;
+
+        const ports: ParsedPort[] = [];
+        hostNode.querySelectorAll('ports > port').forEach((portEl) => {
+          if (ports.length >= MAX_PORTS_PER_MULTI_HOST) return;
+          const stateEl = portEl.querySelector('state');
+          const state = stateEl?.getAttribute('state') || 'closed';
+          if (state !== 'open' && state !== 'open|filtered') return;
+          const portNum = parseInt(portEl.getAttribute('portid') || '0', 10);
+          if (!isValidPort(portNum)) return;
+          const protocol = (portEl.getAttribute('protocol') || 'tcp').toLowerCase();
+          const serviceEl = portEl.querySelector('service');
+          const service = (serviceEl?.getAttribute('name') || 'unknown').toLowerCase();
+          const product = serviceEl?.getAttribute('product') || '';
+          const versionNum = serviceEl?.getAttribute('version') || '';
+          const extrainfo = serviceEl?.getAttribute('extrainfo') || '';
+          const fullVersion = [product, versionNum, extrainfo].filter(Boolean).join(' ') || 'Unknown Version';
+          const { tools, cve } = getServiceIntelligence(portNum, service, fullVersion);
+          ports.push({ port: portNum, protocol, state, service, version: fullVersion, suggestedTools: tools, cveNotes: cve });
+        });
+
+        if (!ip && ports.length === 0) return;
+        const dedupeKey = ip || `__noip_${noIpCounter++}__`;
+        addMultiHost(map, dedupeKey, ip, hostnames[0], os, ports);
+        const existing = map.get(dedupeKey);
+        if (existing) {
+          for (const hn of hostnames.slice(1)) {
+            if (!existing.hostnames.includes(hn)) existing.hostnames.push(hn);
+          }
+        }
+      });
+
+      return Array.from(map.values());
+    }
+
+    // 2. JSON — array of host objects, or object keyed by ip
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      const jsonResult = parseMultiHostJson(trimmed);
+      if (jsonResult && jsonResult.length > 0) return jsonResult;
+      // Fall through to text-based formats if JSON.parse succeeded but yielded nothing,
+      // or if it wasn't actually JSON (e.g. a stray '{' in free text).
+    }
+
+    // 3. Greppable Nmap (.gnmap) — "Host: <ip> (<name>)" lines
+    if (trimmed.includes('Host:') && (trimmed.includes('Ports:') || trimmed.includes('# Nmap'))) {
+      for (const line of trimmed.split('\n')) {
+        if (!line.startsWith('Host:')) continue;
+        const hostMatch = line.match(/^Host:\s*([0-9]{1,3}(?:\.[0-9]{1,3}){3})\s*(?:\(([^)]*)\))?/);
+        if (!hostMatch) continue;
+        const ip = hostMatch[1];
+        const hostname = hostMatch[2] || undefined;
+        const osField = line.match(/\tOS:\s*([^\t\r\n]+)/);
+        const os = osField ? osField[1].trim() : undefined;
+
+        const ports: ParsedPort[] = [];
+        const portsPart = line.split('Ports:')[1];
+        if (portsPart) {
+          for (const pe of portsPart.split(',')) {
+            if (ports.length >= MAX_PORTS_PER_MULTI_HOST) break;
+            const parts = pe.trim().split('/');
+            if (parts.length < 5) continue;
+            const portNum = parseInt(parts[0], 10);
+            const state = parts[1]?.toLowerCase();
+            const proto = parts[2]?.toLowerCase() || 'tcp';
+            const service = parts[4]?.toLowerCase() || 'unknown';
+            const version = (parts[6] || parts[5] || 'Unknown Version').trim();
+            const isOpenState = state === 'open' || state === 'open|filtered';
+            if (!isOpenState || !isValidPort(portNum)) continue;
+            const { tools, cve } = getServiceIntelligence(portNum, service, version);
+            ports.push({ port: portNum, protocol: proto, state: state || 'open', service, version, suggestedTools: tools, cveNotes: cve });
+          }
+        }
+
+        if (!ip && ports.length === 0) continue;
+        addMultiHost(map, ip, ip, hostname, os, ports);
+      }
+      if (map.size > 0) return Array.from(map.values());
+    }
+
+    // 4. Plain / normal terminal output — repeated "Nmap scan report for <name> (<ip>)" blocks
+    const sections = trimmed.split(/^(?=Nmap scan report for )/im).filter((sec) => /^Nmap scan report for /i.test(sec));
+    let noIpCounter = 0;
+    if (sections.length > 0) {
+      for (const sec of sections) {
+        if (map.size >= MAX_MULTI_HOSTS) break;
+        const hostMatch = sec.match(HOST_REPORT_REGEX);
+        let ip = '';
+        let hostname: string | undefined;
+        if (hostMatch) {
+          if (hostMatch[2]) {
+            ip = hostMatch[2];
+            hostname = hostMatch[1] || undefined;
+          } else if (hostMatch[1]) {
+            if (new RegExp(`^${IPV4_SRC}$`).test(hostMatch[1]) || new RegExp(`^${IPV6_SRC}$`).test(hostMatch[1])) {
+              ip = hostMatch[1];
+            } else {
+              hostname = hostMatch[1];
+            }
+          }
+        }
+        const osMatch = sec.match(/Service Info:[^\n\r]*?\bOSs?:\s*([^;\n\r]+)/i);
+        const os = osMatch ? osMatch[1].trim() : undefined;
+        const ports = parseMultiHostPortBlock(sec);
+
+        if (!ip && ports.length === 0) continue;
+        const dedupeKey = ip || `__noip_${noIpCounter++}__`;
+        addMultiHost(map, dedupeKey, ip, hostname, os, ports);
+      }
+      if (map.size > 0) return Array.from(map.values());
+    }
+
+    // No host-report headers at all: treat the whole paste as a single headerless host
+    // if it contains bare port lines (e.g. a snippet of "22/tcp open ssh" lines).
+    const hasOpenPortLine = /^\s*\d{1,5}\/(?:tcp|udp)\s+open/im.test(trimmed);
+    if (hasOpenPortLine) {
+      const ports = parseMultiHostPortBlock(trimmed);
+      if (ports.length > 0) {
+        const ipMatch = trimmed.match(new RegExp(IPV4_SRC));
+        const ip = ipMatch ? ipMatch[0] : '';
+        addMultiHost(map, ip || '__noip_0__', ip, undefined, undefined, ports);
+      }
+    }
+
+    return Array.from(map.values());
+  } catch {
+    return [];
+  }
+}

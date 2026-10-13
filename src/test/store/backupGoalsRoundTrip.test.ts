@@ -18,7 +18,7 @@ describe('backup goals (weeklyRootTarget)', () => {
     const json = useCtfStore.getState().exportBackup();
     const parsed = JSON.parse(json);
     expect(parsed.goals).toEqual({ weeklyRootTarget: 12 });
-    expect(parsed.version).toBe('2.0.0'); // additive optional field, format version unchanged
+    expect(parsed.version).toBe('3.0.0'); // exportBackup() now writes the v3 core
 
     setGoal(3);
     expect(useCtfStore.getState().importBackup(json)).toBe(true);

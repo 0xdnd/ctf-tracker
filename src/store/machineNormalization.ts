@@ -49,6 +49,10 @@ export const hasUserProgress = (m: Partial<Machine> | null | undefined): boolean
   if (hasText(m.scanSummary) || hasText(m.rawScanOutput)) return true;
   if (typeof m.rating === 'number' && m.rating > 0) return true;
   if (hasText(m.perceivedDifficulty)) return true;
+  // Per-lab study data is operator-only too.
+  if (hasText(m.domain) || hasItems(m.vhosts) || hasItems(m.findings) || hasItems(m.timeline)) return true;
+  if (m.portTriage && typeof m.portTriage === 'object' && Object.keys(m.portTriage).length > 0) return true;
+  if (hasText(m.solveIndependence)) return true;
   const cl = m.checklist;
   if (cl && typeof cl === 'object') {
     if (hasItems(cl.openPorts) || cl.activeItemId) return true;

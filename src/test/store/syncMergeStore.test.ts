@@ -123,7 +123,7 @@ describe('mergeBackup (store)', () => {
   it('export, change, merge back: local work survives, deletions stick, and a re-merge is a no-op', async () => {
     const file = await get().exportSyncFile();
     const parsed = JSON.parse(file);
-    expect(parsed.version).toBe('2.0.0');
+    expect(parsed.version).toBe('3.0.0');
     expect(typeof parsed.deviceId).toBe('string');
     expect(typeof parsed.syncedAt).toBe('string');
 

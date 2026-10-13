@@ -51,6 +51,17 @@ export interface Machine {
   rawScanOutput?: string;
   isActive?: boolean;
   checklist?: import('./checklist').MachineChecklistState;
+  // Optional per-lab study data (see ./labStudy). Absent on rows written by older builds.
+  domain?: string;
+  vhosts?: string[];
+  /** Keyed by port number as a string (JSON object keys are always strings). */
+  portTriage?: Record<string, import('./labStudy').PortTriageEntry>;
+  findings?: import('./labStudy').LabFinding[];
+  timeline?: import('./labStudy').TimelineEvent[];
+  solveIndependence?: import('./labStudy').SolveIndependence;
+  /** Epoch ms of the next spaced-repetition review. */
+  nextReviewAt?: number;
+  reviewCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +75,7 @@ export interface MachineTombstone {
 export * from './checklist';
 export * from './graph';
 export * from './loot';
+export * from './labStudy';
 
 export interface CheatsheetCommand {
   id: string;
@@ -83,6 +95,11 @@ export interface GlobalVariables {
   lport: string;
   targetIp: string;
   interface: string;
+  domain?: string;
+  dcIp?: string;
+  user?: string;
+  cred?: string;
+  wordlist?: string;
   customVars: Record<string, string>;
 }
 

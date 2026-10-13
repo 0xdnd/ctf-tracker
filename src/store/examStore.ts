@@ -32,6 +32,7 @@ import { playCyberAlert } from '../utils/audioAlerts';
 import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
 import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
 import type { Finding } from '../types/findings';
+import { isSchemaWriteGated } from '../utils/schemaWriteGate';
 
 let examAlertChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -934,3 +935,86 @@ export function migrateExamProofImages(): Promise<number> {
   return proofImageMigration;
 }
 
+
+/** The persisted (partialize) exam fields and their JSON kinds, for validating a backup's exam snapshot. */
+const EXAM_SNAPSHOT_FIELDS = {
+  id: 'string',
+  track: 'string',
+  candidateName: 'string',
+  candidateCallsign: 'string',
+  osid: 'string',
+  status: 'string',
+  startedAt: 'number?',
+  examExpiresAt: 'number?',
+  totalDurationSeconds: 'number',
+  timerPausedRemainingSeconds: 'number?',
+  boxes: 'array',
+  activeBreak: 'object',
+  breakHistory: 'array',
+  milestones: 'array',
+  scratchNotes: 'string',
+  includeBonusPoints: 'boolean',
+  findings: 'array',
+  activeBoxId: 'string?',
+  activeBoxSince: 'number?',
+  activeBoxPausedAt: 'number?',
+  rabbitHoleSnoozeUntil: 'number?',
+  isQuickDrawerOpen: 'boolean',
+} as const satisfies Partial<Record<keyof ExamSessionState, string>>;
+
+const EXAM_STATUSES: readonly ExamStatus[] = ['idle', 'running', 'paused', 'completed'];
+
+const matchesKind = (value: unknown, kind: string): boolean => {
+  const nullable = kind.endsWith('?');
+  if (value === null) return nullable;
+  const base = nullable ? kind.slice(0, -1) : kind;
+  if (base === 'array') return Array.isArray(value);
+  if (base === 'object') return typeof value === 'object' && !Array.isArray(value);
+  if (base === 'number') return typeof value === 'number' && Number.isFinite(value);
+  return typeof value === base;
+};
+
+/** Backup v3: the exam session exactly as persisted (the persist partialize snapshot), detached from the store. */
+export function getExamBackupSnapshot(): Partial<ExamSessionState> {
+  const state = useExamStore.getState();
+  const partialize = useExamStore.persist?.getOptions().partialize;
+  return JSON.parse(JSON.stringify(partialize ? partialize(state) : state));
+}
+
+/**
+ * Backup v3 restore: replaces the exam session with a backup's snapshot. Only the persisted fields are taken, each
+ * only with the right JSON kind; a snapshot without a valid id, track, status and boxes is refused. Refused while
+ * the schema write gate is engaged (this store's own storage is not gated, so applying would write through it).
+ * Derived clocks are recomputed the way rehydration does. Returns whether the snapshot was applied.
+ */
+export function restoreExamBackupSnapshot(raw: unknown): boolean {
+  if (isSchemaWriteGated()) return false;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+  const incoming = raw as Record<string, unknown>;
+  if (
+    !matchesKind(incoming.id, 'string') ||
+    typeof incoming.track !== 'string' ||
+    !(incoming.track in EXAM_TRACK_CONFIGS) ||
+    !EXAM_STATUSES.includes(incoming.status as ExamStatus) ||
+    !Array.isArray(incoming.boxes)
+  ) {
+    return false;
+  }
+  const patch: Record<string, unknown> = {};
+  for (const [key, kind] of Object.entries(EXAM_SNAPSHOT_FIELDS)) {
+    if (key in incoming && matchesKind(incoming[key], kind)) patch[key] = incoming[key];
+  }
+  const next = { ...useExamStore.getState(), ...patch } as ExamSessionState;
+  const now = Date.now();
+  const activeBreak: ExamBreakState = { ...DEFAULT_BREAK_STATE, ...(patch.activeBreak as Partial<ExamBreakState> | undefined) };
+  activeBreak.remainingSeconds =
+    activeBreak.isActive && activeBreak.expiresAt ? Math.max(0, Math.floor((activeBreak.expiresAt - now) / 1000)) : 0;
+  const remainingSeconds =
+    next.status === 'running' && next.examExpiresAt
+      ? Math.max(0, Math.floor((next.examExpiresAt - now) / 1000))
+      : next.timerPausedRemainingSeconds ?? next.totalDurationSeconds;
+  useExamStore.setState({ ...patch, activeBreak, remainingSeconds } as Partial<ExamSessionState>);
+  // Restored boxes may still carry legacy inline Base64 proofs: move them to IndexedDB like a rehydrate does.
+  void migrateExamProofImages();
+  return true;
+}

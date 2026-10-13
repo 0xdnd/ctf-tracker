@@ -25,6 +25,12 @@ export interface SubstitutionContext {
   /** Shell binary (e.g. `/bin/bash`), used only by the reverse-shell payload templates. */
   shell?: string;
   interface?: string;
+  /** Lab/AD globals (`globalVars.domain` etc.). Empty values fall back to a same-named custom variable. */
+  domain?: string;
+  dcIp?: string;
+  user?: string;
+  cred?: string;
+  wordlist?: string;
   customVars?: Record<string, string>;
 }
 
@@ -66,6 +72,25 @@ const CANONICAL_LABELS: Record<string, string> = {
   rhost: 'TARGET_IP',
   interface: 'INTERFACE',
   shell: 'SHELL',
+  domain: 'DOMAIN',
+  dcIp: 'DC_IP',
+  user: 'USER',
+  cred: 'CRED',
+  wordlist: 'WORDLIST',
+};
+
+/**
+ * Upper-case token -> global field for the lab/AD globals. These have no display default; when the global is
+ * empty a custom variable with the same token name (e.g. the default customVars.DOMAIN) still resolves it, so
+ * templates that relied on customVars behave exactly as before.
+ */
+const GLOBAL_FIELD_ALIASES: Record<string, 'domain' | 'dcIp' | 'user' | 'cred' | 'wordlist'> = {
+  DOMAIN: 'domain',
+  DC_IP: 'dcIp',
+  'DC-IP': 'dcIp',
+  USER: 'user',
+  CRED: 'cred',
+  WORDLIST: 'wordlist',
 };
 
 // Matches `{TOKEN}` (not immediately preceded by `$`, so `${VAR}` is left
@@ -109,6 +134,15 @@ function resolveKnownToken(
   if (upper === 'LPORT') return { value: ctx.lport, canonical: 'lport' };
   if (upper === 'INTERFACE') return { value: ctx.interface, canonical: 'interface' };
   return null;
+}
+
+function resolveGlobalFieldToken(
+  raw: string,
+  ctx: SubstitutionContext
+): { value: string | undefined; canonical: string } | null {
+  const field = GLOBAL_FIELD_ALIASES[raw.toUpperCase()];
+  if (!field) return null;
+  return { value: ctx[field] || resolveCustomVar(raw, ctx), canonical: field };
 }
 
 function resolveCustomVar(raw: string, ctx: SubstitutionContext): string | undefined {
@@ -162,7 +196,10 @@ export function resolveTemplate(
     const end = start + match[0].length;
     result += template.slice(lastIndex, start);
 
-    const known = (options.legacyAliases ? null : resolveExactCaseToken(raw, context)) ?? resolveKnownToken(raw.toUpperCase(), context);
+    const known =
+      (options.legacyAliases ? null : resolveExactCaseToken(raw, context)) ??
+      resolveKnownToken(raw.toUpperCase(), context) ??
+      resolveGlobalFieldToken(raw, context);
 
     if (known) {
       const { value, canonical } = known;
@@ -209,6 +246,11 @@ export function contextFromGlobalVars(
     activeTargetIp: extras?.activeTargetIp,
     shell: extras?.shell,
     interface: globalVars.interface,
+    domain: globalVars.domain,
+    dcIp: globalVars.dcIp,
+    user: globalVars.user,
+    cred: globalVars.cred,
+    wordlist: globalVars.wordlist,
     customVars: globalVars.customVars,
   };
 }

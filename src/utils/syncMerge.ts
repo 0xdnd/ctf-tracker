@@ -45,6 +45,7 @@ import type { CptsNoteEntry } from './obsidianManualUtils';
 import { hasUserProgress, isGenuineCustom } from '../store/machineNormalization';
 import { mergeImportedLoot, REDACTED } from '../store/lootPersistence';
 import { normalizeMachineTombstones, pruneMachineTombstones } from './machineTombstones';
+import { TIMELINE_CAP } from '../types/labStudy';
 
 export interface SyncWorkspace {
   deviceId?: string;
@@ -192,6 +193,9 @@ const PROGRESS_KEYS = [
   'status', 'userFlag', 'rootFlag', 'userPwnedAt', 'rootPwnedAt', 'timeSpentSeconds', 'timeToUserSeconds',
   'timeToRootSeconds', 'perceivedDifficulty', 'rating', 'quickNotes', 'writeupMarkdown', 'openPorts', 'services',
   'scanSummary', 'rawScanOutput', 'checklist', 'ip', 'tags',
+  // Per-lab study data. Absent values normalize away, so fingerprints of older rows are unchanged. The timeline
+  // is a derived log (status changes on both devices would always diverge): it is unioned, never compared.
+  'domain', 'vhosts', 'portTriage', 'findings', 'solveIndependence', 'nextReviewAt', 'reviewCount',
 ] as const satisfies readonly (keyof Machine)[];
 
 /** Descriptive fields that only the operator sets on their own machines. */
@@ -273,6 +277,13 @@ export function losesProgress(from: Machine, to: Machine): boolean {
   for (const k of TEXT_KEYS) if (filled(from[k]) && !filled(to[k])) return true;
   if ((to.timeSpentSeconds || 0) < (from.timeSpentSeconds || 0)) return true;
   if (filled(from.rating) && !filled(to.rating)) return true;
+  if (filled(from.domain) && !filled(to.domain)) return true;
+  if (filled(from.solveIndependence) && !filled(to.solveIndependence)) return true;
+  const toVhosts = new Set(to.vhosts || []);
+  if ((from.vhosts || []).some((h) => !toVhosts.has(h))) return true;
+  const toFindings = new Set((to.findings || []).map((f) => f?.id));
+  if ((from.findings || []).some((f) => !toFindings.has(f?.id))) return true;
+  if (Object.keys(from.portTriage || {}).some((port) => !(to.portTriage && port in to.portTriage))) return true;
   const toPorts = new Set(to.openPorts || []);
   if ((from.openPorts || []).some((p) => !toPorts.has(p))) return true;
   const toServices = new Set((to.services || []).map(serviceKey));
@@ -298,6 +309,12 @@ export function coversMachine(a: Machine, b: Machine): boolean {
   }
   const aServices = new Map((a.services || []).map((s) => [serviceKey(s), stable(s)]));
   for (const s of b.services || []) if (aServices.get(serviceKey(s)) !== stable(s)) return false;
+  for (const k of ['domain', 'solveIndependence'] as const) if (filled(b[k]) && a[k] !== b[k]) return false;
+  const aFindings = new Map((a.findings || []).map((f) => [f?.id, stable(f)]));
+  for (const f of b.findings || []) if (aFindings.get(f?.id) !== stable(f)) return false;
+  for (const [port, entry] of Object.entries(b.portTriage || {})) {
+    if (stable(a.portTriage?.[port]) !== stable(entry)) return false;
+  }
   if (isGenuineCustom(a) || isGenuineCustom(b)) {
     for (const k of CUSTOM_KEYS) if (filled(b[k]) && stable(a[k]) !== stable(b[k])) return false;
   }
@@ -342,6 +359,17 @@ export function unionMachine(local: Machine, incoming: Machine): Machine {
       itemsState,
     };
   }
+  for (const k of ['domain', 'solveIndependence'] as const) {
+    if (!filled(local[k]) && filled(incoming[k])) (out as unknown as Record<string, unknown>)[k] = incoming[k];
+  }
+  const vhosts = Array.from(new Set([...(local.vhosts || []), ...(incoming.vhosts || [])]));
+  if (vhosts.length) out.vhosts = vhosts;
+  if (local.portTriage || incoming.portTriage) out.portTriage = { ...(incoming.portTriage || {}), ...(local.portTriage || {}) };
+  const findings = unionById(asArray<NonNullable<Machine['findings']>[number]>(local.findings), asArray(incoming.findings)).list;
+  if (findings.length) out.findings = findings;
+  const timeline = unionById(asArray<NonNullable<Machine['timeline']>[number]>(local.timeline), asArray(incoming.timeline))
+    .list.sort((x, y) => (x.at || 0) - (y.at || 0));
+  if (timeline.length) out.timeline = timeline.slice(-TIMELINE_CAP);
   out.updatedAt = latest(local.updatedAt, incoming.updatedAt);
   return out;
 }

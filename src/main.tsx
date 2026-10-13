@@ -7,6 +7,10 @@ import { isTauriTarget } from './utils/runtimeTarget';
 import { initServiceWorkerUpdates } from './utils/swUpdate';
 import { flushProfileSave } from './store/useCtfStore';
 import { useToastStore } from './store/useToastStore';
+import { registerBackupImageProvider } from './store/backupFile';
+import { imageBackupProvider } from './utils/backupImageProvider';
+
+registerBackupImageProvider(imageBackupProvider);
 
 // Register offline Service Worker only in production builds; clear any stale SW in DEV mode
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, cleanup, waitFor, act, configure } from '@te
 import { webcrypto } from 'node:crypto';
 import { BackupModal } from '../../components/backup/BackupModal';
 import { useCtfStore } from '../../store/useCtfStore';
+import { buildBackupFile } from '../../store/backupFile';
 import { decryptBackup, encryptBackup, isEncryptedBackup } from '../../utils/backupCrypto';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
@@ -26,7 +27,9 @@ const dateStr = () => new Date().toISOString().slice(0, 10);
 
 const backupJson = (redact: boolean) =>
   JSON.stringify({ isRedacted: redact, machines: [{ id: 'm1', name: 'Lame', notes: 'secret-note-123' }] });
-const PLAINTEXT = backupJson(false);
+const PLAINTEXT = backupJson(false); // legacy (pre-3.0.0) text, used for the import path
+// The downloaded file is the v3 backup built from the (mocked) exportBackup core, not the raw core text.
+const v3File = (redact: boolean) => buildBackupFile({ redactSecrets: redact });
 
 const readBlob = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
@@ -107,16 +110,19 @@ describe('BackupModal: plaintext export is unchanged', () => {
     render(<BackupModal />);
     expect(screen.queryByLabelText('Export passphrase')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^download json$/i }));
-    expect(downloads).toHaveLength(1);
+    await waitFor(() => expect(downloads).toHaveLength(1));
     expect(downloads[0].filename).toBe(`zerobox_ctf_backup_${dateStr()}.json`);
-    expect(await readBlob(downloads[0].blob)).toBe(PLAINTEXT);
+    const file = await readBlob(downloads[0].blob);
+    expect(file).toBe(await v3File(false));
+    expect(JSON.parse(file).checksum).toMatch(/^[0-9a-f]{64}$/);
     expect(exportBackup).toHaveBeenCalledWith({ redactSecrets: false });
   });
 
-  it('keeps the redacted filename when only redaction is on', () => {
+  it('keeps the redacted filename when only redaction is on', async () => {
     render(<BackupModal />);
     fireEvent.click(screen.getByLabelText(/redact sensitive credentials/i));
     fireEvent.click(screen.getByRole('button', { name: /^download json$/i }));
+    await waitFor(() => expect(downloads).toHaveLength(1));
     expect(downloads[0].filename).toBe(`zerobox_ctf_backup_redacted_${dateStr()}.json`);
     expect(exportBackup).toHaveBeenCalledWith({ redactSecrets: true });
   });
@@ -169,7 +175,7 @@ describe('BackupModal: encrypted export', () => {
     expect(envelope.format).toBe('zerobox-backup-encrypted');
     expect(envelope.v).toBe(1);
     expect(text).not.toContain('secret-note-123');
-    expect(await decryptBackup(text, PASSPHRASE)).toBe(PLAINTEXT);
+    expect(await decryptBackup(text, PASSPHRASE)).toBe(await v3File(false));
 
     await waitFor(() => expect(screen.queryByText(/Encrypting backup/)).toBeNull());
     // passphrase fields are wiped after a successful export
@@ -201,10 +207,10 @@ describe('BackupModal: encrypted export', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const copied = writeText.mock.calls[0][0] as string;
     expect(isEncryptedBackup(copied)).toBe(true);
-    expect(await decryptBackup(copied, PASSPHRASE)).toBe(PLAINTEXT);
+    expect(await decryptBackup(copied, PASSPHRASE)).toBe(await v3File(false));
   });
 
-  it('disables the toggle and explains why when WebCrypto is unavailable', () => {
+  it('disables the toggle and explains why when WebCrypto is unavailable', async () => {
     vi.stubGlobal('crypto', undefined);
     render(<BackupModal />);
     const toggle = screen.getByLabelText(/encrypt with passphrase/i);
@@ -214,7 +220,7 @@ describe('BackupModal: encrypted export', () => {
     expect(toggle).toHaveAccessibleDescription(/not in a secure context/i);
     // plaintext export still works
     fireEvent.click(screen.getByRole('button', { name: /^download json$/i }));
-    expect(downloads).toHaveLength(1);
+    await waitFor(() => expect(downloads).toHaveLength(1));
   });
 
   it('clears passphrases when the modal is closed and reopened', () => {

@@ -92,7 +92,8 @@ describe('per-machine views never borrow the engaged machine IP', () => {
     expect(region.textContent).not.toContain(ENGAGED_IP);
 
     // Inserting the note into the writeup must not persist B's IP into A's markdown.
-    fireEvent.click(screen.getAllByRole('button', { name: /insert/i })[0]);
+    // Target the note's own Insert button (the toolbar also has a disabled "Insert lab summary" button).
+    fireEvent.click(screen.getAllByTitle('Insert this note and commands into active writeup')[0]);
     const saved = useCtfStore.getState().machines.find((m) => m.id === MACHINE_A.id)?.writeupMarkdown ?? '';
     expect(saved).toContain('probe');
     expect(saved).not.toContain(ENGAGED_IP);

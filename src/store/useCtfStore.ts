@@ -22,8 +22,18 @@ import {
   NewCredAttemptInput,
   NewLootItemInput,
   LootItemPatch,
-  MachineTombstone
+  MachineTombstone,
+  PortTriageEntry,
+  PortTriageStatus,
+  LabFinding,
+  NewLabFindingInput,
+  LabFindingPatch,
+  TimelineEvent,
+  SolveIndependence,
+  TIMELINE_CAP,
 } from '../types';
+import { FINDING_SEVERITIES } from '../types/findings';
+import { isDueForReview, scheduleNextReview } from '../utils/spacedRepetition';
 import { addMachineTombstone, normalizeMachineTombstones } from '../utils/machineTombstones';
 // Sync merge code is loaded on demand (./syncActions) to keep it out of the entry chunk: types only here.
 import type { ConflictChoice, SyncConflict, SyncMergeSummary } from '../utils/syncMerge';
@@ -86,6 +96,8 @@ import {
 import { SYNC_CHANNEL_NAME, syncChannel } from '../utils/crossTabChannel';
 import { useToastStore } from './useToastStore';
 import { useGoalsStore } from './useGoalsStore';
+import { getExamBackupSnapshot, restoreExamBackupSnapshot } from './examStore';
+import { BACKUP_FORMAT_VERSION } from '../utils/backupChecksum';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
@@ -290,6 +302,26 @@ interface CtfStoreState {
   toggleUserFlag: (id: string, flagValue?: string) => void;
   toggleRootFlag: (id: string, flagValue?: string) => void;
 
+  // Per-lab study data (no-ops on active HTB machines; every change stamps the machine's updatedAt)
+  setMachineDomain: (id: string, domain: string) => void;
+  /** Trims, lowercases, de-duplicates and drops empty entries. */
+  setMachineVhosts: (id: string, vhosts: string[]) => void;
+  addMachineVhost: (id: string, vhost: string) => void;
+  removeMachineVhost: (id: string, vhost: string) => void;
+  /** A new entry starts as { status: 'untested' } before the patch is applied. */
+  setPortTriage: (id: string, port: number | string, patch: Partial<PortTriageEntry>) => void;
+  clearPortTriage: (id: string, port: number | string) => void;
+  /** Returns the new finding id, or '' when the machine is unknown or active. Logs a 'finding_added' event. */
+  addFinding: (id: string, input: NewLabFindingInput) => string;
+  updateFinding: (id: string, findingId: string, patch: LabFindingPatch) => void;
+  removeFinding: (id: string, findingId: string) => void;
+  /** Records how independently the lab was solved and (re)schedules its next review. */
+  setSolveIndependence: (id: string, value: SolveIndependence) => void;
+  /** Completes a review: reviewCount + 1 and the next (longer) interval. */
+  markReviewed: (id: string, independence?: SolveIndependence) => void;
+  /** Re-runs mergeMachinesWithCatalog over the current machines (no-op while the schema write gate is engaged). */
+  syncCatalog: () => void;
+
   // Attack Methodology Checklist Actions
   setMachineOpenPorts: (machineId: string, ports: number[]) => void;
   setChecklistItemStatus: (machineId: string, itemId: string, status: import('../types').ChecklistItemStatus) => void;
@@ -342,7 +374,11 @@ interface CtfStoreState {
   loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => void;
   saveProfileData: (profileId?: string) => void;
   exportBackup: (options?: { redactSecrets?: boolean }) => string;
-  importBackup: (jsonStr: string) => boolean;
+  /**
+   * Applies a backup synchronously. A 3.0.0 file that carries a checksum is refused unless `verifiedChecksum`
+   * (computed by store/backupFile.importBackupFile, WebCrypto being async) equals it.
+   */
+  importBackup: (jsonStr: string, options?: { verifiedChecksum?: string }) => boolean;
   /** Plaintext sync file (full backup + deviceId, syncedAt, syncPeers, tombstones). The UI encrypts it. */
   exportSyncFile: () => Promise<string>;
   /** Merges a decrypted backup or sync file into this workspace (see utils/syncMerge). Never replaces. */
@@ -381,6 +417,11 @@ const DEFAULT_GLOBAL_VARS: GlobalVariables = {
   lport: '4444',
   targetIp: '10.10.10.X',
   interface: 'tun0',
+  domain: '',
+  dcIp: '',
+  user: '',
+  cred: '',
+  wordlist: '',
   customVars: {
     DOMAIN: 'corp.local',
     USER: 'administrator',
@@ -924,7 +965,135 @@ export function sanitizeActiveMachine(m: Machine): Machine {
     writeupMarkdown: '',
     skillsLearned: [],
     checklist: undefined,
+    // Per-lab study data is recon/progress too: never kept on an active machine.
+    domain: undefined,
+    vhosts: undefined,
+    portTriage: undefined,
+    findings: undefined,
+    timeline: undefined,
+    solveIndependence: undefined,
+    nextReviewAt: undefined,
+    reviewCount: undefined,
   };
+}
+
+const newLabId = (prefix: string): string =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+type TimelineEventInput = Omit<TimelineEvent, 'id' | 'at'> & Partial<Pick<TimelineEvent, 'id' | 'at'>>;
+
+/**
+ * The single place a timeline event is added: appends, drops the oldest beyond TIMELINE_CAP, and stamps updatedAt
+ * (at the event time) so a cross-tab merge sees the change. Active machines never keep a timeline.
+ */
+export function appendTimeline(m: Machine, event: TimelineEventInput): Machine {
+  if (m.isActive) return m;
+  const at = typeof event.at === 'number' && Number.isFinite(event.at) ? event.at : Date.now();
+  const full: TimelineEvent = {
+    id: event.id || newLabId('evt'),
+    at,
+    kind: event.kind,
+    label: event.label,
+    ...(event.meta ? { meta: event.meta } : {}),
+  };
+  const next = [...(Array.isArray(m.timeline) ? m.timeline : []), full];
+  return {
+    ...m,
+    timeline: next.length > TIMELINE_CAP ? next.slice(next.length - TIMELINE_CAP) : next,
+    updatedAt: new Date(at).toISOString(),
+  };
+}
+
+/** Logs status / user-pwn / root-pwn changes between two versions of a machine (used by the status and flag actions). */
+function logProgressTimeline(prev: Machine, next: Machine): Machine {
+  if (next.isActive) return next;
+  const parsed = Date.parse(next.updatedAt);
+  const at = Number.isFinite(parsed) ? parsed : Date.now();
+  let out = next;
+  if (prev.status !== next.status) {
+    const from = String(prev.status || 'backlog');
+    const to = String(next.status);
+    out = appendTimeline(out, { kind: 'status_change', label: `Status: ${from} -> ${to}`, meta: { from, to }, at });
+  }
+  if (!prev.userPwnedAt && next.userPwnedAt) out = appendTimeline(out, { kind: 'user_pwned', label: 'User flag captured', at });
+  if (!prev.rootPwnedAt && next.rootPwnedAt) out = appendTimeline(out, { kind: 'root_pwned', label: 'Root flag captured', at });
+  return out;
+}
+
+/**
+ * Applies `fn` to one non-active machine and stamps updatedAt. Returns the same array when nothing changed
+ * (unknown/active id, or `fn` returned the machine unchanged).
+ */
+function patchLabMachine(
+  machines: Machine[],
+  id: string,
+  fn: (m: Machine, nowMs: number) => Machine
+): Machine[] {
+  const nowMs = Date.now();
+  let changed = false;
+  const out = machines.map((m) => {
+    if (m.id !== id || m.isActive) return m;
+    const next = fn(m, nowMs);
+    if (next === m) return m;
+    changed = true;
+    return { ...next, updatedAt: new Date(nowMs).toISOString() };
+  });
+  return changed ? out : machines;
+}
+
+const MAX_VHOSTS = 100;
+const MAX_FINDINGS = 500;
+const PORT_TRIAGE_STATUSES: readonly PortTriageStatus[] = ['untested', 'checking', 'key_vector', 'dead_end'];
+const SOLVE_INDEPENDENCE_VALUES: readonly SolveIndependence[] = ['solo', 'nudged', 'assisted'];
+
+const normalizeVhosts = (list: unknown): string[] => {
+  if (!Array.isArray(list)) return [];
+  const out: string[] = [];
+  for (const v of list) {
+    if (typeof v !== 'string') continue;
+    const host = v.trim().toLowerCase();
+    if (host && !out.includes(host)) out.push(host);
+    if (out.length >= MAX_VHOSTS) break;
+  }
+  return out;
+};
+
+const sameList = (a: string[] | undefined, b: string[]): boolean =>
+  (a || []).length === b.length && b.every((v, i) => (a || [])[i] === v);
+
+const cleanSeverity = (v: unknown): LabFinding['severity'] =>
+  (FINDING_SEVERITIES as readonly string[]).includes(v as string) ? (v as LabFinding['severity']) : 'info';
+
+const cleanCvss = (v: unknown): number | undefined =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(10, Math.max(0, Math.round(v * 10) / 10)) : undefined;
+
+/** Normalizes the editable finding fields (title fallback, known severity, CVSS clamped to 0-10). */
+function cleanFindingFields(input: LabFindingPatch, base?: LabFinding): Omit<LabFinding, 'id' | 'createdAt' | 'updatedAt'> {
+  const merged = { ...(base || {}), ...input } as Partial<LabFinding>;
+  const title = typeof merged.title === 'string' && merged.title.trim() ? merged.title.trim() : 'Untitled finding';
+  const out: Omit<LabFinding, 'id' | 'createdAt' | 'updatedAt'> = { title, severity: cleanSeverity(merged.severity) };
+  const score = cleanCvss(merged.cvssScore);
+  if (score !== undefined) out.cvssScore = score;
+  for (const k of ['cweCve', 'affectedService', 'repro', 'remediation'] as const) {
+    const v = merged[k];
+    if (typeof v === 'string' && v.trim()) out[k] = v;
+  }
+  return out;
+}
+
+/** Sets the independence rating, schedules the next review and logs it. `reviewCount` is the count to schedule with. */
+function scheduleReview(m: Machine, value: SolveIndependence, reviewCount: number, nowMs: number): Machine {
+  const nextReviewAt = scheduleNextReview(value, reviewCount, nowMs);
+  const nextIso = new Date(nextReviewAt).toISOString();
+  return appendTimeline(
+    { ...m, solveIndependence: value, reviewCount, nextReviewAt },
+    {
+      kind: 'review_scheduled',
+      label: `Review scheduled (${value}) for ${nextIso.slice(0, 10)}`,
+      meta: { independence: value, reviewCount: String(reviewCount), nextReviewAt: nextIso },
+      at: nowMs,
+    }
+  );
 }
 
 export const mergeMachinesWithCatalog = (
@@ -1425,7 +1594,7 @@ export const useCtfStore = create<CtfStoreState>()(
             const hasUserFlag = Boolean(m.userFlag?.trim());
             const hasRootFlag = Boolean(m.rootFlag?.trim());
 
-            return {
+            return logProgressTimeline(m, {
               ...m,
               status,
               timeSpentSeconds: finalTime > 0 ? finalTime : m.timeSpentSeconds,
@@ -1434,7 +1603,7 @@ export const useCtfStore = create<CtfStoreState>()(
               timeToUserSeconds: isNowFoothold ? (m.timeToUserSeconds || finalTime) : undefined,
               timeToRootSeconds: isNowRoot ? (m.timeToRootSeconds || finalTime) : undefined,
               updatedAt: now,
-            };
+            });
           });
 
           // Log activity session if root or completed
@@ -1509,7 +1678,7 @@ export const useCtfStore = create<CtfStoreState>()(
             const hasUserFlag = Boolean(m.userFlag?.trim());
             const hasRootFlag = Boolean(m.rootFlag?.trim());
 
-            return {
+            return logProgressTimeline(m, {
               ...m,
               status: targetStatus,
               rootPwnedAt: isPwned ? (m.rootPwnedAt || now) : (hasRootFlag ? m.rootPwnedAt : undefined),
@@ -1517,7 +1686,7 @@ export const useCtfStore = create<CtfStoreState>()(
               timeToUserSeconds: isFoothold ? m.timeToUserSeconds : undefined,
               timeToRootSeconds: isPwned ? m.timeToRootSeconds : undefined,
               updatedAt: now,
-            };
+            });
           });
           return { machines: updated };
         });
@@ -1536,7 +1705,7 @@ export const useCtfStore = create<CtfStoreState>()(
             ...(editsActiveTime ? { activeTimerSeconds: updates.timeSpentSeconds } : {}),
             machines: base.map((m) => {
               if (m.id !== id) return m;
-              const merged = { ...m, ...updates, updatedAt: new Date().toISOString() };
+              const merged = logProgressTimeline(m, { ...m, ...updates, updatedAt: new Date().toISOString() });
               if (isKnownActiveByName(merged)) {
                 merged.isActive = true;
               }
@@ -1611,7 +1780,7 @@ export const useCtfStore = create<CtfStoreState>()(
             let status = m.status;
             if (!hadUser && (status === 'backlog' || status === 'recon')) status = 'foothold';
             const totalSeconds = currentElapsed !== undefined ? Math.max(m.timeSpentSeconds, currentElapsed) : m.timeSpentSeconds;
-            return {
+            return logProgressTimeline(m, {
               ...m,
               userFlag: flagValue !== undefined ? flagValue : m.userFlag,
               userPwnedAt,
@@ -1619,7 +1788,7 @@ export const useCtfStore = create<CtfStoreState>()(
               timeSpentSeconds: totalSeconds,
               timeToUserSeconds: !hadUser ? totalSeconds : m.timeToUserSeconds,
               updatedAt: now,
-            };
+            });
           });
           return { machines: updated };
         });
@@ -1636,7 +1805,7 @@ export const useCtfStore = create<CtfStoreState>()(
             let status = m.status;
             if (!hadRoot) status = 'root';
             const totalSeconds = currentElapsed !== undefined ? Math.max(m.timeSpentSeconds, currentElapsed) : m.timeSpentSeconds;
-            return {
+            return logProgressTimeline(m, {
               ...m,
               rootFlag: flagValue !== undefined ? flagValue : m.rootFlag,
               rootPwnedAt,
@@ -1644,9 +1813,162 @@ export const useCtfStore = create<CtfStoreState>()(
               timeSpentSeconds: totalSeconds,
               timeToRootSeconds: !hadRoot ? totalSeconds : m.timeToRootSeconds,
               updatedAt: now,
-            };
+            });
           });
           return { machines: updated };
+        });
+      },
+
+      setMachineDomain: (id, domain) => {
+        const value = typeof domain === 'string' ? domain.trim().slice(0, 253) : '';
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) =>
+            (m.domain || '') === value ? m : { ...m, domain: value || undefined }
+          );
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      setMachineVhosts: (id, vhosts) => {
+        const list = normalizeVhosts(vhosts);
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) =>
+            sameList(m.vhosts, list) ? m : { ...m, vhosts: list.length ? list : undefined }
+          );
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      addMachineVhost: (id, vhost) => {
+        const m = get().machines.find((x) => x.id === id);
+        if (!m) return;
+        get().setMachineVhosts(id, [...(m.vhosts || []), vhost]);
+      },
+
+      removeMachineVhost: (id, vhost) => {
+        const m = get().machines.find((x) => x.id === id);
+        if (!m) return;
+        const target = typeof vhost === 'string' ? vhost.trim().toLowerCase() : '';
+        get().setMachineVhosts(id, (m.vhosts || []).filter((v) => v !== target));
+      },
+
+      setPortTriage: (id, port, patch) => {
+        const key = String(port ?? '').trim();
+        if (!key) return;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) => {
+            const prev: PortTriageEntry = m.portTriage?.[key] || { status: 'untested' };
+            const merged = { ...prev, ...(patch || {}) };
+            const entry: PortTriageEntry = {
+              status: PORT_TRIAGE_STATUSES.includes(merged.status) ? merged.status : 'untested',
+            };
+            if (typeof merged.note === 'string' && merged.note.trim()) entry.note = merged.note;
+            const existing = m.portTriage?.[key];
+            if (existing && existing.status === entry.status && existing.note === entry.note) return m;
+            return { ...m, portTriage: { ...(m.portTriage || {}), [key]: entry } };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      clearPortTriage: (id, port) => {
+        const key = String(port ?? '').trim();
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) => {
+            if (!m.portTriage || !(key in m.portTriage)) return m;
+            const { [key]: _removed, ...rest } = m.portTriage;
+            return { ...m, portTriage: Object.keys(rest).length ? rest : undefined };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      addFinding: (id, input) => {
+        const findingId = newLabId('finding');
+        let added = false;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) => {
+            const list = Array.isArray(m.findings) ? m.findings : [];
+            if (list.length >= MAX_FINDINGS) return m;
+            const finding: LabFinding = { ...cleanFindingFields(input || ({} as LabFindingPatch)), id: findingId, createdAt: nowMs, updatedAt: nowMs };
+            added = true;
+            return appendTimeline(
+              { ...m, findings: [...list, finding] },
+              {
+                kind: 'finding_added',
+                label: `Finding added: ${finding.title}`,
+                meta: { findingId, severity: finding.severity },
+                at: nowMs,
+              }
+            );
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+        return added ? findingId : '';
+      },
+
+      updateFinding: (id, findingId, patch) => {
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) => {
+            const list = m.findings || [];
+            const idx = list.findIndex((f) => f.id === findingId);
+            if (idx === -1) return m;
+            const current = list[idx];
+            const next: LabFinding = { ...cleanFindingFields(patch || {}, current), id: current.id, createdAt: current.createdAt, updatedAt: nowMs };
+            const findings = [...list];
+            findings[idx] = next;
+            return { ...m, findings };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      removeFinding: (id, findingId) => {
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) => {
+            const list = m.findings || [];
+            const findings = list.filter((f) => f.id !== findingId);
+            if (findings.length === list.length) return m;
+            return { ...m, findings: findings.length ? findings : undefined };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      setSolveIndependence: (id, value) => {
+        if (!SOLVE_INDEPENDENCE_VALUES.includes(value)) return;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) => {
+            // First rating schedules review #0. Re-rating a due machine counts as completing that review;
+            // re-rating before it is due only corrects the rating and reschedules from now.
+            const prevCount = m.reviewCount || 0;
+            const count = m.solveIndependence && isDueForReview(m, nowMs) ? prevCount + 1 : prevCount;
+            return scheduleReview(m, value, count, nowMs);
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      markReviewed: (id, independence) => {
+        if (independence !== undefined && !SOLVE_INDEPENDENCE_VALUES.includes(independence)) return;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) =>
+            scheduleReview(m, independence || m.solveIndependence || 'nudged', (m.reviewCount || 0) + 1, nowMs)
+          );
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      syncCatalog: () => {
+        // Re-applies the loaded catalog (or STARTER_MACHINES before it loads) to the current machines.
+        // NOTE: tags and certifications are UNIONED (catalog + stored), so a tag the catalog has since removed
+        // stays on the machine; only additions propagate. All operator fields survive (both branches spread `...m`).
+        if (isSchemaWriteGated()) return;
+        set((state) => {
+          const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset);
+          const unchanged =
+            merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
+          return unchanged ? state : { machines: merged };
         });
       },
 
@@ -2306,6 +2628,7 @@ export const useCtfStore = create<CtfStoreState>()(
             ...state.globalVars,
             lhost: '10.10.14.X',
             targetIp: '10.10.10.X',
+            ...(state.globalVars.cred ? { cred: '[REDACTED]' } : {}),
             customVars: redactedCustom,
           };
           // Sanitize any machine flag proofs containing credentials
@@ -2327,7 +2650,8 @@ export const useCtfStore = create<CtfStoreState>()(
           : { credentials: state.credentials, credAttempts: state.credAttempts, lootItems: state.lootItems };
 
         const exportData = {
-          version: '2.0.0',
+          // 3.0.0 adds examState here; store/backupFile adds indexedDb and the checksum to the downloadable file.
+          version: BACKUP_FORMAT_VERSION,
           exportedAt: new Date().toISOString(),
           isRedacted: Boolean(options?.redactSecrets),
           machines: exportMachines,
@@ -2345,11 +2669,12 @@ export const useCtfStore = create<CtfStoreState>()(
           ...exportLoot,
           // Optional block: older builds ignore unknown fields, older backups simply lack it.
           goals: { weeklyRootTarget: useGoalsStore.getState().weeklyRootTarget },
+          examState: getExamBackupSnapshot(),
         };
         return JSON.stringify(exportData, null, 2);
       },
 
-      importBackup: (jsonStr) => {
+      importBackup: (jsonStr, options) => {
         try {
           const raw = JSON.parse(jsonStr);
           if (!raw || typeof raw !== 'object') return false;
@@ -2358,6 +2683,9 @@ export const useCtfStore = create<CtfStoreState>()(
           if (!validation.success || !validation.data) return false;
 
           const data = validation.data;
+          const isV3 = data.version === BACKUP_FORMAT_VERSION;
+          // An unverified checksum means an unchecked file: change nothing (importBackupFile verifies first).
+          if (isV3 && data.checksum !== undefined && data.checksum !== options?.verifiedChecksum) return false;
           const rawMachines = Array.isArray(data.machines) ? data.machines : null;
           if (rawMachines) {
             const userSolvesReset = Boolean(data.userSolvesReset);
@@ -2428,6 +2756,8 @@ export const useCtfStore = create<CtfStoreState>()(
                 get().currentProfileId || 'guest'
               );
             }
+            // Skipped (state kept) while the schema write gate is engaged; vault notes are upserted by importBackupFile.
+            if (isV3 && data.examState) restoreExamBackupSnapshot(data.examState);
             return true;
           }
           return false;

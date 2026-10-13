@@ -1,6 +1,7 @@
 import { Machine, CheatsheetCommand, GlobalVariables, ActivitySession } from '../types';
 import { CptsNoteEntry } from './obsidianManualUtils';
 import { MAX_WEEKLY_ROOT_TARGET } from '../store/useGoalsStore';
+import { sanitizeLabStudyFields } from './labStudyValidation';
 
 interface WorkspaceExportPayload {
   version: string;
@@ -23,6 +24,36 @@ interface WorkspaceExportPayload {
   lootItems?: any[];
   /** Optional (added after 2.0.0 shipped; older builds ignore it, older backups lack it). */
   goals?: BackupGoals;
+  /** 3.0.0: the exam store's persisted snapshot (validated field by field on restore). */
+  examState?: Record<string, unknown>;
+  /** 3.0.0: IndexedDB content (vault notes; images when a provider is registered). */
+  indexedDb?: BackupIndexedDb;
+  /** 3.0.0: SHA-256 hex of the canonical payload without this field (see utils/backupChecksum). */
+  checksum?: unknown;
+}
+
+export interface BackupIndexedDb {
+  notes: CptsNoteEntry[];
+  wikilinkMap?: Record<string, string>;
+  images?: Record<string, unknown>[];
+}
+
+const isPlainRecord = (v: unknown): v is Record<string, unknown> =>
+  Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+
+/** The optional 3.0.0 `indexedDb` block: entries without a string id are dropped; anything else invalid is ignored. */
+export function parseBackupIndexedDb(raw: unknown): BackupIndexedDb | undefined {
+  if (!isPlainRecord(raw)) return undefined;
+  const hasId = (item: unknown): item is Record<string, unknown> => isPlainRecord(item) && typeof item.id === 'string';
+  const notes = Array.isArray(raw.notes) ? raw.notes.map((item) => sanitizeObjectKeys(item)).filter(hasId) : [];
+  const out: BackupIndexedDb = { notes: notes as unknown as CptsNoteEntry[] };
+  if (isPlainRecord(raw.wikilinkMap)) {
+    out.wikilinkMap = Object.fromEntries(
+      Object.entries(sanitizeObjectKeys(raw.wikilinkMap)).filter(([, v]) => typeof v === 'string')
+    ) as Record<string, string>;
+  }
+  if (Array.isArray(raw.images)) out.images = raw.images.map((item) => sanitizeObjectKeys(item)).filter(hasId);
+  return out;
 }
 
 export interface BackupGoals {
@@ -125,7 +156,7 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
     return {
       success: true,
       data: {
-        machines: raw.map((item: any) => sanitizeObjectKeys(item)),
+        machines: raw.map((item: any) => sanitizeLabStudyFields(sanitizeObjectKeys(item))),
       },
       restoredCount: raw.length,
     };
@@ -133,7 +164,7 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
 
   // Handle nested or root payload structures
   const root = raw.data || raw;
-  const machines = Array.isArray(root.machines) ? root.machines.map((item: any) => sanitizeObjectKeys(item)) : [];
+  const machines = Array.isArray(root.machines) ? root.machines.map((item: any) => sanitizeLabStudyFields(sanitizeObjectKeys(item))) : [];
 
   const validatedData: Partial<WorkspaceExportPayload> = {
     version: typeof root.version === 'string' ? root.version : '2.0.0',
@@ -155,6 +186,9 @@ export function validateWorkspacePayload(raw: any): WorkspaceImportResult {
     credAttempts: Array.isArray(root.credAttempts) ? root.credAttempts.map((item: any) => sanitizeObjectKeys(item)) : undefined,
     lootItems: Array.isArray(root.lootItems) ? root.lootItems.map((item: any) => sanitizeObjectKeys(item)) : undefined,
     goals: parseBackupGoals(root.goals),
+    examState: isPlainRecord(root.examState) ? sanitizeObjectKeys(root.examState) : undefined,
+    indexedDb: parseBackupIndexedDb(root.indexedDb),
+    checksum: root.checksum,
   };
 
   return {

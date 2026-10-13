@@ -157,3 +157,45 @@ describe('contextFromGlobalVars', () => {
     expect(resolveTemplate('{TARGET_IP}', withoutActive).text).toBe('10.10.10.50');
   });
 });
+
+describe('resolveTemplate - lab/AD global aliases', () => {
+  const vars: GlobalVariables = {
+    lhost: '10.10.14.2',
+    lport: '9001',
+    targetIp: '10.10.10.50',
+    interface: 'tun0',
+    domain: 'corp.htb',
+    dcIp: '10.10.10.1',
+    user: 'svc_sql',
+    cred: 'Winter2026!',
+    wordlist: '/usr/share/seclists/top.txt',
+    customVars: { DOMAIN: 'fallback.local', USER: 'fallbackuser' },
+  };
+
+  it('maps DOMAIN, DC_IP, USER, CRED, WORDLIST from globalVars (both brace styles, any case)', () => {
+    const r = resolveTemplate(
+      'nxc smb {DC_IP} -d {DOMAIN} -u <USER> -p {cred} && hydra -P {WORDLIST} {DC-IP}',
+      contextFromGlobalVars(vars)
+    );
+    expect(r.text).toBe('nxc smb 10.10.10.1 -d corp.htb -u svc_sql -p Winter2026! && hydra -P /usr/share/seclists/top.txt 10.10.10.1');
+    expect(r.unresolved).toEqual([]);
+  });
+
+  it('falls back to a same-named custom variable when the global is empty', () => {
+    const r = resolveTemplate('{DOMAIN}/{USER}', contextFromGlobalVars({ ...vars, domain: '', user: undefined }));
+    expect(r.text).toBe('fallback.local/fallbackuser');
+    expect(r.unresolved).toEqual([]);
+  });
+
+  it('reports an empty global without fallback as unresolved and leaves the token', () => {
+    const r = resolveTemplate('dig @{DC_IP} {DOMAIN}', contextFromGlobalVars({ ...vars, dcIp: '', domain: '', customVars: {} }));
+    expect(r.text).toBe('dig @{DC_IP} {DOMAIN}');
+    expect(r.unresolved).toEqual(['DC_IP', 'DOMAIN']);
+  });
+
+  it('leaves the legacy LHOST/LPORT/TARGET_IP/RHOST/{ip} behavior unchanged', () => {
+    const c = contextFromGlobalVars(vars);
+    expect(resolveTemplate('{ip}:{port} {TARGET_IP} {LHOST}:{LPORT}', c).text).toBe('10.10.14.2:9001 10.10.10.50 10.10.14.2:9001');
+    expect(resolveTemplate('{ip} {DOMAIN}', c, { legacyAliases: true }).text).toBe('10.10.10.50 corp.htb');
+  });
+});

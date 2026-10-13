@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
+import { buildBackupFile, importBackupFile } from '../../store/backupFile';
 import { toast } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
@@ -33,8 +34,6 @@ export const UserMenu: React.FC = () => {
     machines, 
     currentProfileId, 
     saveProfileData, 
-    exportBackup, 
-    importBackup, 
     resetAllProgress,
     setOperatorModalOpen,
     setSettingsModalOpen,
@@ -44,8 +43,6 @@ export const UserMenu: React.FC = () => {
       machines: s.machines,
       currentProfileId: s.currentProfileId,
       saveProfileData: s.saveProfileData,
-      exportBackup: s.exportBackup,
-      importBackup: s.importBackup,
       resetAllProgress: s.resetAllProgress,
       setOperatorModalOpen: s.setOperatorModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
@@ -99,8 +96,15 @@ export const UserMenu: React.FC = () => {
 
 
   // 1-Click Export JSON
-  const handleExportBackup = () => {
-    const jsonStr = exportBackup();
+  const handleExportBackup = async () => {
+    let jsonStr: string;
+    try {
+      jsonStr = await buildBackupFile();
+    } catch (err) {
+      console.warn('[ZeroBox] Quick export failed.', err);
+      toast.error('Backup export failed. Your data could not be read; try again or use the Backup dialog.');
+      return;
+    }
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -122,16 +126,16 @@ export const UserMenu: React.FC = () => {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const text = event.target?.result as string;
         if (text) {
-          const ok = importBackup(text);
-          if (ok) {
+          const result = await importBackupFile(text);
+          if (result.ok) {
             playCyberSound('root');
             setJustSaved(true);
             setTimeout(() => setJustSaved(false), 2000);
           } else {
-            toast.error('Invalid backup JSON format.');
+            toast.error(result.reason === 'invalid' || result.reason === 'malformed' ? 'Invalid backup JSON format.' : result.message);
           }
         }
       };
