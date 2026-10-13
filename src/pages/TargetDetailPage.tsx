@@ -29,6 +29,7 @@ import { OsBadge } from '../components/common/OsBadge';
 import { DifficultyBadge } from '../components/common/DifficultyBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
 import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
+import { QuickNotesField } from '../components/tracker/QuickNotesField';
 import { TargetReconDropzone } from '../components/tracker/TargetReconDropzone';
 import { PageHeader } from '../components/common/PageHeader';
 import { BadgeOverflow } from '../components/common/BadgeOverflow';
@@ -70,6 +71,7 @@ export const TargetDetailPage: React.FC = () => {
     startTimer,
     pauseTimer,
     soundEnabled,
+    globalVars,
     setWriteupMachineId,
     isCatalogLoaded,
     loadCatalog,
@@ -85,6 +87,7 @@ export const TargetDetailPage: React.FC = () => {
       pauseTimer: s.pauseTimer,
       resetTimer: s.resetTimer,
       soundEnabled: s.soundEnabled,
+      globalVars: s.globalVars,
       setWriteupMachineId: s.setWriteupMachineId,
       isCatalogLoaded: s.isCatalogLoaded,
       loadCatalog: s.loadCatalog,
@@ -711,13 +714,17 @@ export const TargetDetailPage: React.FC = () => {
           {/* Field notes */}
           <section className="space-y-2" aria-labelledby="target-notes-heading">
             <h2 id="target-notes-heading" className="text-sm font-semibold text-primary">Field notes</h2>
-            <textarea
+            <QuickNotesField
               id="target-detail-field-notes"
               name="target-detail-field-notes"
               aria-label="Tactical field notes"
               rows={4}
               value={machine.quickNotes || ''}
-              onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
+              onChange={(quickNotes) => updateMachine(machine.id, { quickNotes })}
+              globalVars={globalVars}
+              soundEnabled={soundEnabled}
+              targetIp={machine.ip || undefined}
+              previewClassName="rounded-xl"
               placeholder="Record tactical field notes, credentials, and pivot paths (supports Markdown and [[wikilinks]]). Stored strictly offline in your browser."
               className="w-full resize-none rounded-xl border border-subtle bg-surface-sunken p-3 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none"
             />
