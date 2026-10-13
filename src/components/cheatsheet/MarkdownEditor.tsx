@@ -89,6 +89,40 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       });
   }, [noteId, updateNoteContent, onSave]);
 
+  // The save the pending debounce timer would run (bound to the note it was typed into).
+  const pendingSaveRef = useRef<(() => void) | null>(null);
+
+  const scheduleSave = useCallback((nextVal: string) => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    const save = () => {
+      saveTimeoutRef.current = null;
+      pendingSaveRef.current = null;
+      executeSave(nextVal);
+    };
+    pendingSaveRef.current = save;
+    saveTimeoutRef.current = setTimeout(save, 600);
+  }, [executeSave]);
+
+  // Run a pending debounced save now: on unmount, when the tab is hidden and when the page is unloaded.
+  useEffect(() => {
+    const flushPending = () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      pendingSaveRef.current?.();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushPending();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flushPending);
+    window.addEventListener('beforeunload', flushPending);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flushPending);
+      window.removeEventListener('beforeunload', flushPending);
+      flushPending();
+    };
+  }, []);
+
   // Handle text changes with debounce
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const nextVal = e.target.value;
@@ -96,13 +130,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     setIsDirty(true);
     setSaveStatus('dirty');
     onContentChange(nextVal);
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => {
-      executeSave(nextVal);
-    }, 600);
+    scheduleSave(nextVal);
   };
 
   // Immediate manual save (Ctrl+S or click)
@@ -110,6 +138,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
+    pendingSaveRef.current = null;
     executeSave(content);
     if (soundEnabled) playCyberSound('copy');
   }, [content, executeSave, soundEnabled]);
@@ -133,8 +162,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     onContentChange(nextVal);
 
     // Schedule debounced save
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => executeSave(nextVal), 600);
+    scheduleSave(nextVal);
 
     // Reposition cursor inside wrapped text
     setTimeout(() => {
@@ -143,7 +171,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     }, 0);
 
     if (soundEnabled) playCyberSound('click');
-  }, [executeSave, onContentChange, soundEnabled]);
+  }, [scheduleSave, onContentChange, soundEnabled]);
 
   // Keyboard shortcuts handler
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -188,7 +216,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       const nextVal = currentVal.substring(0, start) + '  ' + currentVal.substring(end);
       setContent(nextVal);
       setIsDirty(true);
+      setSaveStatus('dirty');
       onContentChange(nextVal);
+      scheduleSave(nextVal);
 
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 2;
