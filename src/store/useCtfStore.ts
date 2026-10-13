@@ -2742,6 +2742,14 @@ export const useCtfStore = create<CtfStoreState>()(
 // Hydration is done (and any newer persisted blob has engaged the gate): record our schema version.
 recordSchemaVersion();
 
+// Loot and the attack graph were loaded for the auth session's profile, but the persisted blob can name another
+// one (it wins during hydration). Reload them for the profile this tab actually ended up on, or the next loot or
+// graph save would write that profile's data under another profile's key.
+const bootProfileId = useCtfStore.getState().currentProfileId || 'guest';
+if (bootProfileId !== initialProfileId) {
+  useCtfStore.setState({ ...loadInitialAttackGraphState(bootProfileId), ...loadLootState(bootProfileId) });
+}
+
 // Timer fields are transient, so a tab that closed or crashed with the timer running always boots paused and
 // never counts the downtime. Seed the display from the active machine's last saved time, or the next
 // start/pause/switch would continue from 0 and overwrite that saved time.
@@ -3093,8 +3101,7 @@ if (typeof window !== 'undefined') {
   });
 
   // Asynchronously hydrate deep writeup payloads from IndexedDB
-  const initialProfile = getInitialProfileId();
-  loadDeepProfileData(initialProfile).then((deep) => {
+  loadDeepProfileData(bootProfileId).then((deep) => {
     if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
       const currentMachines = useCtfStore.getState().machines;
       const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
