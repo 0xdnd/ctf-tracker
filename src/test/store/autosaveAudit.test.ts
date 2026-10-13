@@ -454,6 +454,20 @@ describe('item 11: same profile in two tabs merges per machine', () => {
   });
 });
 
+describe('pagehide flushes like visibilitychange hidden', () => {
+  it('saves pending edits and the running timer on pagehide', async () => {
+    seedStorage([box('custom-a')]);
+    const mod = await boot();
+    mod.useCtfStore.getState().setActiveTarget('custom-a');
+    mod.useCtfStore.getState().updateMachine('custom-a', { ip: '10.10.4.4' }); // pending (debounced)
+    mod.useCtfStore.setState({ isTimerRunning: true, activeTimerSeconds: 42 });
+    window.dispatchEvent(new Event('pagehide'));
+    const row = storedProfile().machines.find((m: Machine) => m.id === 'custom-a');
+    expect(row.ip).toBe('10.10.4.4');
+    expect(row.timeSpentSeconds).toBe(42);
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);
