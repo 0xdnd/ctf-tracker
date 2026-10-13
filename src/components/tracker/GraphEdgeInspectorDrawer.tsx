@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { confirmAction } from '../../store/useConfirmStore';
 import { 
@@ -22,6 +22,9 @@ import { generatePivotCommands } from '../../utils/pivotCommandUtils';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 import { DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
+
+/** Pivot notes are saved this long after the last keystroke. */
+export const NOTES_SAVE_DELAY_MS = 400;
 
 export interface GraphEdgeInspectorDrawerProps {
   edge: AttackGraphEdge | null;
@@ -48,22 +51,60 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   const [customPort, setCustomPort] = useState<string>('');
   const [edgeNotes, setEdgeNotes] = useState<string>('');
 
+  // Pivot notes autosave: typed text is saved NOTES_SAVE_DELAY_MS after the last keystroke, and any pending draft
+  // is flushed on blur, close (button or Escape), switching to another edge, and unmount.
+  const pendingNotesRef = useRef<{ edgeId: string; notes: string } | null>(null);
+  const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onUpdateEdgeRef = useRef(onUpdateEdge);
   useEffect(() => {
-    if (edge) {
-      setCustomPort(edge.port ? String(edge.port) : '');
-      setEdgeNotes(edge.notes || '');
+    onUpdateEdgeRef.current = onUpdateEdge;
+  }, [onUpdateEdge]);
+
+  const flushNotes = useCallback(() => {
+    if (notesTimerRef.current) {
+      clearTimeout(notesTimerRef.current);
+      notesTimerRef.current = null;
     }
+    const pending = pendingNotesRef.current;
+    pendingNotesRef.current = null;
+    if (pending) onUpdateEdgeRef.current(pending.edgeId, { notes: pending.notes });
+  }, []);
+
+  useEffect(() => {
+    if (edge) setCustomPort(edge.port ? String(edge.port) : '');
   }, [edge]);
+
+  const edgeId = edge?.id;
+  const savedNotes = edge?.notes;
+  useEffect(() => {
+    // Another edge (or none): save the previous edge's draft before showing this one's notes.
+    if (pendingNotesRef.current && pendingNotesRef.current.edgeId !== edgeId) flushNotes();
+    // Same edge with a draft still pending: an update to another field must not wipe what is being typed.
+    if (pendingNotesRef.current) return;
+    if (edgeId) setEdgeNotes(savedNotes || '');
+  }, [edgeId, savedNotes, flushNotes]);
+
+  useEffect(() => {
+    if (!isOpen) flushNotes();
+  }, [isOpen, flushNotes]);
+
+  // Unmount: nothing typed may be lost.
+  useEffect(() => flushNotes, [flushNotes]);
+
+  const handleClose = useCallback(() => {
+    flushNotes();
+    onClose();
+  }, [flushNotes, onClose]);
 
   // Trap Escape key to close drawer
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   const meta = edge ? (ATTACK_EDGE_META[edge.type] || ATTACK_EDGE_META['pivot-ssh']) : ATTACK_EDGE_META['pivot-ssh'];
   const srcIp = sourceMachine?.ip || edge?.sourceId || '';
@@ -116,9 +157,12 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     }
   };
 
-  const handleNotesBlur = () => {
+  const handleNotesChange = (value: string) => {
+    setEdgeNotes(value);
     if (!edge) return;
-    onUpdateEdge(edge.id, { notes: edgeNotes });
+    pendingNotesRef.current = { edgeId: edge.id, notes: value };
+    if (notesTimerRef.current) clearTimeout(notesTimerRef.current);
+    notesTimerRef.current = setTimeout(flushNotes, NOTES_SAVE_DELAY_MS);
   };
 
   const handleDelete = async () => {
@@ -130,6 +174,8 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
       tone: 'danger',
     });
     if (ok) {
+      // The edge is gone: drop its unsaved draft rather than writing it to a deleted edge.
+      if (pendingNotesRef.current?.edgeId === edge.id) pendingNotesRef.current = null;
       onDeleteEdge(edge.id);
       if (soundEnabled) playCyberSound('toggle');
       onClose();
@@ -180,7 +226,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         </div>
 
         <button aria-label="Close inspector"
-          onClick={onClose}
+          onClick={handleClose}
           className="p-1.5 rounded-lg text-tertiary hover:text-primary hover:bg-surface-sunken transition-colors active:scale-[0.97] cursor-pointer"
           title="Close Inspector (Esc)"
         >
@@ -404,8 +450,8 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
           <textarea
             rows={2}
             value={edgeNotes}
-            onChange={(e) => setEdgeNotes(e.target.value)}
-            onBlur={handleNotesBlur}
+            onChange={(e) => handleNotesChange(e.target.value)}
+            onBlur={flushNotes}
             placeholder="Add operational notes (e.g. ssh user/pass, pivoting interface, subnet notes)..."
             className="w-full p-2 rounded-lg bg-surface-card border border-subtle text-primary text-xs focus:outline-none focus:border-accent resize-none"
           />
@@ -425,7 +471,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
 
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="px-4 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-semibold transition-colors active:scale-[0.97] cursor-pointer"
         >
           Done
