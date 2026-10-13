@@ -3103,6 +3103,11 @@ if (typeof window !== 'undefined') {
 
   // Cross-tab auto-sync: Reconcile external storage modifications across open tabs
   window.addEventListener('storage', (event) => {
+    // Another tab's write (or removal, or clear) is newer than any copy this tab holds in memory after a failed
+    // write: drop that copy so reads (e.g. a STATE_UPDATED reload) see the other tab's data, not our stale one.
+    // Our own unsaved state stays in the store and is retried at the next save.
+    if (event.key === null) inMemoryFallbackStorage.clear();
+    else inMemoryFallbackStorage.delete(event.key);
     // Restore lock set/cleared by another tab (handled before the newValue check: clearing has newValue null)
     if (handleRestoreLockStorageEvent(event.key, event.newValue)) return;
     if (!event.key || !event.newValue) return;
