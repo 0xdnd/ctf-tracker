@@ -34,7 +34,8 @@ describe('in-progress machines outside the boot catalog survive a reload', () =>
   });
 
   it('mergeMachinesWithCatalog keeps recon and root machines (no flags/time/notes), drops idle backlog ones', () => {
-    const merged = mergeMachinesWithCatalog([reconBox, rootBox, backlogBox]);
+    // An explicit catalog is authoritative; against the boot STARTER list unmatched rows are kept until the full merge.
+    const merged = mergeMachinesWithCatalog([reconBox, rootBox, backlogBox], false, STARTER_MACHINES);
     expect(merged.find((m) => m.id === reconBox.id)?.status).toBe('recon');
     expect(merged.find((m) => m.id === rootBox.id)?.status).toBe('root');
     expect(merged.some((m) => m.id === backlogBox.id)).toBe(false);
@@ -52,6 +53,10 @@ describe('in-progress machines outside the boot catalog survive a reload', () =>
     const machines = useCtfStore.getState().machines;
     expect(machines.find((m) => m.id === reconBox.id)?.status).toBe('recon');
     expect(machines.find((m) => m.id === rootBox.id)?.status).toBe('root');
-    expect(machines.some((m) => m.id === backlogBox.id)).toBe(false);
+    // Kept while only STARTER_MACHINES is loaded; the full catalog merge applies the drop rule.
+    expect(machines.some((m) => m.id === backlogBox.id)).toBe(true);
+    const full = mergeMachinesWithCatalog(machines, false, STARTER_MACHINES);
+    expect(full.find((m) => m.id === reconBox.id)?.status).toBe('recon');
+    expect(full.some((m) => m.id === backlogBox.id)).toBe(false);
   });
 });
