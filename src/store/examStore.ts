@@ -91,6 +91,8 @@ export interface ExamSessionState {
   isQuickDrawerOpen: boolean;
   scratchNotes: string;
   includeBonusPoints: boolean;
+  /** Report header date (YYYY-MM-DD) the operator set for this session; null = derive from startedAt. */
+  reportExamDate: string | null;
   /** Box the operator is currently working (rabbit-hole clock). */
   activeBoxId: string | null;
   /** Effective ms timestamp the active box session began (shifted forward across pauses). */
@@ -124,7 +126,7 @@ export interface ExamStoreActions {
 
   // Milestones & Candidate Data
   addMilestone: (targetId: string, type: ExamMilestone['type'], notes: string) => void;
-  setCandidateInfo: (info: { candidateName?: string; candidateCallsign?: string; osid?: string }) => void;
+  setCandidateInfo: (info: { candidateName?: string; candidateCallsign?: string; osid?: string; reportExamDate?: string | null }) => void;
   setScratchNotes: (notes: string) => void;
   setIncludeBonusPoints: (include: boolean) => void;
 
@@ -212,6 +214,7 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
     isQuickDrawerOpen: false,
     scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n- administrator : P@ssw0rd2024!\n\n## Active Tunnels & Pivots\n- Chisel SOCKS5 proxy on 127.0.0.1:1080 -> 172.16.1.0/24`,
     includeBonusPoints: false,
+    reportExamDate: null,
     findings: [],
     ...NO_ACTIVE_BOX,
   };
@@ -304,6 +307,7 @@ export const useExamStore = create<ExamStore>()(
           osid: config?.osid || get().osid,
           activeBreak: { ...DEFAULT_BREAK_STATE },
           breakHistory: [],
+          reportExamDate: null,
           ...NO_ACTIVE_BOX,
           milestones: [
             {
@@ -691,6 +695,7 @@ export const useExamStore = create<ExamStore>()(
           candidateName: info.candidateName !== undefined ? info.candidateName : state.candidateName,
           candidateCallsign: info.candidateCallsign !== undefined ? info.candidateCallsign : state.candidateCallsign,
           osid: info.osid !== undefined ? info.osid : state.osid,
+          reportExamDate: info.reportExamDate !== undefined ? info.reportExamDate : state.reportExamDate,
         }));
       },
 
@@ -907,6 +912,7 @@ export const useExamStore = create<ExamStore>()(
         milestones: state.milestones,
         scratchNotes: state.scratchNotes,
         includeBonusPoints: state.includeBonusPoints,
+        reportExamDate: state.reportExamDate,
         findings: state.findings,
         activeBoxId: state.activeBoxId,
         activeBoxSince: state.activeBoxSince,

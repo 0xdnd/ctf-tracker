@@ -30,6 +30,8 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
   const [copied, setCopied] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Set once Save / Cancel ended this edit, so the blur fired as the input goes away cannot save again.
+  const editDoneRef = useRef(false);
 
   const isPlaceholder = !initialIp || initialIp.includes('x');
 
@@ -46,6 +48,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
 
   const handleStartEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
+    editDoneRef.current = false;
     setIsEditing(true);
     setIpValue(initialIp);
   };
@@ -57,6 +60,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
 
   const handleCancel = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    editDoneRef.current = true;
     setIsEditing(false);
     setIpValue(initialIp);
   };
@@ -69,13 +73,11 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
       .replace(/^https?:\/\//i, '')
       .replace(/\/.*$/, '')
       .trim();
-    if (!cleanIp) {
-      handleCancel();
-      return;
-    }
+    // An empty value clears the IP on purpose (Escape / the X button cancel instead).
+    editDoneRef.current = true;
+    setIsEditing(false);
 
     updateMachine(machineId, { ip: cleanIp });
-    setIsEditing(false);
     setJustSaved(true);
     if (soundEnabled) playCyberSound('click');
     if (onSaved) onSaved(cleanIp);
@@ -83,6 +85,17 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
     setTimeout(() => {
       setJustSaved(false);
     }, 1800);
+  };
+
+  // Leaving the field saves, unless focus moved to the editor's own Save / Cancel buttons (they decide).
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const next = e.relatedTarget as Node | null;
+    if (editDoneRef.current || (next && e.currentTarget.parentElement?.contains(next))) return;
+    if (ipValue.trim() === (initialIp || '').trim()) {
+      handleCancel();
+      return;
+    }
+    handleSave();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -142,6 +155,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
           value={ipValue}
           onChange={(e) => setIpValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           onClick={(e) => e.stopPropagation()}
           className={`bg-surface-card text-primary border ${variant === 'hardware' ? 'border-strong focus:border-accent' : 'border-accent/40'} rounded-[3px] px-1 font-mono font-bold focus:outline-none tabular-nums ${sizeClasses.input}`}
           placeholder="10.10.x.x"
