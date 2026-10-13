@@ -32,6 +32,7 @@ import { playCyberAlert } from '../utils/audioAlerts';
 import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
 import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
 import type { Finding } from '../types/findings';
+import { isSchemaWriteGated } from '../utils/schemaWriteGate';
 
 let examAlertChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -222,6 +223,9 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
  * Only invokes disk I/O when discrete state payload strings actually change.
  */
 let lastStoredPayload = '';
+/** True while this tab holds exam state its last write could not put on disk (an unsaved change). */
+let examWriteFailing = false;
+export const EXAM_STORAGE_FULL_MESSAGE = 'Storage is full — exam changes are kept in memory only; export a backup.';
 
 const selectiveExamStorage = {
   getItem: (name: string): string | null => {
@@ -236,14 +240,30 @@ const selectiveExamStorage = {
   },
   setItem: (name: string, value: string): void => {
     if (typeof window === 'undefined') return;
+    // A gated tab (newer ZeroBox elsewhere, or a restore in flight) must not overwrite the stored session.
+    if (isSchemaWriteGated()) return;
     if (value === lastStoredPayload) {
       return; // Deduplicate identical discrete state; 0 disk write!
     }
     try {
       localStorage.setItem(name, value);
       lastStoredPayload = value;
-    } catch (err) {
+      examWriteFailing = false;
+    } catch (err: any) {
       console.warn('[ExamStore] Failed to write to localStorage:', err);
+      // Alert once per failing streak through the app's sticky storage banner (same event as useCtfStore).
+      if (examWriteFailing) return;
+      examWriteFailing = true;
+      const isQuota = err?.name === 'QuotaExceededError' || err?.code === 22 || err?.number === -2147024882;
+      try {
+        window.dispatchEvent(
+          new CustomEvent('zerobox:storage', {
+            detail: isQuota
+              ? { kind: 'quota', message: EXAM_STORAGE_FULL_MESSAGE, sticky: true }
+              : { kind: 'error', message: `Could not save the exam session (${String(err?.message || err)}). Changes are kept in memory only; export a backup.`, sticky: true },
+          })
+        );
+      } catch {}
     }
   },
   removeItem: (name: string): void => {
@@ -909,6 +929,17 @@ export const useExamStore = create<ExamStore>()(
     }
   )
 );
+
+// Cross-tab: another tab's exam write lands here as a storage event. Rehydrate from it so this (stale) tab's
+// next discrete write cannot overwrite it. The exam session carries no per-field timestamps, so the stored
+// copy wins unless this tab holds an unsaved change (its own last write failed), which is kept instead.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key !== EXAM_STORAGE_KEY || event.newValue === null) return;
+    if (event.newValue === lastStoredPayload || examWriteFailing) return;
+    void useExamStore.persist.rehydrate();
+  });
+}
 
 let proofImageMigration: Promise<number> | null = null;
 
