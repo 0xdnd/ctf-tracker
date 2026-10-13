@@ -33,11 +33,10 @@ export const QuickNotesField: React.FC<QuickNotesFieldProps> = ({
   ...textareaProps
 }) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
-  const label = textareaProps['aria-label'] || 'Notes';
 
   return (
     <div className="space-y-2">
-      <div role="group" aria-label={`${label} view`} className="inline-flex gap-1 rounded-lg border border-subtle bg-surface-sunken p-0.5">
+      <div role="group" aria-label="Preview or edit notes" className="inline-flex gap-1 rounded-lg border border-subtle bg-surface-sunken p-0.5">
         {(['preview', 'edit'] as const).map((m) => (
           <button
             key={m}
