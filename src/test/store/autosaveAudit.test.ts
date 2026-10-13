@@ -270,6 +270,58 @@ describe('item 6: restore from the IndexedDB workspace copy', () => {
   });
 });
 
+describe('item 7: attack graph storage is per profile', () => {
+  const GLOBAL = 'zerobox-attack-graph-state';
+  const graphOf = (edgeId: string) =>
+    JSON.stringify({
+      graphNodePositions: {},
+      graphEdges: [{ id: edgeId, sourceId: 'a', targetId: 'b', type: 'pivot-ssh', status: 'potential', createdAt: '2024-01-01T00:00:00.000Z' }],
+    });
+  const asP1 = () => {
+    localStorage.setItem('rootvector_auth_session', JSON.stringify({ state: { user: { id: 'p1' } } }));
+    seedStorage([box('custom-p1')], 'p1');
+  };
+  const edgeIds = (mod: StoreModule) => mod.useCtfStore.getState().graphEdges.map((e) => e.id);
+
+  it('saves only to the profile key, never the shared unscoped key', async () => {
+    asP1();
+    const mod = await boot();
+    mod.useCtfStore.getState().addGraphEdge({ id: 'edge-new', sourceId: 'a', targetId: 'b', type: 'pivot-ssh', status: 'potential' });
+    expect(localStorage.getItem('zerobox_graph_state_p1')).toContain('edge-new');
+    expect(localStorage.getItem(GLOBAL)).toBeNull();
+  });
+
+  it('ignores graph storage events for another profile', async () => {
+    asP1();
+    localStorage.setItem('zerobox_graph_state_p1', graphOf('edge-p1'));
+    const mod = await boot();
+    window.dispatchEvent(new StorageEvent('storage', { key: GLOBAL, newValue: graphOf('edge-guest') }));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'zerobox_graph_state_p2', newValue: graphOf('edge-p2') }));
+    expect(edgeIds(mod)).toEqual(['edge-p1']);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'zerobox_graph_state_p1', newValue: graphOf('edge-p1b') }));
+    expect(edgeIds(mod)).toEqual(['edge-p1b']);
+  });
+
+  it('an existing user without a profile graph key gets the legacy unscoped graph once, claimed into its key', async () => {
+    asP1();
+    localStorage.setItem(GLOBAL, graphOf('edge-legacy'));
+    const mod = await boot();
+    expect(edgeIds(mod)).toEqual(['edge-legacy']);
+    expect(localStorage.getItem('zerobox_graph_state_p1')).toContain('edge-legacy');
+  });
+
+  it("resetAllProgress removes the profile's graph key and a reload does not bring it back", async () => {
+    asP1();
+    localStorage.setItem(GLOBAL, graphOf('edge-legacy'));
+    localStorage.setItem('zerobox_graph_state_p1', graphOf('edge-p1'));
+    const mod = await boot();
+    await mod.useCtfStore.getState().resetAllProgress();
+    expect(localStorage.getItem('zerobox_graph_state_p1')).toBeNull();
+    const reloaded = await boot();
+    expect(edgeIds(reloaded)).toEqual([]);
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);

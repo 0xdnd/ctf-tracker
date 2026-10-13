@@ -562,28 +562,36 @@ function writeProfilePayload(
 
 export const ATTACK_GRAPH_STORAGE_KEY = 'zerobox-attack-graph-state';
 
+/** Each profile's own graph key. The guest profile's key is the original unscoped one. */
 export const getAttackGraphStorageKey = (profileId: string = 'guest'): string => {
   const id = profileId || 'guest';
-  if (id === 'guest') {
-    return ATTACK_GRAPH_STORAGE_KEY;
-  }
-  const specificKey = `zerobox_graph_state_${id}`;
-  if (typeof window !== 'undefined') {
-    const modernExists = safeLocalStorage.getItem(specificKey);
-    if (modernExists) return specificKey;
-    const legacyExists = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
-    if (legacyExists) return ATTACK_GRAPH_STORAGE_KEY;
-  }
-  return specificKey;
+  return id === 'guest' ? ATTACK_GRAPH_STORAGE_KEY : `zerobox_graph_state_${id}`;
 };
+
+/** Set once a profile's one-time legacy fallback (below) has been evaluated, so a later reset can't resurrect it. */
+const graphLegacyCheckedKey = (profileId: string) => `zerobox_graph_legacy_checked_${profileId}`;
 
 export function loadInitialAttackGraphState(profileId: string = 'guest'): AttackGraphPersistedState {
   if (typeof window === 'undefined') {
     return { graphNodePositions: {}, graphEdges: [] };
   }
   try {
-    const key = getAttackGraphStorageKey(profileId);
-    const raw = safeLocalStorage.getItem(key);
+    const id = profileId || 'guest';
+    const key = getAttackGraphStorageKey(id);
+    let raw = safeLocalStorage.getItem(key);
+    // One-time fallback for existing users: older builds wrote every profile's graph to the unscoped key too
+    // (and read it when the profile key was missing). Claim it into the profile key, then never read it again.
+    if (!raw && id !== 'guest' && !safeLocalStorage.getItem(graphLegacyCheckedKey(id))) {
+      const legacy = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
+      const existingUser = Boolean(
+        safeLocalStorage.getItem(`zerobox_operator_profile_${id}`) || safeLocalStorage.getItem(`specter_ctf_profile_${id}`)
+      );
+      if (legacy && existingUser) {
+        raw = legacy;
+        safeLocalStorage.setItem(key, legacy);
+      }
+      safeLocalStorage.setItem(graphLegacyCheckedKey(id), '1');
+    }
     if (raw) {
       const parsed = JSON.parse(raw);
       const positions = parsed.graphNodePositions !== undefined ? parsed.graphNodePositions : (parsed.nodePositions || {});
@@ -616,12 +624,8 @@ export function saveAttackGraphState(
       nodePositions: positions,
       edges,
     };
-    const serialized = JSON.stringify(payload);
-    const id = profileId || 'guest';
-    if (id !== 'guest') {
-      safeLocalStorage.setItem(`zerobox_graph_state_${id}`, serialized);
-    }
-    safeLocalStorage.setItem(ATTACK_GRAPH_STORAGE_KEY, serialized);
+    // Only this profile's key: writing the shared unscoped key too let one profile's graph leak into others.
+    safeLocalStorage.setItem(getAttackGraphStorageKey(profileId), JSON.stringify(payload));
   } catch (err) {
     console.warn('[ZeroBox] Failed to save attack graph state to storage:', err);
   }
@@ -2584,7 +2588,8 @@ export const useCtfStore = create<CtfStoreState>()(
         // Explicitly clear IndexedDB deep storage and vault notes to prevent orphaned data accumulation
         await clearDeepProfileData(targetId);
         await clearVaultFromIndexedDb();
-        safeLocalStorage.removeItem(ATTACK_GRAPH_STORAGE_KEY);
+        safeLocalStorage.removeItem(getAttackGraphStorageKey(targetId));
+        if (targetId !== 'guest') safeLocalStorage.setItem(graphLegacyCheckedKey(targetId), '1');
         clearLootState(targetId);
         set(() => ({
           machines: mergeMachinesWithCatalog([], true, catalog),
@@ -3088,7 +3093,7 @@ if (typeof window !== 'undefined') {
       if (loot) useCtfStore.setState(loot);
     }
 
-    if (event.key === ATTACK_GRAPH_STORAGE_KEY) {
+    if (event.key === getAttackGraphStorageKey(currentProfileId)) {
       try {
         const parsed = JSON.parse(event.newValue);
         const positions = parsed.graphNodePositions || parsed.nodePositions || {};
