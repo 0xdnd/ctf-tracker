@@ -64,7 +64,7 @@ import {
   triggerWorkspaceDownload, 
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
-import { saveWorkspaceToIdb } from '../utils/resilientStorage';
+import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
 import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_STORAGE_KEY,
@@ -525,6 +525,8 @@ export const safeLocalStorage = {
   }
 };
 
+const profileSaveStamps = new Map<string, { content: string; savedAt: string }>();
+
 /**
  * Writes a profile payload to its key. On quota it retries without writeup/quick-note bodies (those also live in
  * IndexedDB deep storage); if that fails too the full payload is held in memory (and the user alerted) and this
@@ -532,22 +534,30 @@ export const safeLocalStorage = {
  * (getProfileStorageKey fallback, backups), so it is kept in step, best effort: a mirror that can't be replaced is
  * removed rather than left stale.
  */
-function writeProfilePayload(profileId: string, payload: { machines: Machine[] } & Record<string, unknown>): boolean {
+function writeProfilePayload(
+  profileId: string,
+  payload: { machines: Machine[] } & Record<string, unknown>
+): { saved: boolean; savedAt: string } {
   const key = getWriteProfileStorageKey(profileId);
-  const serialized = JSON.stringify(payload);
+  const content = JSON.stringify(payload);
+  // savedAt only moves when the content does, so re-saving unchanged data writes byte-identical copies.
+  const prev = profileSaveStamps.get(key);
+  const savedAt = prev && prev.content === content ? prev.savedAt : new Date().toISOString();
+  profileSaveStamps.set(key, { content, savedAt });
+  const serialized = `${content.slice(0, -1)},"savedAt":${JSON.stringify(savedAt)}}`;
   let written = serialized;
   if (!safeLocalStorage.tryWrite(key, serialized)) {
-    const lean = JSON.stringify({ ...payload, machines: stripDeepFieldsFromMachines(payload.machines) });
+    const lean = JSON.stringify({ ...payload, machines: stripDeepFieldsFromMachines(payload.machines), savedAt });
     if (!safeLocalStorage.tryWrite(key, lean)) {
       safeLocalStorage.setItem(key, serialized);
-      return false;
+      return { saved: false, savedAt };
     }
     console.warn('[ZeroBox] LocalStorage quota reached: saved the profile without writeup bodies (kept in IndexedDB).');
     written = lean;
   }
   const mirror = `specter_ctf_profile_${profileId || 'guest'}`;
   if (!safeLocalStorage.tryWrite(mirror, written)) safeLocalStorage.removeItem(mirror);
-  return true;
+  return { saved: true, savedAt };
 }
 
 export const ATTACK_GRAPH_STORAGE_KEY = 'zerobox-attack-graph-state';
@@ -2785,6 +2795,52 @@ if (bootProfileId !== initialProfileId) {
   useCtfStore.setState({ ...loadInitialAttackGraphState(bootProfileId), ...loadLootState(bootProfileId) });
 }
 
+/**
+ * The IndexedDB workspace copy (zb:workspace:<profile>) is written with every profile save. Decide now, before
+ * anything writes, whether localStorage lost that data or holds an older copy (e.g. its write hit the quota):
+ * 'missing' when neither the profile key nor the persisted blob exists, else the profile copy's savedAt stamp
+ * (null when it has none, i.e. written by an older build, so it can't be compared and is trusted).
+ */
+const bootResilientCheck: 'missing' | number | null = (() => {
+  if (typeof window === 'undefined') return null;
+  const raw = safeLocalStorage.getItem(getProfileStorageKey(bootProfileId));
+  if (!raw) return safeLocalStorage.getItem('zerobox-tactical-store') ? null : 'missing';
+  try {
+    const savedAt = Date.parse(JSON.parse(raw)?.savedAt);
+    return Number.isFinite(savedAt) ? savedAt : null;
+  } catch {
+    return null;
+  }
+})();
+
+async function restoreFromResilientCopy(profileId: string, check: 'missing' | number | null) {
+  if (check === null) return;
+  const copy = await loadWorkspaceFromIdb<Record<string, any>>(`zb:workspace:${profileId}`).catch(() => null);
+  if (!copy || !Array.isArray(copy.machines)) return;
+  if (check !== 'missing' && !(Date.parse(copy.savedAt) > check)) return;
+  // Gated (newer schema or a restore in progress) or switched profile meanwhile: leave everything alone.
+  if (isSchemaWriteGated() || (useCtfStore.getState().currentProfileId || 'guest') !== profileId) return;
+  const userSolvesReset = Boolean(copy.userSolvesReset);
+  const machines = mergeMachinesWithCatalog(copy.machines, userSolvesReset);
+  const activeTargetId = typeof copy.activeTargetId === 'string' ? copy.activeTargetId : null;
+  useCtfStore.setState((s) => ({
+    machines,
+    activeTargetId,
+    isTimerRunning: false,
+    timerLastTick: null,
+    activeTimerSeconds: timerSecondsFor(machines, activeTargetId),
+    userSolvesReset,
+    globalVars: copy.globalVars || s.globalVars,
+    cheatsheets: Array.isArray(copy.cheatsheets) ? copy.cheatsheets : s.cheatsheets,
+    activitySessions: Array.isArray(copy.activitySessions) ? copy.activitySessions : s.activitySessions,
+    customNotes: Array.isArray(copy.customNotes) ? copy.customNotes : s.customNotes,
+    deletedNoteIds: Array.isArray(copy.deletedNoteIds) ? copy.deletedNoteIds : s.deletedNoteIds,
+    deletedMachineIds: normalizeMachineTombstones(copy.deletedMachineIds ?? s.deletedMachineIds),
+  }));
+  console.warn('[ZeroBox] Restored the workspace from the IndexedDB copy (localStorage was missing or older).');
+  flushProfileSave();
+}
+
 // Timer fields are transient, so a tab that closed or crashed with the timer running always boots paused and
 // never counts the downtime. Seed the display from the active machine's last saved time, or the next
 // start/pause/switch would continue from 0 and overwrite that saved time.
@@ -2886,9 +2942,12 @@ export function flushProfileSave() {
     deletedMachineIds: state.deletedMachineIds,
     userSolvesReset: state.userSolvesReset,
   };
-  saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, payload).catch(() => {});
+  const { saved, savedAt } = writeProfilePayload(state.currentProfileId, payload);
+  // Same stamp on the IndexedDB copy as on the localStorage copy: boot compares them (restoreFromResilientCopy).
+  // Written even when localStorage failed (quota), so that newer copy can be restored after a reload.
+  saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, { ...payload, savedAt }).catch(() => {});
   // Only a write that reached disk is a save: on failure the markers stay put, so the next save point retries.
-  if (writeProfilePayload(state.currentProfileId, payload)) {
+  if (saved) {
     markProfileSaved(state);
     broadcastCrossTabMessage('WRITEUPS_UPDATED', { profileId: state.currentProfileId });
   }
@@ -3107,6 +3166,8 @@ if (typeof window !== 'undefined') {
       });
     }).catch(() => {});
   }
+
+  restoreFromResilientCopy(bootProfileId, bootResilientCheck);
 
   // Asynchronously hydrate the user's imported notes from IndexedDB
   loadVaultFromIndexedDb().then((vault) => {
