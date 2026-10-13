@@ -102,6 +102,35 @@ describe('item 2: boot merge against STARTER_MACHINES', () => {
   });
 });
 
+describe('item 3: missing or quarantined persisted store blob', () => {
+  const note = { id: 'note-1', title: 'Mine', rawMarkdown: 'body' };
+  const seedProfileOnly = () =>
+    localStorage.setItem(
+      PROFILE_KEY,
+      JSON.stringify({ machines: [box('custom-mine')], activeTargetId: null, customNotes: [note], deletedNoteIds: ['x'] })
+    );
+
+  it('boots from the intact profile copy when the store blob is missing', async () => {
+    seedProfileOnly();
+    const mod = await boot();
+    const s = mod.useCtfStore.getState();
+    expect(ids(s.machines)).toContain('custom-mine');
+    expect(s.customNotes.map((n) => n.id)).toEqual(['note-1']);
+    expect(s.deletedNoteIds).toEqual(['x']);
+    mod.flushProfileSave();
+    expect(ids(storedProfile().machines)).toContain('custom-mine');
+    expect(storedProfile().customNotes).toHaveLength(1);
+  });
+
+  it('boots from the profile copy when the store blob is corrupted (quarantined)', async () => {
+    seedProfileOnly();
+    localStorage.setItem(STORE_KEY, '{not json');
+    const mod = await boot();
+    expect(ids(mod.useCtfStore.getState().machines)).toContain('custom-mine');
+    expect(mod.useCtfStore.getState().customNotes).toHaveLength(1);
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);
