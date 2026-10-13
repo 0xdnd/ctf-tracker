@@ -144,7 +144,8 @@ const MainAppContent: React.FC = () => {
       const detail = (e as CustomEvent).detail;
       if (detail) {
         setStorageAlert(detail);
-        setTimeout(() => setStorageAlert(null), 9000);
+        // Failed saves stay up until dismissed: the data is only in memory until the user exports or frees space.
+        if (!detail.sticky) setTimeout(() => setStorageAlert((cur) => (cur === detail ? null : cur)), 9000);
       }
     };
     window.addEventListener('zerobox:storage', handleStorageEvent);
