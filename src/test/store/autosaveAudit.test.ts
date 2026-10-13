@@ -131,6 +131,36 @@ describe('item 3: missing or quarantined persisted store blob', () => {
   });
 });
 
+describe('item 4: auth profile differs from the persisted profile', () => {
+  const graphOf = (edgeId: string) =>
+    JSON.stringify({
+      graphNodePositions: {},
+      graphEdges: [{ id: edgeId, sourceId: 'a', targetId: 'b', type: 'pivot-ssh', status: 'potential', createdAt: '2024-01-01T00:00:00.000Z' }],
+    });
+  const lootOf = (lootId: string) =>
+    JSON.stringify({ schemaVersion: 1, credentials: [], credAttempts: [], lootItems: [{ id: lootId, title: lootId, value: 'v' }] });
+
+  it('loads loot and the attack graph of the profile the tab ends up on', async () => {
+    localStorage.setItem('rootvector_auth_session', JSON.stringify({ state: { user: { id: 'p1' } } }));
+    seedStorage([box('custom-p2')], 'p2'); // the persisted blob names p2
+    localStorage.setItem('zerobox_graph_state_p1', graphOf('edge-p1'));
+    localStorage.setItem('zerobox_graph_state_p2', graphOf('edge-p2'));
+    localStorage.setItem('zerobox_loot_v2_p1', lootOf('loot-p1'));
+    localStorage.setItem('zerobox_loot_v2_p2', lootOf('loot-p2'));
+
+    const mod = await boot();
+    const s = () => mod.useCtfStore.getState();
+    expect(s().currentProfileId).toBe('p2');
+    expect(s().graphEdges.map((e) => e.id)).toEqual(['edge-p2']);
+    expect(s().lootItems.map((l) => l.id)).toEqual(['loot-p2']);
+
+    // A loot edit now saves p2's list under p2, and leaves p1's key alone.
+    s().addLootItem({ category: 'note', title: 'new', value: 'x' });
+    expect(JSON.parse(localStorage.getItem('zerobox_loot_v2_p1') as string).lootItems.map((l: { id: string }) => l.id)).toEqual(['loot-p1']);
+    expect(JSON.parse(localStorage.getItem('zerobox_loot_v2_p2') as string).lootItems).toHaveLength(2);
+  });
+});
+
 describe('item 1: cross-tab events from another profile', () => {
   it('ignores a persisted-store event written by a tab on a different profile', async () => {
     seedStorage([box('custom-mine')]);
