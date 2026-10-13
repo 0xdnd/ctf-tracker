@@ -2130,12 +2130,11 @@ export const useCtfStore = create<CtfStoreState>()(
             n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
           );
           set({ userNotes: updatedUserNotes });
-          saveVaultToIndexedDb({
+          // Awaited, and a failure rejects: the editor then keeps the edit marked unsaved instead of "saved".
+          await saveVaultToIndexedDb({
             notes: updatedUserNotes,
             wikilinkMap: state.userWikilinkMap || {},
-          }).catch((err) =>
-            console.warn('[ZeroBox] Could not persist note update to IndexedDB', err)
-          );
+          });
           return;
         }
 
@@ -2143,6 +2142,7 @@ export const useCtfStore = create<CtfStoreState>()(
         //    has not caught up yet, read the vault directly so the edit is never dropped.
         //    (The app ships no bundled catalog, so there is nothing else to promote from.)
         if (userNotes.length === 0) {
+          let saveEdit: (() => Promise<void>) | null = null;
           try {
             const vault = await loadVaultFromIndexedDb();
             const vaultNotes = vault?.notes || [];
@@ -2155,13 +2155,15 @@ export const useCtfStore = create<CtfStoreState>()(
                 n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
               );
               set({ userNotes: updatedUserNotes, userWikilinkMap: wikilinkMap });
-              await saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap }).catch((err) =>
-                console.warn('[ZeroBox] Could not persist note update to IndexedDB', err)
-              );
-              return;
+              saveEdit = () => saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap });
             }
           } catch (err) {
             console.warn('[ZeroBox] Could not read the notes vault before saving an edit', err);
+          }
+          // Outside the read guard: a failed save must reject so the editor keeps the edit unsaved.
+          if (saveEdit) {
+            await saveEdit();
+            return;
           }
         }
 
