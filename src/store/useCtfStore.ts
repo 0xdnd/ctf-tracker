@@ -2650,6 +2650,12 @@ export const useCtfStore = create<CtfStoreState>()(
         };
       },
       merge: (persistedState: any, currentState: CtfStoreState) => {
+        // No blob (first run, or a corrupted one was quarantined): the initial state already holds the profile
+        // copy. Merging an empty blob would replace its machines with the bare catalog and clear its notes.
+        if (persistedState === null || persistedState === undefined) {
+          applyThemePreset(currentState.themePreset);
+          return currentState;
+        }
         const persisted = (persistedState as Partial<CtfStoreState>) || {};
         const userSolvesReset = Boolean(persisted.userSolvesReset);
         const rawPreset = (persisted.themePreset as string) || 'obsidian';
