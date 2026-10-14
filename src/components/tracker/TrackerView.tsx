@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   Search, 
@@ -23,7 +23,8 @@ import {
   Tv,
   Network,
   Flame,
-  ShieldAlert
+  ShieldAlert,
+  Upload
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -537,6 +538,13 @@ export const TrackerView: React.FC = () => {
     return count;
   }, [filters]);
 
+  const dueFilterOn = /(^|\s)review:due(\s|$)/i.test(filters.searchQuery);
+  const toggleDueFilter = useCallback(() => {
+    const rest = filters.searchQuery.replace(/(^|\s)review:due(?=\s|$)/gi, ' ').replace(/\s+/g, ' ').trim();
+    setFilters({ searchQuery: dueFilterOn ? rest : `${rest} review:due`.trim() });
+    if (soundEnabled) playCyberSound('click');
+  }, [filters.searchQuery, dueFilterOn, setFilters, soundEnabled]);
+
   const activeFilterPills = useMemo(() => {
     const pills: { id: string; label: string; onRemove: () => void }[] = [];
     if (filters.searchQuery) {
@@ -651,78 +659,22 @@ export const TrackerView: React.FC = () => {
         onRemove: () => setFilters({ selectedTags: filters.selectedTags.filter((x) => x !== t) }),
       });
     });
+    if (dueFilterOn) {
+      pills.push({
+        id: 'due-filter',
+        label: 'Due for review',
+        onRemove: toggleDueFilter,
+      });
+    }
     return pills;
-  }, [filters, setFilters]);
+  }, [filters, setFilters, dueFilterOn, toggleDueFilter]);
 
   const [multiImportOpen, setMultiImportOpen] = useState(false);
+  const [readinessOpen, setReadinessOpen] = useState(false);
   const readiness = useMemo(() => computeReadiness(machines, Date.now()), [machines]);
-  const dueFilterOn = /(^|\s)review:due(\s|$)/i.test(filters.searchQuery);
-  const toggleDueFilter = () => {
-    const rest = filters.searchQuery.replace(/(^|\s)review:due(?=\s|$)/gi, ' ').replace(/\s+/g, ' ').trim();
-    setFilters({ searchQuery: dueFilterOn ? rest : `${rest} review:due`.trim() });
-    if (soundEnabled) playCyberSound('click');
-  };
 
   return (
     <div className="space-y-3 w-full">
-      {/* Readiness summary */}
-      <div
-        role="region"
-        aria-label="Readiness summary"
-        className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-subtle bg-surface-card px-3 py-2 text-xs"
-      >
-        <span className="text-secondary">
-          Readiness <strong className="font-mono tabular-nums text-primary">{readiness.score}%</strong>
-          <span className="text-muted"> ({readiness.solved}/{readiness.attempted} solved)</span>
-        </span>
-        {readiness.weakestTags.length > 0 && (
-          <span className="text-secondary">
-            Weakest:{' '}
-            <span className="text-primary">
-              {readiness.weakestTags.map((t) => `${t.tag} ${t.solved}/${t.attempted}`).join(', ')}
-            </span>
-          </span>
-        )}
-        {readiness.nextSuggested.length > 0 && (
-          <span className="text-secondary min-w-0 truncate">
-            Next:{' '}
-            {readiness.nextSuggested.map((m, i) => (
-              <React.Fragment key={m.id}>
-                {i > 0 && ', '}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMachineId(m.id)}
-                  className="text-accent hover:underline cursor-pointer"
-                >
-                  {m.name}
-                </button>
-              </React.Fragment>
-            ))}
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleDueFilter}
-            disabled={readiness.dueItems.length === 0 && !dueFilterOn}
-            aria-pressed={dueFilterOn}
-            className={`${TOOLBAR_BTN} h-7 px-2.5 disabled:opacity-40 disabled:cursor-not-allowed ${dueFilterOn ? 'border-accent text-accent' : ''}`}
-            title="Show only items due for review"
-          >
-            <span>Due for review</span>
-            <span className="font-mono tabular-nums">{readiness.dueItems.length}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMultiImportOpen(true)}
-            className={`${TOOLBAR_BTN} h-7 px-2.5`}
-            title="Import several hosts from one scan"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Import records</span>
-          </button>
-        </span>
-      </div>
       <MultiRecordImportModal
         open={multiImportOpen}
         onClose={() => setMultiImportOpen(false)}
@@ -820,8 +772,40 @@ export const TrackerView: React.FC = () => {
                 <LayoutGrid className="w-4 h-4" />
               </button>
             </div>
-            <div className="font-mono tabular-nums text-xs text-muted" aria-live="polite">
-              <span className="text-primary">{filteredMachines.length}</span> / {machines.length}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setReadinessOpen((prev) => !prev);
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className={`${TOOLBAR_BTN} h-11 px-2.5 text-xs flex items-center gap-1 ${readinessOpen ? 'border-accent text-accent' : ''}`}
+                title="Toggle readiness summary"
+                aria-label="Toggle readiness panel"
+              >
+                <Target className="w-4 h-4 text-accent" />
+                <span className="font-mono">{readiness.score}%</span>
+                {readiness.dueItems.length > 0 && (
+                  <span className="px-1 rounded-full bg-warning/20 text-warning text-[10px] font-mono font-bold">
+                    {readiness.dueItems.length}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMultiImportOpen(true);
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className={`${TOOLBAR_BTN} h-11 px-2.5`}
+                title="Bulk import scan records"
+                aria-label="Bulk import scan records"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+              <div className="font-mono tabular-nums text-xs text-muted pl-1" aria-live="polite">
+                <span className="text-primary">{filteredMachines.length}</span> / {machines.length}
+              </div>
             </div>
           </div>
         </div>
@@ -960,6 +944,40 @@ export const TrackerView: React.FC = () => {
               <span className="hidden xl:inline">Import</span>
             </button>
 
+            {/* Bulk Scan Importer */}
+            <button
+              type="button"
+              onClick={() => { setMultiImportOpen(true); if (soundEnabled) playCyberSound('click'); }}
+              className={`${TOOLBAR_BTN} h-8 px-2.5`}
+              title="Bulk import targets from Nmap / NetExec multi-host scan"
+              aria-label="Bulk import scan records"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Bulk Import</span>
+            </button>
+
+            {/* Exam Readiness & Review Queue Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                setReadinessOpen((prev) => !prev);
+                if (soundEnabled) playCyberSound('click');
+              }}
+              aria-expanded={readinessOpen}
+              className={`${TOOLBAR_BTN} h-8 px-2.5 ${readinessOpen ? 'border-accent text-accent' : ''}`}
+              title="Exam readiness score and spaced repetition review queue"
+              aria-label="Toggle readiness panel"
+            >
+              <Target className="w-3.5 h-3.5 text-accent" />
+              <span className="hidden xl:inline">Readiness</span>
+              <span className="font-mono tabular-nums font-semibold">{readiness.score}%</span>
+              {readiness.dueItems.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-warning/20 text-warning text-[10px] font-mono font-bold">
+                  {readiness.dueItems.length}
+                </span>
+              )}
+            </button>
+
             {/* View switcher */}
             <div role="group" aria-label="View mode" className={SEGMENT_WRAP}>
               <button
@@ -1063,6 +1081,76 @@ export const TrackerView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Collapsible Readiness & Spaced Repetition Panel */}
+      {readinessOpen && (
+        <div
+          role="region"
+          aria-label="Readiness summary"
+          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-subtle bg-surface-card p-3 text-xs shadow-sm"
+        >
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 min-w-0">
+            <span className="text-secondary flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-accent flex-shrink-0" />
+              <span>Readiness: <strong className="font-mono tabular-nums text-primary">{readiness.score}%</strong></span>
+              <span className="text-muted">({readiness.solved}/{readiness.attempted} solved)</span>
+            </span>
+
+            {readiness.weakestTags.length > 0 && (
+              <span className="text-secondary hidden sm:inline">
+                Weakest:{' '}
+                <span className="text-primary font-mono">
+                  {readiness.weakestTags.map((t) => `${t.tag} (${t.solved}/${t.attempted})`).join(', ')}
+                </span>
+              </span>
+            )}
+
+            {readiness.nextSuggested.length > 0 && (
+              <span className="text-secondary min-w-0 truncate">
+                Next:{' '}
+                {readiness.nextSuggested.map((m, i) => (
+                  <React.Fragment key={m.id}>
+                    {i > 0 && ', '}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMachineId(m.id)}
+                      className="text-accent hover:underline cursor-pointer font-medium"
+                    >
+                      {m.name}
+                    </button>
+                  </React.Fragment>
+                ))}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={toggleDueFilter}
+              disabled={readiness.dueItems.length === 0 && !dueFilterOn}
+              aria-pressed={dueFilterOn}
+              className={`${TOOLBAR_BTN} h-7 px-2.5 disabled:opacity-40 disabled:cursor-not-allowed ${
+                dueFilterOn ? 'border-accent text-accent' : ''
+              }`}
+              title="Show only items due for review"
+            >
+              <span>Due for review</span>
+              <span className="font-mono tabular-nums font-semibold">{readiness.dueItems.length}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setReadinessOpen(false)}
+              className="w-7 h-7 flex items-center justify-center rounded text-tertiary hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+              title="Close readiness overview"
+              aria-label="Close readiness overview"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Slide-over Filter Drawer */}
       {filterDrawerSeen && (
         <React.Suspense fallback={null}>

@@ -134,6 +134,49 @@ describe('Wave 2 lane B - tracker redesign', () => {
       fireEvent.click(screen.getByRole('button', { name: /Reset filters/i }));
       expect(useCtfStore.getState().filters.searchQuery).toBe('');
     });
+
+    it('readiness panel is collapsed by default and toggles on demand', () => {
+      wrap(<TrackerView />);
+      // Not mounted by default (uncluttered view)
+      expect(screen.queryByRole('region', { name: 'Readiness summary' })).toBeNull();
+
+      // Click toolbar Readiness button to expand
+      const readinessBtn = screen.getAllByRole('button', { name: 'Toggle readiness panel' })[0];
+      fireEvent.click(readinessBtn);
+      expect(screen.getByRole('region', { name: 'Readiness summary' })).toBeInTheDocument();
+
+      // Click dismiss button to collapse
+      fireEvent.click(screen.getByRole('button', { name: 'Close readiness overview' }));
+      expect(screen.queryByRole('region', { name: 'Readiness summary' })).toBeNull();
+    });
+
+    it('opens Bulk Import modal from toolbar button', () => {
+      wrap(<TrackerView />);
+      const bulkImportBtn = screen.getAllByRole('button', { name: 'Bulk import scan records' })[0];
+      fireEvent.click(bulkImportBtn);
+      expect(screen.getByRole('dialog', { name: 'Import multiple records' })).toBeInTheDocument();
+    });
+
+    it('toggles review due filter and shows active filter chip', () => {
+      useCtfStore.setState({
+        machines: [
+          makeMachine({ id: 'box-due', status: 'root', nextReviewAt: Date.now() - 1000 }),
+        ],
+      });
+      wrap(<TrackerView />);
+      // Open readiness panel
+      fireEvent.click(screen.getAllByRole('button', { name: 'Toggle readiness panel' })[0]);
+
+      // Click review due
+      const reviewDueBtn = screen.getByRole('button', { name: /Due for review/i });
+      fireEvent.click(reviewDueBtn);
+      expect(useCtfStore.getState().filters.searchQuery).toContain('review:due');
+      expect(screen.getByLabelText('Remove filter Due for review')).toBeInTheDocument();
+
+      // Remove filter via chip
+      fireEvent.click(screen.getByLabelText('Remove filter Due for review'));
+      expect(useCtfStore.getState().filters.searchQuery).not.toContain('review:due');
+    });
   });
 
   describe('FilterDrawer', () => {
