@@ -18,8 +18,10 @@ export const DomainVhostSection: React.FC<DomainVhostSectionProps> = ({ machine,
 
   const [newVhost, setNewVhost] = useState('');
   const [copiedHosts, setCopiedHosts] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState(false);
 
   const hostsLine = formatHostsLine(machine.ip, machine.domain, machine.vhosts);
+  const hostsCmd = hostsLine ? `echo "${hostsLine}" | sudo tee -a /etc/hosts` : '';
 
   const handleCopyHostsLine = async () => {
     if (!hostsLine) return;
@@ -27,6 +29,14 @@ export const DomainVhostSection: React.FC<DomainVhostSectionProps> = ({ machine,
     setCopiedHosts(true);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopiedHosts(false), 2000);
+  };
+
+  const handleCopyHostsCmd = async () => {
+    if (!hostsCmd) return;
+    await safeCopyToClipboard(hostsCmd);
+    setCopiedCmd(true);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedCmd(false), 2000);
   };
 
   const handleAddVhost = (e: React.FormEvent) => {
@@ -49,15 +59,26 @@ export const DomainVhostSection: React.FC<DomainVhostSectionProps> = ({ machine,
         </div>
 
         {hostsLine ? (
-          <button
-            type="button"
-            onClick={handleCopyHostsLine}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle text-xs font-medium text-secondary hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
-            title="Copy /etc/hosts line to clipboard"
-          >
-            {copiedHosts ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
-            <span className="font-mono text-[11px]">{copiedHosts ? 'Copied /etc/hosts' : 'Copy /etc/hosts line'}</span>
-          </button>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={handleCopyHostsCmd}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle text-xs font-medium text-secondary hover:text-accent transition-colors cursor-pointer active:scale-[0.97]"
+              title="Copy sudo tee command to append to /etc/hosts"
+            >
+              {copiedCmd ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
+              <span className="font-mono text-[11px]">{copiedCmd ? 'Copied tee cmd' : 'Copy tee cmd'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyHostsLine}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle text-xs font-medium text-secondary hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
+              title="Copy raw /etc/hosts line to clipboard"
+            >
+              {copiedHosts ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
+              <span className="font-mono text-[11px]">{copiedHosts ? 'Copied line' : 'Copy /etc/hosts line'}</span>
+            </button>
+          </div>
         ) : null}
       </div>
 

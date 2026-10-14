@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { identifyHash, formatCrackingList, groupByHashcatMode, HashCandidate } from './hashIdentifier';
+import { identifyHash, formatCrackingList, groupByHashcatMode, getCrackingCommands, HashCandidate } from './hashIdentifier';
 
 function top(input: string, hint?: 'windows' | 'linux' | 'web'): HashCandidate | undefined {
   return identifyHash(input, hint)[0];
@@ -142,5 +142,24 @@ describe('groupByHashcatMode', () => {
     const groups = groupByHashcatMode(['5d41402abc4b2a76b9719d911017c592', '098f6bcd4621d373cade4e832627b4f6']);
     // both 32-hex -> MD5 is top candidate by default (no hint) -> mode 0
     expect(groups['0']).toEqual(['5d41402abc4b2a76b9719d911017c592', '098f6bcd4621d373cade4e832627b4f6']);
+  });
+});
+
+describe('getCrackingCommands', () => {
+  it('generates exact hashcat and john commands for MD5/NTLM', () => {
+    const cmds = getCrackingCommands('5d41402abc4b2a76b9719d911017c592');
+    expect(cmds.hashcat).toBe("hashcat -m 0 '5d41402abc4b2a76b9719d911017c592' /usr/share/wordlists/rockyou.txt");
+    expect(cmds.john).toBe('john --format=raw-md5 hash.txt --wordlist=/usr/share/wordlists/rockyou.txt');
+  });
+
+  it('generates hashcat command for SHA256', () => {
+    const cmds = getCrackingCommands('127e6fbfe24a750e72930c220a8e138275656b8e5d8f48a98c3c92df2caba935');
+    expect(cmds.hashcat).toContain('hashcat -m 1400');
+    expect(cmds.john).toContain('john --format=raw-sha256');
+  });
+
+  it('handles unknown input gracefully', () => {
+    const cmds = getCrackingCommands('not-a-hash');
+    expect(cmds).toEqual({});
   });
 });

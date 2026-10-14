@@ -94,7 +94,7 @@ describe('LootVerificationMatrix', () => {
     fireEvent.click(untestedButtons[0]);
 
     expect(setLootVerificationSpy).toHaveBeenCalledWith('cred-2', 'mach-1', {
-      status: 'user',
+      status: 'failed',
       protocol: 'smb',
     });
   });

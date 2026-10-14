@@ -31,10 +31,11 @@ describe('matchesSearchQuery', () => {
     expect(matchesSearchQuery(m, parseSearchQuery('port:22'))).toBe(false);
     expect(matchesSearchQuery(m, parseSearchQuery('os:linux'))).toBe(false);
   });
-  it('matches free text on name, tags, ip', () => {
+  it('matches free text on name, tags, ip, os', () => {
     expect(matchesSearchQuery(m, parseSearchQuery('FOREST'))).toBe(true);
     expect(matchesSearchQuery(m, parseSearchQuery('kerberos'))).toBe(true);
     expect(matchesSearchQuery(m, parseSearchQuery('10.10.10.161'))).toBe(true);
+    expect(matchesSearchQuery(m, parseSearchQuery('windows'))).toBe(true);
     expect(matchesSearchQuery(m, parseSearchQuery('nope'))).toBe(false);
   });
   it('uses opts for review and track', () => {

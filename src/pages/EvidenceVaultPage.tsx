@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key } from 'lucide-react';
+import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key, Terminal } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PlatformIcon } from '../components/common/PlatformBadge';
@@ -15,7 +15,7 @@ import { LootTimeline } from '../components/loot/LootTimeline';
 import { AddLootModal } from '../components/loot/AddLootModal';
 import { ExportLootDrawer } from '../components/loot/ExportLootDrawer';
 import { LootVerificationMatrix } from '../components/loot/LootVerificationMatrix';
-import { identifyHash } from '../utils/hashIdentifier';
+import { identifyHash, getCrackingCommands } from '../utils/hashIdentifier';
 import { toast } from '../store/useToastStore';
 import { confirmAction } from '../store/useConfirmStore';
 
@@ -142,6 +142,7 @@ export const EvidenceVaultPage: React.FC = () => {
   const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
   const [allRevealed, setAllRevealed] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedCrackKey, setCopiedCrackKey] = useState<string | null>(null);
 
   // Add Loot Modal & Export Drawer state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -359,6 +360,14 @@ export const EvidenceVaultPage: React.FC = () => {
     toast.success(`Active HUD variables updated: ${username || (item.secret ? item.secret.slice(0, 10) : 'cred')}`);
     if (soundEnabled) playCyberSound('engage');
   }, [setGlobalVars, soundEnabled]);
+
+  const handleCopyCrackingCmd = useCallback(async (cmd: string, key: string, label: string) => {
+    await safeCopyToClipboard(cmd);
+    setCopiedCrackKey(key);
+    toast.success(`${label} command copied`);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedCrackKey(null), 2000);
+  }, [soundEnabled]);
 
   // Export to CSV (RFC 4180)
   const handleExportCsv = useCallback(() => {
@@ -788,17 +797,47 @@ export const EvidenceVaultPage: React.FC = () => {
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
                         </div>
-                        {hashCandidates.length > 0 && (
-                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                            <span
-                              className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-accent border border-subtle"
-                              title={hashCandidates[0].hashcatMode !== null ? `Hashcat mode -m ${hashCandidates[0].hashcatMode}` : undefined}
-                            >
-                              {hashCandidates[0].name}
-                              {hashCandidates[0].hashcatMode !== null ? ` (-m ${hashCandidates[0].hashcatMode})` : ''}
-                            </span>
-                          </div>
-                        )}
+                        {hashCandidates.length > 0 && (() => {
+                          const cracking = getCrackingCommands(item.secret, hashCandidates[0]);
+                          const isCopiedHc = copiedCrackKey === `hc-${item.id}`;
+                          const isCopiedJtr = copiedCrackKey === `jtr-${item.id}`;
+
+                          return (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-accent border border-subtle"
+                                title={hashCandidates[0].hashcatMode !== null ? `Hashcat mode -m ${hashCandidates[0].hashcatMode}` : undefined}
+                              >
+                                {hashCandidates[0].name}
+                                {hashCandidates[0].hashcatMode !== null ? ` (-m ${hashCandidates[0].hashcatMode})` : ''}
+                              </span>
+
+                              {cracking.hashcat && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCrackingCmd(cracking.hashcat!, `hc-${item.id}`, 'Hashcat')}
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[10px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
+                                  title={cracking.hashcat}
+                                >
+                                  {isCopiedHc ? <Check className="w-2.5 h-2.5 text-callout-success-fg" /> : <Terminal className="w-2.5 h-2.5" />}
+                                  <span>{isCopiedHc ? 'Copied' : 'Hashcat'}</span>
+                                </button>
+                              )}
+
+                              {cracking.john && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCrackingCmd(cracking.john!, `jtr-${item.id}`, 'John')}
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[10px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
+                                  title={cracking.john}
+                                >
+                                  {isCopiedJtr ? <Check className="w-2.5 h-2.5 text-callout-success-fg" /> : <Terminal className="w-2.5 h-2.5" />}
+                                  <span>{isCopiedJtr ? 'Copied' : 'John'}</span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Discovered */}

@@ -109,7 +109,7 @@ export function matchesSearchQuery<M extends SearchableMachine>(
   if (filters.review === 'due' && !(opts.isDue?.(machine) ?? false)) return false;
 
   if (text) {
-    const hay = [machine.name, machine.ip ?? '', ...(machine.tags ?? [])].join('\n').toLowerCase();
+    const hay = [machine.name, machine.ip ?? '', machine.os ?? '', ...(machine.tags ?? [])].join('\n').toLowerCase();
     const needle = text.toLowerCase();
     if (!hay.includes(needle) && !needle.split(/\s+/).every((w) => hay.includes(w))) return false;
   }

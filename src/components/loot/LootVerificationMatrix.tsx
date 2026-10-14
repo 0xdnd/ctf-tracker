@@ -23,7 +23,7 @@ interface LootVerificationMatrixProps {
   className?: string;
 }
 
-const STATUS_CYCLE: LootVerificationStatus[] = ['untested', 'user', 'admin', 'failed'];
+const STATUS_CYCLE: LootVerificationStatus[] = ['untested', 'failed', 'user', 'admin'];
 
 const STATUS_CONFIG: Record<
   LootVerificationStatus,

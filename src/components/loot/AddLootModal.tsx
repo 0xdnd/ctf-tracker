@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, X } from 'lucide-react';
+import { Database, X, Sparkles, Terminal, Check } from 'lucide-react';
 import { Machine } from '../../types';
 import { VaultEvidenceItem, EvidenceCategory } from '../../pages/EvidenceVaultPage';
 import { MODAL_ASYMMETRIC_TRANSITION } from '../../utils/motionTokens';
-import { playCyberSound } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { identifyHash, getCrackingCommands } from '../../utils/hashIdentifier';
+import { toast } from '../../store/useToastStore';
 
 export interface AddLootModalProps {
   isOpen: boolean;
@@ -28,6 +30,23 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   const [username, setUsername] = useState<string>('');
   const [secret, setSecret] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+
+  const hashCandidates = React.useMemo(() => {
+    return secret.trim() ? identifyHash(secret.trim()) : [];
+  }, [secret]);
+
+  const crackingCmds = React.useMemo(() => {
+    return secret.trim() ? getCrackingCommands(secret.trim(), hashCandidates[0]) : {};
+  }, [secret, hashCandidates]);
+
+  const handleCopyCmd = async (cmd: string, type: string) => {
+    await safeCopyToClipboard(cmd);
+    setCopiedCmd(type);
+    toast.success(`${type === 'hashcat' ? 'Hashcat' : 'John'} cracking command copied`);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedCmd(null), 2000);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -182,6 +201,45 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
                   placeholder="Paste password, hash string, or SSH private key..."
                   className="w-full p-2.5 rounded-lg bg-surface-base border border-subtle text-primary font-mono text-xs tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 resize-none"
                 />
+                {hashCandidates.length > 0 && (
+                  <div className="mt-2 p-2.5 rounded-lg bg-surface-base border border-subtle space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 font-medium text-primary">
+                        <Sparkles className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                        <span>Format: <strong className="text-accent">{hashCandidates[0].name}</strong></span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-surface-sunken text-muted border border-subtle uppercase">
+                          {hashCandidates[0].confidence} confidence
+                        </span>
+                      </div>
+                    </div>
+                    {(crackingCmds.hashcat || crackingCmds.john) && (
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-subtle/50">
+                        {crackingCmds.hashcat && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCmd(crackingCmds.hashcat!, 'hashcat')}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[11px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
+                            title={crackingCmds.hashcat}
+                          >
+                            {copiedCmd === 'hashcat' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Terminal className="w-3 h-3" />}
+                            <span>{copiedCmd === 'hashcat' ? 'Copied Hashcat' : 'Copy Hashcat'}</span>
+                          </button>
+                        )}
+                        {crackingCmds.john && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCmd(crackingCmds.john!, 'john')}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[11px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
+                            title={crackingCmds.john}
+                          >
+                            {copiedCmd === 'john' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Terminal className="w-3 h-3" />}
+                            <span>{copiedCmd === 'john' ? 'Copied John' : 'Copy John'}</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Tactical Notes */}

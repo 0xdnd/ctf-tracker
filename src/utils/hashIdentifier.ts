@@ -196,3 +196,25 @@ export function groupByHashcatMode(hashes: string[]): Record<string, string[]> {
   }
   return result;
 }
+
+/**
+ * Returns ready-to-run hashcat and john cracking commands for a given hash.
+ */
+export function getCrackingCommands(
+  hash: string,
+  candidate?: HashCandidate
+): { hashcat?: string; john?: string } {
+  const cand = candidate || identifyHash(hash)[0];
+  if (!cand) return {};
+
+  const h = (hash ?? '').trim();
+  const hashcat = cand.hashcatMode !== null
+    ? `hashcat -m ${cand.hashcatMode} '${h}' /usr/share/wordlists/rockyou.txt`
+    : undefined;
+
+  const john = cand.johnFormat !== null
+    ? `john --format=${cand.johnFormat} hash.txt --wordlist=/usr/share/wordlists/rockyou.txt`
+    : undefined;
+
+  return { hashcat, john };
+}

@@ -4,13 +4,9 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
 
-export interface TtyStep {
-  step: number;
-  title: string;
-  command: string;
-  explanation: string;
-  isKeystroke?: boolean;
-}
+import { generateTtyStabilizationSteps, TtyUpgradeStep } from '../../utils/offensiveTransferUtils';
+
+export type TtyStep = TtyUpgradeStep;
 
 export const TtyStabilizationCheatsheet: React.FC = () => {
   const { soundEnabled } = useCtfStore();
@@ -20,39 +16,9 @@ export const TtyStabilizationCheatsheet: React.FC = () => {
   const estimatedRows = Math.max(24, Math.floor(window.innerHeight / 24));
   const estimatedCols = Math.max(80, Math.floor(window.innerWidth / 10));
 
-  const steps: TtyStep[] = [
-    {
-      step: 1,
-      title: 'Spawn PTY in Catch Shell',
-      command: `python3 -c 'import pty; pty.spawn("/bin/bash")'`,
-      explanation: 'Invokes Python pty module to allocate pseudo-terminal. If Python 3 is missing, try python or /usr/bin/script -qc /bin/bash /dev/null.',
-    },
-    {
-      step: 2,
-      title: 'Background Netcat Shell',
-      command: `Ctrl + Z`,
-      explanation: 'Sends SIGTSTP to suspend the current netcat session and drop back to your local attacker terminal.',
-      isKeystroke: true,
-    },
-    {
-      step: 3,
-      title: 'Raw Mode & Foreground Job',
-      command: `stty raw -echo; fg`,
-      explanation: 'Disables terminal echo and line buffering on your local terminal, then returns netcat to the foreground (press ENTER twice if prompt does not appear).',
-    },
-    {
-      step: 4,
-      title: 'Set Terminal Profile & Shell',
-      command: `export TERM=xterm-256color; export SHELL=/bin/bash`,
-      explanation: 'Enables clear, nano, top, arrows, history and full color support inside the remote shell.',
-    },
-    {
-      step: 5,
-      title: 'Set Rows & Columns (Fix wrap)',
-      command: `stty rows ${estimatedRows} columns ${estimatedCols}`,
-      explanation: `Matches remote shell window boundaries to avoid line wrapping glitches. (Run 'stty size' locally to verify exact values).`,
-    },
-  ];
+  const steps = React.useMemo(() => {
+    return generateTtyStabilizationSteps({ rows: estimatedRows, cols: estimatedCols });
+  }, [estimatedRows, estimatedCols]);
 
   const handleCopy = async (text: string, id: string) => {
     const ok = await safeCopyToClipboard(text);

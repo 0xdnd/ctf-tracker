@@ -22,7 +22,8 @@ import {
   CheckCircle2,
   ListChecks,
   Plus,
-  Terminal
+  Terminal,
+  Code
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useActiveTargetIp } from '../hooks/useActiveTargetIp';
@@ -34,7 +35,7 @@ import {
 import { ServiceBranchType } from '../types/checklist';
 import { playCyberSound } from '../utils/helpers';
 import { resolveTemplate, contextFromGlobalVars } from '../utils/variableSubstitution';
-import { isNtHash } from '../utils/shellEncoders';
+import { isNtHash, encodeUtf16LeBase64 } from '../utils/shellEncoders';
 import { toast } from '../store/useToastStore';
 import { PlatformIcon } from '../components/common/PlatformBadge';
 import { CyberSelect } from '../components/common/CyberSelect';
@@ -103,6 +104,7 @@ export const MethodologyPage: React.FC = () => {
     'phase-02-service-enumeration': true,
   });
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedPsId, setCopiedPsId] = useState<string | null>(null);
   const [copiedAllMd, setCopiedAllMd] = useState(false);
   const [targetContextId, setTargetContextId] = useState<string | 'universal'>('universal');
 
@@ -199,6 +201,18 @@ export const MethodologyPage: React.FC = () => {
     setCopiedId(id);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // PowerShell UTF-16LE Base64 Encoded Command Copy Handler
+  const handleCopyPsEncoded = (commandSnippet: string, id: string) => {
+    const finalCmd = formatMethodologyCommand(commandSnippet);
+    const b64 = encodeUtf16LeBase64(finalCmd);
+    const psCmd = `powershell -nop -w hidden -EncodedCommand ${b64}`;
+    navigator.clipboard?.writeText(psCmd);
+    toast.success('PowerShell Base64 command copied');
+    setCopiedPsId(id);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopiedPsId(null), 2000);
   };
 
   // Export Full Methodology as Obsidian/GitBook Markdown
@@ -674,23 +688,45 @@ export const MethodologyPage: React.FC = () => {
                                             />
                                           </div>
 
-                                          <button
-                                            onClick={() => handleCopy(item.commandSnippet!, item.id)}
-                                            className="inline-flex min-h-8 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-on-inverse active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
-                                            title="Copy command to clipboard"
-                                          >
-                                            {isCopied ? (
-                                              <>
-                                                <Check className="h-3.5 w-3.5 text-syntax-string" />
-                                                <span className="text-syntax-string">Copied</span>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Copy className="h-3.5 w-3.5" />
-                                                <span>Copy</span>
-                                              </>
-                                            )}
-                                          </button>
+                                          <div className="flex items-center gap-1 flex-shrink-0">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleCopyPsEncoded(item.commandSnippet!, item.id)}
+                                              className="inline-flex min-h-8 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-accent active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                                              title="Copy as PowerShell UTF-16LE Base64 -EncodedCommand"
+                                            >
+                                              {copiedPsId === item.id ? (
+                                                <>
+                                                  <Check className="h-3.5 w-3.5 text-syntax-string" />
+                                                  <span className="text-syntax-string">Copied PS</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Code className="h-3.5 w-3.5" />
+                                                  <span>PS Base64</span>
+                                                </>
+                                              )}
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => handleCopy(item.commandSnippet!, item.id)}
+                                              className="inline-flex min-h-8 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-on-inverse active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                                              title="Copy command to clipboard"
+                                            >
+                                              {isCopied ? (
+                                                <>
+                                                  <Check className="h-3.5 w-3.5 text-syntax-string" />
+                                                  <span className="text-syntax-string">Copied</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Copy className="h-3.5 w-3.5" />
+                                                  <span>Copy</span>
+                                                </>
+                                              )}
+                                            </button>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
