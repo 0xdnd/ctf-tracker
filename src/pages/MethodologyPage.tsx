@@ -21,7 +21,8 @@ import {
   BookOpen,
   CheckCircle2,
   ListChecks,
-  Plus
+  Plus,
+  Terminal
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useActiveTargetIp } from '../hooks/useActiveTargetIp';
@@ -33,12 +34,17 @@ import {
 import { ServiceBranchType } from '../types/checklist';
 import { playCyberSound } from '../utils/helpers';
 import { resolveTemplate, contextFromGlobalVars } from '../utils/variableSubstitution';
+import { isNtHash } from '../utils/shellEncoders';
 import { toast } from '../store/useToastStore';
 import { PlatformIcon } from '../components/common/PlatformBadge';
 import { CyberSelect } from '../components/common/CyberSelect';
 import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
+import { GlobalHudVarsBar } from '../components/methodology/GlobalHudVarsBar';
+import { FileTransferCheatsheet } from '../components/methodology/FileTransferCheatsheet';
+import { TtyStabilizationCheatsheet } from '../components/methodology/TtyStabilizationCheatsheet';
+import { PowerShellEncoderTool } from '../components/methodology/PowerShellEncoderTool';
 import { useShallow } from 'zustand/react/shallow';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
 import { SyntaxHighlightedCommand } from '../components/common/SyntaxHighlightedCommand';
@@ -65,7 +71,7 @@ export const MethodologyPage: React.FC = () => {
     }))
   );
 
-  const [viewMode, setViewMode] = useState<'playbook' | 'checklist'>('playbook');
+  const [viewMode, setViewMode] = useState<'playbook' | 'checklist' | 'transfers' | 'tty' | 'encoder'>('playbook');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Active engaged target's IP takes priority over the global RHOST.
@@ -74,6 +80,22 @@ export const MethodologyPage: React.FC = () => {
     () => contextFromGlobalVars(globalVars, { activeTargetIp }),
     [globalVars, activeTargetIp]
   );
+
+  const isNtHashCred = Boolean(globalVars.cred && isNtHash(globalVars.cred));
+
+  const formatMethodologyCommand = (commandSnippet: string): string => {
+    let finalCmd = resolveTemplate(commandSnippet, substitutionContext, { legacyAliases: true }).text;
+    if (isNtHashCred && globalVars.cred) {
+      const hash = globalVars.cred;
+      // Automatic Pass-The-Hash switching for NT hashes
+      finalCmd = finalCmd.replace(/-p\s+["']?\{PASSWORD\}["']?/gi, `-H ${hash}`);
+      finalCmd = finalCmd.replace(/-p\s+["']?\{CRED\}["']?/gi, `-H ${hash}`);
+      if (finalCmd.includes('impacket-') && finalCmd.includes(':{PASSWORD}')) {
+        finalCmd = finalCmd.replace(':{PASSWORD}', ` -hashes :${hash}`);
+      }
+    }
+    return finalCmd;
+  };
   const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number | 'all'>('all');
   const [selectedBranch, setSelectedBranch] = useState<ServiceBranchType | 'all'>('all');
   const [expandedPhases, setExpandedPhases] = useState<Record<string, boolean>>({
@@ -171,7 +193,7 @@ export const MethodologyPage: React.FC = () => {
 
   // Command Copy Handler
   const handleCopy = (commandSnippet: string, id: string) => {
-    const finalCmd = resolveTemplate(commandSnippet, substitutionContext, { legacyAliases: true }).text;
+    const finalCmd = formatMethodologyCommand(commandSnippet);
     navigator.clipboard?.writeText(finalCmd);
     toast.success('Command copied to clipboard');
     setCopiedId(id);
@@ -201,7 +223,7 @@ export const MethodologyPage: React.FC = () => {
           md += `- [ ] **${item.title}**\n`;
           md += `  - *Description:* ${item.description}\n`;
           if (item.commandSnippet) {
-            const interpolated = resolveTemplate(item.commandSnippet, substitutionContext, { legacyAliases: true }).text;
+            const interpolated = formatMethodologyCommand(item.commandSnippet);
             md += `  - *Execution:* \`${interpolated}\`\n`;
           }
           md += `\n`;
@@ -259,12 +281,15 @@ export const MethodologyPage: React.FC = () => {
           </CyberButton>
         }
       >
-        {/* View mode: reference playbook vs live target checklist */}
+        {/* View mode: reference playbook vs live target checklist vs transfers vs tty vs encoder */}
         <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {([
               { id: 'playbook', label: 'Playbook', icon: <BookOpen className="h-3.5 w-3.5" /> },
               { id: 'checklist', label: 'Live checklist', icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+              { id: 'transfers', label: 'File Transfers', icon: <Download className="h-3.5 w-3.5" /> },
+              { id: 'tty', label: 'TTY Stabilization', icon: <Terminal className="h-3.5 w-3.5" /> },
+              { id: 'encoder', label: 'PowerShell Encoder', icon: <Cpu className="h-3.5 w-3.5" /> },
             ] as const).map((tab) => {
               const selected = viewMode === tab.id;
               return (
@@ -293,7 +318,16 @@ export const MethodologyPage: React.FC = () => {
         </div>
       </PageHeader>
 
-      {viewMode === 'checklist' ? (
+      {/* Global Offensive HUD Variables */}
+      <GlobalHudVarsBar />
+
+      {viewMode === 'transfers' ? (
+        <FileTransferCheatsheet />
+      ) : viewMode === 'tty' ? (
+        <TtyStabilizationCheatsheet />
+      ) : viewMode === 'encoder' ? (
+        <PowerShellEncoderTool />
+      ) : viewMode === 'checklist' ? (
         activeTargetMachine ? (
           <div className="space-y-4">
             {/* Checklist target selector */}
@@ -635,7 +669,7 @@ export const MethodologyPage: React.FC = () => {
                                             className="min-w-0 flex-1 select-all overflow-x-auto no-scrollbar whitespace-nowrap rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                           >
                                             <SyntaxHighlightedCommand
-                                              command={resolveTemplate(item.commandSnippet, substitutionContext, { legacyAliases: true }).text}
+                                              command={formatMethodologyCommand(item.commandSnippet)}
                                               className="text-[12px]"
                                             />
                                           </div>

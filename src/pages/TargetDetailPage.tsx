@@ -34,6 +34,10 @@ import { TargetTypeBadge } from '../components/common/TargetTypeBadge';
 import { CyberButton } from '../components/common/CyberButton';
 import { EmptyState } from '../components/common/EmptyState';
 import { Skeleton, SkeletonRegion, SkeletonText } from '../components/common/Skeleton';
+import { DomainVhostSection } from '../components/tracker/DomainVhostSection';
+import { PortTriageTable } from '../components/tracker/PortTriageTable';
+import { LabFindingsPanel } from '../components/tracker/LabFindingsPanel';
+import { LabTimelineAndIndependence } from '../components/tracker/LabTimelineAndIndependence';
 
 const TargetDetailTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === machineId ? s.activeTimerSeconds : 0));
@@ -590,6 +594,18 @@ export const TargetDetailPage: React.FC = () => {
               </div>
             </div>
           </section>
+
+          {/* Domain & Virtual Hosts */}
+          <DomainVhostSection machine={machine} />
+
+          {/* Port Triage (rendered when full recon services are not populated) */}
+          {(!machine.services || machine.services.length === 0) && <PortTriageTable machine={machine} />}
+
+          {/* Security Findings */}
+          <LabFindingsPanel machine={machine} />
+
+          {/* Solve Independence & Review Timeline */}
+          <LabTimelineAndIndependence machine={machine} />
 
           {/* Discovered attack surface */}
           {machine.services && machine.services.length > 0 && (

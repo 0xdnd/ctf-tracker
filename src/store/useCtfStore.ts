@@ -410,6 +410,7 @@ interface CtfStoreState {
   addLootItem: (input: NewLootItemInput) => string;
   updateLootItem: (id: string, patch: LootItemPatch) => void;
   deleteLootItem: (id: string) => void;
+  setLootVerification: (lootId: string, machineId: string, verification: { status: import('../types').LootVerificationStatus; protocol?: string }) => void;
 }
 
 const DEFAULT_GLOBAL_VARS: GlobalVariables = {
@@ -2427,6 +2428,44 @@ export const useCtfStore = create<CtfStoreState>()(
           saveLootState(state.currentProfileId, { ...state, lootItems });
           return { lootItems };
         });
+      },
+
+      setLootVerification: (lootId, machineId, verification) => {
+        const mid = (machineId || '').trim();
+        if (!mid || !lootId) return;
+        const now = new Date().toISOString();
+        const vEntry = {
+          status: verification.status,
+          ...(verification.protocol ? { protocol: verification.protocol } : {}),
+          updatedAt: now,
+        };
+
+        const creds = get().credentials;
+        const cIdx = creds.findIndex((c) => c.id === lootId);
+        if (cIdx !== -1) {
+          const cred = creds[cIdx];
+          const verifications = { ...(cred.verifications || {}), [mid]: vEntry };
+          const credentials = [...creds];
+          credentials[cIdx] = { ...cred, verifications };
+          set((state) => {
+            saveLootState(state.currentProfileId, { ...state, credentials });
+            return { credentials };
+          });
+          return;
+        }
+
+        const items = get().lootItems;
+        const lIdx = items.findIndex((l) => l.id === lootId);
+        if (lIdx !== -1) {
+          const item = items[lIdx];
+          const verifications = { ...(item.verifications || {}), [mid]: vEntry };
+          const lootItems = [...items];
+          lootItems[lIdx] = { ...item, verifications };
+          set((state) => {
+            saveLootState(state.currentProfileId, { ...state, lootItems });
+            return { lootItems };
+          });
+        }
       },
 
       addCustomNote: (note) => {

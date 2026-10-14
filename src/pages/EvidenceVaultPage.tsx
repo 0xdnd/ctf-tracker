@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock } from 'lucide-react';
+import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PlatformIcon } from '../components/common/PlatformBadge';
@@ -14,6 +14,9 @@ import { Platform, Machine, Credential, CredentialType, LootItem } from '../type
 import { LootTimeline } from '../components/loot/LootTimeline';
 import { AddLootModal } from '../components/loot/AddLootModal';
 import { ExportLootDrawer } from '../components/loot/ExportLootDrawer';
+import { LootVerificationMatrix } from '../components/loot/LootVerificationMatrix';
+import { identifyHash } from '../utils/hashIdentifier';
+import { toast } from '../store/useToastStore';
 import { confirmAction } from '../store/useConfirmStore';
 
 export type EvidenceCategory = 'all' | 'flag' | 'password' | 'hash' | 'ssh_key' | 'token' | 'service';
@@ -106,7 +109,7 @@ export const lootItemToEvidenceItem = (l: LootItem, machines: Machine[]): VaultE
 export const EvidenceVaultPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem } = useCtfStore(
+  const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem, setGlobalVars } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
       soundEnabled: s.soundEnabled,
@@ -114,6 +117,7 @@ export const EvidenceVaultPage: React.FC = () => {
       lootItems: s.lootItems,
       addCredential: s.addCredential,
       addLootItem: s.addLootItem,
+      setGlobalVars: s.setGlobalVars,
     }))
   );
 
@@ -131,7 +135,7 @@ export const EvidenceVaultPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<EvidenceCategory>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
   const [selectedTargetId, setSelectedTargetId] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'timeline'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'timeline' | 'matrix'>('table');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Secret visibility toggle state
@@ -337,6 +341,24 @@ export const EvidenceVaultPage: React.FC = () => {
     else deleteLootItem(id);
     if (soundEnabled) playCyberSound('toggle');
   }, [soundEnabled]);
+
+  const handleUseInHud = useCallback((item: VaultEvidenceItem) => {
+    let domain: string | undefined = undefined;
+    let username = item.username;
+    if (username && username.includes('\\')) {
+      const parts = username.split('\\');
+      domain = parts[0];
+      username = parts.slice(1).join('\\');
+    }
+    setGlobalVars({
+      user: username || undefined,
+      cred: item.secret || undefined,
+      domain: domain,
+      targetIp: item.targetIp && item.targetIp !== '0.0.0.0' ? item.targetIp : undefined,
+    });
+    toast.success(`Active HUD variables updated: ${username || (item.secret ? item.secret.slice(0, 10) : 'cred')}`);
+    if (soundEnabled) playCyberSound('engage');
+  }, [setGlobalVars, soundEnabled]);
 
   // Export to CSV (RFC 4180)
   const handleExportCsv = useCallback(() => {
@@ -561,7 +583,7 @@ export const EvidenceVaultPage: React.FC = () => {
             ))}
           </div>
 
-          {/* View toggle: table vs kill-chain timeline */}
+          {/* View toggle: table vs kill-chain timeline vs matrix */}
           <div
             role="group"
             aria-label="Evidence view"
@@ -591,6 +613,17 @@ export const EvidenceVaultPage: React.FC = () => {
               className={`${segBase} ${viewMode === 'timeline' ? 'bg-surface-card text-primary shadow-xs' : 'text-muted hover:text-primary'}`}
             >
               Kill-chain timeline
+            </button>
+            <button
+              type="button"
+              aria-pressed={viewMode === 'matrix'}
+              onClick={() => {
+                setViewMode('matrix');
+                if (soundEnabled) playCyberSound('click');
+              }}
+              className={`${segBase} ${viewMode === 'matrix' ? 'bg-surface-card text-primary shadow-xs' : 'text-muted hover:text-primary'}`}
+            >
+              Cross-host matrix
             </button>
           </div>
 
@@ -652,12 +685,20 @@ export const EvidenceVaultPage: React.FC = () => {
               >
                 Timeline
               </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('matrix')}
+                aria-pressed={viewMode === 'matrix'}
+                className={`flex-1 h-11 rounded-lg text-sm font-medium cursor-pointer ${viewMode === 'matrix' ? 'bg-accent text-on-accent' : 'bg-surface-sunken text-secondary'}`}
+              >
+                Matrix
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* 4. Evidence view (timeline vs data table / stacked cards below sm) */}
+      {/* 4. Evidence view (timeline vs matrix vs data table / stacked cards below sm) */}
       {viewMode === 'timeline' ? (
         <LootTimeline
           items={filteredItems}
@@ -668,6 +709,8 @@ export const EvidenceVaultPage: React.FC = () => {
           onDeleteCustom={handleDeleteCustomLoot}
           soundEnabled={soundEnabled}
         />
+      ) : viewMode === 'matrix' ? (
+        <LootVerificationMatrix credentials={credentials} machines={machines} />
       ) : (
         <div className="sm:rounded-xl sm:border sm:border-subtle sm:bg-surface-card sm:overflow-hidden machined-edge">
           <div className="sm:overflow-x-auto sm:max-h-[calc(100vh-320px)]">
@@ -689,6 +732,9 @@ export const EvidenceVaultPage: React.FC = () => {
                 {filteredItems.map((item) => {
                   const isRevealed = Boolean(revealedIds[item.id] || allRevealed);
                   const isCopied = copiedId === item.id;
+                  const hashCandidates = (item.category === 'hash' || item.category === 'password')
+                    ? identifyHash(item.secret)
+                    : [];
 
                   return (
                     <tr
@@ -742,6 +788,17 @@ export const EvidenceVaultPage: React.FC = () => {
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
                         </div>
+                        {hashCandidates.length > 0 && (
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-accent border border-subtle"
+                              title={hashCandidates[0].hashcatMode !== null ? `Hashcat mode -m ${hashCandidates[0].hashcatMode}` : undefined}
+                            >
+                              {hashCandidates[0].name}
+                              {hashCandidates[0].hashcatMode !== null ? ` (-m ${hashCandidates[0].hashcatMode})` : ''}
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Discovered */}
@@ -752,6 +809,18 @@ export const EvidenceVaultPage: React.FC = () => {
                       {/* Actions: secondary until hover/focus, always visible on touch */}
                       <td role="cell" className="block sm:table-cell py-2.5 sm:px-4 text-right sm:pr-6 max-sm:w-full">
                         <div className="flex items-center justify-end gap-1.5 [@media(hover:hover)_and_(min-width:640px)]:opacity-0 [@media(hover:hover)_and_(min-width:640px)]:group-hover:opacity-100 [@media(hover:hover)_and_(min-width:640px)]:group-focus-within:opacity-100 transition-opacity">
+                          {(item.category === 'password' || item.category === 'hash' || item.category === 'token') && (
+                            <button
+                              aria-label="Use in HUD variables"
+                              type="button"
+                              onClick={() => handleUseInHud(item)}
+                              className="p-1.5 tap-target rounded-md border border-subtle bg-surface-sunken text-secondary hover:border-accent hover:text-accent transition-colors cursor-pointer active:scale-[0.97]"
+                              title="Set active HUD credential"
+                            >
+                              <Key className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
                           <button
                             aria-label="Copy secret to clipboard"
                             type="button"

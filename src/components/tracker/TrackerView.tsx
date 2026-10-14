@@ -28,7 +28,11 @@ import {
 import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
-import { Platform, Difficulty, OperatingSystem } from '../../types';
+import { Platform, Difficulty, OperatingSystem, Machine } from '../../types';
+import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
+import { isDueForReview } from '../../utils/spacedRepetition';
+import { computeReadiness } from '../../utils/readiness';
+import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
@@ -100,6 +104,8 @@ export const TrackerView: React.FC = () => {
     soundEnabled,
     loadCatalog,
     setFilterDrawerOpen,
+    addCustomMachine,
+    updateMachine,
   } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
@@ -113,6 +119,8 @@ export const TrackerView: React.FC = () => {
       soundEnabled: s.soundEnabled,
       loadCatalog: s.loadCatalog,
       setFilterDrawerOpen: s.setFilterDrawerOpen,
+      addCustomMachine: s.addCustomMachine,
+      updateMachine: s.updateMachine,
     }))
   );
 
@@ -312,7 +320,13 @@ export const TrackerView: React.FC = () => {
 
   // Filter and sort machines based on active filter state
   const filteredMachines = useMemo(() => {
-    const q = deferredFilters.searchQuery ? deferredFilters.searchQuery.trim().toLowerCase() : '';
+    const parsedQuery = parseSearchQuery(deferredFilters.searchQuery ?? '');
+    const hasQuery = parsedQuery.text !== '' || Object.keys(parsedQuery.filters).length > 0;
+    const nowMs = Date.now();
+    const searchOpts = {
+      isDue: (m: Machine) => !m.isActive && isDueForReview(m, nowMs),
+      trackIds: (m: Machine) => PRACTICE_TRACKS.filter((t) => t.filterFn(m)).map((t) => t.id),
+    };
     const platformFilter = deferredFilters.selectedPlatform;
     const diffFilter = deferredFilters.selectedDifficulty;
     const osFilter = deferredFilters.selectedOs;
@@ -371,13 +385,7 @@ export const TrackerView: React.FC = () => {
       }
 
       // 7. Search query (only evaluated on candidates that passed platform/diff)
-      if (q) {
-        const matchName = m.name.toLowerCase().includes(q);
-        const matchIp = m.ip.includes(q);
-        const matchOs = m.os.toLowerCase().includes(q);
-        const matchTag = m.tags.some((t) => t.toLowerCase().includes(q));
-        if (!matchName && !matchIp && !matchOs && !matchTag) return false;
-      }
+      if (hasQuery && !matchesSearchQuery(m, parsedQuery, searchOpts)) return false;
 
       // 8. Legacy Exploit Vector filter compatibility
       if (catFilter && catFilter !== 'ALL') {
@@ -646,8 +654,83 @@ export const TrackerView: React.FC = () => {
     return pills;
   }, [filters, setFilters]);
 
+  const [multiImportOpen, setMultiImportOpen] = useState(false);
+  const readiness = useMemo(() => computeReadiness(machines, Date.now()), [machines]);
+  const dueFilterOn = /(^|\s)review:due(\s|$)/i.test(filters.searchQuery);
+  const toggleDueFilter = () => {
+    const rest = filters.searchQuery.replace(/(^|\s)review:due(?=\s|$)/gi, ' ').replace(/\s+/g, ' ').trim();
+    setFilters({ searchQuery: dueFilterOn ? rest : `${rest} review:due`.trim() });
+    if (soundEnabled) playCyberSound('click');
+  };
+
   return (
     <div className="space-y-3 w-full">
+      {/* Readiness summary */}
+      <div
+        role="region"
+        aria-label="Readiness summary"
+        className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-subtle bg-surface-card px-3 py-2 text-xs"
+      >
+        <span className="text-secondary">
+          Readiness <strong className="font-mono tabular-nums text-primary">{readiness.score}%</strong>
+          <span className="text-muted"> ({readiness.solved}/{readiness.attempted} solved)</span>
+        </span>
+        {readiness.weakestTags.length > 0 && (
+          <span className="text-secondary">
+            Weakest:{' '}
+            <span className="text-primary">
+              {readiness.weakestTags.map((t) => `${t.tag} ${t.solved}/${t.attempted}`).join(', ')}
+            </span>
+          </span>
+        )}
+        {readiness.nextSuggested.length > 0 && (
+          <span className="text-secondary min-w-0 truncate">
+            Next:{' '}
+            {readiness.nextSuggested.map((m, i) => (
+              <React.Fragment key={m.id}>
+                {i > 0 && ', '}
+                <button
+                  type="button"
+                  onClick={() => setSelectedMachineId(m.id)}
+                  className="text-accent hover:underline cursor-pointer"
+                >
+                  {m.name}
+                </button>
+              </React.Fragment>
+            ))}
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleDueFilter}
+            disabled={readiness.dueItems.length === 0 && !dueFilterOn}
+            aria-pressed={dueFilterOn}
+            className={`${TOOLBAR_BTN} h-7 px-2.5 disabled:opacity-40 disabled:cursor-not-allowed ${dueFilterOn ? 'border-accent text-accent' : ''}`}
+            title="Show only items due for review"
+          >
+            <span>Due for review</span>
+            <span className="font-mono tabular-nums">{readiness.dueItems.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMultiImportOpen(true)}
+            className={`${TOOLBAR_BTN} h-7 px-2.5`}
+            title="Import several hosts from one scan"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Import records</span>
+          </button>
+        </span>
+      </div>
+      <MultiRecordImportModal
+        open={multiImportOpen}
+        onClose={() => setMultiImportOpen(false)}
+        machines={liveMachines}
+        soundEnabled={soundEnabled}
+        addCustomMachine={addCustomMachine}
+        updateMachine={updateMachine}
+      />
       {/* Toolbar: one calm row on desktop, search + Filters on mobile */}
       <div className="relative z-30 space-y-2">
         {/* MOBILE (< md): search + Filters, then view switcher + count */}

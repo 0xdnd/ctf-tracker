@@ -18,10 +18,12 @@ import {
 } from '../../types/graph';
 import { Machine } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
-import { generatePivotCommands } from '../../utils/pivotCommandUtils';
+import { generatePivotCommands, PivotCommandOptions } from '../../utils/pivotCommandUtils';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 import { DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
+import { toMermaid } from '../../utils/mermaidExport';
+import { isNtHash } from '../../utils/shellEncoders';
 
 /** Pivot notes are saved this long after the last keystroke. */
 export const NOTES_SAVE_DELAY_MS = 400;
@@ -110,13 +112,23 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   const srcIp = sourceMachine?.ip || edge?.sourceId || '';
   const tgtIp = targetMachine?.ip || edge?.targetId || '';
 
+  // Credential placeholders in the templates (user, domain, password or NT hash) come from the HUD variables.
+  const cred = globalVars.cred?.trim();
+  const pivotOptions: PivotCommandOptions = {
+    user: globalVars.user?.trim() || undefined,
+    domain: targetMachine?.domain || sourceMachine?.domain || globalVars.domain?.trim() || undefined,
+    hash: cred && isNtHash(cred) ? cred : undefined,
+    password: cred && !isNtHash(cred) ? cred : undefined,
+  };
+
   // Generate dynamic live commands reactive to active HUD variables
   const commands = edge ? generatePivotCommands(
     edge,
     srcIp,
     tgtIp,
     globalVars.lhost,
-    globalVars.lport
+    globalVars.lport,
+    pivotOptions
   ) : { listenerCommand: '', clientCommand: '', proxychainsSnippet: '', verificationCommand: '', quickCopyText: '' };
 
   const handleCopy = (text: string, key: string) => {
@@ -127,6 +139,18 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     setTimeout(() => {
       setCopiedKey((prev) => (prev === key ? null : prev));
     }, 1600);
+  };
+
+  const handleCopyMermaid = () => {
+    if (!edge) return;
+    const text = toMermaid(
+      [
+        { id: edge.sourceId, label: sourceMachine?.name || edge.sourceId, ip: sourceMachine?.ip },
+        { id: edge.targetId, label: targetMachine?.name || edge.targetId, ip: targetMachine?.ip },
+      ],
+      [{ source: edge.sourceId, target: edge.targetId, label: edge.label || meta.label, status: edge.status }],
+    );
+    handleCopy(text, 'mermaid');
   };
 
   const handleTypeChange = (newType: AttackEdgeType) => {
@@ -467,6 +491,15 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Delete Vector</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleCopyMermaid}
+          className="px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary text-xs font-semibold transition-colors flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
+        >
+          {copiedKey === 'mermaid' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
+          <span>{copiedKey === 'mermaid' ? 'Copied' : 'Copy Mermaid'}</span>
         </button>
 
         <button

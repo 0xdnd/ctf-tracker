@@ -30,6 +30,8 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
+import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
+import { isDueForReview } from '../../utils/spacedRepetition';
 import { getSearchIndex, searchDocs, type Range, type SearchHit, type SearchSection } from '../../utils/searchIndex';
 
 /** Renders text with <mark> around the given ranges (token-styled, no raw HTML). */
@@ -131,15 +133,10 @@ export const CommandPalette: React.FC = () => {
   // Filtered results
   const filteredMachines = useMemo(() => {
     if (!query.trim()) return machines.slice(0, 6);
-    const q = query.toLowerCase();
+    const parsed = parseSearchQuery(query);
+    const now = Date.now();
     return machines
-      .filter(
-        (m) =>
-          m.name.toLowerCase().includes(q) ||
-          m.ip.includes(q) ||
-          m.os.toLowerCase().includes(q) ||
-          m.tags.some((t) => t.toLowerCase().includes(q))
-      )
+      .filter((m) => matchesSearchQuery(m, parsed, { isDue: (x) => !x.isActive && isDueForReview(x, now) }))
       .slice(0, 8);
   }, [query, machines]);
 

@@ -14,6 +14,16 @@ export interface Credential {
   createdAt: string;
   /** True when the secret was stripped by a redacted backup export. */
   redacted?: boolean;
+  /** Verification tracking per target machine (keyed by machineId). */
+  verifications?: Record<string, LootVerification>;
+}
+
+export type LootVerificationStatus = 'untested' | 'failed' | 'user' | 'admin';
+
+export interface LootVerification {
+  status: LootVerificationStatus;
+  protocol?: string;
+  updatedAt?: string;
 }
 
 export type CredService =
@@ -53,6 +63,8 @@ export interface LootItem {
   notes?: string;
   machineId?: string;
   createdAt: string;
+  /** Verification tracking per target machine (keyed by machineId). */
+  verifications?: Record<string, LootVerification>;
 }
 
 export interface LootState {

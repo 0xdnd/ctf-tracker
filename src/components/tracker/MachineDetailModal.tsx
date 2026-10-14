@@ -59,6 +59,10 @@ import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { AiScanIntelTab } from '../automation/AiScanIntelTab';
 import { detectAndParseScan } from '../../utils/scanParserUtils';
+import { DomainVhostSection } from './DomainVhostSection';
+import { PortTriageTable } from './PortTriageTable';
+import { LabFindingsPanel } from './LabFindingsPanel';
+import { LabTimelineAndIndependence } from './LabTimelineAndIndependence';
 
 const HEADER_ICON_BTN =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
@@ -1134,6 +1138,18 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               </div>
             </div>
           </div>
+
+          {/* Section: Domain & Virtual Hosts */}
+          <DomainVhostSection machine={machine} />
+
+          {/* Section: Port Triage */}
+          <PortTriageTable machine={machine} />
+
+          {/* Section: Security Findings */}
+          <LabFindingsPanel machine={machine} />
+
+          {/* Section: Solve Independence & Review Timeline */}
+          <LabTimelineAndIndependence machine={machine} />
 
           {/* Section 3.5: Target Field Notes & Loot (Concentric R_inner = 8px) */}
           <div className="rounded-lg p-4 bg-surface-card border border-subtle surface-card-depth machined-edge space-y-3">

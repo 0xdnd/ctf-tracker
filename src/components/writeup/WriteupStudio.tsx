@@ -39,6 +39,7 @@ import { INLINE_TOKEN_REGEX } from '../../utils/backlinks';
 import { IMAGE_URL_SCHEME, compressToWebp, getImage, newImageId, putImage } from '../../utils/imageStore';
 import { buildLabSummaryMarkdown } from '../../utils/labMarkdownSummary';
 import { BacklinksPanel, buildBacklinkDocs, getBacklinks } from './BacklinksPanel';
+import { inlineIndexedDbImages } from '../../utils/imageExportInliner';
 
 // Whole-line pasted screenshot: ![alt](zerobox-img://<id>)
 const IMAGE_LINE_REGEX = /^!\[([^\]]*)\]\(zerobox-img:\/\/([A-Za-z0-9_-]+)\)\s*$/;
@@ -716,16 +717,18 @@ cat /root/root.txt
     }
   };
 
-  const handleCopyMarkdown = () => {
-    navigator.clipboard.writeText(editorContent);
+  const handleCopyMarkdown = async () => {
+    const inlined = await inlineIndexedDbImages(editorContent, profileId);
+    navigator.clipboard.writeText(inlined);
     setCopied(true);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownloadMarkdown = () => {
+  const handleDownloadMarkdown = async () => {
     if (!selectedMachine) return;
-    const blob = new Blob([editorContent], { type: 'text/markdown;charset=utf-8' });
+    const inlined = await inlineIndexedDbImages(editorContent, profileId);
+    const blob = new Blob([inlined], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -739,10 +742,11 @@ cat /root/root.txt
     if (soundEnabled) playCyberSound('root');
   };
 
-  const handleDownloadHtml = () => {
+  const handleDownloadHtml = async () => {
     if (!selectedMachine) return;
+    const inlined = await inlineIndexedDbImages(editorContent, profileId);
     const activeBrandObj = BRAND_THEMES.find((b) => b.id === appBrand) || BRAND_THEMES[0];
-    downloadWriteupHtml(selectedMachine, editorContent, {
+    downloadWriteupHtml(selectedMachine, inlined, {
       brandName: `${activeBrandObj.namePrefix}${activeBrandObj.nameSuffix}`,
     });
     if (soundEnabled) playCyberSound('export');

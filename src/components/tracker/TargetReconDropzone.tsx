@@ -57,6 +57,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
   const [createdCount, setCreatedCount] = useState<number | null>(null);
   const machines = useCtfStore((s) => s.machines);
   const addCustomMachine = useCtfStore((s) => s.addCustomMachine);
+  const setPortTriage = useCtfStore((s) => s.setPortTriage);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Existing machine services or local parsed state
@@ -362,13 +363,17 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                   <th className="py-2.5 px-3">Port</th>
                   <th className="py-2.5 px-3">State</th>
                   <th className="py-2.5 px-3">Service</th>
-                  <th className="py-2.5 px-4">Version & Intel</th>
+                  <th className="py-2.5 px-4">Version &amp; Intel</th>
+                  <th className="py-2.5 px-3 w-36">Triage</th>
+                  <th className="py-2.5 px-3">Note</th>
                   <th className="py-2.5 px-3">Known Exploits / CVE</th>
                   <th className="py-2.5 px-4 text-right">Suggested tools</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-subtle/40">
-                {activeServices.map((svc) => (
+                {activeServices.map((svc) => {
+                  const triage = machine.portTriage?.[String(svc.port)] || { status: 'untested' };
+                  return (
                   <tr key={`${svc.port}-${svc.protocol}`} className="hover:bg-surface-sunken/50 transition-colors">
                     <td className="py-2.5 px-3 font-mono tabular-nums font-semibold text-callout-info-fg whitespace-nowrap">
                       {svc.port}/{svc.protocol}
@@ -383,6 +388,33 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                     </td>
                     <td className="py-2.5 px-4 text-muted">
                       {svc.version || <span className="text-muted">Unknown</span>}
+                    </td>
+                    <td className="py-2 px-3">
+                      <select
+                        aria-label={`Triage status for port ${svc.port}`}
+                        value={triage.status || 'untested'}
+                        onChange={(e) =>
+                          setPortTriage(machine.id, svc.port, { status: e.target.value as any })
+                        }
+                        className="h-7 px-2 rounded-lg border border-subtle bg-surface-sunken text-xs font-medium text-primary focus:border-accent focus:outline-none cursor-pointer"
+                      >
+                        <option value="untested">Untested</option>
+                        <option value="checking">Checking</option>
+                        <option value="key_vector">Foothold</option>
+                        <option value="dead_end">Dead end</option>
+                      </select>
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="text"
+                        aria-label={`Triage note for port ${svc.port}`}
+                        value={triage.note || ''}
+                        onChange={(e) =>
+                          setPortTriage(machine.id, svc.port, { note: e.target.value })
+                        }
+                        placeholder="Port notes..."
+                        className="w-full min-w-[120px] h-7 px-2 rounded-lg border border-subtle bg-surface-sunken text-xs text-primary placeholder:text-muted/60 focus:border-accent focus:outline-none"
+                      />
                     </td>
                     <td className="py-2.5 px-3">
                       {svc.cveNotes ? (
@@ -419,7 +451,8 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                       )}
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
