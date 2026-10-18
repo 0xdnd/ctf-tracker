@@ -61,6 +61,8 @@ function build({ esc }) {
       'HTB CPTS exam format, the 10 day window, flags and passing requirement, the report, and a day-by-day pacing plan, with sources cited.',
     h1: 'HTB CPTS exam guide: format, flags and pacing',
     lead: 'The HTB CPTS exam gives you 10 days to compromise a simulated enterprise network and submit a commercial-grade report, and both the flags and the report count toward passing. This guide sets out what Hack The Box states, what only the community reports, and how to pace the 10 days.',
+    directAnswer: `<h2>How do you pass the HTB CPTS exam?</h2>
+<p>You pass the CPTS by collecting enough flags to meet a point requirement and by submitting a report that meets Hack The Box's quality requirements; an instructor checks both. You have 10 days in the lab. Hack The Box does not state the flag count on its public certification pages, and community reports of 14 flags with 12 required are a planning figure, not an official rule.</p>`,
     body,
     cta: {
       title: 'Rehearse a multi-day engagement.',

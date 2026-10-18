@@ -12,6 +12,7 @@ const BUILDERS = [
   require('./guides/report-template.cjs'),
   require('./guides/progress-tracker.cjs'),
   require('./guides/cpts-exam.cjs'),
+  require('./guides/htb-vs-tryhackme.cjs'),
 ];
 
 // Internal link targets guides may use in Related lists (label shown on the page).
@@ -31,6 +32,8 @@ const LINKS = {
   '/oscp-report-template/': 'OSCP report template with CVSS findings',
   '/htb-progress-tracker/': 'HTB and TryHackMe progress tracker',
   '/cpts-exam-guide/': 'HTB CPTS exam guide',
+  '/htb-vs-tryhackme/': 'HTB vs TryHackMe comparison',
+  '/crto-like-machines/': 'CRTO-like machines by difficulty',
 };
 
 const externalLink = (href, label) => `<a href="${esc(href)}" rel="noopener">${esc(label)}</a>`;
@@ -58,9 +61,11 @@ function buildGuidePages({ model, renderPage, site } = {}) {
     const url = ORIGIN + g.path;
     const body = [
       `<p class="lead">${g.lead}</p>`,
+      g.topCta ? ctaBox({ body: esc(g.topCta.body), href: g.topCta.href, label: g.topCta.label }) : '',
+      g.directAnswer || '',
       g.body,
       ctaBox({ title: esc(g.cta.title), body: esc(g.cta.body), href: g.cta.href, label: g.cta.label }),
-      faqSection(g.faq),
+      g.faq && g.faq.length ? faqSection(g.faq) : '',
       relatedSection(g.related),
       sourcesSection(g.sources),
       `<p class="note">Last reviewed: ${LAST_REVIEWED}. ${esc(g.affil)}</p>`,
@@ -88,11 +93,11 @@ function buildGuidePages({ model, renderPage, site } = {}) {
         publisher,
         image: ORIGIN + '/og.png',
       },
-      {
+      ...(g.faq && g.faq.length ? [{
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: g.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
-      },
+      }] : []),
     ];
     const html = renderPage({
       path: g.path,

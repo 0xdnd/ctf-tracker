@@ -89,6 +89,8 @@ function build({ esc }) {
       'OSCP point structure, which combinations reach 70, an hour-by-hour 24h plan with a 90 minute rabbit-hole cap, and the December 2026 scaled scoring change.',
     h1: 'OSCP exam scoring and a 24 hour time budget',
     lead: 'The OSCP exam is 100 points across one Active Directory set and three standalone machines, and until 30 November 2026 you need 70 to pass. From 1 December 2026 OffSec switches to scaled scoring, so the pass threshold will depend on your exam set; this page covers both, plus a 24 hour plan you can rehearse.',
+    directAnswer: `<h2>How many points do you need to pass the OSCP?</h2>
+<p>You need 70 out of 100 points to pass the OSCP through 30 November 2026. The exam is worth 100 points: 40 for the Active Directory set and 20 for each of the three standalone machines. From 1 December 2026 OffSec converts raw points to a scaled score specific to your exam set, so the threshold will vary by set and no new numeric cut score has been published.</p>`,
     body,
     cta: {
       title: 'Rehearse the clock before the real one.',

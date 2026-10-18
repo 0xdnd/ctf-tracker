@@ -186,11 +186,12 @@ const GUIDE_LABEL = {
   '/oscp-report-template/': 'OSCP report template',
   '/htb-progress-tracker/': 'HTB progress tracker',
   '/cpts-exam-guide/': 'HTB CPTS exam guide',
+  '/htb-vs-tryhackme/': 'HTB vs TryHackMe',
 };
 const guideChips = (paths) => paths.filter((p) => guideByPath.has(p)).map((p) => `<a href="${p}">${esc(GUIDE_LABEL[p] || guideByPath.get(p).title)}</a>`).join('');
 // Guides that belong on a certification hub.
 const CERT_GUIDES = {
-  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/'],
+  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-vs-tryhackme/'],
   CPTS: ['/cpts-exam-guide/'],
 };
 
@@ -395,8 +396,9 @@ for (const m of withPage) {
   parts.push(
     `<p class="lead">Browse ${model.catalogCounts.ctf} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
   );
+  parts.push(ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }));
   parts.push(
-    `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-progress-tracker/', '/tj-null-list/'])}</div>`
+    `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`
   );
   parts.push(`<div class="chips">${platforms.map((p) => `<a href="#${p.toLowerCase()}">${esc(PLATFORM_NAME[p] || p)} (${byPlatform[p].length})</a>`).join('')}</div>`);
   for (const p of platforms) {
@@ -431,8 +433,8 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: 'HTB & TryHackMe Machines List by OS and Difficulty | ZeroBox',
-    description: `Directory of ${model.catalogCounts.ctf} Hack The Box and TryHackMe machines grouped by platform, OS and difficulty, with attack paths for the solved ones.`,
+    title: fitTitle(`Hack The Box Machines List: ${model.catalogCounts.ctf.toLocaleString('en-US')} HTB & THM Boxes`, `Hack The Box Machines List: ${model.catalogCounts.ctf.toLocaleString('en-US')} Boxes`),
+    description: `Browse ${model.catalogCounts.ctf.toLocaleString('en-US')} Hack The Box and TryHackMe machines by platform, OS and difficulty, with attack paths for solved boxes and a free tracker.`,
     h1: 'Hack The Box and TryHackMe machines list and tracker',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
@@ -570,8 +572,8 @@ emit(
     '/revshells/',
     renderPage({
       path: '/revshells/',
-      title: 'Reverse Shell One-Liners: Bash, Python, PHP | ZeroBox',
-      description: `OSCP reverse shell cheatsheet: ${model.shellCount} one-liners for Bash, Netcat, Python, PHP, PowerShell, Java, Perl and more, plus bind shells and TTY upgrades.`,
+      title: 'Reverse Shell Cheat Sheet: PHP, Python, Bash, Netcat',
+      description: `Reverse shell cheat sheet with ${model.shellCount} copy-paste one-liners: PHP, Python, Bash, Netcat, PowerShell, Java and more, plus bind shells and TTY upgrades.`,
       h1: 'Reverse shell one-liners by language',
       body,
       crumbs: [['Home', '/'], ['Reverse shells', '/revshells/']],
@@ -711,6 +713,12 @@ const LEGACY_NOTES_HUB = '/cpts-notes/';
   for (const n of model.notes) writeRedirectStub(`${LEGACY_NOTES_HUB}${n.slug}/`, `${NOTES_HUB}${n.slug}/`);
   // The in-app notes route moved from /cpts-manual/ to /notes/ (the SPA also redirects /cpts-manual client-side).
   writeRedirectStub('/cpts-manual/', '/notes/');
+  // Hubs that no longer meet CERT_MIN / TECH_MIN would 404 once indexed; point them at /machines/ instead.
+  for (const cert of new Set([...Object.keys(certCountsAll), 'HTB-Starting-Point'])) { // Starting Point was indexed earlier, so always stub it
+    if (certHubs.some((h) => h.cert === cert)) continue;
+    writeRedirectStub(`/${cert === 'HTB-Starting-Point' ? slugify(cert) + '-machines' : slugify(cert) + '-like-machines'}/`, '/machines/');
+  }
+  for (const g of TECH.GROUPS) if (!techGroups.some((o) => o.slug === g.slug)) writeRedirectStub(`/techniques/${g.slug}/`, '/machines/');
 }
 
 // ===================== Certification + technique hubs =====================
@@ -815,6 +823,7 @@ for (const hub of certHubs) {
   const introWords = wc(intro);
   if (introWords < 150 || introWords > 250) console.warn(`cert intro ${cert}: ${introWords} words (target 150-250)`);
   const body = [
+    ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }),
     intro,
     guideNote(cert),
     `<h2>Jump to difficulty</h2>${jump}`,
@@ -826,7 +835,7 @@ for (const hub of certHubs) {
   ].join('\n');
   hubWords.cert.push([cert, wc(body)]);
   hub.url = p;
-  hub.title = fitTitle(`${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
+  hub.title = fitTitle(...(cert === 'OSCP' ? [`${label} (2026): ${machines.length} ${plats.replace('Hack The Box', 'HTB').replace('TryHackMe', 'THM')} Boxes, Easy to Hard`] : []), `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
   emit(
     'cert-hub',
     p,
