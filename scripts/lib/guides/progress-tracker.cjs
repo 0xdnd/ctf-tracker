@@ -2,7 +2,7 @@
 const PATH = '/htb-progress-tracker/';
 
 function build({ model, esc }) {
-  const total = model.machines.length;
+  const total = model.catalogCounts.ctf;
   const cmp = [
     ['Counts machines you own', 'Yes, on that platform only', 'Only what you type in', 'Yes, across both platforms and your own targets'],
     ['Covers other labs (Proving Grounds, Vulnhub, custom)', 'No', 'Yes, manually', 'Yes, add any target'],
@@ -31,6 +31,10 @@ function build({ model, esc }) {
     [
       'Can I track machines that are not in the catalogue?',
       'Yes. Add a custom target with its own name, platform, operating system and difficulty, which suits Proving Grounds boxes, CTF events and your own lab.',
+    ],
+    [
+      'Can ZeroBox import nmap scan output?',
+      'Yes. ZeroBox accepts .nmap, .gnmap, XML and plain text scan output and fills in the open ports so you do not retype them. Keep the original scan files too, because the import is a convenience, not a replacement for your evidence folder.',
     ],
   ];
 

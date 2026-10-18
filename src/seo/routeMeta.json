@@ -16,10 +16,10 @@
   },
   {
     "path": "/methodology/",
-    "title": "Pentest Methodology Checklist — Attack Lifecycle | ZeroBox",
-    "description": "An eight-phase pentest methodology checklist with copyable commands that fill in your target values. Track progress per machine, free in the browser.",
-    "h1": "Pentest methodology checklist",
-    "intro": "A phase-by-phase attack lifecycle playbook for CTFs and OSCP-style labs. Commands are templates that insert your target IP and attacker values, so you can copy them straight into a terminal.",
+    "title": "Interactive Pentest Checklist Per Box | ZeroBox",
+    "description": "Interactive pentest checklist you tick off per box: eight phases with copyable commands. Track your progress per machine, free in your browser.",
+    "h1": "Interactive pentest checklist",
+    "intro": "An interactive checklist you tick off for each box you work on. Pick a target, work through the phases, and your progress is saved per machine, so you can see what is done and what is left. Commands insert your target IP and attacker values.",
     "bullets": [
       "Eight-phase attack lifecycle with checklist items per phase",
       "Service branches so the checklist adapts to what you find on a target",
@@ -61,11 +61,11 @@
   {
     "path": "/exam/",
     "title": "OSCP Exam Simulator: 24h Timer, Scoring & Report | ZeroBox",
-    "description": "Practice OSCP, CPTS, CRTO, OSEP and CRTP exams with a countdown timer, scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
+    "description": "Practice OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE exams with a countdown timer, scoring, pacing, breaks and an exportable report. Free in the browser.",
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
     "bullets": [
-      "OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h) and CRTP (24h) exam tracks with their own durations",
+      "Seven exam tracks, each with its own duration: OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m)",
       "Countdown timer with pause, bio breaks and a burndown chart",
       "Point scoring against the pass threshold, with optional bonus points",
       "Flag format validation and evidence proof uploads",

@@ -5,7 +5,7 @@ import crypto from 'crypto';
 const { applyCsp, inlineScriptHashes, hashScript } = createRequire(import.meta.url)('../../../scripts/lib/csp.cjs');
 
 const CSP =
-  "default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com;";
+  "default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; img-src 'self' data: blob:; connect-src 'self';";
 const meta = (csp = CSP) => `<meta http-equiv="Content-Security-Policy" content="${csp}" />`;
 const page = (body: string, csp?: string) => `<html><head>${meta(csp)}${body}</head><body></body></html>`;
 const sha = (s: string) => `'sha256-${crypto.createHash('sha256').update(s, 'utf8').digest('base64')}'`;
@@ -46,7 +46,7 @@ describe('csp build step', () => {
       "manifest-src 'self'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
-      "connect-src 'self' https://api.anthropic.com",
+      "connect-src 'self'",
     ]) {
       expect(out).toContain(d);
     }
@@ -68,10 +68,10 @@ describe('csp build step', () => {
   });
 
   it('drops the dev-only ws: and wss: connect-src sources from built pages', () => {
-    const dev = "default-src 'none'; script-src 'self'; connect-src 'self' blob: ws: wss: https://api.anthropic.com; media-src 'self';";
+    const dev = "default-src 'none'; script-src 'self'; connect-src 'self' blob: ws: wss:; media-src 'self';";
     const out = applyCsp(page('<script src="/a.js"></script>', dev));
     expect(out.changed).toBe(true);
-    expect(out.html).toContain("connect-src 'self' blob: https://api.anthropic.com;");
+    expect(out.html).toContain("connect-src 'self' blob:;");
     expect(out.html).not.toMatch(/\bwss?:/);
     expect(out.html).toContain("media-src 'self'");
     expect(applyCsp(out.html).changed).toBe(false);

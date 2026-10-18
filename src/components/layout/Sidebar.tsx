@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { stripTrailingSlash } from '../../utils/pathUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -155,8 +156,8 @@ export const Sidebar: React.FC = () => {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            location.pathname === item.path ||
-            (item.id === 'tracker' && (location.pathname === '/' || location.pathname.startsWith('/target'))) ||
+            stripTrailingSlash(location.pathname) === item.path ||
+            (item.id === 'tracker' && (stripTrailingSlash(location.pathname) === '/' || location.pathname.startsWith('/target'))) ||
             (item.id === 'cheatsheet' && (location.pathname.startsWith('/cheatsheet') || location.pathname.startsWith('/field-manual') || location.pathname.startsWith('/notes') || location.pathname.startsWith('/cpts'))) ||
             (item.id === 'vault' && (location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')));
           return (

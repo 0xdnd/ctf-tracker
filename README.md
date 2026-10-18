@@ -57,7 +57,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ## 🚀 Core Modules
 
 ### 1. 🛡️ Lab & Machine Tracker
-- **1005-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, plus custom targets, Pro Labs and exams.
+- **1005-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, plus custom targets and Pro Lab presets. The pre-loaded catalog is 1005 CTF machines, plus 85 guided labs.
 - **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
 - **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and `CuratedPathways` for structured cert journeys (OSCP, CPTS, CRTO).
@@ -82,7 +82,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 
 ### 5. 📊 Analytics & ⏱️ Exam Simulator
 - **Skill radar & readiness analytics:** Real-time telemetry (`readinessAnalytics`) across Web, AD, Linux/Windows PrivEsc, Pivoting, and a **90-day activity heatmap**.
-- **24h exam simulator:** OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a live burn-down chart.
+- **24h exam simulator:** OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE-style rulesets, scoring, breaks, evidence proofs, and a live burn-down chart.
 
 ---
 
@@ -170,7 +170,7 @@ Everything is stored locally in your browser (LocalStorage + IndexedDB). There i
 556 retired Hack The Box machines and Starting Point labs, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 514 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
 
 **Can I use it to prepare for OSCP or CPTS?**
-Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
+Yes. It includes a 24-hour exam simulator with OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
 
 ---
 
@@ -199,7 +199,7 @@ ZeroBox is engineered to strictly uphold the Terms of Service, Acceptable Use Po
 ### 1. 🛡️ Hack The Box Acceptable Use Policy (§8.2 & §8.3)
 - **Zero Active Content Disclosure:** In strict accordance with HTB AUP §8.2 (*"Sharing solutions, write-ups, flags, or hints for active content is strictly prohibited"*), active machines appear only as metadata-only entries: name, OS, difficulty, release date (recorded in `src/data/activeMachines.json`) and a link to the official machine page. Every hint, solution, flag, tag and note is stripped from them, including anything typed in by the user. The active list is maintained by hand and may lag behind Hack The Box.
 - **Retired Content:** The 556 retired HTB machines and Starting Point educational labs stay in the catalog; 141 of them (mostly retired since 2024) are listed by name, OS, difficulty and link only. HTB AUP §8.3 explicitly permits community walkthroughs, educational write-ups, and streaming for content that has been retired.
-- **Pro Labs & Exams Not Bundled:** No Pro Lab, Fortress or certification exam names or content ship with ZeroBox. Users can only add them as personal targets that they name and fill in themselves.
+- **Pro Lab Presets, Metadata Only:** ZeroBox ships 10 Pro Lab presets (`src/data/proLabsData.ts`, offered in the New Target dialog) that carry only public listing metadata: lab name, host and flag counts, difficulty and the official HTB link. No Pro Lab walkthroughs, flags, hints or internal host details ship. Fortress and certification exam names and content are not bundled; you can add them only as personal targets that you name and fill in yourself.
 - **Anti-Scraping / No-Crawling:** ZeroBox contains zero scrapers, bots, or automated crawlers targeting HTB servers (HTB UA §6.1).
 
 ### 2. 🎯 TryHackMe Terms of Use (§3 & §5)

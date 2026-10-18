@@ -35,7 +35,7 @@ fs.writeFileSync(
 
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
-const { CSS_HREF, THEME_SRC } = require('./lib/layout.cjs');
+const { CSS_HREF, THEME_SRC, webPageGraphLd, personLd, PERSON_ID } = require('./lib/layout.cjs');
 // The two hero images (window + pacing card) are part of the first paint, so every width of them is precached too.
 let heroShots = [];
 try {
@@ -98,7 +98,7 @@ function exploreBlock(route) {
     ['/pentest-notes/', 'Pentest methodology notes'],
   ];
   let extra = '';
-  if (route.path === '/methodology/') extra = `<h2 style="font-size:20px">Methodology phases</h2>${linkList(model.phases.map((p) => [`/methodology/${p.slug}/`, p.title]))}`;
+  if (route.path === '/methodology/') extra = `<p style="color:#a1a1aa">Want to read the phases without the app? See the <a href="/methodology-guide/" style="color:#0ea5e9">pentest methodology guide</a>.</p><h2 style="font-size:20px">Methodology phases</h2>${linkList(model.phases.map((p) => [`/methodology/${p.slug}/`, p.title]))}`;
   if (route.path === '/cheatsheets/') extra = `<h2 style="font-size:20px">Cheatsheet topics</h2>${linkList(model.topics.map((t) => [`/cheatsheets/${t.slug}/`, `${t.name} cheatsheet`]))}`;
   return `<h2 style="font-size:20px;margin-top:28px">Guides and references</h2>${linkList(hubs)}${extra}`;
 }
@@ -106,15 +106,14 @@ function exploreBlock(route) {
 function staticBlock(route) {
   const links = [{ path: '/', label: 'Home' }, ...routes.map((r) => ({ path: r.path, label: NAV_LABEL[r.path] || r.h1 }))]
     .filter((l) => l.path !== route.path)
-    .map((l) => `<a href="${esc(l.path)}" style="color:#0ea5e9;margin-right:14px">${esc(l.label)}</a>`)
-    .join('');
+    .map((l) => [l.path, l.label]);
   return (
     `<div data-prerender style="max-width:760px;margin:0 auto;padding:32px 20px;background:#09090b;color:#f4f4f5;` +
     `font:16px/1.6 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh">` +
     `<h1 style="font-size:30px;line-height:1.2;margin:0 0 12px">${esc(route.h1)}</h1>` +
     `<p style="color:#a1a1aa">${esc(route.intro)}</p>` +
     `<ul style="color:#f4f4f5;padding-left:20px">${route.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` +
-    `<nav aria-label="ZeroBox sections" style="margin-top:24px;line-height:2">${links}</nav>` +
+    `<nav aria-label="ZeroBox sections" style="margin-top:24px">${linkList(links)}</nav>` +
     exploreBlock(route) +
     `</div>`
   );
@@ -137,6 +136,10 @@ for (const route of routes) {
   // Keep the boot splash (from index.html) after the SEO block: hidden for no-JS users, shown by CSS under .js.
   html = setTag(html, ROOT_RE, `<div id="root">${staticBlock(route)}${splashHtml}</div>`, '<div id="root"> with boot splash');
 
+  // Route-specific structured data: WebPage (part of the WebSite) + BreadcrumbList. The shell's own block stays untouched.
+  const routeLd = webPageGraphLd({ path: route.path, name: route.title, description: route.description, crumbs: [['Home', '/'], [NAV_LABEL[route.path] || route.h1, route.path]] });
+  html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(routeLd)}</script>\n</head>`, '</head>');
+
   const outDir = path.join(distDir, route.path.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf8');
@@ -147,13 +150,16 @@ for (const route of routes) {
 // One description for <meta name="description">, og:description and twitter:description (kept at 155 chars or fewer).
 const META_DESC = 'Free offline CTF tracker for Hack The Box and TryHackMe, with an OSCP exam simulator, cheatsheets and a report template. No account needed.';
 if (META_DESC.length > 155) throw new Error(`prerender: landing description is ${META_DESC.length} chars (max 155)`);
+const nf = new Intl.NumberFormat('en-US');
+const { ctf: CTF_MACHINES, guided: GUIDED_LABS } = model.catalogCounts;
+const EXAM_TRACKS = model.examTracks;
 const FAQ = [
-  ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under a non-commercial license.'],
+  ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under the ZeroBox Source-Available Non-Commercial License (ZNSL 1.0).'],
   ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, zero telemetry, and 100% of your data stays on your device.'],
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
   ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
-  ['Which platforms and machines are supported?', 'ZeroBox ships with a pre-loaded catalog of 1,000+ targets (1,005 pure CTF challenge machines across Hack The Box and TryHackMe, plus 85 guided walkthrough labs, and 10 enterprise Pro Lab presets including Dante, Zephyr, and Offshore). You can also add custom targets for VulnHub, Proving Grounds, or any live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.'],
-  ['Which certification exams can I simulate?', 'The exam simulator includes timed practice for OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h) and CRTP (24h) with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.'],
+  ['Which platforms and machines are supported?', `ZeroBox ships with a pre-loaded catalog of ${nf.format(CTF_MACHINES)} CTF machines across Hack The Box and TryHackMe, plus ${GUIDED_LABS} guided labs. It also has 10 Pro Lab presets, such as Dante, Zephyr and Offshore, that fill in only the public lab name, difficulty and official link when you add a Pro Lab as your own target. You can also add custom targets for VulnHub, Proving Grounds, or any live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.`],
+  ['Which certification exams can I simulate?', `The exam simulator includes timed practice for ${EXAM_TRACKS.length} tracks: OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m), with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.`],
   ['Does ZeroBox comply with Hack The Box rules for active machines and Pro Labs?', 'Yes. ZeroBox strictly enforces Hack The Box Acceptable Use Policy (AUP §8.2). Active seasonal machines and enterprise Pro Labs are limited to public listing metadata (name, scope/host count, difficulty, and official link). Walkthroughs, attack vectors, intel hints, flags, and writeups are strictly excluded. ZeroBox operates entirely offline in your browser and transmits no network telemetry.'],
   ['Is there a desktop app?', 'Yes. Desktop installers are published on GitHub Releases, and you can also build the Tauri app from source using the instructions in the GitHub README.'],
 ];
@@ -163,7 +169,7 @@ const CARD_DESC = {
   '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
   '/cheatsheets/': 'Interactive pentest cheatsheets with dynamic LHOST, LPORT and IP substitution.',
   '/notes/': 'Notes app for your own Obsidian vault, with wikilinks and a private local vault.',
-  '/exam/': 'OSCP exam simulator with CPTS, CRTO, OSEP and CRTP tracks and scoring.',
+  '/exam/': 'OSCP exam simulator with CPTS, CRTO, OSEP, CRTP, PNPT and OSWE tracks and scoring.',
   '/writeup/': 'CTF writeup and report editor with templates, live preview and export.',
   '/analytics/': 'Skill radar, activity heatmap and benchmarks.',
   '/vault/': 'Credentials, flags and hashes from every target.',
@@ -184,18 +190,20 @@ const faqLd = {
   mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
-const { organizationLd, websiteLd } = require('./lib/layout.cjs');
+const { organizationLd, websiteLd, REPO: REPO_URL } = require('./lib/layout.cjs');
 const webAppLd = {
   '@context': 'https://schema.org',
   '@graph': [
     organizationLd(),
     websiteLd(),
+    personLd(),
     {
       '@type': 'WebApplication',
       '@id': ORIGIN + '/#webapp',
       name: 'ZeroBox',
       alternateName: ['ZeroBox CTF Tracker', 'CTF Tracker'],
       url: ORIGIN + '/',
+      license: REPO_URL + '/blob/main/LICENSE',
       applicationCategory: 'SecurityApplication',
       operatingSystem: 'Web browser',
       browserRequirements: 'Requires JavaScript and modern browser',
@@ -204,7 +212,7 @@ const webAppLd = {
       keywords: 'CTF tracker, HTB tracker, Hack The Box tracker, TryHackMe tracker, OSCP tracker, OSCP exam simulator, CTF progress tracker, pentest notes, CPTS',
       featureList: [
         'Kanban, table and grid CTF tracker for Hack The Box and TryHackMe machines',
-        'OSCP, CPTS, CRTO, OSEP and CRTP exam simulator with scoring and pacing',
+        'OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE exam simulator with scoring and pacing',
         'Attack graph of hosts, services and credentials',
         'Multi-host nmap XML import',
         'Evidence vault for credentials, hashes and flags',
@@ -215,7 +223,7 @@ const webAppLd = {
         'Works offline, with data stored in your browser',
       ],
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      author: { '@type': 'Person', name: 'Daniel Dayan', url: 'https://github.com/0xdnd' },
+      author: { '@id': PERSON_ID },
     },
     {
       '@type': 'ItemList',
@@ -313,11 +321,9 @@ const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO, LINKEDIN } = requir
 // The repo publishes releases (checked with gh release list), so the desktop CTA goes straight to the latest one.
 const DESKTOP_HREF = REPO + '/releases/latest';
 
-const EXAM_TRACKS = ['OSCP', 'CPTS', 'CRTO', 'OSEP', 'CRTP'];
-const nf = new Intl.NumberFormat('en-US');
 const proofItem = (value, label) => `          <li><span class="num">${esc(value)}</span><span class="lbl">${esc(label)}</span></li>`;
 const proofStrip = [
-  proofItem('1,000+', 'machines catalogued'),
+  proofItem(nf.format(CTF_MACHINES), 'machines catalogued'),
   proofItem(nf.format(model.shellCount), 'reverse shells'),
   proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
   `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source available on GitHub${ICON.ext}</a></li>`,
@@ -325,7 +331,7 @@ const proofStrip = [
 
 // [href, title, description, count]; count is optional (mono figure after the title, with its unit).
 const GUIDES = [
-  ['/machines/', 'Hack The Box and TryHackMe machine list', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(model.machines.length)} boxes`],
+  ['/machines/', 'Hack The Box and TryHackMe machine list', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(CTF_MACHINES)} boxes`],
   ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', `${nf.format(model.shellCount)} shells`],
   ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', `${model.phases.length} phases`],
   ['/cheatsheet-library/', 'OSCP and CTF cheatsheets', 'Recon, web, privesc, Active Directory, pivoting.', `${model.topics.length} topics`],

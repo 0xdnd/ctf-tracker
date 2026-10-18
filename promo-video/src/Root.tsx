@@ -31,7 +31,7 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
       />
 
-      {/* Google Nano Banana AI Edition: 4-Act Cinematic Cyber Showcase (1080p Full HD) */}
+      {/* Google Nano Banana Edition: 4-Act Cinematic Cyber Showcase (1080p Full HD) */}
       <Composition
         id="ZeroBoxNanoBananaShowcase"
         component={ZeroBoxNanoBananaShowcase}

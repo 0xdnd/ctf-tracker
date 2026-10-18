@@ -12,6 +12,11 @@ import { imageBackupProvider } from './utils/backupImageProvider';
 
 registerBackupImageProvider(imageBackupProvider);
 
+// One-time cleanup of keys left behind by a removed feature.
+for (const key of ['zerobox_anthropic_api_key', 'zerobox_anthropic_remember_key', 'zerobox_anthropic_model', 'zerobox_ai_consent_redacted']) {
+  try { localStorage.removeItem(key); sessionStorage.removeItem(key); } catch { /* storage unavailable */ }
+}
+
 // Register offline Service Worker only in production builds; clear any stale SW in DEV mode
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   if (import.meta.env.DEV) {

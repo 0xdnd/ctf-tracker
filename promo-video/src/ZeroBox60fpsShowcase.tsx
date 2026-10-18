@@ -29,7 +29,7 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
   // Act 1: 0.0s - 5.0s  (0 - 300f)   - Macro Reveal & Unified Header (OLED Black & Blue)
   // Act 2: 5.0s - 11.0s (300 - 660f)  - Theme Switcher Confirms OLED + Target Matrix & CPTS Filter
   // Act 3: 11.0s - 18.0s (660 - 1080f) - Tactical Kanban & Root Pwn (Electric Blue & Emerald Solve)
-  // Act 4: 18.0s - 24.0s (1080 - 1440f) - RevShell Studio & AI Scan Intel
+  // Act 4: 18.0s - 24.0s (1080 - 1440f) - RevShell Studio
   // Act 5: 24.0s - 29.0s (1440 - 1740f) - Attack Graph & Evidence Vault
   // Act 6: 29.0s - 35.0s (1740 - 2100f) - 3D Pullback Grand Finale
 
@@ -113,7 +113,7 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
     targetFocusX = interpolate(kanbanZoom, [0, 1], [0.44, 0.51]);
     targetFocusY = interpolate(kanbanZoom, [0, 1], [0.26, 0.44]);
   } else if (time < 24.0) {
-    // Act 4: RevShell Studio & AI Scan Intel
+    // Act 4: RevShell Studio
     const shellZoom = interpolate(time, [18.0, 20.5, 24.0], [0, 0.55, 1], {
       extrapolateRight: "clamp",
       easing: Easing.bezier(0.16, 1, 0.3, 1),
@@ -152,13 +152,11 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
   const timerSeconds = 6138 + (isTimerRunning ? Math.floor(time - 3.6) : 0);
 
   // 2. Track & Search Filter
-  // Clicks CPTS at 7.4s; switches to AISCAN at 21.0s; ATTACKGRAPH at 24.0s
-  let selectedTrack: "ALL" | "OSCP" | "CPTS" | "AD" | "REVSHELL" | "EXAM" | "AISCAN" | "ATTACKGRAPH" = "ALL";
+  // Clicks CPTS at 7.4s; ATTACKGRAPH at 24.0s
+  let selectedTrack: "ALL" | "OSCP" | "CPTS" | "AD" | "REVSHELL" | "EXAM" | "ATTACKGRAPH" = "ALL";
   if (time >= 24.0 && time < 29.0) {
     selectedTrack = "ATTACKGRAPH";
-  } else if (time >= 21.0 && time < 24.0) {
-    selectedTrack = "AISCAN";
-  } else if (time >= 18.0 && time < 21.0) {
+  } else if (time >= 18.0 && time < 24.0) {
     selectedTrack = "REVSHELL";
   } else if (time >= 7.4) {
     selectedTrack = "CPTS";
@@ -186,7 +184,7 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // 4. Dynamic RevShell Studio & AI Scan (Act 4: 18.0s to 24.0s)
+  // 4. Dynamic RevShell Studio (Act 4: 18.0s to 24.0s)
   let revShellHost = "10.10.14.88";
   let revShellPort = "9001";
   if (time < 18.5) {
@@ -200,9 +198,6 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
 
   // Copy button click at 20.2s -> toast stays until 23.5s
   const isPayloadCopied = time >= 20.2 && time < 23.5;
-
-  // AI Scan Intel toggled during second half of Act 4 (21.0s to 24.0s)
-  const showAiScanIntel = time >= 21.0 && time < 24.0;
 
   // 5. Attack Graph & Evidence Vault (Act 5: 24.0s to 29.0s)
   const showAttackGraph = time >= 24.0 && time < 29.0;
@@ -323,7 +318,7 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
       if (time < 16.0) cursorLabel = "PWNED ✓";
     }
   } else if (time < 24.0) {
-    // Act 4: RevShell Copy Click at 20.2s, then Click AI Scan tab at 21.0s
+    // Act 4: RevShell Copy Click at 20.2s
     if (time < 20.5) {
       const pos = humanMove(time, 18.0, 20.2, 980, 680, 270, 310, -20);
       cursorX = pos.x;
@@ -334,14 +329,9 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
         clickProgress = interpolate(time, [20.2, 20.45], [0, 1]);
       }
     } else {
-      const pos = humanMove(time, 20.5, 21.2, 680, 520, 310, 138, -25);
+      const pos = humanMove(time, 20.5, 24.0, 680, 700, 310, 320, -10);
       cursorX = pos.x;
       cursorY = pos.y;
-      if (time >= 21.0 && time <= 21.3) {
-        isClicking = true;
-        cursorLabel = "AI Scan Intel";
-        clickProgress = interpolate(time, [21.0, 21.3], [0, 1]);
-      }
     }
   } else if (time < 29.0) {
     // Act 5: Inspect Attack Graph node DC01
@@ -552,7 +542,6 @@ export const ZeroBox60fpsShowcase: React.FC = () => {
               examMinsLeft={examMinsLeft}
               radarExpansion={radarExpansion}
               isCtaClicked={isCtaClicked}
-              showAiScanIntel={showAiScanIntel}
               showAttackGraph={showAttackGraph}
               themePreset={themePreset}
               isThemeDropdownOpen={isThemeDropdownOpen}

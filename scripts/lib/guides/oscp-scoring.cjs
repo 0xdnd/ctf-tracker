@@ -52,6 +52,10 @@ function build({ esc }) {
       'Does the ZeroBox simulator use the new scaled scoring?',
       'No. The simulator uses a fixed 70 point threshold, because OffSec has not published per-set conversions. Use it to practise pacing and evidence handling, not to predict your result.',
     ],
+    [
+      'How many points is each part of the OSCP exam worth?',
+      'The Active Directory set is worth 40 points and each of the three standalone machines is worth 20 points, for 100 in total.',
+    ],
   ];
 
   const body = `<h2>How OSCP points work</h2>

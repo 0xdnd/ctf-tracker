@@ -39,7 +39,7 @@ export const ZeroBoxPromoVertical: React.FC = () => {
     actSubtitle = "Choreographed Drag-and-Drop Root Pwned";
   } else if (time >= 15.5 && time < 21.5) {
     actNumber = "04";
-    actTitle = "DYNAMIC REVSHELL & AI RECON";
+    actTitle = "DYNAMIC REVSHELL STUDIO";
     actSubtitle = "Local-First Payloads & MITRE ATT&CK Triage";
   } else if (time >= 21.5 && time < 29.0) {
     actNumber = "05";
@@ -222,7 +222,7 @@ export const ZeroBoxPromoVertical: React.FC = () => {
             { label: "1005 Machines", icon: "🎯" },
             { label: "OSCP & CPTS", icon: "🎓" },
             { label: "Dynamic RevShells", icon: "⚡" },
-            { label: "Zero-Egress AI", icon: "🧠" },
+            { label: "Exam simulator", icon: "🧠" },
           ].map((item, idx) => (
             <div
               key={idx}
@@ -472,7 +472,7 @@ export const ZeroBoxPromoVertical: React.FC = () => {
           {[
             { title: "⚡ Dynamic RevShell Studio", desc: "12+ languages with instant copy" },
             { title: "🎯 OSCP & CPTS Pathways", desc: "Curated syllabi with active tracking" },
-            { title: "🧠 Zero-Egress AI Recon", desc: "100% offline Nmap CVE triaging" },
+            { title: "🧠 Exam Simulator", desc: "7 tracks with a live 24h timer" },
             { title: "🗺️ Active Directory Graph", desc: "Sugiyama layout with pivot tunneling" },
           ].map((item, idx) => (
             <div

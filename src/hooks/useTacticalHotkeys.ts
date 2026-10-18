@@ -7,6 +7,7 @@ import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../utils/helpers';
 import { ViewMode } from '../types';
+import { stripTrailingSlash } from '../utils/pathUtils';
 
 export function useTacticalHotkeys() {
   const navigate = useNavigate();
@@ -240,7 +241,8 @@ export function useTacticalHotkeys() {
       // 2. View Mode Switchers: '1' -> Kanban, '2' -> Grid, '3' -> Table, '4' -> Graph
       if (['1', '2', '3', '4'].includes(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
-        if (location.pathname !== '/tracker' && location.pathname !== '/') {
+        const currentPath = stripTrailingSlash(location.pathname);
+        if (currentPath !== '/tracker' && currentPath !== '/') {
           navigate('/tracker');
         }
         const viewMap: Record<string, ViewMode> = {

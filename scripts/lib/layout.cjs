@@ -61,6 +61,7 @@ const FOOTER_LINKS = {
     ['/revshells/', 'Reverse shells'],
   ],
   Creator: [
+    ['/about/', 'About'],
     [GITHUB_PROFILE, 'Profile on GitHub'],
     [LINKEDIN, 'LinkedIn'],
   ],
@@ -101,12 +102,12 @@ function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', 
 /** current: path of the page being rendered; exact match gets aria-current="page", a parent section gets "true". */
 function navLinks(current) {
   const home = `<a href="/"${current === '/' ? ' aria-current="page"' : ''}>Home</a>`;
-  return home + NAV.map(([p, l]) => {
+  return '<ul>' + [home].concat(NAV.map(([p, l]) => {
     const exact = current === p;
     const section = !exact && typeof current === 'string' && current.startsWith(p);
     const aria = exact ? ' aria-current="page"' : section ? ' aria-current="true"' : '';
     return `<a href="${p}"${aria}>${esc(l)}</a>`;
-  }).join('');
+  })).map((a) => `<li>${a}</li>`).join('') + '</ul>';
 }
 
 const THEME_ICONS =
@@ -221,18 +222,53 @@ const organizationLd = () => ({
   '@type': 'Organization',
   '@id': ORG_ID,
   name: 'ZeroBox',
+  alternateName: ['ZeroBox CTF Tracker', 'CTF Tracker'],
   url: ORIGIN + '/',
   logo: ORIGIN + '/icon-512.png',
   sameAs: [REPO, GITHUB_PROFILE, LINKEDIN],
 });
 const websiteLd = () => ({
   '@type': 'WebSite',
-  '@id': ORIGIN + '/#website',
+  '@id': WEBSITE_ID,
   name: 'ZeroBox',
+  alternateName: ['ZeroBox CTF Tracker', 'CTF Tracker'],
   url: ORIGIN + '/',
+  sameAs: [REPO],
   inLanguage: 'en',
   publisher: { '@id': ORG_ID },
 });
+const WEBSITE_ID = ORIGIN + '/#website';
+const ABOUT_PATH = '/about/';
+const PERSON_ID = ORIGIN + ABOUT_PATH + '#person';
+/** Site author. Stable @id and url (the About page) so every page that credits the author can reference it by @id. */
+const personLd = () => ({
+  '@type': 'Person',
+  '@id': PERSON_ID,
+  name: 'Daniel Dayan',
+  url: ORIGIN + ABOUT_PATH,
+  sameAs: [GITHUB_PROFILE, LINKEDIN],
+});
+/** Single JSON-LD document for an app landing page: WebPage (part of the WebSite) plus its BreadcrumbList. */
+function webPageGraphLd({ path: p, name, description, crumbs }) {
+  const url = ORIGIN + p;
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      websiteLd(),
+      {
+        '@type': 'WebPage',
+        '@id': url + '#webpage',
+        url,
+        name,
+        description,
+        inLanguage: 'en',
+        isPartOf: { '@id': WEBSITE_ID },
+        breadcrumb: { '@id': url + '#breadcrumb' },
+      },
+      { '@type': 'BreadcrumbList', '@id': url + '#breadcrumb', itemListElement: crumbs.map(([n, cp], i) => ({ '@type': 'ListItem', position: i + 1, name: n, item: ORIGIN + cp })) },
+    ],
+  };
+}
 /** TechArticle with dateModified; a falsy dateModified is omitted. */
 const techArticleLd = ({ headline, url, description, dateModified, about }) => ({
   '@context': 'https://schema.org',
@@ -378,4 +414,4 @@ ${siteFooter({ analyticsNote: '' })}
 `;
 }
 
-module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
+module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };

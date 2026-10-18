@@ -55,6 +55,14 @@ function build({ model, esc }) {
       'How is this page different from the OSCP-like machines page?',
       'The OSCP-like machines page groups every machine ZeroBox tags OSCP by difficulty. This page starts from the TJ Null list itself, shows which of its Hack The Box machines the catalogue contains, and suggests an order.',
     ],
+    [
+      'How many Hack The Box machines from the TJ Null list are in the ZeroBox catalogue?',
+      `${onList.length} Hack The Box machines from the list are in the catalogue, and ${taggedOnList} of them carry the ZeroBox OSCP tag. The last column of the table shows the tag, not whether a box is on the list.`,
+    ],
+    [
+      'In what order should I work through the boxes?',
+      'Start with easy Linux, then easy Windows, then medium Windows and domain boxes to build Active Directory habits. Leave the hard boxes until the first three feel routine.',
+    ],
   ];
 
   const body = `<h2>What the TJ Null list is</h2>

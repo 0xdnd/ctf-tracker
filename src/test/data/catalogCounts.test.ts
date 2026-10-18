@@ -36,19 +36,19 @@ describe('hard-coded catalog counts', () => {
     console.log('[catalog counts]', JSON.stringify({ TOTAL, RETIRED_HTB, ACTIVE, THM, METADATA_ONLY_RETIRED }));
   });
 
-  it.each(UI_FILES)('every total-machine literal in %s equals the catalog total', (file) => {
+  it.each(UI_FILES)('every headline machine literal in %s equals the CTF count (never the total)', (file) => {
     const totals = all(
       read(file),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
+      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
     );
     expect(totals.length, file).toBeGreaterThan(0);
-    for (const n of totals) expect(n, file).toBe(TOTAL);
+    for (const n of totals) expect(n, file).toBe(PURE_CTF_TOTAL);
   });
 
   it('every pure CTF challenge literal in README.md equals 1005', () => {
     const totals = all(
       read('README.md'),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
+      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
     );
     expect(totals.length).toBeGreaterThan(0);
     for (const n of totals) expect(n).toBe(PURE_CTF_TOTAL);
@@ -61,5 +61,28 @@ describe('hard-coded catalog counts', () => {
     expect(all(readme, /\b(\d+) active (?:HTB|Hack The Box) machines/g)).toEqual([ACTIVE]);
     expect(all(readme, /\b(\d+) (?:THM CTF rooms|TryHackMe CTF rooms)/g)).toEqual([THM]);
     expect(all(readme, /; (\d+) of them \(mostly retired since 2024\)/g)).toEqual([METADATA_ONLY_RETIRED]);
+  });
+});
+
+describe('public/llms.txt catalog counts', () => {
+  it('leads with the CTF count and mentions guided labs separately', () => {
+    const llms = read('public/llms.txt');
+    const nf = new Intl.NumberFormat('en-US');
+    const m = llms.match(/Tracks ([\d,]+) CTF machines \(plus ([\d,]+) guided labs\)/);
+    expect(m, 'llms.txt catalog line').not.toBeNull();
+    expect(m![1]).toBe(nf.format(PURE_CTF_TOTAL));
+    expect(m![2]).toBe(nf.format(TOTAL - PURE_CTF_TOTAL));
+    expect(llms).not.toContain(nf.format(TOTAL));
+  });
+});
+
+describe('landing page copy uses computed values', () => {
+  it('prerender.cjs has no hardcoded machine count or track list', () => {
+    const src = read('scripts/prerender.cjs');
+    expect(src).not.toContain('1,000+');
+    expect(src).toContain('const EXAM_TRACKS = model.examTracks;');
+    expect(src).not.toContain('EXAM_TRACKS = [');
+    expect(src).toContain("proofItem(nf.format(CTF_MACHINES), 'machines catalogued')");
+    expect(src).not.toContain('TOTAL_MACHINES');
   });
 });

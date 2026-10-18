@@ -111,7 +111,7 @@ content = content.slice(0, act2GridStart) + act2Replacement + content.slice(act2
 
 // 2. Act 3 Replacement: Replace Synthetic Kanban with authentic hero-app-1575.webp
 const act3Start = content.indexOf("{/* ACT 3: Dense 5-Stage Kanban Board */}");
-const act3End = content.indexOf("{/* ACT 4: Dense Split Workstation (RevShell + AI Recon) */}", act3Start);
+const act3End = content.indexOf("{/* ACT 4: Dense Split Workstation (RevShell Studio) */}", act3Start);
 
 if (act3Start === -1 || act3End === -1) {
   console.error("Act 3 markers not found!");

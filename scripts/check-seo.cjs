@@ -11,6 +11,7 @@
 //                  every URL has a dist file whose canonical equals the URL, every indexable page (has a title, no noindex)
 //                  is listed, 404.html / app-shell.html are not, and every <image:loc> resolves to a dist file
 //   404          : dist/404.html is noindex, has no canonical and returns the designed page
+//   depth        : every indexable dist/machines/<slug>/ page has at least MIN_WORDS (content-model) words of main content
 // Usage: node scripts/check-seo.cjs [--dist <dir>] [--verbose]
 const fs = require('fs');
 const path = require('path');
@@ -42,6 +43,16 @@ const attr = (html, re) => {
 };
 
 const ORIGIN = 'https://ctftracker.com';
+const { MIN_WORDS } = require('./lib/content-model.cjs').getModel();
+// Visible words of the <main> element (whole body when absent), without head, script, style, nav, header and footer.
+const mainWords = (html) => {
+  const m = /<main\b[^>]*>([\s\S]*?)<\/main>/i.exec(html);
+  const text = (m ? m[1] : html)
+    .replace(/<head\b[\s\S]*?<\/head>/gi, ' ')
+    .replace(/<(script|style|nav|footer|header)\b[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ');
+  return decode(text).split(/\s+/).filter(Boolean).length;
+};
 const offenders = [];
 const pageInfo = []; // { name, url, file, canonical, noindex, hasTitle }
 const titles = new Map();
@@ -84,6 +95,11 @@ for (const file of walk(DIST)) {
   ]) {
     const v = attr(html, re);
     if (v !== null && want !== null && v !== want) bad(`${label} differs from page ${label.endsWith('title') ? 'title' : 'description'}`);
+  }
+
+  if (!noindex && /^\/machines\/[^/]+\/$/.test(name)) {
+    const words = mainWords(html);
+    if (words < MIN_WORDS) bad(`main content has ${words} words, below the ${MIN_WORDS} minimum`);
   }
 
   if (!noindex) {

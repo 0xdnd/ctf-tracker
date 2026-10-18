@@ -438,7 +438,7 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
               <p className="text-[11px] text-tertiary">
                 {userSolvesReset
-                  ? 'Tracking your own progress from 0%. All 1090 targets ready.'
+                  ? 'Tracking your own progress from 0%. All 1005 targets ready.'
                   : 'Daniel Dayan\'s solved machines are loaded as reference walkthroughs.'}
               </p>
             </div>
@@ -872,7 +872,7 @@ export const OperatorProfileModal: React.FC = () => {
                       <span className="text-[11px] px-1 rounded bg-surface-card text-secondary border border-subtle">Recommended</span>
                     </div>
                     <p className="text-[11px] text-tertiary mt-1 leading-snug">
-                      All 1090 targets loaded with 0 solves and empty flags and notes.
+                      All 1005 targets loaded with 0 solves and empty flags and notes.
                     </p>
                   </div>
 

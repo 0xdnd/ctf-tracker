@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { stripTrailingSlash } from '../../utils/pathUtils';
 import { 
   Crosshair, 
   Compass, 
@@ -151,7 +152,8 @@ export const MobileNav: React.FC = () => {
   const sectionLabel = 'text-[11px] font-medium text-muted px-1 mb-1';
   const iconCls = 'w-4 h-4 text-muted flex-shrink-0';
 
-  const isTracker = location.pathname === '/tracker' || location.pathname === '/' || location.pathname.startsWith('/target');
+  const currentPath = stripTrailingSlash(location.pathname);
+  const isTracker = currentPath === '/tracker' || currentPath === '/' || location.pathname.startsWith('/target');
 
   return (
     <>
@@ -416,7 +418,7 @@ export const MobileNav: React.FC = () => {
 
                   <button
                     onClick={() => handleNavClick('/exam', 'exam')}
-                    className={`${rowBase} ${rowState(location.pathname === '/exam')}`}
+                    className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/exam')}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <GraduationCap className={iconCls} />
@@ -427,7 +429,7 @@ export const MobileNav: React.FC = () => {
 
                   <button
                     onClick={() => handleNavClick('/analytics', 'analytics')}
-                    className={`${rowBase} ${rowState(location.pathname === '/analytics')}`}
+                    className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/analytics')}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <BarChart3 className={iconCls} />

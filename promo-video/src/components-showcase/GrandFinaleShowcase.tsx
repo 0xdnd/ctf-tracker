@@ -519,7 +519,7 @@ export const GrandFinaleShowcase: React.FC<GrandFinaleShowcaseProps> = ({
             { label: "100% Offline-First PWA", icon: Shield, color: tokens.cyberAccent },
             { label: "1005 Machines Indexed", icon: Target, color: "#F59E0B" },
             { label: "Dynamic RevShell Generator", icon: Terminal, color: tokens.borderAccent },
-            { label: "Zero-Egress AI Intel", icon: Sparkles, color: "#10B981" },
+            { label: "Offline Evidence Vault", icon: Sparkles, color: "#10B981" },
           ].map((pill, idx) => {
             const Icon = pill.icon;
             return (

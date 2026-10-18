@@ -48,6 +48,10 @@ th,td{padding:10px}
 .cta-box{padding:var(--s4)}
 }
 @media(max-width:479px){.cta-actions{flex-direction:column;align-items:stretch;width:100%;gap:var(--s2)}.cta-actions .btn{width:100%}.cta-actions .link-arrow{justify-content:center}}
+.card-preview{min-width:0}
+.card-preview h2 a{color:inherit;text-decoration:none}
+.card-preview pre{margin:var(--s3) 0 0;padding:var(--s3);overflow-x:auto}
+.card-more{display:inline-block;margin-top:var(--s3);font-size:var(--fs-small);font-weight:600}
 @media(hover:hover) and (pointer:fine){
 .chips a:hover{border-color:var(--accent);background:var(--hover);color:var(--text)}
 .card:hover{border-color:var(--line-strong);background:var(--elev)}

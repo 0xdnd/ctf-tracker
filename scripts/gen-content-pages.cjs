@@ -115,6 +115,10 @@ function listFit(prefix, items, max = 155) {
 const card = (href, title, desc) =>
   `<a class="card" href="${href}"><h2>${esc(title)}</h2><p>${esc(desc)}</p></a>`;
 
+// Hub card that previews a few commands; not an <a> because it holds links and code blocks.
+const previewCard = (href, title, desc, commands, moreLabel) =>
+  `<div class="card card-preview"><h2><a href="${href}">${esc(title)}</a></h2><p>${esc(desc)}</p>${commands.slice(0, 3).map(code).join('')}<a class="card-more" href="${href}">${esc(moreLabel)}</a></div>`;
+
 const code = (s) => `<pre><code>${esc(s)}</code></pre>`;
 const stripEmoji = (s) => s.replace(/[\p{Extended_Pictographic}️‍]/gu, '').replace(/\s+/g, ' ').trim();
 
@@ -239,6 +243,55 @@ function relatedHubs(m) {
   return `<h2>Related</h2><ul>${links.join('')}</ul>`;
 }
 
+// First sentence of a technique explainer, used as the one-line explanation on a machine page.
+const firstSentence = (t) => String(t).replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s+/)[0];
+const joinList = (a) => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a[0] || '');
+const solvedAll = (list) => list.filter((x) => x.hasPage).length;
+
+// "Overview" paragraph built only from catalog fields (platform, OS, difficulty, tags, certifications, timings, dates).
+function machineOverview(m, plat, tagList) {
+  const parts = [];
+  parts.push(`${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine from ${esc(plat)}`);
+  const sentences = [`${parts[0]}${tagList.length ? ` that I tagged with ${esc(joinList(tagList.slice(0, 6)))}` : ''}.`];
+  const u = m.timeToUserSeconds, r = m.timeToRootSeconds;
+  if (u && r) {
+    sentences.push(`I reached user access after ${fmtDur(u)} and root after ${fmtDur(r)}${r > u ? `, so the privilege escalation stage took about ${fmtDur(r - u)}` : ''}.`);
+  } else if (u || r) {
+    sentences.push(`I reached ${r ? 'root' : 'user'} access after ${fmtDur(r || u)}.`);
+  }
+  const du = fmtDate(m.userPwnedAt), dr = fmtDate(m.rootPwnedAt);
+  if (du && dr) sentences.push(du === dr ? `Both stages were completed on ${du}.` : `User was owned on ${du} and root on ${dr}.`);
+  const certs = m.certifications || [];
+  if (certs.length) sentences.push(`In the ZeroBox catalog it counts toward the ${esc(joinList(certs.map((c) => CERT_NAME[c] || c)))} practice ${certs.length > 1 ? 'lists' : 'list'}.`);
+  return `<h2>Overview</h2><p>${sentences.join(' ')}</p>`;
+}
+
+// "Techniques explained": each technique hub the machine's tags match, with the hub's first explainer sentence and the matching tags.
+function techniqueExplained(m) {
+  const items = techGroups
+    .map((g) => [g, (m.tags || []).filter((t) => TECH.matchesTag(g, t))])
+    .filter((e) => e[1].length)
+    .sort((a, b) => b[1].length - a[1].length || a[0].name.localeCompare(b[0].name))
+    .slice(0, 5)
+    .map(([g, hit]) => `<li><a href="/techniques/${g.slug}/">${esc(g.name)}</a>: ${esc(firstSentence(g.explainer))} Matched here by the ${hit.length > 1 ? 'tags' : 'tag'} ${esc(joinList(hit))}; ${g.machines.length} catalog machines practise it, ${solvedAll(g.machines)} of them solved by me.</li>`);
+  return items.length ? `<h2>Techniques explained</h2><ul>${items.join('')}</ul>` : '';
+}
+
+// "Where it fits": its certification lists and its place among catalog machines of the same platform and difficulty.
+function machinePlace(m, plat) {
+  const same = model.machines.filter((o) => o.platform === m.platform && o.difficulty === m.difficulty);
+  const sameOs = same.filter((o) => o.os === m.os);
+  const items = (m.certifications || [])
+    .map((c) => certHubs.find((h) => h.cert === c))
+    .filter(Boolean)
+    .map((h) => {
+      const sameDiff = h.machines.filter((o) => o.difficulty === m.difficulty);
+      return `<li><a href="/${h.slug}/">${esc(h.name)} machine list</a>: ${esc(m.name)} is one of ${sameDiff.length} ${esc(m.difficulty.toLowerCase())} machines on a list of ${h.machines.length}, and I solved ${solvedAll(h.machines)} of the ${h.machines.length}.</li>`;
+    });
+  items.push(`<li>${esc(plat)} in the catalog: ${same.length} ${esc(m.difficulty.toLowerCase())} machines, ${sameOs.length} of them on ${esc(m.os)}, and I solved ${solvedAll(same)} of the ${same.length}. See the <a href="/machines/">full machine directory</a>.</li>`);
+  return `<h2>Where it fits</h2><ul>${items.join('')}</ul>`;
+}
+
 for (const m of withPage) {
   const plat = PLATFORM_NAME[m.platform] || m.platform;
   const kind = m.ownWriteup ? 'Writeup & Attack Path' : 'Attack Path & Techniques';
@@ -281,12 +334,20 @@ for (const m of withPage) {
           ...(m.ownWriteup && m.roomUrl ? { linkHref: m.roomUrl, linkLabel: `Open ${m.name} on ${plat}`, linkRel: ROOM_REL } : {}),
         })
       : '',
+    machineOverview(m, plat, tagList),
     `<table class="facts"><tbody>${facts.map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</tbody></table>`,
     `<h2>Attack path summary</h2><p>${esc(summary)}</p>`,
+    m.myNotes ? `<h2>My notes</h2>${m.myNotes.split(/\r?\n[ \t]*\r?\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('')}` : '',
     tagList.length ? `<h2>Techniques</h2><p>${tagList.map(tagLink).join(' ')}</p>` : '',
+    techniqueExplained(m),
+    machinePlace(m, plat),
     rel.length
       ? `<h2>Related solved machines</h2><p class="note">Other machines I solved that share techniques with ${esc(m.name)}.</p><ul>${rel
-          .map((r) => `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})</li>`)
+          .map((r) => {
+            const mine = new Set(tagList.map((t) => t.toLowerCase()));
+            const shared = (r.tags || []).filter((t) => mine.has(t.toLowerCase()));
+            return `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})${shared.length ? `, shares ${esc(joinList(shared))}` : ''}</li>`;
+          })
           .join('')}</ul>`
       : '',
     relatedHubs(m),
@@ -332,7 +393,7 @@ for (const m of withPage) {
   const platforms = Object.keys(byPlatform).sort();
   const parts = [];
   parts.push(
-    `<p class="lead">Browse ${model.machines.length} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
+    `<p class="lead">Browse ${model.catalogCounts.ctf} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
   );
   parts.push(
     `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-progress-tracker/', '/tj-null-list/'])}</div>`
@@ -371,7 +432,7 @@ for (const m of withPage) {
   const html = renderPage({
     path: '/machines/',
     title: 'HTB & TryHackMe Machines List by OS and Difficulty | ZeroBox',
-    description: `Directory of ${model.machines.length} Hack The Box and TryHackMe machines grouped by platform, OS and difficulty, with attack paths for the solved ones.`,
+    description: `Directory of ${model.catalogCounts.ctf} Hack The Box and TryHackMe machines grouped by platform, OS and difficulty, with attack paths for the solved ones.`,
     h1: 'Hack The Box and TryHackMe machines list and tracker',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
@@ -418,7 +479,7 @@ emit(
     h1: 'OSCP and CTF cheatsheets by topic',
     body: [
       `<p class="lead">Command cheatsheets for penetration testing labs and OSCP preparation, grouped by phase. Every command is a template you can adapt to your target.</p>`,
-      `<div class="grid">${model.topics.map((t) => card(`/cheatsheets/${t.slug}/`, t.name, `${t.items.length} commands`)).join('')}${card('/revshells/', 'Reverse shells', `${model.shellCount} reverse, bind and TTY shell one-liners`)}</div>`,
+      `<div class="grid">${model.topics.map((t) => previewCard(`/cheatsheets/${t.slug}/`, t.name, `${t.items.length} commands`, t.items.map((i) => i.commandTemplate).filter(Boolean), `View all ${t.items.length} commands`)).join('')}${card('/revshells/', 'Reverse shells', `${model.shellCount} reverse, bind and TTY shell one-liners`)}</div>`,
       ctaBox({ body: 'Prefer an interactive version?', href: '/cheatsheets/', label: 'Open the cheatsheet' }),
     ].join('\n'),
     crumbs: [['Home', '/'], ['Cheatsheets', '/cheatsheet-library/']],
@@ -476,8 +537,8 @@ emit(
     description: `An ${model.phases.length}-phase pentest methodology and enumeration checklist for OSCP and CTF labs, from host discovery to post-exploitation, with copyable commands.`,
     h1: 'Pentest methodology and enumeration checklist',
     body: [
-      `<p class="lead">A phase-by-phase attack lifecycle for CTFs and OSCP-style labs. Work through the phases in order, and branch by service when you find web, file sharing, database or remote access ports.</p>`,
-      `<div class="grid">${model.phases.map((ph) => card(`/methodology/${ph.slug}/`, ph.title, `${ph.itemCount} items. ${ph.subtitle}`)).join('')}</div>`,
+      `<p class="lead">A phase-by-phase attack lifecycle for CTFs and OSCP-style labs. Work through the phases in order, and branch by service when you find web, file sharing, database or remote access ports. To tick items off per box and track your progress, use the <a href="/methodology/">interactive checklist</a>.</p>`,
+      `<div class="grid">${model.phases.map((ph) => previewCard(`/methodology/${ph.slug}/`, ph.title, `${ph.itemCount} items. ${ph.subtitle}`, ph.subcategories.flatMap((sc) => sc.items.map((i) => i.commandSnippet)).filter(Boolean), `View all ${ph.itemCount} items`)).join('')}</div>`,
       ctaBox({ body: 'Track progress per machine.', href: '/methodology/', label: 'Open the checklist' }),
     ].join('\n'),
     crumbs: [['Home', '/'], ['Methodology', '/methodology-guide/']],
@@ -883,6 +944,13 @@ for (const g of guides) emit('guide', g.path, g.html, 0.7, g.lastmod || BUILD_DA
 {
   const { buildLegalPages, LEGAL_SRC } = require('./lib/legal.cjs');
   for (const p of buildLegalPages({ renderPage })) emit('legal', p.path, p.html, 0.3, gitDate(LEGAL_SRC));
+}
+
+// ===================== About (scripts/lib/about.cjs) =====================
+{
+  const { buildAboutPages, ABOUT_SRC } = require('./lib/about.cjs');
+  const stats = { machines: model.catalogCounts.ctf, guidedLabs: model.catalogCounts.guided, solved: withPage.length, writeups: withPage.filter((m) => m.ownWriteup).length, techniqueHubs: techGroups.length };
+  for (const p of buildAboutPages({ renderPage, stats })) emit('about', p.path, p.html, 0.5, gitDate(ABOUT_SRC));
 }
 
 // ===================== static.css, 404, sitemap =====================

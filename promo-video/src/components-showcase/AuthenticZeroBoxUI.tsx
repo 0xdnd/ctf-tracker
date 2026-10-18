@@ -21,7 +21,6 @@ import {
   Palette,
   FileText,
   BarChart3,
-  Sparkles,
   SlidersHorizontal,
 } from "lucide-react";
 import { Img, staticFile } from "remotion";
@@ -35,7 +34,7 @@ export interface AuthenticZeroBoxUIProps {
   actProgress: number;
   timerSeconds: number;
   isTimerRunning: boolean;
-  selectedTrack: "ALL" | "OSCP" | "CPTS" | "AD" | "REVSHELL" | "EXAM" | "AISCAN" | "ATTACKGRAPH";
+  selectedTrack: "ALL" | "OSCP" | "CPTS" | "AD" | "REVSHELL" | "EXAM" | "ATTACKGRAPH";
   searchQuery: string;
   kanbanDragProgress: number;
   isRootPwned: boolean;
@@ -47,7 +46,6 @@ export interface AuthenticZeroBoxUIProps {
   examMinsLeft: number;
   radarExpansion: number;
   isCtaClicked?: boolean;
-  showAiScanIntel?: boolean;
   showAttackGraph?: boolean;
   themePreset?: ThemePreset;
   isThemeDropdownOpen?: boolean;
@@ -71,7 +69,6 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
   examMinsLeft,
   radarExpansion,
   isCtaClicked = false,
-  showAiScanIntel = false,
   showAttackGraph = false,
   themePreset = "oled",
   isThemeDropdownOpen = false,
@@ -492,7 +489,7 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
 
           {/* Catalog stats */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: tokens.textMuted }}>
-            <span style={{ color: tokens.textPrimary, fontWeight: 700 }}>929</span> Labs
+            <span style={{ color: tokens.textPrimary, fontWeight: 700 }}>1005</span> Labs
             <span style={{ color: tokens.borderStrong }}>|</span>
             <span style={{ color: tokens.cyberAccent, fontWeight: 700 }}>55</span> Solves
           </div>
@@ -516,7 +513,7 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {[
-            { id: "ALL", label: "All Targets (929)", icon: Target, color: tokens.borderAccent },
+            { id: "ALL", label: "All Targets (1005)", icon: Target, color: tokens.borderAccent },
             { id: "OSCP", label: "OSCP Track", icon: GraduationCap, color: "#F59E0B" },
             { id: "CPTS", label: "CPTS Path (Official)", icon: Crosshair, color: tokens.cyberAccent },
             { id: "AD", label: "Active Directory", icon: Network, color: "#A855F7" },
@@ -629,8 +626,7 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
           {[
             { icon: Target, active: currentAct === 1 || currentAct === 2, label: "Matrix" },
             { icon: Kanban, active: currentAct === 3, label: "Kanban" },
-            { icon: Terminal, active: currentAct === 4 && !showAiScanIntel, label: "RevShell" },
-            { icon: Sparkles, active: showAiScanIntel, label: "AI Intel" },
+            { icon: Terminal, active: currentAct === 4, label: "RevShell" },
             { icon: Network, active: currentAct === 5 && showAttackGraph, label: "Graph" },
             { icon: Flame, active: currentAct === 5 && !showAttackGraph, label: "Exam 24h" },
             { icon: FileText, active: false, label: "Vault" },
@@ -694,7 +690,7 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
                 {/* Filter Pills */}
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   {[
-                    { label: "All", count: 929, active: true },
+                    { label: "All", count: 1005, active: true },
                     { label: "Unsolved", count: 856, active: false },
                     { label: "Foothold", count: 18, active: false },
                     { label: "Pwned", count: 55, active: false },
@@ -878,7 +874,7 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ color: tokens.textPrimary, fontWeight: 700 }}>929 targets indexed</span>
+                  <span style={{ color: tokens.textPrimary, fontWeight: 700 }}>1005 targets indexed</span>
                   <span style={{ color: tokens.borderStrong }}>•</span>
                   <span style={{ color: tokens.cyberAccent, fontWeight: 700 }}>55 pwned (100% root loot stored)</span>
                   <span style={{ color: tokens.borderStrong }}>•</span>
@@ -1084,11 +1080,11 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
             </div>
           )}
 
-          {/* ACT 4: Dense Split Workstation (RevShell + AI Recon) */}
+          {/* ACT 4: Dense Split Workstation (RevShell Studio) */}
           {/* ==================================================== */}
           {currentAct === 4 && (
-            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 10, height: "100%" }}>
-              {/* Left: RevShell Studio */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, height: "100%" }}>
+              {/* RevShell Studio (full width) */}
               <div
                 style={{
                   backgroundColor: tokens.surfaceCard,
@@ -1300,158 +1296,6 @@ export const AuthenticZeroBoxUI: React.FC<AuthenticZeroBoxUIProps> = ({
                     <div style={{ color: "#F59E0B" }}>
                       # cat /root/root.txt -&gt; 44b7f093c8a14e9b882109fd2a1e67bb [VERIFIED ✓]
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: AI Recon & Scan Intel */}
-              <div
-                style={{
-                  backgroundColor: tokens.surfaceCard,
-                  borderRadius: 11,
-                  border: `1px solid ${tokens.borderSubtle}`,
-                  padding: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
-                }}
-              >
-                {/* Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <Sparkles size={16} color={tokens.cyberAccent} />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: tokens.textPrimary }}>
-                        AI Recon & Scan Intel
-                      </div>
-                      <div style={{ fontSize: 9, color: tokens.textMuted }}>
-                        Client-side Nmap triaging · 0-Egress architecture
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      backgroundColor: tokens.cyberAccentBg,
-                      border: `1px solid ${tokens.cyberAccent}55`,
-                      padding: "2px 6px",
-                      borderRadius: 4,
-                      fontSize: 8,
-                      fontWeight: 700,
-                      color: tokens.cyberAccent,
-                    }}
-                  >
-                    <Lock size={8} />
-                    <span>0-EGRESS GUARANTEED</span>
-                  </div>
-                </div>
-
-                {/* Scan Target Strip */}
-                <div
-                  style={{
-                    backgroundColor: tokens.surfaceSunken,
-                    borderRadius: 5,
-                    padding: "4px 7px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    fontSize: 9,
-                    fontFamily: "monospace",
-                    border: `1px solid ${tokens.borderSubtle}`,
-                  }}
-                >
-                  <span style={{ color: tokens.textSecondary }}>Target: 10.10.11.224 (sau.htb)</span>
-                  <span style={{ color: tokens.cyberAccent }}>SYN Stealth Scan (-sC -sV -p-)</span>
-                </div>
-
-                {/* Scanned Services Breakdown */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: 1, justifyContent: "space-between" }}>
-                  {[
-                    { port: "55555/tcp", service: "Maltrail v0.54 (Python 3.8)", vuln: "CRITICAL: Authenticated / SSRF RCE", cvss: "9.8" },
-                    { port: "80/tcp", service: "nginx 1.18.0 (Ubuntu)", vuln: "Reverse proxy to localhost:8080", cvss: "5.3" },
-                    { port: "22/tcp", service: "OpenSSH 8.2p1 Ubuntu", vuln: "Public key authentication enforced", cvss: "—" },
-                    { port: "8080/tcp", service: "Internal Maltrail Backend API", vuln: "Accessible via SSRF on /login", cvss: "8.1" },
-                    { port: "1337/tcp", service: "Node.js Health Daemon", vuln: "Internal metrics telemetry", cvss: "4.2" },
-                  ].map((s, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        backgroundColor: tokens.surfaceElevated,
-                        borderRadius: 6,
-                        padding: "5px 7px",
-                        border: idx === 0 ? "1px solid rgba(239, 68, 68, 0.45)" : `1px solid ${tokens.borderSubtle}`,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: tokens.textPrimary }}>
-                          {s.port} · {s.service}
-                        </div>
-                        <div style={{ fontSize: 8, color: idx === 0 ? "#EF4444" : tokens.textMuted, marginTop: 1 }}>
-                          {s.vuln}
-                        </div>
-                      </div>
-                      <span
-                        style={{
-                          fontSize: 8,
-                          fontWeight: 800,
-                          color: idx === 0 ? "#EF4444" : tokens.textMuted,
-                          backgroundColor: idx === 0 ? "rgba(239, 68, 68, 0.15)" : "transparent",
-                          padding: "1px 4px",
-                          borderRadius: 3,
-                        }}
-                      >
-                        CVSS {s.cvss}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* MITRE ATT&CK Mapping Pills */}
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {[
-                    "T1190 Exploit Public App",
-                    "T1059 Command Shell",
-                    "T1548 Sudo Rights",
-                    "T1552 Credentials",
-                  ].map((ttp, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        fontSize: 8,
-                        backgroundColor: "rgba(255, 255, 255, 0.05)",
-                        color: tokens.textSecondary,
-                        padding: "1px 5px",
-                        borderRadius: 3,
-                        fontFamily: "monospace",
-                        border: `1px solid ${tokens.borderSubtle}`,
-                      }}
-                    >
-                      #{ttp}
-                    </span>
-                  ))}
-                </div>
-
-                {/* AI Strategic Recommendation Box */}
-                <div
-                  style={{
-                    backgroundColor: tokens.cyberAccentBg,
-                    border: `1px solid ${tokens.cyberAccent}55`,
-                    borderRadius: 6,
-                    padding: "7px 9px",
-                  }}
-                >
-                  <div style={{ fontSize: 9, fontWeight: 800, color: tokens.cyberAccent, display: "flex", alignItems: "center", gap: 4 }}>
-                    <CheckCircle2 size={10} />
-                    <span>RECOMMENDED ATTACK CHAIN (98% CONFIDENCE)</span>
-                  </div>
-                  <div style={{ fontSize: 9, color: tokens.textPrimary, marginTop: 2, lineHeight: 1.35 }}>
-                    1. Abuse SSRF via Maltrail login to reach 127.0.0.1:8080 · 2. Inject command payload to obtain shell as puma · 3. Break out via sudo systemctl status pager (!sh) to root.
                   </div>
                 </div>
               </div>

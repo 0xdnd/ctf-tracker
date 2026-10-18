@@ -2,4 +2,28 @@ User-agent: *
 Allow: /
 Disallow: /app-shell.html
 
+User-agent: GPTBot
+Allow: /
+Disallow: /app-shell.html
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /app-shell.html
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /app-shell.html
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /app-shell.html
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /app-shell.html
+
+User-agent: Bingbot
+Allow: /
+Disallow: /app-shell.html
+
 Sitemap: https://ctftracker.com/sitemap.xml

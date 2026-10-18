@@ -104,6 +104,14 @@ function build({ esc }) {
       'Can ZeroBox produce the PDF OffSec asks for?',
       'Not directly. ZeroBox generates the report as Markdown and as a standalone HTML file you can print to PDF from a browser, and its zip bundle holds both with your proof screenshots. You then put the PDF in a .7z yourself.',
     ],
+    [
+      'What CVSS 3.1 score does an unauthenticated remote code execution flaw get?',
+      `The worked example on this page, ${vector}, scores ${score} (${rating(score)}). If the same flaw needed a low privilege account (PR:L), the score would drop to ${second} (${rating(second)}).`,
+    ],
+    [
+      'What should a proof screenshot show?',
+      "OffSec's guidance expects the content of each proof file to be visible together with the target IP address, taken from an interactive shell on the machine rather than a copy pasted into a document. Confirm the exact wording on the live page.",
+    ],
   ];
 
   const body = `<h2>Required sections</h2>

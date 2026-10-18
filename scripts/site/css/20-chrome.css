@@ -46,6 +46,9 @@
 .brand img{width:32px;height:32px;border-radius:var(--r-md)}
 @media(max-width:419px){.site-header .brand-name{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
 .nav-inline{display:none}
+.nav-inline ul,.nav-panel ul{margin:0;padding:0;list-style:none}
+.nav-inline ul{display:flex}
+.nav-inline li,.nav-panel li{margin:0;padding:0}
 .nav-inline a,.nav-panel a{color:var(--muted);font-size:.875rem;font-weight:500;text-decoration:none;border-radius:var(--r-md);transition:background-color .15s,color .15s}
 .nav-inline a{padding:6px 5px;white-space:nowrap}
 .nav-inline a[aria-current],.nav-panel a[aria-current]{color:var(--text)}
@@ -55,6 +58,7 @@
 .nav-menu summary::after{content:"";width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
 .nav-menu[open] summary::after{transform:translateY(1px) rotate(-135deg)}
 .nav-panel{position:absolute;top:100%;left:calc(-1*var(--gutter));right:calc(-1*var(--gutter));display:flex;flex-direction:column;padding:var(--s2) var(--gutter) var(--s4);background:var(--card);border-bottom:1px solid var(--line)}
+.nav-panel ul{display:flex;flex-direction:column}
 .nav-panel a{display:block;padding:12px var(--s2);font-size:1rem}
 @media(min-width:960px){
 .nav-inline{display:flex;margin-left:auto}
@@ -62,7 +66,7 @@
 .nav-menu{display:none}
 .bar{gap:var(--s2)}
 }
-@media(min-width:960px){.bar{gap:var(--s3)}.nav-inline{gap:2px}.nav-inline a{padding:6px 8px}}
+@media(min-width:960px){.bar{gap:var(--s3)}.nav-inline ul{gap:2px}.nav-inline a{padding:6px 8px}}
 .icon-link{display:none;flex:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--r-md);color:var(--text-2);transition:background-color .15s,color .15s}
 .icon-link svg{width:18px;height:18px}
 @media(min-width:640px){.icon-link{display:inline-flex}.nav-social{display:none!important}}
@@ -91,7 +95,7 @@
 @media(min-width:960px) and (max-width:1099px){.bar{gap:var(--s2)}.nav-inline a{padding:6px 5px}}
 @media(min-width:1440px){
 .nav-inline a{font-size:calc(.875rem + 2*var(--f));padding:6px calc(8px + 4*var(--f))}
-.nav-inline{gap:calc(2px + 2*var(--f))}
+.nav-inline ul{gap:calc(2px + 2*var(--f))}
 .site-header .btn-sm{min-height:calc(36px + 6*var(--f));padding:0 calc(14px + 6*var(--f));font-size:calc(.875rem + 2*var(--f))}
 .brand{font-size:calc(1rem + 3*var(--f))}.brand img{width:calc(32px + 6*var(--f));height:calc(32px + 6*var(--f))}
 .icon-link,.theme-toggle{width:calc(36px + 6*var(--f));height:calc(36px + 6*var(--f))}

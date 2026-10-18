@@ -239,7 +239,7 @@ export const CinematicColdOpen: React.FC<CinematicColdOpenProps> = ({ frame }) =
             }}
           >
             <Crosshair size={15} color="#38BDF8" />
-            <span>929 LABS</span>
+            <span>1005 LABS</span>
           </div>
 
           <div

@@ -107,7 +107,7 @@ const lines = [
     ]
   ),
   '',
-  'הקטלוג המובנה כולל 1,090 יעדים בודדים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
+  'הקטלוג המובנה כולל 1,005 מכונות CTF (ובנוסף 85 מעבדות מודרכות) (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
   '',
   '## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה',
   '',

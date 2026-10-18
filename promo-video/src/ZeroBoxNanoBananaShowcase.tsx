@@ -177,7 +177,7 @@ export const ZeroBoxNanoBananaShowcase: React.FC = () => {
           }}
         >
           <Sparkles size={14} color="#FACC15" />
-          <span>VISUALS ENHANCED BY NANO BANANA AI</span>
+          <span>VISUALS ENHANCED BY NANO BANANA</span>
         </div>
       </div>
     </div>

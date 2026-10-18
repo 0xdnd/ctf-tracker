@@ -33,6 +33,10 @@ function build({ esc }) {
       'How long do results take?',
       'Hack The Box says the review takes up to 20 business days, and results are sent by email.',
     ],
+    [
+      'When should I start writing the CPTS report?',
+      'Budget for the report from day one, because it shares the 10-day clock. The pacing plan on this page puts writing the report on day 9 and the review and upload on day 10.',
+    ],
   ];
 
   const body = `<h2>Exam format</h2>

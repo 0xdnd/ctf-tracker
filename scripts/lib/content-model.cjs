@@ -28,6 +28,7 @@ export { INITIAL_MACHINES } from './src/data/machinesCatalog';
 export { CHEATSHEET_CATEGORIES, INITIAL_CHEATSHEET } from './src/data/cheatsheetsData';
 export { ALL_SHELL_ITEMS } from './src/data/revshellsData';
 export { MASTER_METHODOLOGY_FRAMEWORK } from './src/data/methodologyFramework';
+export { EXAM_TRACK_CONFIGS } from './src/utils/examComplianceUtils';
 `,
         resolveDir: rootDir,
         loader: 'ts',
@@ -49,6 +50,8 @@ export { MASTER_METHODOLOGY_FRAMEWORK } from './src/data/methodologyFramework';
 }
 
 const MIN_WORDS = 150;
+// Pure CTF challenge machines (HTB + THM); the rest of the catalog is guided labs. README and llms.txt state the same split.
+const CTF_MACHINE_COUNT = 1005;
 const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
 function getModel() {
@@ -79,6 +82,20 @@ function getModel() {
     const ownWriteup = (!isAct && /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '')) ? m.writeupUrl : '';
     return { ...safe, slug, ownWriteup, hasPage: ownerSolved };
   });
+
+  // ---- Owner notes (scripts/data/machine-notes.json: { "<machine slug>": "note text" }, see scripts/data/README.md) ----
+  const notesFile = process.env.MACHINE_NOTES_FILE ? path.resolve(process.env.MACHINE_NOTES_FILE) : path.join(rootDir, 'scripts', 'data', 'machine-notes.json');
+  const ownerNotes = fs.existsSync(notesFile) ? JSON.parse(fs.readFileSync(notesFile, 'utf8')) : {};
+  const bySlug = new Map(machines.map((m) => [m.slug, m]));
+  for (const [key, val] of Object.entries(ownerNotes)) {
+    const target = bySlug.get(key);
+    const text = typeof val === 'string' ? val.trim() : '';
+    if (!target || !target.hasPage) {
+      console.warn(`machine-notes: key "${key}" matches no page-eligible machine, ignored`);
+    } else if (text) {
+      target.myNotes = text;
+    }
+  }
 
   // ---- Cheatsheets ----
   const topics = d.CHEATSHEET_CATEGORIES.filter((c) => !['all', 'revshell', 'custom'].includes(c.id))
@@ -113,7 +130,10 @@ function getModel() {
     .notes.filter((n) => n.rawMarkdown && n.rawMarkdown.length > 400)
     .map((n) => ({ ...n, slug: slugify(n.id) }));
 
-  cached = { machines, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, MIN_WORDS };
+  const examTracks = Object.values(d.EXAM_TRACK_CONFIGS).map((t) => t.id);
+  const catalogCounts = { total: machines.length, ctf: CTF_MACHINE_COUNT, guided: machines.length - CTF_MACHINE_COUNT };
+
+  cached = { machines, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, examTracks, catalogCounts, MIN_WORDS };
   return cached;
 }
 
