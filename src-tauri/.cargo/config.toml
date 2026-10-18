@@ -1,0 +1,2 @@
+[target.'cfg(windows)']
+rustflags = ["-C", "control-flow-guard=yes"]
