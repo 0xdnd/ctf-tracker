@@ -15,7 +15,7 @@ describe('NotFoundPage Component', () => {
     expect(screen.getByText('Page not found')).toBeInTheDocument();
     expect(screen.getByText('404')).toBeInTheDocument();
     expect(screen.getByText('Unresolved route')).toBeInTheDocument();
-    expect(screen.getByText('/non-existent-vector')).toBeInTheDocument();
+    expect(screen.getAllByText('/non-existent-vector').length).toBeGreaterThanOrEqual(1);
   });
 
   it('detects suggestion for cheatsheet keywords', () => {

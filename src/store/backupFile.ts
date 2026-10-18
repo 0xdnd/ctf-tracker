@@ -123,6 +123,10 @@ export async function importBackupFile(text: string): Promise<BackupImportResult
   }
   const root = payloadRoot(raw);
   if (!root || root.version !== BACKUP_FORMAT_VERSION) {
+    if (root && typeof root.checksum === 'string') {
+      const v = await verifyBackupChecksum(root as Record<string, unknown>);
+      if (v === 'mismatch') return fail('checksum', BACKUP_CHECKSUM_MISMATCH_MESSAGE);
+    }
     return store().importBackup(text) ? { ok: true, verified: false, warnings: [] } : fail('invalid', INVALID_MESSAGE);
   }
 
@@ -137,6 +141,9 @@ export async function importBackupFile(text: string): Promise<BackupImportResult
   if (!applied) return fail('invalid', INVALID_MESSAGE);
 
   const warnings: string[] = [];
+  if (isSchemaWriteGated() && validateWorkspacePayload(raw).data?.examState) {
+    warnings.push('Exam data could not be restored (writes blocked). Reload and try again.');
+  }
   const idb = validateWorkspacePayload(raw).data?.indexedDb;
   if (idb) {
     try {

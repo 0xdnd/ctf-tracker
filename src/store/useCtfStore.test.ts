@@ -105,4 +105,26 @@ describe('useCtfStore Zustand store', () => {
     expect(state.isCatalogLoaded).toBe(true);
     expect(state.machines.length).toBeGreaterThan(50);
   });
+
+  it('sanitizes, deduplicates, and sorts open ports in setMachineOpenPorts', () => {
+    useCtfStore.getState().addCustomMachine({
+      name: 'PortSanitizeTest',
+      ip: '10.10.10.123',
+      os: 'Linux',
+      difficulty: 'Easy',
+      platform: 'HTB',
+      status: 'backlog',
+      tags: [],
+      certifications: [],
+      timeSpentSeconds: 0,
+    });
+    const machine = useCtfStore.getState().machines.find((m) => m.name === 'PortSanitizeTest')!;
+    expect(machine).toBeDefined();
+
+    // Pass invalid ports: negative numbers, 0, >65535, floats, duplicates, strings
+    useCtfStore.getState().setMachineOpenPorts(machine.id, [443, -1, 0, 70000, 80, 443, 22.5 as any, '8080' as any]);
+    const updated = useCtfStore.getState().machines.find((m) => m.id === machine.id)!;
+    expect(updated.openPorts).toEqual([80, 443, 8080]);
+    expect(updated.checklist?.openPorts).toEqual([80, 443, 8080]);
+  });
 });

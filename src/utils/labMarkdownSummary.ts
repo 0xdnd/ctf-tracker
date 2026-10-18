@@ -51,7 +51,11 @@ function triageSection(machine: Machine, level: number): string[] {
     ([, e]) => e && (e.status !== 'untested' || e.note)
   );
   if (entries.length === 0) return [];
-  entries.sort((a, b) => Number(a[0]) - Number(b[0]));
+  entries.sort((a, b) => {
+    const portA = parseInt(a[0], 10) || 0;
+    const portB = parseInt(b[0], 10) || 0;
+    return portA - portB || a[0].localeCompare(b[0]);
+  });
   const lines = entries.map(([port, e]) => {
     const note = e.note ? `: ${oneLine(e.note)}` : '';
     return `- **${port}** [${TRIAGE_LABEL[e.status] ?? e.status}]${note}`;

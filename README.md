@@ -56,29 +56,32 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ## 🚀 Core Modules
 
 ### 1. 🛡️ Lab & Machine Tracker
-- **1090-machine catalog:** 556 retired HTB machines and Starting Point labs, 20 active HTB machines (metadata only), 514 THM CTF rooms, plus your own custom targets, Pro Labs and exams.
+- **1090-machine catalog:** 556 retired HTB machines and Starting Point labs, 20 active HTB machines (metadata only), 514 THM CTF rooms, plus custom targets, Pro Labs and exams.
+- **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
-- **Four views:** Kanban board, dense sortable table, card grid, and an attack **graph view** with an edge inspector for pivots between hosts.
-- **Target dossier:** per-machine detail page with Nmap/scan import, methodology checklist, flags, and user/root timers.
-- **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus a global command palette.
+- **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and `CuratedPathways` for structured cert journeys (OSCP, CPTS, CRTO).
+- **Target dossier:** Per-machine detail page with multi-host Nmap/scan import, methodology checklist, flags, and user/root timers.
+- **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus syntax DSL search (`syntaxSearchUtils`) and a global command palette.
 
 ### 2. 🗝️ Evidence & Loot Vault
 - Credentials, hashes, flags, keys and tokens collected across every target in one place.
-- Loot timeline, quick add, and an export drawer for reports.
+- Automatic hash type identification (`hashIdentifier`) across 20+ hash formats.
+- Loot timeline, quick add, batch operations, and an export drawer for reports.
 
 ### 3. 🧭 Methodology & Field Manual
-- **Attack methodology:** phase-by-phase tree with decision branches and playbooks.
-- **Dynamic cheatsheet:** set `LHOST`, `LPORT`, `TARGET_IP` once and they are injected into every command.
-- **Reverse shell builder:** 130+ Linux and Windows payloads with matching listener commands.
+- **Attack methodology:** Phase-by-phase tree with decision branches and playbooks.
+- **Dynamic cheatsheet:** Set `LHOST`, `LPORT`, `TARGET_IP` once and they are injected into every command.
+- **Reverse shell builder & modal:** 130+ Linux and Windows payloads (`RevShellModal`) with matching listeners and one-click copy.
+- **Offensive Forge Utilities:** Multi-host scan parsing, payload encoding, and transfer server presets (`offensiveForgeUtils`, `multiHostScanParser`).
 - **Notes workspace:** Obsidian-style note viewer with multi-tab docked notes and an IndexedDB-backed private vault.
 
 ### 4. 📝 Writeup Studio & Reports
 - Dual-pane Markdown editor with live preview.
-- Pentest report templates pre-filled with target data, exportable as `.md` for Obsidian or GitBook.
+- Pentest report templates pre-filled with target data, exportable via `reportCompilerUtils` as `.md` or formatted HTML for Obsidian or GitBook.
 
 ### 5. 📊 Analytics & ⏱️ Exam Simulator
-- **Skill radar** across Web, AD, Linux/Windows PrivEsc, Pivoting and more, plus a **90-day activity heatmap** and speed benchmarks.
-- **24h exam simulator** with OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a burn-down chart.
+- **Skill radar & readiness analytics:** Real-time telemetry (`readinessAnalytics`) across Web, AD, Linux/Windows PrivEsc, Pivoting, and a **90-day activity heatmap**.
+- **24h exam simulator:** OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a live burn-down chart.
 
 ---
 
@@ -145,7 +148,7 @@ npm run tauri:build   # build an installer
 ### ✅ Testing
 ```bash
 npx tsc --noEmit   # type check
-npm test           # unit & component tests (Vitest)
+npm test           # 212 test suites / 3,200+ unit & component tests (Vitest)
 npm run test:e2e   # browser E2E crawl (Python + Playwright)
 ```
 

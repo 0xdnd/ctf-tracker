@@ -284,7 +284,7 @@ function renderPage(opts) {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>${esc(opts.title)}</title>
   <meta name="description" content="${desc}" />
   <meta name="theme-color" content="#09090b" />
@@ -333,7 +333,7 @@ ${beaconTag()}</body>
  *  The CSP equals the app shell's: the shell is document.write()n into this document and a stricter policy would carry over and break it. */
 const NF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', '404.js'), 'utf8');
 const NF_SRC = '/404.js?v=' + crypto.createHash('sha1').update(NF_JS).digest('hex').slice(0, 8);
-const SHELL_CSP = "default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss: https://api.anthropic.com; media-src 'self' data: blob:;";
+const SHELL_CSP = "default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss:; media-src 'self' data: blob:;";
 const NF_LINKS = [
   ['/machines/', 'Machines'],
   ['/cheatsheet-library/', 'Cheatsheets'],
@@ -348,7 +348,7 @@ function render404Page() {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Page not found | ZeroBox</title>
   <meta name="robots" content="noindex" />
   <meta name="theme-color" content="#09090b" />

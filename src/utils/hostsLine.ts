@@ -7,7 +7,7 @@ function isLooseIp(ip: string): boolean {
 }
 
 // eslint-disable-next-line no-control-regex
-const BAD_NAME = /[\s\u0000-\u001f\u007f]/;
+const BAD_NAME = /[\s\u0000-\u001f\u007f"$`\\;|&()<>]/;
 
 export function formatHostsLine(ip: string, domain?: string, vhosts?: string[]): string {
   const addr = (ip ?? '').trim();

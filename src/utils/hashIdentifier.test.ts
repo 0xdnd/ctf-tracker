@@ -162,4 +162,10 @@ describe('getCrackingCommands', () => {
     const cmds = getCrackingCommands('not-a-hash');
     expect(cmds).toEqual({});
   });
+
+  it('rejects oversized inputs (>4096 chars) gracefully without crashing', () => {
+    const huge = 'a'.repeat(5000);
+    expect(identifyHash(huge)).toEqual([]);
+    expect(getCrackingCommands(huge)).toEqual({});
+  });
 });

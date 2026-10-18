@@ -8,6 +8,7 @@ import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { Modal } from '../common/Modal';
 import { TARGET_TYPE_LABELS, TARGET_TYPE_TAGS, type TargetType } from '../../utils/targetType';
+import { OFFICIAL_HTB_PRO_LABS } from '../../data/proLabsData';
 
 const TARGET_TYPES: TargetType[] = ['machine', 'pro-lab', 'exam'];
 
@@ -149,6 +150,38 @@ export const NewMachineModal: React.FC = () => {
               <p className="mt-1.5 text-tertiary">
                 Track your own progress here. ZeroBox doesn't include any Pro Lab or exam content.
               </p>
+            )}
+            {targetType === 'pro-lab' && (
+              <div className="mt-2 p-3 rounded-lg border border-subtle bg-surface-sunken/70 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-primary">Official HTB Pro Lab Presets</span>
+                  <span className="text-[11px] text-tertiary">Scope & official URL only (HTB AUP §8.2)</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Official HTB Pro Lab Presets">
+                  {OFFICIAL_HTB_PRO_LABS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => {
+                        setName(preset.name);
+                        setDifficulty(preset.difficulty);
+                        setRoomUrl(preset.roomUrl);
+                        setTags(preset.tags.join(', '));
+                        if (soundEnabled) playCyberSound('click');
+                      }}
+                      className={`px-2.5 py-1 rounded text-xs font-mono border transition-all ${
+                        name.toLowerCase() === preset.name.toLowerCase()
+                          ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg font-semibold shadow-xs'
+                          : 'border-subtle bg-surface-card text-secondary hover:text-primary hover:border-strong'
+                      }`}
+                      title={`${preset.name}: ${preset.hostCount} hosts, ${preset.flagCount} flags (${preset.examAlignment.join(', ')})`}
+                    >
+                      {preset.name}
+                      <span className="ml-1 text-[10px] opacity-75">({preset.flagCount}🚩)</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </fieldset>
 

@@ -5,6 +5,7 @@ import {
   Search, 
   ArrowLeft, 
   ArrowRight,
+  ChevronRight,
   FileQuestion,
   Database,
   Layers,
@@ -103,7 +104,7 @@ export const NotFoundPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-12 px-1 sm:px-0">
       {/* Clean standard page header */}
       <PageHeader
         title="Page not found"
@@ -115,6 +116,7 @@ export const NotFoundPage: React.FC = () => {
             size="md"
             iconLeft={<Home className="w-4 h-4" />}
             onClick={() => handleNavigate('/tracker')}
+            className="w-full sm:w-auto justify-center"
           >
             Back to tracker
           </CyberButton>
@@ -145,36 +147,72 @@ export const NotFoundPage: React.FC = () => {
             </CyberButton>
           </>
         }
+        overflow={[
+          {
+            id: 'search',
+            label: 'Search (Ctrl+K)',
+            icon: <Search className="w-4 h-4" />,
+            onSelect: () => {
+              if (soundEnabled) playCyberSound('click');
+              setCommandPaletteOpen(true);
+            },
+          },
+          {
+            id: 'back',
+            label: 'Go back',
+            icon: <ArrowLeft className="w-4 h-4" />,
+            onSelect: () => {
+              if (soundEnabled) playCyberSound('click');
+              navigate(-1);
+            },
+          },
+        ]}
       />
 
-      {/* Calm Status Block */}
-      <div className="rounded-lg border border-subtle bg-surface-card p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Cyber Status Block */}
+      <div className="rounded-xl border border-subtle bg-surface-card p-3.5 sm:p-5 space-y-3 sm:space-y-4 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <CyberBadge variant="neutral" mono size="sm">
               404
             </CyberBadge>
             <span className="text-secondary font-medium">Unresolved route</span>
           </div>
-          <code className="text-xs font-mono text-muted bg-surface-sunken px-2 py-0.5 rounded border border-subtle">
+          <code
+            className="text-[11px] sm:text-xs font-mono text-muted bg-surface-sunken px-2 py-0.5 rounded border border-subtle truncate max-w-[200px] sm:max-w-xs md:max-w-md"
+            title={currentPath}
+          >
             {currentPath}
           </code>
         </div>
 
-        <p className="text-sm text-secondary leading-relaxed">
+        {/* Cyber terminal preview */}
+        <div className="rounded-lg bg-surface-sunken border border-subtle p-2.5 sm:p-3 font-mono text-xs space-y-1 overflow-x-auto text-muted">
+          <div className="flex items-center gap-1.5 text-primary">
+            <span className="text-accent select-none">$</span>
+            <span className="text-secondary">curl -I</span>
+            <span className="text-primary truncate">{currentPath}</span>
+          </div>
+          <div className="text-callout-danger-fg text-[11px] flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold">HTTP/2 404</span>
+            <span className="text-muted/80">&middot; target route unresolved in client manifest</span>
+          </div>
+        </div>
+
+        <p className="text-xs sm:text-sm text-secondary leading-relaxed">
           The link you followed may be broken, or the address may have been typed incorrectly. You can return to the main tracker or navigate to any of the sections below.
         </p>
 
         {/* Suggestion Card (if recognized) */}
         {suggestedMatch && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-md bg-surface-elevated border border-subtle">
-            <div className="flex items-center gap-3">
-              <span className="p-2 rounded-md bg-surface-sunken text-secondary border border-subtle flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-lg bg-surface-elevated border border-accent/30 shadow-xs">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <span className="p-2 rounded-md bg-surface-sunken text-accent border border-subtle flex-shrink-0">
                 <suggestedMatch.icon className="w-4 h-4" />
               </span>
-              <div>
-                <div className="text-xs text-muted">Looking for this page?</div>
-                <div className="text-sm font-medium text-primary">{suggestedMatch.name}</div>
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted font-medium">Looking for this page?</div>
+                <div className="text-xs sm:text-sm font-semibold text-primary truncate">{suggestedMatch.name}</div>
               </div>
             </div>
             <CyberButton
@@ -182,6 +220,7 @@ export const NotFoundPage: React.FC = () => {
               size="sm"
               iconRight={<ArrowRight className="w-3.5 h-3.5" />}
               onClick={() => handleNavigate(suggestedMatch.path)}
+              className="w-full sm:w-auto justify-center"
             >
               Open {suggestedMatch.name}
             </CyberButton>
@@ -190,12 +229,16 @@ export const NotFoundPage: React.FC = () => {
       </div>
 
       {/* Directory Grid */}
-      <div className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">
-          All sections
-        </h2>
+      <div className="space-y-2.5 sm:space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">
+            All sections
+          </h2>
+          <span className="text-[11px] text-muted font-mono sm:hidden">8 modules</span>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+        {/* Adaptive layout: sleek list on mobile (<sm), 4-column cards on desktop (sm+) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
           {QUICK_LINKS.map((item) => {
             const Icon = item.icon;
             return (
@@ -203,18 +246,26 @@ export const NotFoundPage: React.FC = () => {
                 key={item.path}
                 type="button"
                 onClick={() => handleNavigate(item.path)}
-                className="active:scale-[0.97] group flex flex-col justify-between text-left p-3 rounded-lg border border-subtle bg-surface-card hover:bg-surface-hover hover:border-strong transition-interactive cursor-pointer"
+                className="active:scale-[0.98] group flex items-center sm:flex-col sm:items-start justify-between text-left p-2.5 sm:p-3 rounded-lg border border-subtle bg-surface-card hover:bg-surface-hover hover:border-strong transition-interactive cursor-pointer min-h-[48px] sm:min-h-[104px]"
               >
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-primary group-hover:text-accent transition-colors">
-                    <Icon className="w-4 h-4 text-secondary group-hover:text-accent transition-colors flex-shrink-0" />
-                    <span className="text-sm font-medium">{item.name}</span>
+                <div className="flex items-center sm:items-start gap-2.5 sm:gap-2 min-w-0 flex-1">
+                  <div className="p-1.5 sm:p-2 rounded-md bg-surface-sunken border border-subtle text-secondary group-hover:text-accent group-hover:border-accent/40 transition-colors flex-shrink-0">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <p className="text-xs text-muted line-clamp-2 leading-relaxed">
-                    {item.description}
-                  </p>
+                  <div className="min-w-0 flex-1 sm:space-y-1">
+                    <div className="text-xs sm:text-sm font-semibold text-primary group-hover:text-accent transition-colors truncate">
+                      {item.name}
+                    </div>
+                    <p className="hidden sm:block text-xs text-muted line-clamp-2 leading-relaxed">
+                      {item.description}
+                    </p>
+                    <div className="sm:hidden text-[10px] font-mono text-muted/70 truncate">
+                      {item.path}
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-2 text-[11px] font-mono text-muted/70">
+                <ChevronRight className="w-4 h-4 text-muted group-hover:text-primary transition-colors flex-shrink-0 sm:hidden ml-2" />
+                <div className="hidden sm:block mt-2 text-[11px] font-mono text-muted/70">
                   {item.path}
                 </div>
               </button>

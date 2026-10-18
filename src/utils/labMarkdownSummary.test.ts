@@ -71,6 +71,27 @@ describe('buildLabSummaryMarkdown', () => {
     expect(md).not.toContain('**80** [');
   });
 
+  it('correctly sorts protocol-aware port triage keys without NaN sorting failures', () => {
+    const machineWithProto: Machine = {
+      ...base,
+      portTriage: {
+        '445/tcp': { status: 'key_vector', note: 'smb attack' },
+        '53/udp': { status: 'dead_end', note: 'udp filtered' },
+        '53/tcp': { status: 'checking', note: 'zone transfer' },
+        '22/tcp': { status: 'checking', note: 'ssh banner' },
+      },
+    } as Machine;
+    const md = buildLabSummaryMarkdown(machineWithProto);
+    expect(md).toContain('## Port triage notes');
+    const idx22 = md.indexOf('**22/tcp**');
+    const idx53tcp = md.indexOf('**53/tcp**');
+    const idx53udp = md.indexOf('**53/udp**');
+    const idx445 = md.indexOf('**445/tcp**');
+    expect(idx22).toBeLessThan(idx53tcp);
+    expect(idx53tcp).toBeLessThan(idx53udp);
+    expect(idx53udp).toBeLessThan(idx445);
+  });
+
   it('renders findings by severity with CVSS, CWE/CVE, service and remediation', () => {
     const md = buildLabSummaryMarkdown(full);
     expect(md.indexOf('Samba usermap script RCE')).toBeLessThan(md.indexOf('Weak SSH'));

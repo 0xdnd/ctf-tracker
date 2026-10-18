@@ -372,7 +372,12 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
               </thead>
               <tbody className="divide-y divide-subtle/40">
                 {activeServices.map((svc) => {
-                  const triage = machine.portTriage?.[String(svc.port)] || { status: 'untested' };
+                  const proto = (svc.protocol || 'tcp').toLowerCase();
+                  const triageKey = `${svc.port}/${proto}`;
+                  const triage =
+                    machine.portTriage?.[triageKey] ||
+                    machine.portTriage?.[String(svc.port)] ||
+                    { status: 'untested' };
                   return (
                   <tr key={`${svc.port}-${svc.protocol}`} className="hover:bg-surface-sunken/50 transition-colors">
                     <td className="py-2.5 px-3 font-mono tabular-nums font-semibold text-callout-info-fg whitespace-nowrap">
@@ -394,7 +399,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                         aria-label={`Triage status for port ${svc.port}`}
                         value={triage.status || 'untested'}
                         onChange={(e) =>
-                          setPortTriage(machine.id, svc.port, { status: e.target.value as any })
+                          setPortTriage(machine.id, triageKey, { status: e.target.value as any })
                         }
                         className="h-7 px-2 rounded-lg border border-subtle bg-surface-sunken text-xs font-medium text-primary focus:border-accent focus:outline-none cursor-pointer"
                       >
@@ -409,8 +414,9 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                         type="text"
                         aria-label={`Triage note for port ${svc.port}`}
                         value={triage.note || ''}
+                        maxLength={500}
                         onChange={(e) =>
-                          setPortTriage(machine.id, svc.port, { note: e.target.value })
+                          setPortTriage(machine.id, triageKey, { note: e.target.value })
                         }
                         placeholder="Port notes..."
                         className="w-full min-w-[120px] h-7 px-2 rounded-lg border border-subtle bg-surface-sunken text-xs text-primary placeholder:text-muted/60 focus:border-accent focus:outline-none"

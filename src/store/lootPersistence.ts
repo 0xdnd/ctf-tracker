@@ -53,11 +53,13 @@ const memoryFallback = new Map<string, string>();
 const lootStorage = {
   get(name: string): string | null {
     if (typeof window === 'undefined') return null;
+    // A value held in memory is newer than the disk copy (its write failed under quota), so it wins.
+    const held = memoryFallback.get(name);
+    if (held !== undefined) return held;
     try {
-      const v = localStorage.getItem(name);
-      return v !== null ? v : memoryFallback.get(name) ?? null;
+      return localStorage.getItem(name);
     } catch {
-      return memoryFallback.get(name) ?? null;
+      return null;
     }
   },
   set(name: string, value: string): void {

@@ -30,10 +30,23 @@ export function encodeUtf16LeBase64(s: string): string {
 }
 
 /**
+ * Quote a string as a single shell word for POSIX sh/bash copy-paste helpers.
+ * Wraps in single quotes and escapes embedded single quotes as '"'"'.
+ * Strips CR/LF to prevent command splitting / header-style injection.
+ * e.g. shellQuote("a'b") => "'a'\"'\"'b'" (rendered as 'a'"'"'b').
+ */
+export function shellQuote(s: string): string {
+  const clean = (s ?? '').replace(/[\r\n]/g, '');
+  return `'${clean.replace(/'/g, `'"'"'`)}'`;
+}
+
+/**
  * True iff the token is exactly 32 hex characters (case-insensitive) — the shape of an
  * NTLM/NT hash, as opposed to a plaintext password.
+ * Never throws on undefined/null — returns false for non-strings.
  */
-export function isNtHash(token: string): boolean {
+export function isNtHash(token: string | undefined | null): boolean {
+  if (typeof token !== 'string') return false;
   return /^[0-9a-fA-F]{32}$/.test(token.trim());
 }
 
@@ -47,29 +60,31 @@ export interface CredFlagResult {
 /**
  * Build the right credential flag for a tool, switching form based on whether the
  * active secret looks like an NT hash or a plaintext password.
+ * All interpolated secrets are shell-quoted so passwords with spaces/specials
+ * keep working while shell metachars cannot break out.
  */
 export function credFlag(tool: CredTool, token: string): CredFlagResult {
   const usesHash = isNtHash(token);
+  const q = shellQuote(token ?? '');
 
   switch (tool) {
     case 'cme':
     case 'nxc':
-      return { flag: usesHash ? `-H ${token}` : `-p ${token}`, usesHash };
+      return { flag: usesHash ? `-H ${q}` : `-p ${q}`, usesHash };
 
     case 'evil-winrm':
-      return { flag: usesHash ? `-H ${token}` : `-p ${token}`, usesHash };
+      return { flag: usesHash ? `-H ${q}` : `-p ${q}`, usesHash };
 
     case 'impacket':
       // impacket tools take the plaintext password positionally, but hashes via -hashes LM:NT
-      // (empty LM half when only the NT hash is known).
-      return { flag: usesHash ? `-hashes :${token}` : token, usesHash };
+      // (empty LM half when only the NT hash is known). Quote the whole :hash word.
+      return { flag: usesHash ? `-hashes ${shellQuote(`:${token ?? ''}`)}` : q, usesHash };
 
     case 'smbclient':
-      // smbclient has no native --pw-nt-hash flag; the documented nearest equivalent is
-      // --use-krb5-ccache-free auth via pass-the-hash through the libsmbclient PTH option.
-      return { flag: usesHash ? `--pw-nt-hash ${token}` : `--password ${token}`, usesHash };
+      // smbclient PTH form is --password <hash> --pw-nt-hash (flag takes no value).
+      return { flag: usesHash ? `--password ${q} --pw-nt-hash` : `--password ${q}`, usesHash };
 
     default:
-      return { flag: usesHash ? `-H ${token}` : `-p ${token}`, usesHash };
+      return { flag: usesHash ? `-H ${q}` : `-p ${q}`, usesHash };
   }
 }

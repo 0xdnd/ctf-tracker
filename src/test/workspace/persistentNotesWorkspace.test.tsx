@@ -291,4 +291,64 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
     expect(screen.getByPlaceholderText('Search field notes & guides...')).toBeInTheDocument();
     expect(screen.getAllByText('Custom AD Kerberoast Playbook').length).toBeGreaterThan(0);
   });
+
+  it('supports stayClosed option in openNote to synchronize cheatsheet notes without forcing drawer open', () => {
+    act(() => {
+      useNotesWorkspaceStore.setState({
+        openTabIds: ['01-recon-port-scanning'],
+        activeTabId: '01-recon-port-scanning',
+        isOpen: false,
+      });
+    });
+
+    // Opening note with stayClosed: true registers tab and updates activeTabId, but does NOT force isOpen
+    act(() => {
+      useNotesWorkspaceStore.getState().openNote('07-kerberos-attacks-master', { stayClosed: true });
+    });
+
+    const store = useNotesWorkspaceStore.getState();
+    expect(store.openTabIds).toContain('07-kerberos-attacks-master');
+    expect(store.activeTabId).toBe('07-kerberos-attacks-master');
+    expect(store.isOpen).toBe(false);
+
+    // If already open, stayClosed: true keeps it open and updates active tab
+    act(() => {
+      useNotesWorkspaceStore.setState({ isOpen: true });
+      useNotesWorkspaceStore.getState().openNote('02-web-directory-fuzzing', { stayClosed: true });
+    });
+
+    const storeOpen = useNotesWorkspaceStore.getState();
+    expect(storeOpen.activeTabId).toBe('02-web-directory-fuzzing');
+    expect(storeOpen.isOpen).toBe(true);
+  });
+
+  it('toggleOpen and selectors fall back to cheatsheet active note in localStorage on cold start', () => {
+    // Simulate user previously active on a cheatsheet note in localStorage
+    localStorage.setItem('zerobox_obsidian_active_tab', '07-kerberos-attacks-master');
+
+    act(() => {
+      useNotesWorkspaceStore.setState({
+        openTabIds: [],
+        activeTabId: null,
+        isOpen: false,
+      });
+    });
+
+    // getActiveNote and getOpenNotes resolve to the cheatsheet active note
+    expect(useNotesWorkspaceStore.getState().getActiveNote()?.id).toBe('07-kerberos-attacks-master');
+    expect(useNotesWorkspaceStore.getState().getOpenNotes()[0]?.id).toBe('07-kerberos-attacks-master');
+
+    // Toggling open adopts the cheatsheet active note as the primary open tab
+    act(() => {
+      useNotesWorkspaceStore.getState().toggleOpen();
+    });
+
+    const openedStore = useNotesWorkspaceStore.getState();
+    expect(openedStore.isOpen).toBe(true);
+    expect(openedStore.activeTabId).toBe('07-kerberos-attacks-master');
+    expect(openedStore.openTabIds).toContain('07-kerberos-attacks-master');
+
+    // Clean up
+    localStorage.removeItem('zerobox_obsidian_active_tab');
+  });
 });

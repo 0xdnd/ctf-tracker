@@ -357,16 +357,14 @@ export const TargetDetailPage: React.FC = () => {
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <TargetTypeBadge machine={machine} size="sm" />
+            <BadgeOverflow badges={badges} max={2} />
             {machine.isActive ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg">
                 <Lock className="h-3 w-3" aria-hidden="true" />
                 <span>Active Lab · HTB ToS Protected</span>
               </span>
             ) : (
-              <>
-                <BadgeOverflow badges={badges} max={2} />
-                <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel />
-              </>
+              <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel />
             )}
             <span className="inline-flex items-center gap-1.5 text-secondary">
               <Clock className="h-3.5 w-3.5 text-muted" aria-hidden="true" />
@@ -408,7 +406,7 @@ export const TargetDetailPage: React.FC = () => {
             </div>
           </div>
           <p className="text-sm text-secondary leading-relaxed max-w-lg mx-auto">
-            In strict compliance with <strong>Hack The Box Terms of Service (AUP §8.2)</strong>, active machines are restricted to name only. Reconnaissance data, open ports, flags, attack vectors, hints, and notes are prohibited until retirement.
+            In strict compliance with <strong>Hack The Box Terms of Service (AUP §8.2)</strong>, active machines are restricted to name only. Reconnaissance data, open ports, flags, attack vectors, hints, and notes are prohibited until retirement. You can safely track your practice sessions and elapsed time with 100% peace of mind and zero risk to your HTB account.
           </p>
           {roomUrl && (
             <div className="pt-2">
@@ -696,7 +694,7 @@ export const TargetDetailPage: React.FC = () => {
               rows={4}
               value={machine.quickNotes || ''}
               onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
-              placeholder="Record notes, credentials, and pivot paths..."
+              placeholder="Record tactical field notes, credentials, and pivot paths (supports Markdown and [[wikilinks]]). Stored strictly offline in your browser."
               className="w-full resize-none rounded-xl border border-subtle bg-surface-sunken p-3 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none"
             />
           </section>

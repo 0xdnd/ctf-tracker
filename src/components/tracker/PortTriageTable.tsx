@@ -18,20 +18,28 @@ const TRIAGE_OPTIONS: { value: PortTriageStatus; label: string; icon: React.Comp
 export const PortTriageTable: React.FC<PortTriageTableProps> = ({ machine, className = '' }) => {
   const setPortTriage = useCtfStore((s) => s.setPortTriage);
 
-  // Compile ports list from services or openPorts
+  // Compile ports list from services or openPorts (deduplicated by port/proto)
   const portsList = React.useMemo(() => {
+    const seen = new Set<string>();
     const list: { port: number; protocol: string; service: string; version?: string }[] = [];
     if (machine.services && machine.services.length > 0) {
       for (const s of machine.services) {
+        const proto = (s.protocol || 'tcp').toLowerCase();
+        const key = `${s.port}/${proto}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         list.push({
           port: s.port,
-          protocol: s.protocol || 'tcp',
+          protocol: proto,
           service: s.service || 'unknown',
           version: s.version,
         });
       }
     } else if (machine.openPorts && machine.openPorts.length > 0) {
       for (const p of machine.openPorts) {
+        const key = `${p}/tcp`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         list.push({
           port: p,
           protocol: 'tcp',
@@ -39,7 +47,7 @@ export const PortTriageTable: React.FC<PortTriageTableProps> = ({ machine, class
         });
       }
     }
-    return list.sort((a, b) => a.port - b.port);
+    return list.sort((a, b) => a.port - b.port || a.protocol.localeCompare(b.protocol));
   }, [machine.services, machine.openPorts]);
 
   if (portsList.length === 0) {
@@ -74,7 +82,10 @@ export const PortTriageTable: React.FC<PortTriageTableProps> = ({ machine, class
           </thead>
           <tbody className="divide-y divide-subtle/40">
             {portsList.map((item) => {
-              const triage = triageMap[String(item.port)] || { status: 'untested' };
+              // Protocol-aware key: tcp/udp on the same port are independent triage rows.
+              // The legacy numeric key is kept as a read fallback so old data stays visible.
+              const key = `${item.port}/${(item.protocol || 'tcp').toLowerCase()}`;
+              const triage = triageMap[key] || triageMap[String(item.port)] || { status: 'untested' };
               const currentStatus = triage.status || 'untested';
               const currentNote = triage.note || '';
 
@@ -92,7 +103,7 @@ export const PortTriageTable: React.FC<PortTriageTableProps> = ({ machine, class
                       aria-label={`Triage status for port ${item.port}`}
                       value={currentStatus}
                       onChange={(e) =>
-                        setPortTriage(machine.id, item.port, { status: e.target.value as PortTriageStatus })
+                        setPortTriage(machine.id, key, { status: e.target.value as PortTriageStatus })
                       }
                       className="h-7 px-2 rounded-lg border border-subtle bg-surface-sunken text-xs font-medium text-primary focus:border-accent focus:outline-none cursor-pointer"
                     >
@@ -108,7 +119,8 @@ export const PortTriageTable: React.FC<PortTriageTableProps> = ({ machine, class
                       type="text"
                       aria-label={`Triage note for port ${item.port}`}
                       value={currentNote}
-                      onChange={(e) => setPortTriage(machine.id, item.port, { note: e.target.value })}
+                      maxLength={500}
+                      onChange={(e) => setPortTriage(machine.id, key, { note: e.target.value })}
                       placeholder="Add note (e.g. vulnerable vsftpd 2.3.4, sqli on login form)"
                       className="w-full h-7 px-2.5 rounded-lg border border-subtle bg-surface-sunken text-xs text-primary placeholder:text-muted/60 focus:border-accent focus:outline-none"
                     />

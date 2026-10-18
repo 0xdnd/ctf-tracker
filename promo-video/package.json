@@ -1,0 +1,42 @@
+{
+  "name": "promo-video",
+  "version": "1.0.0",
+  "description": "My Remotion video",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.533",
+    "@remotion/google-fonts": "^4.0.533",
+    "@remotion/transitions": "^4.0.533",
+    "lucide-react": "^1.52.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.533"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.533",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.39.5",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "render:60fps": "remotion render src/index.ts ZeroBox60fpsShowcase out/zerobox-showcase-60fps-1080p.mp4 --concurrency=4",
+    "still:60fps": "remotion still src/index.ts ZeroBox60fpsShowcase out/zerobox-60fps-preview.png --frame=600",
+    "render": "remotion render src/index.ts ZeroBox60fpsShowcase out/zerobox-showcase-60fps-1080p.mp4",
+    "render:nanobanana": "remotion render src/index.ts ZeroBoxNanoBananaShowcase out/zerobox-nanobanana-showcase-1080p.mp4",
+    "still:nanobanana": "remotion still src/index.ts ZeroBoxNanoBananaShowcase out/nanobanana-preview.png",
+    "render:master": "remotion render src/index.ts ZeroBoxMasterShowcase out/zerobox-ultimate-showcase-1080p.mp4",
+    "render:saas": "remotion render src/index.ts ZeroBoxPromoSaaS out/zerobox-promo-modern-saas.mp4",
+    "render:stealth": "remotion render src/index.ts ZeroBoxPromoStealth out/zerobox-version-a-stealth.mp4",
+    "render:neon": "remotion render src/index.ts ZeroBoxPromoNeon out/zerobox-version-b-neon.mp4",
+    "render:vertical": "remotion render src/index.ts ZeroBoxPromoVertical out/zerobox-vertical-shorts.mp4",
+    "still": "remotion still src/index.ts ZeroBoxMasterShowcase out/thumbnail.png",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc"
+  }
+}

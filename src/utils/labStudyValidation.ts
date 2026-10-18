@@ -94,7 +94,7 @@ export function sanitizeLabStudyFields<T>(machine: T): T {
         const clean: PortTriageEntry = { status: entry.status as PortTriageEntry['status'] };
         const note = str(entry.note, MAX_NOTE_LEN);
         if (note) clean.note = note;
-        out[port.slice(0, 16)] = clean;
+        out[port.slice(0, 32)] = clean;
       }
     }
     if (Object.keys(out).length) m.portTriage = out;

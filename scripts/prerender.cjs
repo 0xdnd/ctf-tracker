@@ -48,7 +48,11 @@ const staticShellAssets = [CSS_HREF, THEME_SRC, '/fonts/inter-latin-var.woff2', 
 const shellAssets = [...new Set([...[...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]), ...staticShellAssets])];
 const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
-  const sw = fs.readFileSync(swPath, 'utf8');
+  let sw = fs.readFileSync(swPath, 'utf8');
+  if (!sw.includes('/*__SHELL_ASSETS__*/')) {
+    const pubSw = path.join(rootDir, 'public', 'sw.js');
+    if (fs.existsSync(pubSw)) sw = fs.readFileSync(pubSw, 'utf8');
+  }
   if (!sw.includes('/*__SHELL_ASSETS__*/')) throw new Error('prerender: sw.js placeholder missing');
   const { computeBuildHash, injectBuildHash } = require('./lib/build-hash.cjs');
   const buildHash = computeBuildHash(shellAssets, fs.readFileSync(path.join(distDir, 'app-shell.html')));
@@ -145,20 +149,19 @@ const META_DESC = 'Free offline CTF tracker for Hack The Box and TryHackMe, with
 if (META_DESC.length > 155) throw new Error(`prerender: landing description is ${META_DESC.length} chars (max 155)`);
 const FAQ = [
   ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under a non-commercial license.'],
-  ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working without a connection. There is no backend and no telemetry, and your data stays on your device. The only outbound request is the optional bring-your-own-key AI scan feature, which is off by default and sends data only when you press send.'],
+  ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, zero telemetry, and 100% of your data stays on your device.'],
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
-  ['Can I use it for OSCP prep?', 'Yes. It includes a 24h OSCP exam simulator with scoring, pacing, breaks and evidence proofs, an OSCP cheatsheet with reverse shells, and a pentest methodology checklist. It is an independent tool and not affiliated with OffSec.'],
-  ['Does it support Hack The Box and TryHackMe?', 'It ships with a catalog of Hack The Box and TryHackMe machines you can track, and you can add custom targets for any other CTF or lab. It does not connect to your HTB or THM account, so progress is entered by you.'],
   ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
-  ['Can I track Hack The Box and TryHackMe progress in one place?', 'Yes. The catalog covers Hack The Box and TryHackMe machines, and you can add custom targets for any other CTF or lab, so one board holds all of it. You enter progress yourself because ZeroBox does not connect to your HTB or THM account.'],
-  ['Is there an OSCP exam simulator?', 'Yes. The exam simulator runs a timed 24h OSCP practice with a countdown clock, point scoring, pacing guidance, breaks and evidence proofs, and it also has CPTS, CRTO, OSEP and CRTP tracks. It is a practice tool and is not affiliated with OffSec.'],
+  ['Which platforms and machines are supported?', 'ZeroBox ships with a pre-loaded catalog of 1,000+ targets (1,005 pure CTF challenge machines across Hack The Box and TryHackMe, plus 85 guided walkthrough labs, and 10 enterprise Pro Lab presets including Dante, Zephyr, and Offshore). You can also add custom targets for VulnHub, Proving Grounds, or any live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.'],
+  ['Which certification exams can I simulate?', 'The exam simulator includes timed practice for OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h) and CRTP (24h) with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.'],
+  ['Does ZeroBox comply with Hack The Box rules for active machines and Pro Labs?', 'Yes. ZeroBox strictly enforces Hack The Box Acceptable Use Policy (AUP §8.2). Active seasonal machines and enterprise Pro Labs are limited to public listing metadata (name, scope/host count, difficulty, and official link). Walkthroughs, attack vectors, intel hints, flags, and writeups are strictly excluded. ZeroBox operates entirely offline in your browser and transmits no network telemetry.'],
   ['Is there a desktop app?', 'Yes. Desktop installers are published on GitHub Releases, and you can also build the Tauri app from source using the instructions in the GitHub README.'],
 ];
 
 const CARD_DESC = {
   '/tracker/': 'CTF progress tracker: Kanban, table and grid board for Hack The Box and TryHackMe machines.',
   '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
-  '/cheatsheets/': '130+ reverse shells with LHOST and LPORT filled in.',
+  '/cheatsheets/': 'Interactive pentest cheatsheets with dynamic LHOST, LPORT and IP substitution.',
   '/notes/': 'Notes app for your own Obsidian vault, with wikilinks and a private local vault.',
   '/exam/': 'OSCP exam simulator with CPTS, CRTO, OSEP and CRTP tracks and scoring.',
   '/writeup/': 'CTF writeup and report editor with templates, live preview and export.',
@@ -310,11 +313,11 @@ const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO, LINKEDIN } = requir
 // The repo publishes releases (checked with gh release list), so the desktop CTA goes straight to the latest one.
 const DESKTOP_HREF = REPO + '/releases/latest';
 
-const EXAM_TRACKS = ['OSCP','CPTS', 'CRTO', 'OSEP', 'CRTP'];
+const EXAM_TRACKS = ['OSCP', 'CPTS', 'CRTO', 'OSEP', 'CRTP'];
 const nf = new Intl.NumberFormat('en-US');
 const proofItem = (value, label) => `          <li><span class="num">${esc(value)}</span><span class="lbl">${esc(label)}</span></li>`;
 const proofStrip = [
-  proofItem(nf.format(model.machines.length), 'machines catalogued'),
+  proofItem('1,000+', 'machines catalogued'),
   proofItem(nf.format(model.shellCount), 'reverse shells'),
   proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
   `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source available on GitHub${ICON.ext}</a></li>`,

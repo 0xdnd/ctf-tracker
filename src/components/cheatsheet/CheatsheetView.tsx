@@ -25,6 +25,7 @@ import {
   PanelLeft,
   Maximize2} from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
   CHEATSHEET_CATEGORIES 
@@ -388,6 +389,13 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       }
     } catch {}
   }, [openObsidianNotes, activeObsidianNoteId]);
+
+  // Synchronize active cheatsheet note to the persistent sidecar Notes workspace (staying closed unless already open)
+  useEffect(() => {
+    if (activeObsidianNoteId) {
+      useNotesWorkspaceStore.getState().openNote(activeObsidianNoteId, { stayClosed: true });
+    }
+  }, [activeObsidianNoteId]);
 
   // Sync viewMode and activeObsidianNote when route or search query changes
   useEffect(() => {

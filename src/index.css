@@ -783,7 +783,12 @@ html:not(.dark) .border-gray-900 {
   border-color: rgb(var(--cyber-border));
 }
 
-/* Compact Terminal Scrollbars (No Neon Glow) */
+/* Compact Terminal Scrollbars (No Neon Glow) - Cross-Browser Firefox & WebKit */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--border-strong)) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;

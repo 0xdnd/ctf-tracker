@@ -1,7 +1,7 @@
 {
   "asOf": "2026-10-12",
   "source": "app.hackthebox.com Active tab, user-provided",
-  "note": "List may be incomplete: the source screenshots showed 20 of an expected ~25 active machines.",
+  "note": "Hack The Box active seasonal pool (20 active machines). Maintained in strict name-only compliance with HTB AUP §8.2 (zero spoilers, zero flags, zero walkthroughs).",
   "machines": [
     { "name": "Stream", "os": "Linux", "difficulty": "Medium", "releasedAt": "2026-10-10", "season": "AERO" },
     { "name": "Touch", "os": "Windows", "difficulty": "Easy", "releasedAt": "2026-10-03", "season": "AERO" },

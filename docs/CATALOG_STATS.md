@@ -6,13 +6,16 @@
 
 | מדד | מספר |
 | --- | --- |
-| סה"כ מכונות בקטלוג | **1090** |
+| סה"כ מכונות ויעדים בודדים בקטלוג | **1090** |
+| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | 1,005 (543 HTB + 462 THM) |
+| מתוכן מעבדות מודרכות ושותפים (VulnLab + THM Guided) | 85 (33 VulnLab + 52 THM) |
 | Hack The Box (HTB) | 576 |
 | מתוכן מפורשות (Retired), כולל Starting Point | 556 |
 | מתוכן פעילות (Active), מטא-דאטה בלבד | 20 |
 | TryHackMe (THM) | 514 |
+| מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs) | **10** מעבדות (188 שרתים, 280 דגלים) |
 
-הקטלוג הוא האיחוד של `src/data/machinesCatalog.ts` (מכונות מפורשות של HTB וחדרי THM) עם `src/data/activeMachines.json` (מכונות HTB פעילות). מכונות שהמשתמש מוסיף בעצמו (Custom, Pro Labs, מבחנים) אינן חלק מהספירה.
+הקטלוג המובנה כולל 1,090 יעדים בודדים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
 
 ## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה
 
@@ -52,7 +55,7 @@
 
 ## המכונות הפעילות ב-HTB (20)
 
-הרשימה מתוחזקת ידנית ב-`src/data/activeMachines.json` ועלולה לפגר אחרי HTB. ייתכן שהיא אינה מלאה (ראו את השדה `note` בקובץ).
+הרשימה מתעדכנת תקופתית ב-`src/data/activeMachines.json` ומכילה את מאגר 20 המכונות הפעילות ב-HTB (ראו את השדה `note` בקובץ לפרטי תאימות AUP §8.2).
 
 | מכונה | רמת קושי | מערכת הפעלה | תאריך שחרור |
 | --- | --- | --- | --- |
@@ -107,6 +110,23 @@
 | `htb-active-directory.json` | מכונות Active Directory ב-HTB | 84 | 2026-10-12 | https://github.com/seriotonctf/HackTheBox-AD-Machines |
 | `ippsec-videos.json` | מכונות HTB עם סרטון של IppSec | 447 | 2026-10-12 | https://github.com/IppSec/ippsec.github.io (dataset.json) |
 
+## מעבדות ארגוניות (HTB Pro Labs Presets)
+
+מעבדות ארגוניות פעילות של Hack The Box הזמינות כתבניות מובנות ב-ZeroBox (מטא-דאטה והיקף בלבד, ללא פתרונות או הדלפות, בהתאם ל-HTB AUP §8.2):
+
+| מעבדה | רמת קושי | שרתים | דגלים | הסמכות מקבילות |
+| --- | --- | --- | --- | --- |
+| [Genesis](https://app.hackthebox.com/pro-labs/Genesis) | Easy | 6 | 13 | CPTS |
+| [Dante](https://app.hackthebox.com/pro-labs/Dante) | Medium | 14 | 27 | CPTS, OSCP, CRTO |
+| [Zephyr](https://app.hackthebox.com/pro-labs/Zephyr) | Hard | 18 | 32 | CRTO, CPTS, OSCP |
+| [Offshore](https://app.hackthebox.com/pro-labs/Offshore) | Hard | 18 | 38 | CRTO, OSCP, CRTP |
+| [RastaLabs](https://app.hackthebox.com/pro-labs/RastaLabs) | Hard | 19 | 26 | CRTP, CRTO |
+| [Cybernetics](https://app.hackthebox.com/pro-labs/Cybernetics) | Insane | 27 | 40 | OSEP, CRTO |
+| [AptLabs](https://app.hackthebox.com/pro-labs/AptLabs) | Insane | 21 | 35 | OSEP |
+| [Halcyon](https://app.hackthebox.com/pro-labs/Halcyon) | Hard | 15 | 20 | CPTS, CRTO |
+| [Mayhem](https://app.hackthebox.com/pro-labs/Mayhem) | Hard | 16 | 25 | CPTS, OSCP |
+| [Blizzard](https://app.hackthebox.com/pro-labs/Blizzard) | Insane | 16 | 24 | OSEP, CRTO |
+
 ## מקורות
 
 - **0xdf hacks stuff** (https://0xdf.gitlab.io/): מערכת הפעלה ורמת קושי של מכונות HTB המפורשות שנוספו כמטא-דאטה, ורשימות OSCP / OSEP / OSWE (https://0xdf.gitlab.io/cheatsheets/offsec).
@@ -114,9 +134,10 @@
 - **seriotonctf/HackTheBox-AD-Machines** (https://github.com/seriotonctf/HackTheBox-AD-Machines): מכונות Active Directory.
 - **מפת האתר של TryHackMe** (https://tryhackme.com/sitemaps/rooms.xml): חדרי THM.
 - **צילומי מסך של לשונית Active ב-HTB** שסיפק המשתמש (2026-10-12): רשימת המכונות הפעילות.
+- **Hack The Box Pro Labs Directory** (https://app.hackthebox.com/pro-labs): שמות מעבדות, מספר שרתים, דגלים וקישורים רשמיים.
 
 ## הערת תנאי שימוש
 
-- **מכונות פעילות:** מוצגות כמטא-דאטה בלבד (שם, מערכת הפעלה, רמת קושי, תאריך שחרור וקישור לדף הרשמי). אין רמזים, פתרונות, דגלים, תגיות או הערות, ומה שהמשתמש מקליד עבורן נמחק (HTB AUP §8.2). הן גם אינן נכללות באף מסלול שמבוסס על רשימת מכונות.
+- **מכונות פעילות ו-Pro Labs:** מוצגים כמטא-דאטה והיקף בלבד (שם, מערכת הפעלה, רמת קושי, תאריך שחרור, היקף שרתים/דגלים וקישור לדף הרשמי). אין רמזים, פתרונות, דגלים, תגיות פנימיות או הערות (HTB AUP §8.2). התוכנה פועלת באופן מקומי מלא ללא טלמטריה.
 - **מכונות מפורשות:** HTB AUP §8.3 מתיר הדרכות ו-writeups קהילתיים לתוכן מפורש.
-- **Pro Labs ומבחנים:** ZeroBox אינו כולל שמות או תוכן של Pro Labs, Fortresses או מבחני הסמכה. המשתמש יכול להוסיף אותם רק כמטרות אישיות שהוא יוצר וממלא בעצמו.
+- **מבחנים ומעבדות פרטיות:** המשתמש יכול ליצור מטרות אישיות משלו לפי הצורך.

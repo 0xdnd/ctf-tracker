@@ -53,7 +53,8 @@ function tokenize(q: string): { raw: string; quoted: boolean }[] {
 export function parseSearchQuery(q: string): ParsedSearchQuery {
   const filters: ParsedSearchQuery['filters'] = {};
   const text: string[] = [];
-  for (const { raw, quoted } of tokenize(q ?? '')) {
+  const safeQ = typeof q === 'string' ? q.slice(0, 1000) : '';
+  for (const { raw, quoted } of tokenize(safeQ)) {
     const idx = raw.indexOf(':');
     const key = !quoted && idx > 0 ? KEY_MAP[raw.slice(0, idx).toLowerCase()] : undefined;
     const value = key ? raw.slice(idx + 1) : '';
@@ -68,10 +69,16 @@ export function parseSearchQuery(q: string): ParsedSearchQuery {
     } else if (key === 'port') {
       const ports = vals.map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0 && n < 65536);
       if (ports.length === 0) text.push(raw);
-      else filters.port = [...(filters.port ?? []), ...ports];
+      else {
+        const existing = new Set(filters.port ?? []);
+        for (const p of ports) existing.add(p);
+        filters.port = Array.from(existing);
+      }
     } else {
       const k = key as 'os' | 'difficulty' | 'platform' | 'track' | 'status';
-      filters[k] = [...(filters[k] ?? []), ...vals.map((v) => v.toLowerCase())];
+      const existing = new Set(filters[k] ?? []);
+      for (const v of vals) existing.add(v.toLowerCase());
+      filters[k] = Array.from(existing);
     }
   }
   return { text: text.join(' ').trim(), filters };

@@ -125,8 +125,8 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
         type="button"
         onClick={() => onSelect(m.id)}
         className={ICON_BTN}
-        title="Attack Methodology Checklist"
-        aria-label={`Open attack methodology checklist for ${m.name}`}
+        title={m.isActive ? 'Active Lab Compliance & Details' : 'Attack Methodology Checklist'}
+        aria-label={m.isActive ? `Open active target compliance details for ${m.name}` : `Open attack methodology checklist for ${m.name}`}
       >
         <ListChecks className="w-3.5 h-3.5" />
       </button>

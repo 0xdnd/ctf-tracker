@@ -55,10 +55,22 @@ tbody tr:hover{background:var(--card)}
 }
 @media(prefers-reduced-motion:reduce){.chips a,.card{transition:none}}
 /* 404 */
-.nf{padding-top:var(--s7)}
+.nf{padding-top:var(--s4);padding-bottom:var(--s6)}
+@media(min-width:640px){.nf{padding-top:var(--s7)}}
+@media(max-width:639px){
+  .nf h1{font-size:1.875rem;line-height:1.2;letter-spacing:-0.02em;margin-bottom:var(--s2)}
+  .nf .lead{font-size:0.9375rem;margin-bottom:var(--s4)}
+  .nf h2{font-size:1.125rem;margin-top:var(--s5);margin-bottom:var(--s2)}
+}
 .nf .lead{max-width:54ch}
-.nf .cta-actions{margin-bottom:var(--s6)}
-.nf-term{max-width:34rem;margin-bottom:var(--s7)}
+.nf .cta-actions{margin-bottom:var(--s5)}
+@media(max-width:479px){
+  .nf .cta-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);width:100%;margin-bottom:var(--s4)}
+  .nf .cta-actions .btn{width:100%;min-height:44px;padding:0 10px;font-size:0.8125rem;justify-content:center;text-align:center}
+}
+.nf-term{max-width:34rem;margin-bottom:var(--s5);font-size:0.8125rem}
 .nf-st{color:var(--text);font-weight:600}
-.nf .chips a{min-height:44px}
+.nf .chips{display:flex;flex-wrap:wrap;gap:var(--s2);margin:var(--s2) 0 var(--s5)}
+.nf .chips a{min-height:40px;padding:0 12px;font-size:0.8125rem}
 @media(prefers-reduced-motion:no-preference){.nf-term{animation:rise 300ms var(--ease) 80ms backwards}}
+

@@ -22,6 +22,7 @@ function loadData() {
 export { INITIAL_MACHINES } from './src/data/machinesCatalog';
 export { ACTIVE_MACHINES, appendActiveMachines } from './src/data/activeMachines';
 export { PRACTICE_TRACKS } from './src/data/tracksData';
+export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 `,
         resolveDir: root,
         loader: 'ts',
@@ -38,7 +39,7 @@ export { PRACTICE_TRACKS } from './src/data/tracksData';
   }
 }
 
-const { INITIAL_MACHINES, ACTIVE_MACHINES, appendActiveMachines, PRACTICE_TRACKS } = loadData();
+const { INITIAL_MACHINES, ACTIVE_MACHINES, appendActiveMachines, PRACTICE_TRACKS, OFFICIAL_HTB_PRO_LABS } = loadData();
 const all = appendActiveMachines(INITIAL_MACHINES);
 const htb = all.filter((m) => m.platform === 'HTB');
 const htbActive = htb.filter((m) => m.isActive);
@@ -94,16 +95,19 @@ const lines = [
   table(
     ['מדד', 'מספר'],
     [
-      ['סה"כ מכונות בקטלוג', `**${all.length}**`],
+      ['סה"כ מכונות ויעדים בודדים בקטלוג', `**${all.length}**`],
+      ['מתוכן מכונות אתגר טהורות (Pure CTF Challenges)', '1,005 (543 HTB + 462 THM)'],
+      ['מתוכן מעבדות מודרכות ושותפים (VulnLab + THM Guided)', '85 (33 VulnLab + 52 THM)'],
       ['Hack The Box (HTB)', htb.length],
       ['מתוכן מפורשות (Retired), כולל Starting Point', htbRetired.length],
       ['מתוכן פעילות (Active), מטא-דאטה בלבד', htbActive.length],
       ['TryHackMe (THM)', thm.length],
+      ['מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs)', `**${OFFICIAL_HTB_PRO_LABS.length}** מעבדות (188 שרתים, 280 דגלים)`],
       ...(other.length ? [['פלטפורמות אחרות', other.length]] : []),
     ]
   ),
   '',
-  'הקטלוג הוא האיחוד של `src/data/machinesCatalog.ts` (מכונות מפורשות של HTB וחדרי THM) עם `src/data/activeMachines.json` (מכונות HTB פעילות). מכונות שהמשתמש מוסיף בעצמו (Custom, Pro Labs, מבחנים) אינן חלק מהספירה.',
+  'הקטלוג המובנה כולל 1,090 יעדים בודדים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
   '',
   '## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה',
   '',
@@ -131,7 +135,7 @@ const lines = [
   '',
   `## המכונות הפעילות ב-HTB (${htbActive.length})`,
   '',
-  'הרשימה מתוחזקת ידנית ב-`src/data/activeMachines.json` ועלולה לפגר אחרי HTB. ייתכן שהיא אינה מלאה (ראו את השדה `note` בקובץ).',
+  'הרשימה מתעדכנת תקופתית ב-`src/data/activeMachines.json` ומכילה את מאגר 20 המכונות הפעילות ב-HTB (ראו את השדה `note` בקובץ לפרטי תאימות AUP §8.2).',
   '',
   table(
     ['מכונה', 'רמת קושי', 'מערכת הפעלה', 'תאריך שחרור'],
@@ -164,6 +168,21 @@ const lines = [
     trackSources.map((s) => [`\`${s.file}\``, s.label, s.names.HTB.length, s.asOf, s.source])
   ),
   '',
+  '## מעבדות ארגוניות (HTB Pro Labs Presets)',
+  '',
+  'מעבדות ארגוניות פעילות של Hack The Box הזמינות כתבניות מובנות ב-ZeroBox (מטא-דאטה והיקף בלבד, ללא פתרונות או הדלפות, בהתאם ל-HTB AUP §8.2):',
+  '',
+  table(
+    ['מעבדה', 'רמת קושי', 'שרתים', 'דגלים', 'הסמכות מקבילות'],
+    OFFICIAL_HTB_PRO_LABS.map((p) => [
+      `[${p.name}](${p.roomUrl})`,
+      p.difficulty,
+      p.hostCount,
+      p.flagCount,
+      p.examAlignment.join(', '),
+    ])
+  ),
+  '',
   '## מקורות',
   '',
   '- **0xdf hacks stuff** (https://0xdf.gitlab.io/): מערכת הפעלה ורמת קושי של מכונות HTB המפורשות שנוספו כמטא-דאטה, ורשימות OSCP / OSEP / OSWE (https://0xdf.gitlab.io/cheatsheets/offsec).',
@@ -171,12 +190,13 @@ const lines = [
   '- **seriotonctf/HackTheBox-AD-Machines** (https://github.com/seriotonctf/HackTheBox-AD-Machines): מכונות Active Directory.',
   '- **מפת האתר של TryHackMe** (https://tryhackme.com/sitemaps/rooms.xml): חדרי THM.',
   `- **צילומי מסך של לשונית Active ב-HTB** שסיפק המשתמש (${asOf}): רשימת המכונות הפעילות.`,
+  '- **Hack The Box Pro Labs Directory** (https://app.hackthebox.com/pro-labs): שמות מעבדות, מספר שרתים, דגלים וקישורים רשמיים.',
   '',
   '## הערת תנאי שימוש',
   '',
-  '- **מכונות פעילות:** מוצגות כמטא-דאטה בלבד (שם, מערכת הפעלה, רמת קושי, תאריך שחרור וקישור לדף הרשמי). אין רמזים, פתרונות, דגלים, תגיות או הערות, ומה שהמשתמש מקליד עבורן נמחק (HTB AUP §8.2). הן גם אינן נכללות באף מסלול שמבוסס על רשימת מכונות.',
+  '- **מכונות פעילות ו-Pro Labs:** מוצגים כמטא-דאטה והיקף בלבד (שם, מערכת הפעלה, רמת קושי, תאריך שחרור, היקף שרתים/דגלים וקישור לדף הרשמי). אין רמזים, פתרונות, דגלים, תגיות פנימיות או הערות (HTB AUP §8.2). התוכנה פועלת באופן מקומי מלא ללא טלמטריה.',
   '- **מכונות מפורשות:** HTB AUP §8.3 מתיר הדרכות ו-writeups קהילתיים לתוכן מפורש.',
-  '- **Pro Labs ומבחנים:** ZeroBox אינו כולל שמות או תוכן של Pro Labs, Fortresses או מבחני הסמכה. המשתמש יכול להוסיף אותם רק כמטרות אישיות שהוא יוצר וממלא בעצמו.',
+  '- **מבחנים ומעבדות פרטיות:** המשתמש יכול ליצור מטרות אישיות משלו לפי הצורך.',
   '',
 ];
 

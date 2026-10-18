@@ -55,6 +55,29 @@ describe('NewMachineModal target type', () => {
     expect(getTargetType(saved)).toBe('pro-lab');
   });
 
+  it('Pro Lab preset buttons auto-fill lab name, official URL, and exam alignment tags', async () => {
+    const user = userEvent.setup();
+    openModal();
+    await user.click(screen.getByRole('radio', { name: 'Pro Lab' }));
+
+    const danteBtn = screen.getByRole('button', { name: /Dante/ });
+    await user.click(danteBtn);
+
+    expect(screen.getByLabelText('Machine or Room Name')).toHaveValue('Dante');
+    expect(screen.getByLabelText('Lab Room / Writeup URL')).toHaveValue('https://app.hackthebox.com/pro-labs/Dante');
+
+    await user.click(screen.getByRole('button', { name: /Deploy Machine/ }));
+    const saved = useCtfStore.getState().machines[0];
+    expect(saved.name).toBe('Dante');
+    expect(saved.difficulty).toBe('Medium');
+    expect(saved.roomUrl).toBe('https://app.hackthebox.com/pro-labs/Dante');
+    expect(saved.tags).toContain('pro-lab');
+    expect(saved.tags).toContain('CPTS');
+    expect(saved.tags).toContain('14-hosts');
+    expect(saved.tags).toContain('27-flags');
+    expect(getTargetType(saved)).toBe('pro-lab');
+  });
+
   it('Exam keeps user tags after the exam marker', async () => {
     const saved = await addTarget('Exam', 'Practice attempt', 'AD, pivoting');
     expect(saved.platform).toBe('Custom');

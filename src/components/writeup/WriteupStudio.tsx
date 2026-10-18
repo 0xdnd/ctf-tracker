@@ -1024,7 +1024,7 @@ cat /root/root.txt
           </div>
           <h3 className="text-lg font-semibold text-primary">Writeups Prohibited for Active Targets</h3>
           <p className="text-xs text-secondary max-w-md mx-auto leading-relaxed">
-            Under Hack The Box Terms of Service (AUP §8.2) and Community Rules, authoring or publishing writeups, walkthroughs, attack vectors, or solutions for active seasonal machines is strictly prohibited. Only retired machines may be documented.
+            Under Hack The Box Terms of Service (AUP §8.2) and Community Rules, authoring or publishing writeups, walkthroughs, attack vectors, or solutions for active seasonal machines is strictly prohibited. Full Writeup Studio documentation will unlock automatically once this machine is retired.
           </p>
         </div>
       ) : (

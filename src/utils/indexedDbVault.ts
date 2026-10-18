@@ -119,6 +119,9 @@ async function readVaultStrict(): Promise<VaultPayload | null> {
   });
 }
 
+const BACKUP_GATED_MESSAGE =
+  'Writes are blocked in this tab (another tab is restoring or merging, or ZeroBox was updated). Reload and try again.';
+
 const isNoteLike = (n: unknown): n is CptsNoteEntry =>
   Boolean(n) && typeof n === 'object' && typeof (n as { id?: unknown }).id === 'string';
 
@@ -140,11 +143,12 @@ export async function upsertVaultNotesFromBackup(
   notes: unknown[],
   wikilinkMap?: Record<string, string>
 ): Promise<number> {
-  if (isSchemaWriteGated()) return 0;
+  if (isSchemaWriteGated()) throw new Error(BACKUP_GATED_MESSAGE);
   const incoming = notes.filter(isNoteLike);
   const incomingMap = wikilinkMap && typeof wikilinkMap === 'object' ? wikilinkMap : {};
   if (incoming.length === 0 && Object.keys(incomingMap).length === 0) return 0;
   const current = await readVaultStrict();
+  if (isSchemaWriteGated()) throw new Error(BACKUP_GATED_MESSAGE);
   const byId = new Map<string, CptsNoteEntry>();
   for (const n of Array.isArray(current?.notes) ? current.notes.filter(isNoteLike) : []) byId.set(n.id, n);
   for (const n of incoming) byId.set(n.id, n);

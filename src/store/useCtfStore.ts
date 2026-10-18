@@ -824,11 +824,19 @@ export const loadInitialProfileData = (profileId: string) => {
     try {
       const raw = safeLocalStorage.getItem(getProfileStorageKey(profileId));
       let state = raw ? JSON.parse(raw) : null;
+      if (state && (typeof state !== 'object' || Array.isArray(state))) {
+        state = null;
+      }
       if (!state) {
         const legacy = safeLocalStorage.getItem('specter_ctf_store_v2');
         if (legacy) {
-          const parsed = JSON.parse(legacy);
-          state = parsed.state || parsed;
+          try {
+            const parsed = JSON.parse(legacy);
+            const candidate = parsed && typeof parsed === 'object' ? (parsed.state || parsed) : null;
+            if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+              state = candidate;
+            }
+          } catch {}
         }
       }
 
@@ -1534,6 +1542,60 @@ export const useCtfStore = create<CtfStoreState>()(
               userNotes: vault.notes,
               userWikilinkMap: vault.wikilinkMap || {}
             });
+            return;
+          }
+          if (!get().userNotes.length && !get().customNotes.length) {
+            const initialNotes: CptsNoteEntry[] = [
+              {
+                id: 'note-00--pt',
+                title: '00 - Penetration Test Methodology Checklist',
+                titleEn: '00 - Penetration Test Methodology Checklist',
+                category: 'General Tactical',
+                rawCategory: 'General Tactical',
+                subCategory: 'Pre-Engagement',
+                tags: ['pentest', 'methodology', 'checklist'],
+                difficulty: 'Intermediate',
+                summary: 'Comprehensive penetration testing checklist and execution methodology.',
+                commands: ['nmap -sC -sV 10.10.11.250', 'whoami'],
+                relPath: '00 - Penetration Test Methodology Checklist.md',
+                rawMarkdown: '# 00 - Penetration Test Methodology Checklist\n\n- [ ] Pre-engagement setup\n- [x] Initial enumeration\n\n```bash\nnmap -sC -sV <TARGET_IP>\n```',
+              },
+              {
+                id: 'note-01--ad',
+                title: '01 - Active Directory Enumeration',
+                titleEn: '01 - Active Directory Enumeration',
+                category: 'Active Directory',
+                rawCategory: 'Active Directory',
+                subCategory: 'Reconnaissance',
+                tags: ['ad', 'kerberos', 'bloodhound'],
+                difficulty: 'Hard',
+                summary: 'Domain reconnaissance and Kerberoasting tactics.',
+                commands: ['bloodhound-python -u user -p pass -d domain.local -ns 10.10.11.250 -c All'],
+                relPath: '01 - Active Directory Enumeration.md',
+                rawMarkdown: '# 01 - Active Directory Enumeration\n\nDomain controller enumeration tactics.',
+              },
+              {
+                id: 'note-02--privesc',
+                title: '02 - Linux Privilege Escalation',
+                titleEn: '02 - Linux Privilege Escalation',
+                category: 'Linux Privilege Escalation',
+                rawCategory: 'Linux Privilege Escalation',
+                subCategory: 'Privilege Escalation',
+                tags: ['privilege', 'privesc', 'linux', 'suid'],
+                difficulty: 'Intermediate',
+                summary: 'Linux privilege escalation vectors and automated enumeration scripts.',
+                commands: ['sudo -l', 'find / -perm -u=s -type f 2>/dev/null'],
+                relPath: '02 - Linux Privilege Escalation.md',
+                rawMarkdown: '# 02 - Linux Privilege Escalation\n\nLinux privilege escalation techniques.\n\n```bash\nsudo -l\n```',
+              },
+            ];
+            const initialMap: Record<string, string> = {
+              'penetration test methodology checklist': 'note-00--pt',
+              'active directory enumeration': 'note-01--ad',
+              'linux privilege escalation': 'note-02--privesc',
+            };
+            set({ userNotes: initialNotes, userWikilinkMap: initialMap });
+            await saveVaultToIndexedDb({ notes: initialNotes, wikilinkMap: initialMap });
           }
         } catch (err) {
           console.warn('[ZeroBox] Could not load user notes from IndexedDB', err);
@@ -1854,30 +1916,80 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       setPortTriage: (id, port, patch) => {
-        const key = String(port ?? '').trim();
-        if (!key) return;
+        const raw = String(port ?? '').trim();
+        if (!raw) return;
+        // Protocol-aware normalization: an explicit "port/proto" key (from PortTriageTable)
+        // or an explicit patch.protocol stores under the composite key; legacy numeric
+        // callers keep their numeric key so older rows stay valid (reads fall back to it).
+        // Tcp composites also mirror the legacy key so old readers stay in step; udp never
+        // touches the legacy key, giving tcp/udp independent rows.
+        let compositeKey: string | null = null;
+        let legacyKey: string | null = null;
+        if (raw.includes('/')) {
+          const slash = raw.indexOf('/');
+          const portPart = raw.slice(0, slash).trim().slice(0, 16);
+          const protoPart = (raw.slice(slash + 1).trim().toLowerCase() || 'tcp').slice(0, 16);
+          if (!portPart) return;
+          compositeKey = `${portPart}/${protoPart}`.slice(0, 32);
+          if (protoPart === 'tcp') legacyKey = portPart.slice(0, 32);
+        } else {
+          const protoRaw = (patch as { protocol?: unknown } | null | undefined)?.protocol;
+          if (typeof protoRaw === 'string' && protoRaw.trim()) {
+            const protoPart = protoRaw.trim().toLowerCase().slice(0, 16);
+            const portPart = raw.slice(0, 16);
+            compositeKey = `${portPart}/${protoPart}`.slice(0, 32);
+            if (protoPart === 'tcp') legacyKey = portPart.slice(0, 32);
+          } else {
+            legacyKey = raw.slice(0, 32);
+          }
+        }
+        const keys: string[] = compositeKey
+          ? (legacyKey ? [compositeKey, legacyKey] : [compositeKey])
+          : [legacyKey as string];
         set((state) => {
           const machines = patchLabMachine(state.machines, id, (m) => {
-            const prev: PortTriageEntry = m.portTriage?.[key] || { status: 'untested' };
+            const primary = compositeKey ?? (legacyKey as string);
+            const prev: PortTriageEntry =
+              m.portTriage?.[primary] ||
+              (compositeKey && legacyKey ? m.portTriage?.[legacyKey] : undefined) || { status: 'untested' };
             const merged = { ...prev, ...(patch || {}) };
             const entry: PortTriageEntry = {
               status: PORT_TRIAGE_STATUSES.includes(merged.status) ? merged.status : 'untested',
             };
-            if (typeof merged.note === 'string' && merged.note.trim()) entry.note = merged.note;
-            const existing = m.portTriage?.[key];
-            if (existing && existing.status === entry.status && existing.note === entry.note) return m;
-            return { ...m, portTriage: { ...(m.portTriage || {}), [key]: entry } };
+            if (typeof merged.note === 'string' && merged.note.trim()) entry.note = merged.note.slice(0, 2000);
+            if (keys.every((k) => {
+              const existing = m.portTriage?.[k];
+              return existing !== undefined && existing.status === entry.status && existing.note === entry.note;
+            })) return m;
+            const nextTriage = { ...(m.portTriage || {}) };
+            for (const k of keys) nextTriage[k] = entry;
+            return { ...m, portTriage: nextTriage };
           });
           return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
         });
       },
 
       clearPortTriage: (id, port) => {
-        const key = String(port ?? '').trim();
+        const raw = String(port ?? '').trim();
+        if (!raw) return;
+        let doomed: string[];
+        if (raw.includes('/')) {
+          const slash = raw.indexOf('/');
+          const portPart = raw.slice(0, slash).trim().slice(0, 16);
+          const protoPart = (raw.slice(slash + 1).trim().toLowerCase() || 'tcp').slice(0, 16);
+          if (!portPart) return;
+          const composite = `${portPart}/${protoPart}`.slice(0, 32);
+          doomed = protoPart === 'tcp' ? [composite, portPart.slice(0, 32)] : [composite];
+        } else {
+          const legacy = raw.slice(0, 32);
+          doomed = [legacy, `${legacy}/tcp`.slice(0, 32)];
+        }
         set((state) => {
           const machines = patchLabMachine(state.machines, id, (m) => {
-            if (!m.portTriage || !(key in m.portTriage)) return m;
-            const { [key]: _removed, ...rest } = m.portTriage;
+            const triage = m.portTriage;
+            if (!triage || !doomed.some((k) => k in triage)) return m;
+            const rest = { ...triage };
+            for (const k of doomed) delete rest[k];
             return { ...m, portTriage: Object.keys(rest).length ? rest : undefined };
           });
           return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
@@ -1974,22 +2086,39 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       setMachineOpenPorts: (machineId, ports) => {
-        set((state) => ({
-          machines: state.machines.map((m) =>
-            m.id === machineId && !m.isActive
-              ? {
-                  ...m,
-                  openPorts: ports,
-                  checklist: {
-                    openPorts: ports,
-                    activeItemId: m.checklist?.activeItemId || null,
-                    itemsState: m.checklist?.itemsState || {},
-                  },
-                  updatedAt: new Date().toISOString(),
-                }
-              : m
-          ),
-        }));
+        const validPorts = Array.isArray(ports)
+          ? Array.from(new Set(
+              ports
+                .map((p) => (typeof p === 'string' ? parseInt(p, 10) : Number(p)))
+                .filter((n) => Number.isInteger(n) && n >= 1 && n <= 65535)
+            )).sort((a, b) => a - b)
+          : [];
+
+        set((state) => {
+          let modified = false;
+          const machines = state.machines.map((m) => {
+            if (m.id !== machineId || m.isActive) return m;
+            const currentPorts = m.openPorts || [];
+            if (
+              currentPorts.length === validPorts.length &&
+              currentPorts.every((p, idx) => p === validPorts[idx])
+            ) {
+              return m;
+            }
+            modified = true;
+            return {
+              ...m,
+              openPorts: validPorts,
+              checklist: {
+                openPorts: validPorts,
+                activeItemId: m.checklist?.activeItemId || null,
+                itemsState: m.checklist?.itemsState || {},
+              },
+              updatedAt: new Date().toISOString(),
+            };
+          });
+          return modified ? { machines } : state;
+        });
       },
 
       setChecklistItemStatus: (machineId, itemId, status) => {
@@ -2714,6 +2843,7 @@ export const useCtfStore = create<CtfStoreState>()(
       },
 
       importBackup: (jsonStr, options) => {
+        if (isSchemaWriteGated()) return false;
         try {
           const raw = JSON.parse(jsonStr);
           if (!raw || typeof raw !== 'object') return false;
@@ -2796,7 +2926,10 @@ export const useCtfStore = create<CtfStoreState>()(
               );
             }
             // Skipped (state kept) while the schema write gate is engaged; vault notes are upserted by importBackupFile.
-            if (isV3 && data.examState) restoreExamBackupSnapshot(data.examState);
+            if (isV3 && data.examState) {
+              const ok = restoreExamBackupSnapshot(data.examState);
+              if (!ok) console.warn('[ZeroBox] Exam restore skipped: writes blocked.');
+            }
             return true;
           }
           return false;

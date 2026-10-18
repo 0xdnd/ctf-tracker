@@ -64,4 +64,39 @@ describe('imageExportInliner', () => {
     expect(result).toContain('![B](data:image/webp;base64,');
     expect(result).toContain('![A2](data:image/webp;base64,');
   });
+
+  it('caps inlined images at MAX_INLINE_IMAGES, leaving the rest intact', async () => {
+    const { MAX_INLINE_IMAGES } = await import('./imageExportInliner');
+    const blob = new Blob(['tiny'], { type: 'image/webp' });
+    vi.spyOn(imageStore, 'getImage').mockResolvedValue(blob);
+
+    const ids = Array.from({ length: MAX_INLINE_IMAGES + 5 }, (_, i) => `cap-${String(i).padStart(2, '0')}`);
+    const md = ids.map((id) => `![x](zerobox-img://${id})`).join('\n');
+    const result = await inlineIndexedDbImages(md, profileId);
+
+    for (const id of ids.slice(0, MAX_INLINE_IMAGES)) {
+      expect(result).not.toContain(`zerobox-img://${id})`);
+    }
+    for (const id of ids.slice(MAX_INLINE_IMAGES)) {
+      expect(result).toContain(`zerobox-img://${id})`);
+    }
+  });
+
+  it('degrades gracefully (no throw) when the total byte budget is exceeded', async () => {
+    // ~1 MB blobs inline to ~1.3 MB data URLs; 10 of them exceed the 8 MB budget.
+    const big = new Blob([new Uint8Array(1024 * 1024)], { type: 'image/webp' });
+    vi.spyOn(imageStore, 'getImage').mockResolvedValue(big);
+
+    const ids = Array.from({ length: 10 }, (_, i) => `big-${i}`);
+    const md = ids.map((id) => `![x](zerobox-img://${id})`).join('\n');
+    let result: string | undefined;
+    await expect(
+      (async () => {
+        result = await inlineIndexedDbImages(md, profileId);
+      })()
+    ).resolves.toBeUndefined();
+    expect(result).toContain('data:image/webp;base64,');
+    // Budget exhausted: at least the last reference stays intact.
+    expect(result).toContain('zerobox-img://');
+  });
 });

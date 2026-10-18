@@ -23,6 +23,17 @@ describe('parseSearchQuery', () => {
     expect(parseSearchQuery('"active directory" os:linux').text).toBe('active directory');
     expect(parseSearchQuery('track:"oscp"').filters.track).toEqual(['oscp']);
   });
+  it('deduplicates repeated port and category filter values', () => {
+    const p = parseSearchQuery('port:80,80,443 os:linux,Linux diff:easy,easy');
+    expect(p.filters.port).toEqual([80, 443]);
+    expect(p.filters.os).toEqual(['linux']);
+    expect(p.filters.difficulty).toEqual(['easy']);
+  });
+  it('gracefully handles extremely long queries without crashing', () => {
+    const huge = 'a '.repeat(5000);
+    const p = parseSearchQuery(huge);
+    expect(p.text.length).toBeLessThanOrEqual(1000);
+  });
 });
 
 describe('matchesSearchQuery', () => {

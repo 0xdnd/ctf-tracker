@@ -1,7 +1,7 @@
 // Privacy and Terms pages (/privacy/, /terms/). Plain copy only; the facts below are checked against the code:
 //   app storage    : src/store/*, src/utils/indexedDbVault.ts, indexedDbDeepStorage.ts (also holds exam proof images), resilientStorage.ts
 //   public pages   : scripts/lib/site.cjs beaconTag() (Cloudflare Web Analytics); the app shell never loads it
-//   optional AI    : src/utils/aiClient.ts, aiConsent.ts, components/automation/AiConsentDialog.tsx (api.anthropic.com only)
+//   telemetry      : zero telemetry, 100% in-browser offline execution
 //   backups        : src/utils/backupCrypto.ts (PBKDF2 + AES-GCM, passphrase never stored)
 //   license        : LICENSE (ZNSL 1.0, source-available, non-commercial)
 // Public interface: buildLegalPages({ renderPage }) -> [{ path, title, description, html, lastmod }]
@@ -32,22 +32,12 @@ const PRIVACY = {
       `<li><strong>A safety copy.</strong> A second copy of your workspace and a few automatic snapshots, including one before an update, so a browser storage problem does not cost you your work. These are in IndexedDB.</li>`,
       `<li><strong>Preferences.</strong> Theme, layout, pinned tabs, sound and font settings, and whether you finished onboarding.</li>`,
       `<li><strong>An offline copy of the app.</strong> A service worker keeps the app files in the browser cache so ZeroBox opens without a connection. This holds the app itself, not your data.</li>`,
-      `<li><strong>An AI key, only if you add one.</strong> See the AI section below.</li>`,
       `</ul>`,
       `<p>The app code sets no cookies. If you want to look, the IndexedDB databases are named <code>zerobox_vault_db</code>, <code>zerobox_deep_storage_db</code> and <code>zerobox_resilient_store_v1</code>.</p>`,
 
       `<h2>The public pages</h2>`,
       `<p>The home page, the guides, the machine lists, the pentest notes and the other pages on this site load Cloudflare Web Analytics, including this page. It is cookieless and counts page views: which page, the referrer, the country and the browser. The app pages do not load it.</p>`,
       `<p>Cloudflare handles that data under its own <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">privacy policy</a>.</p>`,
-
-      `<h2>Optional AI scan interpretation</h2>`,
-      `<p>This is off by default and works only with your own Anthropic API key. If you add a key and approve the consent dialog, the scan text you selected is sent from your browser straight to <code>api.anthropic.com</code>. No ZeroBox server sits in between. What Anthropic does with it is covered by Anthropic's own terms and privacy policy.</p>`,
-      `<ul>`,
-      `<li>By default, IP addresses, hostnames, Active Directory domains and usernames are replaced with placeholders before sending. You can turn this off in the AI tab. The consent dialog shows the exact request first.</li>`,
-      `<li>You can choose to skip the dialog for later redacted requests. Requests without redaction always ask again.</li>`,
-      `<li>The key is kept in session storage and is cleared when you close the tab. It goes into local storage only if you choose to remember it on this device. You can remove it with Forget key.</li>`,
-      `<li>The connection test sends a small test request with your key.</li>`,
-      `</ul>`,
 
       `<h2>Hosting</h2>`,
       `<p>This site is hosted on GitHub Pages behind Cloudflare. Like any website, they see standard request information, such as your IP address and browser user agent, when you load a page. They handle it under their own policies.</p>`,
@@ -57,7 +47,7 @@ const PRIVACY = {
 
       `<h2>Delete your data</h2>`,
       `<p>Clear the site data for ctftracker.com in your browser settings. That removes everything the app stores, including local storage, IndexedDB and the offline cache.</p>`,
-      `<p>Inside the app, Backup has a Reset all progress option. It resets target progress and clears flags, notes, loot and the vault, but it leaves your preferences and any saved AI key. Forget key removes the key.</p>`,
+      `<p>Inside the app, Backup has a Reset all progress option. It resets target progress and clears flags, notes, loot and the vault, while leaving your local UI preferences intact.</p>`,
 
       `<h2>Questions</h2>`,
       `<p>The source is public, so you can check all of this. To ask a question or report a problem, open an issue on <a href="${esc(REPO)}/issues" rel="noopener">GitHub</a>. See also the <a href="/terms/">terms</a>.</p>`,
@@ -85,7 +75,7 @@ const TERMS = {
       `<p>ZeroBox is for practice and learning. Use it on labs, CTF platforms and systems you own or have permission to test. You are responsible for following the rules of the platforms you use and the laws that apply to you.</p>`,
 
       `<h2>No affiliation</h2>`,
-      `<p>ZeroBox is an independent project. It is not affiliated with, endorsed by or sponsored by Hack The Box, TryHackMe, OffSec, TCM Security, INE or Anthropic. All trademarks and product names belong to their owners and are used only to describe what ZeroBox works with.</p>`,
+      `<p>ZeroBox is an independent project. It is not affiliated with, endorsed by or sponsored by Hack The Box, TryHackMe, OffSec, TCM Security or INE. All trademarks and product names belong to their owners and are used only to describe what ZeroBox works with.</p>`,
 
       `<h2>Your data</h2>`,
       `<p>You are responsible for what you store in ZeroBox and what you export from it, including credentials, flags and scan output from the systems you test. Follow the rules of the platform or exam you are using about what you may record or share. See the <a href="/privacy/">privacy page</a> for where your data lives.</p>`,

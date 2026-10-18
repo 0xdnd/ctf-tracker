@@ -10,6 +10,7 @@ export type NoteFontSize = 'sm' | 'base' | 'lg' | 'xl';
 export interface OpenNoteOptions {
   background?: boolean;
   anchor?: string;
+  stayClosed?: boolean;
 }
 
 export interface NotesWorkspaceState {
@@ -75,7 +76,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           return {
             openTabIds: nextTabs,
             activeTabId: options?.background ? (state.activeTabId || noteId) : noteId,
-            isOpen: true,
+            isOpen: options?.stayClosed ? state.isOpen : true,
           };
         });
       },
@@ -135,7 +136,17 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           if (all.length === 0) {
             return { isOpen: !state.isOpen };
           }
-          const defaultId = all[0].id;
+
+          // Cold-start fallback from cheatsheet active tab if available in localStorage
+          let cheatsheetFallbackId: string | null = null;
+          try {
+            const saved = localStorage.getItem('zerobox_obsidian_active_tab');
+            if (saved && all.some((n) => n.id === saved)) {
+              cheatsheetFallbackId = saved;
+            }
+          } catch {}
+
+          const defaultId = cheatsheetFallbackId || all[0].id;
           const validTabIds = state.openTabIds.filter((id) => all.some((n) => n.id === id));
 
           if (!state.isOpen && validTabIds.length === 0) {
@@ -194,7 +205,16 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           if (match) return match;
         }
 
-        // 3. Fallback: first available note (null when the user has no notes yet)
+        // 3. Fallback: check if cheatsheet has an active note in localStorage
+        try {
+          const cheatsheetActive = localStorage.getItem('zerobox_obsidian_active_tab');
+          if (cheatsheetActive) {
+            const match = all.find((n) => n.id === cheatsheetActive);
+            if (match) return match;
+          }
+        } catch {}
+
+        // 4. Fallback: first available note (null when the user has no notes yet)
         return all[0] || null;
       },
 
@@ -208,6 +228,12 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           .filter((n): n is CptsNoteEntry => Boolean(n));
 
         if (matched.length === 0 && all.length > 0) {
+          try {
+            const cheatsheetActive = localStorage.getItem('zerobox_obsidian_active_tab');
+            if (cheatsheetActive && map.has(cheatsheetActive)) {
+              return [map.get(cheatsheetActive)!];
+            }
+          } catch {}
           return [all[0]];
         }
 

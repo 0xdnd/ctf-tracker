@@ -246,8 +246,8 @@ export const UnifiedHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Center: target switcher */}
-      <div className="relative flex items-center gap-1.5 mx-1 sm:mx-2 min-w-0 flex-shrink" ref={dropdownRef}>
+      {/* 2. Center: target switcher & exam HUD */}
+      <div className="relative flex items-center gap-1.5 mx-1 sm:mx-2 flex-shrink-0" ref={dropdownRef}>
         <ExamHeaderCapsule />
         {activeMachine ? (
           <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 h-8 rounded-lg bg-surface-card border border-subtle text-xs min-w-0 flex-shrink machined-edge">
@@ -367,10 +367,11 @@ export const UnifiedHeader: React.FC = () => {
         ) : (
           <button
             onClick={() => setTargetDropdownOpen(!targetDropdownOpen)}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer"
+            aria-label="Engage target"
+            className="flex items-center gap-1.5 px-2 sm:px-3 h-8 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer"
           >
             <Crosshair className="w-3.5 h-3.5 text-muted group-hover:text-accent transition-colors" />
-            <span>Engage target</span>
+            <span className="hidden 2xl:inline">Engage target</span>
             <ChevronDown className={`w-3 h-3 text-muted group-hover:text-accent transition-transform ${targetDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
         )}
@@ -465,7 +466,7 @@ export const UnifiedHeader: React.FC = () => {
           <span className="hidden 2xl:inline">Scans</span>
         </button>
 
-        {/* Telemetry chip: LHOST | RHOST | LPORT */}
+        {/* Telemetry chip: LHOST | RHOST | LPORT (visible on lg+; floating payload bar always active on all screens) */}
         <div
           aria-label="Tactical Variables (LHOST / RHOST / LPORT)"
           data-tauri-drag-region="false"
@@ -633,7 +634,7 @@ export const UnifiedHeader: React.FC = () => {
             toggleNotesWorkspace();
             if (soundEnabled) playCyberSound('click');
           }}
-          className={`hidden md:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
+          className={`hidden xl:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
           title="Toggle Notes Workspace Sidecar (Alt+N)"
           aria-label="Toggle Field Notes Sidecar"
         >

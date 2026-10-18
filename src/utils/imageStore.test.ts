@@ -169,4 +169,22 @@ describe('compressToWebp', () => {
     stubCanvas(() => null);
     await expect(compressToWebp(new Blob(['src']))).rejects.toThrow(/encode/);
   });
+
+  it('rejects pastes larger than 15 MB before decoding', async () => {
+    const { MAX_PASTE_BYTES } = await import('./imageStore');
+    expect(MAX_PASTE_BYTES).toBe(15 * 1024 * 1024);
+    const big = new Blob([new Uint8Array(16 * 1024 * 1024)], { type: 'image/png' });
+    await expect(compressToWebp(big)).rejects.toThrow(/too large|max 15 MB/i);
+  });
+
+  it('clamps canvas output height to 4096px, scaling proportionally', async () => {
+    stubBitmap(2000, 8000);
+    const { canvas } = stubCanvas((type) => new Blob(['w'], { type }));
+    const out = await compressToWebp(new Blob(['src']));
+    expect(out.type).toBe('image/webp');
+    expect(canvas.height).toBeLessThanOrEqual(4096);
+    expect(canvas.height).toBe(4096);
+    // Aspect ratio preserved: 2000x8000 scaled by 4096/8000 = 0.512.
+    expect(canvas.width).toBe(1024);
+  });
 });

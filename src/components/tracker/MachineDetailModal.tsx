@@ -340,21 +340,20 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-semibold text-primary tracking-tight font-sans">{machine.name}</h2>
               <TargetTypeBadge machine={machine} size="sm" />
-              {machine.isActive ? (
+              <BadgeOverflow
+                max={2}
+                badges={[
+                  <OsBadge key="os" os={machine.os} size="sm" />,
+                  <DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />,
+                  <PlatformBadge key="plat" platform={machine.platform} size="sm" />,
+                  ...(!machine.isActive ? [<CategoryBadge key="cat" machine={machine} size="sm" />] : []),
+                ]}
+              />
+              {machine.isActive && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg border border-callout-warn-border bg-callout-warn-bg px-2 py-0.5 rounded-md">
                   <Lock className="w-3 h-3" />
                   <span>Active Lab · HTB ToS Protected</span>
                 </span>
-              ) : (
-                <BadgeOverflow
-                  max={2}
-                  badges={[
-                    <OsBadge key="os" os={machine.os} size="sm" />,
-                    <DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />,
-                    <PlatformBadge key="plat" platform={machine.platform} size="sm" />,
-                    <CategoryBadge key="cat" machine={machine} size="sm" />,
-                  ]}
-                />
               )}
             </div>
             {!machine.isActive && (
@@ -524,10 +523,33 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <p className="text-xs font-mono uppercase tracking-wider text-muted">Active Seasonal Target · Name Only</p>
             </div>
             <p className="text-sm text-secondary leading-relaxed max-w-md">
-              In strict compliance with <strong>Hack The Box Terms of Service (AUP §8.2)</strong>, active machines are restricted to name only. No walkthroughs, attack vectors, open ports, flags, hints, or notes are permitted until retirement.
+              In strict compliance with <strong>Hack The Box Terms of Service (AUP §8.2)</strong>, active machines are restricted to name only. No walkthroughs, attack vectors, open ports, flags, hints, or notes are permitted until retirement. You can safely track your practice sessions and elapsed time with 100% peace of mind and zero risk to your HTB account.
             </p>
-            {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
-              <div className="pt-2">
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+              {isActiveTarget ? (
+                <button
+                  type="button"
+                  onClick={isTimerRunning ? pauseTimer : startTimer}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-subtle text-primary font-medium text-xs transition-colors"
+                >
+                  {isTimerRunning ? <Pause className="w-3.5 h-3.5 text-callout-warn-fg" /> : <Play className="w-3.5 h-3.5 text-callout-success-fg" />}
+                  <span>{isTimerRunning ? 'Pause Session Timer' : 'Resume Session Timer'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTarget(machine.id);
+                    startTimer();
+                    if (soundEnabled) playCyberSound('engage');
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-fg hover:opacity-90 font-medium text-xs transition-opacity"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Engage &amp; Start Timer</span>
+                </button>
+              )}
+              {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
                 <a
                   href={sanitizeExternalUrl(machine.roomUrl)}
                   target="_blank"
@@ -537,8 +559,8 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   <span>Play on Hack The Box</span>
                   <ExternalLink className="w-3.5 h-3.5 text-muted" />
                 </a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-4 sm:p-5 text-xs scrollbar-thin">
@@ -1167,7 +1189,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               aria-label="Target Field Notes"
               value={machine.quickNotes || ''}
               onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
-              placeholder="Jot down credentials, hashes, local discovery findings, and exploit notes here..."
+              placeholder="Record tactical field notes, credentials, and pivot paths (supports Markdown and [[wikilinks]]). Stored strictly offline in your browser."
               rows={4}
               className="w-full p-3 rounded-md border border-subtle bg-surface-sunken text-primary placeholder:text-tertiary text-xs font-sans leading-relaxed focus:outline-none focus:border-accent selection:bg-accent/20 resize-y shadow-xs"
             />
@@ -1217,7 +1239,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             <div className="p-3 rounded-lg border border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg flex items-center gap-2">
               <Lock className="w-4 h-4 text-callout-warn-fg flex-shrink-0" />
               <span className="text-xs">
-                Active Lab: Intel hints and spoilers are strictly prohibited by Hack The Box Terms of Service (AUP §8.2).
+                Active Lab: Intel hints, walkthroughs, and spoilers are strictly prohibited by Hack The Box Terms of Service (AUP §8.2).
               </span>
             </div>
           ) : machine.hint ? (

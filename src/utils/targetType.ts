@@ -2,9 +2,10 @@ import type { Machine } from '../types';
 import { isGenuineCustom } from '../store/machineNormalization';
 
 /**
- * Personal target types. Pro Labs and exams are stored as ordinary custom machines carrying a
- * marker tag, so the persisted Machine shape and the sync fingerprint stay unchanged.
- * ZeroBox ships no Pro Lab or exam names or content: the user types their own.
+ * Personal and Pro Lab target types. Pro Labs and exams are stored as custom machines carrying a
+ * marker tag, so the persisted Machine shape and sync fingerprint stay unchanged.
+ * ZeroBox provides official HTB Pro Lab presets (scope, host/flag count, exam alignment, and official link)
+ * with zero pre-bundled spoilers or writeups (HTB AUP §8.2 compliance), or operators can type their own.
  */
 export type TargetType = 'machine' | 'pro-lab' | 'exam';
 

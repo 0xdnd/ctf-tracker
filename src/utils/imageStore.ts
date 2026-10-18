@@ -118,15 +118,28 @@ const loadBitmap = async (blob: Blob): Promise<{ source: CanvasImageSource; widt
 const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality?: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
 
+/** DoS guard: pasted/dropped images larger than this are rejected before decoding. */
+export const MAX_PASTE_BYTES = 15 * 1024 * 1024;
+/** DoS guard: canvas output height is clamped to this (scaled proportionally). */
+export const MAX_IMAGE_HEIGHT = 4096;
+
 /**
  * Downscale to `maxWidth` (never upscale) and re-encode as WebP; falls back to PNG when the
  * browser cannot encode WebP (it then returns a different type than requested).
+ * Rejects blobs larger than MAX_PASTE_BYTES and clamps output height to MAX_IMAGE_HEIGHT.
+ * Throws on oversize so callers (e.g. WriteupStudio handlePaste, which already catches) can warn.
  */
 export async function compressToWebp(blob: Blob, maxWidth = 1920, quality = 0.85): Promise<Blob> {
+  if (blob.size > MAX_PASTE_BYTES) {
+    throw new Error('Image too large (max 15 MB)');
+  }
   const { source, width, height, release } = await loadBitmap(blob);
   try {
     if (!width || !height) throw new Error('Image has no dimensions');
-    const scale = width > maxWidth ? maxWidth / width : 1;
+    const scale = Math.min(
+      width > maxWidth ? maxWidth / width : 1,
+      height > MAX_IMAGE_HEIGHT ? MAX_IMAGE_HEIGHT / height : 1
+    );
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(width * scale));
     canvas.height = Math.max(1, Math.round(height * scale));

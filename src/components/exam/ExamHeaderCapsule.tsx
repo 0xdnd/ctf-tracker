@@ -124,8 +124,8 @@ export const ExamHeaderCapsule: React.FC = () => {
         </span>
       </div>
 
-      {/* Passing Status Badge */}
-      <div className="hidden sm:flex items-center flex-shrink-0">
+      {/* Passing Status Badge: Visible on 2xl+ to avoid choking middle header on laptops/desktops */}
+      <div className="hidden 2xl:flex items-center flex-shrink-0">
         {isPassing ? (
           <span
             data-testid="exam-capsule-status"

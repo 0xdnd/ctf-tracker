@@ -8,6 +8,9 @@ import { TableView } from '../../components/tracker/TableView';
 import { MachineDetailModal } from '../../components/tracker/MachineDetailModal';
 import { FilterDrawer } from '../../components/layout/FilterDrawer';
 import { useCtfStore } from '../../store/useCtfStore';
+import { PortTriageTable } from '../../components/tracker/PortTriageTable';
+import * as imageStore from '../../utils/imageStore';
+import { imageBackupProvider } from '../../utils/backupImageProvider';
 import type { Machine } from '../../types';
 
 function makeMachine(overrides: Partial<Machine> = {}): Machine {
@@ -269,6 +272,59 @@ describe('Wave 2 lane B - tracker redesign', () => {
         fireEvent.click(checklistTab);
       });
       expect(checklistTab).toHaveAttribute('aria-selected', 'true');
+    });
+  });
+
+  describe('Port triage tcp/udp independence (regression)', () => {
+    it('keeps 53/tcp and 53/udp triage rows independent while legacy numeric keys stay readable', () => {
+      const machine = makeMachine({
+        id: 'box-triage',
+        services: [
+          { port: 53, protocol: 'tcp', state: 'open', service: 'dns' },
+          { port: 53, protocol: 'udp', state: 'open', service: 'dns' },
+        ],
+        // Legacy numeric row (pre-fix data) must still render as the tcp fallback.
+        portTriage: { '53': { status: 'checking', note: 'legacy tcp note' } },
+      });
+      useCtfStore.setState({ machines: [machine] });
+      wrap(<PortTriageTable machine={machine} />);
+
+      // Both protocol rows render, and the legacy note is visible via fallback on both
+      // rows until udp gets its own composite entry.
+      expect(screen.getByText('53/tcp')).toBeTruthy();
+      expect(screen.getByText('53/udp')).toBeTruthy();
+      expect(screen.getAllByDisplayValue('legacy tcp note')).toHaveLength(2);
+
+      const store = useCtfStore.getState();
+      store.setPortTriage('box-triage', '53/tcp', { status: 'key_vector', note: 'tcp zone transfer' });
+      store.setPortTriage('box-triage', '53/udp', { status: 'dead_end', note: 'udp filtered' });
+
+      const updated = useCtfStore.getState().machines.find((m) => m.id === 'box-triage')!;
+      expect(updated.portTriage?.['53/tcp']).toMatchObject({ status: 'key_vector' });
+      expect(updated.portTriage?.['53/udp']).toMatchObject({ status: 'dead_end' });
+      expect(updated.portTriage?.['53/tcp']?.note).not.toBe(updated.portTriage?.['53/udp']?.note);
+    });
+
+    it('truncates triage notes to 2000 chars', () => {
+      useCtfStore.setState({ machines: [makeMachine({ id: 'box-triage-2' })] });
+      useCtfStore.getState().setPortTriage('box-triage-2', '80/tcp', { note: 'x'.repeat(5000) });
+      const updated = useCtfStore.getState().machines.find((m) => m.id === 'box-triage-2')!;
+      expect(updated.portTriage?.['80/tcp']?.note).toHaveLength(2000);
+    });
+  });
+
+  describe('Backup image restore atomicity (regression)', () => {
+    it('aborts with zero writes when any image payload is corrupt', async () => {
+      const putSpy = vi.spyOn(imageStore, 'putImage').mockResolvedValue(undefined);
+      try {
+        useCtfStore.setState({ currentProfileId: 'atomic-test' } as never);
+        const good = { id: 'good', mime: 'image/webp', data: btoa('hello-bytes') };
+        const corrupt = { id: 'evil', mime: 'image/png', data: '!!!not-valid-base64!!!' };
+        await expect(imageBackupProvider.restoreImages([good, corrupt])).rejects.toThrow();
+        expect(putSpy).not.toHaveBeenCalled();
+      } finally {
+        putSpy.mockRestore();
+      }
     });
   });
 });

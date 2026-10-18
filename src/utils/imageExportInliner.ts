@@ -32,10 +32,20 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
  */
 export const ZEROBOX_IMG_REGEX = /zerobox-img:\/\/([a-zA-Z0-9_-]+)/g;
 
+/** DoS guard: at most this many distinct images are inlined into one export. */
+export const MAX_INLINE_IMAGES = 20;
+/** DoS guard: stop inlining once the estimated total of inlined bytes exceeds this. */
+export const MAX_INLINE_TOTAL_BYTES = 8 * 1024 * 1024;
+
 /**
- * Replaces every `zerobox-img://<id>` reference in markdown with an inlined
- * base64 Data URL retrieved from the IndexedDB image store.
+ * Replaces `zerobox-img://<id>` references in markdown with inlined
+ * base64 Data URLs retrieved from the IndexedDB image store.
  * If an image is not found in the store, the original reference is retained.
+ *
+ * DoS guards (graceful degradation, never throws on oversize):
+ * - only the first MAX_INLINE_IMAGES unique IDs are considered;
+ * - inlining stops once the estimated total exceeds MAX_INLINE_TOTAL_BYTES,
+ *   leaving the remaining references intact.
  */
 export async function inlineIndexedDbImages(
   markdown: string,
@@ -53,22 +63,36 @@ export async function inlineIndexedDbImages(
     return markdown;
   }
 
-  // Fetch blobs and build substitution map
+  const cappedIds = uniqueIds.slice(0, MAX_INLINE_IMAGES);
+  if (uniqueIds.length > cappedIds.length) {
+    console.warn(
+      `[imageExportInliner] Capping inlined images to ${MAX_INLINE_IMAGES} of ${uniqueIds.length} referenced.`
+    );
+  }
+
+  // Resolve sequentially so the running byte total can stop further inlining.
   const replacements = new Map<string, string>();
-  await Promise.all(
-    uniqueIds.map(async (id) => {
-      try {
-        const blob = await getImage(profileId, id);
-        if (blob) {
-          const dataUrl = await blobToDataUrl(blob);
-          replacements.set(id, dataUrl);
-        }
-      } catch (err) {
-        // Leave intact if reading fails
-        console.warn(`[imageExportInliner] Failed to inline image ${id}:`, err);
+  let totalBytes = 0;
+  for (const id of cappedIds) {
+    try {
+      const blob = await getImage(profileId, id);
+      if (!blob) continue;
+      const dataUrl = await blobToDataUrl(blob);
+      // base64 is ~4/3 of the raw bytes; dataUrl.length * 0.75 approximates them.
+      const estimatedBytes = dataUrl.length * 0.75;
+      if (totalBytes + estimatedBytes > MAX_INLINE_TOTAL_BYTES) {
+        console.warn(
+          `[imageExportInliner] Inline budget exceeded (${MAX_INLINE_TOTAL_BYTES} bytes); leaving remaining references intact.`
+        );
+        break;
       }
-    })
-  );
+      totalBytes += estimatedBytes;
+      replacements.set(id, dataUrl);
+    } catch (err) {
+      // Leave intact if reading fails
+      console.warn(`[imageExportInliner] Failed to inline image ${id}:`, err);
+    }
+  }
 
   // Substitute each resolved image ID
   return markdown.replace(ZEROBOX_IMG_REGEX, (match, id) => {

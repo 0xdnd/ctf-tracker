@@ -61,11 +61,11 @@
   {
     "path": "/exam/",
     "title": "OSCP Exam Simulator: 24h Timer, Scoring & Report | ZeroBox",
-    "description": "Practice OSCP, CPTS and CRTO exams with a countdown timer, scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
+    "description": "Practice OSCP, CPTS, CRTO, OSEP and CRTP exams with a countdown timer, scoring, pacing, bio breaks, evidence proofs and an exportable report. Free in the browser.",
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
     "bullets": [
-      "OSCP (24h), CPTS (10 days) and CRTO (48h) exam tracks with their own durations",
+      "OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h) and CRTP (24h) exam tracks with their own durations",
       "Countdown timer with pause, bio breaks and a burndown chart",
       "Point scoring against the pass threshold, with optional bonus points",
       "Flag format validation and evidence proof uploads",

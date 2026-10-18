@@ -18,7 +18,7 @@ import {
 } from '../../utils/backupChecksum';
 import { decryptBackup, encryptBackup } from '../../utils/backupCrypto';
 import { engageSchemaWriteGate, releaseRestoreWriteGate } from '../../utils/schemaWriteGate';
-import { saveVaultToIndexedDb } from '../../utils/indexedDbVault';
+import { saveVaultToIndexedDb, upsertVaultNotesFromBackup } from '../../utils/indexedDbVault';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import type { Machine } from '../../types';
 
@@ -262,5 +262,122 @@ describe('backup v3: redaction', () => {
     expect(text).not.toContain('exam log: pivot via chisel');
     expect(file.checksum).toMatch(/^[0-9a-f]{64}$/);
     expect(await computeBackupChecksum(file)).toBe(file.checksum);
+  });
+});
+
+describe('backup v3: write-gate TOCTOU and checksum hardening (regression)', () => {
+  it('importBackup returns false and changes nothing while gated (2.0.0 path)', () => {
+    const fixture = JSON.stringify({
+      version: '2.0.0',
+      exportedAt: OLD,
+      isRedacted: false,
+      machines: [box({ id: 'custom-gated', name: 'Gated Box' })],
+      globalVars: { ...get().globalVars, lhost: '9.9.9.9' },
+      cheatsheets: get().cheatsheets,
+      activitySessions: [],
+      customNotes: [],
+      userNotes: [],
+      userWikilinkMap: {},
+      deletedNoteIds: [],
+      userSolvesReset: false,
+    });
+    const before = snapshotAll(fake);
+    engageSchemaWriteGate('restoring');
+    expect(get().importBackup(fixture)).toBe(false);
+    expect(snapshotAll(fake)).toBe(before);
+  });
+
+  it('importBackup accepts a v3 core without checksum (absent compat for exportBackup/sync cores)', async () => {
+    const core = get().exportBackup();
+    const parsed = JSON.parse(core);
+    expect(parsed.version).toBe('3.0.0');
+    expect(parsed).not.toHaveProperty('checksum');
+    expect(await verifyBackupChecksum(parsed)).toBe('absent');
+
+    useCtfStore.setState({ machines: [], globalVars: { ...get().globalVars, lhost: '1.2.3.4' } });
+    useExamStore.setState({ scratchNotes: 'wiped', candidateName: 'Wiped' });
+    expect(get().importBackup(core)).toBe(true);
+    expect(get().machines.find((m) => m.id === 'custom-1-lab')).toBeTruthy();
+    expect(get().globalVars.lhost).toBe('10.10.14.7');
+    expect(useExamStore.getState().scratchNotes).toBe('exam log: pivot via chisel');
+  });
+
+  it('importBackupFile accepts v3 without checksum as unverified (absent compat)', async () => {
+    const core = get().exportBackup();
+    useCtfStore.setState({ machines: [], globalVars: { ...get().globalVars, lhost: '1.2.3.4' } });
+    useExamStore.setState({ scratchNotes: 'wiped' });
+    const result = await importBackupFile(core);
+    expect(result).toMatchObject({ ok: true, verified: false });
+    expect(get().machines.find((m) => m.id === 'custom-1-lab')).toBeTruthy();
+    expect(useExamStore.getState().scratchNotes).toBe('exam log: pivot via chisel');
+  });
+
+  it('upsertVaultNotesFromBackup throws when gated instead of silently succeeding', async () => {
+    engageSchemaWriteGate('restoring');
+    await expect(upsertVaultNotesFromBackup([note('evil')], {})).rejects.toThrow('Writes are blocked');
+    expect(vaultNotes(fake)).toEqual(['n1', 'n2']);
+  });
+
+  it('upsertVaultNotesFromBackup throws when the gate engages after the read started (TOCTOU)', async () => {
+    const pending = upsertVaultNotesFromBackup([note('n-toctou')], {});
+    engageSchemaWriteGate('restoring');
+    await expect(pending).rejects.toThrow('Writes are blocked');
+    expect(vaultNotes(fake)).toEqual(['n1', 'n2']);
+  });
+
+  it('importBackupFile rejects a downgraded version carrying a stale checksum but accepts absent', async () => {
+    const file = JSON.parse(await buildBackupFile());
+    file.version = '2.0.0';
+    const downgraded = JSON.stringify(file);
+    const before = snapshotAll(fake);
+    expect(await importBackupFile(downgraded)).toMatchObject({ ok: false, reason: 'checksum' });
+    expect(snapshotAll(fake)).toBe(before);
+
+    const noChecksum = JSON.parse(await buildBackupFile());
+    delete noChecksum.checksum;
+    noChecksum.version = '2.0.0';
+    useCtfStore.setState({ machines: [] });
+    expect(await importBackupFile(JSON.stringify(noChecksum))).toMatchObject({ ok: true });
+  });
+
+  it('importBackup warns via console when the exam restore is skipped', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const coreObj = JSON.parse(get().exportBackup());
+      coreObj.examState = { bogus: true };
+      expect(get().importBackup(JSON.stringify(coreObj))).toBe(true);
+      expect(warn).toHaveBeenCalledWith('[ZeroBox] Exam restore skipped: writes blocked.');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('importBackupFile surfaces an exam warning when writes get blocked right after the core applied', async () => {
+    const text = await buildBackupFile();
+    const getState = useCtfStore.getState;
+    const orig = getState().importBackup;
+    const spy = vi.spyOn(useCtfStore, 'getState').mockImplementation(
+      () =>
+        ({
+          ...getState(),
+          importBackup: ((s: string, o?: { verifiedChecksum?: string }) => {
+            const applied = orig(s, o);
+            if (applied) engageSchemaWriteGate('restoring');
+            return applied;
+          }) as typeof orig,
+        }) as unknown as ReturnType<typeof getState>
+    );
+    try {
+      const result = await importBackupFile(text);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.warnings).toContain(
+          'Exam data could not be restored (writes blocked). Reload and try again.'
+        );
+      }
+    } finally {
+      spy.mockRestore();
+      releaseRestoreWriteGate();
+    }
   });
 });

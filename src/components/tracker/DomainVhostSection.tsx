@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Globe, Copy, Check, Plus, X } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { formatHostsLine } from '../../utils/hostsLine';
+import { shellQuote } from '../../utils/shellEncoders';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { Machine } from '../../types';
 
@@ -21,7 +22,7 @@ export const DomainVhostSection: React.FC<DomainVhostSectionProps> = ({ machine,
   const [copiedCmd, setCopiedCmd] = useState(false);
 
   const hostsLine = formatHostsLine(machine.ip, machine.domain, machine.vhosts);
-  const hostsCmd = hostsLine ? `echo "${hostsLine}" | sudo tee -a /etc/hosts` : '';
+  const hostsCmd = hostsLine ? `printf '%s\n' ${shellQuote(hostsLine)} | sudo tee -a /etc/hosts` : '';
 
   const handleCopyHostsLine = async () => {
     if (!hostsLine) return;

@@ -8,6 +8,7 @@
  * Ambiguous 32-hex strings (MD5 vs NTLM) return both candidates, ordered by
  * the optional context `hint` ('windows' favors NTLM first).
  */
+import { shellQuote } from './shellEncoders';
 
 export interface HashCandidate {
   name: string;
@@ -28,7 +29,7 @@ function isHex(s: string): boolean {
  */
 export function identifyHash(input: string, hint?: 'windows' | 'linux' | 'web'): HashCandidate[] {
   const trimmed = (input ?? '').trim();
-  if (!trimmed) return [];
+  if (!trimmed || trimmed.length > 4096) return [];
 
   // --- Prefix-delimited formats (checked before generic hex/length rules) ---
 
@@ -204,12 +205,13 @@ export function getCrackingCommands(
   hash: string,
   candidate?: HashCandidate
 ): { hashcat?: string; john?: string } {
+  if (!hash || typeof hash !== 'string' || hash.length > 4096) return {};
   const cand = candidate || identifyHash(hash)[0];
   if (!cand) return {};
 
-  const h = (hash ?? '').trim();
+  const h = hash.trim().replace(/[\r\n]/g, '');
   const hashcat = cand.hashcatMode !== null
-    ? `hashcat -m ${cand.hashcatMode} '${h}' /usr/share/wordlists/rockyou.txt`
+    ? `hashcat -m ${cand.hashcatMode} ${shellQuote(h)} /usr/share/wordlists/rockyou.txt`
     : undefined;
 
   const john = cand.johnFormat !== null
