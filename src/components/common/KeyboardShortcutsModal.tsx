@@ -23,6 +23,8 @@ const SHORTCUTS: ShortcutEntry[] = [
   // Tactical Actions
   { keys: ['Ctrl', 'S'], description: 'Tactical 1-Click Save to Local Storage & Profile', category: 'actions' },
   { keys: ['Ctrl', 'P'], description: 'Executive Pre-Report PDF Generator for active target', category: 'actions' },
+  { keys: ['Alt', 'S'], description: 'Slide-over Snippets & Commands Drawer (or Ctrl+Space)', category: 'actions' },
+  { keys: ['Alt', 'F'], description: 'Toggle Zen / Focus Mode (maximize board real-estate)', category: 'actions' },
   { keys: ['t'], description: 'Toggle active target stopwatch timer', category: 'actions' },
   { keys: ['u'], description: 'Quick-pwn User flag on active target', category: 'actions' },
   { keys: ['r'], description: 'Quick-pwn Root / SYSTEM flag on active target', category: 'actions' },

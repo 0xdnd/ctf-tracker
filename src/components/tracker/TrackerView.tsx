@@ -28,7 +28,7 @@ import {
   Filter,
   Share2
 } from 'lucide-react';
-import { useCtfStore, BoxVectorCategory, FilterState } from '../../store/useCtfStore';
+import { useCtfStore, BoxVectorCategory, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
@@ -36,6 +36,8 @@ import { KanbanBoard } from './KanbanBoard';
 import { TableView } from './TableView';
 import { GridView } from './GridView';
 import { GraphView } from './GraphView';
+import { CuratedPathways } from './CuratedPathways';
+import { FilterDrawer } from '../layout/FilterDrawer';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsIcon } from '../common/OsBadge';
 import { CyberSelect, CyberMultiSelect, CyberSelectOption } from '../common/CyberSelect';
@@ -47,7 +49,7 @@ import {
   classifyMachine, 
   matchesCategory, 
   matchesDomain, 
-  isActiveDirectory,
+  isActiveDirectory, 
   getCategoryDef 
 } from '../../utils/categoryUtils';
 
@@ -60,12 +62,71 @@ const SORT_OPTIONS: CyberSelectOption[] = [
 ];
 
 const DIFFICULTY_FILTER_OPTIONS: CyberSelectOption<Difficulty | 'ALL'>[] = [
-  { value: 'ALL', label: 'ALL Difficulties' },
-  { value: 'Very Easy', label: 'Very Easy', color: '#10B981' },
-  { value: 'Easy', label: 'Easy', color: '#22C55E' },
+  { value: 'ALL', label: 'Difficulties' },
+  { value: 'Very Easy', label: 'Very Easy', color: '#06B6D4' },
+  { value: 'Easy', label: 'Easy', color: '#10B981' },
   { value: 'Medium', label: 'Medium', color: '#F59E0B' },
-  { value: 'Hard', label: 'Hard', color: '#EF4444' },
+  { value: 'Hard', label: 'Hard', color: '#F43F5E' },
   { value: 'Insane', label: 'Insane', color: '#A855F7' },
+];
+
+const STATUS_FILTER_OPTIONS: CyberSelectOption<HtbTargetStatus>[] = [
+  { value: 'ALL', label: 'Status - Both', color: '#9FEF00' },
+  { value: 'UNCOMPLETED', label: 'Status - Uncompleted' },
+  { value: 'FOOTHOLD', label: 'Status - Foothold', color: '#F59E0B' },
+  { value: 'COMPLETED', label: 'Status - Completed', color: '#10B981' },
+];
+
+const LANGUAGE_OPTIONS: CyberSelectOption<string>[] = [
+  { value: 'ALL', label: 'Language' },
+  { value: 'Python', label: 'Python' },
+  { value: 'PHP', label: 'PHP' },
+  { value: 'NodeJS', label: 'Node.js / JS' },
+  { value: 'Java', label: 'Java' },
+  { value: 'C#', label: 'C# / .NET' },
+  { value: 'C/C++', label: 'C / C++' },
+  { value: 'Go', label: 'Go (Golang)' },
+  { value: 'Ruby', label: 'Ruby' },
+  { value: 'Bash', label: 'Bash / Shell' },
+  { value: 'PowerShell', label: 'PowerShell' },
+];
+
+const AREA_OF_INTEREST_OPTIONS: CyberSelectOption<string>[] = [
+  { value: 'ALL', label: 'Area of Interest' },
+  { value: 'Web Application', label: 'Web Application' },
+  { value: 'Active Directory', label: 'Active Directory' },
+  { value: 'Cloud Security', label: 'Cloud Security' },
+  { value: 'Binary Exploitation', label: 'Binary Exploitation (Pwn)' },
+  { value: 'Cryptography', label: 'Cryptography' },
+  { value: 'Reverse Engineering', label: 'Reverse Engineering' },
+  { value: 'Forensics', label: 'Forensics' },
+  { value: 'Network Security', label: 'Network Security' },
+];
+
+const VULNERABILITY_OPTIONS: CyberSelectOption<string>[] = [
+  { value: 'ALL', label: 'Vulnerability' },
+  { value: 'SQL Injection', label: 'SQL Injection (SQLi)' },
+  { value: 'RCE / Command Injection', label: 'Remote Code Execution (RCE)' },
+  { value: 'LFI / Path Traversal', label: 'LFI / Path Traversal' },
+  { value: 'SSRF', label: 'SSRF' },
+  { value: 'Insecure Deserialization', label: 'Deserialization' },
+  { value: 'Authentication Bypass', label: 'Authentication Bypass' },
+  { value: 'Privilege Escalation', label: 'Privilege Escalation' },
+  { value: 'Buffer Overflow', label: 'Buffer Overflow' },
+  { value: 'File Upload Bypass', label: 'File Upload Bypass' },
+  { value: 'IDOR', label: 'IDOR / Broken Access' },
+  { value: 'XXE', label: 'XXE Injection' },
+  { value: 'CSRF', label: 'CSRF' },
+  { value: 'Misconfiguration', label: 'Misconfiguration' },
+];
+
+const HTB_OS_OPTIONS: CyberSelectOption<'ALL' | OperatingSystem>[] = [
+  { value: 'ALL', label: 'OS' },
+  { value: 'Linux', label: 'Linux' },
+  { value: 'Windows', label: 'Windows' },
+  { value: 'Android', label: 'Android' },
+  { value: 'BSD', label: 'BSD' },
+  { value: 'Other', label: 'Other' },
 ];
 
 export const TrackerView: React.FC = () => {
@@ -79,6 +140,10 @@ export const TrackerView: React.FC = () => {
     setReconAutomationModalOpen,
     soundEnabled,
     loadCatalog,
+    setFilterDrawerOpen,
+    focusMode,
+    setFocusMode,
+    toggleFocusMode,
   } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
@@ -90,6 +155,10 @@ export const TrackerView: React.FC = () => {
       setReconAutomationModalOpen: s.setReconAutomationModalOpen,
       soundEnabled: s.soundEnabled,
       loadCatalog: s.loadCatalog,
+      setFilterDrawerOpen: s.setFilterDrawerOpen,
+      focusMode: s.focusMode,
+      setFocusMode: s.setFocusMode,
+      toggleFocusMode: s.toggleFocusMode,
     }))
   );
 
@@ -160,6 +229,69 @@ export const TrackerView: React.FC = () => {
   };
 
   const [selectedDomain, setSelectedDomain] = useState<VulnDomainId>('all');
+  const [htbSecondaryRowOpen, setHtbSecondaryRowOpen] = useState(true);
+
+  // Dynamic OS-Adaptive Technique options matching authentic Hack The Box experience
+  const techniqueOptions = useMemo(() => {
+    const os = filters.selectedOs;
+    if (os === 'Linux') {
+      return [
+        { value: 'ALL', label: 'Technique' },
+        { value: 'SUID / SGID Exploitation', label: 'SUID / SGID Exploitation' },
+        { value: 'Sudo Rights (sudo -l)', label: 'Sudo Rights (sudo -l)' },
+        { value: 'Cron Jobs / Wildcard Injection', label: 'Cron Jobs / Wildcards' },
+        { value: 'Kernel Exploits / Dirty COW', label: 'Kernel Exploits' },
+        { value: 'Linux Capabilities', label: 'Linux Capabilities' },
+        { value: 'NFS No_Root_Squash', label: 'NFS No_Root_Squash' },
+        { value: 'SSH Key Hijacking', label: 'SSH Key Hijacking' },
+        { value: 'Docker Breakout / Socket', label: 'Docker Breakout' },
+        { value: 'Log Poisoning / LFI to RCE', label: 'Log Poisoning (LFI to RCE)' },
+        { value: 'Systemd Service Misconfig', label: 'Systemd Service Misconfig' },
+        { value: 'Writable /etc/passwd or shadow', label: 'Writable /etc/passwd' },
+      ];
+    } else if (os === 'Windows') {
+      return [
+        { value: 'ALL', label: 'Technique' },
+        { value: 'Kerberoasting (TGS Request)', label: 'Kerberoasting (TGS)' },
+        { value: 'AS-REP Roasting', label: 'AS-REP Roasting' },
+        { value: 'DCSync / NTDS.dit', label: 'DCSync / NTDS.dit' },
+        { value: 'SeImpersonate (JuicyPotato / PrintSpoofer)', label: 'SeImpersonate / Potato' },
+        { value: 'Unquoted Service Paths', label: 'Unquoted Service Paths' },
+        { value: 'AlwaysInstallElevated', label: 'AlwaysInstallElevated' },
+        { value: 'DLL Hijacking', label: 'DLL Hijacking' },
+        { value: 'SAM & SYSTEM Dumping', label: 'SAM & LSASS Dumping' },
+        { value: 'Token Manipulation', label: 'Token Impersonation' },
+        { value: 'BloodHound Attack Paths', label: 'BloodHound Attack Paths' },
+        { value: 'GPO Abuse', label: 'GPO Abuse' },
+        { value: 'LAPS Password', label: 'LAPS Password Extraction' },
+      ];
+    }
+    return [
+      { value: 'ALL', label: 'Technique' },
+      { value: 'SUID / SGID Exploitation', label: 'Linux: SUID / SGID' },
+      { value: 'Sudo Rights (sudo -l)', label: 'Linux: Sudo Rights' },
+      { value: 'Cron Jobs / Wildcard Injection', label: 'Linux: Cron Jobs' },
+      { value: 'Kernel Exploits / Dirty COW', label: 'Linux: Kernel Exploits' },
+      { value: 'Docker Breakout / Socket', label: 'Linux: Docker Breakout' },
+      { value: 'Kerberoasting (TGS Request)', label: 'Win: Kerberoasting' },
+      { value: 'AS-REP Roasting', label: 'Win: AS-REP Roasting' },
+      { value: 'DCSync / NTDS.dit', label: 'Win: DCSync / NTDS' },
+      { value: 'SeImpersonate (JuicyPotato / PrintSpoofer)', label: 'Win: SeImpersonate / Potato' },
+      { value: 'Unquoted Service Paths', label: 'Win: Unquoted Service Paths' },
+      { value: 'DLL Hijacking', label: 'Win: DLL Hijacking' },
+      { value: 'BloodHound Attack Paths', label: 'Win: BloodHound Paths' },
+    ];
+  }, [filters.selectedOs]);
+
+  const handleClearSecondaryFilters = () => {
+    setFilters({
+      selectedLanguage: 'ALL',
+      selectedAreaOfInterest: 'ALL',
+      selectedTechnique: 'ALL',
+      selectedStatus: 'ALL',
+    });
+    if (soundEnabled) playCyberSound('click');
+  };
 
   // Synchronize domain tab when a specific category is selected
   React.useEffect(() => {
@@ -243,7 +375,19 @@ export const TrackerView: React.FC = () => {
     const excludeAD = Boolean(deferredFilters.excludeActiveDirectory);
     const certFilter = deferredFilters.selectedCert;
     const hasTags = deferredFilters.selectedTags.length > 0;
-    const selectedTrack = (trackFilter && trackFilter !== 'ALL') ? PRACTICE_TRACKS.find(t => t.id === trackFilter) : null;
+
+    // Multi-track active IDs (Union matching across all selected tracks)
+    const activeTrackIds: string[] = (deferredFilters.selectedTracks && deferredFilters.selectedTracks.length > 0)
+      ? deferredFilters.selectedTracks
+      : (trackFilter && trackFilter !== 'ALL')
+        ? [trackFilter]
+        : [];
+    const activeTracks = activeTrackIds.map((id) => PRACTICE_TRACKS.find((t) => t.id === id)).filter(Boolean) as PracticeTrack[];
+
+    const statusFilter = deferredFilters.selectedStatus || 'ALL';
+    const langFilter = deferredFilters.selectedLanguage;
+    const areaFilter = deferredFilters.selectedAreaOfInterest;
+    const techFilter = deferredFilters.selectedTechnique;
 
     const list = machines.filter((m) => {
       // 1. Fast primitive checks first (0 allocations, rejects immediately)
@@ -252,23 +396,34 @@ export const TrackerView: React.FC = () => {
       if (osFilter && osFilter !== 'ALL' && m.os !== osFilter) return false;
       if (certFilter !== 'ALL' && !m.certifications.includes(certFilter)) return false;
 
-      // 2. Active Directory Exclusion Check
+      // 2. HTB Target Status filter
+      if (statusFilter !== 'ALL') {
+        const isCompleted = m.status === 'root' || m.status === 'completed';
+        const isFoothold = m.status === 'foothold';
+        if (statusFilter === 'UNCOMPLETED' && isCompleted) return false;
+        if (statusFilter === 'FOOTHOLD' && !isFoothold) return false;
+        if (statusFilter === 'COMPLETED' && !isCompleted) return false;
+      }
+
+      // 3. Active Directory Exclusion Check
       if (excludeAD && isActiveDirectory(m)) return false;
 
-      // 3. Vulnerability Domain filter (active when domain selected without specific category override)
+      // 4. Vulnerability Domain filter (active when domain selected without specific category override)
       if (selectedDomain !== 'all' && (!vulnCatFilter || vulnCatFilter === 'ALL')) {
         if (!matchesDomain(m, selectedDomain)) return false;
       }
 
-      // 4. Vulnerability Category filter
+      // 5. Vulnerability Category filter
       if (vulnCatFilter && vulnCatFilter !== 'ALL') {
         if (!matchesCategory(m, vulnCatFilter)) return false;
       }
 
-      // 4. Curated Track filter
-      if (selectedTrack && !selectedTrack.filterFn(m)) return false;
+      // 6. Curated Track filter (Multi-Track Union matching: matches if ANY active track matches)
+      if (activeTracks.length > 0 && !activeTracks.some((t) => t.filterFn(m))) {
+        return false;
+      }
 
-      // 5. Search query (only evaluated on candidates that passed platform/diff)
+      // 7. Search query (only evaluated on candidates that passed platform/diff)
       if (q) {
         const matchName = m.name.toLowerCase().includes(q);
         const matchIp = m.ip.includes(q);
@@ -277,16 +432,84 @@ export const TrackerView: React.FC = () => {
         if (!matchName && !matchIp && !matchOs && !matchTag) return false;
       }
 
-      // 6. Legacy Exploit Vector filter compatibility
+      // 8. Legacy Exploit Vector filter compatibility
       if (catFilter && catFilter !== 'ALL') {
         const legacyTarget = catFilter === 'Binary / Pwn' ? 'Binary / BOF' : catFilter;
         if (!matchesCategory(m, legacyTarget)) return false;
       }
 
-      // 7. Selected Tags
+      // 9. Selected Tags
       if (hasTags) {
         const hasAllTags = deferredFilters.selectedTags.every((t) => m.tags.includes(t));
         if (!hasAllTags) return false;
+      }
+
+      // 10. Language filter
+      if (langFilter && langFilter !== 'ALL') {
+        const l = langFilter.toLowerCase();
+        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
+        let matchesLang = false;
+        if (l === 'python') matchesLang = /python|flask|django|\bpy\b/i.test(textToSearch);
+        else if (l === 'php') matchesLang = /php|laravel|wordpress/i.test(textToSearch);
+        else if (l === 'nodejs' || l === 'javascript') matchesLang = /node|javascript|\bjs\b|express/i.test(textToSearch);
+        else if (l === 'java') matchesLang = /java|spring|tomcat|log4j/i.test(textToSearch);
+        else if (l === 'c#' || l === '.net') matchesLang = /c#|\.net|csharp|asp\.net|iis/i.test(textToSearch);
+        else if (l === 'c/c++') matchesLang = /\bc\b|c\+\+|bof|buffer overflow|binary/i.test(textToSearch);
+        else if (l === 'go') matchesLang = /\bgo\b|golang/i.test(textToSearch);
+        else if (l === 'ruby') matchesLang = /ruby|rails/i.test(textToSearch);
+        else if (l === 'bash') matchesLang = /bash|shell|\bsh\b/i.test(textToSearch);
+        else if (l === 'powershell') matchesLang = /powershell|\bps1\b/i.test(textToSearch);
+        else matchesLang = textToSearch.includes(l);
+        if (!matchesLang) return false;
+      }
+
+      // 11. Area of Interest filter
+      if (areaFilter && areaFilter !== 'ALL') {
+        const a = areaFilter.toLowerCase();
+        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
+        let matchesArea = false;
+        if (a.includes('web')) matchesArea = classifyMachine(m).domains.includes('web') || /web|http|api|injection|xss|sqli|lfi/i.test(textToSearch);
+        else if (a.includes('active directory') || a.includes('ad')) matchesArea = isActiveDirectory(m) || /active directory|kerberos|domain controller|ldap|smb/i.test(textToSearch);
+        else if (a.includes('cloud')) matchesArea = /cloud|aws|azure|gcp|s3|iam|docker|k8s|kubernetes/i.test(textToSearch);
+        else if (a.includes('binary') || a.includes('pwn')) matchesArea = /bof|buffer overflow|pwn|rop|heap|stack|shellcode|binary/i.test(textToSearch);
+        else if (a.includes('crypto')) matchesArea = /crypto|cipher|rsa|aes|padding|hash|jwt|encoding/i.test(textToSearch);
+        else if (a.includes('revers')) matchesArea = /reversing|reverse engineering|decompile|ghidra|ida|radare|crack/i.test(textToSearch);
+        else if (a.includes('forensic')) matchesArea = /forensics|wireshark|pcap|volatility|memory|stego/i.test(textToSearch);
+        else if (a.includes('network')) matchesArea = /network|snmp|smb|ldap|pivoting|tunnel|port knocking|firewall/i.test(textToSearch);
+        else matchesArea = textToSearch.includes(a);
+        if (!matchesArea) return false;
+      }
+
+      // 12. Technique filter (OS-Adaptive)
+      if (techFilter && techFilter !== 'ALL') {
+        const t = techFilter.toLowerCase();
+        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
+        let matchesTech = false;
+        if (t.includes('suid') || t.includes('sgid')) matchesTech = /suid|sgid|gtfobins/i.test(textToSearch);
+        else if (t.includes('sudo')) matchesTech = /sudo|sudo -l|ld_preload|sudoers/i.test(textToSearch);
+        else if (t.includes('cron')) matchesTech = /cron|wildcard|tar\b|rsync/i.test(textToSearch);
+        else if (t.includes('kernel')) matchesTech = /kernel|dirty cow|cve-20/i.test(textToSearch);
+        else if (t.includes('capabilit')) matchesTech = /cap_setuid|capabilities|getcap|setcap/i.test(textToSearch);
+        else if (t.includes('nfs')) matchesTech = /nfs|no_root_squash|exports/i.test(textToSearch);
+        else if (t.includes('ssh')) matchesTech = /ssh|id_rsa|authorized_keys/i.test(textToSearch);
+        else if (t.includes('docker')) matchesTech = /docker|container breakout|docker\.sock/i.test(textToSearch);
+        else if (t.includes('log poison')) matchesTech = /log poison|auth\.log|access\.log/i.test(textToSearch);
+        else if (t.includes('systemd')) matchesTech = /systemd|service misconfig|\.service/i.test(textToSearch);
+        else if (t.includes('passwd') || t.includes('shadow')) matchesTech = /passwd|shadow|writable/i.test(textToSearch);
+        else if (t.includes('kerberoast')) matchesTech = /kerberoast|spn|tgs/i.test(textToSearch);
+        else if (t.includes('as-rep')) matchesTech = /as-rep|asrep|dontreqpreauth/i.test(textToSearch);
+        else if (t.includes('dcsync')) matchesTech = /dcsync|ntds|secretsdump|krbtgt/i.test(textToSearch);
+        else if (t.includes('seimpersonate') || t.includes('potato') || t.includes('printspoofer')) matchesTech = /seimpersonate|juicypotato|printspoofer|godpotato|rottenpotato/i.test(textToSearch);
+        else if (t.includes('unquoted')) matchesTech = /unquoted|service path/i.test(textToSearch);
+        else if (t.includes('alwaysinstall')) matchesTech = /alwaysinstallelevated|msi/i.test(textToSearch);
+        else if (t.includes('dll')) matchesTech = /dll hijack|dll search/i.test(textToSearch);
+        else if (t.includes('sam') || t.includes('lsass')) matchesTech = /sam|system hive|lsass|mimikatz/i.test(textToSearch);
+        else if (t.includes('token') || t.includes('incognito')) matchesTech = /token|incognito|impersonate/i.test(textToSearch);
+        else if (t.includes('bloodhound')) matchesTech = /bloodhound|sharphound|shortest path/i.test(textToSearch);
+        else if (t.includes('gpo')) matchesTech = /gpo|group policy/i.test(textToSearch);
+        else if (t.includes('laps')) matchesTech = /laps/i.test(textToSearch);
+        else matchesTech = textToSearch.includes(t);
+        if (!matchesTech) return false;
       }
 
       return true;
@@ -338,23 +561,6 @@ export const TrackerView: React.FC = () => {
     'Binary / Pwn'
   ];
 
-  const vulnCategoryOptions: CyberSelectOption[] = useMemo(() => {
-    const allOption: CyberSelectOption = {
-      value: 'ALL',
-      label: `All Attack Categories (${machines.length})`,
-    };
-    const sorted = [...VULN_CATEGORIES].sort((a, b) => {
-      const countA = categoryCounts[a.id] || 0;
-      const countB = categoryCounts[b.id] || 0;
-      return countB - countA;
-    });
-    const options: CyberSelectOption[] = sorted.map((cat) => ({
-      value: cat.id,
-      label: `${cat.label} (${categoryCounts[cat.id] || 0})`,
-    }));
-    return [allOption, ...options];
-  }, [machines.length, categoryCounts]);
-
   const displayedCategories = useMemo(() => {
     if (selectedDomain === 'all') {
       return [...VULN_CATEGORIES]
@@ -364,710 +570,352 @@ export const TrackerView: React.FC = () => {
     return VULN_CATEGORIES.filter((c) => c.domain === selectedDomain);
   }, [selectedDomain, categoryCounts]);
 
-  const isFiltered =
-    Boolean(filters.searchQuery) ||
-    filters.selectedPlatform !== 'ALL' ||
-    filters.selectedDifficulty !== 'ALL' ||
-    (filters.selectedOs && filters.selectedOs !== 'ALL') ||
-    (filters.selectedCategory && filters.selectedCategory !== 'ALL') ||
-    (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') ||
-    selectedDomain !== 'all' ||
-    Boolean(filters.excludeActiveDirectory) ||
-    (filters.selectedTrack && filters.selectedTrack !== 'ALL') ||
-    filters.selectedCert !== 'ALL' ||
-    filters.selectedTags.length > 0;
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.selectedPlatform !== 'ALL') count++;
+    if (filters.selectedDifficulty !== 'ALL') count++;
+    if (filters.selectedOs && filters.selectedOs !== 'ALL') count++;
+    if (filters.selectedCert !== 'ALL') count++;
+    if (filters.selectedTracks && filters.selectedTracks.length > 0) {
+      count += filters.selectedTracks.length;
+    } else if (filters.selectedTrack && filters.selectedTrack !== 'ALL') {
+      count++;
+    }
+    if (filters.selectedStatus && filters.selectedStatus !== 'ALL') count++;
+    if (filters.selectedLanguage && filters.selectedLanguage !== 'ALL') count++;
+    if (filters.selectedAreaOfInterest && filters.selectedAreaOfInterest !== 'ALL') count++;
+    if (filters.selectedTechnique && filters.selectedTechnique !== 'ALL') count++;
+    if (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') count++;
+    if (filters.excludeActiveDirectory) count++;
+    if (filters.selectedTags.length > 0) count += filters.selectedTags.length;
+    return count;
+  }, [filters]);
+
+  const activeFilterPills = useMemo(() => {
+    const pills: { id: string; label: string; onRemove: () => void }[] = [];
+    if (filters.selectedPlatform !== 'ALL') {
+      pills.push({
+        id: 'platform',
+        label: `Platform: ${filters.selectedPlatform}`,
+        onRemove: () => setFilters({ selectedPlatform: 'ALL' }),
+      });
+    }
+    if (filters.selectedDifficulty !== 'ALL') {
+      pills.push({
+        id: 'diff',
+        label: `Diff: ${filters.selectedDifficulty}`,
+        onRemove: () => setFilters({ selectedDifficulty: 'ALL' }),
+      });
+    }
+    if (filters.selectedOs && filters.selectedOs !== 'ALL') {
+      pills.push({
+        id: 'os',
+        label: `OS: ${filters.selectedOs}`,
+        onRemove: () => setFilters({ selectedOs: 'ALL' }),
+      });
+    }
+    if (filters.selectedCert !== 'ALL') {
+      pills.push({
+        id: 'cert',
+        label: `Cert: ${filters.selectedCert}`,
+        onRemove: () => setFilters({ selectedCert: 'ALL' }),
+      });
+    }
+    if (filters.selectedStatus && filters.selectedStatus !== 'ALL') {
+      pills.push({
+        id: 'status',
+        label: `Status: ${filters.selectedStatus}`,
+        onRemove: () => setFilters({ selectedStatus: 'ALL' }),
+      });
+    }
+    if (filters.selectedTracks && filters.selectedTracks.length > 0) {
+      filters.selectedTracks.forEach((trackId) => {
+        const tr = PRACTICE_TRACKS.find((t) => t.id === trackId);
+        pills.push({
+          id: `track-${trackId}`,
+          label: `Track: ${tr?.shortName || trackId}`,
+          onRemove: () => {
+            const next = filters.selectedTracks.filter((x) => x !== trackId);
+            setFilters({
+              selectedTracks: next,
+              selectedTrack: next.length === 1 ? next[0] : (next.length > 1 ? 'MULTI' : 'ALL'),
+            });
+          },
+        });
+      });
+    } else if (filters.selectedTrack && filters.selectedTrack !== 'ALL') {
+      const tr = PRACTICE_TRACKS.find((t) => t.id === filters.selectedTrack);
+      pills.push({
+        id: 'track',
+        label: `Track: ${tr?.shortName || filters.selectedTrack}`,
+        onRemove: () => setFilters({ selectedTrack: 'ALL', selectedTracks: [] }),
+      });
+    }
+    if (filters.selectedLanguage && filters.selectedLanguage !== 'ALL') {
+      pills.push({
+        id: 'lang',
+        label: `Lang: ${filters.selectedLanguage}`,
+        onRemove: () => setFilters({ selectedLanguage: 'ALL' }),
+      });
+    }
+    if (filters.selectedAreaOfInterest && filters.selectedAreaOfInterest !== 'ALL') {
+      pills.push({
+        id: 'area',
+        label: `Area: ${filters.selectedAreaOfInterest}`,
+        onRemove: () => setFilters({ selectedAreaOfInterest: 'ALL' }),
+      });
+    }
+    if (filters.selectedTechnique && filters.selectedTechnique !== 'ALL') {
+      pills.push({
+        id: 'tech',
+        label: `Tech: ${filters.selectedTechnique}`,
+        onRemove: () => setFilters({ selectedTechnique: 'ALL' }),
+      });
+    }
+    if (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') {
+      pills.push({
+        id: 'vuln',
+        label: `Category: ${filters.selectedVulnCategory}`,
+        onRemove: () => setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' }),
+      });
+    }
+    if (filters.excludeActiveDirectory) {
+      pills.push({
+        id: 'ad',
+        label: 'No AD Labs',
+        onRemove: () => setFilters({ excludeActiveDirectory: false }),
+      });
+    }
+    filters.selectedTags.forEach((t) => {
+      pills.push({
+        id: `tag-${t}`,
+        label: `#${t}`,
+        onRemove: () => setFilters({ selectedTags: filters.selectedTags.filter((x) => x !== t) }),
+      });
+    });
+    return pills;
+  }, [filters, setFilters]);
 
   return (
-    <div className="space-y-4 w-full">
-      {/* 1. Curated Practice Tracks Carousel / Pathways */}
-      <div className="p-2.5 sm:p-3 rounded-xl border border-cyber-border bg-cyber-card/90 shadow-md font-mono space-y-2">
-        <div className="flex items-center justify-between gap-2">
+    <div className="space-y-3 w-full">
+      {/* 2-Row Compact Toolbar */}
+      {!focusMode && (
+      <div className="font-sans text-xs antialiased text-slate-700 dark:text-cyber-text space-y-0 shadow-sm p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-cyber-border bg-white dark:bg-cyber-card/90">
+        
+        {/* Row 1: Track & Actions Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+          {/* Left: Track Info with Progress */}
           <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-cyber-cyan flex-shrink-0" />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
-              CURATED TACTICAL PATHWAYS & TRACKS
+            <span className="text-[10px] text-slate-500 dark:text-cyber-muted uppercase font-bold tracking-wider">TRACK:</span>
+            <span className="text-xs font-semibold text-slate-900 dark:text-white">
+              {(filters.selectedTracks && filters.selectedTracks.length > 0)
+                ? `${filters.selectedTracks.length} Tracks Selected`
+                : (filters.selectedTrack && filters.selectedTrack !== 'ALL')
+                  ? (PRACTICE_TRACKS.find(t => t.id === filters.selectedTrack)?.shortName || filters.selectedTrack)
+                  : 'All Targets'
+              }
             </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {filters.selectedTrack !== 'ALL' && (
-              <button
-                onClick={() => setFilters({ selectedTrack: 'ALL' })}
-                className="text-[10px] text-cyber-cyan hover:underline flex items-center gap-1"
-              >
-                <span>Clear Track</span>
-                <span>✕</span>
-              </button>
-            )}
-            <button
-              onClick={toggleTracksCollapsed}
-              className="p-1 px-2 rounded-md bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-white transition-all flex items-center gap-1 text-[10px]"
-              title={tracksCollapsed ? 'Expand Pathways' : 'Collapse Pathways to save vertical space'}
-            >
-              {tracksCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-              <span>{tracksCollapsed ? 'Expand' : 'Collapse'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tracks Horizontal Scroll or Compact View */}
-        {!tracksCollapsed ? (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {PRACTICE_TRACKS.map((track) => {
-              const isSelected = filters.selectedTrack === track.id;
-              const stats = trackStats[track.id] || { total: 0, rooted: 0, percent: 0 };
-
+            {/* Inline micro progress bar (when tracks selected) */}
+            {((filters.selectedTracks && filters.selectedTracks.length > 0) || (filters.selectedTrack && filters.selectedTrack !== 'ALL')) && (() => {
+              const activeIds = (filters.selectedTracks && filters.selectedTracks.length > 0)
+                ? filters.selectedTracks
+                : [filters.selectedTrack!];
+              const tracks = activeIds.map(id => PRACTICE_TRACKS.find(t => t.id === id)).filter(Boolean);
+              const totalSet = new Set<string>();
+              const rootedSet = new Set<string>();
+              tracks.forEach(track => {
+                if (!track) return;
+                machines.filter(track.filterFn).forEach(m => {
+                  totalSet.add(m.id || m.name);
+                  if (m.status === 'root' || m.status === 'completed') rootedSet.add(m.id || m.name);
+                });
+              });
+              const total = totalSet.size;
+              const rooted = rootedSet.size;
+              const pct = total > 0 ? Math.round((rooted / total) * 100) : 0;
               return (
-                <motion.button
-                  key={track.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() =>
-                    setFilters({
-                      selectedTrack: isSelected ? 'ALL' : track.id,
-                    })
-                  }
-                  className={`p-2.5 rounded-lg border text-left flex-shrink-0 min-w-[210px] transition-all relative group overflow-hidden ${
-                    isSelected
-                      ? 'border-cyber-cyan bg-cyber-card shadow-glow-cyan/20 ring-1 ring-cyber-cyan/40'
-                      : 'border-cyber-border bg-cyber-bg hover:border-cyber-borderGlow'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className={`text-[11px] font-bold truncate ${isSelected ? 'text-cyber-cyan' : 'text-slate-900 dark:text-white'}`}>
-                      {track.shortName}
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-cyber-card border border-cyber-border text-cyber-muted">
-                      {stats.rooted}/{stats.total}
-                    </span>
-                  </div>
-
-                  {/* Progress Mini Bar */}
-                  <div className="w-full bg-cyber-card h-1.5 rounded-full overflow-hidden border border-cyber-border/80">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-cyber-emerald to-cyber-cyan"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${stats.percent}%` }}
-                      transition={{ duration: 0.5 }}
+                <div className="flex items-center gap-1.5">
+                  <div className="w-20 h-1.5 rounded-full bg-slate-200 dark:bg-cyber-bg overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-emerald-500 dark:bg-emerald-400 transition-all"
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
-
-                  <div className="flex items-center justify-between text-[9px] text-cyber-muted mt-1.5">
-                    <span className="truncate max-w-[130px]">{track.category.toUpperCase()}</span>
-                    <span className="font-mono text-cyber-emerald font-bold">{stats.percent}% PWN</span>
-                  </div>
-                </motion.button>
+                  <span className="text-[10px] font-mono text-slate-500 dark:text-cyber-muted">{rooted}/{total} ({pct}%)</span>
+                </div>
               );
-            })}
+            })()}
           </div>
-        ) : (
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 text-xs">
-            {PRACTICE_TRACKS.map((track) => {
-              const isSelected = filters.selectedTrack === track.id;
-              const stats = trackStats[track.id] || { total: 0, rooted: 0, percent: 0 };
-              return (
-                <button
-                  key={track.id}
-                  onClick={() => setFilters({ selectedTrack: isSelected ? 'ALL' : track.id })}
-                  className={`px-2.5 py-1 rounded-lg border text-left flex-shrink-0 transition-all flex items-center gap-2 text-[11px] ${
-                    isSelected
-                      ? 'border-cyber-cyan bg-cyber-bg text-cyber-cyan font-bold shadow-sm'
-                      : 'border-cyber-border/70 bg-cyber-bg/60 text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-border'
-                  }`}
-                >
-                  <span>{track.shortName}</span>
-                  <span className="text-[10px] text-cyber-emerald font-bold font-mono">
-                    {stats.rooted}/{stats.total}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+          
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-1.5">
+            {/* Scan Importer */}
+            <button
+              onClick={() => setReconAutomationModalOpen(true)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-cyber-bg/80 hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-cyber-borderGlow text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-xs transition-all"
+              title="Launch Tactical Scan Importer"
+            >
+              <Zap className="w-3.5 h-3.5 text-cyber-cyan" />
+              <span className="hidden sm:inline">Import</span>
+            </button>
 
-      {/* 2. Primary Filter, Search, and View Controls */}
-      <div className="p-3.5 rounded-xl border border-cyber-border bg-cyber-card/90 shadow-md font-mono space-y-3">
-        
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[260px]">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-cyber-muted" />
-            <input
-              type="text"
-              id="tracker-search-input"
-              name="tracker-search-input"
-              aria-label="Search targets by name, IP, OS, or CVE"
-              value={filters.searchQuery}
-              onChange={(e) => setFilters({ searchQuery: e.target.value })}
-              placeholder="Search by target name, IP (10.10.x), OS, exploit vector, or CVE..."
-              className="w-full pl-9 pr-4 py-2 bg-cyber-bg border border-cyber-border rounded-lg text-xs text-slate-900 dark:text-white placeholder-cyber-muted focus:outline-none focus:border-cyber-emerald"
-            />
-            {filters.searchQuery && (
-              <button
-                onClick={() => setFilters({ searchQuery: '' })}
-                className="absolute right-3 top-2.5 text-xs text-cyber-muted hover:text-slate-900 dark:hover:text-white"
-              >
-                ✕
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-cyber-bg/80 p-0.5 rounded-lg border border-slate-200 dark:border-cyber-border">
+              <button onClick={() => setViewMode('kanban')} className={`p-1.5 rounded transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-cyber-card text-cyan-600 dark:text-cyber-cyan border border-cyan-500/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`} title="Kanban">
+                <Kanban className="w-3.5 h-3.5" />
               </button>
-            )}
-          </div>
+              <button onClick={() => setViewMode('table')} className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white dark:bg-cyber-card text-cyan-600 dark:text-cyber-cyan border border-cyan-500/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`} title="Table">
+                <Table className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-cyber-card text-cyan-600 dark:text-cyber-cyan border border-cyan-500/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`} title="Grid">
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setViewMode('graph')} className={`p-1.5 rounded transition-all ${viewMode === 'graph' ? 'bg-white dark:bg-cyber-card text-cyan-600 dark:text-cyber-cyan border border-cyan-500/40 shadow-sm' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`} title="Graph">
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              {/* Embedded Hide Empty (kanban only) */}
+              {viewMode === 'kanban' && (
+                <>
+                  <div className="w-px h-4 bg-slate-300 dark:bg-cyber-border mx-0.5" />
+                  <button
+                    onClick={() => { setFilters({ hideEmptyLanes: !filters.hideEmptyLanes }); if (soundEnabled) playCyberSound('toggle'); }}
+                    className={`p-1.5 rounded transition-all ${filters.hideEmptyLanes ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300' : 'text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
+                    title={filters.hideEmptyLanes ? 'Show Empty Lanes' : 'Hide Empty Lanes'}
+                  >
+                    {filters.hideEmptyLanes ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </>
+              )}
+            </div>
 
-          {/* Attractive Platform Selector with Genuine Glowing Badges */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
-            {platformList.map((p) => {
-              const active = filters.selectedPlatform === p;
-              return (
-                <motion.button
-                  key={p}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setFilters({ selectedPlatform: p })}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 border ${
-                    active
-                      ? p === 'HTB'
-                        ? 'bg-emerald-100 dark:bg-cyber-emerald/20 border-emerald-400 dark:border-cyber-emerald text-emerald-900 dark:text-cyber-emerald shadow-glow-emerald/30 font-bold'
-                        : p === 'THM'
-                        ? 'bg-red-100 dark:bg-cyber-crimson/20 border-red-400 dark:border-cyber-crimson text-red-900 dark:text-cyber-crimson shadow-glow-crimson/30 font-bold'
-                        : 'bg-cyan-100 dark:bg-cyber-cyan/20 border-cyan-400 dark:border-cyber-cyan text-cyan-900 dark:text-cyber-cyan shadow-glow-cyan/30 font-bold'
-                      : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-borderGlow'
-                  }`}
-                >
-                  {p !== 'ALL' && <PlatformIcon platform={p as Platform} className="w-3.5 h-3.5" />}
-                  <span>{p === 'ALL' ? 'All Platforms' : p}</span>
-                </motion.button>
-              );
-            })}
+            {/* Zen Mode */}
+            <button
+              onClick={toggleFocusMode}
+              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${focusMode ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border-cyan-500/60 shadow-[0_0_8px_rgba(6,182,212,0.3)] animate-pulse' : 'bg-slate-50 dark:bg-cyber-bg/80 border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'}`}
+              title={focusMode ? 'Exit Zen (Esc)' : 'Zen Mode'}
+            >
+              <Eye className={`w-3.5 h-3.5 ${focusMode ? 'text-cyan-500' : ''}`} />
+            </button>
           </div>
+        </div>
 
-          {/* Sorting Controls */}
-          <div className="flex items-center gap-1.5 bg-cyber-bg px-2.5 py-1 rounded-lg border border-cyber-border text-xs">
-            <ArrowUpDown className="w-3.5 h-3.5 text-cyber-cyan flex-shrink-0" />
-            <span className="text-[10px] uppercase font-bold text-cyber-muted">Sort:</span>
-            <CyberSelect
-              id="tracker-sort-select"
-              name="tracker-sort-select"
-              aria-label="Sort targets"
-              value={filters.sortBy || 'default'}
-              onChange={(val) => setFilters({ sortBy: val as any })}
-              options={SORT_OPTIONS}
-              variant="transparent"
+        {/* Row 2: Search & Filters Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-cyber-border/60">
+          {/* Left: Search + Platform + OS + Difficulty */}
+          <div className="flex items-center gap-2 flex-wrap flex-1">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[160px] max-w-[280px]">
+              <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400 dark:text-cyber-muted" />
+              <input
+                type="text"
+                id="tracker-search-input"
+                name="tracker-search-input"
+                aria-label="Search machines"
+                value={filters.searchQuery}
+                onChange={(e) => setFilters({ searchQuery: e.target.value })}
+                placeholder="Search..."
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border rounded-lg text-xs text-slate-900 dark:text-cyber-text placeholder-slate-400 dark:placeholder-cyber-muted focus:outline-none focus:border-cyan-500 dark:focus:border-cyber-cyan font-sans"
+              />
+              {filters.searchQuery && (
+                <button type="button" onClick={() => setFilters({ searchQuery: '' })} className="absolute right-2 top-2 text-xs text-slate-400 dark:text-cyber-muted hover:text-slate-700 dark:hover:text-white cursor-pointer">✕</button>
+              )}
+            </div>
+
+            {/* Platform Segment Pills */}
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-cyber-bg/80 p-0.5 rounded-lg border border-slate-200 dark:border-cyber-border">
+              {platformList.map((p) => {
+                const active = filters.selectedPlatform === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => { setFilters({ selectedPlatform: p }); if (soundEnabled) playCyberSound('toggle'); }}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${active ? 'bg-white dark:bg-cyber-card text-slate-900 dark:text-white border border-slate-300 dark:border-cyber-borderGlow font-bold shadow-sm' : 'text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white'}`}
+                  >
+                    {p !== 'ALL' && <PlatformIcon platform={p as Platform} className="w-3 h-3" />}
+                    <span>{p === 'ALL' ? 'All' : p}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* OS Dropdown (single canonical instance) */}
+            <CyberSelect<'ALL' | OperatingSystem>
+              id="htb-os-select"
+              name="htb-os-select"
+              aria-label="Filter OS"
+              value={filters.selectedOs || 'ALL'}
+              onChange={(val) => setFilters({ selectedOs: val })}
+              options={HTB_OS_OPTIONS}
               size="xs"
-              triggerClassName="py-0 px-1 border-none bg-transparent hover:bg-transparent"
+              variant="default"
               soundEnabled={soundEnabled}
             />
-            {filters.sortBy && filters.sortBy !== 'default' && (
-              <button
-                onClick={() => setFilters({ sortDirection: filters.sortDirection === 'asc' ? 'desc' : 'asc' })}
-                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyber-card hover:bg-cyber-card/80 text-cyber-cyan border border-cyber-cyan/30"
-                title={`Sort ${filters.sortDirection === 'asc' ? 'Ascending' : 'Descending'} (Click to toggle)`}
-              >
-                {filters.sortDirection === 'asc' ? 'ASC ↑' : 'DESC ↓'}
-              </button>
-            )}
+
+            {/* Difficulty Dropdown (single canonical instance) */}
+            <CyberSelect<Difficulty | 'ALL'>
+              id="htb-difficulty-select"
+              name="htb-difficulty-select"
+              aria-label="Filter difficulty"
+              value={filters.selectedDifficulty}
+              onChange={(val) => setFilters({ selectedDifficulty: val })}
+              options={DIFFICULTY_FILTER_OPTIONS}
+              size="xs"
+              variant="default"
+              soundEnabled={soundEnabled}
+            />
           </div>
 
-          {/* Kanban Hide Empty Lanes Toggle */}
-          {viewMode === 'kanban' && (
+          {/* Right: Filters Button + Sort + Counter */}
+          <div className="flex items-center gap-2">
+            {/* Advanced Filters Drawer Trigger */}
             <button
-              onClick={() => setFilters({ hideEmptyLanes: !filters.hideEmptyLanes })}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all whitespace-nowrap ${
-                filters.hideEmptyLanes
-                  ? 'bg-amber-100 dark:bg-cyber-amber/15 text-amber-900 dark:text-cyber-amber border-amber-400 dark:border-cyber-amber/50 shadow-glow-amber/20'
-                  : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white'
+              onClick={() => { setFilterDrawerOpen(true); if (soundEnabled) playCyberSound('click'); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all shadow-sm cursor-pointer ${
+                activeFilterCount > 0
+                  ? 'bg-cyber-cyan/15 border-cyber-cyan text-slate-900 dark:text-white font-bold'
+                  : 'bg-slate-50 dark:bg-cyber-bg/80 border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-cyber-borderGlow'
               }`}
-              title="Toggle collapsing empty Kanban columns"
+              title="Open Advanced Filters"
             >
-              {filters.hideEmptyLanes ? <EyeOff className="w-3.5 h-3.5 text-amber-600 dark:text-cyber-amber" /> : <Eye className="w-3.5 h-3.5 text-cyber-muted" />}
-              <span>{filters.hideEmptyLanes ? 'Empty Lanes Hidden' : 'Hide Empty Lanes'}</span>
-            </button>
-          )}
-
-          {/* Tactical Recon Automation Launcher */}
-          <button
-            onClick={() => setReconAutomationModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyber-cyan/10 text-cyan-900 dark:text-cyber-cyan border border-cyan-400 dark:border-cyber-cyan/40 hover:bg-cyan-500 hover:text-black font-semibold text-xs transition-all shadow-glow-cyan/20 whitespace-nowrap"
-            title="Launch Tactical Scan Importer & Payload Crafter"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Scan & Payloads</span>
-          </button>
-
-          {/* View Mode Switcher */}
-          <div className="flex items-center gap-1 bg-cyber-bg p-1 rounded-lg border border-cyber-border">
-            <button
-              onClick={() => setViewMode('kanban')}
-              className={`p-1.5 rounded transition-all ${
-                viewMode === 'kanban'
-                  ? 'bg-cyber-card text-emerald-700 dark:text-cyber-emerald border border-emerald-400 dark:border-cyber-emerald/40'
-                  : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Kanban Board View"
-            >
-              <Kanban className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded transition-all ${
-                viewMode === 'table'
-                  ? 'bg-cyber-card text-emerald-700 dark:text-cyber-emerald border border-emerald-400 dark:border-cyber-emerald/40'
-                  : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Data Table View"
-            >
-              <Table className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded transition-all ${
-                viewMode === 'grid'
-                  ? 'bg-cyber-card text-emerald-700 dark:text-cyber-emerald border border-emerald-400 dark:border-cyber-emerald/40'
-                  : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Grid Cards View"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('graph')}
-              className={`p-1.5 rounded transition-all ${
-                viewMode === 'graph'
-                  ? 'bg-cyber-card text-emerald-700 dark:text-cyber-emerald border border-emerald-400 dark:border-cyber-emerald/40'
-                  : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Attack Topology Network Graph"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* 3. Quick OS & Box Archetype Vector Filter Bars */}
-        <div className="pt-2.5 border-t border-cyber-border/70 space-y-2.5">
-          {/* OS Quick Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-cyber-muted text-[10px] uppercase font-bold tracking-wider">TARGET OS:</span>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {osList.map((os) => {
-                const isActive = (filters.selectedOs || 'ALL') === os;
-                return (
-                  <button
-                    key={os}
-                    onClick={() => setFilters({ selectedOs: os })}
-                    className={`px-2.5 py-1 rounded text-[11px] border font-semibold transition-all flex items-center gap-1.5 ${
-                      isActive
-                        ? 'bg-cyber-card text-slate-900 dark:text-white border-cyber-emerald shadow-glow-emerald/20 font-bold'
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-borderGlow'
-                    }`}
-                  >
-                    {os === 'ALL' ? (
-                      <Globe className="w-3.5 h-3.5 text-cyber-cyan" />
-                    ) : (
-                      <OsIcon os={os} className="w-3.5 h-3.5" />
-                    )}
-                    <span>{os === 'ALL' ? 'All OS' : os}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Tactical 1-Click Presets Strip: ONLY WEB | ONLY AD | NO ACTIVE DIRECTORY (EXCLUSION) */}
-          <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-cyber-border/40">
-            <span className="text-cyber-muted text-[10px] uppercase font-bold tracking-wider flex items-center gap-1">
-              <span>TACTICAL PRESETS:</span>
-            </span>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {/* Preset: ONLY WEB */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isOnlyWeb = filters.selectedVulnCategory === 'Web' && !filters.excludeActiveDirectory;
-                  if (isOnlyWeb) {
-                    setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' });
-                  } else {
-                    setFilters({ selectedVulnCategory: 'Web', selectedCategory: 'ALL', excludeActiveDirectory: false });
-                  }
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`px-2.5 py-1 rounded text-[11px] border font-mono font-bold transition-all flex items-center gap-1.5 ${
-                  filters.selectedVulnCategory === 'Web' && !filters.excludeActiveDirectory
-                    ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-900 dark:text-cyan-300 border-cyan-400 shadow-glow-cyan/20 ring-1 ring-cyan-500/40 font-extrabold'
-                    : 'bg-cyber-bg border-cyan-500/30 text-cyan-800 dark:text-cyan-400/80 hover:text-cyan-950 dark:hover:text-cyan-300 hover:border-cyan-400'
-                }`}
-                title="Filter only Web application targets (SQLi, XSS, SSRF, LFI, RCE, etc.)"
-              >
-                <Globe className="w-3.5 h-3.5 text-cyan-500" />
-                <span>🌐 ONLY WEB</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-200/70 text-cyan-950 dark:bg-cyan-500/20 dark:text-cyan-300 ml-0.5">
-                  {categoryCounts['Web'] || 0}
+              <Filter className="w-3.5 h-3.5 text-cyber-cyan" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-cyber-cyan text-slate-900 dark:text-black leading-none">
+                  {activeFilterCount}
                 </span>
-              </button>
-
-              {/* Preset: ONLY ACTIVE DIRECTORY */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isOnlyAd = filters.selectedVulnCategory === 'Active Directory' && !filters.excludeActiveDirectory;
-                  if (isOnlyAd) {
-                    setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' });
-                  } else {
-                    setFilters({ selectedVulnCategory: 'Active Directory', selectedCategory: 'ALL', excludeActiveDirectory: false });
-                  }
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`px-2.5 py-1 rounded text-[11px] border font-mono font-bold transition-all flex items-center gap-1.5 ${
-                  filters.selectedVulnCategory === 'Active Directory' && !filters.excludeActiveDirectory
-                    ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-900 dark:text-purple-300 border-purple-400 shadow-glow-purple/20 ring-1 ring-purple-500/40 font-extrabold'
-                    : 'bg-cyber-bg border-purple-500/30 text-purple-800 dark:text-purple-400/80 hover:text-purple-950 dark:hover:text-purple-300 hover:border-purple-400'
-                }`}
-                title="Filter only Active Directory domain environments (Kerberos, DCSync, BloodHound, etc.)"
-              >
-                <Cpu className="w-3.5 h-3.5 text-purple-500" />
-                <span>🛡️ ONLY AD</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-200/70 text-purple-950 dark:bg-purple-500/20 dark:text-purple-300 ml-0.5">
-                  {categoryCounts['AD_TOTAL'] || 0}
-                </span>
-              </button>
-
-              {/* Preset: TJ NULL (OSCP 2024) */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isTjNull = filters.selectedTrack === 'tjnull-oscp';
-                  if (isTjNull) {
-                    setFilters({ selectedTrack: 'ALL' });
-                  } else {
-                    setFilters({ selectedTrack: 'tjnull-oscp', selectedVulnCategory: 'ALL', selectedCategory: 'ALL', excludeActiveDirectory: false });
-                  }
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`px-2.5 py-1 rounded text-[11px] border font-mono font-bold transition-all flex items-center gap-1.5 ${
-                  filters.selectedTrack === 'tjnull-oscp'
-                    ? 'bg-emerald-100 dark:bg-emerald-500/25 text-emerald-900 dark:text-emerald-300 border-emerald-400 shadow-glow-emerald/30 ring-1 ring-emerald-500/50 font-extrabold'
-                    : 'bg-cyber-bg border-emerald-500/30 text-emerald-800 dark:text-emerald-400/80 hover:text-emerald-950 dark:hover:text-emerald-300 hover:border-emerald-400'
-                }`}
-                title="Filter machines on TJ_Null's legendary OSCP 2024 syllabus"
-              >
-                <Target className="w-3.5 h-3.5 text-emerald-500" />
-                <span>🎯 TJ NULL (OSCP)</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-200/70 text-emerald-950 dark:bg-emerald-500/20 dark:text-emerald-300 ml-0.5">
-                  {trackStats['tjnull-oscp']?.total || 0}
-                </span>
-              </button>
-
-              {/* Preset: CPTS TROPHY ROOM */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isCpts = filters.selectedTrack === 'cpts-path';
-                  if (isCpts) {
-                    setFilters({ selectedTrack: 'ALL' });
-                  } else {
-                    setFilters({ selectedTrack: 'cpts-path', selectedVulnCategory: 'ALL', selectedCategory: 'ALL', excludeActiveDirectory: false });
-                  }
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`px-2.5 py-1 rounded text-[11px] border font-mono font-bold transition-all flex items-center gap-1.5 ${
-                  filters.selectedTrack === 'cpts-path'
-                    ? 'bg-cyan-100 dark:bg-cyan-500/25 text-cyan-900 dark:text-cyan-300 border-cyan-400 shadow-glow-cyan/30 ring-1 ring-cyan-500/50 font-extrabold'
-                    : 'bg-cyber-bg border-cyan-500/30 text-cyan-800 dark:text-cyan-400/80 hover:text-cyan-950 dark:hover:text-cyan-300 hover:border-cyan-400'
-                }`}
-                title="Filter machines on Penetration Testing Track Trophy Room"
-              >
-                <Trophy className="w-3.5 h-3.5 text-cyan-500" />
-                <span>🏆 PEN-TEST PATH</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-200/70 text-cyan-950 dark:bg-cyan-500/20 dark:text-cyan-300 ml-0.5">
-                  {trackStats['cpts-path']?.total || 0}
-                </span>
-              </button>
-
-              {/* Exclusion Toggle: NO ACTIVE DIRECTORY (EXCLUDE AD) */}
-              <button
-                type="button"
-                onClick={() => {
-                  const nextExclude = !filters.excludeActiveDirectory;
-                  const updates: Partial<FilterState> = { excludeActiveDirectory: nextExclude };
-                  if (nextExclude && (filters.selectedVulnCategory === 'Active Directory' || filters.selectedCategory === 'Active Directory')) {
-                    updates.selectedVulnCategory = 'ALL';
-                    updates.selectedCategory = 'ALL';
-                  }
-                  setFilters(updates);
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`px-2.5 py-1 rounded text-[11px] border font-mono font-bold transition-all flex items-center gap-1.5 ${
-                  filters.excludeActiveDirectory
-                    ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300 border-rose-500 shadow-glow-crimson/20 ring-1 ring-rose-500/50 font-extrabold'
-                    : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-rose-700 dark:hover:text-rose-400 hover:border-rose-500/40'
-                }`}
-                title="Exclude all 55 Active Directory machines from results (show pure standalone Linux/Windows/Web boxes)"
-              >
-                <Ban className={`w-3.5 h-3.5 ${filters.excludeActiveDirectory ? 'text-rose-500' : 'text-cyber-muted'}`} />
-                <span>{filters.excludeActiveDirectory ? '🚫 EXCLUDING DOMAIN LABS' : '🚫 EXCLUDE DOMAIN LABS'}</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-200/70 text-rose-950 dark:bg-rose-500/20 dark:text-rose-300 ml-0.5">
-                  {filters.excludeActiveDirectory ? `${categoryCounts['NON_AD_TOTAL'] || 0} left` : `-${categoryCounts['AD_TOTAL'] || 0}`}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Vulnerability Archetype Category Filter Section */}
-          <div className="pt-2 border-t border-cyber-border/40 space-y-2">
-            {/* Domain Tabs + Searchable Specific Category Selector */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-              {/* Tactical Domain Selector Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
-                <span className="text-cyber-muted text-[10px] uppercase font-bold tracking-wider mr-1 whitespace-nowrap flex items-center gap-1">
-                  <Filter className="w-3 h-3 text-cyber-cyan" />
-                  <span>DOMAIN:</span>
-                </span>
-                {VULN_DOMAINS.map((dom) => {
-                  const isActiveDomain = selectedDomain === dom.id;
-                  const count = domainCounts[dom.id] || 0;
-                  return (
-                    <button
-                      key={dom.id}
-                      type="button"
-                      onClick={() => {
-                        if (isActiveDomain && dom.id !== 'all') {
-                          setSelectedDomain('all');
-                        } else {
-                          setSelectedDomain(dom.id);
-                          if (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') {
-                            const def = getCategoryDef(filters.selectedVulnCategory);
-                            if (def && def.domain !== dom.id && dom.id !== 'all') {
-                              setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' });
-                            }
-                          }
-                        }
-                        if (soundEnabled) playCyberSound('click');
-                      }}
-                      className={`px-2.5 py-1 rounded text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 whitespace-nowrap border ${
-                        isActiveDomain
-                          ? 'bg-cyber-card text-slate-900 dark:text-white border-cyber-cyan shadow-glow-cyan/20 ring-1 ring-cyber-cyan/40'
-                          : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-borderGlow'
-                      }`}
-                    >
-                      <span>{dom.shortLabel}</span>
-                      <span className={`text-[9px] px-1.5 py-0.2 rounded ${isActiveDomain ? 'bg-cyan-200 text-cyan-950 dark:bg-cyber-cyan/20 dark:text-cyber-cyan font-bold' : 'bg-cyber-card text-cyber-muted'}`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Searchable Specific Category Combobox */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-cyber-muted text-[10px] uppercase font-bold tracking-wider hidden sm:inline">VULN CATEGORY:</span>
-                <div className="w-full sm:w-64">
-                  <CyberSelect
-                    id="tracker-vuln-category-select"
-                    name="tracker-vuln-category"
-                    aria-label="Filter specific vulnerability category"
-                    value={filters.selectedVulnCategory || 'ALL'}
-                    onChange={(val) => {
-                      const catId = val as string;
-                      if (catId === 'ALL') {
-                        setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' });
-                      } else {
-                        const def = getCategoryDef(catId);
-                        if (def) setSelectedDomain(def.domain);
-                        setFilters({ selectedVulnCategory: catId, selectedCategory: 'ALL' });
-                      }
-                    }}
-                    options={vulnCategoryOptions}
-                    variant="cyan"
-                    size="xs"
-                    soundEnabled={soundEnabled}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Category Pills Strip (Tailored to active Domain) */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-              {/* Active Category Indicator Chip (if set) */}
-              {filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL' && (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-cyan-100 dark:bg-cyber-cyan/20 border border-cyan-400 dark:border-cyber-cyan text-cyan-950 dark:text-cyber-cyan font-mono text-[11px] font-bold shadow-glow-cyan/20 mr-1">
-                  <span>ACTIVE: {filters.selectedVulnCategory}</span>
-                  <button
-                    type="button"
-                    onClick={() => setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' })}
-                    className="hover:text-red-500 font-extrabold text-xs ml-0.5"
-                    title="Clear specific category filter"
-                  >
-                    ×
-                  </button>
-                </div>
               )}
+            </button>
 
-              {/* All in current domain option (if not on 'all') */}
-              {selectedDomain !== 'all' && (
-                <button
-                  type="button"
-                  onClick={() => setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' })}
-                  className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-all flex items-center gap-1 font-semibold ${
-                    !filters.selectedVulnCategory || filters.selectedVulnCategory === 'ALL'
-                      ? 'bg-cyber-card text-slate-900 dark:text-white border-cyber-cyan shadow-glow-cyan/20 font-bold'
-                      : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-borderGlow'
-                  }`}
-                >
-                  <span>All in Domain</span>
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-cyber-bg border border-cyber-border text-cyber-muted">
-                    {domainCounts[selectedDomain]}
-                  </span>
-                </button>
-              )}
-
-              {/* Visible Category Pills */}
-              {displayedCategories.map((cat) => {
-                const isActive = (filters.selectedVulnCategory === cat.id) || (filters.selectedCategory === cat.id);
-                const count = categoryCounts[cat.id] || 0;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      if (isActive) {
-                        setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' });
-                      } else {
-                        const updates: Partial<FilterState> = {
-                          selectedVulnCategory: cat.id,
-                          selectedCategory: 'ALL',
-                        };
-                        if (cat.id === 'Active Directory' && filters.excludeActiveDirectory) {
-                          updates.excludeActiveDirectory = false;
-                        }
-                        setFilters(updates);
-                        setSelectedDomain(cat.domain);
-                      }
-                      if (soundEnabled) playCyberSound('click');
-                    }}
-                    className={`px-2 py-0.5 rounded text-[11px] border font-mono transition-all flex items-center gap-1 ${
-                      isActive
-                        ? `${cat.badgeColor} ${cat.borderColor} shadow-sm font-bold ring-1`
-                        : 'bg-cyber-bg border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:border-cyber-borderGlow'
-                    }`}
-                    title={`Filter by ${cat.label}`}
-                  >
-                    <span>{cat.shortLabel}</span>
-                    <span className={`text-[9px] px-1 py-0.2 rounded ${isActive ? 'bg-black/30 text-white' : 'bg-cyber-card text-cyber-muted'}`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* 4. Secondary Filters Bar (Difficulty, Cert, Attack Tag, Reset) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-cyber-border/70 text-xs">
-          
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Difficulty Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-cyber-muted text-[10px] uppercase font-bold">Difficulty:</span>
-              <CyberSelect<Difficulty | 'ALL'>
-                id="tracker-difficulty-select"
-                name="tracker-difficulty-select"
-                aria-label="Filter difficulty"
-                value={filters.selectedDifficulty}
-                onChange={(val) => setFilters({ selectedDifficulty: val })}
-                options={DIFFICULTY_FILTER_OPTIONS}
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-1 bg-slate-50 dark:bg-cyber-bg/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-cyber-border">
+              <ArrowUpDown className="w-3 h-3 text-cyber-cyan flex-shrink-0" />
+              <CyberSelect
+                id="tracker-sort-select"
+                name="tracker-sort-select"
+                aria-label="Sort targets"
+                value={filters.sortBy || 'default'}
+                onChange={(val) => setFilters({ sortBy: val as any })}
+                options={SORT_OPTIONS}
+                variant="transparent"
                 size="xs"
-                variant="default"
+                triggerClassName="py-0 px-1 border-none bg-transparent hover:bg-transparent text-slate-800 dark:text-cyber-text font-sans"
                 soundEnabled={soundEnabled}
               />
             </div>
 
-            {/* Attack Tag Select */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-cyber-muted text-[10px] uppercase font-bold">Attack Tag:</span>
-              <CyberMultiSelect
-                id="tracker-attack-tag-select"
-                name="tracker-attack-tag-select"
-                aria-label="Filter attack tag"
-                selectedValues={filters.selectedTags}
-                onChange={(tags) => setFilters({ selectedTags: tags })}
-                options={allTags.map((t) => ({ value: t, label: t }))}
-                placeholder="Filter by vector tag..."
-                searchPlaceholder="Search vector tags..."
-                size="xs"
-                variant="cyan"
-                soundEnabled={soundEnabled}
-              />
-            </div>
-
-            {/* Selected Tag Pills */}
-            {filters.selectedTags.map((t) => (
-              <span
-                key={t}
-                className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyber-bg border border-cyber-cyan/40 text-cyber-cyan text-[11px]"
-              >
-                <span>{t}</span>
-                <button
-                  onClick={() =>
-                    setFilters({
-                      selectedTags: filters.selectedTags.filter((x) => x !== t),
-                    })
-                  }
-                  className="hover:text-cyber-crimson"
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
-            {/* Active Category & Exclusion Filter Chips */}
-            {((filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') || (filters.selectedCategory && filters.selectedCategory !== 'ALL')) && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan text-[11px] font-mono">
-                <span>Category: <strong>{filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL' ? filters.selectedVulnCategory : filters.selectedCategory}</strong></span>
-                <button
-                  type="button"
-                  onClick={() => setFilters({ selectedVulnCategory: 'ALL', selectedCategory: 'ALL' })}
-                  className="hover:text-cyber-crimson ml-0.5 font-bold"
-                  title="Clear category filter"
-                >
-                  ✕
-                </button>
-              </span>
-            )}
-
-            {filters.excludeActiveDirectory && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-rose-950/40 border border-rose-500/50 text-rose-300 text-[11px] font-mono font-bold">
-                <span>🚫 Excluded: Active Directory</span>
-                <button
-                  type="button"
-                  onClick={() => setFilters({ excludeActiveDirectory: false })}
-                  className="hover:text-cyber-crimson ml-0.5 font-bold"
-                  title="Remove AD exclusion"
-                >
-                  ✕
-                </button>
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-cyber-muted text-xs">
-              Showing <strong className="text-slate-900 dark:text-white">{filteredMachines.length}</strong> / {machines.length} targets
+            {/* Result Counter */}
+            <span className="text-slate-500 dark:text-cyber-muted text-[11px] whitespace-nowrap font-mono">
+              <strong className="text-slate-900 dark:text-white">{filteredMachines.length}</strong>
+              <span className="mx-0.5">/</span>
+              {machines.length}
             </span>
-
-            {isFiltered && (
-              <button
-                onClick={() => {
-                  resetFilters();
-                  setSelectedDomain('all');
-                }}
-                className="flex items-center gap-1 text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:underline text-xs"
-              >
-                <RotateCcw className="w-3 h-3" /> Reset All Filters
-              </button>
-            )}
           </div>
-
         </div>
-
       </div>
+
+      )}
+      {/* Slide-over Filter Drawer */}
+      <FilterDrawer />
 
       {/* Main View Renderer */}
       {viewMode === 'kanban' && <KanbanBoard filteredMachines={filteredMachines} />}

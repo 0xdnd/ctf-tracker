@@ -16,7 +16,8 @@ import {
   Coffee,
   HardDrive,
   User,
-  ExternalLink
+  ExternalLink,
+  Settings
 } from 'lucide-react';
 
 export const UserMenu: React.FC = () => {
@@ -35,7 +36,9 @@ export const UserMenu: React.FC = () => {
     exportBackup, 
     importBackup, 
     resetAllProgress,
-    setOperatorModalOpen
+    setOperatorModalOpen,
+    setSettingsModalOpen,
+    soundEnabled
   } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
@@ -45,6 +48,8 @@ export const UserMenu: React.FC = () => {
       importBackup: s.importBackup,
       resetAllProgress: s.resetAllProgress,
       setOperatorModalOpen: s.setOperatorModalOpen,
+      setSettingsModalOpen: s.setSettingsModalOpen,
+      soundEnabled: s.soundEnabled,
     }))
   );
 
@@ -182,9 +187,9 @@ export const UserMenu: React.FC = () => {
   };
 
   return (
-    <div ref={menuRef} className="relative font-mono text-xs">
+    <div ref={menuRef} className="relative font-mono text-xs flex-shrink-0">
       {/* Header Button Group: 1-Click Save + Profile / Local Operator Badge */}
-      <div className="flex items-center gap-1.5 bg-cyber-card/90 border border-cyber-border rounded-xl p-1 shadow-sm">
+      <div className="flex items-center gap-1.5 bg-cyber-card/90 border border-cyber-border rounded-xl p-1 shadow-sm flex-shrink-0">
         {/* Instant 1-Click Quick Save Button */}
         <button
           onClick={handleQuickSave}
@@ -230,7 +235,7 @@ export const UserMenu: React.FC = () => {
             </div>
           )}
 
-          <span className="font-bold text-slate-900 dark:text-white text-xs max-w-[100px] truncate group-hover:text-cyber-cyan transition-colors">
+          <span className="font-bold text-slate-900 dark:text-white text-xs max-w-[80px] sm:max-w-[110px] truncate group-hover:text-cyber-cyan transition-colors">
             {isAuthenticated && user ? activeName : 'Local Operator'}
           </span>
 
@@ -438,13 +443,29 @@ export const UserMenu: React.FC = () => {
               </button>
             )}
 
-            <button
-              onClick={handleReset}
-              className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
-            >
-              <RotateCcw className="w-3 h-3 text-cyber-amber" />
-              <span>Reset CTF Progress</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  setSettingsModalOpen(true);
+                  if (soundEnabled) playCyberSound('click');
+                }}
+                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                title="Open Operator Settings"
+              >
+                <Settings className="w-3 h-3 text-cyber-cyan" />
+                <span>Settings</span>
+              </button>
+
+              <button
+                onClick={handleReset}
+                className="w-full py-1.5 px-2 rounded-lg bg-cyber-bg hover:bg-cyber-card border border-cyber-border text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5"
+                title="Reset all target progress"
+              >
+                <RotateCcw className="w-3 h-3 text-cyber-amber" />
+                <span>Reset CTF</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

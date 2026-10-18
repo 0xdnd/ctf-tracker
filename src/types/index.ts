@@ -1,6 +1,6 @@
-export type Platform = 'HTB' | 'THM' | 'Custom';
+export type Platform = 'HTB' | 'THM' | 'PG' | 'VulnHub' | 'Custom';
 
-export type OperatingSystem = 'Linux' | 'Windows' | 'Android' | 'BSD' | 'Other';
+export type OperatingSystem = 'Linux' | 'Windows' | 'Android' | 'BSD' | 'Multi-OS' | 'Other';
 
 export type Difficulty = 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Insane';
 
@@ -15,7 +15,7 @@ export interface Machine {
   difficulty: Difficulty;
   status: PipelineStatus;
   tags: string[];
-  certifications: ('OSCP' | 'CPTS' | 'CRTO' | 'HTB-Starting-Point')[];
+  certifications: ('OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'HTB-Starting-Point')[];
   roomUrl?: string;
   writeupUrl?: string;
   hint?: string;

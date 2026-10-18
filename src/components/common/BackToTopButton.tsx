@@ -36,7 +36,7 @@ export const BackToTopButton: React.FC = React.memo(() => {
           whileTap={{ scale: 0.92 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           onClick={handleClick}
-          className="fixed bottom-16 right-4 md:bottom-6 md:right-6 z-40 flex items-center gap-2 px-3 py-2 rounded-xl bg-cyber-card/90 hover:bg-cyber-card border border-cyber-cyan/50 hover:border-cyber-cyan text-cyber-cyan hover:text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-md font-mono text-xs transition-[colors,box-shadow,border-color] group"
+          className="fixed bottom-20 right-4 md:bottom-4 md:right-6 z-40 flex items-center gap-2 px-3 py-2 rounded-xl bg-cyber-card/90 hover:bg-cyber-card border border-cyber-cyan/50 hover:border-cyber-cyan text-cyber-cyan hover:text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-md font-mono text-xs transition-[colors,box-shadow,border-color] group"
           title="Scroll Back to Top"
         >
           <div className="relative">

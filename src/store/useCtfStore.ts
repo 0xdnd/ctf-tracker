@@ -14,10 +14,16 @@ import {
   saveDeepProfileData, 
   loadDeepProfileData 
 } from '../utils/indexedDbDeepStorage';
+import { 
+  exportWorkspaceToJson, 
+  triggerWorkspaceDownload, 
+  validateWorkspacePayload 
+} from '../utils/workspaceStorage';
 
 export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
 export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
 export type SortDirection = 'asc' | 'desc';
+export type HtbTargetStatus = 'ALL' | 'UNCOMPLETED' | 'FOOTHOLD' | 'COMPLETED';
 
 export interface FilterState {
   searchQuery: string;
@@ -29,6 +35,11 @@ export interface FilterState {
   selectedVulnCategory?: string | 'ALL';
   excludeActiveDirectory?: boolean;
   selectedTrack: string | 'ALL';
+  selectedTracks: string[];
+  selectedStatus: HtbTargetStatus;
+  selectedLanguage?: string | 'ALL';
+  selectedAreaOfInterest?: string | 'ALL';
+  selectedTechnique?: string | 'ALL';
   selectedTags: string[];
   sortBy: SortOption;
   sortDirection: SortDirection;
@@ -55,13 +66,40 @@ export const ZEROBOX_BRAND: BrandTheme = {
 
 export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];
 
-export type ThemePreset = 'htb' | 'matrix' | 'kali' | 'zerobox';
+export type ThemePreset = 'neon' | 'zerobox' | 'htb' | 'midnight-blue' | 'slate' | 'oled' | 'light';
+export type UiScale = 'auto' | 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
 
 export function applyThemePreset(preset: ThemePreset) {
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', preset);
+    if (preset === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-mode', 'light');
+    }
+
+    // Synchronize browser tab favicon with active theme preset
+    try {
+      const faviconMap: Record<string, string> = {
+        htb: './logo-htb.png',
+        zerobox: './logo-zerobox.png',
+        neon: './logo-zerobox.png',
+        'midnight-blue': './logo-midnight.png',
+        slate: './logo-midnight.png',
+        oled: './logo-oled.png',
+      };
+      const iconPath = faviconMap[preset] || './logo-zerobox.png';
+      const favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+      favicons.forEach(el => {
+        el.href = iconPath;
+      });
+    } catch {
+      // Ignore in non-browser or mock environments
+    }
   }
 }
+
+export type ActiveTab = 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme';
 
 interface CtfStoreState {
   machines: Machine[];
@@ -72,7 +110,7 @@ interface CtfStoreState {
   
   // UI States
   appBrand: string;
-  activeTab: 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam';
+  activeTab: ActiveTab;
   viewMode: ViewMode;
   selectedMachineId: string | null;
   writeupMachineId: string | null;
@@ -86,7 +124,12 @@ interface CtfStoreState {
   crtOverlay: boolean;
   soundEnabled: boolean;
   themePreset: ThemePreset;
-  uiScale: 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
+  uiScale: UiScale;
+  focusMode: boolean;
+  snippetsDrawerOpen: boolean;
+  revShellModalOpen: boolean;
+  filterDrawerOpen: boolean;
+  unexportedChangesCount: number;
   
   // Timer State
   isTimerRunning: boolean;
@@ -96,8 +139,16 @@ interface CtfStoreState {
   filters: FilterState;
 
   // Actions
+  setFocusMode: (open: boolean) => void;
+  toggleFocusMode: () => void;
+  setSnippetsDrawerOpen: (open: boolean) => void;
+  setRevShellModalOpen: (open: boolean) => void;
+  setFilterDrawerOpen: (open: boolean) => void;
+  resetUnexportedChangesCount: () => void;
+  exportWorkspace: () => void;
+  importWorkspace: (jsonStr: string) => { success: boolean; count?: number; error?: string };
   setAppBrand: (brandId: string) => void;
-  setActiveTab: (tab: 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam') => void;
+  setActiveTab: (tab: ActiveTab) => void;
   setViewMode: (mode: ViewMode) => void;
   setSelectedMachineId: (id: string | null) => void;
   setWriteupMachineId: (id: string | null) => void;
@@ -113,6 +164,8 @@ interface CtfStoreState {
   setFlexCardModalOpen: (open: boolean) => void;
   shortcutsModalOpen: boolean;
   setShortcutsModalOpen: (open: boolean) => void;
+  settingsModalOpen: boolean;
+  setSettingsModalOpen: (open: boolean) => void;
   notesImportModalOpen: boolean;
   setNotesImportModalOpen: (open: boolean) => void;
   userNotes: CptsNoteEntry[];
@@ -128,7 +181,7 @@ interface CtfStoreState {
   toggleCrtOverlay: () => void;
   toggleSound: () => void;
   setThemePreset: (preset: ThemePreset) => void;
-  setUiScale: (scale: 'tiny' | 'compact' | 'normal' | 'large' | 'huge') => void;
+  setUiScale: (scale: UiScale) => void;
   cycleUiScale: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -212,6 +265,11 @@ const DEFAULT_FILTERS: FilterState = {
   selectedVulnCategory: 'ALL',
   excludeActiveDirectory: false,
   selectedTrack: 'ALL',
+  selectedTracks: [],
+  selectedStatus: 'ALL',
+  selectedLanguage: 'ALL',
+  selectedAreaOfInterest: 'ALL',
+  selectedTechnique: 'ALL',
   selectedTags: [],
   sortBy: 'default',
   sortDirection: 'asc',
@@ -256,10 +314,26 @@ export const loadInitialProfileData = (profileId: string) => {
 };
 
 export const KNOWN_ACTIVE_SEASONAL_NAMES = new Set([
-  'scaffold', 'blocksynergy', 'danglingtree', 'cohort', 'darkzeroreturns', 
-  'bedside', 'paperwork', 'makesense', 'enigma', 'nimbus', 'checkpoint', 
-  'connected', 'devhub', 'reactor', 'smarthire', 'pingpong', 'silentium', 
-  'garfield', 'eloquia', 'hercules'
+  'trustfall',
+  'touch',
+  'stream',
+  'scaffold',
+  'pingpong',
+  'paperwork',
+  'nimbus',
+  'management',
+  'makesense',
+  'layover',
+  'garfield',
+  'enigma',
+  'eloquia',
+  'darkzeroreturns',
+  'danglingtree',
+  'connected',
+  'cohort',
+  'checkpoint',
+  'blocksynergy',
+  'bedside'
 ]);
 
 export const normalizeMachineSlug = (str?: string): string => {
@@ -508,13 +582,13 @@ export const mergeMachinesWithCatalog = (
     });
   }
 
-  // Enforce Hack The Box Terms of Service compliance: Active machines MUST NEVER have writeupUrl or hint
+  // Enforce Hack The Box Terms of Service compliance: Active HTB machines MUST NEVER have writeupUrl or hint
   map.forEach((machine) => {
     const norm = machine.name.toLowerCase().trim();
-    if (KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
+    if (machine.platform === 'HTB' && KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
       machine.isActive = true;
     }
-    if (machine.isActive) {
+    if (machine.platform === 'HTB' && machine.isActive) {
       machine.writeupUrl = '';
       machine.hint = '';
       machine.officialWalkthrough = '';
@@ -556,6 +630,7 @@ export const useCtfStore = create<CtfStoreState>()(
       licenseModalOpen: false,
       flexCardModalOpen: false,
       shortcutsModalOpen: false,
+      settingsModalOpen: false,
       notesImportModalOpen: false,
       userNotes: [],
       userWikilinkMap: {},
@@ -564,12 +639,66 @@ export const useCtfStore = create<CtfStoreState>()(
       crtOverlay: false,
       soundEnabled: true,
       themePreset: 'zerobox',
-      uiScale: 'normal',
+      uiScale: 'auto',
+      focusMode: false,
+      snippetsDrawerOpen: false,
+      revShellModalOpen: false,
+      filterDrawerOpen: false,
+      unexportedChangesCount: 0,
       isTimerRunning: false,
       activeTimerSeconds: 0,
       filters: DEFAULT_FILTERS,
       isCatalogLoaded: false,
       isCatalogLoading: false,
+
+      setFocusMode: (open) => set({ focusMode: open }),
+      toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+      setSnippetsDrawerOpen: (open) => set({ snippetsDrawerOpen: open }),
+      setRevShellModalOpen: (open) => set({ revShellModalOpen: open }),
+      setFilterDrawerOpen: (open) => set({ filterDrawerOpen: open }),
+      resetUnexportedChangesCount: () => set({ unexportedChangesCount: 0 }),
+      exportWorkspace: () => {
+        const state = get();
+        const json = exportWorkspaceToJson({
+          machines: state.machines,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          customNotes: state.customNotes,
+          userNotes: state.userNotes,
+          userWikilinkMap: state.userWikilinkMap,
+          deletedNoteIds: state.deletedNoteIds,
+          userSolvesReset: state.userSolvesReset,
+        });
+        triggerWorkspaceDownload(json, 'zerobox-workspace');
+        set({ unexportedChangesCount: 0 });
+      },
+      importWorkspace: (jsonStr: string) => {
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const validated = validateWorkspacePayload(parsed);
+          if (!validated.success || !validated.data) {
+            return { success: false, error: validated.error || 'Invalid workspace backup format.' };
+          }
+          const data = validated.data;
+          set((state) => ({
+            machines: data.machines ? mergeMachinesWithCatalog(data.machines, data.userSolvesReset) : state.machines,
+            globalVars: data.globalVars ? { ...state.globalVars, ...data.globalVars } : state.globalVars,
+            cheatsheets: data.cheatsheets ? [...data.cheatsheets] : state.cheatsheets,
+            activitySessions: data.activitySessions ? [...data.activitySessions] : state.activitySessions,
+            customNotes: data.customNotes ? [...data.customNotes] : state.customNotes,
+            userNotes: data.userNotes ? [...data.userNotes] : state.userNotes,
+            userWikilinkMap: data.userWikilinkMap ? { ...data.userWikilinkMap } : state.userWikilinkMap,
+            deletedNoteIds: data.deletedNoteIds ? [...data.deletedNoteIds] : state.deletedNoteIds,
+            userSolvesReset: data.userSolvesReset !== undefined ? data.userSolvesReset : state.userSolvesReset,
+            unexportedChangesCount: 0,
+          }));
+          get().saveProfileData();
+          return { success: true, count: validated.restoredCount };
+        } catch (err: any) {
+          return { success: false, error: err?.message || 'Failed to parse JSON file' };
+        }
+      },
 
       loadCatalog: async () => {
         if (get().isCatalogLoaded || get().isCatalogLoading) return;
@@ -604,6 +733,7 @@ export const useCtfStore = create<CtfStoreState>()(
       setLicenseModalOpen: (open) => set({ licenseModalOpen: open }),
       setFlexCardModalOpen: (open) => set({ flexCardModalOpen: open }),
       setShortcutsModalOpen: (open) => set({ shortcutsModalOpen: open }),
+      setSettingsModalOpen: (open) => set({ settingsModalOpen: open }),
       setNotesImportModalOpen: (open) => set({ notesImportModalOpen: open }),
       setUserNotes: (notes) => set({ userNotes: notes }),
       setUserWikilinkMap: (map) => set({ userWikilinkMap: map }),
@@ -653,21 +783,27 @@ export const useCtfStore = create<CtfStoreState>()(
       },
       setUiScale: (scale) => set({ uiScale: scale }),
       zoomIn: () => set((s) => {
-        const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'normal');
-        const nextIdx = Math.min(order.length - 1, currentIdx + 1);
-        return { uiScale: order[nextIdx] };
+        const steps: UiScale[] = ['tiny', 'compact', 'normal', 'large', 'huge'];
+        if (s.uiScale === 'auto') {
+          return { uiScale: 'large' };
+        }
+        const currentIdx = steps.indexOf(s.uiScale);
+        const nextIdx = Math.min(steps.length - 1, (currentIdx === -1 ? 2 : currentIdx) + 1);
+        return { uiScale: steps[nextIdx] };
       }),
       zoomOut: () => set((s) => {
-        const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'normal');
-        const nextIdx = Math.max(0, currentIdx - 1);
-        return { uiScale: order[nextIdx] };
+        const steps: UiScale[] = ['tiny', 'compact', 'normal', 'large', 'huge'];
+        if (s.uiScale === 'auto') {
+          return { uiScale: 'compact' };
+        }
+        const currentIdx = steps.indexOf(s.uiScale);
+        const nextIdx = Math.max(0, (currentIdx === -1 ? 2 : currentIdx) - 1);
+        return { uiScale: steps[nextIdx] };
       }),
       cycleUiScale: () => set((s) => {
-        const order: Array<'tiny' | 'compact' | 'normal' | 'large' | 'huge'> = ['tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'normal');
-        const nextIdx = (currentIdx + 1) % order.length;
+        const order: UiScale[] = ['auto', 'tiny', 'compact', 'normal', 'large', 'huge'];
+        const currentIdx = order.indexOf(s.uiScale || 'auto');
+        const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % order.length;
         return { uiScale: order[nextIdx] };
       }),
 
@@ -723,10 +859,36 @@ export const useCtfStore = create<CtfStoreState>()(
             ];
           }
 
+          // Auto-sync active target and RHOST (targetIp) when entering Active Recon or Foothold Obtained
+          let activeId = state.activeTargetId;
+          let newGlobalVars = state.globalVars;
+          let assignIpId = state.assignIpMachineId;
+          let shouldStartTimer = state.isTimerRunning;
+
+          if (status === 'recon' || status === 'foothold') {
+            activeId = id;
+            const targetM = state.machines.find((x) => x.id === id);
+            if (targetM) {
+              const isPlaceholder = !targetM.ip || targetM.ip.toLowerCase().includes('x') || targetM.ip === '10.10.10.X';
+              if (isPlaceholder) {
+                assignIpId = id;
+              } else {
+                newGlobalVars = {
+                  ...state.globalVars,
+                  targetIp: targetM.ip,
+                };
+              }
+            }
+          }
+
           return { 
             machines: updated, 
             activitySessions: sessions,
-            isTimerRunning: shouldStopTimer ? false : state.isTimerRunning,
+            isTimerRunning: shouldStopTimer ? false : shouldStartTimer,
+            activeTargetId: activeId,
+            globalVars: newGlobalVars,
+            assignIpMachineId: assignIpId,
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
         });
       },
@@ -773,10 +935,10 @@ export const useCtfStore = create<CtfStoreState>()(
               if (m.id !== id) return m;
               const merged = { ...m, ...updates, updatedAt: new Date().toISOString() };
               const norm = merged.name.toLowerCase().trim();
-              if (KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
+              if (merged.platform === 'HTB' && KNOWN_ACTIVE_SEASONAL_NAMES.has(norm)) {
                 merged.isActive = true;
               }
-              if (merged.isActive) {
+              if (merged.platform === 'HTB' && merged.isActive) {
                 merged.writeupUrl = '';
                 merged.hint = '';
                 merged.officialWalkthrough = '';
@@ -797,7 +959,7 @@ export const useCtfStore = create<CtfStoreState>()(
         const id = 'custom-' + Date.now() + '-' + data.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
         const now = new Date().toISOString();
         const norm = data.name.toLowerCase().trim();
-        const isKnownActive = KNOWN_ACTIVE_SEASONAL_NAMES.has(norm);
+        const isKnownActive = data.platform === 'HTB' && KNOWN_ACTIVE_SEASONAL_NAMES.has(norm);
         const isActive = Boolean(data.isActive || isKnownActive);
 
         const newMachine: Machine = {
@@ -805,9 +967,9 @@ export const useCtfStore = create<CtfStoreState>()(
           id,
           isCustom: true,
           isActive,
-          // If active seasonal lab, enforce HTB ToS sanitation strictly at intake
-          writeupUrl: isActive ? '' : (data.writeupUrl || ''),
-          hint: isActive ? '' : (data.hint || ''),
+          // If active HTB lab, enforce HTB ToS sanitation strictly at intake
+          writeupUrl: (data.platform === 'HTB' && isActive) ? '' : (data.writeupUrl || ''),
+          hint: (data.platform === 'HTB' && isActive) ? '' : (data.hint || ''),
           officialWalkthrough: '',
           officialSynopsis: '',
           officialPdf: '',
@@ -1018,7 +1180,7 @@ export const useCtfStore = create<CtfStoreState>()(
           }
 
           const m = updatedMachines.find((x) => x.id === id);
-          const isPlaceholderIp = Boolean(m && (!m.ip || m.ip.includes('x')));
+          const isPlaceholderIp = Boolean(m && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
           return {
             machines: updatedMachines,
             activeTargetId: id,
@@ -1026,8 +1188,9 @@ export const useCtfStore = create<CtfStoreState>()(
             assignIpMachineId: isPlaceholderIp ? id : null,
             globalVars: {
               ...state.globalVars,
-              targetIp: m?.ip && !m.ip.includes('x') ? m.ip : state.globalVars.targetIp,
+              targetIp: m?.ip && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
             },
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
           };
         });
       },
@@ -1123,7 +1286,15 @@ export const useCtfStore = create<CtfStoreState>()(
         }));
       },
 
-      setFilters: (f) => set((s) => ({ filters: { ...s.filters, ...f } })),
+      setFilters: (f) => set((s) => {
+        const nextFilters = { ...s.filters, ...f };
+        if (f.selectedTracks !== undefined) {
+          nextFilters.selectedTrack = f.selectedTracks.length > 0 ? f.selectedTracks[0] : 'ALL';
+        } else if (f.selectedTrack !== undefined) {
+          nextFilters.selectedTracks = f.selectedTrack === 'ALL' ? [] : [f.selectedTrack];
+        }
+        return { filters: nextFilters };
+      }),
       resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
       addCustomNote: (note) => {
@@ -1476,10 +1647,14 @@ export const useCtfStore = create<CtfStoreState>()(
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
         }
+        if (!persisted.uiScale || persisted.uiScale === 'normal') {
+          persisted.uiScale = 'auto';
+        }
         const userSolvesReset = Boolean(persisted.userSolvesReset);
         return {
           ...persisted,
           appBrand: 'zerobox',
+          uiScale: (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : persisted.uiScale,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
@@ -1491,16 +1666,25 @@ export const useCtfStore = create<CtfStoreState>()(
         const userSolvesReset = Boolean(persisted.userSolvesReset);
         const themePreset = (persisted.themePreset as ThemePreset) || 'zerobox';
         applyThemePreset(themePreset);
+        const resolvedUiScale: UiScale = (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : (persisted.uiScale as UiScale);
         return {
           ...currentState,
           ...persisted,
           appBrand: 'zerobox',
           themePreset,
+          uiScale: resolvedUiScale,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
           machines: mergeMachinesWithCatalog(persisted.machines, userSolvesReset),
         };
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (!state.uiScale || state.uiScale === 'normal') {
+            state.uiScale = 'auto';
+          }
+        }
       },
       partialize: (state) => ({
         currentProfileId: state.currentProfileId,

@@ -50,7 +50,9 @@ const iconFiles = [
   'icon-192.jpg',
   'icon-512.jpg',
   'favicon.jpg',
-  'manifest.webmanifest'
+  'manifest.webmanifest',
+  'sitemap.xml',
+  'robots.txt'
 ];
 
 iconFiles.forEach(file => {

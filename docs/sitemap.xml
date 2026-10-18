@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- ZeroBox Canonical Root -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.00</priority>
+  </url>
+
+  <!-- Module A: Advanced Machine & Lab Tracker -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/tracker</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Module B: Dynamic Cheatsheet & Reverse Shell Builder -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/cheatsheets</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Module C: CPTS Field Manual & Obsidian Notes Vault -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/field-manual</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/notes</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Module D: Penetration Testing Methodology Framework -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/methodology</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Module E: Embedded Pentest Writeup Studio -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/writeup</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Module F: 24-Hour CPTS / OSCP Exam Simulator -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/exam</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Module G: Operational Analytics & Proficiency Skill Radar -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/analytics</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Module H: Tactical Theme & Display Customizer -->
+  <url>
+    <loc>https://0xdnd.github.io/ctf-tracker/#/theme</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
+  </url>
+</urlset>

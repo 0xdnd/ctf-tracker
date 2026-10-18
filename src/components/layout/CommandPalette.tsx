@@ -10,13 +10,15 @@ import {
   FileText, 
   X, 
   ChevronRight, 
-  Sparkles, 
+  Sliders, 
+  Sun,
   Compass, 
   Zap, 
   Globe,
   Award,
   Radio,
-  Keyboard 
+  Keyboard,
+  Settings
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -44,6 +46,7 @@ export const CommandPalette: React.FC = () => {
     setThemePreset,
     setFlexCardModalOpen,
     setShortcutsModalOpen,
+    setSettingsModalOpen,
   } = useCtfStore(
     useShallow((s) => ({
       commandPaletteOpen: s.commandPaletteOpen,
@@ -59,6 +62,7 @@ export const CommandPalette: React.FC = () => {
       setThemePreset: s.setThemePreset,
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
+      setSettingsModalOpen: s.setSettingsModalOpen,
     }))
   );
 
@@ -191,9 +195,20 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-settings',
+        label: 'Open Operator Settings & Themes',
+        icon: Settings,
+        colorClass: 'text-cyber-cyan',
+        bgHoverClass: 'hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setSettingsModalOpen(true);
+        },
+      },
+      {
         id: 'theme-htb',
-        label: 'Switch Theme: Hack The Box (Toxic Lime & Matte Dark)',
-        icon: Palette,
+        label: 'Switch Theme: Hack The Box (HTB Vibe - #9FEF00 Lime Green)',
+        icon: Terminal,
         colorClass: 'text-[#9FEF00]',
         bgHoverClass: 'hover:bg-[#9FEF00]/10 hover:border-[#9FEF00]/40',
         execute: () => {
@@ -202,13 +217,46 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'theme-matrix',
-        label: 'Switch Theme: Matrix Terminal (Phosphor Green & Black)',
-        icon: Terminal,
-        colorClass: 'text-[#00FF66]',
-        bgHoverClass: 'hover:bg-[#00FF66]/10 hover:border-[#00FF66]/40',
+        id: 'theme-zerobox',
+        label: 'Switch Theme: Minimalist Black & Blue (Default)',
+        icon: Sliders,
+        colorClass: 'text-cyber-cyan',
+        bgHoverClass: 'hover:bg-blue-500/10 hover:border-blue-500/40',
         execute: () => {
-          setThemePreset('matrix');
+          setThemePreset('zerobox');
+          setCommandPaletteOpen(false);
+        },
+      },
+      {
+        id: 'theme-oled',
+        label: 'Switch Theme: OLED Pure Black (Pitch Black & Ice Blue)',
+        icon: Terminal,
+        colorClass: 'text-sky-400',
+        bgHoverClass: 'hover:bg-sky-400/10 hover:border-sky-400/40',
+        execute: () => {
+          setThemePreset('oled');
+          setCommandPaletteOpen(false);
+        },
+      },
+      {
+        id: 'theme-slate',
+        label: 'Switch Theme: Slate Navy (Dark Slate & Steel Blue)',
+        icon: Palette,
+        colorClass: 'text-blue-400',
+        bgHoverClass: 'hover:bg-blue-400/10 hover:border-blue-400/40',
+        execute: () => {
+          setThemePreset('slate');
+          setCommandPaletteOpen(false);
+        },
+      },
+      {
+        id: 'theme-light',
+        label: 'Switch Theme: Minimalist Light Mode (Crisp White & Precision Blue)',
+        icon: Sun,
+        colorClass: 'text-blue-600',
+        bgHoverClass: 'hover:bg-blue-600/10 hover:border-blue-600/40',
+        execute: () => {
+          setThemePreset('light');
           setCommandPaletteOpen(false);
         },
       },
@@ -236,7 +284,7 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-exam',
-        label: 'War Room (24h OSCP / CPTS Exam Simulator)',
+        label: '24h Exam Simulator (OSCP / CPTS)',
         icon: Radio,
         colorClass: 'text-rose-600 dark:text-rose-400',
         bgHoverClass: 'hover:bg-rose-500/10 hover:border-rose-500/40',
@@ -247,7 +295,7 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-shortcuts',
-        label: 'Combat Keyboard Shortcuts Reference [?]',
+        label: 'Keyboard Shortcuts Reference [?]',
         icon: Keyboard,
         colorClass: 'text-cyan-600 dark:text-cyber-cyan',
         bgHoverClass: 'hover:bg-cyan-500/10 hover:border-cyan-500/40',
@@ -257,7 +305,7 @@ export const CommandPalette: React.FC = () => {
         },
       },
     ],
-    [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, setThemePreset, setFlexCardModalOpen, setShortcutsModalOpen]
+    [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, setThemePreset, setFlexCardModalOpen, setShortcutsModalOpen, setSettingsModalOpen]
   );
 
   // Filter actions based on search
@@ -393,7 +441,7 @@ export const CommandPalette: React.FC = () => {
           {filteredActions.length > 0 && (
             <div>
               <div className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-cyber-muted flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-cyber-cyan" /> QUICK ACTIONS
+                <Sliders className="w-3 h-3 text-cyber-cyan" /> QUICK ACTIONS
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {filteredActions.map((action) => {

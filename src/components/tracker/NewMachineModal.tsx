@@ -23,10 +23,10 @@ const OS_OPTIONS: CyberSelectOption<OperatingSystem>[] = [
 ];
 
 const DIFFICULTY_OPTIONS: CyberSelectOption<Difficulty>[] = [
-  { value: 'Very Easy', label: 'Very Easy', color: '#10B981' },
-  { value: 'Easy', label: 'Easy', color: '#22C55E' },
+  { value: 'Very Easy', label: 'Very Easy', color: '#06B6D4' },
+  { value: 'Easy', label: 'Easy', color: '#10B981' },
   { value: 'Medium', label: 'Medium', color: '#F59E0B' },
-  { value: 'Hard', label: 'Hard', color: '#EF4444' },
+  { value: 'Hard', label: 'Hard', color: '#F43F5E' },
   { value: 'Insane', label: 'Insane', color: '#A855F7' },
 ];
 

@@ -4,84 +4,194 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Tactical Light Mode - Crisp, High-Contrast Slate Palette */
-  --cyber-bg: 248 250 252;          /* #F8FAFC slate-50 */
+/* ==========================================================================
+   ZEROBOX // 6-MODE TOKEN ENGINE (Dark & Light for Neon, HTB, Midnight, OLED)
+   ========================================================================== */
+
+/* 1. DEFAULT FALLBACK LIGHT */
+:root, html.light {
+  --cyber-bg: 240 245 250;          /* #F0F5FA clean ice base */
   --cyber-card: 255 255 255;        /* #FFFFFF pure white */
-  --cyber-card-hover: 241 245 249;  /* #F1F5F9 slate-100 */
-  --cyber-border: 226 232 240;      /* #E2E8F0 slate-200 */
-  --cyber-border-glow: 203 213 225; /* #CBD5E1 slate-300 */
-  --cyber-text: 15 23 42;           /* #0F172A slate-900 */
-  --cyber-muted: 100 116 139;       /* #64748B slate-500 */
-  --cyber-code: 241 245 249;        /* #F1F5F9 slate-100 */
-  --cyber-cyan: 6 182 212;          /* #06B6D4 cyan-500 */
-  --cyber-emerald: 16 185 129;      /* #10B981 emerald-500 */
-  --cyber-crimson: 239 68 68;       /* #EF4444 red-500 */
-  --cyber-neon: 0 255 102;          /* #00FF66 */
+  --cyber-card-hover: 228 236 245;  /* #E4ECF5 */
+  --cyber-border: 203 216 230;      /* #CBD8E6 subtle border */
+  --cyber-border-glow: 0 139 153;   /* #008B99 */
+  --cyber-text: 9 21 36;            /* #091524 high contrast text */
+  --cyber-muted: 80 99 121;         /* #506379 muted slate */
+  --cyber-code: 227 235 245;        /* #E3EBF5 */
+  --cyber-cyan: 0 139 153;          /* #008B99 deep cyan primary */
+  --cyber-emerald: 13 148 136;      /* #0D9488 teal secondary */
+  --cyber-crimson: 225 29 72;       /* #E11D48 ruby */
+  --cyber-amber: 217 119 6;         /* #D97706 amber-600 */
+  --cyber-purple: 147 51 234;       /* #9333EA purple-600 */
+  --cyber-neon: 0 139 153;
+  --diff-very-easy: 14 116 144;     /* #0E7490 cyan-700 */
+  --diff-easy: 4 120 87;           /* #047857 emerald-700 */
+  --diff-medium: 180 83 9;         /* #B45309 amber-700 */
+  --diff-hard: 190 18 60;          /* #BE123C rose-700 */
+  --diff-insane: 126 34 206;       /* #7E22CE purple-700 */
 }
 
-.dark, [data-theme="zerobox"].dark {
-  /* Tactical Cyber Dark Mode (Original Default) */
-  --cyber-bg: 11 15 25;             /* #0B0F19 */
-  --cyber-card: 17 24 39;           /* #111827 */
-  --cyber-card-hover: 22 31 51;     /* #161F33 */
-  --cyber-border: 31 41 55;         /* #1F2937 */
-  --cyber-border-glow: 45 55 72;    /* subtle border */
-  --cyber-text: 226 232 240;        /* #E2E8F0 */
-  --cyber-muted: 148 163 184;       /* #94A3B8 */
-  --cyber-code: 9 13 22;            /* #090D16 */
-  --cyber-cyan: 6 182 212;          /* #06B6D4 */
-  --cyber-emerald: 16 185 129;      /* #10B981 */
-  --cyber-crimson: 239 68 68;       /* #EF4444 */
-  --cyber-neon: 16 185 129;
+/* 2. DEFAULT FALLBACK DARK */
+html.dark {
+  --cyber-bg: 7 11 20;             /* #070B14 deep obsidian */
+  --cyber-card: 13 21 39;           /* #0D1527 card surface */
+  --cyber-card-hover: 19 31 56;     /* #131F38 hover */
+  --cyber-border: 26 41 66;         /* #1A2942 matte border */
+  --cyber-border-glow: 0 240 255;   /* #00F0FF electric cyan glow */
+  --cyber-text: 240 246 252;        /* #F0F6FC text */
+  --cyber-muted: 121 141 163;       /* #798DA3 */
+  --cyber-code: 10 16 30;
+  --cyber-cyan: 0 240 255;          /* #00F0FF electric cyan */
+  --cyber-emerald: 16 185 129;      /* #10B981 emerald */
+  --cyber-crimson: 244 63 94;
+  --cyber-amber: 245 158 11;        /* #F59E0B amber-500 */
+  --cyber-purple: 168 85 247;       /* #A855F7 purple-500 */
+  --cyber-neon: 0 240 255;
+  --diff-very-easy: 6 182 212;      /* #06B6D4 cyan-500 */
+  --diff-easy: 16 185 129;         /* #10B981 emerald-500 */
+  --diff-medium: 245 158 11;       /* #F59E0B amber-500 */
+  --diff-hard: 244 63 94;          /* #F43F5E rose-500 */
+  --diff-insane: 168 85 247;       /* #A855F7 purple-500 */
 }
 
-/* 🟩 HACK THE BOX THEME: Clean HTB Matte Dark + Subtle Lime Accents */
-[data-theme="htb"] {
-  --cyber-bg: 17 24 39;             /* #111827 Matte HTB dark background */
-  --cyber-card: 20 30 45;           /* #141E2D Matte HTB slate card */
-  --cyber-card-hover: 26 38 56;     /* #1A2638 */
-  --cyber-border: 35 48 70;         /* #233046 Matte border */
-  --cyber-border-glow: 45 60 85;    /* Subtle border */
-  --cyber-text: 226 232 240;        /* Crisp readable text */
-  --cyber-muted: 148 163 184;       /* #94A3B8 */
-  --cyber-code: 12 18 30;           /* #0C121E */
-  --cyber-cyan: 6 182 212;          /* Keep clean cyan */
-  --cyber-emerald: 159 239 0;       /* #9FEF00 HTB Lime for active items */
-  --cyber-crimson: 239 68 68;
-  --cyber-neon: 159 239 0;
+/* --- THEME 1: NEON CYBER (ZEROBOX Signature Electric Cyan) --- */
+html.dark[data-theme="neon"], html.dark[data-theme="zerobox"] {
+  --cyber-bg: 7 11 20;             /* #070B14 */
+  --cyber-card: 13 21 39;           /* #0D1527 */
+  --cyber-card-hover: 19 31 56;
+  --cyber-border: 26 41 66;
+  --cyber-border-glow: 0 240 255;
+  --cyber-text: 240 246 252;
+  --cyber-muted: 121 141 163;
+  --cyber-code: 10 16 30;
+  --cyber-cyan: 0 240 255;          /* #00F0FF Electric Cyan */
+  --cyber-emerald: 16 185 129;
+  --cyber-crimson: 244 63 94;
+  --cyber-neon: 0 240 255;
 }
 
-/* 🟢 TERMINAL THEME: Subtle Matte Monospace Green */
-[data-theme="matrix"] {
-  --cyber-bg: 10 15 12;             /* #0A0F0C Calm dark slate */
-  --cyber-card: 16 24 19;           /* #101813 */
-  --cyber-card-hover: 22 32 26;     /* #16201A */
-  --cyber-border: 28 48 35;         /* #1C3023 Subtle green border */
-  --cyber-border-glow: 36 60 45;
-  --cyber-text: 215 235 220;        /* Soft readable green */
-  --cyber-muted: 110 145 120;
-  --cyber-code: 6 10 8;
-  --cyber-cyan: 52 211 153;         /* Soft emerald */
-  --cyber-emerald: 34 197 94;       /* Terminal green */
-  --cyber-crimson: 239 68 68;
-  --cyber-neon: 34 197 94;
-}
-
-/* 🔴 OFFSEC CRIMSON: Matte Carbon Dark with Crimson Accents */
-[data-theme="kali"] {
-  --cyber-bg: 15 15 18;             /* #0F0F12 Matte carbon */
-  --cyber-card: 22 22 28;           /* #16161C */
-  --cyber-card-hover: 30 30 38;     /* #1E1E26 */
-  --cyber-border: 45 42 55;         /* #2D2A37 */
-  --cyber-border-glow: 55 50 68;
-  --cyber-text: 235 235 242;
-  --cyber-muted: 145 142 160;
-  --cyber-code: 10 10 13;
-  --cyber-cyan: 244 63 94;          /* Rose */
-  --cyber-emerald: 225 29 72;       /* Crimson */
+html.light[data-theme="neon"], html.light[data-theme="zerobox"] {
+  --cyber-bg: 240 245 250;          /* #F0F5FA Clean Ice-Lab */
+  --cyber-card: 255 255 255;
+  --cyber-card-hover: 228 236 245;
+  --cyber-border: 203 216 230;
+  --cyber-border-glow: 0 139 153;
+  --cyber-text: 9 21 36;
+  --cyber-muted: 80 99 121;
+  --cyber-code: 227 235 245;
+  --cyber-cyan: 0 139 153;          /* #008B99 Precision Cyan */
+  --cyber-emerald: 13 148 136;
   --cyber-crimson: 225 29 72;
-  --cyber-neon: 225 29 72;
+  --cyber-neon: 0 139 153;
+}
+
+/* --- THEME 2: HACK THE BOX (Tactical Terminal / Lime Green) --- */
+html.dark[data-theme="htb"] {
+  --cyber-bg: 20 29 43;             /* #141D2B Official HTB Node Black */
+  --cyber-card: 26 35 50;           /* #1A2332 Official HTB Dark Card */
+  --cyber-card-hover: 34 45 63;     /* #222D3F Official HTB Hover */
+  --cyber-border: 40 53 72;         /* #283548 Official HTB Border */
+  --cyber-border-glow: 159 239 0;   /* #9FEF00 HTB Lime Green Glow */
+  --cyber-text: 255 255 255;        /* #FFFFFF Crisp High-Contrast White */
+  --cyber-muted: 164 177 205;       /* #A4B1CD Official HTB Hacker Grey */
+  --cyber-code: 15 22 34;           /* #0F1622 HTB Deep Console */
+  --cyber-cyan: 159 239 0;          /* #9FEF00 HTB Primary Green */
+  --cyber-emerald: 159 239 0;       /* #9FEF00 HTB Pwned / Solved */
+  --cyber-crimson: 255 62 62;       /* #FF3E3E HTB Crimson Red */
+  --cyber-amber: 255 170 0;         /* #FFAA00 HTB Orange/Amber */
+  --cyber-purple: 159 0 255;        /* #9F00FF HTB Insane Purple */
+  --cyber-neon: 159 239 0;
+  /* Authentic HTB Difficulty Palette */
+  --diff-very-easy: 0 238 255;      /* #00EEFF Starting Point Cyan */
+  --diff-easy: 159 239 0;           /* #9FEF00 Signature HTB Lime Green */
+  --diff-medium: 255 170 0;         /* #FFAA00 HTB Warm Orange */
+  --diff-hard: 255 62 62;           /* #FF3E3E HTB Crimson Red */
+  --diff-insane: 159 0 255;         /* #9F00FF HTB Pure Insane Purple */
+}
+
+html.light[data-theme="htb"] {
+  --cyber-bg: 244 246 249;          /* #F4F6F9 HTB Lab Slate */
+  --cyber-card: 255 255 255;
+  --cyber-card-hover: 235 240 245;
+  --cyber-border: 210 220 230;      /* #D2DCE6 */
+  --cyber-border-glow: 21 128 61;
+  --cyber-text: 15 23 42;           /* #0F172A Deep Slate */
+  --cyber-muted: 100 116 139;       /* #64748B */
+  --cyber-code: 226 232 240;
+  --cyber-cyan: 21 128 61;          /* #15803D Forest / Pwn Green */
+  --cyber-emerald: 22 101 52;
+  --cyber-crimson: 220 38 38;
+  --cyber-amber: 217 119 6;
+  --cyber-purple: 126 34 206;
+  --cyber-neon: 21 128 61;
+  /* HTB Light Difficulty Palette */
+  --diff-very-easy: 8 145 178;      /* #0891B2 */
+  --diff-easy: 21 128 61;           /* #15803D */
+  --diff-medium: 194 65 12;         /* #C2410C */
+  --diff-hard: 190 18 60;           /* #BE123C */
+  --diff-insane: 126 34 206;        /* #7E22CE */
+}
+
+/* --- THEME 3: MIDNIGHT BLUE (Stealth Ice / Navy & Sky Blue) --- */
+html.dark[data-theme="midnight-blue"], html.dark[data-theme="slate"] {
+  --cyber-bg: 4 7 17;              /* #040711 Midnight Abyss */
+  --cyber-card: 10 17 34;           /* #0A1122 Deep Navy Card */
+  --cyber-card-hover: 17 29 56;
+  --cyber-border: 21 34 56;         /* #152238 */
+  --cyber-border-glow: 56 189 248;  /* #38BDF8 Sky Blue Glow */
+  --cyber-text: 241 245 249;
+  --cyber-muted: 107 127 153;
+  --cyber-code: 7 12 24;
+  --cyber-cyan: 56 189 248;         /* #38BDF8 Electric Sky Blue */
+  --cyber-emerald: 59 130 246;      /* #3B82F6 Cobalt */
+  --cyber-crimson: 244 63 94;
+  --cyber-neon: 56 189 248;
+}
+
+html.light[data-theme="midnight-blue"], html.light[data-theme="slate"] {
+  --cyber-bg: 240 244 248;          /* #F0F4F8 Clean Azure */
+  --cyber-card: 255 255 255;
+  --cyber-card-hover: 228 235 243;
+  --cyber-border: 203 214 227;
+  --cyber-border-glow: 2 132 199;
+  --cyber-text: 15 23 42;
+  --cyber-muted: 71 85 105;
+  --cyber-code: 226 232 240;
+  --cyber-cyan: 2 132 199;          /* #0284C7 Clean Azure Primary */
+  --cyber-emerald: 37 99 235;       /* #2563EB Cobalt */
+  --cyber-crimson: 225 29 72;
+  --cyber-neon: 2 132 199;
+}
+
+/* --- THEME 4: OLED PURE BLACK (True Black & Ice Blue) --- */
+html.dark[data-theme="oled"] {
+  --cyber-bg: 0 0 0;                /* #000000 Pitch Black */
+  --cyber-card: 9 12 18;            /* #090C12 */
+  --cyber-card-hover: 16 21 32;
+  --cyber-border: 24 32 46;
+  --cyber-border-glow: 56 189 248;
+  --cyber-text: 248 250 252;
+  --cyber-muted: 148 163 184;
+  --cyber-code: 5 7 10;
+  --cyber-cyan: 56 189 248;         /* #38BDF8 */
+  --cyber-emerald: 96 165 250;
+  --cyber-crimson: 244 63 94;
+  --cyber-neon: 56 189 248;
+}
+
+html.light[data-theme="oled"] {
+  --cyber-bg: 250 250 250;          /* Minimalist Monochrome */
+  --cyber-card: 255 255 255;
+  --cyber-card-hover: 244 244 245;
+  --cyber-border: 228 228 231;
+  --cyber-border-glow: 39 39 42;
+  --cyber-text: 9 9 11;
+  --cyber-muted: 113 113 122;
+  --cyber-code: 244 244 245;
+  --cyber-cyan: 24 24 27;           /* Deep Graphite */
+  --cyber-emerald: 82 82 91;
+  --cyber-crimson: 225 29 72;
+  --cyber-neon: 24 24 27;
 }
 
 @layer base {
@@ -162,8 +272,15 @@ html:not(.dark) .border-gray-900 {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #10B981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+  background: rgb(var(--cyber-cyan));
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--cyber-cyan));
 }
 
 /* Slow tactical rotation for crosshairs */
@@ -187,3 +304,39 @@ html:not(.dark) .border-gray-900 {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
+
+/* HTB Vibe Page Customization Styles */
+html.dark[data-theme="htb"] ::selection {
+  background-color: #9FEF00 !important;
+  color: #000000 !important;
+}
+
+html.dark[data-theme="htb"] ::-webkit-scrollbar-thumb {
+  background: rgba(159, 239, 0, 0.25);
+  border-radius: 4px;
+}
+
+html.dark[data-theme="htb"] ::-webkit-scrollbar-thumb:hover {
+  background: #9FEF00;
+}
+
+/* Explicit Semantic Difficulty Utilities */
+.text-diff-very-easy { color: rgb(var(--diff-very-easy)); }
+.bg-diff-very-easy\/15 { background-color: rgb(var(--diff-very-easy) / 0.15); }
+.border-diff-very-easy\/40 { border-color: rgb(var(--diff-very-easy) / 0.40); }
+
+.text-diff-easy { color: rgb(var(--diff-easy)); }
+.bg-diff-easy\/15 { background-color: rgb(var(--diff-easy) / 0.15); }
+.border-diff-easy\/40 { border-color: rgb(var(--diff-easy) / 0.40); }
+
+.text-diff-medium { color: rgb(var(--diff-medium)); }
+.bg-diff-medium\/15 { background-color: rgb(var(--diff-medium) / 0.15); }
+.border-diff-medium\/40 { border-color: rgb(var(--diff-medium) / 0.40); }
+
+.text-diff-hard { color: rgb(var(--diff-hard)); }
+.bg-diff-hard\/15 { background-color: rgb(var(--diff-hard) / 0.15); }
+.border-diff-hard\/40 { border-color: rgb(var(--diff-hard) / 0.40); }
+
+.text-diff-insane { color: rgb(var(--diff-insane)); }
+.bg-diff-insane\/15 { background-color: rgb(var(--diff-insane) / 0.15); }
+.border-diff-insane\/40 { border-color: rgb(var(--diff-insane) / 0.40); }

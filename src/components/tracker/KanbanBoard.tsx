@@ -38,41 +38,41 @@ const LANES: LaneConfig[] = [
     id: 'backlog',
     title: 'TARGET BACKLOG',
     subtitle: 'Queued & Scoped Labs',
-    accentColor: '#94A3B8',
-    badgeClass: 'text-slate-600 dark:text-gray-400 bg-slate-200 dark:bg-gray-900 border-slate-300 dark:border-gray-700',
-    borderClass: 'border-cyber-border',
+    accentColor: '#71717A',
+    badgeClass: 'text-slate-600 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-card border-slate-200 dark:border-cyber-border',
+    borderClass: 'border-slate-200 dark:border-cyber-border',
   },
   {
     id: 'recon',
     title: 'ACTIVE RECON',
     subtitle: 'Port & Web Enumeration',
     accentColor: '#06B6D4',
-    badgeClass: 'text-cyber-cyan bg-cyber-cyan/10 border-cyber-cyan/30',
-    borderClass: 'border-cyber-cyan/40',
+    badgeClass: 'text-cyan-700 dark:text-cyber-cyan bg-cyan-50 dark:bg-cyber-cyan/10 border-cyan-200 dark:border-cyber-cyan/30',
+    borderClass: 'border-slate-200 dark:border-cyber-border hover:border-cyan-500/30 dark:hover:border-cyber-cyan/30',
   },
   {
     id: 'foothold',
     title: 'FOOTHOLD OBTAINED',
     subtitle: 'User Shell / Initial Access',
     accentColor: '#F59E0B',
-    badgeClass: 'text-cyber-amber bg-cyber-amber/10 border-cyber-amber/30',
-    borderClass: 'border-cyber-amber/40',
+    badgeClass: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30',
+    borderClass: 'border-slate-200 dark:border-cyber-border hover:border-amber-500/30',
   },
   {
     id: 'root',
     title: 'SYSTEM PWNED',
     subtitle: 'Root / System Flag Captured',
-    accentColor: '#EF4444',
-    badgeClass: 'text-cyber-crimson bg-cyber-crimson/10 border-cyber-crimson/30',
-    borderClass: 'border-cyber-crimson/40',
+    accentColor: '#10B981',
+    badgeClass: 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30',
+    borderClass: 'border-slate-200 dark:border-cyber-border hover:border-emerald-500/30',
   },
   {
     id: 'completed',
     title: 'COMPLETED & LOGGED',
     subtitle: 'Writeup Archived & Retired',
-    accentColor: '#10B981',
-    badgeClass: 'text-cyber-emerald bg-cyber-emerald/10 border-cyber-emerald/30',
-    borderClass: 'border-cyber-emerald/40',
+    accentColor: '#71717A',
+    badgeClass: 'text-slate-600 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-card border-slate-200 dark:border-cyber-border',
+    borderClass: 'border-slate-200 dark:border-cyber-border',
   },
 ];
 
@@ -107,15 +107,15 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       data-testid="kanban-card"
       onClick={() => onSelect(m.id)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '0 160px' }}
-      className={`group relative p-3 rounded-lg border bg-cyber-card hover:bg-cyber-cardHover transition-[transform,box-shadow,border-color,background-color] duration-150 hover:-translate-y-0.5 cursor-pointer shadow-sm hover:will-change-transform ${
+      className={`group relative p-3 rounded-xl border transition-[transform,box-shadow,border-color,background-color] duration-150 hover:-translate-y-0.5 cursor-pointer shadow-sm hover:will-change-transform ${
         isActiveTarget
-          ? 'border-cyber-emerald shadow-glow-emerald/30 ring-1 ring-cyber-emerald/40'
-          : 'border-cyber-border hover:border-cyber-cyan/50 hover:shadow-glow-cyan/20'
+          ? 'bg-white dark:bg-cyber-card border-emerald-600 dark:border-cyber-emerald shadow-md shadow-emerald-500/15 dark:shadow-glow-emerald/30 ring-1 ring-emerald-500/40 dark:ring-cyber-emerald/40'
+          : 'bg-white dark:bg-cyber-card/90 border-slate-200 dark:border-cyber-border hover:border-slate-300 dark:hover:border-cyber-borderGlow hover:bg-slate-50/80 dark:hover:bg-cyber-cardHover'
       }`}
     >
       {/* Top Badges */}
       <div className="flex items-center justify-between gap-1.5 mb-2">
-        <PlatformBadge platform={m.platform} size="sm" />
+        <PlatformBadge platform={m.platform} size="sm" className="shrink-0" />
 
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           <CategoryBadge machine={m} size="xs" />
@@ -127,7 +127,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       {/* Machine Name & IP */}
       <div className="flex items-start justify-between gap-1.5">
         <div>
-          <div className="font-bold text-slate-900 dark:text-white text-base group-hover:text-cyber-cyan transition-colors leading-snug">
+          <div className="font-extrabold text-lg transition-colors leading-snug text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyber-cyan">
             {m.name}
           </div>
           <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5" />
@@ -136,10 +136,10 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         {/* Active Target Engage Button */}
         <button
           onClick={(e) => onSetTarget(e, m.id)}
-          className={`p-1.5 rounded transition-[transform,colors] duration-150 hover:scale-110 active:scale-95 ${
+          className={`p-1.5 rounded-lg transition-[transform,colors] duration-150 hover:scale-110 active:scale-95 ${
             isActiveTarget
-              ? 'text-cyber-emerald bg-cyber-emerald/10 border border-cyber-emerald/40 shadow-glow-emerald/20'
-              : 'text-cyber-muted hover:text-slate-900 dark:hover:text-white bg-cyber-bg hover:bg-cyber-card border border-cyber-border'
+              ? 'text-emerald-700 dark:text-cyber-emerald bg-emerald-50 dark:bg-cyber-emerald/15 border border-emerald-300 dark:border-cyber-emerald/40 shadow-sm'
+              : 'text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-cyber-bg/80 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border'
           }`}
           title={isActiveTarget ? 'Currently Engaged' : 'Engage Target & Start Timer'}
         >
@@ -148,13 +148,13 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       </div>
 
       {/* Flags & Time Spent Pill */}
-      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-cyber-border/70 text-xs">
+      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-slate-200 dark:border-cyber-border/60 text-xs">
         <div className="flex items-center gap-1.5">
           <span
             className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-bold ${
               hasUser
-                ? 'bg-cyan-100 border-cyan-400 text-cyan-900 dark:bg-cyber-cyan/10 dark:border-cyber-cyan/40 dark:text-cyber-cyan'
-                : 'bg-slate-100 border-slate-300 text-slate-700 dark:bg-cyber-bg dark:border-cyber-border/60 dark:text-cyber-muted'
+                ? 'bg-cyan-50 dark:bg-cyber-cyan/10 border-cyan-200 dark:border-cyber-cyan/30 text-cyan-700 dark:text-cyber-cyan'
+                : 'bg-slate-100 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-slate-400 dark:text-cyber-muted'
             }`}
             title={hasUser ? 'User Flag Captured' : 'User Flag Pending'}
           >
@@ -163,8 +163,8 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           <span
             className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-bold ${
               hasRoot
-                ? 'bg-emerald-100 border-emerald-400 text-emerald-900 dark:bg-cyber-emerald/10 dark:border-cyber-emerald/40 dark:text-cyber-emerald'
-                : 'bg-slate-100 border-slate-300 text-slate-700 dark:bg-cyber-bg dark:border-cyber-border/60 dark:text-cyber-muted'
+                ? 'bg-rose-50 dark:bg-cyber-crimson/10 border-rose-200 dark:border-cyber-crimson/30 text-rose-700 dark:text-cyber-crimson'
+                : 'bg-slate-100 dark:bg-cyber-bg/60 border-slate-200 dark:border-cyber-border text-slate-400 dark:text-cyber-muted'
             }`}
             title={hasRoot ? 'Root Flag Captured' : 'Root Flag Pending'}
           >
@@ -172,24 +172,28 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-700 dark:text-cyber-muted">
-          <ShareLinkButton
-            path={`/target/${m.id}`}
-            title={m.name}
-            iconOnly
-            className="p-1 rounded bg-cyber-bg hover:bg-slate-200 dark:hover:bg-cyber-card border border-cyber-border text-slate-700 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-cyber-cyan transition-colors"
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenReport(m.id);
-            }}
-            className="p-1 rounded bg-cyber-bg hover:bg-purple-100 dark:hover:bg-purple-950/60 border border-cyber-border hover:border-purple-300 dark:hover:border-purple-600 text-purple-700 dark:text-cyber-muted hover:text-purple-900 dark:hover:text-purple-300 transition-colors"
-            title="Open Pentest Pre-Report"
-          >
-            <FileText className="w-3 h-3" />
-          </button>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 text-slate-500 dark:text-cyber-muted">
+          {/* Secondary Actions (Hidden until hover to reduce clutter) */}
+          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <ShareLinkButton
+              path={`/target/${m.id}`}
+              title={m.name}
+              iconOnly
+              className="p-1 rounded bg-slate-100 dark:bg-cyber-bg/60 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-cyan-600 dark:hover:text-cyber-cyan transition-colors"
+            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenReport(m.id);
+              }}
+              className="p-1 rounded bg-slate-100 dark:bg-cyber-bg/60 hover:bg-slate-200 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-500 dark:text-cyber-muted hover:text-purple-600 dark:hover:text-cyber-purple transition-colors"
+              title="Open Pentest Pre-Report"
+            >
+              <FileText className="w-3 h-3" />
+            </button>
+          </div>
+          {/* Timer always visible */}
+          <div className="flex items-center gap-1 min-w-[45px] justify-end font-mono">
             <Clock className="w-3 h-3" />
             <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
           </div>
@@ -202,7 +206,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           {m.certifications.map((cert) => (
             <span
               key={cert}
-              className="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 border border-purple-300 text-purple-900 dark:bg-cyber-purple/10 dark:border-cyber-purple/30 dark:text-cyber-purple font-bold"
+              className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-cyber-bg/80 border border-slate-200 dark:border-cyber-border text-slate-700 dark:text-cyber-muted font-semibold"
             >
               {cert}
             </span>
@@ -211,11 +215,11 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       )}
 
       {/* Quick Move Across Lanes Action Footer */}
-      <div className="flex items-center justify-between mt-2.5 pt-1.5 border-t border-dashed border-cyber-border/60">
+      <div className="flex items-center justify-between mt-2.5 pt-1.5 border-t border-dashed border-slate-200 dark:border-cyber-border/60">
         {prevLane ? (
           <button
             onClick={(e) => onRetreat(e, m, prevLane)}
-            className="flex items-center gap-0.5 text-[10px] text-cyber-muted hover:text-slate-900 dark:hover:text-white hover:-translate-x-0.5 transition-all"
+            className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-cyber-muted hover:text-slate-800 dark:hover:text-white hover:-translate-x-0.5 transition-all"
             title="Move back"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Back
@@ -225,7 +229,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         {nextLane ? (
           <button
             onClick={(e) => onAdvance(e, m, nextLane)}
-            className="flex items-center gap-0.5 text-[10px] text-cyan-700 dark:text-cyber-cyan hover:underline hover:translate-x-0.5 transition-all font-semibold ml-auto"
+            className="flex items-center gap-0.5 text-[10px] text-cyan-600 dark:text-cyber-cyan hover:underline hover:translate-x-0.5 transition-all font-semibold ml-auto"
             title="Advance stage"
           >
             Advance <ChevronRight className="w-3.5 h-3.5" />
@@ -267,6 +271,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
   );
 
   const [laneLimits, setLaneLimits] = React.useState<Record<string, number>>({});
+  const [mobileActiveLane, setMobileActiveLane] = React.useState<PipelineStatus>('backlog');
 
   const handleAdvance = React.useCallback((e: React.MouseEvent, m: Machine, nextStatus: PipelineStatus) => {
     e.stopPropagation();
@@ -298,6 +303,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     return populated.length > 0 ? populated : LANES;
   }, [hideEmptyLanes, filteredMachines]);
 
+  // If the active mobile lane is hidden by empty-lanes filter, fallback to first visible lane
+  React.useEffect(() => {
+    if (hideEmptyLanes && !visibleLanes.some((l) => l.id === mobileActiveLane)) {
+      if (visibleLanes[0]) {
+        setMobileActiveLane(visibleLanes[0].id);
+      }
+    }
+  }, [hideEmptyLanes, visibleLanes, mobileActiveLane]);
+
   const gridColsClass = React.useMemo(() => {
     const count = visibleLanes.length;
     if (count === 1) return 'grid-cols-1';
@@ -308,112 +322,164 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
   }, [visibleLanes.length]);
 
   return (
-    <div className={`grid ${gridColsClass} gap-3.5 items-start font-mono pb-8 transition-all`}>
-      {visibleLanes.map((lane) => {
-        const laneMachines = filteredMachines.filter((m) => m.status === lane.id);
-        const limit = laneLimits[lane.id] ?? 40;
+    <div className="w-full font-mono pb-8">
+      {/* 1. MOBILE RESPONSIVE STICKY LANE TABS (< md) - Eliminates Nested Scroll Trap */}
+      <div className="md:hidden sticky top-0 z-20 bg-slate-50/95 dark:bg-cyber-bg/95 py-1.5 mb-2 backdrop-blur-md">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {visibleLanes.map((lane) => {
+            const laneCount = filteredMachines.filter((m) => m.status === lane.id).length;
+            const isSelected = mobileActiveLane === lane.id;
+            return (
+              <button
+                key={lane.id}
+                onClick={() => {
+                  setMobileActiveLane(lane.id);
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-sm ${
+                  isSelected
+                    ? 'bg-cyan-600 dark:bg-cyber-cyan text-white dark:text-black font-black'
+                    : 'bg-white dark:bg-cyber-card text-slate-600 dark:text-cyber-muted border border-slate-200 dark:border-cyber-border'
+                }`}
+              >
+                <span>{lane.title.replace('TARGET ', '')}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  isSelected 
+                    ? 'bg-black/20 text-white dark:text-black' 
+                    : 'bg-slate-100 dark:bg-cyber-bg text-slate-700 dark:text-cyber-muted'
+                }`}>
+                  {laneCount}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-        // Active Target Hoisting: Ensure active target is always visible
-        const displayedMachines = laneMachines.length <= limit 
-          ? laneMachines 
-          : (() => {
-              let slice = laneMachines.slice(0, limit);
-              if (activeTargetId && !slice.some((m) => m.id === activeTargetId)) {
-                const activeM = laneMachines.find((m) => m.id === activeTargetId);
-                if (activeM) {
-                  slice = [activeM, ...slice.slice(0, limit - 1)];
+      {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
+      <div className={`grid ${gridColsClass} gap-3.5 items-start transition-all`}>
+        {visibleLanes.map((lane) => {
+          const laneMachines = filteredMachines.filter((m) => m.status === lane.id);
+          const limit = laneLimits[lane.id] ?? 60;
+          const isMobileActive = mobileActiveLane === lane.id;
+
+          // Active Target Hoisting: Ensure active target is always visible in its lane
+          const displayedMachines = laneMachines.length <= limit 
+            ? laneMachines 
+            : (() => {
+                let slice = laneMachines.slice(0, limit);
+                if (activeTargetId && !slice.some((m) => m.id === activeTargetId)) {
+                  const activeM = laneMachines.find((m) => m.id === activeTargetId);
+                  if (activeM) {
+                    slice = [activeM, ...slice.slice(0, limit - 1)];
+                  }
                 }
+                return slice;
+              })();
+
+          // Pre-fetch infinite scroll batching at 400px before bottom
+          const handleLaneScroll = (e: React.UIEvent<HTMLDivElement>) => {
+            const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+            if (scrollHeight - scrollTop - clientHeight < 400) {
+              if (limit < laneMachines.length) {
+                setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }));
               }
-              return slice;
-            })();
-
-        const handleLaneScroll = (e: React.UIEvent<HTMLDivElement>) => {
-          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-          if (scrollHeight - scrollTop - clientHeight < 160) {
-            if (limit < laneMachines.length) {
-              setLaneLimits(prev => ({ ...prev, [lane.id]: limit + 40 }));
             }
-          }
-        };
+          };
 
-        const fullLaneIdx = LANES.findIndex((l) => l.id === lane.id);
-        const prevLane = fullLaneIdx > 0 ? LANES[fullLaneIdx - 1].id : null;
-        const nextLane = fullLaneIdx < LANES.length - 1 ? LANES[fullLaneIdx + 1].id : null;
+          const fullLaneIdx = LANES.findIndex((l) => l.id === lane.id);
+          const prevLane = fullLaneIdx > 0 ? LANES[fullLaneIdx - 1].id : null;
+          const nextLane = fullLaneIdx < LANES.length - 1 ? LANES[fullLaneIdx + 1].id : null;
 
-        return (
-          <div
-            key={lane.id}
-            className="flex flex-col rounded-xl border border-cyber-border bg-cyber-card/60 backdrop-blur-sm min-h-[550px] overflow-hidden shadow-lg transition-colors hover:border-cyber-borderGlow"
-          >
-            {/* Lane Header */}
-            <div className={`border-b ${lane.borderClass} p-3 bg-cyber-bg/80`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold tracking-wider text-slate-900 dark:text-white">
-                  {lane.title}
-                </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${lane.badgeClass}`}>
-                  {laneMachines.length}
-                </span>
-              </div>
-              <div className="text-[10px] text-cyber-muted mt-0.5">{lane.subtitle}</div>
-            </div>
-
-            {/* Lane Cards Container */}
-            <div 
-              onScroll={handleLaneScroll}
-              className="flex-1 p-2 space-y-2.5 overflow-y-auto max-h-[calc(100vh-250px)] scroll-smooth"
+          return (
+            <div
+              key={lane.id}
+              className={`rounded-xl border border-slate-200 dark:border-cyber-border bg-white/80 dark:bg-cyber-card/60 backdrop-blur-sm overflow-hidden shadow-sm transition-colors hover:border-slate-300 dark:hover:border-cyber-borderGlow ${
+                // Mobile: Only display the selected lane tab; height is natural so whole page scrolls!
+                isMobileActive ? 'flex flex-col' : 'hidden md:flex md:flex-col'
+              } md:h-[calc(100vh-270px)] md:min-h-[480px]`}
             >
-              {displayedMachines.map((m) => {
-                const isActiveTarget = activeTargetId === m.id;
-                return (
-                  <KanbanCard
-                    key={m.id}
-                    machine={m}
-                    isActiveTarget={isActiveTarget}
-                    prevLane={prevLane ?? undefined}
-                    nextLane={nextLane ?? undefined}
-                    onSelect={setSelectedMachineId}
-                    onSetTarget={handleSetTarget}
-                    onAdvance={handleAdvance}
-                    onRetreat={handleRetreat}
-                    onOpenReport={setReportMachineId}
-                  />
-                );
-              })}
-
-              {/* Lane Pagination / Load More Footer */}
-              {laneMachines.length > displayedMachines.length && (
-                <div className="pt-2.5 pb-1.5 px-2 flex flex-col items-center gap-2 border-t border-cyber-border/80 bg-cyber-bg/60 rounded-xl">
-                  <div className="text-[10px] text-cyber-muted">
-                    Showing <span className="text-white font-bold">{displayedMachines.length}</span> of <span className="text-cyber-cyan font-bold">{laneMachines.length}</span> targets
-                  </div>
-                  <div className="flex items-center gap-2 w-full">
-                    <button
-                      onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: limit + 40 }))}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-cyber-card hover:bg-cyber-cyan/20 border border-cyber-border hover:border-cyber-cyan text-cyber-cyan text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> Load +40 More
-                    </button>
-                    <button
-                      onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
-                      className="py-1.5 px-3 rounded-lg bg-cyber-card hover:bg-cyber-cardHover border border-cyber-border text-cyber-muted hover:text-white text-[10px] transition-all font-semibold"
-                      title="Render all targets in this lane"
-                    >
-                      All ({laneMachines.length})
-                    </button>
+              {/* Lane Header */}
+              <div className={`border-b border-slate-200 dark:border-cyber-border/80 p-2.5 bg-slate-50/90 dark:bg-cyber-bg/80 flex-shrink-0`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold tracking-wider text-slate-800 dark:text-cyber-text">
+                    {lane.title}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {laneMachines.length > limit && (
+                      <button
+                        onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyber-cyan/10 text-cyan-700 dark:text-cyber-cyan border border-cyan-200 dark:border-cyber-cyan/30 font-bold hover:bg-cyan-100 dark:hover:bg-cyber-cyan/20 transition-all"
+                        title="Render all targets in this lane immediately"
+                      >
+                        All ({laneMachines.length})
+                      </button>
+                    )}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${lane.badgeClass}`}>
+                      {laneMachines.length}
+                    </span>
                   </div>
                 </div>
-              )}
+                <div className="text-[10px] text-slate-500 dark:text-cyber-muted mt-0.5">{lane.subtitle}</div>
+              </div>
 
-              {laneMachines.length === 0 && (
-                <div className="p-6 text-center text-[11px] text-cyber-muted/60 border border-dashed border-cyber-border/50 rounded-lg">
-                  No targets in this lane.
-                </div>
-              )}
+              {/* Lane Cards Container: Desktop is inner scroll; Mobile is unconstrained natural scroll */}
+              <div 
+                onScroll={handleLaneScroll}
+                className="flex-1 p-2 space-y-2.5 md:overflow-y-auto scroll-smooth"
+              >
+                {displayedMachines.map((m) => {
+                  const isActiveTarget = activeTargetId === m.id;
+                  return (
+                    <KanbanCard
+                      key={m.id}
+                      machine={m}
+                      isActiveTarget={isActiveTarget}
+                      prevLane={prevLane ?? undefined}
+                      nextLane={nextLane ?? undefined}
+                      onSelect={setSelectedMachineId}
+                      onSetTarget={handleSetTarget}
+                      onAdvance={handleAdvance}
+                      onRetreat={handleRetreat}
+                      onOpenReport={setReportMachineId}
+                    />
+                  );
+                })}
+
+                {/* Lane Pagination / Load More Footer */}
+                {laneMachines.length > displayedMachines.length && (
+                  <div className="pt-2.5 pb-1.5 px-2 flex flex-col items-center gap-2 border-t border-slate-200 dark:border-cyber-border/80 bg-slate-50 dark:bg-cyber-bg/60 rounded-xl">
+                    <div className="text-[10px] text-slate-500 dark:text-cyber-muted">
+                      Showing <span className="text-slate-900 dark:text-white font-bold">{displayedMachines.length}</span> of <span className="text-cyan-600 dark:text-cyber-cyan font-bold">{laneMachines.length}</span> targets
+                    </div>
+                    <div className="flex items-center gap-2 w-full">
+                      <button
+                        onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: Math.min(laneMachines.length, limit + 60) }))}
+                        className="flex-1 py-1.5 px-2 rounded-lg bg-white dark:bg-cyber-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border hover:border-cyan-500/50 dark:hover:border-cyber-cyan text-cyan-600 dark:text-cyber-cyan text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" /> Load +60 More
+                      </button>
+                      <button
+                        onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
+                        className="py-1.5 px-3 rounded-lg bg-white dark:bg-cyber-card hover:bg-slate-100 dark:hover:bg-cyber-cardHover border border-slate-200 dark:border-cyber-border text-slate-600 dark:text-cyber-muted hover:text-slate-900 dark:hover:text-white text-[10px] transition-all font-semibold shadow-sm"
+                        title="Render all targets in this lane"
+                      >
+                        Scroll All ({laneMachines.length})
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {laneMachines.length === 0 && (
+                  <div className="p-6 text-center text-[11px] text-slate-400 dark:text-cyber-muted/60 border border-dashed border-slate-200 dark:border-cyber-border/60 rounded-lg">
+                    No targets in this lane.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };

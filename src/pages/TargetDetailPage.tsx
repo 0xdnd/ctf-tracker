@@ -207,7 +207,7 @@ export const TargetDetailPage: React.FC = () => {
                   Official Room <ExternalLink className="w-3 h-3" />
                 </a>
               )}
-              {machine.isActive ? (
+              {machine.isActive && machine.platform === 'HTB' ? (
                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-500/40">
                   <Lock className="w-3 h-3 text-amber-400" />
                   <span>ACTIVE LAB · WRITEUPS PROHIBITED (HTB ToS)</span>

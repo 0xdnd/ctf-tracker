@@ -39,6 +39,13 @@ export function useTacticalHotkeys() {
     zoomIn,
     zoomOut,
     setUiScale,
+    snippetsDrawerOpen,
+    setSnippetsDrawerOpen,
+    revShellModalOpen,
+    setRevShellModalOpen,
+    filterDrawerOpen,
+    setFilterDrawerOpen,
+    toggleFocusMode,
   } = useCtfStore(
     useShallow((s) => ({
       setViewMode: s.setViewMode,
@@ -69,6 +76,13 @@ export function useTacticalHotkeys() {
       zoomIn: s.zoomIn,
       zoomOut: s.zoomOut,
       setUiScale: s.setUiScale,
+      snippetsDrawerOpen: s.snippetsDrawerOpen,
+      setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
+      revShellModalOpen: s.revShellModalOpen,
+      setRevShellModalOpen: s.setRevShellModalOpen,
+      filterDrawerOpen: s.filterDrawerOpen,
+      setFilterDrawerOpen: s.setFilterDrawerOpen,
+      toggleFocusMode: s.toggleFocusMode,
     }))
   );
 
@@ -87,6 +101,19 @@ export function useTacticalHotkeys() {
           activeEl.blur();
           e.preventDefault();
           e.stopPropagation();
+          return;
+        }
+
+        if (snippetsDrawerOpen) {
+          setSnippetsDrawerOpen(false);
+          return;
+        }
+        if (revShellModalOpen) {
+          setRevShellModalOpen(false);
+          return;
+        }
+        if (filterDrawerOpen) {
+          setFilterDrawerOpen(false);
           return;
         }
 
@@ -114,6 +141,24 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // Alt+S or Ctrl+Space: Toggle Snippets Drawer
+      if ((e.altKey && (e.key === 's' || e.key === 'S')) || (e.ctrlKey && e.code === 'Space')) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSnippetsDrawerOpen(!snippetsDrawerOpen);
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
+      // Alt+F: Toggle Focus Mode
+      if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFocusMode();
+        if (soundEnabled) playCyberSound('toggle');
+        return;
+      }
+
       // Executive Pre-Report Generator / Print Preview (Ctrl+P / Cmd+P)
       if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
@@ -135,6 +180,14 @@ export function useTacticalHotkeys() {
           activeEl.tagName === 'SELECT' ||
           activeEl.isContentEditable)
       ) {
+        return;
+      }
+
+      // Focus Mode toggle: 'f' or 'F' (when outside inputs)
+      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        toggleFocusMode();
+        if (soundEnabled) playCyberSound('toggle');
         return;
       }
 
@@ -333,5 +386,12 @@ export function useTacticalHotkeys() {
     zoomIn,
     zoomOut,
     setUiScale,
+    snippetsDrawerOpen,
+    setSnippetsDrawerOpen,
+    revShellModalOpen,
+    setRevShellModalOpen,
+    filterDrawerOpen,
+    setFilterDrawerOpen,
+    toggleFocusMode,
   ]);
 }

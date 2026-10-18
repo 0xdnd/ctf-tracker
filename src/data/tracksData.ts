@@ -53,6 +53,29 @@ const IPPSEC_NAMES = new Set([
   'sunday', 'secnotes', 'sense', 'arctic', 'cronos', 'brainfuck', 'curling', 'irked'
 ]);
 
+// Canonical Lainkusanagi OSCP targets
+const LAINKUSANAGI_NAMES = new Set([
+  'lame', 'brainfuck', 'shocker', 'bashed', 'nibbles', 'beep', 'cronos', 'optimum',
+  'bastard', 'granny', 'grandpa', 'arctic', 'devel', 'netmon', 'blue', 'jerry',
+  'active', 'forest', 'cascade', 'sauna', 'buff', 'cap', 'knife', 'sense', 'secnotes',
+  'enterprise', 'jeeves', 'solidstate', 'popcorn', 'fortune', 'traverxec', 'resolute',
+  'forwardslash', 'tartarsauce', 'poison', 'valentine', 'bank', 'sunday', 'bastion',
+  'haircut', 'mirai', 'friendzone', 'swagshop', 'postman', 'passage', 'registry',
+  'doctor', 'heist', 'openadmin', 'tabby', 'traceback', 'ready', 'scriptkiddie',
+  'tenet', 'armageddon', 'pit', 'seal', 'dynastore', 'routerspace', 'node', 'carrier',
+  'help', 'stratosphere', 'obscurity', 'previse', 'delivery', 'horizontall', 'silo',
+  'bounty', 'curling', 'haystack', 'irked', 'jarvis', 'calamity', 'europa', 'jail',
+  'querier', 'book', 'blunder', 'magic', 'openkeys', 'admirer', 'sneakymailer', 'tentacle', 'worker'
+]);
+
+// IppSec CPTS & Enterprise Active Directory targets
+const IPPSEC_CPTS_NAMES = new Set([
+  'active', 'forest', 'sauna', 'cascade', 'resolute', 'monteverde', 'blackfield', 'mantis',
+  'support', 'scrambled', 'search', 'return', 'fuse', 'apt', 'flight', 'multimaster',
+  'intelligence', 'hybrid', 'rebound', 'broadcast', 'savant', 'outdated', 'stream',
+  'touch', 'layover', 'scaffold', 'trustfall', 'pingpong', 'paperwork'
+]);
+
 // Legendary Community Classics & Hall of Fame targets in HTB & THM history
 const POPULAR_NAMES = new Set([
   'lame', 'blue', 'devel', 'jerry', 'netmon', 'optimum', 'beep', 'bashed', 'nibbles',
@@ -79,6 +102,18 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
       m.tags?.some(t => ['oscp', 'tjnull', 'tj-null', 'offsec', 'pwk', 'pen-200'].includes(t.toLowerCase())),
   },
   {
+    id: 'lainkusanagi-oscp',
+    name: "Lainkusanagi's OSCP NetSec Curriculum",
+    shortName: 'Lainkusanagi Track',
+    category: 'certification',
+    description: 'Definitive community-celebrated OSCP roadmap focusing on methodical reconnaissance and privilege escalation.',
+    badgeColor: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400',
+    accentColor: '#34D399',
+    filterFn: (m) =>
+      LAINKUSANAGI_NAMES.has(m.name.toLowerCase()) ||
+      m.tags?.some(t => ['lainkusanagi', 'oscp-like', 'pen-200'].includes(t.toLowerCase())),
+  },
+  {
     id: 'cpts-path',
     name: 'Certified Penetration Testing Specialist (CPTS)',
     shortName: 'CPTS Track',
@@ -91,17 +126,29 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
       m.tags?.some(t => ['cpts', 'htb academy', 'academy', 'pivoting', 'trophy room'].includes(t.toLowerCase())),
   },
   {
-    id: 'cwee-web',
-    name: 'HTB CWEE & Advanced Web Exploitation (OSWE)',
-    shortName: 'CWEE / Web Expert',
+    id: 'ippsec-cpts',
+    name: 'IppSec CPTS & Active Directory Masterclass',
+    shortName: 'IppSec CPTS',
     category: 'certification',
-    description: 'Certified Web Exploitation Expert targets: white-box code review, SSRF, Deserialization, SQLi, SSTI, and auth bypass.',
+    description: 'Deep-dive enumeration, Active Directory attack paths, and complex pivot routes featured in IppSec walkthroughs.',
+    badgeColor: 'border-sky-400/40 bg-sky-400/10 text-sky-400',
+    accentColor: '#38BDF8',
+    filterFn: (m) =>
+      IPPSEC_CPTS_NAMES.has(m.name.toLowerCase()) ||
+      m.tags?.some(t => ['cpts-ad', 'ippsec-cpts', 'pivot-chain'].includes(t.toLowerCase())),
+  },
+  {
+    id: 'cwee-web',
+    name: 'HTB CWEE & CWES Advanced Web Exploitation',
+    shortName: 'CWEE / CWES Track',
+    category: 'certification',
+    description: 'Certified Web Exploitation Expert & Specialist (CWEE/CWES): code review, SSRF, Deserialization, SQLi, SSTI, and auth bypass.',
     badgeColor: 'border-amber-400/40 bg-amber-400/10 text-amber-400',
     accentColor: '#F59E0B',
     filterFn: (m) => 
       CWEE_NAMES.has(m.name.toLowerCase()) ||
-      m.certifications?.some(c => ['cwee', 'cwt', 'oswe', 'ewpt'].includes(c.toUpperCase())) ||
-      m.tags?.some(t => ['cwee', 'cwt', 'oswe', 'deserialization', 'ssti', 'ssrf', 'sqli', 'prototype pollution', 'graphql', 'jwt', 'xxe'].includes(t.toLowerCase())),
+      m.certifications?.some(c => ['cwee', 'cwes', 'cwt', 'oswe', 'ewpt'].includes(c.toUpperCase())) ||
+      m.tags?.some(t => ['cwee', 'cwes', 'cwt', 'oswe', 'deserialization', 'ssti', 'ssrf', 'sqli', 'prototype pollution', 'graphql', 'jwt', 'xxe'].includes(t.toLowerCase())),
   },
   {
     id: 'popular-classics',
@@ -136,6 +183,30 @@ export const PRACTICE_TRACKS: PracticeTrack[] = [
     filterFn: (m) => 
       m.certifications?.includes('CRTO') ||
       m.tags?.some(t => ['kerberos', 'ad', 'ldap', 'domain', 'bloodhound', 'active directory', 'gpo', 'adcs'].includes(t.toLowerCase())),
+  },
+  {
+    id: 'crtp-active-directory',
+    name: 'Certified Red Team Professional (CRTP)',
+    shortName: 'CRTP Track',
+    category: 'certification',
+    description: 'Active Directory operational tradecraft: PowerView, BloodHound, Kerberoasting, AS-REP, Unconstrained Delegation, and DCSync.',
+    badgeColor: 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-400',
+    accentColor: '#D946EF',
+    filterFn: (m) =>
+      m.certifications?.includes('CRTP') ||
+      m.tags?.some(t => ['crtp', 'powerview', 'unconstrained delegation', 'dcsync', 'kerberoast', 'as-rep'].includes(t.toLowerCase())),
+  },
+  {
+    id: 'osep-advanced',
+    name: 'OffSec Experienced Pentester (OSEP / PEN-300)',
+    shortName: 'OSEP Track',
+    category: 'certification',
+    description: 'Advanced evasion, AMSI bypasses, process injection, lateral movement, and restrictive environment escapes.',
+    badgeColor: 'border-rose-500/40 bg-rose-500/10 text-rose-400',
+    accentColor: '#F43F5E',
+    filterFn: (m) =>
+      m.certifications?.includes('OSEP') ||
+      m.tags?.some(t => ['osep', 'pen-300', 'amsi', 'applocker', 'process injection', 'evasion'].includes(t.toLowerCase())),
   },
   {
     id: 'web-master',

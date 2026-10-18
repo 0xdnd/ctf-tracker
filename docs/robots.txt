@@ -1,0 +1,5 @@
+# ZeroBox Tactical CTF Tracker Robots Policy
+User-agent: *
+Allow: /
+
+Sitemap: https://0xdnd.github.io/ctf-tracker/sitemap.xml

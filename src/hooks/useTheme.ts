@@ -91,10 +91,12 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   if (effective === 'dark') {
     root.classList.add('dark');
     root.classList.remove('light');
+    root.setAttribute('data-mode', 'dark');
     root.style.colorScheme = 'dark';
   } else {
     root.classList.remove('dark');
     root.classList.add('light');
+    root.setAttribute('data-mode', 'light');
     root.style.colorScheme = 'light';
   }
 

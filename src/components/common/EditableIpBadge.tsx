@@ -171,7 +171,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
         className={`group/ip inline-flex items-center gap-1 font-mono ${sizeClasses.text} ${className}`}
       >
         {showLabel && <span className="text-slate-600 dark:text-cyber-muted text-[10px]">IP:</span>}
-        <div className="inline-flex items-center rounded border border-amber-300 dark:border-amber-500/50 bg-amber-100 dark:bg-amber-500/10 shadow-sm overflow-hidden">
+        <div className="inline-flex items-center rounded border border-amber-300 dark:border-amber-500/60 bg-amber-100 dark:bg-amber-500/25 shadow-sm overflow-hidden">
           <button
             type="button"
             onClick={handleOpenQuickModal}

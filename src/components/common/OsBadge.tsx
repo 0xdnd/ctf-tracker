@@ -72,11 +72,11 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
   const getTheme = () => {
     switch (os) {
       case 'Linux':
-        return 'text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30';
+        return 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/30';
       case 'Windows':
-        return 'text-sky-900 dark:text-sky-300 bg-sky-100 dark:bg-sky-950/20 border-sky-300 dark:border-sky-500/30';
+        return 'text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-300 dark:border-sky-500/40';
       default:
-        return 'text-slate-700 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-bg border-slate-300 dark:border-cyber-border';
+        return 'text-slate-700 dark:text-cyber-muted bg-slate-100 dark:bg-cyber-bg/60 border-slate-300 dark:border-cyber-border';
     }
   };
 
