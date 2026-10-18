@@ -41,7 +41,7 @@ import {
 import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
-import { buildBurndownSeries, resolveChartWindow, persistChartExpiry, readPersistedChartExpiry } from '../utils/examBurndown';
+import { buildBurndownSeries, resolveChartWindow, readPersistedChartExpiry } from '../utils/examBurndown';
 import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
@@ -57,6 +57,7 @@ export const ExamSimulatorPage: React.FC = () => {
     boxes,
     startedAt,
     examExpiresAt,
+    lastExpiresAt,
     totalDurationSeconds,
     timerPausedRemainingSeconds,
     activeBreak,
@@ -88,6 +89,7 @@ export const ExamSimulatorPage: React.FC = () => {
       boxes: s.boxes,
       startedAt: s.startedAt,
       examExpiresAt: s.examExpiresAt,
+      lastExpiresAt: s.lastExpiresAt,
       totalDurationSeconds: s.totalDurationSeconds,
       timerPausedRemainingSeconds: s.timerPausedRemainingSeconds,
       remainingSeconds: s.remainingSeconds,
@@ -177,22 +179,14 @@ export const ExamSimulatorPage: React.FC = () => {
 
   // Burn-down series: memoized on boxes/session only (NOT on the 1Hz tick) so the
   // step path never re-renders; only the "now" marker moves.
-  // While paused examExpiresAt is null; remember the last live expiry so the chart
-  // window stays on the wall-clock axis (prior pause time included).
-  const lastExpiresAtRef = useRef<number | null>(null);
-  if (!startedAt) lastExpiresAtRef.current = null;
-  else if (examExpiresAt !== null) {
-    lastExpiresAtRef.current = examExpiresAt;
-    persistChartExpiry(startedAt, examExpiresAt);
-  } else if (lastExpiresAtRef.current === null) {
-    // Reloaded while paused: recover the expiry persisted before the pause.
-    lastExpiresAtRef.current = readPersistedChartExpiry(startedAt);
-  }
+  // While paused examExpiresAt is null; use lastExpiresAt from the store (with fallback to persisted cache)
+  // so the chart window stays stably anchored on the wall-clock axis across pauses and reloads.
+  const resolvedLastExpiresAt = examExpiresAt ?? lastExpiresAt ?? (startedAt ? readPersistedChartExpiry(startedAt) : null);
   const chartWindow = startedAt
     ? resolveChartWindow({
         startedAt,
         examExpiresAt,
-        lastExpiresAt: lastExpiresAtRef.current,
+        lastExpiresAt: resolvedLastExpiresAt,
         totalDurationSeconds,
         timerPausedRemainingSeconds,
         currentRemainingSeconds: currentRemaining,

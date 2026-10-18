@@ -339,5 +339,34 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
 
       vi.restoreAllMocks();
     });
+
+    it('anchors lastExpiresAt on pauseExam and updates it on resumeExam', () => {
+      let currentTime = 1700000000000;
+      vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
+
+      useExamStore.getState().startExam('OSCP');
+      const liveExpiresAt = useExamStore.getState().examExpiresAt;
+      expect(liveExpiresAt).toBe(currentTime + 86400 * 1000);
+      expect(useExamStore.getState().lastExpiresAt).toBe(liveExpiresAt);
+
+      // Advance by 1 hour and pause
+      currentTime += 3600 * 1000;
+      useExamStore.getState().pauseExam();
+
+      expect(useExamStore.getState().status).toBe('paused');
+      expect(useExamStore.getState().examExpiresAt).toBeNull();
+      // lastExpiresAt retains the frozen anchor
+      expect(useExamStore.getState().lastExpiresAt).toBe(liveExpiresAt);
+
+      // Advance paused time by 30 mins and resume
+      currentTime += 1800 * 1000;
+      useExamStore.getState().resumeExam();
+
+      expect(useExamStore.getState().status).toBe('running');
+      expect(useExamStore.getState().examExpiresAt).toBe(currentTime + (86400 - 3600) * 1000);
+      expect(useExamStore.getState().lastExpiresAt).toBe(useExamStore.getState().examExpiresAt);
+
+      vi.restoreAllMocks();
+    });
   });
 });

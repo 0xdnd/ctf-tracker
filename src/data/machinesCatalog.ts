@@ -988,555 +988,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-windows-privesc-arena",
-    "name": "Windows PrivEsc Arena",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Privilege Escalation",
-      "AlwaysInstallElevated",
-      "Unquoted Service Path",
-      "Registry",
-      "Token Impersonation"
-    ],
-    "certifications": [
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/windowsprivescarena",
-    "writeupUrl": "https://0xinfection.github.io/posts/windows-privesc-arena-thm/",
-    "hint": "Practice hands-on local privilege escalation techniques on Windows: identify and abuse unquoted service paths, hijack weak service binaries, exploit AlwaysInstallElevated MSI configurations, overwrite registry autorun keys, and leverage token impersonation privileges.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-attacking-kerberos",
-    "name": "Attacking Kerberos",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Kerberos",
-      "ASREPRoast",
-      "Kerberoasting",
-      "Silver Ticket",
-      "Golden Ticket",
-      "Active Directory"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/attackingkerberos",
-    "writeupUrl": "https://medium.com/@alicanaktas/tryhackme-attacking-kerberos-writeup-9686036fae7e",
-    "hint": "Comprehensive hands-on breakdown of Kerberos attack primitives: conduct AS-REP Roasting, execute Kerberoasting against SPNs, forge Silver Tickets using service account NTLM hashes, and create Golden Tickets with the krbtgt hash using Mimikatz and Rubeus.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-win-ad-basics",
-    "name": "Active Directory Basics",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Domain Controller",
-      "Forests",
-      "Trusts",
-      "GPO",
-      "LDAP"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/winadbasics",
-    "writeupUrl": "https://github.com/CyberSecurityUP/TryHackMe-Walkthroughs/tree/main/ActiveDirectoryBasics",
-    "hint": "Examine core Active Directory architecture including domains, trees, forests, trust types, and organisational units. Query schema attributes and domain objects using PowerShell ActiveDirectory module, LDAP filters, and ADSI.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-ad-enumeration",
-    "name": "Active Directory Enumeration",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Enumeration",
-      "PowerView",
-      "BloodHound",
-      "RPC",
-      "SharpHound"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/activedirectoryenumeration",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-active-directory-enumeration-walkthrough-6e477e77b102",
-    "hint": "Employ PowerView (Get-DomainUser, Get-DomainComputer, Get-DomainGroupMember) and SharpHound data collection to enumerate AD objects, discover logged-in administrative sessions, map out domain trusts, and export graph data for BloodHound.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-breaching-ad",
-    "name": "Breaching Active Directory",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "NTLM Relay",
-      "LLMNR-Poisoning",
-      "Responder",
-      "Password Spraying",
-      "Inveigh"
-    ],
-    "certifications": [
-      "CRTO",
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/breachingad",
-    "writeupUrl": "https://medium.com/@cyberspace_sec/tryhackme-breaching-active-directory-walkthrough-4011e4bf51a2",
-    "hint": "Simulate external and internal domain perimeter breaches: run Responder/Inveigh for LLMNR/NBT-NS poison-and-capture, configure ntlmrelayx to relay SMB authentication to LDAP/SMB, and perform stealthy password spraying via kerbrute.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-exploiting-ad",
-    "name": "Exploiting Active Directory",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Kerberoasting",
-      "ASREPRoasting",
-      "Pass-the-Hash",
-      "Secretsdump"
-    ],
-    "certifications": [
-      "CRTO",
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/exploitingad",
-    "writeupUrl": "https://medium.com/@matus.sventek/tryhackme-exploiting-active-directory-walkthrough-6c0b943265ef",
-    "hint": "Attack core AD protocol implementations: execute targeted Kerberoasting with GetUserSPNs.py, abuse Pass-the-Hash with crackmapexec / evil-winrm, extract cached credentials from memory, and run secretsdump.py for domain-wide NTDS.dit extraction.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-lateral-movement-pivoting",
-    "name": "Lateral Movement and Pivoting",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Pivoting",
-      "Lateral Movement",
-      "WMI",
-      "WinRM",
-      "Chisel",
-      "PsExec"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/lateralmovementandpivoting",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-lateral-movement-and-pivoting-walkthrough-e5d26a27e36c",
-    "hint": "Learn operator tactics for lateral movement across Windows networks: set up Chisel reverse SOCKS tunnels, utilize WinRM and evil-winrm, execute remote processes via WMI (wmic / Invoke-WmiMethod), and leverage SMB PsExec without alerting antivirus.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-domain-privilege-escalation",
-    "name": "Domain Privilege Escalation",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "BloodHound",
-      "GPO Abuse",
-      "ACLs",
-      "GenericAll",
-      "WriteDacl"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/domainprivilegeescalation",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-domain-privilege-escalation-walkthrough-99be7a398f6d",
-    "hint": "Abuse Access Control Lists (ACLs) and permissions within the domain: exploit GenericAll, GenericWrite, and WriteDacl on high-value objects, abuse LAPS read permissions, and modify existing Group Policy Objects using SharpGPOAbuse.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-ad-certificate-templates",
-    "name": "AD Certificate Templates",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "ADCS",
-      "ESC1",
-      "Certipy",
-      "Certificates",
-      "SAN",
-      "Domain Admin",
-      "Active Directory"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/adcertificatetemplates",
-    "writeupUrl": "https://medium.com/@siddharth.k.infosec/active-directory-certificate-templates-thm-walkthrough-4045f0ba2e31",
-    "hint": "Enumerate vulnerable Active Directory Certificate Services (AD CS) templates using Certipy. Identify ESC1 misconfigurations allowing enrollee supplies subject (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT) and request a certificate on behalf of the Domain Admin.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-active-directory-hardening",
-    "name": "Active Directory Hardening",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Hardening",
-      "LAPS",
-      "Tier Model",
-      "SMB Signing",
-      "Kerberos Armor"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/activedirectoryhardening",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-active-directory-hardening-walkthrough-32ec79f53e6c",
-    "hint": "Deep dive into domain defense: enforce SMB and LDAP signing to block relay attacks, deploy and configure Microsoft LAPS, disable NTLMv1 and LLMNR protocols, and implement administrative tiering and Protected Users groups.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-throwback",
-    "name": "Throwback",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Red Team",
-      "Network",
-      "C2",
-      "Pivoting",
-      "Phishing",
-      "BloodHound"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/throwback",
-    "writeupUrl": "https://github.com/CyberSecurityUP/TryHackMe-Walkthroughs/tree/main/Throwback",
-    "hint": "Flagship multi-machine Red Team simulation lab: craft phishing lure with weaponized macro, establish reverse C2 channel, pivot across perimeter firewalls using Chisel, dump local LSASS tokens, and abuse domain trusts to achieve full enterprise compromise.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-windows-local-persistence",
-    "name": "Windows Local Persistence",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Persistence",
-      "Registry",
-      "Scheduled Tasks",
-      "Services",
-      "Backdoors",
-      "Red Team"
-    ],
-    "certifications": [
-      "CRTO",
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/windowslocalpersistence",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-windows-local-persistence-walkthrough-3c1a3b17478d",
-    "hint": "Operator guide to maintaining persistence on Windows: configure registry Run/RunOnce keys, plant malicious Windows Services, schedule tasks under NT AUTHORITY\\SYSTEM, hijack COM objects, and abuse RID hijacking on local accounts.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-windows10-privesc",
-    "name": "Windows PrivEsc",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Privilege Escalation",
-      "Windows",
-      "UAC Bypass",
-      "Service Exploitation",
-      "DLL Hijacking",
-      "Tokens"
-    ],
-    "certifications": [
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/windows10privesc",
-    "writeupUrl": "https://0xdf.gitlab.io/2020/09/26/windows-privesc-course.html",
-    "hint": "Tib3rius Windows Privilege Escalation course lab: audit service permissions with accesschk, exploit unquoted service paths and insecure file permissions, hijack missing DLLs in service paths, bypass UAC with fodhelper, and abuse SeImpersonate with PrintSpoofer.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-red-team-fundamentals",
-    "name": "Red Team Fundamentals",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "Red Team",
-      "Methodology",
-      "OPSEC",
-      "Engagements",
-      "Threat Emulation"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/redteamfundamentals",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-red-team-fundamentals-walkthrough-5d15a5198dcf",
-    "hint": "Core doctrine of adversary simulation: mapping tradecraft to MITRE ATT&CK, establishing operational security (OPSEC) rules, defining rules of engagement, configuring multi-tiered C2 infrastructure, and documenting remediation.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-av-evasion-shellcode",
-    "name": "AV Evasion: Shellcode",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "Red Team",
-      "AV Evasion",
-      "Shellcode",
-      "AMSI",
-      "Encryption",
-      "Process Injection"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/avevasionshellcode",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-av-evasion-shellcode-walkthrough-3bc2d64f0b09",
-    "hint": "Evade Windows Defender runtime detection: encrypt raw stageless shellcode with RC4/AES, execute in-memory shellcode runners using Native Windows APIs (NtAllocateVirtualMemory, NtProtectVirtualMemory), and patch AmsiScanBuffer in memory.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-living-off-the-land",
-    "name": "Living Off The Land",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "LOLBAS",
-      "Living Off The Land",
-      "Certutil",
-      "MSHTA",
-      "Rundll32",
-      "Red Team"
-    ],
-    "certifications": [
-      "CRTO",
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/livingofftheland",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-living-off-the-land-walkthrough-8ff6ad6078e2",
-    "hint": "Weaponize built-in binaries (LOLBAS) to stay off disk and evade detection: download payloads with certutil and bitsadmin, execute remote scripts with mshta and regsvr32, and bypass AppLocker rules using installutil and rundll32.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-red-team-engagements",
-    "name": "Red Team Engagements",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "Red Team",
-      "Rules of Engagement",
-      "OPSEC",
-      "Threat Intelligence",
-      "TTPs"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/redteamengagements",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-red-team-engagements-walkthrough-b97c0a6b5791",
-    "hint": "Examine professional red team operational lifecycle: draft comprehensive Rules of Engagement (RoE), establish deconfliction triggers with blue team, coordinate out-of-band communication channels, and design adversary emulation plans.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-ad-trusts",
-    "name": "Active Directory Trusts",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Domain Trusts",
-      "SID History",
-      "Trust Abuse",
-      "Mimikatz",
-      "ExtraSids"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/activedirectorytrusts",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-active-directory-trusts-walkthrough-4091e4f451f1",
-    "hint": "Enumerate parent-child and external trusts with PowerView (Get-DomainTrust). Forge inter-realm tickets using krbtgt and inject Enterprise Admin SID into SID History (ExtraSids attribute) via Mimikatz to jump from child domain to root forest domain controller.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-windows-event-logs",
-    "name": "Windows Event Logs",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "Windows",
-      "Event Logs",
-      "Sysmon",
-      "Log Clearing",
-      "Wevtutil",
-      "Red Team"
-    ],
-    "certifications": [
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/windowseventlogs",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-windows-event-logs-walkthrough-7d7d3c0a1f9a",
-    "hint": "Analyze Windows event auditing and evasion: parse Security log Event IDs (4624 logon, 4672 admin logon, 4720 user creation) with Get-WinEvent, inspect Sysmon process creation (Event ID 1), and assess log manipulation and unhooking risks.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-bloodhound-basics",
-    "name": "BloodHound Basics",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "BloodHound",
-      "Neo4j",
-      "Graph Theory",
-      "Active Directory",
-      "SharpHound",
-      "Attack Paths"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/bloodhoundbasics",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-bloodhound-basics-walkthrough-58d34b9d3e8e",
-    "hint": "Collect Active Directory object telemetry with SharpHound. Ingest JSON files into Neo4j and execute custom Cypher queries in BloodHound to discover short-cut paths to Domain Admin through nested groups, local admin rights, and session hunting.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-ad-tier-model",
-    "name": "AD Tier Model",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Tier Model",
-      "Tier 0",
-      "Tier 1",
-      "PAW",
-      "Hardening"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/adtiermodel",
-    "writeupUrl": "https://medium.com/@0xAwali/tryhackme-ad-tier-model-walkthrough-97be2c90c741",
-    "hint": "Study Microsoft's classic 3-tier administrative model (Tier 0 Identity/Domain Controllers, Tier 1 Enterprise Servers, Tier 2 User Workstations). Identify common anti-patterns such as Tier 0 admins logging into Tier 2 workstations and dumping LSASS.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-brainpan-1",
     "name": "Brainpan 1",
     "ip": "10.10.150.11",
@@ -2209,592 +1660,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/borderlands",
     "writeupUrl": "https://nepcodex.com/2021/07/borderlands-tryhackme-walkthrough/",
     "hint": "Multi-tier network pivoting challenge: exploit API vulnerability for initial entry, route traffic through internal network subnets, exploit docker sockets and kernel configurations.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-meow",
-    "name": "Meow",
-    "ip": "10.129.1.1",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 0",
-      "Telnet",
-      "Default Credentials",
-      "Recon"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#meow",
-    "hint": "Connect to open Telnet port 23 and log in with user 'root' without password.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-fawn",
-    "name": "Fawn",
-    "ip": "10.129.1.2",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 0",
-      "FTP",
-      "Anonymous Login"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#fawn",
-    "hint": "Authenticate via FTP on port 21 as 'anonymous' with blank password and retrieve the flag.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-dancing",
-    "name": "Dancing",
-    "ip": "10.129.1.3",
-    "os": "Windows",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 0",
-      "SMB",
-      "Share Enumeration",
-      "smbclient"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#dancing",
-    "hint": "Enumerate exposed SMB shares with smbclient -L and connect into the WorkShares directory anonymously.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-redeemer",
-    "name": "Redeemer",
-    "ip": "10.129.1.4",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 0",
-      "Redis",
-      "Database",
-      "Unauthenticated"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#redeemer",
-    "hint": "Connect to Redis port 6379 with redis-cli -h {TARGET_IP}, use INFO to check keys, and query keys *.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-explosion",
-    "name": "Explosion",
-    "ip": "10.129.1.5",
-    "os": "Windows",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 0",
-      "RDP",
-      "Remote Desktop",
-      "Default Credentials"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#explosion",
-    "hint": "Connect to Windows RDP port 3389 with xfreerdp using Administrator account without password.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-appointment",
-    "name": "Appointment",
-    "ip": "10.129.1.6",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 1",
-      "SQLi",
-      "Web Auth Bypass",
-      "SQL Injection"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#appointment",
-    "hint": "Exploit SQL injection on login username field using admin'# or admin' OR 1=1-- - to bypass password check.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-sequel",
-    "name": "Sequel",
-    "ip": "10.129.1.7",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 1",
-      "MySQL",
-      "MariaDB",
-      "Default Credentials"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#sequel",
-    "hint": "Connect to MySQL on port 3306 as root with no password: mysql -h {TARGET_IP} -u root.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-crocodile",
-    "name": "Crocodile",
-    "ip": "10.129.1.8",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 1",
-      "FTP",
-      "Web",
-      "Admin Panel",
-      "Gobuster"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#crocodile",
-    "hint": "Download user credentials from anonymous FTP, then locate login.php via directory busting to log in as admin.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-included",
-    "name": "Included",
-    "ip": "10.129.1.9",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "foothold",
-    "tags": [
-      "Starting Point",
-      "Tier 1",
-      "TFTP",
-      "LFI",
-      "Local File Inclusion",
-      "Web"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#included",
-    "hint": "Upload a PHP webshell via unauthenticated TFTP on UDP 69, then execute it via LFI on the HTTP web page.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-bike",
-    "name": "Bike",
-    "ip": "10.129.1.10",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "foothold",
-    "tags": [
-      "Starting Point",
-      "Tier 1",
-      "Node.js",
-      "SSTI",
-      "Handlebars",
-      "Web"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#bike",
-    "hint": "Trigger Handlebars SSTI in Node.js web form using constructor prototype pollution payload to execute system commands.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-vaccine",
-    "name": "Vaccine",
-    "ip": "10.129.1.11",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 1",
-      "FTP",
-      "SQLi",
-      "Sudo",
-      "Tar Wildcard"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#vaccine",
-    "hint": "Extract archive via FTP, exploit SQL injection with sqlmap to obtain user hash, and abuse sudo vi to spawn root shell.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-archetype",
-    "name": "Archetype",
-    "ip": "10.129.1.12",
-    "os": "Windows",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "MSSQL",
-      "xp_cmdshell",
-      "JuicyPotato",
-      "PowerShell"
-    ],
-    "certifications": [
-      "HTB-Starting-Point",
-      "OSCP"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#archetype",
-    "hint": "Find SQL credentials in open SMB share, enable xp_cmdshell via impacket-mssqlclient for revshell, and abuse SeImpersonate with JuicyPotato.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-oopsie",
-    "name": "Oopsie",
-    "ip": "10.129.1.13",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "foothold",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "IDOR",
-      "Web",
-      "SUID",
-      "Privesc"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#oopsie",
-    "hint": "Exploit IDOR on user account ID in admin portal to retrieve super admin cookie, upload PHP shell, and escalate via SUID binary.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-three",
-    "name": "Three",
-    "ip": "10.129.1.14",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "foothold",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "AWS",
-      "S3",
-      "Cloud",
-      "Subdomain"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#three",
-    "hint": "Discover s3.thetoppers.htb subdomain using awscli, upload PHP reverse shell to the writable S3 bucket, and execute via browser.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-markup",
-    "name": "Markup",
-    "ip": "10.129.1.15",
-    "os": "Windows",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "backlog",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "XXE",
-      "XML",
-      "SSH",
-      "Scheduled Task"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#markup",
-    "hint": "Exploit XXE in the XML order submission to read Daniel's private SSH key (.ssh/id_rsa), then abuse unquoted scheduled task to get SYSTEM.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-guard",
-    "name": "Guard",
-    "ip": "10.129.1.16",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "backlog",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "SSH",
-      "Web",
-      "Hash Cracking",
-      "Sudo"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#guard",
-    "hint": "Extract id_rsa from web backup, crack SSH passphrase with john/ssh2john, and run sudo -l to spot instant root escalation.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-base",
-    "name": "Base",
-    "ip": "10.129.1.17",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "PHP",
-      "Type Juggling",
-      "File Upload"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#base",
-    "hint": "Abuse PHP loose comparison (type juggling) in JSON login endpoint to authenticate as admin, then upload webshell.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-unified",
-    "name": "Unified",
-    "ip": "10.129.1.18",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "foothold",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "Log4j",
-      "CVE-2021-44228",
-      "UniFi",
-      "MongoDB"
-    ],
-    "certifications": [
-      "HTB-Starting-Point",
-      "CPTS"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#unified",
-    "hint": "Exploit Log4Shell (CVE-2021-44228) in UniFi Controller login page using rogue-jndi, then inspect MongoDB on port 27117 to extract admin hash.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "htb-pennyworth",
-    "name": "Pennyworth",
-    "ip": "10.129.1.19",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "completed",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "Jenkins",
-      "Groovy",
-      "RCE",
-      "Default Credentials"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#pennyworth",
-    "hint": "Log into Jenkins on port 8080 with root:password, open Script Console at /script, and execute Groovy reverse shell.",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-funnel",
-    "name": "Funnel",
-    "ip": "10.129.1.20",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "status": "foothold",
-    "tags": [
-      "Starting Point",
-      "Tier 2",
-      "SSH",
-      "Port Forwarding",
-      "PostgreSQL",
-      "Tunneling"
-    ],
-    "certifications": [
-      "HTB-Starting-Point",
-      "CPTS"
-    ],
-    "roomUrl": "https://app.hackthebox.com/starting-point",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#funnel",
-    "hint": "Log into SSH with discovered credentials, establish dynamic SSH port forwarding to access internal PostgreSQL database, and query flags.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -6165,7 +5030,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Dumping credentials from LSASS",
       "Anonymous / Guest"
     ],
-    "officialPdf": "255-Blackfield_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "255-Blackfield_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sauna",
@@ -6199,7 +5064,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "ASREPRoasting Attack",
       "DCSync Attack"
     ],
-    "officialPdf": "229-Sauna_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "229-Sauna_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-forest",
@@ -6231,7 +5096,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "ASREPRoasting"
     ],
-    "officialPdf": "212-Forest_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "212-Forest_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-resolute",
@@ -6263,7 +5128,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "DnsAdmins Abuse"
     ],
-    "officialPdf": "220-Resolute_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "220-Resolute_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-cascade",
@@ -6298,7 +5163,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "AES Encryption",
       "Active Directory"
     ],
-    "officialPdf": "235-Cascade_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "235-Cascade_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-monteverde",
@@ -6333,7 +5198,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Using sqlcmd",
       "Azure AD Connect Password Extraction"
     ],
-    "officialPdf": "223-Monteverde_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "223-Monteverde_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-intelligence",
@@ -6369,7 +5234,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "ReadGMSAPassword abuse",
       "Constrained delegation abuse"
     ],
-    "officialPdf": "357-Intelligence_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "357-Intelligence_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-scrambled",
@@ -6405,7 +5270,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Silver ticket attack",
       "Deserialization attacks"
     ],
-    "officialPdf": "476-Scrambled_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "476-Scrambled_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bastion",
@@ -6438,7 +5303,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Extracting passwords from SAM",
       "Exploiting MRemoteNG"
     ],
-    "officialPdf": "186-Bastion_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "186-Bastion_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-silo",
@@ -6473,7 +5338,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Leveraging Oracle to upload and",
       "execute files"
     ],
-    "officialPdf": "131-Silo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "131-Silo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-time",
@@ -6510,7 +5375,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Java Deserialization",
       "System Timer"
     ],
-    "officialPdf": "286-Time_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "286-Time_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sneakymailer",
@@ -6543,7 +5408,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Phishing",
       "PyPI Package"
     ],
-    "officialPdf": "262-SneakyMailer_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "262-SneakyMailer_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-skyfall",
@@ -7316,7 +6181,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Managing users via the Linux command line",
       "Enumerating and understanding a system running X11"
     ],
-    "officialPdf": "514-Squashed_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "514-Squashed_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-derailed",
@@ -7422,7 +6287,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Docker/Host shared PIDs",
       "Python"
     ],
-    "officialPdf": "502-RainyDay_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "502-RainyDay_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-photobomb",
@@ -7448,7 +6313,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Command Injection",
       "Exploiting UNIX PATH variables"
     ],
-    "officialPdf": "500-Photobomb_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "500-Photobomb_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ambassador",
@@ -7475,7 +6340,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Leveraging misconfigurations in common services",
       "Configuration analysis"
     ],
-    "officialPdf": "499-Ambassador_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "499-Ambassador_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-absolute",
@@ -7522,7 +6387,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Reverse Engineering",
       "Exploiting docker usergroup privileges"
     ],
-    "officialPdf": "496-Shoppy_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "496-Shoppy_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sekhmet",
@@ -7569,7 +6434,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "PHP Local File Inclusion Firewall bypass",
       "Exploiting SUID binaries"
     ],
-    "officialPdf": "493-UpDown_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "493-UpDown_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-vessel",
@@ -7616,7 +6481,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Replicating remote environment",
       "Exploit modification"
     ],
-    "officialPdf": "491-Health_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "491-Health_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-outdated",
@@ -7644,7 +6509,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Golden Ticket Attack",
       "Navigating Active Directory"
     ],
-    "officialPdf": "490-Outdated_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "490-Outdated_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-moderators",
@@ -7670,7 +6535,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Insecure Direct Object Reference",
       "Leveraging WordPress plugin vulnerabilities"
     ],
-    "officialPdf": "485-Moderators_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "485-Moderators_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-support",
@@ -7696,7 +6561,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Quering an LDAP server for information",
       "Performing a Resource Based Constrained Delegation attack"
     ],
-    "officialPdf": "484-Support_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "484-Support_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-shared",
@@ -7725,7 +6590,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Using ghidra to inspect reverse engineered binaries",
       "Port forwarding"
     ],
-    "officialPdf": "483-Shared_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "483-Shared_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-extension",
@@ -7772,7 +6637,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "XML Entity Injection",
       "Source code review"
     ],
-    "officialPdf": "481-RedPanda_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "481-RedPanda_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-faculty",
@@ -7797,7 +6662,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Linux Fundamentals"
     ],
-    "officialPdf": "480-Faculty_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "480-Faculty_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-carpediem",
@@ -7832,7 +6697,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "2022",
       "0492"
     ],
-    "officialPdf": "478-Carpediem_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "478-Carpediem_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-trick",
@@ -7858,7 +6723,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "DNS Zone transfer",
       "Using SQL Injection to read system files"
     ],
-    "officialPdf": "477-Trick_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "477-Trick_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-streamio",
@@ -7889,7 +6754,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Browser saved credentials retrieval and cracking",
       "Automatic LDAP"
     ],
-    "officialPdf": "474-StreamIO_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "474-StreamIO_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-seventeen",
@@ -7919,7 +6784,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Npm usage",
       "Npm registry"
     ],
-    "officialPdf": "473-Seventeen_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "473-Seventeen_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-opensource",
@@ -7949,7 +6814,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Network Pivoting",
       "Using the Git Configuration file to execute system commands"
     ],
-    "officialPdf": "471-OpenSource_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "471-OpenSource_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-backendtwo",
@@ -8003,7 +6868,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Directory Traversal",
       "Meterpreter Session Decryption"
     ],
-    "officialPdf": "468-Response_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "468-Response_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-noter",
@@ -8030,7 +6895,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Cookie Manipulation",
       "Session Hijacking"
     ],
-    "officialPdf": "467-Noter_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "467-Noter_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-overgraph",
@@ -8061,7 +6926,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "CSRF attacks",
       "FFmpeg"
     ],
-    "officialPdf": "464-OverGraph_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "464-OverGraph_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-late",
@@ -8087,7 +6952,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Server Side Template Injection",
       "Linux file attributes"
     ],
-    "officialPdf": "463-Late_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "463-Late_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-backend",
@@ -8146,7 +7011,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2022-04-16T16:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Hathor is an Insane Windows Active Directory machine that starts with a webpage that is currently under construction. The CMS used for the webpage is the mojoPortal CMS. Since the CMS is open source, an attacker is able to find the default credentials used in the Admin panel straight away. It turns out that the credentials have not been modified on the remote machine and the attacker gets access to the Admin panel. There, it is discovered that any file with the extension .txt can be uploaded on the remote server. So, an attacker could leverage this and upload a webshell with the .",
-    "officialPdf": "459-Hathor_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "459-Hathor_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-talkative",
@@ -8171,7 +7036,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Network"
     ],
-    "officialPdf": "458-Talkative_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "458-Talkative_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ransom",
@@ -8217,7 +7082,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "based buffer overflows",
       "Gaining root privileges through writable /proc/sys/fs/binfmt_misc/register"
     ],
-    "officialPdf": "456-Retired_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "456-Retired_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-timelapse",
@@ -8243,7 +7108,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Public SMB Share",
       "LAPS Privilege Escalation"
     ],
-    "officialPdf": "452-Timelapse_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "452-Timelapse_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-perspective",
@@ -8269,7 +7134,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Abusing weak RC4 implementations",
       "Performing Padding Oracle Attacks"
     ],
-    "officialPdf": "451-Perspective_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "451-Perspective_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-catch",
@@ -8298,7 +7163,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Decompile APK files",
       "Tamper with APK files"
     ],
-    "officialPdf": "450-Catch_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "450-Catch_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-phoenix",
@@ -8326,7 +7191,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Reverse engineering encrypted shell binaries",
       "Wildcard injection"
     ],
-    "officialPdf": "448-Phoenix_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "448-Phoenix_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-object",
@@ -8351,7 +7216,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Jenkins"
     ],
-    "officialPdf": "447-Object_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "447-Object_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-goodgames",
@@ -8384,7 +7249,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting SSTI",
       "Basics of Docker Breakouts"
     ],
-    "officialPdf": "446-GoodGames_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "446-GoodGames_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-routerspace",
@@ -8413,7 +7278,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Command Injection",
       "Linux Privilege Escalation"
     ],
-    "officialPdf": "444-RouterSpace_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "444-RouterSpace_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-steamcloud",
@@ -8438,7 +7303,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Exploiting Kubernetes"
     ],
-    "officialPdf": "443-SteamCloud_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "443-SteamCloud_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-epsilon",
@@ -8467,7 +7332,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Cloud Knowledge",
       "OWASP Top 10"
     ],
-    "officialPdf": "442-Epsilon_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "442-Epsilon_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-pressed",
@@ -8511,7 +7376,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Reversing Knowledge"
     ],
-    "officialPdf": "439-Undetected_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "439-Undetected_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-acute",
@@ -8540,7 +7405,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Windows Defender bypass",
       "Manual Active Directory"
     ],
-    "officialPdf": "438-Acute_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "438-Acute_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-flustered",
@@ -8567,7 +7432,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying and exploiting SSTI vulnerabilities",
       "Accessing Azure Storage"
     ],
-    "officialPdf": "437-Flustered_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "437-Flustered_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-paper",
@@ -8594,7 +7459,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Linux Fundamentals"
     ],
-    "officialPdf": "432-Paper_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "432-Paper_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-scanned",
@@ -8619,7 +7484,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Manual"
     ],
-    "officialPdf": "431-Scanned_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "431-Scanned_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-nodeblog",
@@ -8674,7 +7539,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "29599",
       "Exploiting sudo misconfigurations"
     ],
-    "officialPdf": "429-Meta_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "429-Meta_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-logforge",
@@ -8723,7 +7588,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Linux Fundamentals",
       "Linux system"
     ],
-    "officialPdf": "427-AdmirerToo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "427-AdmirerToo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-pandora",
@@ -8748,7 +7613,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "SNMP"
     ],
-    "officialPdf": "423-Pandora_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "423-Pandora_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-search",
@@ -8776,7 +7641,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "GMSA password retrieval",
       "Exploiting misconfigured Active Directory ACLs"
     ],
-    "officialPdf": "422-Search_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "422-Search_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-timing",
@@ -8801,7 +7666,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Side Channel"
     ],
-    "officialPdf": "421-Timing_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "421-Timing_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-union",
@@ -8849,7 +7714,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Forging JWT tokens",
       "Attacking AES with ECB mode"
     ],
-    "officialPdf": "417-Fingerprint_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "417-Fingerprint_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-backdoor",
@@ -8875,7 +7740,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Directory traversal",
       "Exploiting unprotected screen session"
     ],
-    "officialPdf": "416-Backdoor_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "416-Backdoor_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-unicode",
@@ -8896,7 +7761,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2021-11-27T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Unicode is a medium difficulty Linux machine. The machine begins with the",
-    "officialPdf": "415-Unicode_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "415-Unicode_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-nunchucks",
@@ -8923,7 +7788,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "NodeJS Nunjucks SSTI",
       "AppArmor Profile Bypass"
     ],
-    "officialPdf": "414-Nunchucks_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "414-Nunchucks_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-spooktrol",
@@ -8968,7 +7833,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "IPMI"
     ],
-    "officialPdf": "410-Shibboleth_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "410-Shibboleth_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-toby",
@@ -8995,7 +7860,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Cryptography",
       "PAM module authentication"
     ],
-    "officialPdf": "409-Toby_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "409-Toby_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-secret",
@@ -9022,7 +7887,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "JWT forgery",
       "SUID"
     ],
-    "officialPdf": "408-Secret_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "408-Secret_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-return",
@@ -9048,7 +7913,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Network Printer Abuse",
       "Server Operators Group Abuse"
     ],
-    "officialPdf": "401-Return_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "401-Return_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-antique",
@@ -9073,7 +7938,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "SNMP"
     ],
-    "officialPdf": "400-Antique_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "400-Antique_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-overflow",
@@ -9106,7 +7971,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "22204",
       "Buffer Overflow"
     ],
-    "officialPdf": "399-Overflow_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "399-Overflow_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-devzat",
@@ -9135,7 +8000,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Command Injection",
       "Local File Inclusion attack"
     ],
-    "officialPdf": "398-Devzat_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "398-Devzat_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-jarmis",
@@ -9182,7 +8047,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Decrypting Mozilla passwords",
       "Socket reuse in binary"
     ],
-    "officialPdf": "388-Hancliffe_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "388-Hancliffe_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-driver",
@@ -9209,7 +8074,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Hash capturing",
       "Meterpreter"
     ],
-    "officialPdf": "387-Driver_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "387-Driver_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bolt",
@@ -9234,7 +8099,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Docker Image"
     ],
-    "officialPdf": "384-Bolt_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "384-Bolt_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-validation",
@@ -9255,7 +8120,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2021-09-13T09:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": ": Validation is an easy machine created for the September Qualifiers of UHC (Ultimate Hacking Championship). There is a web page that lets users register and specify their country. Once signed in, the website displays other users within your Country and the query it does this is Vulnerable to SQL Injection. The registration function utilizes Prepared Statements and is not SQL Injectable, however the developer trusted that all data from the database was safe and did not use Prepared Statements when viewing others users in the country making this a Second Order SQL Injection.",
-    "officialPdf": "382-Validation_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "382-Validation_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-stacked",
@@ -9288,7 +8153,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "LocalStack API handler command injection",
       "Escalating privileges via docker container creation"
     ],
-    "officialPdf": "379-Stacked_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "379-Stacked_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-gobox",
@@ -9309,7 +8174,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2021-08-23T09:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": ": Gobox is a medium machine created for the August Finals of UHC (Ultimate Hacking Championship). There are two websites, the home page on port 80 does not have any place for user input; whereas on port 8080 there is a login portal. The reset password functionality is vulnerable to SSTI, but the application is written in Go which has unique ways to exploit SSTI. First, users get create an SSTI Payload to dump credentials and upon logging in the source code to the webapp is provided, which allows for creating a gadget to achieve code execution.",
-    "officialPdf": "378-Gobox_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "378-Gobox_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-forge",
@@ -9336,7 +8201,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SSRF localhost filter bypass",
       "Python debugging"
     ],
-    "officialPdf": "376-Forge_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "376-Forge_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-earlyaccess",
@@ -9368,7 +8233,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Offline password cracking",
       "Linux capabilities"
     ],
-    "officialPdf": "375-EarlyAccess_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "375-EarlyAccess_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-horizontall",
@@ -9398,7 +8263,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Source Code Review",
       "Port Forwarding"
     ],
-    "officialPdf": "374-Horizontall_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "374-Horizontall_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-previse",
@@ -9426,7 +8291,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Hash cracking with unicode salt",
       "PATH hijacking"
     ],
-    "officialPdf": "373-Previse_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "373-Previse_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-developer",
@@ -9458,7 +8323,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Rust Reversing",
       "AES CTR Decryption"
     ],
-    "officialPdf": "372-Developer_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "372-Developer_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-anubis",
@@ -9485,7 +8350,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "XSS to RCE in Electron applications",
       "Exploiting misconfigured certificate templates"
     ],
-    "officialPdf": "371-Anubis_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "371-Anubis_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-writer",
@@ -9514,7 +8379,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Local File Inclusion",
       "Virtual Host"
     ],
-    "officialPdf": "361-Writer_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "361-Writer_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-pikaboo",
@@ -9545,7 +8410,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Perl function injection",
       "Local File Inclusion"
     ],
-    "officialPdf": "360-Pikaboo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "360-Pikaboo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bountyhunter",
@@ -9572,7 +8437,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "XXE injection",
       "Source code review"
     ],
-    "officialPdf": "359-BountyHunter_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "359-BountyHunter_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-seal",
@@ -9597,7 +8462,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Gitbucket"
     ],
-    "officialPdf": "358-Seal_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "358-Seal_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-explore",
@@ -9622,7 +8487,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Basic Android"
     ],
-    "officialPdf": "356-Explore_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "356-Explore_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-static",
@@ -9657,7 +8522,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "PHP X",
       "DEBUG"
     ],
-    "officialPdf": "355-Static_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "355-Static_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-dynstr",
@@ -9684,7 +8549,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Command Injection",
       "Dynamic DNS"
     ],
-    "officialPdf": "352-dynstr_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "352-dynstr_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-cap",
@@ -9716,7 +8581,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "IDOR",
       "Exploiting Linux capabilities"
     ],
-    "officialPdf": "351-Cap_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "351-Cap_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-spider",
@@ -9744,7 +8609,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SQL injection attacks via session cookies;",
       "Bypassing WAF filters."
     ],
-    "officialPdf": "350-Spider_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "350-Spider_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-knife",
@@ -9771,7 +8636,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "timeToUserSeconds": 1500,
     "timeToRootSeconds": 3600,
     "officialSynopsis": "Knife is an easy difficulty Linux machine that features an application which is running on a backdoored version of PHP. This vulnerability is leveraged to obtain the foothold on the server. A sudo misconfiguration is then exploited to gain a root shell.",
-    "officialPdf": "347-Knife_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "347-Knife_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-pit",
@@ -9804,7 +8669,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "12744",
       "Basic awareness about possible SELinux restrictions"
     ],
-    "officialPdf": "346-Pit_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "346-Pit_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-pivotapi",
@@ -9829,7 +8694,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Metadata"
     ],
-    "officialPdf": "345-pivotapi_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "345-pivotapi_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-love",
@@ -9858,7 +8723,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Applocker policies",
       "Always install everything misconfiguration"
     ],
-    "officialPdf": "344-Love_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "344-Love_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-monitors",
@@ -9890,7 +8755,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Java Deserialization",
       "CAP_SYS_MODULE Docker Capability"
     ],
-    "officialPdf": "341-Monitors_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "341-Monitors_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-atom",
@@ -9911,7 +8776,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2021-04-17T16:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Atom is a Medium Windows machine that features a hosting of Electron software. The website hosts a windows version of the application (Electron Builder) where a vulnerability in signature validation can lead to remote command execution and thus get a foothold on system as user jason. By capturing the password of Redis service from configuration file it was possible to get the encrypted password of user Administrator. By using exploitation for the PortableKanban the administrator's password can be decrypted and thus login through winrm to the system. Note: IP target address might differ.",
-    "officialPdf": "340-Atom_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "340-Atom_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-toolbox",
@@ -9937,7 +8802,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Leveraging PostgreSQL SQL Injection for RCE",
       "Docker Toolbox"
     ],
-    "officialPdf": "339-Toolbox_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "339-Toolbox_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-unobtainium",
@@ -9963,7 +8828,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Electron application reversing",
       "Prototype pollution"
     ],
-    "officialPdf": "338-Unobtainium_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "338-Unobtainium_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-schooled",
@@ -9990,7 +8855,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting Moodle vulnerabilities",
       "Installing custom FreeBSD packages"
     ],
-    "officialPdf": "335-Schooled_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "335-Schooled_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-armageddon",
@@ -10015,7 +8880,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Drupal"
     ],
-    "officialPdf": "323-Armageddon_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "323-Armageddon_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-crossfittwo",
@@ -10045,7 +8910,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "NodeJS path hijacking",
       "Yubikey simulation"
     ],
-    "officialPdf": "322-CrossFitTwo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "322-CrossFitTwo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-proper",
@@ -10070,7 +8935,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Reversing Go applications",
       "Exploiting Privileged Write Capabilities"
     ],
-    "officialPdf": "321-Proper_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "321-Proper_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-thenotebook",
@@ -10100,7 +8965,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "2019",
       "573 to escalalate privileges via Docker"
     ],
-    "officialPdf": "320-TheNotebook_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "320-TheNotebook_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-spectra",
@@ -10129,7 +8994,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "File System Permissions",
       "Sudo"
     ],
-    "officialPdf": "317-Spectra_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "317-Spectra_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-breadcrumbs",
@@ -10156,7 +9021,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Forging PHP sessions",
       "SQL Injection"
     ],
-    "officialPdf": "316-Breadcrumbs_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "316-Breadcrumbs_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ophiuchi",
@@ -10183,7 +9048,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Web Assembly Decompilation",
       "Go and Web Assembly Source Code Analysis"
     ],
-    "officialPdf": "315-Ophiuchi_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "315-Ophiuchi_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-scriptkiddie",
@@ -10215,7 +9080,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "OS Command Injection in command arguments",
       "Running system commands from Metasploit console"
     ],
-    "officialPdf": "314-ScriptKiddie_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "314-ScriptKiddie_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sink",
@@ -10240,7 +9105,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "HTTP Desync"
     ],
-    "officialPdf": "313-Sink_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "313-Sink_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-tentacle",
@@ -10262,7 +9127,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2021-01-23T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Tentacle is a Hard linux machine featuring a Squid proxy server. Bypassing Squid proxy authentication reveals a host which is making use of a vulnerable OpenSMTPD service. Initial foothold can be achieved by the exploitation of it. A SMTP client configuration file discloses a password which assists in generating a valid Kerberos ticket. This ticket then can be used to move laterally. Finally a cronjob can be exploited to escalate to another user who has privileges to add root user to Kerberos principals. This gives us a root shell.",
-    "officialPdf": "310-Tentacle_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "310-Tentacle_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-tenet",
@@ -10283,7 +9148,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2021-01-16T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Tenet is a Medium difficulty machine that features an Apache web server. It contains a Wordpress blog with a few posts. One of the comments on the blog mentions the presence of a PHP file along with it's backup. It is possible after identificaiton of the backup file to review it's source code. The code in PHP file is vulnerable to an insecure deserialisation vulnerability and by successful exploiting it a foothold on the system is achieved. While enumerating the system it was found that the Wordpress configuration file can be read and thus gaining access to a set of credentials.",
-    "officialPdf": "309-Tenet_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "309-Tenet_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-delivery",
@@ -10309,7 +9174,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Email impersonation",
       "Intermediate password cracking"
     ],
-    "officialPdf": "308-Delivery_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "308-Delivery_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-attended",
@@ -10340,7 +9205,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "reverse shell",
       "Finding uncommon gadgets for ROP"
     ],
-    "officialPdf": "307-Attended_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "307-Attended_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ready",
@@ -10369,7 +9234,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SSRF & CRLF Attacks",
       "Docker Escape"
     ],
-    "officialPdf": "304-Ready_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "304-Ready_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sharp",
@@ -10393,7 +9258,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Reversing .NET Applications"
     ],
-    "officialPdf": "303-Sharp_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "303-Sharp_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-luanne",
@@ -10420,7 +9285,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Lua Code Injection",
       "NetPGP and doas Abuse"
     ],
-    "officialPdf": "302-Luanne_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "302-Luanne_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-cereal",
@@ -10441,7 +9306,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2020-11-21T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Cereal is a hard difficulty Windows machine with a repository exposing source code. One of the older commits is found to leak the encryption key, which can be used to login. Reviewing the code reveals deserialization and XSS vulnerabilities. These are leveraged to download a web shell and gain a foothold on the system. The user is found to have SeImpersonatePrivilege which is exploited in combination with a SSRF vulnerability to get SYSTEM privileges.",
-    "officialPdf": "299-Cereal_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "299-Cereal_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-laboratory",
@@ -10471,7 +9336,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Marshal cookie attack",
       "SUID"
     ],
-    "officialPdf": "298-Laboratory_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "298-Laboratory_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-academy",
@@ -10500,7 +9365,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Composer",
       "pam_tty_audit"
     ],
-    "officialPdf": "297-Academy_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "297-Academy_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-apt",
@@ -10521,7 +9386,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2020-10-31T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "APT is an insane difficulty Windows machine where RPC and HTTP services are only exposed.",
-    "officialPdf": "296-APT_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "296-APT_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bucket",
@@ -10548,7 +9413,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "DynamoDB",
       "PD4ML"
     ],
-    "officialPdf": "283-Bucket_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "283-Bucket_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-jewel",
@@ -10578,7 +9443,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "2020",
       "8165"
     ],
-    "officialPdf": "282-Jewel_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "282-Jewel_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-reel2",
@@ -10609,7 +9474,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "JEA Bypass",
       "Sticky Notes"
     ],
-    "officialPdf": "281-Reel2_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "281-Reel2_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-doctor",
@@ -10634,7 +9499,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying a Server Side Template Injection",
       "Exploiting an SSTI to get Remote Code Execution"
     ],
-    "officialPdf": "278-Doctor_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "278-Doctor_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-crossfit",
@@ -10663,7 +9528,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "COR's (Cross",
       "Origin Resource Sharing) Misconfiguration and"
     ],
-    "officialPdf": "277-CrossFit_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "277-CrossFit_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-compromised",
@@ -10689,7 +9554,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "LiteCart 2.1.2"
     ],
-    "officialPdf": "276-Compromised_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "276-Compromised_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-passage",
@@ -10715,7 +9580,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Basic Web"
     ],
-    "officialPdf": "275-Passage_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "275-Passage_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-feline",
@@ -10747,7 +9612,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Unix Socket",
       "Deserialization"
     ],
-    "officialPdf": "274-Feline_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "274-Feline_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-omni",
@@ -10772,7 +9637,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Windows IoT Core"
     ],
-    "officialPdf": "271-Omni_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "271-Omni_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-worker",
@@ -10801,7 +9666,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SVN Repository",
       "OWASP Top 10"
     ],
-    "officialPdf": "270-Worker_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "270-Worker_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-laser",
@@ -10826,7 +9691,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Printer"
     ],
-    "officialPdf": "269-Laser_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "269-Laser_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-unbalanced",
@@ -10853,7 +9718,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Blind XPATH Injection",
       "hole"
     ],
-    "officialPdf": "268-Unbalanced_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "268-Unbalanced_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-openkeys",
@@ -10885,7 +9750,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting xlock",
       "Exploiting S/Key Authentication"
     ],
-    "officialPdf": "267-OpenKeyS_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "267-OpenKeyS_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-buff",
@@ -10914,7 +9779,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Buffer Overflow",
       "Port Forwarding"
     ],
-    "officialPdf": "263-Buff_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "263-Buff_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-intense",
@@ -10945,7 +9810,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SNMP RCE",
       "Binary"
     ],
-    "officialPdf": "261-Intense_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "261-Intense_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ropetwo",
@@ -10972,7 +9837,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "V8 Exploit Development",
       "Heap"
     ],
-    "officialPdf": "260-RopeTwo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "260-RopeTwo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-tabby",
@@ -11000,7 +9865,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "ZIP Cracking",
       "LXD Abuse"
     ],
-    "officialPdf": "259-Tabby_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "259-Tabby_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-fuse",
@@ -11025,7 +9890,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Printer"
     ],
-    "officialPdf": "256-Fuse_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "256-Fuse_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-blunder",
@@ -11051,7 +9916,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Bludit CMS"
     ],
-    "officialPdf": "254-Blunder_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "254-Blunder_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-dyplesher",
@@ -11081,7 +9946,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "AMQP",
       "Cuberite"
     ],
-    "officialPdf": "253-Dyplesher_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "253-Dyplesher_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-travel",
@@ -11112,7 +9977,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "PHP Deserialization",
       "Editing LDAP Attributes"
     ],
-    "officialPdf": "252-Travel_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "252-Travel_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-cache",
@@ -11139,7 +10004,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic SQL Injection",
       "Memcached"
     ],
-    "officialPdf": "251-Cache_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "251-Cache_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-admirer",
@@ -11165,7 +10030,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting MySQL Arbitrary File Read via Adminer",
       "Python Library Hijacking"
     ],
-    "officialPdf": "248-Admirer_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "248-Admirer_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-quick",
@@ -11194,7 +10059,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Using Symlinks",
       "ESI Injection"
     ],
-    "officialPdf": "244-Quick_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "244-Quick_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-magic",
@@ -11224,7 +10089,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Path Hijacking",
       "SUID Abuse"
     ],
-    "officialPdf": "241-Magic_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "241-Magic_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-servmon",
@@ -11255,7 +10120,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting NSClient++",
       "SSH Password Spraying"
     ],
-    "officialPdf": "240-ServMon_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "240-ServMon_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-forwardslash",
@@ -11286,7 +10151,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Attacking Custom Cryptography using Python",
       "LUKS Image Mounting and Decryption"
     ],
-    "officialPdf": "239-ForwardSlash_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "239-ForwardSlash_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-remote",
@@ -11308,7 +10173,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2020-03-21T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "Remote is an easy difficulty Windows machine that features an Umbraco CMS installation. Credentials are found in a world-readable NFS share. Using these, an authenticated Umbraco CMS exploit is leveraged to gain a foothold. A vulnerable TeamViewer version is identified, from which we can gain a password. This password has been reused with the local administrator account. Using psexec with these credentials returns a SYSTEM shell.",
-    "officialPdf": "234-Remote_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "234-Remote_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-traceback",
@@ -11333,7 +10198,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "SSH Motd Editing"
     ],
-    "officialPdf": "233-Traceback_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "233-Traceback_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-multimaster",
@@ -11363,7 +10228,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Password Cracking",
       "VS Code"
     ],
-    "officialPdf": "232-Multimaster_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "232-Multimaster_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-oouch",
@@ -11388,7 +10253,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "OAuth"
     ],
-    "officialPdf": "231-Oouch_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "231-Oouch_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-book",
@@ -11415,7 +10280,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SQL Truncation",
       "Logrotate"
     ],
-    "officialPdf": "230-Book_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "230-Book_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-fatty",
@@ -11446,7 +10311,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SQL Injection",
       "Deserialization"
     ],
-    "officialPdf": "227-Fatty_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "227-Fatty_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-nest",
@@ -11471,7 +10336,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       ".NET Development"
     ],
-    "officialPdf": "225-Nest_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "225-Nest_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-patents",
@@ -11498,7 +10363,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "OOB XXE",
       "based"
     ],
-    "officialPdf": "224-Patents_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "224-Patents_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-openadmin",
@@ -11519,7 +10384,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "createdAt": "2020-01-04T17:00:00.000000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z",
     "officialSynopsis": "OpenAdmin is an easy difficulty Linux machine that features an outdated OpenNetAdmin CMS instance. The CMS is exploited to gain a foothold, and subsequent",
-    "officialPdf": "222-OpenAdmin_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "222-OpenAdmin_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-playertwo",
@@ -11548,7 +10413,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "MQTT",
       "Heap"
     ],
-    "officialPdf": "221-PlayerTwo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "221-PlayerTwo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-obscurity",
@@ -11577,7 +10442,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Known",
       "Plaintext Attack"
     ],
-    "officialPdf": "219-Obscurity_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "219-Obscurity_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-control",
@@ -11607,7 +10472,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Hash Cracking",
       "File System"
     ],
-    "officialPdf": "218-Control_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "218-Control_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-traverxec",
@@ -11634,7 +10499,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SSH Key Cracking",
       "GTFOBins"
     ],
-    "officialPdf": "217-Traverxec_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "217-Traverxec_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ai",
@@ -11661,7 +10526,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Debugging with JDWP",
       "Speech to Text"
     ],
-    "officialPdf": "216-AI_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "216-AI_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-postman",
@@ -11686,7 +10551,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Redis"
     ],
-    "officialPdf": "215-Postman_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "215-Postman_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-mango",
@@ -11713,7 +10578,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "NoSQL Injection",
       "GTFOBins Abuse"
     ],
-    "officialPdf": "214-Mango_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "214-Mango_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-registry",
@@ -11738,7 +10603,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Docker API"
     ],
-    "officialPdf": "213-Registry_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "213-Registry_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sniper",
@@ -11770,7 +10635,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "NetNTLM",
       "v2 Hash Capture and Cracking"
     ],
-    "officialPdf": "211-Sniper_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "211-Sniper_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-json",
@@ -11797,7 +10662,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Using ysoserial.net",
       "dnSpy"
     ],
-    "officialPdf": "210-Json_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "210-Json_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bankrobber",
@@ -11826,7 +10691,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "File read through SQLi",
       "Buffer Overflow"
     ],
-    "officialPdf": "209-Bankrobber_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "209-Bankrobber_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-wall",
@@ -11857,7 +10722,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "WAF bypass",
       "Decompiling python code"
     ],
-    "officialPdf": "208-Wall_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "208-Wall_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bitlab",
@@ -11886,7 +10751,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Git Hooks",
       "Dynamic Binary Analysis"
     ],
-    "officialPdf": "207-Bitlab_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "207-Bitlab_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-zetta",
@@ -11912,7 +10777,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Postgres Command Execution",
       "FXP & FTP Bounce Attack"
     ],
-    "officialPdf": "204-Zetta_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "204-Zetta_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-networked",
@@ -11939,7 +10804,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "File upload bypass",
       "Command injection"
     ],
-    "officialPdf": "203-Networked_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "203-Networked_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-scavenger",
@@ -11966,7 +10831,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SQL Injection",
       "Reversing Rootkits"
     ],
-    "officialPdf": "202-Scavenger_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "202-Scavenger_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-heist",
@@ -11995,7 +10860,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Cracking Cisco hashes",
       "ProcDump"
     ],
-    "officialPdf": "201-Heist_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "201-Heist_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-rope",
@@ -12020,7 +10885,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Format String"
     ],
-    "officialPdf": "200-Rope_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "200-Rope_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-safe",
@@ -12044,7 +10909,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Cracking keepass databases"
     ],
-    "officialPdf": "199-Safe_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "199-Safe_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-re",
@@ -12072,7 +10937,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting WinRAR path traversal",
       "Ghidra XXE"
     ],
-    "officialPdf": "198-RE_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "198-RE_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-craft",
@@ -12101,7 +10966,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "pymysql API",
       "Vault SSH"
     ],
-    "officialPdf": "197-Craft_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "197-Craft_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-player",
@@ -12126,7 +10991,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Vhost"
     ],
-    "officialPdf": "196-Player_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "196-Player_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-haystack",
@@ -12152,7 +11017,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Elasticsearch"
     ],
-    "officialPdf": "195-Haystack_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "195-Haystack_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-jarvis",
@@ -12177,7 +11042,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "File writes through SQL injection",
       "Exploiting systemctl GTFObin"
     ],
-    "officialPdf": "194-Jarvis_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "194-Jarvis_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-chainsaw",
@@ -12207,7 +11072,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "IPFS",
       "Slack space and Bmap"
     ],
-    "officialPdf": "193-Chainsaw_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "193-Chainsaw_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-writeup",
@@ -12234,7 +11099,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Path hijacking",
       "Process"
     ],
-    "officialPdf": "192-Writeup_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "192-Writeup_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-smasher2",
@@ -12261,7 +11126,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting mmap handlers",
       "Reversing shared objects"
     ],
-    "officialPdf": "191-Smasher2_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "191-Smasher2_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-luke",
@@ -12286,7 +11151,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "NodeJs"
     ],
-    "officialPdf": "190-Luke_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "190-Luke_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ellingson",
@@ -12313,7 +11178,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Python debugger RCE",
       "ROP exploit"
     ],
-    "officialPdf": "189-Ellingson_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "189-Ellingson_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-swagshop",
@@ -12341,7 +11206,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploit modification",
       "GTFObins"
     ],
-    "officialPdf": "188-SwagShop_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "188-SwagShop_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ghoul",
@@ -12371,7 +11236,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Gogs RCE",
       "Git reflog"
     ],
-    "officialPdf": "187-Ghoul_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "187-Ghoul_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-onetwoseven",
@@ -12397,7 +11262,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Apache rules",
       "Abusing apt package manager"
     ],
-    "officialPdf": "185-OneTwoSeven_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "185-OneTwoSeven_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-unattended",
@@ -12425,7 +11290,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "LFI to RCE",
       "Analyzing kernel image"
     ],
-    "officialPdf": "184-Unattended_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "184-Unattended_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-kryptos",
@@ -12459,7 +11324,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Analysing RNG",
       "Python eval injection"
     ],
-    "officialPdf": "183-Kryptos_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "183-Kryptos_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-lacasadepapel",
@@ -12485,7 +11350,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Linux inode knowledge",
       "Creating client certificates"
     ],
-    "officialPdf": "181-LaCasaDePapel_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "181-LaCasaDePapel_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-helpline",
@@ -12511,7 +11376,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Applocker"
     ],
-    "officialPdf": "180-Helpline_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "180-Helpline_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-arkham",
@@ -12538,7 +11403,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Java Deserialization",
       "UAC bypass"
     ],
-    "officialPdf": "179-Arkham_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "179-Arkham_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-fortune",
@@ -12562,7 +11427,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Creating HTTPS client certificates"
     ],
-    "officialPdf": "178-Fortune_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "178-Fortune_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-netmon",
@@ -12596,7 +11461,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "2018",
       "9276"
     ],
-    "officialPdf": "177-Netmon_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "177-Netmon_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-hackback",
@@ -12624,7 +11489,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Named pipe impersonation",
       "Exploiting arbitrary writes"
     ],
-    "officialPdf": "176-Hackback_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "176-Hackback_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-querier",
@@ -12651,7 +11516,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Excel macros",
       "PowerView"
     ],
-    "officialPdf": "175-Querier_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "175-Querier_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-friendzone",
@@ -12676,7 +11541,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Module hijacking"
     ],
-    "officialPdf": "173-FriendZone_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "173-FriendZone_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ctf",
@@ -12702,7 +11567,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "LDAP Injection",
       "Wildcard and Symlink abuse"
     ],
-    "officialPdf": "172-CTF_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "172-CTF_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-flujab",
@@ -12731,7 +11596,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Union SQL injection",
       "Openssl PRNG exploit"
     ],
-    "officialPdf": "171-FluJab_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "171-FluJab_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-help",
@@ -12756,7 +11621,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "GraphQL"
     ],
-    "officialPdf": "170-Help_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "170-Help_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sizzle",
@@ -12787,7 +11652,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Kerberoasting",
       "DCSync"
     ],
-    "officialPdf": "169-Sizzle_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "169-Sizzle_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-conceal",
@@ -12813,7 +11678,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "IKE Configuration"
     ],
-    "officialPdf": "168-Conceal_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "168-Conceal_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-chaos",
@@ -12838,7 +11703,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Breaking out of restricted shells",
       "Extracting data from firefox profiles"
     ],
-    "officialPdf": "167-Chaos_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "167-Chaos_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-lightweight",
@@ -12864,7 +11729,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Passive Sniffing",
       "Abusing Linux Capabilities"
     ],
-    "officialPdf": "166-Lightweight_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "166-Lightweight_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-teacher",
@@ -12890,7 +11755,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Website"
     ],
-    "officialPdf": "165-Teacher_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "165-Teacher_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bighead",
@@ -12919,7 +11784,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Egg hunting technique",
       "Extracting ADS"
     ],
-    "officialPdf": "164-BigHead_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "164-BigHead_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-irked",
@@ -12947,7 +11812,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Troubleshooting Metasploit modules",
       "Linux"
     ],
-    "officialPdf": "163-Irked_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "163-Irked_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-redcross",
@@ -12975,7 +11840,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "PHP Session ID reuse",
       "Identification and"
     ],
-    "officialPdf": "162-RedCross_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "162-RedCross_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-vault",
@@ -13004,7 +11869,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SSH port forwarding",
       "Bypassing port restrictions using ncat"
     ],
-    "officialPdf": "161-Vault_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "161-Vault_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-curling",
@@ -13031,7 +11896,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Analyzing hex dump",
       "Curl usage"
     ],
-    "officialPdf": "160-Curling_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "160-Curling_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-zipper",
@@ -13056,7 +11921,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Zabbix API"
     ],
-    "officialPdf": "159-Zipper_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "159-Zipper_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-frolic",
@@ -13089,7 +11954,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Escalating privileges through ROP SUID",
       "binaries with ret2libc"
     ],
-    "officialPdf": "158-Frolic_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "158-Frolic_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ethereal",
@@ -13120,7 +11985,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Malicious shortcut testing and creation",
       "Malicious MSI testing and creation"
     ],
-    "officialPdf": "157-Ethereal_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "157-Ethereal_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-access",
@@ -13145,7 +12010,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Basic Windows knowledge"
     ],
-    "officialPdf": "156-Access_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "156-Access_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-carrier",
@@ -13170,7 +12035,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "SNMP"
     ],
-    "officialPdf": "155-Carrier_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "155-Carrier_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ypuffy",
@@ -13196,7 +12061,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Crafting custom LDAP queries /",
       "manually finding the RootDSE"
     ],
-    "officialPdf": "154-Ypuffy_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "154-Ypuffy_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-giddy",
@@ -13224,7 +12089,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identification of installed programs via",
       "Windows Registry"
     ],
-    "officialPdf": "153-Giddy_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "153-Giddy_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-oz",
@@ -13260,7 +12125,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Server",
       "Side Template Injection"
     ],
-    "officialPdf": "152-Oz_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "152-Oz_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-secnotes",
@@ -13287,7 +12152,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SQLi authentication bypass",
       "Windows Subsystem for Linux"
     ],
-    "officialPdf": "151-SecNotes_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "151-SecNotes_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-dab",
@@ -13313,7 +12178,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Wfuzz advanced"
     ],
-    "officialPdf": "150-Dab_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "150-Dab_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-waldo",
@@ -13342,7 +12207,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Rbash escape techniques",
       "Linux Capabilities"
     ],
-    "officialPdf": "149-Waldo_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "149-Waldo_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-active",
@@ -13367,7 +12232,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic knowledge of Active Directory",
       "authentication and shared folders"
     ],
-    "officialPdf": "148-Active_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "148-Active_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-reddish",
@@ -13393,7 +12258,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Gaining situational awareness",
       "Tunneling"
     ],
-    "officialPdf": "147-Reddish_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "147-Reddish_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-hawk",
@@ -13422,7 +12287,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "IppSec Hawk video)",
       "Drupal"
     ],
-    "officialPdf": "146-Hawk_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "146-Hawk_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-mischief",
@@ -13450,7 +12315,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "techniques",
       "Establishment of IPv6 reverse shell"
     ],
-    "officialPdf": "145-Mischief_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "145-Mischief_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-jerry",
@@ -13484,7 +12349,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Custom war file payload creation",
       "SILENTTRINITY post"
     ],
-    "officialPdf": "144-Jerry_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "144-Jerry_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-reel",
@@ -13516,7 +12381,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "and listener)",
       "Identification and"
     ],
-    "officialPdf": "143-Reel_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "143-Reel_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bounty",
@@ -13544,7 +12409,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "patches",
       "Exploit selection and execution"
     ],
-    "officialPdf": "142-Bounty_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "142-Bounty_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-smasher",
@@ -13575,7 +12440,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Binary file reversing",
       "Padding Oracle"
     ],
-    "officialPdf": "141-Smasher_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "141-Smasher_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-devoops",
@@ -13602,7 +12467,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting Python pickle",
       "Enumerating git revision history"
     ],
-    "officialPdf": "140-DevOops_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "140-DevOops_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-dropzone",
@@ -13630,7 +12495,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploit modification",
       "Discovery of NTFS data streams"
     ],
-    "officialPdf": "139-Dropzone_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "139-Dropzone_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-tartarsauce",
@@ -13656,7 +12521,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Static analysis of shell scripts",
       "Identification and"
     ],
-    "officialPdf": "138-TartarSauce_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "138-TartarSauce_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-fighter",
@@ -13691,7 +12556,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploit selection and modification",
       "Post"
     ],
-    "officialPdf": "137-Fighter_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "137-Fighter_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sunday",
@@ -13719,7 +12584,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Brute forcing SSH",
       "Exploiting Sudo NOPASSWD"
     ],
-    "officialPdf": "136-Sunday_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "136-Sunday_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-olympus",
@@ -13751,7 +12616,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "transfers",
       "Abusing Docker permissions"
     ],
-    "officialPdf": "135-Olympus_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "135-Olympus_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-canape",
@@ -13779,7 +12644,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting Apache CouchDB",
       "Exploiting Sudo NOPASSWD"
     ],
-    "officialPdf": "134-Canape_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "134-Canape_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-rabbit",
@@ -13808,7 +12673,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Authorisation bypass",
       "SQL injection identification and"
     ],
-    "officialPdf": "133-Rabbit_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "133-Rabbit_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-poison",
@@ -13835,7 +12700,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Apache log poisoning",
       "Tunneling ports over SSH"
     ],
-    "officialPdf": "132-Poison_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "132-Poison_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-celestial",
@@ -13862,7 +12727,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "NodeJS",
       "Enumerating system log files"
     ],
-    "officialPdf": "130-Celestial_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "130-Celestial_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-stratosphere",
@@ -13891,7 +12756,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting Sudo NOPASSWD",
       "Hijacking Python libraries"
     ],
-    "officialPdf": "129-Stratosphere_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "129-Stratosphere_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bart",
@@ -13925,7 +12790,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Log poisoning",
       "Pass the hash technique without direct"
     ],
-    "officialPdf": "128-Bart_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "128-Bart_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-valentine",
@@ -13954,7 +12819,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting Heartbleed",
       "Exploiting permissive tmux sessions"
     ],
-    "officialPdf": "127-Valentine_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "127-Valentine_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-aragog",
@@ -13980,7 +12845,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Enumerating files through XXE",
       "Exploiting weak file permissions"
     ],
-    "officialPdf": "126-Aragog_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "126-Aragog_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-falafel",
@@ -14010,7 +12875,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting video group permissions",
       "Exploiting disk group permissions"
     ],
-    "officialPdf": "124-Falafel_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "124-Falafel_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-chatterbox",
@@ -14038,7 +12903,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "techniques",
       "Enumerating Windows Registry"
     ],
-    "officialPdf": "123-Chatterbox_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "123-Chatterbox_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-nightmare",
@@ -14073,7 +12938,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "bit binaries",
       "Exploit modification"
     ],
-    "officialPdf": "122-Nightmare_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "122-Nightmare_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-nibbles",
@@ -14107,7 +12972,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Bypassing login rate limiting",
       "Exploiting NOPASSWD"
     ],
-    "officialPdf": "121-Nibbles_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "121-Nibbles_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-crimestoppers",
@@ -14134,7 +12999,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Extracting data from Thunderbird",
       "Reverse engineering Apache modules"
     ],
-    "officialPdf": "120-CrimeStoppers_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "120-CrimeStoppers_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-fluxcapacitor",
@@ -14161,7 +13026,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Bypassing basic WAF rules",
       "Exploiting NOPASSWD"
     ],
-    "officialPdf": "119-FluxCapacitor_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "119-FluxCapacitor_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bashed",
@@ -14192,7 +13057,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic web fuzzing techniques",
       "Locating recently modified files"
     ],
-    "officialPdf": "118-Bashed_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "118-Bashed_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-inception",
@@ -14219,7 +13084,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Bypassing restrictive network filtering",
       "Advanced local"
     ],
-    "officialPdf": "117-Inception_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "117-Inception_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-fulcrum",
@@ -14250,7 +13115,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "network rules",
       "Advanced remote"
     ],
-    "officialPdf": "116-Fulcrum_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "116-Fulcrum_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-ariekei",
@@ -14281,7 +13146,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "techniques",
       "Web application firewall evasion"
     ],
-    "officialPdf": "115-Ariekei_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "115-Ariekei_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-jeeves",
@@ -14313,7 +13178,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "hash attacks",
       "Enumerating alternate data streams"
     ],
-    "officialPdf": "114-Jeeves_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "114-Jeeves_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-tally",
@@ -14345,7 +13210,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "techniques",
       "Exploit modification"
     ],
-    "officialPdf": "113-Tally_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "113-Tally_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-enterprise",
@@ -14371,7 +13236,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting Wordpress plugins",
       "Exploiting buffer overflows"
     ],
-    "officialPdf": "112-Enterprise_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "112-Enterprise_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sense",
@@ -14398,7 +13263,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Bypassing strict filtering",
       "Exploiting PFSense"
     ],
-    "officialPdf": "111-Sense_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "111-Sense_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-node",
@@ -14426,7 +13291,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting buffer overflows",
       "Bypassing ASLR and NX"
     ],
-    "officialPdf": "110-Node_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "110-Node_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-minion",
@@ -14456,7 +13321,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Finding and reading alternate data",
       "streams"
     ],
-    "officialPdf": "109-Minion_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "109-Minion_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-shocker",
@@ -14489,7 +13354,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting shellshock",
       "Exploiting NOPASSWD"
     ],
-    "officialPdf": "108-Shocker_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "108-Shocker_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-kotarak",
@@ -14521,7 +13386,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying isolated systems and",
       "containers"
     ],
-    "officialPdf": "101-Kotarak_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "101-Kotarak_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-mantis",
@@ -14550,7 +13415,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting domain controllers and",
       "Kerberos"
     ],
-    "officialPdf": "98-Mantis_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "98-Mantis_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-solidstate",
@@ -14583,7 +13448,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting world",
       "writable files"
     ],
-    "officialPdf": "85-SolidState_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "85-SolidState_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-mirai",
@@ -14609,7 +13474,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying an IoT device",
       "Forensic file recovery"
     ],
-    "officialPdf": "64-Mirai_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "64-Mirai_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-shrek",
@@ -14640,7 +13505,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Enumerating hidden tasks",
       "Exploiting chown wildcards"
     ],
-    "officialPdf": "58-Shrek_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "58-Shrek_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-apocalyst",
@@ -14672,7 +13537,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic steganograpy",
       "Exploiting permissive system files"
     ],
-    "officialPdf": "57-Apocalyst_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "57-Apocalyst_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-nineveh",
@@ -14705,7 +13570,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Local file inclusion",
       "Port knocking"
     ],
-    "officialPdf": "54-Nineveh_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "54-Nineveh_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-blue",
@@ -14736,7 +13601,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying Windows targets using SMB",
       "Exploit modification (optional)"
     ],
-    "officialPdf": "51-Blue_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "51-Blue_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-blocky",
@@ -14771,7 +13636,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Decompiling JAR files",
       "Basic local Linux"
     ],
-    "officialPdf": "48-Blocky_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "48-Blocky_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-jail",
@@ -14806,7 +13671,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Cracking encrypted RAR archives",
       "Exploiting weak RSA public keys"
     ],
-    "officialPdf": "45-Jail_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "45-Jail_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-charon",
@@ -14837,7 +13702,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting SUID files",
       "Shell command injection"
     ],
-    "officialPdf": "42-Charon_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "42-Charon_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-calamity",
@@ -14865,7 +13730,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "mechanisms",
       "Exploiting binaries in multiple stages"
     ],
-    "officialPdf": "37-Calamity_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "37-Calamity_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-europa",
@@ -14893,7 +13758,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting PHP's preg_replace function",
       "Bypassing restrictive write permissions"
     ],
-    "officialPdf": "27-Europa_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "27-Europa_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bank",
@@ -14925,7 +13790,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying vulnerable services",
       "Exploiting SUID files"
     ],
-    "officialPdf": "26-Bank_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "26-Bank_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-holiday",
@@ -14955,7 +13820,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting NOPASSWD files",
       "Exploiting NPM CLI"
     ],
-    "officialPdf": "22-Holiday_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "22-Holiday_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-haircut",
@@ -14983,7 +13848,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "based fuzzing",
       "Exploiting CURL/Command injection"
     ],
-    "officialPdf": "21-Haircut_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "21-Haircut_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-joker",
@@ -15011,7 +13876,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting sudoedit wildcards",
       "Exploiting tar wildcards"
     ],
-    "officialPdf": "20-Joker_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "20-Joker_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-sneaky",
@@ -15042,7 +13907,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting SUID files",
       "Basic buffer overflow"
     ],
-    "officialPdf": "19-Sneaky_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "19-Sneaky_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-lazy",
@@ -15072,7 +13937,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Using the PATH environment variable",
       "to aid in"
     ],
-    "officialPdf": "18-Lazy_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "18-Lazy_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-brainfuck",
@@ -15106,7 +13971,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "SSH key brute forcing",
       "RSA decryption techniques"
     ],
-    "officialPdf": "17-Brainfuck_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "17-Brainfuck_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-october",
@@ -15136,7 +14001,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Bypassing NX/DEP",
       "Bypassing ASLR"
     ],
-    "officialPdf": "15-October_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "15-October_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-granny",
@@ -15171,7 +14036,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Windows privilege escalation",
       "techniques"
     ],
-    "officialPdf": "14-Granny_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "14-Granny_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-grandpa",
@@ -15206,7 +14071,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Windows privilege escalation",
       "techniques"
     ],
-    "officialPdf": "13-Grandpa_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "13-Grandpa_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-cronos",
@@ -15235,7 +14100,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Command Injection",
       "Exploiting cron jobs"
     ],
-    "officialPdf": "11-Cronos_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "11-Cronos_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-arctic",
@@ -15263,7 +14128,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Troubleshooting Metasploit modules",
       "and HTTP requests"
     ],
-    "officialPdf": "9-Arctic_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "9-Arctic_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-tenten",
@@ -15293,7 +14158,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic steganography",
       "Exploiting NOPASSWD files"
     ],
-    "officialPdf": "8-Tenten_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "8-Tenten_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-bastard",
@@ -15323,7 +14188,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Windows privilege escalation",
       "techniques"
     ],
-    "officialPdf": "7-Bastard_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "7-Bastard_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-optimum",
@@ -15358,7 +14223,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Windows privilege escalation",
       "techniques"
     ],
-    "officialPdf": "6-Optimum_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "6-Optimum_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-beep",
@@ -15393,7 +14258,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Exploiting local file inclusion",
       "vulnerabilities"
     ],
-    "officialPdf": "5-Beep_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "5-Beep_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-popcorn",
@@ -15419,7 +14284,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Bypassing file upload checks",
       "Modifying HTTP requests"
     ],
-    "officialPdf": "4-Popcorn_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "4-Popcorn_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-devel",
@@ -15453,7 +14318,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Basic Windows privilege escalation",
       "techniques"
     ],
-    "officialPdf": "3-Devel_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "3-Devel_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-legacy",
@@ -15486,7 +14351,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying vulnerable services",
       "Exploiting SMB"
     ],
-    "officialPdf": "2-Legacy_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "2-Legacy_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "htb-lame",
@@ -15519,7 +14384,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Identifying vulnerable services",
       "Exploiting Samba"
     ],
-    "officialPdf": "1-Lame_HTB_Official_writeup_Tamarisk.pdf",
+    "officialPdf": "1-Lame_HTB_Official_writeup_Tamarisk.pdf"
   },
   {
     "id": "thm-crackthehash",
@@ -15840,26 +14705,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-scripting",
-    "name": "Scripting",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/scripting",
-    "writeupUrl": "",
-    "hint": "Learn basic scripting by solving some challenges!",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-bebop",
     "name": "Bebop",
     "ip": "10.10.x.x",
@@ -15921,26 +14766,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-toolboxvim",
-    "name": "Toolbox: Vim",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/toolboxvim",
-    "writeupUrl": "",
-    "hint": "Learn vim, a universal text editor that can be incredibly powerful when used properly. From basic text editing to editing of binary files, Vim can be an important arsenal in a security toolkit.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-ninjaskills",
     "name": "Ninja Skills",
     "ip": "10.10.x.x",
@@ -15957,27 +14782,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/ninjaskills",
     "writeupUrl": "",
     "hint": "Practise your Linux skills and complete the challenges.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-basicmalwarere",
-    "name": "Basic Malware RE",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "-"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/basicmalwarere",
-    "writeupUrl": "",
-    "hint": "This room aims towards helping everyone learn about the basics of \"Malware Reverse Engineering\".",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -16410,48 +15214,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-jvmreverseengineering",
-    "name": "JVM Reverse Engineering",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/jvmreverseengineering",
-    "writeupUrl": "",
-    "hint": "Learn Reverse Engineering for Java Virtual Machine bytecode",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-corp",
-    "name": "Corp",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "hashcat",
-      "PowerUp1.ps1"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/corp",
-    "writeupUrl": "",
-    "hint": "Bypass Windows Applocker and escalate your privileges. You will learn about kerberoasting, evading AV, bypassing applocker and escalating your privileges on a Windows system.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-pythonplayground",
     "name": "Python Playground",
     "ip": "10.10.x.x",
@@ -16595,7 +15357,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "id": "thm-ra",
     "name": "Ra",
     "ip": "10.10.x.x",
-    "os": "Linux",
+    "os": "Windows",
     "platform": "THM",
     "difficulty": "Hard",
     "status": "backlog",
@@ -17018,22 +15780,22 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-tmuxremux",
-    "name": "REmux The Tmux",
+    "id": "thm-tonythetiger",
+    "name": "Tony the Tiger",
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Very Easy",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "THM",
       "CTF",
-      "-"
+      "Java Deserialization"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/tmuxremux",
+    "roomUrl": "https://tryhackme.com/room/tonythetiger",
     "writeupUrl": "",
-    "hint": "Updated, how to use tmux guide. Defaults and customize your workflow.",
+    "hint": "Exploit a Java deserialization vulnerability in this classic boot-to-root challenge machine.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -17099,8 +15861,8 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-res-2",
-    "name": "Walkthrough",
+    "id": "thm-kothfoodctf",
+    "name": "KoTH Food CTF",
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
@@ -17108,12 +15870,13 @@ export const INITIAL_MACHINES: Machine[] = [
     "status": "backlog",
     "tags": [
       "THM",
-      "CTF"
+      "CTF",
+      "King of the Hill"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/res",
+    "roomUrl": "https://tryhackme.com/room/kothfoodctf",
     "writeupUrl": "",
-    "hint": "Discover the forensic artefacts present within iOS.",
+    "hint": "Practice the Food King of the Hill (KoTH) standalone machine to capture flags and maintain root access.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -17134,26 +15897,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/toc2",
     "writeupUrl": "",
     "hint": "It's a setup... Can you get the flags in time?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-psychobreak",
-    "name": "Psycho Break",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/psychobreak",
-    "writeupUrl": "",
-    "hint": "Learn about and exploit the ZeroLogon vulnerability that allows an attacker to go from Zero to Domain Admin without any valid credentials.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -17239,47 +15982,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-physicalsecurityintro",
-    "name": "Physical Security Intro",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "-"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/physicalsecurityintro",
-    "writeupUrl": "",
-    "hint": "This room is an introduction to physical security methods to bypass locks, doors and other physical barriers.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-nerdherd",
-    "name": "NerdHerd",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/nerdherd",
-    "writeupUrl": "",
-    "hint": "An introduction to sending and receiving (reverse/bind) shells when exploiting target machines.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-theserverfromhell",
     "name": "The Server From Hell",
     "ip": "10.10.x.x",
@@ -17295,27 +15997,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/theserverfromhell",
     "writeupUrl": "",
     "hint": "Face a server that feels as if it was configured and deployed by Satan himself. Can you escalate to root?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-bruteit",
-    "name": "Brute It",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "-"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/bruteit",
-    "writeupUrl": "https://medium.com/traditional-cyber-security/tryhackme-brute-it-ctf-writeup-ba8ee8522730",
-    "hint": "Learn how to brute, hash cracking and escalate privileges in this box!",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -17362,26 +16043,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-inacave",
-    "name": "You're in a cave",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Insane",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/inacave",
-    "writeupUrl": "",
-    "hint": "Learn how to discover and attack ICS plants using modbus protocol (Modicon / Schneider Electric).",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-osiris",
     "name": "Osiris",
     "ip": "10.10.x.x",
@@ -17417,46 +16078,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/envizon",
     "writeupUrl": "",
     "hint": "Attacking the pentesters",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hardeningbasicspart1",
-    "name": "Hardening Basics Part 1",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hardeningbasicspart1",
-    "writeupUrl": "",
-    "hint": "Learn how to harden an Ubuntu Server! Covers a wide range of topics (Part 1)",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hardeningbasicspart2",
-    "name": "Hardening Basics Part 2",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hardeningbasicspart2",
-    "writeupUrl": "",
-    "hint": "Continue learning about hardening",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -17683,26 +16304,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-nahamstore",
-    "name": "NahamStore",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/nahamstore",
-    "writeupUrl": "",
-    "hint": "In this room you will learn the basics of bug bounty hunting and web application hacking",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-keldagrim",
     "name": "Keldagrim",
     "ip": "10.10.x.x",
@@ -17918,26 +16519,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/lunizzctfnd",
     "writeupUrl": "",
     "hint": "Lunizz CTF",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-reloaded",
-    "name": "REloaded",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/reloaded",
-    "writeupUrl": "",
-    "hint": "This room is dedicated for the RE challenges, each challenge has unique concepts divided in each binaries. As if now only phase 1 is added will decide about phase 2 on response. Developed by WhiteHeart and tested by IslaMukheef",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -18766,7 +17347,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "id": "thm-crocccrew",
     "name": "Crocc Crew",
     "ip": "10.10.x.x",
-    "os": "Linux",
+    "os": "Windows",
     "platform": "THM",
     "difficulty": "Insane",
     "status": "backlog",
@@ -19099,26 +17680,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-frankandherby",
-    "name": "Frank & Herby make an app",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/frankandherby",
-    "writeupUrl": "",
-    "hint": "Learn how the misconfiguration of containers can lead to opportunities for some and disasters for others.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-labyrinth8llv",
     "name": "Minotaur's Labyrinth",
     "ip": "10.10.x.x",
@@ -19153,7 +17714,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "certifications": [],
     "roomUrl": "https://tryhackme.com/room/squidgameroom",
     "writeupUrl": "",
-    "hint": "\uc624\uc9d5\uc5b4 \uac8c\uc784",
+    "hint": "오징어 게임",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -19576,27 +18137,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/0x41haz",
     "writeupUrl": "",
     "hint": "Simple Reversing Challenge",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-snortchallenges1",
-    "name": "Snort Challenge - The Basics",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "snort"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/snortchallenges1",
-    "writeupUrl": "",
-    "hint": "Put your snort skills into practice and write snort rules to analyse live capture network traffic.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -20526,26 +19066,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-tardigrade",
-    "name": "Tardigrade",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/tardigrade",
-    "writeupUrl": "",
-    "hint": "Can you find all the basic persistence mechanisms in this Linux endpoint?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-bugged",
     "name": "Bugged",
     "ip": "10.10.x.x",
@@ -20580,7 +19100,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "certifications": [],
     "roomUrl": "https://tryhackme.com/room/lookback",
     "writeupUrl": "",
-    "hint": "You\u2019ve been asked to run a vulnerability test on a production environment.",
+    "hint": "You’ve been asked to run a vulnerability test on a production environment.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -20947,26 +19467,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/forgottenimplant",
     "writeupUrl": "",
     "hint": "With almost no attack surface, you must use a forgotten C2 implant to get initial access.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-crylo4a",
-    "name": "Crylo",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/crylo4a",
-    "writeupUrl": "",
-    "hint": "Learn about the CryptoJS library and JavaScript-based client-side encryption and decryption.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21407,7 +19907,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "certifications": [],
     "roomUrl": "https://tryhackme.com/room/avenger",
     "writeupUrl": "",
-    "hint": "You\u2019ve been asked to exploit all the vulnerabilities present.",
+    "hint": "You’ve been asked to exploit all the vulnerabilities present.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21438,7 +19938,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Very Easy",
+    "difficulty": "Hard",
     "status": "backlog",
     "tags": [
       "THM",
@@ -21488,26 +19988,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/adv3nt0fdbopsjcap",
     "writeupUrl": "",
     "hint": "The Bandit Yeti is surfing to town.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-busyvimfrosteau",
-    "name": "Frosteau Busy with Vim",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Insane",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/busyvimfrosteau",
-    "writeupUrl": "",
-    "hint": "Stay frosty!",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21668,7 +20148,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "certifications": [],
     "roomUrl": "https://tryhackme.com/room/exfilibur",
     "writeupUrl": "",
-    "hint": "You\u2019ve been asked to exploit all the vulnerabilities present.",
+    "hint": "You’ve been asked to exploit all the vulnerabilities present.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21835,26 +20315,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-sch3mad3mon",
-    "name": "TryHack3M: Sch3Ma D3Mon",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/sch3mad3mon",
-    "writeupUrl": "",
-    "hint": "A guided challenge to learn about SQL injection exploits.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-tryhack3mencryptionchallenge",
     "name": "TryHack3M: TriCipher Summit",
     "ip": "10.10.x.x",
@@ -21950,26 +20410,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/whatsyourname",
     "writeupUrl": "",
     "hint": "CORS & SOP",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-blizzard",
-    "name": "Blizzard",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/blizzard",
-    "writeupUrl": "",
-    "hint": "Learn how the Windows OS manages volatile data in different files on disk. Explore how to extract and analyse volatile data from those artefacts.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -22178,7 +20618,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "certifications": [],
     "roomUrl": "https://tryhackme.com/room/thenewyorkflankees",
     "writeupUrl": "",
-    "hint": "Discover the forensic artefacts present within iOS.",
+    "hint": "Exploit an AES-CBC padding oracle vulnerability on the debug endpoint to obtain credentials, then escape the Docker container via the mounted Docker socket.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -22329,26 +20769,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-blockroom",
-    "name": "Block",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/blockroom",
-    "writeupUrl": "",
-    "hint": "Learn how to exploit a Joomla CMS using CVE-2023-23752 and understand various mitigation techniques.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-ironshade",
     "name": "IronShade",
     "ip": "10.10.x.x",
@@ -22384,46 +20804,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/yueiua",
     "writeupUrl": "",
     "hint": "Welcome to the web application of U.A., the Superhero Academy.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hammer",
-    "name": "Hammer",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hammer",
-    "writeupUrl": "",
-    "hint": "An introduction to the use of Hypervisors and their internal components.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-trypwnmeone",
-    "name": "TryPwnMe One",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/trypwnmeone",
-    "writeupUrl": "",
-    "hint": "Learn about Hosted Hypervisors, how to investigate them, and more.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -22911,26 +21291,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-rabbitstore",
-    "name": "Rabbit Store",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/rabbitstore",
-    "writeupUrl": "",
-    "hint": "Demonstrate your web application testing skills and the basics of Linux to escalate your privileges.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-cryptofailures",
     "name": "Crypto Failures",
     "ip": "10.10.x.x",
@@ -23193,146 +21553,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-hfb1heist",
-    "name": "Heist",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1heist",
-    "writeupUrl": "",
-    "hint": "From the Hackfinity Battle CTF event.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1passcode",
-    "name": "PassCode",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1passcode",
-    "writeupUrl": "",
-    "hint": "From the Hackfinity Battle CTF event.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1abucketofphish",
-    "name": "A Bucket of Phish",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1abucketofphish",
-    "writeupUrl": "",
-    "hint": "From the Hackfinity Battle CTF event.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1flagvault",
-    "name": "Flag Vault",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1flagvault",
-    "writeupUrl": "",
-    "hint": "Understand the basics of buffer overflows.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1flagvault2",
-    "name": "Flag Vault 2",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1flagvault2",
-    "writeupUrl": "",
-    "hint": "Exploit a simple format string vulnerability.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1precision",
-    "name": "Precision",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1precision",
-    "writeupUrl": "",
-    "hint": "Practice your advanced Linux Exploit Development skills.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1voidexecution",
-    "name": "Void Execution",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1voidexecution",
-    "writeupUrl": "",
-    "hint": "Learn how to bypass restrictions in Linux exploit development.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-hfb1thegame",
     "name": "The Game",
     "ip": "10.10.x.x",
@@ -23474,128 +21694,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-hfb1cipherssecretmessage",
-    "name": "Cipher's Secret Message",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1cipherssecretmessage",
-    "writeupUrl": "",
-    "hint": "Sharpen your cryptography skills by analyzing code to get the flag.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1cryptosystem",
-    "name": "Cryptosystem",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1cryptosystem",
-    "writeupUrl": "",
-    "hint": "Learn public-key cryptography concepts by analyzing data.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1darkmatter",
-    "name": "DarkMatter",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1darkmatter",
-    "writeupUrl": "",
-    "hint": "Practice how to exploit a weak RSA implementation to recover the private key and decrypt a ransomware-encrypted files.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1order",
-    "name": "Order",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1order",
-    "writeupUrl": "",
-    "hint": "Perform a known-plaintext attack to recover a repeating-key XOR key and decrypt a hidden message.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1evilgpt",
-    "name": "Evil-GPT",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "Python"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1evilgpt",
-    "writeupUrl": "https://medium.com/genai-llm-security/tryhackme-evil-gpt-ctf-writeup-c0d6bb8e3174",
-    "hint": "Practice your LLM hacking skills.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1evilgptv2",
-    "name": "Evil-GPT v2",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "-"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1evilgptv2",
-    "writeupUrl": "https://medium.com/genai-llm-security/tryhackme-evil-gpt-v2-ctf-writeup-en-draft-c25ac7634744",
-    "hint": "Put your LLM hacking skills to the test one more time.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-containment",
     "name": "ContAInment",
     "ip": "10.10.x.x",
@@ -23611,46 +21709,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/containment",
     "writeupUrl": "",
     "hint": "Can you help contain the ransomware threat with the help of AI?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1hideandseek",
-    "name": "Hide and Seek",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1hideandseek",
-    "writeupUrl": "",
-    "hint": "Conduct a live system analysis to uncover post-compromise activity related to persistence mechanisms.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1infinityshell",
-    "name": "Infinity Shell",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1infinityshell",
-    "writeupUrl": "",
-    "hint": "Investigate and analyse the traces of an attack from an implanted webshell.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -23711,26 +21769,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/hfb1stolenmount",
     "writeupUrl": "",
     "hint": "Analyse network traffic related to an unauthenticated file share access attempt, focusing on potential signs of data exfiltration.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-hfb1royalrouter",
-    "name": "Royal Router",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/hfb1royalrouter",
-    "writeupUrl": "",
-    "hint": "You will learn how to compromise an IoT device.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -23811,26 +21849,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/contrabando",
     "writeupUrl": "",
     "hint": "Never tell me the odds.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-loganalysiswithsiem",
-    "name": "Log Analysis with SIEM",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/loganalysiswithsiem",
-    "writeupUrl": "",
-    "hint": "Learn how SIEM solutions can be used to detect and analyse different types of malicious behaviour.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -24237,65 +22255,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "timeToRootSeconds": 3600
   },
   {
-    "id": "htb-ignition",
-    "name": "Ignition",
-    "ip": "10.129.95.178",
-    "os": "Linux",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "tags": [
-      "http",
-      "web",
-      "cms",
-      "credentials",
-      "starting-point"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/machines/Ignition",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#ignition",
-    "status": "completed",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2026-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
-    "id": "htb-tactics",
-    "name": "Tactics",
-    "ip": "10.129.95.180",
-    "os": "Windows",
-    "platform": "HTB",
-    "difficulty": "Very Easy",
-    "tags": [
-      "smb",
-      "administrator",
-      "share",
-      "starting-point"
-    ],
-    "certifications": [
-      "HTB-Starting-Point"
-    ],
-    "roomUrl": "https://app.hackthebox.com/machines/Tactics",
-    "writeupUrl": "https://0xdf.gitlab.io/tags#tactics",
-    "status": "completed",
-    "timeSpentSeconds": 3600,
-    "createdAt": "2026-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z",
-    "userPwnedAt": "2026-08-20T10:00:00.000Z",
-    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
-    "userFlag": "HTB{user_pwn_verified}",
-    "rootFlag": "HTB{root_pwn_verified}",
-    "timeToUserSeconds": 1500,
-    "timeToRootSeconds": 3600
-  },
-  {
     "id": "htb-kobold",
     "name": "Kobold",
     "ip": "10.10.11.238",
@@ -24412,6 +22371,650 @@ export const INITIAL_MACHINES: Machine[] = [
     "rootPwnedAt": "2026-08-15T15:10:00.000Z",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-meow",
+    "name": "Meow",
+    "ip": "10.129.1.1",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 0",
+      "Telnet",
+      "Default Credentials",
+      "Recon"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#meow",
+    "hint": "Connect to open Telnet port 23 and log in with user 'root' without password.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-fawn",
+    "name": "Fawn",
+    "ip": "10.129.1.2",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 0",
+      "FTP",
+      "Anonymous Login"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#fawn",
+    "hint": "Authenticate via FTP on port 21 as 'anonymous' with blank password and retrieve the flag.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-dancing",
+    "name": "Dancing",
+    "ip": "10.129.1.3",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 0",
+      "SMB",
+      "Share Enumeration",
+      "smbclient"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#dancing",
+    "hint": "Enumerate exposed SMB shares with smbclient -L and connect into the WorkShares directory anonymously.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-redeemer",
+    "name": "Redeemer",
+    "ip": "10.129.1.4",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 0",
+      "Redis",
+      "Database",
+      "Unauthenticated"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#redeemer",
+    "hint": "Connect to Redis port 6379 with redis-cli -h {TARGET_IP}, use INFO to check keys, and query keys *.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-explosion",
+    "name": "Explosion",
+    "ip": "10.129.1.5",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 0",
+      "RDP",
+      "Remote Desktop",
+      "Default Credentials"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#explosion",
+    "hint": "Connect to Windows RDP port 3389 with xfreerdp using Administrator account without password.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-appointment",
+    "name": "Appointment",
+    "ip": "10.129.1.6",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 1",
+      "SQLi",
+      "Web Auth Bypass",
+      "SQL Injection"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#appointment",
+    "hint": "Exploit SQL injection on login username field using admin'# or admin' OR 1=1-- - to bypass password check.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-sequel",
+    "name": "Sequel",
+    "ip": "10.129.1.7",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 1",
+      "MySQL",
+      "MariaDB",
+      "Default Credentials"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#sequel",
+    "hint": "Connect to MySQL on port 3306 as root with no password: mysql -h {TARGET_IP} -u root.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-crocodile",
+    "name": "Crocodile",
+    "ip": "10.129.1.8",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 1",
+      "FTP",
+      "Web",
+      "Admin Panel",
+      "Gobuster"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#crocodile",
+    "hint": "Download user credentials from anonymous FTP, then locate login.php via directory busting to log in as admin.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-included",
+    "name": "Included",
+    "ip": "10.129.1.9",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "foothold",
+    "tags": [
+      "Starting Point",
+      "Tier 1",
+      "TFTP",
+      "LFI",
+      "Local File Inclusion",
+      "Web"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#included",
+    "hint": "Upload a PHP webshell via unauthenticated TFTP on UDP 69, then execute it via LFI on the HTTP web page.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-bike",
+    "name": "Bike",
+    "ip": "10.129.1.10",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "foothold",
+    "tags": [
+      "Starting Point",
+      "Tier 1",
+      "Node.js",
+      "SSTI",
+      "Handlebars",
+      "Web"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#bike",
+    "hint": "Trigger Handlebars SSTI in Node.js web form using constructor prototype pollution payload to execute system commands.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-vaccine",
+    "name": "Vaccine",
+    "ip": "10.129.1.11",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 1",
+      "FTP",
+      "SQLi",
+      "Sudo",
+      "Tar Wildcard"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#vaccine",
+    "hint": "Extract archive via FTP, exploit SQL injection with sqlmap to obtain user hash, and abuse sudo vi to spawn root shell.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-archetype",
+    "name": "Archetype",
+    "ip": "10.129.1.12",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "MSSQL",
+      "xp_cmdshell",
+      "JuicyPotato",
+      "PowerShell"
+    ],
+    "certifications": [
+      "HTB-Starting-Point",
+      "OSCP"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#archetype",
+    "hint": "Find SQL credentials in open SMB share, enable xp_cmdshell via impacket-mssqlclient for revshell, and abuse SeImpersonate with JuicyPotato.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-oopsie",
+    "name": "Oopsie",
+    "ip": "10.129.1.13",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "foothold",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "IDOR",
+      "Web",
+      "SUID",
+      "Privesc"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#oopsie",
+    "hint": "Exploit IDOR on user account ID in admin portal to retrieve super admin cookie, upload PHP shell, and escalate via SUID binary.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-three",
+    "name": "Three",
+    "ip": "10.129.1.14",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "foothold",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "AWS",
+      "S3",
+      "Cloud",
+      "Subdomain"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#three",
+    "hint": "Discover s3.thetoppers.htb subdomain using awscli, upload PHP reverse shell to the writable S3 bucket, and execute via browser.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-markup",
+    "name": "Markup",
+    "ip": "10.129.1.15",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "backlog",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "XXE",
+      "XML",
+      "SSH",
+      "Scheduled Task"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#markup",
+    "hint": "Exploit XXE in the XML order submission to read Daniel's private SSH key (.ssh/id_rsa), then abuse unquoted scheduled task to get SYSTEM.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-guard",
+    "name": "Guard",
+    "ip": "10.129.1.16",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "backlog",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "SSH",
+      "Web",
+      "Hash Cracking",
+      "Sudo"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#guard",
+    "hint": "Extract id_rsa from web backup, crack SSH passphrase with john/ssh2john, and run sudo -l to spot instant root escalation.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-base",
+    "name": "Base",
+    "ip": "10.129.1.17",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "PHP",
+      "Type Juggling",
+      "File Upload"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#base",
+    "hint": "Abuse PHP loose comparison (type juggling) in JSON login endpoint to authenticate as admin, then upload webshell.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-unified",
+    "name": "Unified",
+    "ip": "10.129.1.18",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "foothold",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "Log4j",
+      "CVE-2021-44228",
+      "UniFi",
+      "MongoDB"
+    ],
+    "certifications": [
+      "HTB-Starting-Point",
+      "CPTS"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#unified",
+    "hint": "Exploit Log4Shell (CVE-2021-44228) in UniFi Controller login page using rogue-jndi, then inspect MongoDB on port 27117 to extract admin hash.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-pennyworth",
+    "name": "Pennyworth",
+    "ip": "10.129.1.19",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "completed",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "Jenkins",
+      "Groovy",
+      "RCE",
+      "Default Credentials"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#pennyworth",
+    "hint": "Log into Jenkins on port 8080 with root:password, open Script Console at /script, and execute Groovy reverse shell.",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-funnel",
+    "name": "Funnel",
+    "ip": "10.129.1.20",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "status": "foothold",
+    "tags": [
+      "Starting Point",
+      "Tier 2",
+      "SSH",
+      "Port Forwarding",
+      "PostgreSQL",
+      "Tunneling"
+    ],
+    "certifications": [
+      "HTB-Starting-Point",
+      "CPTS"
+    ],
+    "roomUrl": "https://app.hackthebox.com/starting-point",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#funnel",
+    "hint": "Log into SSH with discovered credentials, establish dynamic SSH port forwarding to access internal PostgreSQL database, and query flags.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-ignition",
+    "name": "Ignition",
+    "ip": "10.129.95.178",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "tags": [
+      "http",
+      "web",
+      "cms",
+      "credentials",
+      "starting-point"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/machines/Ignition",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#ignition",
+    "status": "completed",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-tactics",
+    "name": "Tactics",
+    "ip": "10.129.95.180",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Very Easy",
+    "tags": [
+      "smb",
+      "administrator",
+      "share",
+      "starting-point"
+    ],
+    "certifications": [
+      "HTB-Starting-Point"
+    ],
+    "roomUrl": "https://app.hackthebox.com/machines/Tactics",
+    "writeupUrl": "https://0xdf.gitlab.io/tags#tactics",
+    "status": "completed",
+    "timeSpentSeconds": 3600,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z",
+    "userPwnedAt": "2026-08-20T10:00:00.000Z",
+    "rootPwnedAt": "2026-08-20T11:30:00.000Z",
+    "userFlag": "HTB{user_pwn_verified}",
+    "rootFlag": "HTB{root_pwn_verified}",
+    "timeToUserSeconds": 1500,
+    "timeToRootSeconds": 3600
   }
 ];
-

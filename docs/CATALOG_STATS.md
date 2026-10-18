@@ -6,16 +6,16 @@
 
 | מדד | מספר |
 | --- | --- |
-| סה"כ מכונות ויעדים בודדים בקטלוג | **1090** |
-| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | 1,005 (543 HTB + 462 THM) |
-| מתוכן מעבדות מודרכות ושותפים (VulnLab + THM Guided) | 85 (33 VulnLab + 52 THM) |
+| סה"כ מכונות ויעדים בודדים בקטלוג | **1027** |
+| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **1027** (576 HTB + 451 THM) |
+| מתוכן מעבדות מודרכות ושותפים (Guided Labs) | 0 (הוסרו כליל מהקטלוג) |
 | Hack The Box (HTB) | 576 |
-| מתוכן מפורשות (Retired), כולל Starting Point | 556 |
+| מתוכן מפורשות (Retired) | 556 |
 | מתוכן פעילות (Active), מטא-דאטה בלבד | 20 |
-| TryHackMe (THM) | 514 |
-| מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs) | **10** מעבדות (188 שרתים, 280 דגלים) |
+| TryHackMe (THM) | 451 |
+| מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs) | **10** מעבדות (170 שרתים, 280 דגלים) |
 
-הקטלוג המובנה כולל 1,090 יעדים בודדים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
+הקטלוג המובנה כולל 1,027 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
 
 ## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה
 
@@ -34,24 +34,24 @@
 
 | רמת קושי | HTB מפורשות (Retired) | HTB פעילות (Active) | THM | סה"כ |
 | --- | --- | --- | --- | --- |
-| Very Easy | 22 | 0 | 3 | 25 |
-| Easy | 163 | 6 | 170 | 339 |
-| Medium | 190 | 6 | 245 | 441 |
-| Hard | 117 | 4 | 88 | 209 |
-| Insane | 64 | 4 | 8 | 76 |
-| **סה"כ** | **556** | **20** | **514** | **1090** |
+| Very Easy | 22 | 0 | 1 | 23 |
+| Easy | 163 | 6 | 145 | 314 |
+| Medium | 190 | 6 | 216 | 412 |
+| Hard | 117 | 4 | 83 | 204 |
+| Insane | 64 | 4 | 6 | 74 |
+| **סה"כ** | **556** | **20** | **451** | **1027** |
 
 ## פילוח לפי מערכת הפעלה
 
 | מערכת הפעלה | HTB מפורשות (Retired) | HTB פעילות (Active) | THM | סה"כ |
 | --- | --- | --- | --- | --- |
-| Linux | 382 | 11 | 456 | 849 |
-| Windows | 162 | 9 | 56 | 227 |
+| Linux | 382 | 11 | 414 | 807 |
+| Windows | 162 | 9 | 35 | 206 |
 | BSD | 10 | 0 | 0 | 10 |
 | Other | 1 | 0 | 1 | 2 |
 | Android | 1 | 0 | 0 | 1 |
 | macOS | 0 | 0 | 1 | 1 |
-| **סה"כ** | **556** | **20** | **514** | **1090** |
+| **סה"כ** | **556** | **20** | **451** | **1027** |
 
 ## המכונות הפעילות ב-HTB (20)
 
@@ -86,19 +86,19 @@
 
 | מזהה | שם המסלול | קטגוריה | HTB | THM | סה"כ |
 | --- | --- | --- | --- | --- | --- |
-| `tjnull-oscp` | TJ_Null's OSCP NetSec Preparation | certification | 70 | 41 | **111** |
+| `tjnull-oscp` | TJ_Null's OSCP NetSec Preparation | certification | 70 | 34 | **104** |
 | `osep` | OSEP Evasion & Lateral Movement Preparation | certification | 27 | 0 | **27** |
 | `oswe` | OSWE Web Exploitation & Code Review Preparation | certification | 23 | 0 | **23** |
-| `cpts-path` | Certified Penetration Testing Specialist (CPTS) | certification | 49 | 4 | **53** |
+| `cpts-path` | Certified Penetration Testing Specialist (CPTS) | certification | 49 | 2 | **51** |
 | `cwee-web` | HTB CWEE & CWES Advanced Web Exploitation | certification | 76 | 7 | **83** |
 | `popular-classics` | Community Classics & Hall of Fame | curated | 40 | 13 | **53** |
 | `ippsec-vault` | IppSec Video Walkthrough Masterclass | curated | 447 | 0 | **447** |
-| `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 77 | 29 | **106** |
+| `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 77 | 11 | **88** |
 | `web-master` | Web Exploitation Master Pathway | technique | 56 | 33 | **89** |
 | `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 31 | **39** |
-| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 173 | 83 | **256** |
-| `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 173 | **364** |
-| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 189 | 96 | **285** |
+| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 173 | 62 | **235** |
+| `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 146 | **337** |
+| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 189 | 89 | **278** |
 
 רשימות השמות של המסלולים נשמרות ב-`src/data/trackSources/` (שמות בלבד, עם תאריך ומקור):
 

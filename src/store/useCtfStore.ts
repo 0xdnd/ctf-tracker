@@ -1116,7 +1116,6 @@ export const mergeMachinesWithCatalog = (
   // the full catalog merges, which then matches it or applies the normal drop rule. Dropping it here lost
   // user fields that hasUserProgress doesn't count (ip, tags, writeupUrl, ...), and loadCatalog saved the loss.
   const keepUnmatched = !fullCatalog;
-  const catalogIds = new Set(catalog.map((c) => c.id));
   const map = new Map<string, Machine>();
   const nameMap = new Map<string, Machine>();
   const platformNameMap = new Map<string, Machine>();
@@ -1175,8 +1174,6 @@ export const mergeMachinesWithCatalog = (
 
       // Multi-tier lookup to safeguard against catalog ID, name, or platform drift
       let catalogMachine = map.get(m.id);
-      // Exact catalog id or id-based alias: the stored row IS that catalog machine, so a stale isCustom stamp can go.
-      let matchedByIdentity = Boolean(catalogMachine) && catalogIds.has(m.id);
       // Operator-created machines only ever match by exact id; fuzzy tiers would fold e.g. a custom "Lame" into htb-lame.
       const genuineCustom = isGenuineCustom(m);
 
@@ -1187,7 +1184,6 @@ export const mergeMachinesWithCatalog = (
         const aliasTarget = idAliasTarget || (normName && CATALOG_MACHINE_ALIASES[normName]);
         if (aliasTarget) {
           catalogMachine = map.get(aliasTarget) || nameMap.get(aliasTarget.toLowerCase().trim());
-          matchedByIdentity = Boolean(catalogMachine && idAliasTarget && catalogIds.has(catalogMachine.id));
         }
       }
 
@@ -1209,9 +1205,10 @@ export const mergeMachinesWithCatalog = (
       if (!catalogMachine && !genuineCustom && idSlug) {
         catalogMachine = idSlugMap.get(idSlug);
       }
-      // Drop a stale "custom" stamp only on an identity match of a non-custom row; name-only matches keep legacy behavior.
-      const customFlag = matchedByIdentity && !genuineCustom ? { isCustom: undefined } : {};
+      // Drop a stale "custom" stamp whenever any lookup tier matches a catalog machine on a non-genuine-custom row.
+      const customFlag = catalogMachine && !genuineCustom ? { isCustom: undefined } : {};
       if (catalogMachine) {
+        const isAuthoritativeActive = Boolean(catalogMachine.isActive || isKnownActiveByName(catalogMachine));
         if (userSolvesReset) {
           // User started fresh: respect their current status (unsolved/foothold/completed) and progress without forcing catalog completed status
           const mStatus = m.status || 'backlog';
@@ -1223,6 +1220,7 @@ export const mergeMachinesWithCatalog = (
             ...catalogMachine,
             ...m,
             ...customFlag,
+            isActive: isAuthoritativeActive,
             status: m.status || 'unsolved',
             userFlag: m.userFlag,
             rootFlag: m.rootFlag,
@@ -1257,6 +1255,7 @@ export const mergeMachinesWithCatalog = (
             ...catalogMachine,
             ...m,
             ...customFlag,
+            isActive: isAuthoritativeActive,
             status: userHasProgress ? mStatus : 'backlog',
             userFlag: m.userFlag || '',
             rootFlag: m.rootFlag || '',
@@ -1290,8 +1289,8 @@ export const mergeMachinesWithCatalog = (
 
   // Enforce Hack The Box Terms of Service compliance: Active machines MUST ONLY have name and room link (no spoilers/recon)
   map.forEach((machine) => {
-    if (isKnownActiveByName(machine)) {
-      machine.isActive = true;
+    if (!isGenuineCustom(machine)) {
+      machine.isActive = Boolean(machine.isActive && isKnownActiveByName(machine));
     }
     if (machine.isActive) {
       Object.assign(machine, sanitizeActiveMachine(machine));

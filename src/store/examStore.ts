@@ -81,6 +81,7 @@ export interface ExamSessionState {
   status: ExamStatus;
   startedAt: number | null;
   examExpiresAt: number | null;
+  lastExpiresAt?: number | null;
   totalDurationSeconds: number;
   timerPausedRemainingSeconds: number | null;
   remainingSeconds: number;
@@ -202,6 +203,7 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
     status: 'idle',
     startedAt: null,
     examExpiresAt: null,
+    lastExpiresAt: null,
     totalDurationSeconds: config.durationSeconds,
     timerPausedRemainingSeconds: null,
     remainingSeconds: config.durationSeconds,
@@ -276,6 +278,7 @@ export const useExamStore = create<ExamStore>()(
           status: 'running',
           startedAt: now,
           examExpiresAt: expiresAt,
+          lastExpiresAt: expiresAt,
           totalDurationSeconds: duration,
           timerPausedRemainingSeconds: null,
           remainingSeconds: duration,
@@ -313,6 +316,7 @@ export const useExamStore = create<ExamStore>()(
         set({
           status: 'paused',
           examExpiresAt: null,
+          lastExpiresAt: state.examExpiresAt ?? state.lastExpiresAt ?? null,
           timerPausedRemainingSeconds: remaining,
           remainingSeconds: remaining,
           activeBoxPausedAt: state.activeBoxId ? now : null,
@@ -332,6 +336,7 @@ export const useExamStore = create<ExamStore>()(
         set({
           status: 'running',
           examExpiresAt: expiresAt,
+          lastExpiresAt: expiresAt,
           timerPausedRemainingSeconds: null,
           remainingSeconds: remaining,
           ...resumedRabbitHoleClock(state, now),
@@ -873,6 +878,7 @@ export const useExamStore = create<ExamStore>()(
         status: state.status,
         startedAt: state.startedAt,
         examExpiresAt: state.examExpiresAt,
+        lastExpiresAt: state.lastExpiresAt ?? null,
         totalDurationSeconds: state.totalDurationSeconds,
         timerPausedRemainingSeconds: state.timerPausedRemainingSeconds,
         boxes: state.boxes,
@@ -946,6 +952,7 @@ const EXAM_SNAPSHOT_FIELDS = {
   status: 'string',
   startedAt: 'number?',
   examExpiresAt: 'number?',
+  lastExpiresAt: 'number?',
   totalDurationSeconds: 'number',
   timerPausedRemainingSeconds: 'number?',
   boxes: 'array',

@@ -7,7 +7,7 @@ This ZeroBox is a CTF and penetration-testing practice tracker, unrelated to oth
 ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.
 
 ## Catalog
-Tracks 1,005 CTF machines (plus 85 guided labs).
+Tracks 1,027 CTF machines.
 
 ## App
 - [CTF tracker](https://ctftracker.com/tracker/): Kanban, table and grid board for HTB and THM machines

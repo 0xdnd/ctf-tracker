@@ -51,7 +51,7 @@ export { EXAM_TRACK_CONFIGS } from './src/utils/examComplianceUtils';
 
 const MIN_WORDS = 150;
 // Pure CTF challenge machines (HTB + THM); the rest of the catalog is guided labs. README and llms.txt state the same split.
-const CTF_MACHINE_COUNT = 1005;
+const CTF_MACHINE_COUNT = 1027;
 const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
 function getModel() {

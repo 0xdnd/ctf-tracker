@@ -18,6 +18,7 @@ export default tseslint.config(
       '.agents/**',
       '.kilo/**',
       'docs/**',
+      'scratch/**',
     ],
   },
   js.configs.recommended,

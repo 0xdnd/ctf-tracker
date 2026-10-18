@@ -18,7 +18,7 @@ function body({ machines, guidedLabs, solved, writeups, techniqueHubs }) {
     `<p class="lead">ZeroBox is a free tool for tracking Hack The Box and TryHackMe practice and for rehearsing certification exams. It is made by Daniel Dayan (0xdnd), runs in your browser, works offline and keeps your data on your device.</p>`,
 
     `<h2>What ZeroBox is</h2>`,
-    `<p>ZeroBox is a CTF tracker with Kanban, table and grid boards for ${nf.format(machines)} Hack The Box and TryHackMe machines, plus ${nf.format(guidedLabs)} guided labs. It also has a pentest methodology checklist, cheatsheets and reverse shells that fill in your LHOST and LPORT, an exam simulator for OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE, an Obsidian-style notes viewer, a writeup editor and an evidence vault.</p>`,
+    `<p>ZeroBox is a CTF tracker with Kanban, table and grid boards for ${nf.format(machines)} Hack The Box and TryHackMe machines${guidedLabs > 0 ? `, plus ${nf.format(guidedLabs)} guided labs` : ""}. It also has a pentest methodology checklist, cheatsheets and reverse shells that fill in your LHOST and LPORT, an exam simulator for OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE, an Obsidian-style notes viewer, a writeup editor and an evidence vault.</p>`,
 
     `<h2>Privacy</h2>`,
     `<p>The ZeroBox app has no account, no analytics and no telemetry. Your targets, notes and loot stay in your browser, and the app keeps working offline after your first visit. The public pages on this site, including this one, use cookieless Cloudflare Web Analytics to count page views. The <a href="/privacy/">privacy page</a> has the details.</p>`,

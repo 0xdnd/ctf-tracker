@@ -52,7 +52,18 @@ export function buildActivityCounts(
 ): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const s of sessions) {
-    counts[s.date] = (counts[s.date] || 0) + 1;
+    if (!s || !s.date) continue;
+    let key = s.date;
+    // If the stored session date has a time/ISO component (T/Z/:), compute the operator's
+    // local calendar day at read time without mutating the stored UTC record.
+    // Plain YYYY-MM-DD date strings remain untouched to avoid UTC-midnight rollback.
+    if (s.date.includes('T') || s.date.includes('Z') || s.date.includes(':')) {
+      const parsed = new Date(s.date);
+      if (!Number.isNaN(parsed.getTime())) {
+        key = toLocalDateKey(parsed);
+      }
+    }
+    counts[key] = (counts[key] || 0) + 1;
   }
   for (const m of machines) {
     for (const stamp of [m.rootPwnedAt, m.userPwnedAt]) {

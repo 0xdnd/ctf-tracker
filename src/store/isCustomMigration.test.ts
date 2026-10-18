@@ -361,4 +361,30 @@ describe('(10) active/seasonal sanitization still applies to unstamped rows', ()
     expect(merged[0].quickNotes).toBe('');
     expect(merged[0].hint).toBe('');
   });
+
+  it('a retired catalog machine loses isActive and preserves its notes and hints', () => {
+    // A machine that was previously active (e.g. devhub), but is now retired in catalog
+    const catalog = [box({ id: 'htb-devhub', name: 'DevHub', hint: 'useful hint', isActive: false })];
+    const merged = mergeMachinesWithCatalog(
+      [box({ id: 'htb-devhub', name: 'DevHub', isActive: true, quickNotes: 'operator notes', hint: 'useful hint' })],
+      false,
+      catalog
+    );
+    expect(merged[0].isActive).toBe(false);
+    expect(merged[0].quickNotes).toBe('operator notes');
+    expect(merged[0].hint).toBe('useful hint');
+  });
+
+  it('a real machine matched by name or slug loses isCustom: true and is not treated as custom', () => {
+    const catalog = [box({ id: 'htb-lame', name: 'Lame', platform: 'HTB' })];
+    // Legacy stored machine had a mismatched id or slug match with isCustom: true
+    const merged = mergeMachinesWithCatalog(
+      [box({ id: 'legacy-lame-slug', name: 'Lame', platform: 'HTB', isCustom: true, quickNotes: 'notes' })],
+      false,
+      catalog
+    );
+    const row = merged.find((m) => m.name === 'Lame');
+    expect(row).toBeDefined();
+    expect(row?.isCustom).toBeFalsy();
+  });
 });

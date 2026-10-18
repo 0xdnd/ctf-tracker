@@ -95,32 +95,32 @@ afterEach(() => {
 });
 
 describe('item 2: boot merge against STARTER_MACHINES', () => {
-  // htb-dancing is in the full catalog but not in STARTER_MACHINES; this row has no "progress" per hasUserProgress.
-  const dancing = () =>
-    box('htb-dancing', {
-      name: 'Dancing',
+  // htb-optimum is in the full catalog but not in STARTER_MACHINES; this row has no "progress" per hasUserProgress.
+  const optimum = () =>
+    box('htb-optimum', {
+      name: 'Optimum',
       platform: 'HTB',
       isCustom: undefined,
       status: 'backlog',
       ip: '10.129.77.7',
       tags: ['my-own-tag'],
-      writeupUrl: 'https://notes.example/dancing',
+      writeupUrl: 'https://notes.example/optimum',
     });
 
   it('keeps edits on a not-yet-loaded catalog machine through boot and the full catalog merge', async () => {
-    seedStorage([dancing()]);
+    seedStorage([optimum()]);
     const mod = await boot();
     const s = () => mod.useCtfStore.getState();
     // Boot (STARTER only): the row rides along unchanged, and the persisted blob keeps it too.
-    expect(s().machines.find((m) => m.id === 'htb-dancing')?.ip).toBe('10.129.77.7');
+    expect(s().machines.find((m) => m.id === 'htb-optimum')?.ip).toBe('10.129.77.7');
     mod.useCtfStore.setState({ crtOverlay: true }); // any persisted write
     const blob = JSON.parse(localStorage.getItem(STORE_KEY) as string);
-    expect(blob.state.machines.find((m: Machine) => m.id === 'htb-dancing')?.ip).toBe('10.129.77.7');
+    expect(blob.state.machines.find((m: Machine) => m.id === 'htb-optimum')?.ip).toBe('10.129.77.7');
 
     await s().loadCatalog();
-    const merged = s().machines.find((m) => m.id === 'htb-dancing');
+    const merged = s().machines.find((m) => m.id === 'htb-optimum');
     expect(merged?.ip).toBe('10.129.77.7');
-    expect(merged?.writeupUrl).toBe('https://notes.example/dancing');
+    expect(merged?.writeupUrl).toBe('https://notes.example/optimum');
     expect(merged?.tags).toContain('my-own-tag');
   });
 

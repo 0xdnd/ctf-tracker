@@ -84,6 +84,14 @@ describe('computeStreaks', () => {
     expect(counts['2026-10-07']).toBe(2);
     expect(computeStreaks(counts, at(2026, 10, 7)).current).toBe(1);
   });
+
+  it('localizes sessions with UTC timestamps on read without altering stored date', () => {
+    const parsed = new Date('2026-03-01T23:30:00Z');
+    const localDay = toLocalDateKey(parsed);
+    const counts = buildActivityCounts([{ date: '2026-03-01T23:30:00Z' }], []);
+    expect(counts[localDay]).toBe(1);
+    expect(counts['2026-03-01T23:30:00Z']).toBeUndefined();
+  });
 });
 
 describe('weeklyProgress', () => {

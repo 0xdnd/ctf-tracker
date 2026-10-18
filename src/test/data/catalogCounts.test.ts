@@ -17,7 +17,7 @@ const METADATA_ONLY_RETIRED = INITIAL_MACHINES.filter(
   (m) => m.platform === 'HTB' && m.isActive === false && m.tags.length === 0 && !m.hint && !m.writeupUrl
 ).length;
 
-const PURE_CTF_TOTAL = 1005;
+const PURE_CTF_TOTAL = 1027;
 
 const UI_FILES = [
   'index.html',
@@ -45,7 +45,7 @@ describe('hard-coded catalog counts', () => {
     for (const n of totals) expect(n, file).toBe(PURE_CTF_TOTAL);
   });
 
-  it('every pure CTF challenge literal in README.md equals 1005', () => {
+  it('every pure CTF challenge literal in README.md equals 1027', () => {
     const totals = all(
       read('README.md'),
       /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
@@ -65,14 +65,13 @@ describe('hard-coded catalog counts', () => {
 });
 
 describe('public/llms.txt catalog counts', () => {
-  it('leads with the CTF count and mentions guided labs separately', () => {
+  it('leads with the CTF count and mentions guided labs only when there are any', () => {
     const llms = read('public/llms.txt');
     const nf = new Intl.NumberFormat('en-US');
-    const m = llms.match(/Tracks ([\d,]+) CTF machines \(plus ([\d,]+) guided labs\)/);
+    const m = llms.match(/Tracks ([\d,]+) CTF machines(?: \(plus ([\d,]+) guided labs\))?/);
     expect(m, 'llms.txt catalog line').not.toBeNull();
     expect(m![1]).toBe(nf.format(PURE_CTF_TOTAL));
-    expect(m![2]).toBe(nf.format(TOTAL - PURE_CTF_TOTAL));
-    expect(llms).not.toContain(nf.format(TOTAL));
+    expect(m![2] ?? '0').toBe(nf.format(TOTAL - PURE_CTF_TOTAL));
   });
 });
 
