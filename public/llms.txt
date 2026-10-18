@@ -1,0 +1,26 @@
+# ZeroBox
+
+> ZeroBox is a free, offline-first CTF and OSCP preparation tracker that runs in the browser. It tracks Hack The Box and TryHackMe machines on a Kanban board, ships a pentest methodology checklist, an OSCP cheatsheet with reverse shells, and a 24h OSCP/CPTS exam simulator. All data stays in the user's browser (LocalStorage and IndexedDB); there is no backend. Site: https://ctftracker.com/
+
+ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.
+
+## App
+- [CTF tracker](https://ctftracker.com/tracker/): Kanban, table and grid board for HTB and THM machines
+- [Methodology checklist](https://ctftracker.com/methodology/): eight-phase attack lifecycle with copyable commands
+- [Cheatsheet](https://ctftracker.com/cheatsheets/): commands and a reverse shell generator with LHOST and LPORT filled in
+- [Notes](https://ctftracker.com/notes/): Obsidian-style viewer for the user's own imported or written notes (ships no notes)
+- [Exam simulator](https://ctftracker.com/exam/): timed OSCP, CPTS and CRTO practice
+- [Writeups](https://ctftracker.com/writeup/): Markdown writeup editor
+- [Analytics](https://ctftracker.com/analytics/): skill radar and activity heatmap
+- [Evidence vault](https://ctftracker.com/vault/): credentials, flags and hashes per target
+
+## Static references (readable without the app)
+- [Machines](https://ctftracker.com/machines/): directory of HTB and THM machines by platform, OS and difficulty, with writeups and attack paths for solved machines at /machines/<name>/
+- [Reverse shells](https://ctftracker.com/revshells/): reverse, bind, MSFVenom, HoaxShell and TTY upgrade one-liners grouped by language
+- [Methodology guide](https://ctftracker.com/methodology-guide/): the eight phases, each at /methodology/<phase>/
+- [Cheatsheet library](https://ctftracker.com/cheatsheet-library/): topic pages at /cheatsheets/<topic>/ (recon, web, exploitation, Linux privesc, Active Directory, pivoting, file transfers)
+- [Pentest methodology notes](https://ctftracker.com/pentest-notes/): short general methodology notes with commands, each at /pentest-notes/<topic>/
+
+## Optional
+- [Source code](https://github.com/0xdnd/ctf-tracker): React, Vite and Tailwind, non-commercial license
+- [Sitemap](https://ctftracker.com/sitemap.xml)

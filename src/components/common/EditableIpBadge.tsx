@@ -1,0 +1,263 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Pencil, Check, X, Copy, CheckCheck } from 'lucide-react';
+import { useCtfStore } from '../../store/useCtfStore';
+import { playCyberSound } from '../../utils/helpers';
+
+export interface EditableIpBadgeProps {
+  machineId: string;
+  initialIp: string;
+  size?: 'xs' | 'sm' | 'md';
+  showLabel?: boolean;
+  className?: string;
+  variant?: 'default' | 'hardware';
+  onSaved?: (newIp: string) => void;
+}
+
+export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
+  machineId,
+  initialIp,
+  size = 'xs',
+  showLabel = false,
+  className = '',
+  variant = 'default',
+  onSaved,
+}) => {
+  const updateMachine = useCtfStore((s) => s.updateMachine);
+  const setAssignIpMachineId = useCtfStore((s) => s.setAssignIpMachineId);
+  const soundEnabled = useCtfStore((s) => s.soundEnabled);
+  const [isEditing, setIsEditing] = useState(false);
+  const [ipValue, setIpValue] = useState(initialIp);
+  const [copied, setCopied] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isPlaceholder = !initialIp || initialIp.includes('x');
+
+  useEffect(() => {
+    setIpValue(initialIp);
+  }, [initialIp]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleStartEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setIpValue(initialIp);
+  };
+
+  const handleOpenQuickModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAssignIpMachineId(machineId);
+  };
+
+  const handleCancel = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsEditing(false);
+    setIpValue(initialIp);
+  };
+
+  const handleSave = (e?: React.MouseEvent | React.FormEvent) => {
+    if (e) e.stopPropagation();
+    // Sanitize input: strip accidental http://, https://, or trailing slashes/ports
+    const cleanIp = ipValue
+      .trim()
+      .replace(/^https?:\/\//i, '')
+      .replace(/\/.*$/, '')
+      .trim();
+    if (!cleanIp) {
+      handleCancel();
+      return;
+    }
+
+    updateMachine(machineId, { ip: cleanIp });
+    setIsEditing(false);
+    setJustSaved(true);
+    if (soundEnabled) playCyberSound('click');
+    if (onSaved) onSaved(cleanIp);
+
+    setTimeout(() => {
+      setJustSaved(false);
+    }, 1800);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  };
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!initialIp) return;
+    navigator.clipboard.writeText(initialIp).catch(() => {});
+    setCopied(true);
+    if (soundEnabled) playCyberSound('copy');
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  const sizeClasses = {
+    xs: {
+      text: 'text-[11px]',
+      input: 'text-[11px] py-0.5 px-1.5 w-28',
+      icon: 'w-3 h-3',
+      button: 'p-1',
+    },
+    sm: {
+      text: 'text-xs',
+      input: 'text-xs py-1 px-2 w-32',
+      icon: 'w-3.5 h-3.5',
+      button: 'p-1',
+    },
+    md: {
+      text: 'text-sm',
+      input: 'text-sm py-1 px-2.5 w-36',
+      icon: 'w-4 h-4',
+      button: 'p-1.5',
+    },
+  }[size];
+
+  if (isEditing) {
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`inline-flex items-center gap-1 bg-surface-card border ${variant === 'hardware' ? 'border-accent' : 'border-accent/70'} rounded-[3px] p-0.5 font-mono tabular-nums ${className}`}
+      >
+        {showLabel && <span className="text-[10px] text-muted px-1">IP:</span>}
+        <input
+          ref={inputRef}
+          id={`edit-ip-${machineId}`}
+          name={`edit-ip-${machineId}`}
+          aria-label="Edit machine IP address"
+          type="text"
+          value={ipValue}
+          onChange={(e) => setIpValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onClick={(e) => e.stopPropagation()}
+          className={`bg-surface-card text-primary border ${variant === 'hardware' ? 'border-strong focus:border-accent' : 'border-accent/40'} rounded-[3px] px-1 font-mono font-bold focus:outline-none tabular-nums ${sizeClasses.input}`}
+          placeholder="10.10.x.x"
+        />
+        <button
+          type="button"
+          onClick={handleSave}
+          className={`${sizeClasses.button} rounded-[3px] bg-callout-success-bg text-callout-success-fg hover:bg-callout-success-fg/20 transition-interactive active:scale-[0.97]`}
+          title="Save IP (Enter)"
+        >
+          <Check className={sizeClasses.icon} />
+        </button>
+        <button
+          type="button"
+          onClick={handleCancel}
+          className={`${sizeClasses.button} rounded-[3px] bg-callout-danger-bg text-callout-danger-fg hover:bg-callout-danger-fg/20 transition-interactive active:scale-[0.97]`}
+          title="Cancel (Esc)"
+        >
+          <X className={sizeClasses.icon} />
+        </button>
+      </div>
+    );
+  }
+
+  if (isPlaceholder) {
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`group/ip inline-flex items-center gap-1 font-mono tabular-nums ${sizeClasses.text} ${className}`}
+      >
+        {showLabel && <span className="text-secondary text-[11px]">IP</span>}
+        <div className="inline-flex items-center rounded-[3px] border border-callout-warn-border/60 bg-callout-warn-bg overflow-hidden tabular-nums">
+          <button
+            type="button"
+            onClick={handleOpenQuickModal}
+            aria-label={size === 'xs' ? (initialIp ? `Set IP (${initialIp})` : 'Set dynamic IP') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}
+            className={`min-h-[24px] inline-flex items-center gap-1 ${size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-0.5'} text-callout-warn-fg hover:bg-callout-warn-fg/10 transition-interactive active:scale-[0.97] font-bold tabular-nums`}
+            title="Dynamic spawned IP needed! Click to quickly assign spawned instance IP"
+          >
+            <span className="tabular-nums">{size === 'xs' ? (initialIp || 'Set IP') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleStartEdit}
+            aria-label="Edit IP inline"
+            className={`min-w-[24px] min-h-[24px] inline-flex items-center justify-center ${size === 'xs' ? 'px-1 py-0.5' : 'px-1.5 py-0.5'} text-callout-warn-fg hover:bg-callout-warn-fg/10 border-l border-callout-warn-border/60 transition-interactive active:scale-[0.97]`}
+            title="Edit inline"
+          >
+            <Pencil className={sizeClasses.icon} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className={`group/ip inline-flex items-center gap-1.5 font-mono tabular-nums ${sizeClasses.text} ${className}`}
+    >
+      {showLabel && <span className="text-secondary text-[11px]">IP</span>}
+
+      <div
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] border transition-colors tabular-nums ${
+          justSaved
+            ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
+            : copied
+            ? 'bg-accent/10 border-accent text-accent'
+            : variant === 'hardware'
+            ? 'bg-surface-sunken border-subtle text-secondary hover:border-strong'
+            : 'bg-surface-sunken border-subtle hover:border-strong text-primary'
+        }`}
+      >
+        <span
+          onClick={handleCopy}
+          onDoubleClick={handleStartEdit}
+          className="cursor-pointer font-bold select-all tabular-nums"
+          title="Click to copy IP • Double-click to edit"
+        >
+          {initialIp}
+        </span>
+
+        {/* Copy confirmation or icon */}
+        {copied ? (
+          <CheckCheck className={`${sizeClasses.icon} text-callout-success-fg stroke-[2.5]`} />
+        ) : justSaved ? (
+          <Check className={`${sizeClasses.icon} text-callout-success-fg stroke-[2.5]`} />
+        ) : (
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label="Copy IP"
+            className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 touch:opacity-100 cursor-pointer"
+            title="Copy IP"
+          >
+            <Copy className={sizeClasses.icon} />
+          </button>
+        )}
+
+        {/* Edit Button */}
+        <button
+          type="button"
+          onClick={handleStartEdit}
+          aria-label="Change target IP"
+          className="min-w-[24px] min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary transition-[opacity,color,transform] active:scale-[0.97] ml-0.5 opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 touch:opacity-100 cursor-pointer"
+          title="Change / Update Target IP"
+        >
+          <Pencil className={sizeClasses.icon} />
+        </button>
+      </div>
+
+      {justSaved && (
+        <span className="text-[11px] text-callout-success-fg font-medium tabular-nums">
+          IP saved
+        </span>
+      )}
+    </div>
+  );
+});

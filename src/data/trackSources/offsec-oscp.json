@@ -1,0 +1,8 @@
+{
+  "asOf": "2026-10-12",
+  "source": "https://0xdf.gitlab.io/cheatsheets/offsec",
+  "section": "OSCPv3 (PEN-200 2023+, includes OSCP+): OSCP Like + OSCP Harder",
+  "names": {
+    "HTB": ["Eighteen", "Browsed", "Expressway", "Signed", "Editor", "Outbound", "Voleur", "TombWatcher", "Puppy", "Fluffy", "TheFrizz", "Dog", "Titanic", "Administrator", "LinkVortex", "Certified", "Cicada", "Editorial", "BoardLight", "Mailing", "Usage", "Monitored", "Manager", "CozyHosting", "Builder", "Keeper", "Sau", "Broker", "Intentions", "Aero", "Busqueda", "Escape", "Soccer", "Flight", "UpDown", "Support", "StreamIO", "Timelapse", "Pandora", "Return", "Jeeves", "Intelligence", "Blackfield", "Magic", "Cascade", "Sauna", "ServMon", "Monteverde", "Forest", "Heist", "Networked", "Help", "Access", "Active", "DarkZero", "RustyKey", "EscapeTwo", "Vintage", "Rebound", "Clicker", "Authority", "Cerberus", "Absolute", "Mentor", "Outdated", "Atom", "Cereal", "APT", "Multimaster", "Quick"]
+  }
+}

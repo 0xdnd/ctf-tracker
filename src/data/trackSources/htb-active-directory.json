@@ -1,0 +1,8 @@
+{
+  "asOf": "2026-10-12",
+  "source": "https://github.com/seriotonctf/HackTheBox-AD-Machines",
+  "section": "Hack The Box Active Directory machines that are HTB catalog or active-list rows",
+  "names": {
+    "HTB": ["Scaffold", "TrustFall", "DanglingTree", "DarkZeroReturns", "Ghostlink", "Checkpoint", "PingPong", "Logging", "Garfield", "Pirate", "Overwatch", "Fries", "Eighteen", "NanoCorp", "Hercules", "Signed", "DarkZero", "Mirage", "Voleur", "RustyKey", "TombWatcher", "Certificate", "Fluffy", "Puppy", "Scepter", "Haze", "TheFrizz", "DarkCorp", "EscapeTwo", "Vintage", "Administrator", "Certified", "University", "Cicada", "Infiltrator", "Ghost", "Freelancer", "Mist", "Office", "Analysis", "Manager", "Rebound", "Authority", "Coder", "Escape", "Flight", "Absolute", "Support", "Scrambled", "StreamIO", "Hathor", "Timelapse", "Object", "Acute", "Search", "Return", "Anubis", "Intelligence", "PivotAPI", "APT", "Blackfield", "Cascade", "Multimaster", "Sauna", "Monteverde", "Resolute", "Forest", "Sizzle", "Active", "Reel", "Rabbit", "Mantis", "Breach", "BabyTwo", "Baby", "Delegate", "Sendai", "Phantom", "LustrousTwo", "RetroTwo", "Redelegate", "VulnCicada", "Retro", "Shibuya"]
+  }
+}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ZeroBox redirecting</title>
+    <meta name="robots" content="noindex">
+    <script>
+      var h = window.location.hash;
+      var target = h.indexOf('#/') === 0 ? h.slice(1) : '/tracker/';
+      window.location.replace(target + (h.indexOf('#/') === 0 ? '' : window.location.search));
+    </script>
+  </head>
+  <body style="background-color: #0B0F19; color: #10B981; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+    <p>[ZEROBOX] ROUTING SECURE CHANNEL &middot; REDIRECTING...</p>
+  </body>
+</html>

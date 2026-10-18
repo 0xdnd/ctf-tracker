@@ -1,0 +1,144 @@
+import React from 'react';
+import { Loader2 } from 'lucide-react';
+import { playCyberSound } from '../../utils/helpers';
+import { useCtfStore } from '../../store/useCtfStore';
+
+export type CyberButtonVariant =
+  | 'default'     // Calm tactical slate/zinc surface
+  | 'primary'     // Theme-locked accent CTA (Sky in Obsidian/Monolith, Neon Lime in HTB)
+  | 'secondary'   // Muted surface-card button with subtle border
+  | 'danger'      // Crimson/rose destructive action
+  | 'ghost'       // Borderless transparent button
+  | 'outline'     // Clean 1px border with transparent body
+  | 'hardware';   // Specular etched cyber chip button
+
+export type CyberButtonSize = 'xs' | 'sm' | 'md' | 'lg';
+
+export interface CyberButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: CyberButtonVariant;
+  size?: CyberButtonSize;
+  iconLeft?: React.ReactNode;
+  iconRight?: React.ReactNode;
+  isLoading?: boolean;
+  soundType?: 'click' | 'toggle' | 'root' | 'flag' | 'copy';
+  soundEnabled?: boolean;
+}
+
+export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>(({
+  children,
+  variant = 'default',
+  size = 'md',
+  iconLeft,
+  iconRight,
+  isLoading = false,
+  disabled = false,
+  soundType = 'click',
+  soundEnabled: explicitSound,
+  className = '',
+  onClick,
+  type = 'button',
+  ...props
+}, ref) => {
+  const storeSoundEnabled = useCtfStore((s) => s.soundEnabled);
+  const soundEnabled = explicitSound ?? storeSoundEnabled;
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled || isLoading) return;
+    if (soundEnabled && soundType) {
+      playCyberSound(soundType);
+    }
+    onClick?.(e);
+  };
+
+  // Concentric Radii & Sizing Matrix:
+  // xs: 24px height, 6px radius (rounded-sm)
+  // sm: 28px height, 8px radius (rounded-md)
+  // md: 32px height, 8px radius (rounded-md)
+  // lg: 40px height, 10px radius (rounded-lg)
+  const sizeClasses: Record<CyberButtonSize, string> = {
+    xs: 'h-6 px-2 text-xs gap-1 rounded-sm',
+    sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md',
+    md: 'h-8 px-3 text-[13px] gap-1.5 rounded-md',
+    lg: 'h-10 px-4 text-sm gap-2 rounded-lg',
+  };
+
+  const iconSizes: Record<CyberButtonSize, string> = {
+    xs: 'w-3 h-3',
+    sm: 'w-3.5 h-3.5',
+    md: 'w-3.5 h-3.5',
+    lg: 'w-4 h-4',
+  };
+
+  // Semantic Token Variant Matrix (WCAG AAA in both Dark and Light modes):
+  const variantClasses: Record<CyberButtonVariant, string> = {
+    default:
+      'bg-surface-elevated hover:bg-surface-hover ' +
+      'border border-subtle hover:border-strong ' +
+      'text-primary ' +
+      'shadow-xs dark:shadow-none machined-edge',
+
+    primary:
+      'bg-accent hover:brightness-105 active:brightness-95 ' +
+      'text-on-accent font-medium ' +
+      'border border-accent shadow-xs',
+
+    secondary:
+      'bg-surface-card hover:bg-surface-hover ' +
+      'border border-subtle hover:border-strong ' +
+      'text-primary ' +
+      'shadow-xs',
+
+    danger:
+      'bg-callout-danger-bg hover:brightness-95 active:brightness-90 ' +
+      'border border-callout-danger-border ' +
+      'text-callout-danger-fg font-medium',
+
+    ghost:
+      'bg-transparent hover:bg-surface-hover ' +
+      'border border-transparent ' +
+      'text-secondary hover:text-primary',
+
+    outline:
+      'bg-transparent hover:bg-surface-card ' +
+      'border border-subtle hover:border-strong ' +
+      'text-primary',
+
+    hardware:
+      'bg-surface-sunken hover:bg-surface-hover ' +
+      'border border-subtle hover:border-strong ' +
+      'text-secondary ' +
+      'machined-edge',
+  };
+
+  return (
+    <button
+      ref={ref}
+      type={type}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      onClick={handleClick}
+      className={`inline-flex items-center justify-center font-medium select-none cursor-pointer transition-[background-color,border-color,color,opacity,transform] duration-150 ` +
+        `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base ` +
+        `active:scale-[0.97] ` +
+        `disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed ` +
+        `${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      {...props}
+    >
+      {isLoading ? (
+        <Loader2 className={`${iconSizes[size]} animate-spin flex-shrink-0`} />
+      ) : iconLeft ? (
+        <span className="flex-shrink-0 flex items-center">{iconLeft}</span>
+      ) : null}
+
+      <span className="truncate">{children}</span>
+
+      {!isLoading && iconRight && (
+        <span className="flex-shrink-0 flex items-center">{iconRight}</span>
+      )}
+    </button>
+  );
+});
+
+CyberButton.displayName = 'CyberButton';
+
+export default CyberButton;

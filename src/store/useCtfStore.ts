@@ -1,0 +1,3841 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { StorageValue } from 'zustand/middleware';
+import { 
+  Machine, 
+  PipelineStatus, 
+  CheatsheetCommand, 
+  GlobalVariables, 
+  ActivitySession, 
+  ViewMode, 
+  Platform, 
+  Difficulty, 
+  OperatingSystem,
+  AttackGraphEdge,
+  AttackNodePosition,
+  AttackGraphPersistedState,
+  Credential,
+  CredAttempt,
+  LootItem,
+  NewCredentialInput,
+  CredentialPatch,
+  NewCredAttemptInput,
+  NewLootItemInput,
+  LootItemPatch,
+  MachineTombstone,
+  PortTriageEntry,
+  PortTriageStatus,
+  LabFinding,
+  NewLabFindingInput,
+  LabFindingPatch,
+  TimelineEvent,
+  SolveIndependence,
+  TIMELINE_CAP,
+} from '../types';
+import { FINDING_SEVERITIES } from '../types/findings';
+import { isDueForReview, scheduleNextReview } from '../utils/spacedRepetition';
+import { addMachineTombstone, normalizeMachineTombstones } from '../utils/machineTombstones';
+// Sync merge code is loaded on demand (./syncActions) to keep it out of the entry chunk: types only here.
+import type { ConflictChoice, SyncConflict, SyncMergeSummary } from '../utils/syncMerge';
+import {
+  loadLootState,
+  saveLootState,
+  clearLootState,
+  getLootStorageKey,
+  parseLootPayload,
+  buildCredential,
+  findDuplicateCredential,
+  patchCredential,
+  upsertAttemptInList,
+  buildLootItem,
+  patchLootItem,
+  mergeImportedLoot,
+  redactLootState
+} from './lootPersistence';
+import { STARTER_MACHINES } from '../data/starterMachines';
+import { hasUserProgress, isGenuineCustom, LEGACY_CROSS_PLATFORM_NAME_SLUGS, normalizeMachineSlug } from './machineNormalization';
+import { ACTIVE_MACHINES } from '../data/activeMachines';
+import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
+
+import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
+import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
+import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
+import { 
+  extractDeepWriteups, 
+  stripDeepFieldsFromMachines, 
+  mergeDeepPayloadsIntoMachines, 
+  saveDeepProfileData, 
+  loadDeepProfileData,
+  deleteMachineDeepData,
+  clearDeepProfileData
+} from '../utils/indexedDbDeepStorage';
+import { 
+  exportWorkspaceToJson, 
+  triggerWorkspaceDownload, 
+  validateWorkspacePayload 
+} from '../utils/workspaceStorage';
+import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
+import {
+  SCHEMA_VERSION,
+  SCHEMA_VERSION_STORAGE_KEY,
+  isSchemaWriteGated,
+  isNewerSchemaVersion,
+  engageSchemaWriteGate,
+  onSchemaWriteGateEngaged,
+  initSchemaVersionGate,
+  recordSchemaVersion,
+} from '../utils/schemaWriteGate';
+import {
+  takePreMigrationBackup,
+  whenPreMigrationBackupSettled,
+  initRestoreLockGate,
+  handleRestoreLockStorageEvent,
+  handleRestoreBroadcast,
+  onRestoreLockReleased,
+} from './preMigrationBackup';
+import { SYNC_CHANNEL_NAME, syncChannel } from '../utils/crossTabChannel';
+import { useToastStore } from './useToastStore';
+import { useGoalsStore } from './useGoalsStore';
+import { getExamBackupSnapshot, restoreExamBackupSnapshot } from './examStore';
+import { BACKUP_FORMAT_VERSION } from '../utils/backupChecksum';
+import { toLocalDateKey } from '../utils/analyticsHeatmap';
+import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
+
+export type MergeBackupResult =
+  | {
+      status: 'merged';
+      summary: SyncMergeSummary;
+      /** 'empty': there was no stored data at all, so no snapshot was needed. */
+      snapshot: 'saved' | 'duplicate' | 'empty';
+      legacy: boolean;
+      /** Saves that failed after the merge was applied (the merge itself stands; the next save retries). */
+      warnings: string[];
+    }
+  | { status: 'conflicts'; conflicts: SyncConflict[]; summary: SyncMergeSummary }
+  | { status: 'invalid' }
+  | { status: 'busy' }
+  | { status: 'gated' }
+  | { status: 'snapshot-failed' }
+  | { status: 'failed'; error: string };
+
+export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
+export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
+export type SortDirection = 'asc' | 'desc';
+export type HtbTargetStatus = 'ALL' | 'UNCOMPLETED' | 'FOOTHOLD' | 'COMPLETED';
+
+export interface FilterState {
+  searchQuery: string;
+  selectedPlatform: Platform | 'ALL';
+  selectedDifficulty: Difficulty | 'ALL';
+  selectedCert: 'OSCP' | 'CPTS' | 'CRTO' | 'ALL';
+  selectedOs: 'ALL' | OperatingSystem;
+  selectedCategory: BoxVectorCategory;
+  selectedVulnCategory?: string | 'ALL';
+  excludeActiveDirectory?: boolean;
+  selectedTrack: string | 'ALL';
+  selectedTracks: string[];
+  selectedStatus: HtbTargetStatus;
+  selectedLanguage?: string | 'ALL';
+  selectedAreaOfInterest?: string | 'ALL';
+  selectedTechnique?: string | 'ALL';
+  selectedTags: string[];
+  sortBy: SortOption;
+  sortDirection: SortDirection;
+  hideEmptyLanes: boolean;
+}
+
+export interface BrandTheme {
+  id: string;
+  namePrefix: string;
+  nameSuffix: string;
+  suffixColor: string;
+  tagline: string;
+  badge: string;
+}
+
+export const ZEROBOX_BRAND: BrandTheme = {
+  id: 'zerobox',
+  namePrefix: 'ZERO',
+  nameSuffix: 'BOX',
+  suffixColor: 'cyber-box-glow',
+  tagline: 'Tactical Cyber Operations Suite',
+  badge: 'v2.0',
+};
+
+export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];
+
+export type CoreThemePreset = 'obsidian' | 'monolith' | 'htb';
+export type LegacyThemePreset = 'industrial' | 'neon' | 'zerobox' | 'oled' | 'light';
+export type ThemePreset = 'obsidian' | 'monolith' | 'htb';
+
+
+export function normalizeThemePreset(preset: string | null | undefined): ThemePreset {
+  if (!preset) return 'obsidian';
+  const p = String(preset).toLowerCase().trim();
+  if (p === 'monolith' || p === 'light' || p === 'clean-monolith' || p === 'clean monolith') return 'monolith';
+  if (p === 'htb' || p === 'hackthebox' || p === 'hack-the-box' || p === 'htb-oled' || p === 'hack the box') return 'htb';
+  // Legacy aliases ('oled', 'industrial', 'zerobox', 'neon', 'midnight-blue', 'slate', etc.) map to 'obsidian'
+  return 'obsidian';
+}
+
+export type UiScale = 'auto' | 'tiny' | 'compact' | 'normal' | 'large' | 'huge';
+
+export function applyThemePreset(preset: ThemePreset | string) {
+  const normalizedPreset: ThemePreset = normalizeThemePreset(preset);
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', normalizedPreset);
+
+    // Synchronize browser tab favicon with active theme preset
+    try {
+      const faviconMap: Record<string, string> = {
+        obsidian: `${import.meta.env.BASE_URL}favicon-zerobox.png`,
+        monolith: `${import.meta.env.BASE_URL}favicon-zerobox.png`,
+        htb: `${import.meta.env.BASE_URL}favicon-htb.png`,
+      };
+      const iconPath = faviconMap[normalizedPreset] || `${import.meta.env.BASE_URL}favicon-zerobox.png`;
+      const favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+      favicons.forEach(el => {
+        el.href = iconPath;
+      });
+    } catch {
+      // Ignore in non-browser or mock environments
+    }
+  }
+}
+
+export type ActiveTab = 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme' | 'vault';
+
+interface CtfStoreState {
+  machines: Machine[];
+  activeTargetId: string | null;
+  globalVars: GlobalVariables;
+  cheatsheets: CheatsheetCommand[];
+  activitySessions: ActivitySession[];
+  
+  // UI States
+  appBrand: string;
+  activeTab: ActiveTab;
+  viewMode: ViewMode;
+  selectedMachineId: string | null;
+  writeupMachineId: string | null;
+  reportMachineId: string | null;
+  commandPaletteOpen: boolean;
+  newMachineModalOpen: boolean;
+  backupModalOpen: boolean;
+  reconAutomationModalOpen: boolean;
+  operatorModalOpen: boolean;
+  mobileMenuOpen: boolean;
+  crtOverlay: boolean;
+  soundEnabled: boolean;
+  themePreset: ThemePreset | string;
+  uiScale: UiScale;
+  focusMode: boolean;
+  snippetsDrawerOpen: boolean;
+  revShellModalOpen: boolean;
+  filterDrawerOpen: boolean;
+  unexportedChangesCount: number;
+  
+  // Timer State
+  isTimerRunning: boolean;
+  activeTimerSeconds: number;
+  timerLastTick: number | null;
+  
+  // Filters
+  filters: FilterState;
+
+  // Actions
+  setFocusMode: (open: boolean) => void;
+  toggleFocusMode: () => void;
+  setSnippetsDrawerOpen: (open: boolean) => void;
+  setRevShellModalOpen: (open: boolean) => void;
+  setFilterDrawerOpen: (open: boolean) => void;
+  resetUnexportedChangesCount: () => void;
+  exportWorkspace: () => void | Promise<void>;
+  importWorkspace: (jsonStr: string) => { success: boolean; count?: number; error?: string };
+  setAppBrand: (brandId: string) => void;
+  setActiveTab: (tab: ActiveTab) => void;
+  setViewMode: (mode: ViewMode) => void;
+  setSelectedMachineId: (id: string | null) => void;
+  setWriteupMachineId: (id: string | null) => void;
+  setReportMachineId: (id: string | null) => void;
+  setCommandPaletteOpen: (open: boolean) => void;
+  setNewMachineModalOpen: (open: boolean) => void;
+  setBackupModalOpen: (open: boolean) => void;
+  setReconAutomationModalOpen: (open: boolean) => void;
+  setOperatorModalOpen: (open: boolean) => void;
+  licenseModalOpen: boolean;
+  setLicenseModalOpen: (open: boolean) => void;
+  flexCardModalOpen: boolean;
+  setFlexCardModalOpen: (open: boolean) => void;
+  shortcutsModalOpen: boolean;
+  setShortcutsModalOpen: (open: boolean) => void;
+  settingsModalOpen: boolean;
+  setSettingsModalOpen: (open: boolean) => void;
+  showcaseModalOpen: boolean;
+  setShowcaseModalOpen: (open: boolean) => void;
+  notesImportModalOpen: boolean;
+  setNotesImportModalOpen: (open: boolean) => void;
+  userNotes: CptsNoteEntry[];
+  userWikilinkMap: Record<string, string>;
+  setUserNotes: (notes: CptsNoteEntry[]) => void;
+  setUserWikilinkMap: (map: Record<string, string>) => void;
+  importNotesFromJson: (jsonStr: string) => Promise<{ success: boolean; count: number; error?: string }>;
+  clearUserNotes: () => Promise<void>;
+  loadUserNotesFromDb: () => Promise<void>;
+  setMobileMenuOpen: (open: boolean) => void;
+  assignIpMachineId: string | null;
+  setAssignIpMachineId: (id: string | null) => void;
+  toggleCrtOverlay: () => void;
+  toggleSound: () => void;
+  setThemePreset: (preset: ThemePreset | string) => void;
+  setUiScale: (scale: UiScale) => void;
+  cycleUiScale: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+
+  // Machine Actions
+  updateMachineStatus: (id: string, status: PipelineStatus) => void;
+  batchUpdateMachineStatus: (updates: { machineId: string; status: PipelineStatus }[]) => void;
+  updateMachine: (id: string, updates: Partial<Machine>) => void;
+  addCustomMachine: (machine: Omit<Machine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  deleteMachine: (id: string) => void;
+  toggleUserFlag: (id: string, flagValue?: string) => void;
+  toggleRootFlag: (id: string, flagValue?: string) => void;
+
+  // Per-lab study data (no-ops on active HTB machines; every change stamps the machine's updatedAt)
+  setMachineDomain: (id: string, domain: string) => void;
+  /** Trims, lowercases, de-duplicates and drops empty entries. */
+  setMachineVhosts: (id: string, vhosts: string[]) => void;
+  addMachineVhost: (id: string, vhost: string) => void;
+  removeMachineVhost: (id: string, vhost: string) => void;
+  /** A new entry starts as { status: 'untested' } before the patch is applied. */
+  setPortTriage: (id: string, port: number | string, patch: Partial<PortTriageEntry>) => void;
+  clearPortTriage: (id: string, port: number | string) => void;
+  /** Returns the new finding id, or '' when the machine is unknown or active. Logs a 'finding_added' event. */
+  addFinding: (id: string, input: NewLabFindingInput) => string;
+  updateFinding: (id: string, findingId: string, patch: LabFindingPatch) => void;
+  removeFinding: (id: string, findingId: string) => void;
+  /** Records how independently the lab was solved and (re)schedules its next review. */
+  setSolveIndependence: (id: string, value: SolveIndependence) => void;
+  /** Completes a review: reviewCount + 1 and the next (longer) interval. */
+  markReviewed: (id: string, independence?: SolveIndependence) => void;
+  /** Re-runs mergeMachinesWithCatalog over the current machines (no-op while the schema write gate is engaged). */
+  syncCatalog: () => void;
+
+  // Attack Methodology Checklist Actions
+  setMachineOpenPorts: (machineId: string, ports: number[]) => void;
+  setChecklistItemStatus: (machineId: string, itemId: string, status: import('../types').ChecklistItemStatus) => void;
+  setChecklistItemNotes: (machineId: string, itemId: string, notes: string) => void;
+  setActiveChecklistItem: (machineId: string, itemId: string | null) => void;
+  resetMachineChecklist: (machineId: string) => void;
+
+  // Active Target & Timer Actions
+  setActiveTarget: (id: string | null) => void;
+  startTimer: () => void;
+  pauseTimer: () => void;
+  resetTimer: (machineId?: string) => void;
+  tickTimer: () => void;
+
+  // Variables & Cheatsheet Actions
+  setGlobalVars: (vars: Partial<GlobalVariables>) => void;
+  addCustomCommand: (cmd: Omit<CheatsheetCommand, 'id' | 'isCustom'>) => void;
+  deleteCustomCommand: (id: string) => void;
+  toggleStarCommand: (id: string) => void;
+
+  // Filters Actions
+  setFilters: (filters: Partial<FilterState>) => void;
+  resetFilters: () => void;
+
+  // Custom Notes & Field Manual State
+  customNotes: CptsNoteEntry[];
+  deletedNoteIds: string[];
+  /** Tombstones of hard-deleted machines (sync merge must not resurrect them). Pruned after 180 days. */
+  deletedMachineIds: MachineTombstone[];
+  userSolvesReset: boolean;
+  addCustomNote: (note: Partial<CptsNoteEntry> & { title: string }) => void;
+  updateNoteContent: (noteId: string, rawMarkdown: string) => void | Promise<void>;
+  deleteNote: (noteId: string) => void;
+  restoreDeletedNotes: () => void;
+  resetSolvesToZero: () => void;
+  restoreDanielSolves: () => void;
+
+  // Asynchronous Catalog Hydration
+  isCatalogLoaded: boolean;
+  isCatalogLoading: boolean;
+  loadCatalog: () => Promise<void>;
+  isDeepStorageLoaded: boolean;
+
+  // Data Import & Export & Profile Data Isolation
+  isHydrated: boolean;
+  setIsHydrated: (val: boolean) => void;
+  currentProfileId: string;
+  isEphemeralStorage: boolean;
+  setIsEphemeralStorage: (val: boolean) => void;
+  loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => void;
+  saveProfileData: (profileId?: string) => void;
+  exportBackup: (options?: { redactSecrets?: boolean }) => string;
+  /**
+   * Applies a backup synchronously. A 3.0.0 file that carries a checksum is refused unless `verifiedChecksum`
+   * (computed by store/backupFile.importBackupFile, WebCrypto being async) equals it.
+   */
+  importBackup: (jsonStr: string, options?: { verifiedChecksum?: string }) => boolean;
+  /** Plaintext sync file (full backup + deviceId, syncedAt, syncPeers, tombstones). The UI encrypts it. */
+  exportSyncFile: () => Promise<string>;
+  /** Merges a decrypted backup or sync file into this workspace (see utils/syncMerge). Never replaces. */
+  mergeBackup: (jsonStr: string, resolutions?: Record<string, ConflictChoice>) => Promise<MergeBackupResult>;
+  resetAllProgress: () => void;
+
+  // Attack Graph & Pivot Topology State & Actions
+  graphNodePositions: Record<string, AttackNodePosition>;
+  graphEdges: AttackGraphEdge[];
+  setGraphNodePosition: (id: string, pos: AttackNodePosition) => void;
+  batchSetGraphNodePositions: (positions: Record<string, AttackNodePosition>) => void;
+  resetGraphLayout: () => void;
+  addGraphEdge: (edge: Omit<AttackGraphEdge, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => AttackGraphEdge;
+  updateGraphEdge: (id: string, updates: Partial<AttackGraphEdge>) => void;
+  deleteGraphEdge: (id: string) => void;
+  clearGraphEdges: () => void;
+
+  // Credentials & Loot (per profile; persisted by lootPersistence, not by zustand persist)
+  credentials: Credential[];
+  credAttempts: CredAttempt[];
+  lootItems: LootItem[];
+  /** Returns the new credential's id, or the id of the existing one when the credKey already exists. */
+  addCredential: (input: NewCredentialInput) => string;
+  /** Returns false when the id is unknown or the edit would duplicate another real credential. */
+  updateCredential: (id: string, patch: CredentialPatch) => boolean;
+  deleteCredential: (id: string) => void;
+  upsertCredAttempt: (attempt: NewCredAttemptInput) => string;
+  deleteCredAttempt: (id: string) => void;
+  addLootItem: (input: NewLootItemInput) => string;
+  updateLootItem: (id: string, patch: LootItemPatch) => void;
+  deleteLootItem: (id: string) => void;
+  setLootVerification: (lootId: string, machineId: string, verification: { status: import('../types').LootVerificationStatus; protocol?: string }) => void;
+}
+
+const DEFAULT_GLOBAL_VARS: GlobalVariables = {
+  lhost: '10.10.14.X',
+  lport: '4444',
+  targetIp: '10.10.10.X',
+  interface: 'tun0',
+  domain: '',
+  dcIp: '',
+  user: '',
+  cred: '',
+  wordlist: '',
+  customVars: {
+    DOMAIN: 'corp.local',
+    USER: 'administrator',
+    PASSWORD: 'Password123!',
+  }
+};
+
+const DEFAULT_FILTERS: FilterState = {
+  searchQuery: '',
+  selectedPlatform: 'ALL',
+  selectedDifficulty: 'ALL',
+  selectedCert: 'ALL',
+  selectedOs: 'ALL',
+  selectedCategory: 'ALL',
+  selectedVulnCategory: 'ALL',
+  excludeActiveDirectory: false,
+  selectedTrack: 'ALL',
+  selectedTracks: [],
+  selectedStatus: 'ALL',
+  selectedLanguage: 'ALL',
+  selectedAreaOfInterest: 'ALL',
+  selectedTechnique: 'ALL',
+  selectedTags: [],
+  sortBy: 'default',
+  sortDirection: 'asc',
+  hideEmptyLanes: false,
+};
+
+export const getProfileStorageKey = (profileId: string) => {
+  const id = profileId || 'guest';
+  const modernKey = `zerobox_operator_profile_${id}`;
+  if (typeof window !== 'undefined') {
+    const modernExists = safeLocalStorage.getItem(modernKey);
+    if (modernExists) return modernKey;
+    const legacyKey = `specter_ctf_profile_${id}`;
+    const legacyExists = safeLocalStorage.getItem(legacyKey);
+    if (legacyExists) return legacyKey;
+  }
+  return modernKey;
+};
+
+export const getWriteProfileStorageKey = (profileId: string) => `zerobox_operator_profile_${profileId || 'guest'}`;
+
+export { SYNC_CHANNEL_NAME, syncChannel };
+
+export const broadcastCrossTabMessage = (
+  type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED',
+  payload?: any
+) => {
+  // A gated (outdated/restoring) tab must not push its edits into other tabs, which would persist them.
+  if (isSchemaWriteGated()) return;
+  try {
+    syncChannel?.postMessage({ type, payload, timestamp: Date.now() });
+  } catch {}
+};
+
+const inMemoryFallbackStorage = new Map<string, string>();
+let isStorageEphemeral = false;
+let profileLoadGeneration = 0;
+
+export { SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY } from '../utils/schemaWriteGate';
+export { restorePreMigrationBackup, listPreMigrationBackups } from './preMigrationBackup';
+
+export const STORAGE_FULL_MESSAGE = 'Storage is full — changes are kept in memory only; export a backup.';
+/** Keys whose last write failed; the alert fires once per key until a write to it succeeds again. */
+const failingStorageKeys = new Set<string>();
+
+// Every write below is a no-op while the schema write gate is engaged (newer ZeroBox in another tab, or restore).
+export const safeLocalStorage = {
+  getItem: (name: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    // A value held in memory is newer than the disk copy (its write failed), so it wins.
+    const held = inMemoryFallbackStorage.get(name);
+    if (held !== undefined) return held;
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      isStorageEphemeral = true;
+      return null;
+    }
+  },
+  /** Disk write only: true once it landed (any memory-held copy is dropped). No fallback, no alert. */
+  tryWrite: (name: string, value: string): boolean => {
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
+    try {
+      localStorage.setItem(name, value);
+      inMemoryFallbackStorage.delete(name);
+      failingStorageKeys.delete(name);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  /** Returns false when the value could only be kept in memory (quota or storage error); the user is alerted. */
+  setItem: (name: string, value: string): boolean => {
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
+    try {
+      localStorage.setItem(name, value);
+      inMemoryFallbackStorage.delete(name);
+      failingStorageKeys.delete(name);
+      return true;
+    } catch (e: any) {
+      isStorageEphemeral = true;
+      inMemoryFallbackStorage.set(name, value);
+      if (failingStorageKeys.has(name)) return false;
+      failingStorageKeys.add(name);
+      const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.number === -2147024882;
+      try {
+        window.dispatchEvent(
+          new CustomEvent('zerobox:storage', {
+            detail: isQuota
+              ? { kind: 'quota', message: STORAGE_FULL_MESSAGE, sticky: true }
+              : { kind: 'error', message: `Could not save to browser storage (${String(e?.message || e)}). Changes are kept in memory only; export a backup.`, sticky: true },
+          })
+        );
+      } catch {}
+      return false;
+    }
+  },
+  removeItem: (name: string): void => {
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
+    inMemoryFallbackStorage.delete(name);
+    failingStorageKeys.delete(name);
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      isStorageEphemeral = true;
+    }
+  },
+  isEphemeral: (): boolean => {
+    if (isStorageEphemeral) return true;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return false;
+    try {
+      const test = '__zb_storage_test__';
+      localStorage.setItem(test, '1');
+      localStorage.removeItem(test);
+      return false;
+    } catch {
+      isStorageEphemeral = true;
+      return true;
+    }
+  }
+};
+
+const profileSaveStamps = new Map<string, { content: string; savedAt: string }>();
+
+/**
+ * Writes a profile payload to its key. On quota it retries without writeup/quick-note bodies (those also live in
+ * IndexedDB deep storage); if that fails too the full payload is held in memory (and the user alerted) and this
+ * returns false so callers don't treat it as saved. The legacy specter_ctf_profile_* mirror is still read
+ * (getProfileStorageKey fallback, backups), so it is kept in step, best effort: a mirror that can't be replaced is
+ * removed rather than left stale.
+ */
+function writeProfilePayload(
+  profileId: string,
+  payload: { machines: Machine[] } & Record<string, unknown>
+): { saved: boolean; savedAt: string } {
+  const key = getWriteProfileStorageKey(profileId);
+  const content = JSON.stringify(payload);
+  // savedAt only moves when the content does, so re-saving unchanged data writes byte-identical copies.
+  const prev = profileSaveStamps.get(key);
+  const savedAt = prev && prev.content === content ? prev.savedAt : new Date().toISOString();
+  profileSaveStamps.set(key, { content, savedAt });
+  const serialized = `${content.slice(0, -1)},"savedAt":${JSON.stringify(savedAt)}}`;
+  let written = serialized;
+  if (!safeLocalStorage.tryWrite(key, serialized)) {
+    const lean = JSON.stringify({ ...payload, machines: stripDeepFieldsFromMachines(payload.machines), savedAt });
+    if (!safeLocalStorage.tryWrite(key, lean)) {
+      safeLocalStorage.setItem(key, serialized);
+      return { saved: false, savedAt };
+    }
+    console.warn('[ZeroBox] LocalStorage quota reached: saved the profile without writeup bodies (kept in IndexedDB).');
+    written = lean;
+  }
+  const mirror = `specter_ctf_profile_${profileId || 'guest'}`;
+  if (!safeLocalStorage.tryWrite(mirror, written)) safeLocalStorage.removeItem(mirror);
+  return { saved: true, savedAt };
+}
+
+export const ATTACK_GRAPH_STORAGE_KEY = 'zerobox-attack-graph-state';
+
+/** Each profile's own graph key. The guest profile's key is the original unscoped one. */
+export const getAttackGraphStorageKey = (profileId: string = 'guest'): string => {
+  const id = profileId || 'guest';
+  return id === 'guest' ? ATTACK_GRAPH_STORAGE_KEY : `zerobox_graph_state_${id}`;
+};
+
+/** Set once the one-time legacy graph claim (claimLegacyAttackGraphOnce) has run; it never runs again. */
+export const GRAPH_LEGACY_CLAIMED_KEY = 'zerobox_graph_legacy_claimed';
+/** Set when the guest profile saves its graph under this build: from then on the unscoped key is guest's own data. */
+export const GRAPH_GUEST_WRITTEN_KEY = 'zerobox_graph_guest_written_v2';
+
+/**
+ * Older builds wrote every profile's graph to the unscoped key as well, and read it when a profile key was missing.
+ * Once, globally: hand that graph to the profile the persisted store blob was last on (the profile that wrote it
+ * last), if that profile has no graph key of its own and guest hasn't saved to the unscoped key under this build.
+ * Every other profile, and every later boot, ignores the unscoped key; it stays guest's key.
+ */
+function claimLegacyAttackGraphOnce(): string | null {
+  // Runs after hydration, so a newer-schema blob or a restore has engaged the write gate first (then: next boot).
+  if (typeof window === 'undefined' || isSchemaWriteGated() || safeLocalStorage.getItem(GRAPH_LEGACY_CLAIMED_KEY)) {
+    return null;
+  }
+  let claimedFor: string | null = null;
+  try {
+    const legacy = safeLocalStorage.getItem(ATTACK_GRAPH_STORAGE_KEY);
+    let blobProfileId: unknown = null;
+    try {
+      blobProfileId = JSON.parse(safeLocalStorage.getItem('zerobox-tactical-store') || 'null')?.state?.currentProfileId;
+    } catch {}
+    if (
+      legacy &&
+      typeof blobProfileId === 'string' &&
+      blobProfileId &&
+      blobProfileId !== 'guest' &&
+      !safeLocalStorage.getItem(GRAPH_GUEST_WRITTEN_KEY) &&
+      !safeLocalStorage.getItem(getAttackGraphStorageKey(blobProfileId))
+    ) {
+      if (safeLocalStorage.setItem(getAttackGraphStorageKey(blobProfileId), legacy)) claimedFor = blobProfileId;
+    }
+  } finally {
+    safeLocalStorage.setItem(GRAPH_LEGACY_CLAIMED_KEY, '1');
+  }
+  return claimedFor;
+}
+
+export function loadInitialAttackGraphState(profileId: string = 'guest'): AttackGraphPersistedState {
+  if (typeof window === 'undefined') {
+    return { graphNodePositions: {}, graphEdges: [] };
+  }
+  try {
+    const raw = safeLocalStorage.getItem(getAttackGraphStorageKey(profileId));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const positions = parsed.graphNodePositions !== undefined ? parsed.graphNodePositions : (parsed.nodePositions || {});
+      const edges = Array.isArray(parsed.graphEdges)
+        ? parsed.graphEdges
+        : Array.isArray(parsed.edges)
+        ? parsed.edges
+        : [];
+      return {
+        graphNodePositions: positions,
+        graphEdges: edges,
+      };
+    }
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to parse attack graph state from storage:', err);
+  }
+  return { graphNodePositions: {}, graphEdges: [] };
+}
+
+export function saveAttackGraphState(
+  positions: Record<string, AttackNodePosition>,
+  edges: AttackGraphEdge[],
+  profileId: string = 'guest'
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload = {
+      graphNodePositions: positions,
+      graphEdges: edges,
+      nodePositions: positions,
+      edges,
+    };
+    // Only this profile's key: writing the shared unscoped key too let one profile's graph leak into others.
+    const id = profileId || 'guest';
+    if (id === 'guest' && !safeLocalStorage.getItem(GRAPH_LEGACY_CLAIMED_KEY)) {
+      safeLocalStorage.setItem(GRAPH_GUEST_WRITTEN_KEY, '1');
+    }
+    safeLocalStorage.setItem(getAttackGraphStorageKey(id), JSON.stringify(payload));
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to save attack graph state to storage:', err);
+  }
+}
+
+export const getInitialProfileId = (): string => {
+  if (typeof window !== 'undefined') {
+    try {
+      const auth = safeLocalStorage.getItem('rootvector_auth_session');
+      if (auth) {
+        const parsed = JSON.parse(auth);
+        if (parsed.state?.user?.id) {
+          return parsed.state.user.id;
+        }
+      }
+    } catch {}
+  }
+  return 'guest';
+};
+
+export const CUSTOM_MACHINES_STORAGE_KEY = 'zerobox_custom_machines_v1';
+
+export const getCustomMachinesStorageKey = (profileId: string = 'guest'): string => {
+  return `${CUSTOM_MACHINES_STORAGE_KEY}_${profileId}`;
+};
+
+export const loadCustomMachinesFromStorage = (profileId: string = 'guest'): Machine[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const specificKey = getCustomMachinesStorageKey(profileId);
+    const rawSpecific = safeLocalStorage.getItem(specificKey);
+    if (rawSpecific) {
+      const parsed = JSON.parse(rawSpecific);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    // Global fallback
+    const rawGlobal = safeLocalStorage.getItem(CUSTOM_MACHINES_STORAGE_KEY);
+    if (rawGlobal) {
+      const parsed = JSON.parse(rawGlobal);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to load custom machines from storage:', err);
+  }
+  return [];
+};
+
+export const saveCustomMachinesToStorage = (machines: Machine[], profileId: string = 'guest'): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const customOnly = machines.filter(
+      (m) => m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))
+    );
+    const serialized = JSON.stringify(customOnly);
+    safeLocalStorage.setItem(getCustomMachinesStorageKey(profileId), serialized);
+    safeLocalStorage.setItem(CUSTOM_MACHINES_STORAGE_KEY, serialized);
+  } catch (err) {
+    console.warn('[ZeroBox] Failed to save custom machines to storage:', err);
+  }
+};
+
+/**
+ * One-time cleanup of the isolated custom-machine keys: older builds stamped catalog machines with progress as
+ * `isCustom` and mirrored their full (heavy) catalog payload here. Only rows that are now present in `machines` as
+ * normal catalog rows are candidates. `beforeWrite` (a profile flush) runs first, and the prune aborts (returns -1,
+ * nothing written) unless the profile key actually on disk (raw localStorage, not the in-memory quota fallback)
+ * contains every row about to be removed. Genuine customs are never touched.
+ */
+export const pruneMisstampedCustomMachines = (
+  machines: Machine[],
+  profileId: string = 'guest',
+  beforeWrite?: () => void
+): number => {
+  if (typeof window === 'undefined' || !Array.isArray(machines) || isSchemaWriteGated()) return -1;
+  const normalizedCatalogIds = new Set(
+    machines.filter((m) => m && !m.isCustom && !isGenuineCustom(m)).map((m) => m.id)
+  );
+  const plans: { key: string; kept: Machine[]; removedIds: string[] }[] = [];
+  for (const key of [getCustomMachinesStorageKey(profileId), CUSTOM_MACHINES_STORAGE_KEY]) {
+    try {
+      const raw = safeLocalStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) continue;
+      const isStale = (m: Machine) =>
+        Boolean(m && typeof m.id === 'string' && !isGenuineCustom(m) && normalizedCatalogIds.has(m.id));
+      const removedIds = parsed.filter(isStale).map((m: Machine) => m.id);
+      if (removedIds.length > 0) plans.push({ key, kept: parsed.filter((m: Machine) => !isStale(m)), removedIds });
+    } catch (err) {
+      console.warn('[ZeroBox] Failed to read custom machines for pruning:', err);
+    }
+  }
+  if (plans.length === 0) return 0;
+
+  beforeWrite?.();
+  // Verify the replacement copy really reached disk before deleting anything.
+  let onDisk: Set<string>;
+  try {
+    if (safeLocalStorage.isEphemeral()) return -1;
+    const raw = localStorage.getItem(getWriteProfileStorageKey(profileId));
+    const parsed = raw ? JSON.parse(raw) : null;
+    onDisk = new Set(
+      (Array.isArray(parsed?.machines) ? parsed.machines : [])
+        .filter((m: Machine) => m && typeof m.id === 'string')
+        .map((m: Machine) => m.id)
+    );
+  } catch {
+    return -1;
+  }
+  if (!plans.every((p) => p.removedIds.every((id) => onDisk.has(id)))) {
+    console.warn('[ZeroBox] Profile save not confirmed on disk; keeping isolated custom copies.');
+    return -1;
+  }
+
+  let removed = 0;
+  for (const p of plans) {
+    try {
+      localStorage.setItem(p.key, JSON.stringify(p.kept));
+      removed += p.removedIds.length;
+    } catch (err) {
+      console.warn('[ZeroBox] Failed to prune mis-stamped custom machines:', err);
+    }
+  }
+  return removed;
+};
+
+export const loadInitialProfileData = (profileId: string) => {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = safeLocalStorage.getItem(getProfileStorageKey(profileId));
+      let state = raw ? JSON.parse(raw) : null;
+      if (state && (typeof state !== 'object' || Array.isArray(state))) {
+        state = null;
+      }
+      if (!state) {
+        const legacy = safeLocalStorage.getItem('specter_ctf_store_v2');
+        if (legacy) {
+          try {
+            const parsed = JSON.parse(legacy);
+            const candidate = parsed && typeof parsed === 'object' ? (parsed.state || parsed) : null;
+            if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+              state = candidate;
+            }
+          } catch {}
+        }
+      }
+
+      if (!state && profileId === 'usr_daniel') {
+        state = { machines: DEMO_SOLVED_ROSTER, userSolvesReset: false };
+      }
+
+      // Re-integrate any isolated custom machines in case of partial reset or fresh profile
+      const storedCustom = loadCustomMachinesFromStorage(profileId);
+      if (Array.isArray(storedCustom) && storedCustom.length > 0) {
+        const validCustom = storedCustom.filter((m): m is Machine => m !== null && typeof m === 'object' && typeof m.id === 'string');
+        if (!state) {
+          state = { machines: validCustom };
+        } else {
+          const rawExisting = Array.isArray(state.machines) ? state.machines : [];
+          const validExisting = rawExisting.filter((m: Machine) => m !== null && typeof m === 'object' && typeof m.id === 'string');
+          const existingIds = new Set(validExisting.map((m: Machine) => m.id));
+          const missingCustom = validCustom.filter((m) => !existingIds.has(m.id));
+          state.machines = [...missingCustom, ...validExisting];
+        }
+      }
+
+      return state;
+    } catch {}
+  }
+  return null;
+};
+
+export { normalizeMachineSlug };
+
+/** Normalized slugs of the currently active HTB machines, derived from src/data/activeMachines.json. */
+export const KNOWN_ACTIVE_SEASONAL_NAMES = new Set(
+  ACTIVE_MACHINES.machines.map((m) => normalizeMachineSlug(m.name))
+);
+
+/**
+ * Name-based active detection. Never applies to the operator's own custom targets (custom- id or
+ * platform Custom): a custom "Management" is their data, not the HTB machine, and must keep its notes.
+ * Customs are only sanitized when explicitly marked isActive. Only HTB rows can match (a THM room
+ * called "Stream" is not the HTB machine); names compare by slug so "Dark Zero Returns" matches.
+ */
+const isKnownActiveByName = (m: Pick<Machine, 'id' | 'name' | 'platform'>): boolean =>
+  m.platform === 'HTB' && !isGenuineCustom(m) && KNOWN_ACTIVE_SEASONAL_NAMES.has(normalizeMachineSlug(m.name));
+
+export const CATALOG_MACHINE_ALIASES: Record<string, string> = {
+  // Legacy or alternate IDs mapped to canonical catalog machine IDs
+  'devel-box': 'htb-devel',
+  'devel': 'htb-devel',
+  'lame-box': 'htb-lame',
+  'lame': 'htb-lame',
+  'blue-box': 'htb-blue',
+  'legacy-box': 'htb-legacy',
+  'legacy': 'htb-legacy',
+  'netmon-box': 'htb-netmon',
+  'optimum-box': 'htb-optimum',
+  'bashed-box': 'htb-bashed',
+  'nibbles-box': 'htb-nibbles',
+  'jerry-box': 'htb-jerry',
+  'shocker-box': 'htb-shocker',
+  'sau-box': 'htb-sau',
+};
+
+export const toLeanMachines = (machines: Machine[]): Machine[] => {
+  if (!Array.isArray(machines)) return [];
+  return machines
+    .filter((m): m is Machine => m !== null && typeof m === 'object' && typeof m.id === 'string')
+    .map((m) => {
+      // Preserve custom user-added machines completely (including user-entered hints, walkthroughs, etc.)
+      if (m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))) {
+        return { ...m, isCustom: true };
+      }
+      // For static catalog machines, strip heavy static content that is deterministically rehydrated by mergeMachinesWithCatalog
+      const { officialWalkthrough, officialSynopsis, officialPdf, ...userFields } = m;
+      return userFields as Machine;
+    });
+};
+
+/** Timer flush: writes timeSpentSeconds and stamps updatedAt, but only when the value really changes. */
+export function withTimeSpent(m: Machine, seconds: number, now: string = new Date().toISOString()): Machine {
+  if (m.timeSpentSeconds === seconds) return m;
+  return { ...m, timeSpentSeconds: seconds, updatedAt: now };
+}
+
+/** While the timer runs, the shown seconds are folded into the active machine (and saved) at least this often. */
+export const TIMER_CHECKPOINT_SECONDS = 60;
+
+type TimerSlice = Pick<CtfStoreState, 'machines' | 'activeTargetId' | 'activeTimerSeconds'>;
+
+/**
+ * Folds the timer's seconds into the active machine (stamping updatedAt); returns the same array when nothing
+ * would change. Never lowers the saved time: only resetTimer and an explicit time edit may do that.
+ */
+function foldActiveTimer(state: TimerSlice, seconds: number = state.activeTimerSeconds): Machine[] {
+  if (!state.activeTargetId || seconds <= 0) return state.machines;
+  const active = state.machines.find((m) => m.id === state.activeTargetId);
+  if (!active || seconds <= (active.timeSpentSeconds || 0)) return state.machines;
+  return state.machines.map((m) => (m === active ? withTimeSpent(m, seconds) : m));
+}
+
+/** Write-time overlay of the live timer (no updatedAt stamp, never lowers), for saves and exports. */
+function overlayActiveTimer(state: TimerSlice): Machine[] {
+  const seconds = state.activeTimerSeconds;
+  if (!state.activeTargetId || seconds <= 0) return state.machines;
+  return state.machines.map((m) =>
+    m.id === state.activeTargetId && seconds > (m.timeSpentSeconds || 0) ? { ...m, timeSpentSeconds: seconds } : m
+  );
+}
+
+/** The paused timer shows the active machine's saved time (timer fields are transient and never persisted). */
+export function timerSecondsFor(machines: Machine[], activeTargetId: string | null | undefined): number {
+  if (!activeTargetId) return 0;
+  return machines.find((m) => m.id === activeTargetId)?.timeSpentSeconds || 0;
+}
+
+export function sanitizeActiveMachine(m: Machine): Machine {
+  if (!m.isActive) return m;
+  return {
+    ...m,
+    ip: '',
+    tags: [],
+    writeupUrl: '',
+    hint: '',
+    officialWalkthrough: '',
+    officialSynopsis: '',
+    officialPdf: '',
+    userFlag: '',
+    rootFlag: '',
+    userPwnedAt: undefined,
+    rootPwnedAt: undefined,
+    openPorts: [],
+    services: [],
+    scanSummary: '',
+    rawScanOutput: '',
+    quickNotes: '',
+    writeupMarkdown: '',
+    skillsLearned: [],
+    checklist: undefined,
+    // Per-lab study data is recon/progress too: never kept on an active machine.
+    domain: undefined,
+    vhosts: undefined,
+    portTriage: undefined,
+    findings: undefined,
+    timeline: undefined,
+    solveIndependence: undefined,
+    nextReviewAt: undefined,
+    reviewCount: undefined,
+  };
+}
+
+const newLabId = (prefix: string): string =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+type TimelineEventInput = Omit<TimelineEvent, 'id' | 'at'> & Partial<Pick<TimelineEvent, 'id' | 'at'>>;
+
+/**
+ * The single place a timeline event is added: appends, drops the oldest beyond TIMELINE_CAP, and stamps updatedAt
+ * (at the event time) so a cross-tab merge sees the change. Active machines never keep a timeline.
+ */
+export function appendTimeline(m: Machine, event: TimelineEventInput): Machine {
+  if (m.isActive) return m;
+  const at = typeof event.at === 'number' && Number.isFinite(event.at) ? event.at : Date.now();
+  const full: TimelineEvent = {
+    id: event.id || newLabId('evt'),
+    at,
+    kind: event.kind,
+    label: event.label,
+    ...(event.meta ? { meta: event.meta } : {}),
+  };
+  const next = [...(Array.isArray(m.timeline) ? m.timeline : []), full];
+  return {
+    ...m,
+    timeline: next.length > TIMELINE_CAP ? next.slice(next.length - TIMELINE_CAP) : next,
+    updatedAt: new Date(at).toISOString(),
+  };
+}
+
+/** Logs status / user-pwn / root-pwn changes between two versions of a machine (used by the status and flag actions). */
+function logProgressTimeline(prev: Machine, next: Machine): Machine {
+  if (next.isActive) return next;
+  const parsed = Date.parse(next.updatedAt);
+  const at = Number.isFinite(parsed) ? parsed : Date.now();
+  let out = next;
+  if (prev.status !== next.status) {
+    const from = String(prev.status || 'backlog');
+    const to = String(next.status);
+    out = appendTimeline(out, { kind: 'status_change', label: `Status: ${from} -> ${to}`, meta: { from, to }, at });
+  }
+  if (!prev.userPwnedAt && next.userPwnedAt) out = appendTimeline(out, { kind: 'user_pwned', label: 'User flag captured', at });
+  if (!prev.rootPwnedAt && next.rootPwnedAt) out = appendTimeline(out, { kind: 'root_pwned', label: 'Root flag captured', at });
+  return out;
+}
+
+/**
+ * Applies `fn` to one non-active machine and stamps updatedAt. Returns the same array when nothing changed
+ * (unknown/active id, or `fn` returned the machine unchanged).
+ */
+function patchLabMachine(
+  machines: Machine[],
+  id: string,
+  fn: (m: Machine, nowMs: number) => Machine
+): Machine[] {
+  const nowMs = Date.now();
+  let changed = false;
+  const out = machines.map((m) => {
+    if (m.id !== id || m.isActive) return m;
+    const next = fn(m, nowMs);
+    if (next === m) return m;
+    changed = true;
+    return { ...next, updatedAt: new Date(nowMs).toISOString() };
+  });
+  return changed ? out : machines;
+}
+
+const MAX_VHOSTS = 100;
+const MAX_FINDINGS = 500;
+const PORT_TRIAGE_STATUSES: readonly PortTriageStatus[] = ['untested', 'checking', 'key_vector', 'dead_end'];
+const SOLVE_INDEPENDENCE_VALUES: readonly SolveIndependence[] = ['solo', 'nudged', 'assisted'];
+
+const normalizeVhosts = (list: unknown): string[] => {
+  if (!Array.isArray(list)) return [];
+  const out: string[] = [];
+  for (const v of list) {
+    if (typeof v !== 'string') continue;
+    const host = v.trim().toLowerCase();
+    if (host && !out.includes(host)) out.push(host);
+    if (out.length >= MAX_VHOSTS) break;
+  }
+  return out;
+};
+
+const sameList = (a: string[] | undefined, b: string[]): boolean =>
+  (a || []).length === b.length && b.every((v, i) => (a || [])[i] === v);
+
+const cleanSeverity = (v: unknown): LabFinding['severity'] =>
+  (FINDING_SEVERITIES as readonly string[]).includes(v as string) ? (v as LabFinding['severity']) : 'info';
+
+const cleanCvss = (v: unknown): number | undefined =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(10, Math.max(0, Math.round(v * 10) / 10)) : undefined;
+
+/** Normalizes the editable finding fields (title fallback, known severity, CVSS clamped to 0-10). */
+function cleanFindingFields(input: LabFindingPatch, base?: LabFinding): Omit<LabFinding, 'id' | 'createdAt' | 'updatedAt'> {
+  const merged = { ...(base || {}), ...input } as Partial<LabFinding>;
+  const title = typeof merged.title === 'string' && merged.title.trim() ? merged.title.trim() : 'Untitled finding';
+  const out: Omit<LabFinding, 'id' | 'createdAt' | 'updatedAt'> = { title, severity: cleanSeverity(merged.severity) };
+  const score = cleanCvss(merged.cvssScore);
+  if (score !== undefined) out.cvssScore = score;
+  for (const k of ['cweCve', 'affectedService', 'repro', 'remediation'] as const) {
+    const v = merged[k];
+    if (typeof v === 'string' && v.trim()) out[k] = v;
+  }
+  return out;
+}
+
+/** Sets the independence rating, schedules the next review and logs it. `reviewCount` is the count to schedule with. */
+function scheduleReview(m: Machine, value: SolveIndependence, reviewCount: number, nowMs: number): Machine {
+  const nextReviewAt = scheduleNextReview(value, reviewCount, nowMs);
+  const nextIso = new Date(nextReviewAt).toISOString();
+  return appendTimeline(
+    { ...m, solveIndependence: value, reviewCount, nextReviewAt },
+    {
+      kind: 'review_scheduled',
+      label: `Review scheduled (${value}) for ${nextIso.slice(0, 10)}`,
+      meta: { independence: value, reviewCount: String(reviewCount), nextReviewAt: nextIso },
+      at: nowMs,
+    }
+  );
+}
+
+export const mergeMachinesWithCatalog = (
+  storedMachines?: Machine[],
+  userSolvesReset: boolean = false,
+  catalogSource?: Machine[]
+): Machine[] => {
+  const fullCatalog = catalogSource || getLoadedMachinesCatalog();
+  const catalog = fullCatalog || STARTER_MACHINES;
+  // Against the boot STARTER list an unmatched row may still be a real catalog machine: keep it as stored until
+  // the full catalog merges, which then matches it or applies the normal drop rule. Dropping it here lost
+  // user fields that hasUserProgress doesn't count (ip, tags, writeupUrl, ...), and loadCatalog saved the loss.
+  const keepUnmatched = !fullCatalog;
+  const catalogIds = new Set(catalog.map((c) => c.id));
+  const map = new Map<string, Machine>();
+  const nameMap = new Map<string, Machine>();
+  const platformNameMap = new Map<string, Machine>();
+  const platformSlugMap = new Map<string, Machine>();
+  const slugMap = new Map<string, Machine>();
+  const idSlugMap = new Map<string, Machine>();
+
+  catalog.forEach((m) => {
+    const entry = userSolvesReset
+      ? {
+          ...m,
+          status: 'backlog' as const,
+          userFlag: undefined,
+          rootFlag: undefined,
+          userPwnedAt: undefined,
+          rootPwnedAt: undefined,
+          timeSpentSeconds: 0,
+          timeToUserSeconds: undefined,
+          timeToRootSeconds: undefined,
+        }
+      : m;
+
+    map.set(m.id, entry);
+    const normName = m.name.toLowerCase().trim();
+    const nameSlug = normalizeMachineSlug(m.name);
+    const idSlug = normalizeMachineSlug(m.id);
+
+    if (m.platform) {
+      platformNameMap.set(`${m.platform}:${normName}`, entry);
+      if (nameSlug) platformSlugMap.set(`${m.platform}:${nameSlug}`, entry);
+    }
+    // Platform-less name tiers. Pairs that predate the 2024-26 retired HTB rows keep the original
+    // order rules (name: last wins, slug: first wins). For newer pairs an HTB row never displaces another
+    // platform's row, so a legacy row without a platform keeps resolving to THM "Retro", not HTB "Retro".
+    const legacyPair = LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(nameSlug);
+    const prevByName = nameMap.get(normName);
+    if (legacyPair || !prevByName || m.platform !== 'HTB' || prevByName.platform === 'HTB') {
+      nameMap.set(normName, entry);
+    }
+    const prevBySlug = nameSlug ? slugMap.get(nameSlug) : undefined;
+    if (nameSlug && (!prevBySlug || (!legacyPair && prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))) {
+      slugMap.set(nameSlug, entry);
+    }
+    if (idSlug && !idSlugMap.has(idSlug)) {
+      idSlugMap.set(idSlug, entry);
+    }
+  });
+
+  if (Array.isArray(storedMachines) && storedMachines.length > 0) {
+    storedMachines
+      .filter((m): m is Machine => m !== null && typeof m === 'object' && typeof m.id === 'string')
+      .forEach((m) => {
+        const normName = typeof m.name === 'string' ? m.name.toLowerCase().trim() : '';
+        const nameSlug = normalizeMachineSlug(m.name);
+        const idSlug = normalizeMachineSlug(m.id);
+
+      // Multi-tier lookup to safeguard against catalog ID, name, or platform drift
+      let catalogMachine = map.get(m.id);
+      // Exact catalog id or id-based alias: the stored row IS that catalog machine, so a stale isCustom stamp can go.
+      let matchedByIdentity = Boolean(catalogMachine) && catalogIds.has(m.id);
+      // Operator-created machines only ever match by exact id; fuzzy tiers would fold e.g. a custom "Lame" into htb-lame.
+      const genuineCustom = isGenuineCustom(m);
+
+      if (!catalogMachine && !genuineCustom) {
+        const idAliasTarget =
+          (m.id && CATALOG_MACHINE_ALIASES[m.id]) ||
+          (idSlug && CATALOG_MACHINE_ALIASES[idSlug]);
+        const aliasTarget = idAliasTarget || (normName && CATALOG_MACHINE_ALIASES[normName]);
+        if (aliasTarget) {
+          catalogMachine = map.get(aliasTarget) || nameMap.get(aliasTarget.toLowerCase().trim());
+          matchedByIdentity = Boolean(catalogMachine && idAliasTarget && catalogIds.has(catalogMachine.id));
+        }
+      }
+
+      // A row without a platform still names one through a legacy "htb-"/"thm-" id prefix.
+      const platform = m.platform || (/^htb-/i.test(m.id) ? 'HTB' : /^thm-/i.test(m.id) ? 'THM' : undefined);
+      if (!catalogMachine && !genuineCustom && platform) {
+        if (normName) catalogMachine = platformNameMap.get(`${platform}:${normName}`);
+        if (!catalogMachine && nameSlug) catalogMachine = platformSlugMap.get(`${platform}:${nameSlug}`);
+      }
+
+      if (!catalogMachine && !genuineCustom && normName) {
+        catalogMachine = nameMap.get(normName);
+      }
+
+      if (!catalogMachine && !genuineCustom && nameSlug) {
+        catalogMachine = slugMap.get(nameSlug);
+      }
+
+      if (!catalogMachine && !genuineCustom && idSlug) {
+        catalogMachine = idSlugMap.get(idSlug);
+      }
+      // Drop a stale "custom" stamp only on an identity match of a non-custom row; name-only matches keep legacy behavior.
+      const customFlag = matchedByIdentity && !genuineCustom ? { isCustom: undefined } : {};
+      if (catalogMachine) {
+        if (userSolvesReset) {
+          // User started fresh: respect their current status (unsolved/foothold/completed) and progress without forcing catalog completed status
+          const mStatus = m.status || 'backlog';
+          const hasUserFlag = Boolean(m.userFlag?.trim());
+          const hasRootFlag = Boolean(m.rootFlag?.trim());
+          const isFootholdOrAbove = mStatus === 'foothold' || mStatus === 'root' || mStatus === 'completed';
+          const isRootOrAbove = mStatus === 'root' || mStatus === 'completed';
+          map.set(catalogMachine.id, {
+            ...catalogMachine,
+            ...m,
+            ...customFlag,
+            status: m.status || 'unsolved',
+            userFlag: m.userFlag,
+            rootFlag: m.rootFlag,
+            userPwnedAt: isFootholdOrAbove || hasUserFlag ? m.userPwnedAt : undefined,
+            rootPwnedAt: isRootOrAbove || hasRootFlag ? m.rootPwnedAt : undefined,
+            timeSpentSeconds: m.timeSpentSeconds || 0,
+            timeToUserSeconds: isFootholdOrAbove ? m.timeToUserSeconds : undefined,
+            timeToRootSeconds: isRootOrAbove ? m.timeToRootSeconds : undefined,
+            checklist: m.checklist || catalogMachine.checklist || { openPorts: [], activeItemId: null, itemsState: {} },
+            openPorts: m.openPorts || catalogMachine.openPorts || [],
+            quickNotes: m.quickNotes || catalogMachine.quickNotes,
+            writeupMarkdown: m.writeupMarkdown || catalogMachine.writeupMarkdown,
+            hint: catalogMachine.hint || m.hint,
+            skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
+            officialPdf: catalogMachine.officialPdf || m.officialPdf,
+            officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
+            officialWalkthrough: undefined,
+            tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
+            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
+          });
+        } else {
+          // Clean slate baseline: Catalog metadata is decoupled from candidate solve history.
+          // Candidate solve state is derived strictly from operator progress.
+          const mStatus: PipelineStatus = m.status || 'backlog';
+          const hasUserFlag = Boolean(m.userFlag?.trim());
+          const hasRootFlag = Boolean(m.rootFlag?.trim());
+          const isFootholdOrAbove = mStatus === 'foothold' || mStatus === 'root' || mStatus === 'completed';
+          const isRootOrAbove = mStatus === 'root' || mStatus === 'completed';
+          const userHasProgress = mStatus !== 'backlog' || hasUserProgress(m);
+
+          map.set(catalogMachine.id, {
+            ...catalogMachine,
+            ...m,
+            ...customFlag,
+            status: userHasProgress ? mStatus : 'backlog',
+            userFlag: m.userFlag || '',
+            rootFlag: m.rootFlag || '',
+            userPwnedAt: isFootholdOrAbove || hasUserFlag ? m.userPwnedAt : undefined,
+            rootPwnedAt: isRootOrAbove || hasRootFlag ? m.rootPwnedAt : undefined,
+            timeSpentSeconds: m.timeSpentSeconds || 0,
+            timeToUserSeconds: isFootholdOrAbove ? m.timeToUserSeconds : undefined,
+            timeToRootSeconds: isRootOrAbove ? m.timeToRootSeconds : undefined,
+            checklist: m.checklist || catalogMachine.checklist || { openPorts: [], activeItemId: null, itemsState: {} },
+            openPorts: m.openPorts || catalogMachine.openPorts || [],
+            quickNotes: m.quickNotes || catalogMachine.quickNotes,
+            writeupMarkdown: m.writeupMarkdown || catalogMachine.writeupMarkdown,
+            hint: catalogMachine.hint || m.hint,
+            skillsLearned: catalogMachine.skillsLearned || m.skillsLearned,
+            officialPdf: catalogMachine.officialPdf || m.officialPdf,
+            officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
+            officialWalkthrough: undefined,
+            tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
+            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
+          });
+        }
+      } else if (m.isCustom || genuineCustom || keepUnmatched || hasUserProgress(m)) {
+        // Genuine custom machine, legacy isCustom row, or catalog machine (not in the loaded catalog yet) with
+        // user progress: keep the row as stored. Only genuine customs get the flag (same rule as toLeanMachines);
+        // never stamp anything else (it would stick once the full catalog matches) and never remove a stamp
+        // (a legacy custom without progress would then be dropped on the next merge).
+        map.set(m.id, genuineCustom ? { ...m, isCustom: true } : { ...m });
+      }
+    });
+  }
+
+  // Enforce Hack The Box Terms of Service compliance: Active machines MUST ONLY have name and room link (no spoilers/recon)
+  map.forEach((machine) => {
+    if (isKnownActiveByName(machine)) {
+      machine.isActive = true;
+    }
+    if (machine.isActive) {
+      Object.assign(machine, sanitizeActiveMachine(machine));
+    }
+  });
+
+  // Priority ordering: User-added custom machines are anchored at the very TOP (index 0) of the collection
+  const customEntries: Machine[] = [];
+  const catalogEntries: Machine[] = [];
+
+  for (const m of map.values()) {
+    if (m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))) {
+      customEntries.push(m);
+    } else {
+      catalogEntries.push(m);
+    }
+  }
+
+  return [...customEntries, ...catalogEntries];
+};
+
+// Persist snapshot memo (see partialize / storage.setItem in the store config below)
+let lastPartialize: { inputs: unknown[]; snapshot: Record<string, unknown> } | null = null;
+let lastPersistedSnapshot: unknown;
+let lastPersistedVersion: number | undefined;
+let lastFailedSnapshot: unknown;
+// pruneMisstampedCustomMachines runs once per session, after the first full-catalog merge
+let customStoragePruned = false;
+
+// Version write gate: must be decided before the store boots (hydration writes synchronously).
+export const SCHEMA_GATE_TOAST_MESSAGE = 'ZeroBox was updated in another tab — reload to continue.';
+onSchemaWriteGateEngaged((reason) => {
+  if (reason !== 'newer-schema') return;
+  console.warn('[ZeroBox] Newer data schema detected; this tab will not write to storage until reloaded.');
+  // durationMs 0 = sticky (never auto-dismissed)
+  useToastStore.getState().addToast({ type: 'warning', title: 'Reload required', message: SCHEMA_GATE_TOAST_MESSAGE, durationMs: 0 });
+});
+initSchemaVersionGate();
+// Another tab mid-restore gates this one before hydration; a stale (>60 s) lock is cleared instead.
+initRestoreLockGate();
+
+const initialProfileId = getInitialProfileId();
+const initialProfileData = loadInitialProfileData(initialProfileId);
+const initialAttackGraphData = loadInitialAttackGraphState(initialProfileId);
+const initialLootData = loadLootState(initialProfileId);
+
+export const useCtfStore = create<CtfStoreState>()(
+  persist(
+    (set, get): CtfStoreState => ({
+      machines: mergeMachinesWithCatalog(initialProfileData?.machines, Boolean(initialProfileData?.userSolvesReset)),
+      activeTargetId: initialProfileData?.activeTargetId || null,
+      globalVars: initialProfileData?.globalVars || DEFAULT_GLOBAL_VARS,
+      cheatsheets: initialProfileData?.cheatsheets || INITIAL_CHEATSHEET,
+      activitySessions: initialProfileData?.activitySessions || [],
+      currentProfileId: initialProfileId,
+      customNotes: initialProfileData?.customNotes || [],
+      deletedNoteIds: initialProfileData?.deletedNoteIds || [],
+      deletedMachineIds: normalizeMachineTombstones(initialProfileData?.deletedMachineIds),
+      userSolvesReset: Boolean(initialProfileData?.userSolvesReset),
+      isHydrated: true,
+      setIsHydrated: (val) => set({ isHydrated: val }),
+
+      // Attack Graph & Pivot Topology State
+      graphNodePositions: initialAttackGraphData.graphNodePositions,
+      graphEdges: initialAttackGraphData.graphEdges,
+
+      // Credentials & Loot (per-profile, loaded lazily with legacy migration)
+      credentials: initialLootData.credentials,
+      credAttempts: initialLootData.credAttempts,
+      lootItems: initialLootData.lootItems,
+
+      appBrand: 'zerobox',
+      activeTab: 'tracker',
+      viewMode: 'kanban',
+      selectedMachineId: null,
+      writeupMachineId: null,
+      reportMachineId: null,
+      commandPaletteOpen: false,
+      newMachineModalOpen: false,
+      backupModalOpen: false,
+      reconAutomationModalOpen: false,
+      operatorModalOpen: false,
+      licenseModalOpen: false,
+      flexCardModalOpen: false,
+      shortcutsModalOpen: false,
+      settingsModalOpen: false,
+      showcaseModalOpen: false,
+      notesImportModalOpen: false,
+      userNotes: [],
+      userWikilinkMap: {},
+      mobileMenuOpen: false,
+      assignIpMachineId: null,
+      crtOverlay: false,
+      soundEnabled: true,
+      themePreset: 'obsidian' as ThemePreset,
+      uiScale: 'auto',
+      focusMode: false,
+      snippetsDrawerOpen: false,
+      revShellModalOpen: false,
+      filterDrawerOpen: false,
+      unexportedChangesCount: 0,
+      isEphemeralStorage: safeLocalStorage.isEphemeral(),
+      setIsEphemeralStorage: (val) => set({ isEphemeralStorage: val }),
+      isTimerRunning: false,
+      activeTimerSeconds: 0,
+      timerLastTick: null,
+      filters: DEFAULT_FILTERS,
+      isCatalogLoaded: false,
+      isCatalogLoading: false,
+      isDeepStorageLoaded: false,
+
+      setFocusMode: (open) => set({ focusMode: open }),
+      toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+      setSnippetsDrawerOpen: (open) => set({ snippetsDrawerOpen: open }),
+      setRevShellModalOpen: (open) => set({ revShellModalOpen: open }),
+      setFilterDrawerOpen: (open) => set({ filterDrawerOpen: open }),
+      resetUnexportedChangesCount: () => set({ unexportedChangesCount: 0 }),
+      exportWorkspace: async () => {
+        const state = get();
+        let machinesToExport = state.machines;
+        try {
+          const profileId = state.currentProfileId || 'guest';
+          const deep = await loadDeepProfileData(profileId);
+          if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
+            machinesToExport = mergeDeepPayloadsIntoMachines(machinesToExport, deep.writeups);
+          }
+        } catch (e) {
+          console.warn('[ZeroBox] Could not preload deep writeups for workspace export:', e);
+        }
+
+        const json = exportWorkspaceToJson({
+          machines: machinesToExport,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          customNotes: state.customNotes,
+          userNotes: state.userNotes,
+          userWikilinkMap: state.userWikilinkMap,
+          deletedNoteIds: state.deletedNoteIds,
+          userSolvesReset: state.userSolvesReset,
+        });
+        triggerWorkspaceDownload(json, 'zerobox-workspace');
+        set({ unexportedChangesCount: 0 });
+      },
+      importWorkspace: (jsonStr: string) => {
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const validated = validateWorkspacePayload(parsed);
+          if (!validated.success || !validated.data) {
+            return { success: false, error: validated.error || 'Invalid workspace backup format.' };
+          }
+          const data = validated.data;
+          set((state) => ({
+            machines: data.machines ? mergeMachinesWithCatalog(data.machines, data.userSolvesReset) : state.machines,
+            globalVars: data.globalVars ? { ...state.globalVars, ...data.globalVars } : state.globalVars,
+            cheatsheets: data.cheatsheets ? [...data.cheatsheets] : state.cheatsheets,
+            activitySessions: data.activitySessions ? [...data.activitySessions] : state.activitySessions,
+            customNotes: data.customNotes ? [...data.customNotes] : state.customNotes,
+            userNotes: data.userNotes ? [...data.userNotes] : state.userNotes,
+            userWikilinkMap: data.userWikilinkMap ? { ...data.userWikilinkMap } : state.userWikilinkMap,
+            deletedNoteIds: data.deletedNoteIds ? [...data.deletedNoteIds] : state.deletedNoteIds,
+            userSolvesReset: data.userSolvesReset !== undefined ? data.userSolvesReset : state.userSolvesReset,
+            unexportedChangesCount: 0,
+          }));
+          get().saveProfileData();
+          return { success: true, count: validated.restoredCount };
+        } catch (err: any) {
+          return { success: false, error: err?.message || 'Failed to parse JSON file' };
+        }
+      },
+
+      loadCatalog: async () => {
+        if (get().isCatalogLoaded || get().isCatalogLoading) return;
+        // Transient flag: not part of partialize(), so this set() never re-serializes the machines.
+        set({ isCatalogLoading: true });
+        try {
+          const INITIAL_MACHINES = await loadMachinesCatalog();
+          const state = get();
+          const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset, INITIAL_MACHINES);
+          const unchanged =
+            merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
+          // Single set(): keep the existing machines reference when the merge changed nothing so
+          // subscribers and the persist layer see no machines change.
+          set({
+            ...(unchanged ? {} : { machines: merged }),
+            isCatalogLoaded: true,
+            isCatalogLoading: false,
+          });
+          // Full catalog is in: every mis-stamped catalog row is now normalized, so drop their stale custom copies once.
+          // Never before the pre-migration snapshot exists; a failed/unconfirmed prune is retried next session.
+          if (!customStoragePruned && (await whenPreMigrationBackupSettled()) !== 'failed') {
+            const removed = pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
+            if (removed >= 0) customStoragePruned = true;
+          }
+        } catch (err) {
+          console.error('Failed to lazy load machinesCatalog:', err);
+          set({ isCatalogLoading: false });
+        }
+      },
+
+      setAppBrand: (brandId) => set({ appBrand: brandId }),
+      setActiveTab: (tab) => set({ activeTab: tab }),
+      setViewMode: (mode) => set({ viewMode: mode }),
+      setSelectedMachineId: (id) => set({ selectedMachineId: id }),
+      setWriteupMachineId: (id) => set({ writeupMachineId: id }),
+      setReportMachineId: (id) => set({ reportMachineId: id }),
+      setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+      setNewMachineModalOpen: (open) => set({ newMachineModalOpen: open }),
+      setBackupModalOpen: (open) => set({ backupModalOpen: open }),
+      setReconAutomationModalOpen: (open) => set({ reconAutomationModalOpen: open }),
+      setOperatorModalOpen: (open) => set({ operatorModalOpen: open }),
+      setLicenseModalOpen: (open) => set({ licenseModalOpen: open }),
+      setFlexCardModalOpen: (open) => set({ flexCardModalOpen: open }),
+      setShortcutsModalOpen: (open) => set({ shortcutsModalOpen: open }),
+      setSettingsModalOpen: (open) => set({ settingsModalOpen: open }),
+      setShowcaseModalOpen: (open) => set({ showcaseModalOpen: open }),
+      setNotesImportModalOpen: (open) => set({ notesImportModalOpen: open }),
+      setUserNotes: (notes) => set({ userNotes: notes }),
+      setUserWikilinkMap: (map) => set({ userWikilinkMap: map }),
+      importNotesFromJson: async (jsonStr) => {
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const notes: CptsNoteEntry[] = Array.isArray(parsed)
+            ? parsed
+            : (Array.isArray(parsed.notes) ? parsed.notes : []);
+
+          if (!notes.length) {
+            return { success: false, count: 0, error: 'No valid notes array found in JSON payload.' };
+          }
+
+          const wikilinkMap: Record<string, string> = parsed.wikilinkMap || {};
+          await saveVaultToIndexedDb({ notes, wikilinkMap });
+          set({ userNotes: notes, userWikilinkMap: wikilinkMap });
+          return { success: true, count: notes.length };
+        } catch (err: any) {
+          return { success: false, count: 0, error: err?.message || 'Invalid JSON format' };
+        }
+      },
+      clearUserNotes: async () => {
+        await clearVaultFromIndexedDb();
+        set({ userNotes: [], userWikilinkMap: {}, deletedNoteIds: [], customNotes: [] });
+      },
+      loadUserNotesFromDb: async () => {
+        try {
+          const vault = await loadVaultFromIndexedDb();
+          if (vault && vault.notes && vault.notes.length > 0) {
+            set({ 
+              userNotes: vault.notes,
+              userWikilinkMap: vault.wikilinkMap || {}
+            });
+            return;
+          }
+          if (!get().userNotes.length && !get().customNotes.length) {
+            const initialNotes: CptsNoteEntry[] = [
+              {
+                id: 'note-00--pt',
+                title: '00 - Penetration Test Methodology Checklist',
+                titleEn: '00 - Penetration Test Methodology Checklist',
+                category: 'General Tactical',
+                rawCategory: 'General Tactical',
+                subCategory: 'Pre-Engagement',
+                tags: ['pentest', 'methodology', 'checklist'],
+                difficulty: 'Intermediate',
+                summary: 'Comprehensive penetration testing checklist and execution methodology.',
+                commands: ['nmap -sC -sV 10.10.11.250', 'whoami'],
+                relPath: '00 - Penetration Test Methodology Checklist.md',
+                rawMarkdown: '# 00 - Penetration Test Methodology Checklist\n\n- [ ] Pre-engagement setup\n- [x] Initial enumeration\n\n```bash\nnmap -sC -sV <TARGET_IP>\n```',
+              },
+              {
+                id: 'note-01--ad',
+                title: '01 - Active Directory Enumeration',
+                titleEn: '01 - Active Directory Enumeration',
+                category: 'Active Directory',
+                rawCategory: 'Active Directory',
+                subCategory: 'Reconnaissance',
+                tags: ['ad', 'kerberos', 'bloodhound'],
+                difficulty: 'Hard',
+                summary: 'Domain reconnaissance and Kerberoasting tactics.',
+                commands: ['bloodhound-python -u user -p pass -d domain.local -ns 10.10.11.250 -c All'],
+                relPath: '01 - Active Directory Enumeration.md',
+                rawMarkdown: '# 01 - Active Directory Enumeration\n\nDomain controller enumeration tactics.',
+              },
+              {
+                id: 'note-02--privesc',
+                title: '02 - Linux Privilege Escalation',
+                titleEn: '02 - Linux Privilege Escalation',
+                category: 'Linux Privilege Escalation',
+                rawCategory: 'Linux Privilege Escalation',
+                subCategory: 'Privilege Escalation',
+                tags: ['privilege', 'privesc', 'linux', 'suid'],
+                difficulty: 'Intermediate',
+                summary: 'Linux privilege escalation vectors and automated enumeration scripts.',
+                commands: ['sudo -l', 'find / -perm -u=s -type f 2>/dev/null'],
+                relPath: '02 - Linux Privilege Escalation.md',
+                rawMarkdown: '# 02 - Linux Privilege Escalation\n\nLinux privilege escalation techniques.\n\n```bash\nsudo -l\n```',
+              },
+            ];
+            const initialMap: Record<string, string> = {
+              'penetration test methodology checklist': 'note-00--pt',
+              'active directory enumeration': 'note-01--ad',
+              'linux privilege escalation': 'note-02--privesc',
+            };
+            set({ userNotes: initialNotes, userWikilinkMap: initialMap });
+            await saveVaultToIndexedDb({ notes: initialNotes, wikilinkMap: initialMap });
+          }
+        } catch (err) {
+          console.warn('[ZeroBox] Could not load user notes from IndexedDB', err);
+        }
+      },
+      setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
+      setAssignIpMachineId: (id) => set({ assignIpMachineId: id }),
+      toggleCrtOverlay: () => set((s) => ({ crtOverlay: !s.crtOverlay })),
+      toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+      setThemePreset: (preset: ThemePreset | string) => {
+        const normalized = normalizeThemePreset(preset);
+        applyThemePreset(normalized);
+        set({ themePreset: normalized });
+      },
+      setUiScale: (scale) => set({ uiScale: scale }),
+      zoomIn: () => set((s) => {
+        const steps: UiScale[] = ['tiny', 'compact', 'normal', 'large', 'huge'];
+        if (s.uiScale === 'auto') {
+          return { uiScale: 'large' };
+        }
+        const currentIdx = steps.indexOf(s.uiScale);
+        const nextIdx = Math.min(steps.length - 1, (currentIdx === -1 ? 2 : currentIdx) + 1);
+        return { uiScale: steps[nextIdx] };
+      }),
+      zoomOut: () => set((s) => {
+        const steps: UiScale[] = ['tiny', 'compact', 'normal', 'large', 'huge'];
+        if (s.uiScale === 'auto') {
+          return { uiScale: 'compact' };
+        }
+        const currentIdx = steps.indexOf(s.uiScale);
+        const nextIdx = Math.max(0, (currentIdx === -1 ? 2 : currentIdx) - 1);
+        return { uiScale: steps[nextIdx] };
+      }),
+      cycleUiScale: () => set((s) => {
+        const order: UiScale[] = ['auto', 'tiny', 'compact', 'normal', 'large', 'huge'];
+        const currentIdx = order.indexOf(s.uiScale || 'auto');
+        const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % order.length;
+        return { uiScale: order[nextIdx] };
+      }),
+
+      updateMachineStatus: (id, status) => {
+        set((state) => {
+          const now = new Date().toISOString();
+          const today = toLocalDateKey(new Date());
+          const isNowRoot = status === 'root' || status === 'completed';
+          const isNowFoothold = status === 'foothold' || isNowRoot;
+          
+          // Automatically stop the stopwatch timer when machine is rooted or completed
+          const shouldStopTimer = isNowRoot && (state.activeTargetId === id || state.isTimerRunning);
+          const base = shouldStopTimer ? foldActiveTimer(state) : state.machines;
+
+          const updated = base.map((m) => {
+            if (m.id !== id) return m;
+
+            // The live timer may be ahead of the last checkpoint stored on the machine: keep the larger one.
+            const elapsed = state.activeTargetId === id ? state.activeTimerSeconds : 0;
+            const finalTime = Math.max(m.timeSpentSeconds || 0, elapsed);
+
+            const hasUserFlag = Boolean(m.userFlag?.trim());
+            const hasRootFlag = Boolean(m.rootFlag?.trim());
+
+            return logProgressTimeline(m, {
+              ...m,
+              status,
+              timeSpentSeconds: finalTime > 0 ? finalTime : m.timeSpentSeconds,
+              userPwnedAt: isNowFoothold ? (m.userPwnedAt || now) : (hasUserFlag ? m.userPwnedAt : undefined),
+              rootPwnedAt: isNowRoot ? (m.rootPwnedAt || now) : (hasRootFlag ? m.rootPwnedAt : undefined),
+              timeToUserSeconds: isNowFoothold ? (m.timeToUserSeconds || finalTime) : undefined,
+              timeToRootSeconds: isNowRoot ? (m.timeToRootSeconds || finalTime) : undefined,
+              updatedAt: now,
+            });
+          });
+
+          // Log activity session if root or completed
+          let sessions = state.activitySessions;
+          if (isNowRoot) {
+            const m = state.machines.find(x => x.id === id);
+            const duration = (state.activeTargetId === id && state.activeTimerSeconds > 0)
+              ? state.activeTimerSeconds
+              : (m?.timeSpentSeconds || 0);
+
+            sessions = [
+              ...sessions,
+              {
+                id: 'sess-' + Date.now(),
+                machineId: id,
+                machineName: m?.name || 'Unknown',
+                date: today,
+                durationSeconds: duration,
+                type: 'root',
+              }
+            ];
+          }
+
+          // Auto-sync active target and RHOST (targetIp) when entering Active Recon or Foothold Obtained
+          let activeId = state.activeTargetId;
+          let newGlobalVars = state.globalVars;
+          let assignIpId = state.assignIpMachineId;
+          let shouldStartTimer = state.isTimerRunning;
+
+          if (status === 'recon' || status === 'foothold') {
+            activeId = id;
+            const targetM = state.machines.find((x) => x.id === id);
+            if (targetM) {
+              const isPlaceholder = !targetM.ip || targetM.ip.toLowerCase().includes('x') || targetM.ip === '10.10.10.X';
+              if (isPlaceholder) {
+                assignIpId = id;
+              } else {
+                newGlobalVars = {
+                  ...state.globalVars,
+                  targetIp: targetM.ip,
+                };
+              }
+            }
+          }
+
+          return { 
+            machines: updated, 
+            activitySessions: sessions,
+            isTimerRunning: shouldStopTimer ? false : shouldStartTimer,
+            activeTargetId: activeId,
+            globalVars: newGlobalVars,
+            assignIpMachineId: assignIpId,
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+          };
+        });
+      },
+
+      batchUpdateMachineStatus: (updates) => {
+        if (!updates || updates.length === 0) return;
+        const updateMap = new Map(updates.map(u => [u.machineId, u.status]));
+        const now = new Date().toISOString();
+        set((state) => {
+          const updated = state.machines.map((m) => {
+            const targetStatus = updateMap.get(m.id);
+            if (!targetStatus) return m;
+
+            // Invariant: Never downgrade Daniel Dayan's existing completed machines unless user started fresh
+            if (!state.userSolvesReset && m.status === 'completed' && targetStatus !== 'completed') return m;
+
+            const isPwned = targetStatus === 'root' || targetStatus === 'completed';
+            const isFoothold = targetStatus === 'foothold' || isPwned;
+            const hasUserFlag = Boolean(m.userFlag?.trim());
+            const hasRootFlag = Boolean(m.rootFlag?.trim());
+
+            return logProgressTimeline(m, {
+              ...m,
+              status: targetStatus,
+              rootPwnedAt: isPwned ? (m.rootPwnedAt || now) : (hasRootFlag ? m.rootPwnedAt : undefined),
+              userPwnedAt: isFoothold ? (m.userPwnedAt || now) : (hasUserFlag ? m.userPwnedAt : undefined),
+              timeToUserSeconds: isFoothold ? m.timeToUserSeconds : undefined,
+              timeToRootSeconds: isPwned ? m.timeToRootSeconds : undefined,
+              updatedAt: now,
+            });
+          });
+          return { machines: updated };
+        });
+      },
+
+      updateMachine: (id, updates) => {
+        set((state) => {
+          const isNowCompleted = updates.status === 'root' || updates.status === 'completed';
+          const shouldStopTimer = isNowCompleted && (state.activeTargetId === id || state.isTimerRunning);
+          const syncTargetIp = Boolean(state.activeTargetId === id && updates.ip);
+          const editsActiveTime = state.activeTargetId === id && typeof updates.timeSpentSeconds === 'number';
+          // Stopping the timer folds its seconds into the active machine first; explicit updates still win.
+          const base = shouldStopTimer ? foldActiveTimer(state) : state.machines;
+
+          return {
+            ...(editsActiveTime ? { activeTimerSeconds: updates.timeSpentSeconds } : {}),
+            machines: base.map((m) => {
+              if (m.id !== id) return m;
+              const merged = logProgressTimeline(m, { ...m, ...updates, updatedAt: new Date().toISOString() });
+              if (isKnownActiveByName(merged)) {
+                merged.isActive = true;
+              }
+              if (merged.isActive) {
+                return sanitizeActiveMachine(merged);
+              }
+              return merged;
+            }),
+            globalVars: syncTargetIp
+              ? { ...state.globalVars, targetIp: updates.ip! }
+              : state.globalVars,
+            isTimerRunning: shouldStopTimer ? false : state.isTimerRunning,
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+          };
+        });
+        const profileId = get().currentProfileId || 'guest';
+        get().saveProfileData(profileId);
+        saveCustomMachinesToStorage(get().machines, profileId);
+      },
+
+      addCustomMachine: (data) => {
+        const id = 'custom-' + Date.now() + '-' + data.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const now = new Date().toISOString();
+        // Customs are never flagged by name alone; only an explicit isActive makes them name-only.
+        const isActive = Boolean(data.isActive);
+
+        const baseMachine: Machine = {
+          ...data,
+          id,
+          isCustom: true,
+          isActive,
+          timeSpentSeconds: 0,
+          createdAt: now,
+          updatedAt: now,
+        };
+        const newMachine: Machine = isActive ? sanitizeActiveMachine(baseMachine) : baseMachine;
+        set((state) => ({
+          machines: [newMachine, ...state.machines],
+          unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+        }));
+        const profileId = get().currentProfileId || 'guest';
+        get().saveProfileData(profileId);
+        saveCustomMachinesToStorage(get().machines, profileId);
+        broadcastCrossTabMessage('MACHINE_ADDED', { machine: newMachine, profileId });
+      },
+
+      deleteMachine: (id) => {
+        const profileId = get().currentProfileId || 'guest';
+        const deletedAt = new Date().toISOString();
+        deleteMachineDeepData(profileId, id).catch(() => {});
+        broadcastCrossTabMessage('MACHINE_DELETED', { id, profileId, deletedAt });
+        set((state) => ({
+          machines: state.machines.filter((m) => m.id !== id),
+          // Tombstone: a later sync merge must not bring the machine back from an older copy.
+          deletedMachineIds: addMachineTombstone(state.deletedMachineIds, id, Date.parse(deletedAt)),
+          activeTargetId: state.activeTargetId === id ? null : state.activeTargetId,
+          selectedMachineId: state.selectedMachineId === id ? null : state.selectedMachineId,
+          unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+        }));
+        get().saveProfileData(profileId);
+        saveCustomMachinesToStorage(get().machines, profileId);
+      },
+
+      toggleUserFlag: (id, flagValue) => {
+        set((state) => {
+          const now = new Date().toISOString();
+          const currentElapsed = id === state.activeTargetId ? state.activeTimerSeconds : undefined;
+          const updated = state.machines.map((m) => {
+            if (m.id !== id) return m;
+            const hadUser = Boolean(m.userPwnedAt);
+            const userPwnedAt = hadUser ? undefined : now;
+            let status = m.status;
+            if (!hadUser && (status === 'backlog' || status === 'recon')) status = 'foothold';
+            const totalSeconds = currentElapsed !== undefined ? Math.max(m.timeSpentSeconds, currentElapsed) : m.timeSpentSeconds;
+            return logProgressTimeline(m, {
+              ...m,
+              userFlag: flagValue !== undefined ? flagValue : m.userFlag,
+              userPwnedAt,
+              status,
+              timeSpentSeconds: totalSeconds,
+              timeToUserSeconds: !hadUser ? totalSeconds : m.timeToUserSeconds,
+              updatedAt: now,
+            });
+          });
+          return { machines: updated };
+        });
+      },
+
+      toggleRootFlag: (id, flagValue) => {
+        set((state) => {
+          const now = new Date().toISOString();
+          const currentElapsed = id === state.activeTargetId ? state.activeTimerSeconds : undefined;
+          const updated = state.machines.map((m) => {
+            if (m.id !== id) return m;
+            const hadRoot = Boolean(m.rootPwnedAt);
+            const rootPwnedAt = hadRoot ? undefined : now;
+            let status = m.status;
+            if (!hadRoot) status = 'root';
+            const totalSeconds = currentElapsed !== undefined ? Math.max(m.timeSpentSeconds, currentElapsed) : m.timeSpentSeconds;
+            return logProgressTimeline(m, {
+              ...m,
+              rootFlag: flagValue !== undefined ? flagValue : m.rootFlag,
+              rootPwnedAt,
+              status,
+              timeSpentSeconds: totalSeconds,
+              timeToRootSeconds: !hadRoot ? totalSeconds : m.timeToRootSeconds,
+              updatedAt: now,
+            });
+          });
+          return { machines: updated };
+        });
+      },
+
+      setMachineDomain: (id, domain) => {
+        const value = typeof domain === 'string' ? domain.trim().slice(0, 253) : '';
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) =>
+            (m.domain || '') === value ? m : { ...m, domain: value || undefined }
+          );
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      setMachineVhosts: (id, vhosts) => {
+        const list = normalizeVhosts(vhosts);
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) =>
+            sameList(m.vhosts, list) ? m : { ...m, vhosts: list.length ? list : undefined }
+          );
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      addMachineVhost: (id, vhost) => {
+        const m = get().machines.find((x) => x.id === id);
+        if (!m) return;
+        get().setMachineVhosts(id, [...(m.vhosts || []), vhost]);
+      },
+
+      removeMachineVhost: (id, vhost) => {
+        const m = get().machines.find((x) => x.id === id);
+        if (!m) return;
+        const target = typeof vhost === 'string' ? vhost.trim().toLowerCase() : '';
+        get().setMachineVhosts(id, (m.vhosts || []).filter((v) => v !== target));
+      },
+
+      setPortTriage: (id, port, patch) => {
+        const raw = String(port ?? '').trim();
+        if (!raw) return;
+        // Protocol-aware normalization: an explicit "port/proto" key (from PortTriageTable)
+        // or an explicit patch.protocol stores under the composite key; legacy numeric
+        // callers keep their numeric key so older rows stay valid (reads fall back to it).
+        // Tcp composites also mirror the legacy key so old readers stay in step; udp never
+        // touches the legacy key, giving tcp/udp independent rows.
+        let compositeKey: string | null = null;
+        let legacyKey: string | null = null;
+        if (raw.includes('/')) {
+          const slash = raw.indexOf('/');
+          const portPart = raw.slice(0, slash).trim().slice(0, 16);
+          const protoPart = (raw.slice(slash + 1).trim().toLowerCase() || 'tcp').slice(0, 16);
+          if (!portPart) return;
+          compositeKey = `${portPart}/${protoPart}`.slice(0, 32);
+          if (protoPart === 'tcp') legacyKey = portPart.slice(0, 32);
+        } else {
+          const protoRaw = (patch as { protocol?: unknown } | null | undefined)?.protocol;
+          if (typeof protoRaw === 'string' && protoRaw.trim()) {
+            const protoPart = protoRaw.trim().toLowerCase().slice(0, 16);
+            const portPart = raw.slice(0, 16);
+            compositeKey = `${portPart}/${protoPart}`.slice(0, 32);
+            if (protoPart === 'tcp') legacyKey = portPart.slice(0, 32);
+          } else {
+            legacyKey = raw.slice(0, 32);
+          }
+        }
+        const keys: string[] = compositeKey
+          ? (legacyKey ? [compositeKey, legacyKey] : [compositeKey])
+          : [legacyKey as string];
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) => {
+            const primary = compositeKey ?? (legacyKey as string);
+            const prev: PortTriageEntry =
+              m.portTriage?.[primary] ||
+              (compositeKey && legacyKey ? m.portTriage?.[legacyKey] : undefined) || { status: 'untested' };
+            const merged = { ...prev, ...(patch || {}) };
+            const entry: PortTriageEntry = {
+              status: PORT_TRIAGE_STATUSES.includes(merged.status) ? merged.status : 'untested',
+            };
+            if (typeof merged.note === 'string' && merged.note.trim()) entry.note = merged.note.slice(0, 2000);
+            if (keys.every((k) => {
+              const existing = m.portTriage?.[k];
+              return existing !== undefined && existing.status === entry.status && existing.note === entry.note;
+            })) return m;
+            const nextTriage = { ...(m.portTriage || {}) };
+            for (const k of keys) nextTriage[k] = entry;
+            return { ...m, portTriage: nextTriage };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      clearPortTriage: (id, port) => {
+        const raw = String(port ?? '').trim();
+        if (!raw) return;
+        let doomed: string[];
+        if (raw.includes('/')) {
+          const slash = raw.indexOf('/');
+          const portPart = raw.slice(0, slash).trim().slice(0, 16);
+          const protoPart = (raw.slice(slash + 1).trim().toLowerCase() || 'tcp').slice(0, 16);
+          if (!portPart) return;
+          const composite = `${portPart}/${protoPart}`.slice(0, 32);
+          doomed = protoPart === 'tcp' ? [composite, portPart.slice(0, 32)] : [composite];
+        } else {
+          const legacy = raw.slice(0, 32);
+          doomed = [legacy, `${legacy}/tcp`.slice(0, 32)];
+        }
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) => {
+            const triage = m.portTriage;
+            if (!triage || !doomed.some((k) => k in triage)) return m;
+            const rest = { ...triage };
+            for (const k of doomed) delete rest[k];
+            return { ...m, portTriage: Object.keys(rest).length ? rest : undefined };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      addFinding: (id, input) => {
+        const findingId = newLabId('finding');
+        let added = false;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) => {
+            const list = Array.isArray(m.findings) ? m.findings : [];
+            if (list.length >= MAX_FINDINGS) return m;
+            const finding: LabFinding = { ...cleanFindingFields(input || ({} as LabFindingPatch)), id: findingId, createdAt: nowMs, updatedAt: nowMs };
+            added = true;
+            return appendTimeline(
+              { ...m, findings: [...list, finding] },
+              {
+                kind: 'finding_added',
+                label: `Finding added: ${finding.title}`,
+                meta: { findingId, severity: finding.severity },
+                at: nowMs,
+              }
+            );
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+        return added ? findingId : '';
+      },
+
+      updateFinding: (id, findingId, patch) => {
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) => {
+            const list = m.findings || [];
+            const idx = list.findIndex((f) => f.id === findingId);
+            if (idx === -1) return m;
+            const current = list[idx];
+            const next: LabFinding = { ...cleanFindingFields(patch || {}, current), id: current.id, createdAt: current.createdAt, updatedAt: nowMs };
+            const findings = [...list];
+            findings[idx] = next;
+            return { ...m, findings };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      removeFinding: (id, findingId) => {
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m) => {
+            const list = m.findings || [];
+            const findings = list.filter((f) => f.id !== findingId);
+            if (findings.length === list.length) return m;
+            return { ...m, findings: findings.length ? findings : undefined };
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      setSolveIndependence: (id, value) => {
+        if (!SOLVE_INDEPENDENCE_VALUES.includes(value)) return;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) => {
+            // First rating schedules review #0. Re-rating a due machine counts as completing that review;
+            // re-rating before it is due only corrects the rating and reschedules from now.
+            const prevCount = m.reviewCount || 0;
+            const count = m.solveIndependence && isDueForReview(m, nowMs) ? prevCount + 1 : prevCount;
+            return scheduleReview(m, value, count, nowMs);
+          });
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      markReviewed: (id, independence) => {
+        if (independence !== undefined && !SOLVE_INDEPENDENCE_VALUES.includes(independence)) return;
+        set((state) => {
+          const machines = patchLabMachine(state.machines, id, (m, nowMs) =>
+            scheduleReview(m, independence || m.solveIndependence || 'nudged', (m.reviewCount || 0) + 1, nowMs)
+          );
+          return machines === state.machines ? state : { machines, unexportedChangesCount: (state.unexportedChangesCount || 0) + 1 };
+        });
+      },
+
+      syncCatalog: () => {
+        // Re-applies the loaded catalog (or STARTER_MACHINES before it loads) to the current machines.
+        // NOTE: tags and certifications are UNIONED (catalog + stored), so a tag the catalog has since removed
+        // stays on the machine; only additions propagate. All operator fields survive (both branches spread `...m`).
+        if (isSchemaWriteGated()) return;
+        set((state) => {
+          const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset);
+          const unchanged =
+            merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
+          return unchanged ? state : { machines: merged };
+        });
+      },
+
+      setMachineOpenPorts: (machineId, ports) => {
+        const validPorts = Array.isArray(ports)
+          ? Array.from(new Set(
+              ports
+                .map((p) => (typeof p === 'string' ? parseInt(p, 10) : Number(p)))
+                .filter((n) => Number.isInteger(n) && n >= 1 && n <= 65535)
+            )).sort((a, b) => a - b)
+          : [];
+
+        set((state) => {
+          let modified = false;
+          const machines = state.machines.map((m) => {
+            if (m.id !== machineId || m.isActive) return m;
+            const currentPorts = m.openPorts || [];
+            if (
+              currentPorts.length === validPorts.length &&
+              currentPorts.every((p, idx) => p === validPorts[idx])
+            ) {
+              return m;
+            }
+            modified = true;
+            return {
+              ...m,
+              openPorts: validPorts,
+              checklist: {
+                openPorts: validPorts,
+                activeItemId: m.checklist?.activeItemId || null,
+                itemsState: m.checklist?.itemsState || {},
+              },
+              updatedAt: new Date().toISOString(),
+            };
+          });
+          return modified ? { machines } : state;
+        });
+      },
+
+      setChecklistItemStatus: (machineId, itemId, status) => {
+        set((state) => {
+          const now = new Date().toISOString();
+          return {
+            machines: state.machines.map((m) => {
+              if (m.id !== machineId || m.isActive) return m;
+
+              const existingChecklist = m.checklist || {
+                openPorts: m.openPorts || [],
+                activeItemId: null,
+                itemsState: {},
+              };
+
+              const currentItem = existingChecklist.itemsState[itemId] || { status: 'todo' };
+              const startedAt = status === 'in_progress' ? (currentItem.startedAt || now) : currentItem.startedAt;
+              const completedAt = status === 'done' ? now : (status === 'todo' ? undefined : currentItem.completedAt);
+              const activeItemId = status === 'in_progress' ? itemId : (existingChecklist.activeItemId === itemId ? null : existingChecklist.activeItemId);
+
+              return {
+                ...m,
+                checklist: {
+                  ...existingChecklist,
+                  activeItemId,
+                  itemsState: {
+                    ...existingChecklist.itemsState,
+                    [itemId]: {
+                      ...currentItem,
+                      status,
+                      startedAt,
+                      completedAt,
+                    },
+                  },
+                },
+                updatedAt: now,
+              };
+            }),
+          };
+        });
+      },
+
+      setChecklistItemNotes: (machineId, itemId, notes) => {
+        set((state) => ({
+          machines: state.machines.map((m) => {
+            if (m.id !== machineId || m.isActive) return m;
+            const existingChecklist = m.checklist || {
+              openPorts: m.openPorts || [],
+              activeItemId: null,
+              itemsState: {},
+            };
+            const currentItem = existingChecklist.itemsState[itemId] || { status: 'todo' };
+
+            return {
+              ...m,
+              checklist: {
+                ...existingChecklist,
+                itemsState: {
+                  ...existingChecklist.itemsState,
+                  [itemId]: {
+                    ...currentItem,
+                    notes,
+                  },
+                },
+              },
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        }));
+      },
+
+      setActiveChecklistItem: (machineId, itemId) => {
+        set((state) => ({
+          machines: state.machines.map((m) =>
+            m.id === machineId && !m.isActive
+              ? {
+                  ...m,
+                  checklist: {
+                    openPorts: m.openPorts || [],
+                    activeItemId: itemId,
+                    itemsState: m.checklist?.itemsState || {},
+                  },
+                  updatedAt: new Date().toISOString(),
+                }
+              : m
+          ),
+        }));
+      },
+
+      resetMachineChecklist: (machineId) => {
+        set((state) => ({
+          machines: state.machines.map((m) =>
+            m.id === machineId && !m.isActive
+              ? {
+                  ...m,
+                  checklist: {
+                    openPorts: m.openPorts || [],
+                    activeItemId: null,
+                    itemsState: {},
+                  },
+                  updatedAt: new Date().toISOString(),
+                }
+              : m
+          ),
+        }));
+      },
+
+      setActiveTarget: (id) => {
+        set((state) => {
+          // Flush current timer to active target before switching
+          let updatedMachines = state.machines;
+          if (state.activeTargetId) {
+            updatedMachines = foldActiveTimer(state);
+          }
+
+          if (!id) {
+            return {
+              machines: updatedMachines,
+              activeTargetId: null,
+              isTimerRunning: false,
+              activeTimerSeconds: 0,
+            };
+          }
+
+          const m = updatedMachines.find((x) => x.id === id);
+          const isPlaceholderIp = Boolean(m && !m.isActive && (!m.ip || m.ip.toLowerCase().includes('x') || m.ip === '10.10.10.X'));
+          return {
+            machines: updatedMachines,
+            activeTargetId: id,
+            activeTimerSeconds: m?.timeSpentSeconds || 0,
+            assignIpMachineId: isPlaceholderIp ? id : null,
+            globalVars: {
+              ...state.globalVars,
+              targetIp: m?.ip && !m.isActive && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
+            },
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+          };
+        });
+        flushPendingProfileSave();
+      },
+
+      startTimer: () => set({ isTimerRunning: true, timerLastTick: Date.now() }),
+
+      pauseTimer: () => {
+        set((state) => {
+          if (!state.activeTargetId) return { isTimerRunning: false, timerLastTick: null };
+          const now = Date.now();
+          const extra = state.timerLastTick ? Math.round((now - state.timerLastTick) / 1000) : 0;
+          // Never below the saved time (another tab or a sync may have saved more).
+          const finalSeconds = Math.max(
+            state.activeTimerSeconds + (extra > 0 ? extra : 0),
+            timerSecondsFor(state.machines, state.activeTargetId)
+          );
+          return {
+            machines: foldActiveTimer(state, finalSeconds),
+            activeTimerSeconds: finalSeconds,
+            isTimerRunning: false,
+            timerLastTick: null,
+          };
+        });
+        // Stopping is a save point. Pausing a running timer was already written by the store subscription
+        // (running -> stopped); this only covers whatever is still pending, so a pause writes exactly once.
+        flushPendingProfileSave();
+      },
+
+      resetTimer: (machineId) => {
+        set((state) => {
+          const targetId = machineId || state.activeTargetId;
+          if (!targetId) return { isTimerRunning: false, activeTimerSeconds: 0, timerLastTick: null };
+          const updated = state.machines.map((m) =>
+            m.id === targetId ? withTimeSpent(m, 0) : m
+          );
+          return {
+            machines: updated,
+            activeTimerSeconds: targetId === state.activeTargetId ? 0 : state.activeTimerSeconds,
+            isTimerRunning: false,
+            timerLastTick: null,
+          };
+        });
+        flushPendingProfileSave();
+      },
+
+      tickTimer: () => {
+        let checkpointed = false;
+        set((state) => {
+          if (!state.isTimerRunning || !state.activeTargetId) return {};
+          const now = Date.now();
+          const last = state.timerLastTick || now;
+          const deltaSeconds = Math.max(1, Math.round((now - last) / 1000));
+          const seconds = state.activeTimerSeconds + deltaSeconds;
+          // Checkpoint: once the shown time is a minute ahead of the saved time, fold it into the machine so a
+          // crash or killed tab loses at most TIMER_CHECKPOINT_SECONDS. Plain ticks never touch persisted state.
+          const saved = timerSecondsFor(state.machines, state.activeTargetId);
+          if (seconds - saved >= TIMER_CHECKPOINT_SECONDS) {
+            checkpointed = true;
+            return {
+              activeTimerSeconds: seconds,
+              timerLastTick: now,
+              machines: foldActiveTimer(state, seconds),
+            };
+          }
+          return {
+            activeTimerSeconds: seconds,
+            timerLastTick: now,
+          };
+        });
+        if (checkpointed) flushPendingProfileSave();
+      },
+
+      setGlobalVars: (vars) => {
+        set((state) => {
+          const newVars = {
+            ...state.globalVars,
+            ...vars,
+            customVars: {
+              ...state.globalVars.customVars,
+              ...(vars.customVars || {}),
+            },
+          };
+
+          // Synchronize targetIp to active target machine in real-time!
+          let updatedMachines = state.machines;
+          if (vars.targetIp && state.activeTargetId) {
+            updatedMachines = state.machines.map((m) =>
+              m.id === state.activeTargetId
+                ? { ...m, ip: vars.targetIp!, updatedAt: new Date().toISOString() }
+                : m
+            );
+          }
+
+          return {
+            globalVars: newVars,
+            machines: updatedMachines,
+          };
+        });
+      },
+
+      addCustomCommand: (cmd) => {
+        const id = 'cmd-' + Date.now();
+        const newCmd: CheatsheetCommand = {
+          ...cmd,
+          id,
+          isCustom: true,
+          isStarred: false,
+        };
+        set((state) => ({
+          cheatsheets: [newCmd, ...state.cheatsheets],
+        }));
+      },
+
+      deleteCustomCommand: (id) => {
+        set((state) => ({
+          cheatsheets: state.cheatsheets.filter((c) => c.id !== id),
+        }));
+      },
+
+      toggleStarCommand: (id) => {
+        set((state) => ({
+          cheatsheets: state.cheatsheets.map((c) =>
+            c.id === id ? { ...c, isStarred: !c.isStarred } : c
+          ),
+        }));
+      },
+
+      setFilters: (f) => set((s) => {
+        const nextFilters = { ...s.filters, ...f };
+        if (f.selectedTracks !== undefined && f.selectedTrack !== undefined) {
+          if (f.selectedTrack !== 'ALL' && (!f.selectedTracks || f.selectedTracks.length === 0)) {
+            nextFilters.selectedTracks = [f.selectedTrack];
+          } else if (f.selectedTrack === 'ALL' && (!f.selectedTracks || f.selectedTracks.length === 0)) {
+            nextFilters.selectedTrack = 'ALL';
+            nextFilters.selectedTracks = [];
+          } else if (f.selectedTracks.length > 1 && (!f.selectedTrack || f.selectedTrack === 'ALL')) {
+            nextFilters.selectedTrack = 'MULTI';
+          } else if (f.selectedTracks.length === 1 && (!f.selectedTrack || f.selectedTrack === 'ALL')) {
+            nextFilters.selectedTrack = f.selectedTracks[0];
+          }
+        } else if (f.selectedTracks !== undefined) {
+          nextFilters.selectedTrack = f.selectedTracks.length > 1 ? 'MULTI' : (f.selectedTracks.length === 1 ? f.selectedTracks[0] : 'ALL');
+        } else if (f.selectedTrack !== undefined) {
+          nextFilters.selectedTracks = f.selectedTrack === 'ALL' ? [] : [f.selectedTrack];
+        }
+        return { filters: nextFilters };
+      }),
+      resetFilters: () => set({ filters: DEFAULT_FILTERS }),
+
+      // Attack Graph & Pivot Topology Actions
+      setGraphNodePosition: (id: string, pos: AttackNodePosition) => {
+        set((state) => {
+          const nextPositions = {
+            ...state.graphNodePositions,
+            [id]: pos,
+          };
+          saveAttackGraphState(nextPositions, state.graphEdges, state.currentProfileId);
+          return { graphNodePositions: nextPositions };
+        });
+      },
+
+      batchSetGraphNodePositions: (positions: Record<string, AttackNodePosition>) => {
+        set((state) => {
+          const nextPositions = {
+            ...state.graphNodePositions,
+            ...positions,
+          };
+          saveAttackGraphState(nextPositions, state.graphEdges, state.currentProfileId);
+          return { graphNodePositions: nextPositions };
+        });
+      },
+
+      resetGraphLayout: () => {
+        set((state) => {
+          const nextPositions: Record<string, AttackNodePosition> = {};
+          saveAttackGraphState(nextPositions, state.graphEdges, state.currentProfileId);
+          return { graphNodePositions: nextPositions };
+        });
+      },
+
+      addGraphEdge: (edge: Omit<AttackGraphEdge, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => {
+        const newEdge: AttackGraphEdge = {
+          id: edge.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `edge_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`),
+          sourceId: edge.sourceId,
+          targetId: edge.targetId,
+          type: edge.type,
+          status: edge.status || 'potential',
+          label: edge.label,
+          port: edge.port,
+          protocol: edge.protocol,
+          notes: edge.notes,
+          createdAt: edge.createdAt || new Date().toISOString(),
+        };
+        set((state) => {
+          const nextEdges = [...state.graphEdges, newEdge];
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+        return newEdge;
+      },
+
+      updateGraphEdge: (id: string, updates: Partial<AttackGraphEdge>) => {
+        set((state) => {
+          const nextEdges = state.graphEdges.map((e) =>
+            e.id === id ? { ...e, ...updates } : e
+          );
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+      },
+
+      deleteGraphEdge: (id: string) => {
+        set((state) => {
+          const nextEdges = state.graphEdges.filter((e) => e.id !== id);
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+      },
+
+      clearGraphEdges: () => {
+        set((state) => {
+          const nextEdges: AttackGraphEdge[] = [];
+          saveAttackGraphState(state.graphNodePositions, nextEdges, state.currentProfileId);
+          return { graphEdges: nextEdges };
+        });
+      },
+
+      // Credentials & Loot Actions: every mutation persists the active profile's loot immediately
+      addCredential: (input) => {
+        const cred = buildCredential(input);
+        const existing = findDuplicateCredential(get().credentials, cred);
+        if (existing) return existing.id;
+        set((state) => {
+          const credentials = [...state.credentials, cred];
+          saveLootState(state.currentProfileId, { ...state, credentials });
+          return { credentials };
+        });
+        return cred.id;
+      },
+
+      updateCredential: (id, patch) => {
+        const credentials = patchCredential(get().credentials, id, patch);
+        if (!credentials) return false;
+        set((state) => {
+          saveLootState(state.currentProfileId, { ...state, credentials });
+          return { credentials };
+        });
+        return true;
+      },
+
+      deleteCredential: (id) => {
+        set((state) => {
+          const credentials = state.credentials.filter((c) => c.id !== id);
+          const credAttempts = state.credAttempts.filter((a) => a.credId !== id);
+          saveLootState(state.currentProfileId, { ...state, credentials, credAttempts });
+          return { credentials, credAttempts };
+        });
+      },
+
+      upsertCredAttempt: (input) => {
+        const { list, attempt } = upsertAttemptInList(get().credAttempts, input);
+        set((state) => {
+          saveLootState(state.currentProfileId, { ...state, credAttempts: list });
+          return { credAttempts: list };
+        });
+        return attempt.id;
+      },
+
+      deleteCredAttempt: (id) => {
+        set((state) => {
+          const credAttempts = state.credAttempts.filter((a) => a.id !== id);
+          saveLootState(state.currentProfileId, { ...state, credAttempts });
+          return { credAttempts };
+        });
+      },
+
+      addLootItem: (input) => {
+        const item = buildLootItem(input);
+        set((state) => {
+          const lootItems = [...state.lootItems, item];
+          saveLootState(state.currentProfileId, { ...state, lootItems });
+          return { lootItems };
+        });
+        return item.id;
+      },
+
+      updateLootItem: (id, patch) => {
+        const lootItems = patchLootItem(get().lootItems, id, patch);
+        if (!lootItems) return;
+        set((state) => {
+          saveLootState(state.currentProfileId, { ...state, lootItems });
+          return { lootItems };
+        });
+      },
+
+      deleteLootItem: (id) => {
+        set((state) => {
+          const lootItems = state.lootItems.filter((l) => l.id !== id);
+          saveLootState(state.currentProfileId, { ...state, lootItems });
+          return { lootItems };
+        });
+      },
+
+      setLootVerification: (lootId, machineId, verification) => {
+        const mid = (machineId || '').trim();
+        if (!mid || !lootId) return;
+        const now = new Date().toISOString();
+        const vEntry = {
+          status: verification.status,
+          ...(verification.protocol ? { protocol: verification.protocol } : {}),
+          updatedAt: now,
+        };
+
+        const creds = get().credentials;
+        const cIdx = creds.findIndex((c) => c.id === lootId);
+        if (cIdx !== -1) {
+          const cred = creds[cIdx];
+          const verifications = { ...(cred.verifications || {}), [mid]: vEntry };
+          const credentials = [...creds];
+          credentials[cIdx] = { ...cred, verifications };
+          set((state) => {
+            saveLootState(state.currentProfileId, { ...state, credentials });
+            return { credentials };
+          });
+          return;
+        }
+
+        const items = get().lootItems;
+        const lIdx = items.findIndex((l) => l.id === lootId);
+        if (lIdx !== -1) {
+          const item = items[lIdx];
+          const verifications = { ...(item.verifications || {}), [mid]: vEntry };
+          const lootItems = [...items];
+          lootItems[lIdx] = { ...item, verifications };
+          set((state) => {
+            saveLootState(state.currentProfileId, { ...state, lootItems });
+            return { lootItems };
+          });
+        }
+      },
+
+      addCustomNote: (note) => {
+        const id = 'custom-note-' + Date.now();
+        const fullNote: CptsNoteEntry = {
+          id,
+          title: note.title,
+          titleEn: note.titleEn || note.title,
+          titleHe: note.titleHe,
+          category: note.category || 'General Methodology',
+          rawCategory: note.rawCategory || note.category || 'General',
+          subCategory: note.subCategory || '',
+          tags: note.tags || ['custom'],
+          difficulty: note.difficulty || 'Custom',
+          summary: note.summary || '',
+          enSummary: note.enSummary || note.summary || '',
+          heSummary: note.heSummary,
+          commands: note.commands || [],
+          relPath: note.relPath || `${note.category || 'Custom'}/${note.title}.md`,
+          filename: `${note.title}.md`,
+          rawMarkdown: note.rawMarkdown || note.summary || '',
+        };
+        set((state) => ({
+          customNotes: [fullNote, ...state.customNotes],
+        }));
+      },
+
+      updateNoteContent: async (noteId: string, rawMarkdown: string) => {
+        const state = get();
+        const now = new Date().toISOString();
+
+        // 1. In-place update if note exists in customNotes (custom or already promoted)
+        const customNote = state.customNotes.find((n) => n.id === noteId);
+        if (customNote) {
+          const updatedCustom = state.customNotes.map((n) =>
+            n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
+          );
+          set({ customNotes: updatedCustom });
+          flushProfileSave();
+          return;
+        }
+
+        // 2. In-place update if note exists in userNotes (imported private vault)
+        const userNotes = state.userNotes || [];
+        const isUserNote = userNotes.some((n) => n.id === noteId);
+        if (isUserNote) {
+          const updatedUserNotes = userNotes.map((n) =>
+            n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
+          );
+          set({ userNotes: updatedUserNotes });
+          // Awaited, and a failure rejects: the editor then keeps the edit marked unsaved instead of "saved".
+          await saveVaultToIndexedDb({
+            notes: updatedUserNotes,
+            wikilinkMap: state.userWikilinkMap || {},
+          });
+          return;
+        }
+
+        // 3. Imported notes hydrate from IndexedDB asynchronously at startup. If the store
+        //    has not caught up yet, read the vault directly so the edit is never dropped.
+        //    (The app ships no bundled catalog, so there is nothing else to promote from.)
+        if (userNotes.length === 0) {
+          let saveEdit: (() => Promise<void>) | null = null;
+          try {
+            const vault = await loadVaultFromIndexedDb();
+            const vaultNotes = vault?.notes || [];
+            if (vaultNotes.some((n) => n.id === noteId)) {
+              const latest = get().userNotes || [];
+              const base = latest.length > 0 ? latest : vaultNotes;
+              const wikilinkMap =
+                latest.length > 0 ? get().userWikilinkMap || {} : vault?.wikilinkMap || {};
+              const updatedUserNotes = base.map((n) =>
+                n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
+              );
+              set({ userNotes: updatedUserNotes, userWikilinkMap: wikilinkMap });
+              saveEdit = () => saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap });
+            }
+          } catch (err) {
+            console.warn('[ZeroBox] Could not read the notes vault before saving an edit', err);
+          }
+          // Outside the read guard: a failed save must reject so the editor keeps the edit unsaved.
+          if (saveEdit) {
+            await saveEdit();
+            return;
+          }
+        }
+
+        console.warn(`[ZeroBox] Note with id "${noteId}" not found for update.`);
+      },
+
+      deleteNote: (noteId) => {
+        const userNotes = get().userNotes || [];
+        const isUserNote = userNotes.some((n) => n.id === noteId);
+        if (isUserNote) {
+          const updatedNotes = userNotes.filter((n) => n.id !== noteId);
+          const updatedMap = { ...(get().userWikilinkMap || {}) };
+          const target = userNotes.find((n) => n.id === noteId);
+          if (target) {
+            if (target.title) delete updatedMap[target.title.toLowerCase()];
+            if (target.titleEn) delete updatedMap[target.titleEn.toLowerCase()];
+            if (target.filename) delete updatedMap[target.filename.toLowerCase()];
+          }
+          saveVaultToIndexedDb({ notes: updatedNotes, wikilinkMap: updatedMap }).catch((err) =>
+            console.warn('[ZeroBox] Could not persist note deletion to IndexedDB', err)
+          );
+          set((state) => ({
+            userNotes: updatedNotes,
+            userWikilinkMap: updatedMap,
+            deletedNoteIds: [...new Set([...state.deletedNoteIds, noteId])],
+            customNotes: state.customNotes.filter((n) => n.id !== noteId),
+          }));
+        } else {
+          set((state) => ({
+            deletedNoteIds: [...new Set([...state.deletedNoteIds, noteId])],
+            customNotes: state.customNotes.filter((n) => n.id !== noteId),
+          }));
+        }
+      },
+
+      restoreDeletedNotes: () => {
+        set(() => ({ deletedNoteIds: [] }));
+      },
+
+      resetSolvesToZero: () => {
+        const targetId = get().currentProfileId || 'guest';
+        set((state) => {
+          const now = new Date().toISOString();
+          const fresh: Machine[] = state.machines.map((m) => ({
+            ...m,
+            updatedAt: now,
+            status: 'backlog' as PipelineStatus,
+            userFlag: undefined,
+            rootFlag: undefined,
+            userPwnedAt: undefined,
+            rootPwnedAt: undefined,
+            timeSpentSeconds: 0,
+            timeToUserSeconds: undefined,
+            timeToRootSeconds: undefined,
+          }));
+          return {
+            machines: fresh,
+            activeTargetId: null,
+            isTimerRunning: false,
+            activeTimerSeconds: 0,
+            activitySessions: [],
+            userSolvesReset: true,
+          };
+        });
+        get().saveProfileData(targetId);
+      },
+
+      restoreDanielSolves: async () => {
+        let catalog: Machine[];
+        try {
+          catalog = await loadMachinesCatalog();
+        } catch {
+          catalog = STARTER_MACHINES;
+        }
+        const targetId = get().currentProfileId || 'guest';
+        const customMachines = get().machines.filter(
+          (m) => m.isCustom || m.platform === 'Custom' || (m.id && m.id.startsWith('custom-'))
+        );
+        const combined = [...customMachines, ...DEMO_SOLVED_ROSTER];
+        const merged = mergeMachinesWithCatalog(combined as Machine[], false, catalog);
+        set(() => ({
+          machines: merged,
+          userSolvesReset: false,
+          isCatalogLoaded: true,
+        }));
+        get().saveProfileData(targetId);
+        saveCustomMachinesToStorage(customMachines, targetId);
+      },
+
+      exportBackup: (options?: { redactSecrets?: boolean }) => {
+        const state = get();
+        let exportMachines = overlayActiveTimer(state);
+
+        let exportGlobalVars = state.globalVars;
+        if (options?.redactSecrets) {
+          const redactedCustom: Record<string, string> = {};
+          if (state.globalVars.customVars) {
+            for (const [key, val] of Object.entries(state.globalVars.customVars)) {
+              const lower = key.toLowerCase();
+              if (
+                lower.includes('pass') ||
+                lower.includes('secret') ||
+                lower.includes('token') ||
+                lower.includes('key') ||
+                lower.includes('auth') ||
+                lower.includes('cred')
+              ) {
+                redactedCustom[key] = '[REDACTED]';
+              } else {
+                redactedCustom[key] = val;
+              }
+            }
+          }
+          exportGlobalVars = {
+            ...state.globalVars,
+            lhost: '10.10.14.X',
+            targetIp: '10.10.10.X',
+            ...(state.globalVars.cred ? { cred: '[REDACTED]' } : {}),
+            customVars: redactedCustom,
+          };
+          // Sanitize any machine flag proofs containing credentials
+          exportMachines = exportMachines.map((m) => ({
+            ...m,
+            userFlag: m.userFlag?.toLowerCase().includes('pass') ? '[REDACTED]' : m.userFlag,
+            rootFlag: m.rootFlag?.toLowerCase().includes('pass') ? '[REDACTED]' : m.rootFlag,
+          }));
+        }
+
+        let exportGraphEdges = state.graphEdges;
+        if (options?.redactSecrets) {
+          const scrub = (v?: string) => (v && v.toLowerCase().includes('pass') ? '[REDACTED]' : v);
+          exportGraphEdges = exportGraphEdges.map((e) => ({ ...e, label: scrub(e.label), notes: scrub(e.notes) }));
+        }
+
+        const exportLoot = options?.redactSecrets
+          ? redactLootState(state)
+          : { credentials: state.credentials, credAttempts: state.credAttempts, lootItems: state.lootItems };
+
+        const exportData = {
+          // 3.0.0 adds examState here; store/backupFile adds indexedDb and the checksum to the downloadable file.
+          version: BACKUP_FORMAT_VERSION,
+          exportedAt: new Date().toISOString(),
+          isRedacted: Boolean(options?.redactSecrets),
+          machines: exportMachines,
+          globalVars: exportGlobalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          customNotes: state.customNotes,
+          userNotes: state.userNotes || [],
+          userWikilinkMap: state.userWikilinkMap || {},
+          deletedNoteIds: state.deletedNoteIds,
+          userSolvesReset: state.userSolvesReset,
+          themePreset: state.themePreset,
+          graphEdges: exportGraphEdges,
+          graphNodePositions: state.graphNodePositions,
+          ...exportLoot,
+          // Optional block: older builds ignore unknown fields, older backups simply lack it.
+          goals: { weeklyRootTarget: useGoalsStore.getState().weeklyRootTarget },
+          examState: getExamBackupSnapshot(),
+        };
+        return JSON.stringify(exportData, null, 2);
+      },
+
+      importBackup: (jsonStr, options) => {
+        if (isSchemaWriteGated()) return false;
+        try {
+          const raw = JSON.parse(jsonStr);
+          if (!raw || typeof raw !== 'object') return false;
+
+          const validation = validateWorkspacePayload(raw);
+          if (!validation.success || !validation.data) return false;
+
+          const data = validation.data;
+          const isV3 = data.version === BACKUP_FORMAT_VERSION;
+          // An unverified checksum means an unchecked file: change nothing (importBackupFile verifies first).
+          if (isV3 && data.checksum !== undefined && data.checksum !== options?.verifiedChecksum) return false;
+          const rawMachines = Array.isArray(data.machines) ? data.machines : null;
+          if (rawMachines) {
+            const userSolvesReset = Boolean(data.userSolvesReset);
+            const normalizedMachines = mergeMachinesWithCatalog(
+              rawMachines.map((m: any) => ({
+                ...m,
+                tags: Array.isArray(m?.tags) ? m.tags : [],
+                openPorts: Array.isArray(m?.openPorts) ? m.openPorts : [],
+                checklist: m?.checklist && typeof m.checklist === 'object' ? m.checklist : {},
+              })),
+              userSolvesReset
+            );
+            const rawPreset = data.themePreset;
+            const nextThemePreset = rawPreset ? normalizeThemePreset(rawPreset) : undefined;
+            if (nextThemePreset) {
+              applyThemePreset(nextThemePreset);
+            }
+            const isNum = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+            const importedGraph: Partial<AttackGraphPersistedState> | undefined = (() => {
+              const out: Partial<AttackGraphPersistedState> = {};
+              if (Array.isArray(data.graphEdges)) {
+                out.graphEdges = data.graphEdges.filter(
+                  (e: any) => e && typeof e.id === 'string' && typeof e.sourceId === 'string' && typeof e.targetId === 'string'
+                );
+              }
+              if (data.graphNodePositions && typeof data.graphNodePositions === 'object') {
+                const pos: Record<string, AttackNodePosition> = {};
+                for (const [k, v] of Object.entries(data.graphNodePositions)) {
+                  if (v && isNum((v as any).x) && isNum((v as any).y)) pos[k] = { x: (v as any).x, y: (v as any).y };
+                }
+                out.graphNodePositions = pos;
+              }
+              return out.graphEdges || out.graphNodePositions ? out : undefined;
+            })();
+            // Loot is merged (not replaced) so a backup, redacted or stale, can never wipe real secrets.
+            const importedLoot = mergeImportedLoot(get(), data);
+            set((state) => ({
+              machines: normalizedMachines,
+              // The backup may hold more time for the active target than this tab shows; never show (and later
+              // fold back) less than either side.
+              activeTimerSeconds: Math.max(
+                state.activeTimerSeconds,
+                timerSecondsFor(normalizedMachines, state.activeTargetId)
+              ),
+              ...(nextThemePreset ? { themePreset: nextThemePreset } : {}),
+              globalVars: (data.globalVars as GlobalVariables) || state.globalVars,
+              cheatsheets: Array.isArray(data.cheatsheets) ? data.cheatsheets : state.cheatsheets,
+              activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : state.activitySessions,
+              customNotes: Array.isArray(data.customNotes) ? data.customNotes : state.customNotes,
+              userNotes: Array.isArray(data.userNotes) ? data.userNotes : state.userNotes,
+              userWikilinkMap: (data.userWikilinkMap && typeof data.userWikilinkMap === 'object') ? data.userWikilinkMap : state.userWikilinkMap,
+              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
+              userSolvesReset,
+              ...importedGraph,
+              ...importedLoot,
+            }));
+            if (importedLoot) {
+              saveLootState(get().currentProfileId || 'guest', importedLoot);
+            }
+            // Validated in validateWorkspacePayload; missing or invalid leaves the current goals untouched.
+            if (data.goals) {
+              useGoalsStore.getState().setWeeklyRootTarget(data.goals.weeklyRootTarget);
+            }
+            if (importedGraph) {
+              saveAttackGraphState(
+                importedGraph.graphNodePositions ?? get().graphNodePositions,
+                importedGraph.graphEdges ?? get().graphEdges,
+                get().currentProfileId || 'guest'
+              );
+            }
+            // Skipped (state kept) while the schema write gate is engaged; vault notes are upserted by importBackupFile.
+            if (isV3 && data.examState) {
+              const ok = restoreExamBackupSnapshot(data.examState);
+              if (!ok) console.warn('[ZeroBox] Exam restore skipped: writes blocked.');
+            }
+            return true;
+          }
+          return false;
+        } catch (e) {
+          console.error('Failed to parse backup JSON:', e);
+          return false;
+        }
+      },
+
+      // Both bodies live in syncActions.ts, loaded on demand with the sync modules (kept out of the entry chunk).
+      exportSyncFile: async () => (await import('./syncActions')).exportSyncFile(),
+
+      mergeBackup: async (jsonStr, resolutions) => (await import('./syncActions')).mergeBackup(jsonStr, resolutions),
+
+      loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => {
+        const gen = ++profileLoadGeneration;
+        const currentId = get().currentProfileId || 'guest';
+        get().saveProfileData(currentId);
+
+        const targetKey = getProfileStorageKey(profileId);
+        const raw = safeLocalStorage.getItem(targetKey);
+        if (raw) {
+          try {
+            const data = JSON.parse(raw);
+            const userSolvesReset = Boolean(data.userSolvesReset);
+            const graphState = loadInitialAttackGraphState(profileId);
+            const loadedMachines = mergeMachinesWithCatalog(data.machines, userSolvesReset);
+            const loadedTargetId = data.activeTargetId || null;
+            set({
+              currentProfileId: profileId,
+              isDeepStorageLoaded: false,
+              userSolvesReset,
+              machines: loadedMachines,
+              activeTargetId: loadedTargetId,
+              // The previous profile's timer was saved above; never carry its seconds onto this profile's target.
+              isTimerRunning: false,
+              timerLastTick: null,
+              activeTimerSeconds: timerSecondsFor(loadedMachines, loadedTargetId),
+              globalVars: data.globalVars || DEFAULT_GLOBAL_VARS,
+              cheatsheets: data.cheatsheets || INITIAL_CHEATSHEET,
+              activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : [],
+              customNotes: Array.isArray(data.customNotes) ? data.customNotes : [],
+              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : [],
+              deletedMachineIds: normalizeMachineTombstones(data.deletedMachineIds),
+              graphNodePositions: graphState.graphNodePositions,
+              graphEdges: graphState.graphEdges,
+              ...loadLootState(profileId),
+            });
+
+            // Asynchronously enrich with deep writeups from IndexedDB (guarded against later switches)
+            hydrateDeepProfile(profileId, gen);
+
+            return;
+          } catch (e) {
+            console.error('Failed to parse target profile data:', e);
+          }
+        }
+
+        // New profile not yet saved in storage:
+        if (options?.cloneFromCurrent) {
+          const payload = {
+            machines: get().machines,
+            activeTargetId: get().activeTargetId,
+            globalVars: get().globalVars,
+            cheatsheets: get().cheatsheets,
+            activitySessions: get().activitySessions,
+            customNotes: get().customNotes,
+            deletedNoteIds: get().deletedNoteIds,
+            deletedMachineIds: get().deletedMachineIds,
+            userSolvesReset: get().userSolvesReset,
+          };
+          const writeKey = getWriteProfileStorageKey(profileId);
+          safeLocalStorage.setItem(writeKey, JSON.stringify(payload));
+          saveAttackGraphState(get().graphNodePositions, get().graphEdges, profileId);
+          saveLootState(profileId, get());
+          set({ currentProfileId: profileId, isDeepStorageLoaded: true });
+          return;
+        }
+
+        const isDaniel = profileId === 'usr_daniel';
+        const startFresh = options?.startFresh ?? (!isDaniel);
+
+        if (!startFresh && isDaniel) {
+          const graphState = loadInitialAttackGraphState(profileId);
+          set({
+            currentProfileId: profileId,
+            isDeepStorageLoaded: true,
+            machines: mergeMachinesWithCatalog(DEMO_SOLVED_ROSTER as Machine[], false),
+            activeTargetId: null,
+            isTimerRunning: false,
+            timerLastTick: null,
+            activeTimerSeconds: 0,
+            globalVars: DEFAULT_GLOBAL_VARS,
+            cheatsheets: INITIAL_CHEATSHEET,
+            activitySessions: [],
+            customNotes: [],
+            deletedNoteIds: [],
+            deletedMachineIds: [],
+            userSolvesReset: false,
+            graphNodePositions: graphState.graphNodePositions,
+            graphEdges: graphState.graphEdges,
+            ...loadLootState(profileId),
+          });
+          get().saveProfileData(profileId);
+          return;
+        }
+
+        // Fresh slate for new operator: every catalog target ready to be pwned with 0 solves (zero custom machine leak)
+        const freshMachines = mergeMachinesWithCatalog([], true);
+        const graphState = loadInitialAttackGraphState(profileId);
+
+        set({
+          currentProfileId: profileId,
+          isDeepStorageLoaded: true,
+          machines: freshMachines,
+          activeTargetId: null,
+          isTimerRunning: false,
+          timerLastTick: null,
+          activeTimerSeconds: 0,
+          globalVars: DEFAULT_GLOBAL_VARS,
+          cheatsheets: INITIAL_CHEATSHEET,
+          activitySessions: [],
+          customNotes: [],
+          deletedNoteIds: [],
+          deletedMachineIds: [],
+          userSolvesReset: true,
+          graphNodePositions: graphState.graphNodePositions,
+          graphEdges: graphState.graphEdges,
+          ...loadLootState(profileId),
+        });
+        get().saveProfileData(profileId);
+      },
+
+      saveProfileData: (profileId?: string) => {
+        const state = get();
+        const targetId = profileId || state.currentProfileId || 'guest';
+        const persistedMachines = overlayActiveTimer(state);
+
+        // Dual-tier: asynchronously save deep payloads (writeups & notes) to IndexedDB
+        const deepWriteups = extractDeepWriteups(persistedMachines);
+        // Always written, even empty, so clearing every writeup or note sticks (see flushProfileSave).
+        if (state.isDeepStorageLoaded) {
+          saveDeepProfileData(targetId, {
+            writeups: deepWriteups,
+            customNotes: state.customNotes,
+          });
+        }
+
+        const payload = {
+          machines: toLeanMachines(persistedMachines),
+          activeTargetId: state.activeTargetId,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          customNotes: state.customNotes,
+          deletedNoteIds: state.deletedNoteIds,
+          deletedMachineIds: state.deletedMachineIds,
+          userSolvesReset: state.userSolvesReset,
+        };
+        // Keep the IndexedDB copy in step (same savedAt), or boot would see it as older/newer than it is.
+        const { savedAt } = writeProfilePayload(targetId, payload);
+        saveWorkspaceToIdb(`zb:workspace:${targetId}`, { ...payload, savedAt }).catch(() => {});
+      },
+
+      resetAllProgress: async () => {
+        let catalog: Machine[];
+        try {
+          catalog = await loadMachinesCatalog();
+        } catch {
+          catalog = STARTER_MACHINES;
+        }
+        const targetId = get().currentProfileId || 'guest';
+        // Explicitly clear IndexedDB deep storage and vault notes to prevent orphaned data accumulation
+        await clearDeepProfileData(targetId);
+        await clearVaultFromIndexedDb();
+        safeLocalStorage.removeItem(getAttackGraphStorageKey(targetId));
+        clearLootState(targetId);
+        set(() => ({
+          machines: mergeMachinesWithCatalog([], true, catalog),
+          activeTargetId: null,
+          isTimerRunning: false,
+          activitySessions: [],
+          customNotes: [],
+          userNotes: [],
+          userWikilinkMap: {},
+          deletedNoteIds: [],
+          userSolvesReset: true,
+          isCatalogLoaded: true,
+          unexportedChangesCount: 0,
+          graphNodePositions: {},
+          graphEdges: [],
+          credentials: [],
+          credAttempts: [],
+          lootItems: [],
+        }));
+        get().saveProfileData(targetId);
+        broadcastCrossTabMessage('STATE_UPDATED', { profileId: targetId });
+      }
+    }),
+    {
+      name: 'zerobox-tactical-store',
+      version: SCHEMA_VERSION,
+      // Object-level storage (not createJSONStorage): lets us skip the JSON.stringify + localStorage write
+      // whenever partialize() hands back the exact same snapshot object (transient-only set() calls such as
+      // timer ticks, modal flags and isCatalogLoading), and parses the stored blob only once at boot.
+      storage: {
+        getItem: (name: string): StorageValue<any> | null => {
+          if (typeof window === 'undefined') return null;
+          try {
+            const raw = safeLocalStorage.getItem(name);
+            if (!raw) return null;
+            // Throws on corrupted JSON; handled below without surfacing an uncaught SyntaxError at boot
+            return JSON.parse(raw) as StorageValue<any>;
+          } catch (err) {
+            console.warn(
+              `[ZeroBox Storage] Corrupted JSON detected in '${name}'. Quarantining and falling back to clean default state:`,
+              err
+            );
+            try {
+              const corrupted = safeLocalStorage.getItem(name);
+              if (corrupted) {
+                safeLocalStorage.setItem(`${name}_corrupted_backup_${Date.now()}`, corrupted);
+              }
+              safeLocalStorage.removeItem(name);
+            } catch {}
+            return null;
+          }
+        },
+        setItem: (name: string, value: StorageValue<any>): void => {
+          if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
+          // A failed write (quota) is retried on the next real change, not on every transient set() (timer ticks).
+          if (value.state === lastFailedSnapshot) return;
+          if (safeLocalStorage.setItem(name, JSON.stringify(value))) {
+            lastPersistedSnapshot = value.state;
+            lastPersistedVersion = value.version;
+            lastFailedSnapshot = undefined;
+          } else {
+            lastFailedSnapshot = value.state;
+          }
+        },
+        removeItem: (name: string): void => {
+          lastPersistedSnapshot = undefined;
+          safeLocalStorage.removeItem(name);
+        },
+      },
+      migrate: (persistedState: any, fromVersion: number) => {
+        if (fromVersion > SCHEMA_VERSION) {
+          // Written by a newer build: never down-convert or write it back. Read-only until reload.
+          engageSchemaWriteGate('newer-schema');
+          return persistedState;
+        }
+        // v3 (isCustom normalization) needs no state transform here: mergeMachinesWithCatalog normalizes every
+        // entry point. Snapshot the raw strings first (synchronous capture, async IndexedDB write).
+        takePreMigrationBackup(fromVersion);
+        const persisted = persistedState || {};
+        if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
+          persisted.appBrand = 'zerobox';
+        }
+        if (!persisted.uiScale || persisted.uiScale === 'normal') {
+          persisted.uiScale = 'auto';
+        }
+        const userSolvesReset = Boolean(persisted.userSolvesReset);
+        const rawPreset = (persisted.themePreset as string) || 'obsidian';
+        const themePreset: ThemePreset = normalizeThemePreset(rawPreset);
+        applyThemePreset(themePreset);
+
+        // Fail-safe: Ensure isolated custom machines are never lost during version migration
+        const storedMachines: Machine[] = Array.isArray(persisted.machines) ? persisted.machines : [];
+        const isolatedCustom = loadCustomMachinesFromStorage(persisted.currentProfileId || 'guest');
+        const existingIds = new Set(storedMachines.map((m) => m.id));
+        const missingCustom = isolatedCustom.filter((c) => !existingIds.has(c.id));
+        const combinedMachines = [...missingCustom, ...storedMachines];
+
+        return {
+          ...persisted,
+          appBrand: 'zerobox',
+          themePreset,
+          uiScale: (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : persisted.uiScale,
+          userSolvesReset,
+          customNotes: persisted.customNotes || [],
+          deletedNoteIds: persisted.deletedNoteIds || [],
+          deletedMachineIds: normalizeMachineTombstones(persisted.deletedMachineIds),
+          machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
+        };
+      },
+      merge: (persistedState: any, currentState: CtfStoreState) => {
+        // No blob (first run, or a corrupted one was quarantined): the initial state already holds the profile
+        // copy. Merging an empty blob would replace its machines with the bare catalog and clear its notes.
+        if (persistedState === null || persistedState === undefined) {
+          applyThemePreset(currentState.themePreset);
+          return currentState;
+        }
+        const persisted = (persistedState as Partial<CtfStoreState>) || {};
+        const userSolvesReset = Boolean(persisted.userSolvesReset);
+        const rawPreset = (persisted.themePreset as string) || 'obsidian';
+        const themePreset: ThemePreset = normalizeThemePreset(rawPreset);
+        applyThemePreset(themePreset);
+        const resolvedUiScale: UiScale = (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : (persisted.uiScale as UiScale);
+
+        // Fail-safe: Ensure isolated custom machines are never lost during store rehydration
+        const storedMachines: Machine[] = Array.isArray(persisted.machines) ? persisted.machines : [];
+        const isolatedCustom = loadCustomMachinesFromStorage(persisted.currentProfileId || 'guest');
+        const existingIds = new Set(storedMachines.map((m) => m.id));
+        const missingCustom = isolatedCustom.filter((c) => !existingIds.has(c.id));
+        const combinedMachines = [...missingCustom, ...storedMachines];
+
+        return {
+          ...currentState,
+          ...persisted,
+          appBrand: 'zerobox',
+          themePreset,
+          uiScale: resolvedUiScale,
+          userSolvesReset,
+          customNotes: persisted.customNotes || [],
+          deletedNoteIds: persisted.deletedNoteIds || [],
+          // Persisted blob first; an older blob without the field falls back to the profile copy.
+          deletedMachineIds: normalizeMachineTombstones(persisted.deletedMachineIds ?? currentState.deletedMachineIds),
+          machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
+        };
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (!state.uiScale || state.uiScale === 'normal') {
+            state.uiScale = 'auto';
+          }
+        }
+      },
+      partialize: (state) => {
+        const inputs = [
+          state.currentProfileId,
+          state.appBrand,
+          state.themePreset,
+          state.userSolvesReset,
+          state.customNotes,
+          state.deletedNoteIds,
+          state.deletedMachineIds,
+          state.machines,
+          state.activeTargetId,
+          state.globalVars,
+          state.cheatsheets,
+          state.activitySessions,
+          state.viewMode,
+          state.crtOverlay,
+          state.soundEnabled,
+          state.uiScale,
+        ];
+        // Same persisted inputs => return the identical snapshot so the storage adapter can skip serializing.
+        if (lastPartialize && lastPartialize.inputs.every((v, i) => Object.is(v, inputs[i]))) {
+          return lastPartialize.snapshot;
+        }
+        const snapshot = {
+          currentProfileId: state.currentProfileId,
+          appBrand: state.appBrand,
+          themePreset: state.themePreset,
+          userSolvesReset: state.userSolvesReset,
+          customNotes: state.customNotes,
+          deletedNoteIds: state.deletedNoteIds,
+          deletedMachineIds: state.deletedMachineIds,
+          machines: toLeanMachines(state.machines),
+          activeTargetId: state.activeTargetId,
+          globalVars: state.globalVars,
+          cheatsheets: state.cheatsheets,
+          activitySessions: state.activitySessions,
+          viewMode: state.viewMode,
+          crtOverlay: state.crtOverlay,
+          soundEnabled: state.soundEnabled,
+          uiScale: state.uiScale,
+        };
+        lastPartialize = { inputs, snapshot };
+        return snapshot;
+      },
+    }
+  )
+);
+
+// Hydration is done (and any newer persisted blob has engaged the gate): record our schema version.
+recordSchemaVersion();
+
+// Loot and the attack graph were loaded for the auth session's profile, but the persisted blob can name another
+// one (it wins during hydration). Reload them for the profile this tab actually ended up on, or the next loot or
+// graph save would write that profile's data under another profile's key.
+const bootProfileId = useCtfStore.getState().currentProfileId || 'guest';
+const legacyGraphClaimedFor = claimLegacyAttackGraphOnce();
+if (bootProfileId !== initialProfileId) {
+  useCtfStore.setState({ ...loadInitialAttackGraphState(bootProfileId), ...loadLootState(bootProfileId) });
+} else if (legacyGraphClaimedFor === bootProfileId) {
+  useCtfStore.setState(loadInitialAttackGraphState(bootProfileId));
+}
+
+/**
+ * The IndexedDB workspace copy (zb:workspace:<profile>) is written with every profile save. Decide now, before
+ * anything writes, whether localStorage lost that data or holds an older copy (e.g. its write hit the quota):
+ * 'missing' when neither the profile key nor the persisted blob exists, else the profile copy's savedAt stamp
+ * (null when it has none, i.e. written by an older build, so it can't be compared and is trusted).
+ */
+const bootResilientCheck: 'missing' | number | null = (() => {
+  if (typeof window === 'undefined') return null;
+  const raw = safeLocalStorage.getItem(getProfileStorageKey(bootProfileId));
+  if (!raw) return safeLocalStorage.getItem('zerobox-tactical-store') ? null : 'missing';
+  try {
+    const savedAt = Date.parse(JSON.parse(raw)?.savedAt);
+    return Number.isFinite(savedAt) ? savedAt : null;
+  } catch {
+    return null;
+  }
+})();
+
+/** Whether the stored workspace carries its own customNotes list (then an empty one means "all deleted"). */
+const bootHasNotesList = (() => {
+  if (typeof window === 'undefined') return false;
+  for (const key of [getProfileStorageKey(bootProfileId), 'zerobox-tactical-store']) {
+    try {
+      const parsed = JSON.parse(safeLocalStorage.getItem(key) || 'null');
+      if (Array.isArray((parsed?.state || parsed)?.customNotes)) return true;
+    } catch {}
+  }
+  return false;
+})();
+
+const DEEP_LOAD_RETRY_DELAYS_MS = [2_000, 10_000, 30_000];
+
+/**
+ * Loads a profile's deep record (writeup/quick-note bodies, custom notes) into the store. Applied only while the
+ * same profile load is still current (no later switch: generation + profile id), and isDeepStorageLoaded only
+ * turns true once the read really succeeded: until then flushes skip the deep write, so a failed read can never
+ * lead to an empty deep record erasing bodies that only live in IndexedDB. A failed read is retried a few times.
+ */
+function hydrateDeepProfile(profileId: string, gen: number, options: { refillNotes?: boolean } = {}, attempt = 0) {
+  const isCurrent = () =>
+    gen === profileLoadGeneration && (useCtfStore.getState().currentProfileId || 'guest') === profileId;
+  loadDeepProfileData(profileId).then(
+    (deep) => {
+      if (!isCurrent()) return;
+      const state = useCtfStore.getState();
+      const patch: Partial<CtfStoreState> = { isDeepStorageLoaded: true };
+      if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
+        const merged = mergeDeepPayloadsIntoMachines(state.machines, deep.writeups);
+        if (merged !== state.machines) patch.machines = merged;
+      }
+      // Only for a workspace saved without a notes list (older or quota-stripped copies); an empty list is a deletion.
+      if (options.refillNotes && deep?.customNotes?.length && state.customNotes.length === 0) {
+        patch.customNotes = deep.customNotes;
+      }
+      useCtfStore.setState(patch);
+    },
+    (err) => {
+      if (!isCurrent()) return;
+      console.warn('[ZeroBox] Could not read deep storage; deep saves stay off until it loads.', err);
+      const delay = DEEP_LOAD_RETRY_DELAYS_MS[attempt];
+      if (delay !== undefined) setTimeout(() => hydrateDeepProfile(profileId, gen, options, attempt + 1), delay);
+    }
+  );
+}
+
+/** The hydrated workspace, to tell user edits from boot-time changes (catalog merge, deep hydration). */
+const bootProfileSnapshot = useCtfStore.getState();
+
+/** True once the user changed profile data after boot (machine edits stamp updatedAt; new customs are added). */
+function profileEditedSinceBoot(state: CtfStoreState): boolean {
+  const b = bootProfileSnapshot;
+  if (
+    state.activeTargetId !== b.activeTargetId ||
+    state.globalVars !== b.globalVars ||
+    state.cheatsheets !== b.cheatsheets ||
+    state.activitySessions !== b.activitySessions ||
+    state.customNotes !== b.customNotes ||
+    state.deletedNoteIds !== b.deletedNoteIds ||
+    state.deletedMachineIds !== b.deletedMachineIds ||
+    state.userSolvesReset !== b.userSolvesReset
+  ) {
+    return true;
+  }
+  const atBoot = new Map(b.machines.map((m) => [m.id, m] as const));
+  return state.machines.some((m) => {
+    const was = atBoot.get(m.id);
+    return was ? isoMs(m.updatedAt) > isoMs(was.updatedAt) : isGenuineCustom(m);
+  });
+}
+
+async function restoreFromResilientCopy(profileId: string, check: 'missing' | number | null) {
+  if (check === null) return;
+  const copy = await loadWorkspaceFromIdb<Record<string, any>>(`zb:workspace:${profileId}`).catch(() => null);
+  if (!copy || !Array.isArray(copy.machines)) return;
+  if (check !== 'missing' && !(Date.parse(copy.savedAt) > check)) return;
+  // Gated (newer schema or a restore in progress) or switched profile meanwhile: leave everything alone.
+  if (isSchemaWriteGated() || (useCtfStore.getState().currentProfileId || 'guest') !== profileId) return;
+  // The user already worked in this tab: restoring would replace those edits. Keep them (they get saved).
+  if (profileEditedSinceBoot(useCtfStore.getState())) return;
+  const userSolvesReset = Boolean(copy.userSolvesReset);
+  const machines = mergeMachinesWithCatalog(copy.machines, userSolvesReset);
+  const activeTargetId = typeof copy.activeTargetId === 'string' ? copy.activeTargetId : null;
+  useCtfStore.setState((s) => ({
+    machines,
+    activeTargetId,
+    isTimerRunning: false,
+    timerLastTick: null,
+    activeTimerSeconds: timerSecondsFor(machines, activeTargetId),
+    userSolvesReset,
+    globalVars: copy.globalVars || s.globalVars,
+    cheatsheets: Array.isArray(copy.cheatsheets) ? copy.cheatsheets : s.cheatsheets,
+    activitySessions: Array.isArray(copy.activitySessions) ? copy.activitySessions : s.activitySessions,
+    customNotes: Array.isArray(copy.customNotes) ? copy.customNotes : s.customNotes,
+    deletedNoteIds: Array.isArray(copy.deletedNoteIds) ? copy.deletedNoteIds : s.deletedNoteIds,
+    deletedMachineIds: normalizeMachineTombstones(copy.deletedMachineIds ?? s.deletedMachineIds),
+  }));
+  console.warn('[ZeroBox] Restored the workspace from the IndexedDB copy (localStorage was missing or older).');
+  flushProfileSave();
+}
+
+// Timer fields are transient, so a tab that closed or crashed with the timer running always boots paused and
+// never counts the downtime. Seed the display from the active machine's last saved time, or the next
+// start/pause/switch would continue from 0 and overwrite that saved time.
+{
+  const booted = useCtfStore.getState();
+  useCtfStore.setState({
+    isTimerRunning: false,
+    timerLastTick: null,
+    activeTimerSeconds: timerSecondsFor(booted.machines, booted.activeTargetId),
+  });
+}
+
+// Selective, high-performance profile auto-save
+// Guards against 1Hz timer ticks, uses debouncing with maxWait cap, and flushes on tab close
+let lastSavedMachines = useCtfStore.getState().machines;
+let lastSavedTargetId = useCtfStore.getState().activeTargetId;
+let lastSavedGlobalVars = useCtfStore.getState().globalVars;
+let lastSavedCheatsheets = useCtfStore.getState().cheatsheets;
+let lastSavedSessions = useCtfStore.getState().activitySessions;
+let lastSavedCustomNotes = useCtfStore.getState().customNotes;
+let lastSavedDeletedNoteIds = useCtfStore.getState().deletedNoteIds;
+let lastSavedDeletedMachineIds = useCtfStore.getState().deletedMachineIds;
+let lastSavedUserSolvesReset = useCtfStore.getState().userSolvesReset;
+let saveDebounceTimer: any = null;
+let maxWaitTimer: any = null;
+/** True while this tab applies profile data another tab just wrote (see the storage listener). */
+let applyingExternalProfile = false;
+
+function markProfileSaved(state: CtfStoreState) {
+  lastSavedMachines = state.machines;
+  lastSavedTargetId = state.activeTargetId;
+  lastSavedGlobalVars = state.globalVars;
+  lastSavedCheatsheets = state.cheatsheets;
+  lastSavedSessions = state.activitySessions;
+  lastSavedCustomNotes = state.customNotes;
+  lastSavedDeletedNoteIds = state.deletedNoteIds;
+  lastSavedDeletedMachineIds = state.deletedMachineIds;
+  lastSavedUserSolvesReset = state.userSolvesReset;
+}
+
+function hasUnsavedProfileChanges(state: CtfStoreState) {
+  return (
+    state.machines !== lastSavedMachines ||
+    state.activeTargetId !== lastSavedTargetId ||
+    state.globalVars !== lastSavedGlobalVars ||
+    state.cheatsheets !== lastSavedCheatsheets ||
+    state.activitySessions !== lastSavedSessions ||
+    state.customNotes !== lastSavedCustomNotes ||
+    state.deletedNoteIds !== lastSavedDeletedNoteIds ||
+    state.deletedMachineIds !== lastSavedDeletedMachineIds ||
+    state.userSolvesReset !== lastSavedUserSolvesReset
+  );
+}
+
+/** Save point (stop, switch, reset, checkpoint): write now, but only if something is still unsaved. */
+function flushPendingProfileSave() {
+  if (hasUnsavedProfileChanges(useCtfStore.getState())) flushProfileSave();
+}
+
+export function flushProfileSave() {
+  if (saveDebounceTimer) {
+    clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = null;
+  }
+  if (maxWaitTimer) {
+    clearTimeout(maxWaitTimer);
+    maxWaitTimer = null;
+  }
+  // Debounced, maxWait, beforeunload, visibility and Tauri-close saves all land here. While gated (newer schema,
+  // or a restore in this or another tab) nothing is written and the lastSaved markers stay put, so a released
+  // restore lock can re-flush the still-unsaved state.
+  if (typeof window === 'undefined' || isSchemaWriteGated()) return;
+  const state = useCtfStore.getState();
+  if (!state.currentProfileId) return;
+
+  const persistedMachines = overlayActiveTimer(state);
+
+  // Optimize localStorage footprint: Strip large static catalog walkthroughs & synopses
+  // from storage payload since they are deterministically rehydrated from INITIAL_MACHINES on load.
+  const storageLeanMachines = toLeanMachines(persistedMachines);
+
+  // Dual-tier: asynchronously save deep payloads (writeups & notes) to IndexedDB
+  const deepWriteups = extractDeepWriteups(persistedMachines);
+  // Always written, even when empty: skipping the empty case left the old record in place, and it refilled the
+  // cleared writeups/notes on the next load. Not before this profile's deep data has loaded, though: until then
+  // the machines may lack bodies that only live in IndexedDB (lean quota saves), and writing would erase them.
+  if (state.isDeepStorageLoaded) {
+    saveDeepProfileData(state.currentProfileId, {
+      writeups: deepWriteups,
+      customNotes: state.customNotes,
+    });
+  }
+
+  const payload = {
+    machines: storageLeanMachines,
+    activeTargetId: state.activeTargetId,
+    globalVars: state.globalVars,
+    cheatsheets: state.cheatsheets,
+    activitySessions: state.activitySessions,
+    customNotes: state.customNotes,
+    deletedNoteIds: state.deletedNoteIds,
+    deletedMachineIds: state.deletedMachineIds,
+    userSolvesReset: state.userSolvesReset,
+  };
+  const { saved, savedAt } = writeProfilePayload(state.currentProfileId, payload);
+  // Same stamp on the IndexedDB copy as on the localStorage copy: boot compares them (restoreFromResilientCopy).
+  // Written even when localStorage failed (quota), so that newer copy can be restored after a reload.
+  saveWorkspaceToIdb(`zb:workspace:${state.currentProfileId}`, { ...payload, savedAt }).catch(() => {});
+  // Only a write that reached disk is a save: on failure the markers stay put, so the next save point retries.
+  if (saved) {
+    markProfileSaved(state);
+    broadcastCrossTabMessage('WRITEUPS_UPDATED', { profileId: state.currentProfileId });
+  }
+}
+
+const isoMs = (iso: unknown): number => {
+  const t = typeof iso === 'string' ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) ? t : 0;
+};
+
+/**
+ * Cross-tab merge of another tab's machines into ours. Only rows this tab changed since its last save
+ * (`saved` holds the rows it last wrote) can win: a pending row strictly newer by updatedAt than the incoming
+ * one is kept, and a pending row the other tab doesn't have is kept unless tombstoned. Everything already saved
+ * defers to the newer write (so e.g. a reset there isn't undone here). Returns `incoming` itself when nothing
+ * of ours is kept, which the listener treats as an echo of data already in storage.
+ */
+export function mergeIncomingMachines(
+  local: Machine[],
+  incoming: Machine[],
+  saved: ReadonlySet<Machine>,
+  tombstones: MachineTombstone[] = []
+): Machine[] {
+  const pending = new Map(local.filter((m) => !saved.has(m)).map((m) => [m.id, m] as const));
+  if (pending.size === 0) return incoming;
+  let keptOurs = false;
+  const incomingIds = new Set<string>();
+  const merged = incoming.map((m) => {
+    incomingIds.add(m.id);
+    const mine = pending.get(m.id);
+    if (mine && isoMs(mine.updatedAt) > isoMs(m.updatedAt)) {
+      keptOurs = true;
+      return mine;
+    }
+    return m;
+  });
+  const dead = new Set(tombstones.map((t) => t.id));
+  const localOnly = [...pending.values()].filter((m) => !incomingIds.has(m.id) && !dead.has(m.id));
+  if (!keptOurs && localOnly.length === 0) return incoming;
+  return [...localOnly, ...merged];
+}
+
+/** Profile-persisted fields: a change to any of these needs a profile save. */
+const profileFieldsDiffer = (a: CtfStoreState, b: CtfStoreState) =>
+  a.machines !== b.machines ||
+  a.activeTargetId !== b.activeTargetId ||
+  a.globalVars !== b.globalVars ||
+  a.cheatsheets !== b.cheatsheets ||
+  a.activitySessions !== b.activitySessions ||
+  a.customNotes !== b.customNotes ||
+  a.deletedNoteIds !== b.deletedNoteIds ||
+  a.deletedMachineIds !== b.deletedMachineIds ||
+  a.userSolvesReset !== b.userSolvesReset;
+
+useCtfStore.subscribe((state, prev) => {
+  if (typeof window === 'undefined' || !state.currentProfileId) return;
+
+  // Data another tab just saved is already in storage: writing it back would only bounce between the tabs.
+  if (applyingExternalProfile) return;
+
+  // Selective Persistence Check: Only trigger if persisted data actually changed!
+  // Prevents 1Hz timer ticks (activeTimerSeconds) from ever touching localStorage!
+  if (!hasUnsavedProfileChanges(state)) return;
+
+  // The timer just stopped (pause, root/completed, target cleared): that is a save point, write now.
+  if (prev.isTimerRunning && !state.isTimerRunning) {
+    flushProfileSave();
+    return;
+  }
+
+  // A pending save is already scheduled and this update (e.g. a 1 Hz timer tick) changed nothing persisted:
+  // leave the debounce alone, otherwise ticks would keep pushing it back until the maxWait cap.
+  if (saveDebounceTimer && !profileFieldsDiffer(state, prev)) return;
+
+  // Debounce with maxWait cap (5000ms max)
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  if (!maxWaitTimer) {
+    maxWaitTimer = setTimeout(flushProfileSave, 5000);
+  }
+  saveDebounceTimer = setTimeout(flushProfileSave, 1200);
+});
+
+/**
+ * Close/background save: fold the live timer into the active machine first, so the persisted store blob (which
+ * wins at boot) carries the exact seconds too, not just the profile copy. Then write through the usual path.
+ */
+function checkpointTimerAndFlush() {
+  const state = useCtfStore.getState();
+  const folded = foldActiveTimer(state);
+  if (folded !== state.machines) useCtfStore.setState({ machines: folded });
+  flushProfileSave();
+}
+
+// Flush immediately on tab close or backgrounding
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', checkpointTimerAndFlush);
+  // pagehide also fires where beforeunload doesn't (mobile Safari, bfcache navigations): same save as hidden.
+  window.addEventListener('pagehide', checkpointTimerAndFlush);
+  // An aborted restore in another tab released our gate: save whatever was held back while it was engaged.
+  onRestoreLockReleased(flushProfileSave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      checkpointTimerAndFlush();
+    } else if (document.visibilityState === 'visible') {
+      if (useCtfStore.getState().isTimerRunning) {
+        useCtfStore.getState().tickTimer();
+      }
+    }
+  });
+
+  // Cross-tab auto-sync: Reconcile external storage modifications across open tabs
+  window.addEventListener('storage', (event) => {
+    // Another tab's write (or removal, or clear) is newer than any copy this tab holds in memory after a failed
+    // write: drop that copy so reads (e.g. a STATE_UPDATED reload) see the other tab's data, not our stale one.
+    // Our own unsaved state stays in the store and is retried at the next save.
+    if (event.key === null) inMemoryFallbackStorage.clear();
+    else inMemoryFallbackStorage.delete(event.key);
+    // Restore lock set/cleared by another tab (handled before the newValue check: clearing has newValue null)
+    if (handleRestoreLockStorageEvent(event.key, event.newValue)) return;
+    if (!event.key || !event.newValue) return;
+    if (event.key === SCHEMA_VERSION_STORAGE_KEY) {
+      if (isNewerSchemaVersion(event.newValue)) engageSchemaWriteGate('newer-schema');
+      return;
+    }
+    const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
+    const profileKey = getProfileStorageKey(currentProfileId);
+    if (event.key === profileKey || event.key === 'zerobox-tactical-store') {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        const data = parsed.state || parsed;
+        // The persisted store blob is shared by every tab: one on another profile must not hand us its data,
+        // or our next save would write it under this profile's keys.
+        const fromOtherProfile =
+          event.key === 'zerobox-tactical-store' && (data?.currentProfileId || 'guest') !== currentProfileId;
+        if (!fromOtherProfile && data && Array.isArray(data.machines)) {
+          const userSolvesReset = Boolean(data.userSolvesReset);
+          const state = useCtfStore.getState();
+          // Same profile in two tabs: this tab's not-yet-saved edits survive per machine when newer (else the
+          // last writer replaced every machine). Returns `incoming` itself when nothing of ours is kept.
+          const theirs = mergeMachinesWithCatalog(data.machines, userSolvesReset);
+          const incoming = mergeIncomingMachines(
+            state.machines,
+            theirs,
+            new Set(lastSavedMachines),
+            [...normalizeMachineTombstones(data.deletedMachineIds), ...state.deletedMachineIds]
+          );
+          const activeTargetId = 'activeTargetId' in data ? (data.activeTargetId ?? null) : state.activeTargetId;
+          const targetChanged = activeTargetId !== state.activeTargetId;
+          // The other tab switched target: keep this tab's seconds on the old target (never lowering it), then
+          // stop and show the new target's saved time.
+          const machines = targetChanged
+            ? foldActiveTimer({ machines: incoming, activeTargetId: state.activeTargetId, activeTimerSeconds: state.activeTimerSeconds })
+            : incoming;
+          const savedSeconds = timerSecondsFor(machines, activeTargetId);
+          // Same target: a running timer never goes down (two running tabs converge on the larger value); a
+          // paused one mirrors the saved time (another tab may have checkpointed or reset it).
+          const timer = targetChanged
+            ? { isTimerRunning: false, timerLastTick: null, activeTimerSeconds: savedSeconds }
+            : { activeTimerSeconds: state.isTimerRunning ? Math.max(state.activeTimerSeconds, savedSeconds) : savedSeconds };
+          // Nothing of ours to add and nothing pending: what we apply is already stored, so don't write it back.
+          const echoOnly = machines === theirs && !saveDebounceTimer && !maxWaitTimer;
+          applyingExternalProfile = echoOnly;
+          try {
+            useCtfStore.setState((s) => ({
+              userSolvesReset,
+              machines,
+              activeTargetId,
+              ...timer,
+              globalVars: data.globalVars || s.globalVars,
+              cheatsheets: data.cheatsheets || s.cheatsheets,
+              activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : s.activitySessions,
+              customNotes: Array.isArray(data.customNotes) ? data.customNotes : s.customNotes,
+              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : s.deletedNoteIds,
+              deletedMachineIds: Array.isArray(data.deletedMachineIds)
+                ? normalizeMachineTombstones(data.deletedMachineIds)
+                : s.deletedMachineIds,
+            }));
+          } finally {
+            applyingExternalProfile = false;
+          }
+          if (echoOnly) markProfileSaved(useCtfStore.getState());
+        }
+      } catch (err) {
+        console.warn('[ZeroBox] Failed to synchronize cross-tab storage event', err);
+      }
+    }
+
+    if (event.key === getLootStorageKey(currentProfileId)) {
+      const loot = parseLootPayload(event.newValue);
+      if (loot) useCtfStore.setState(loot);
+    }
+
+    if (event.key === getAttackGraphStorageKey(currentProfileId)) {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        const positions = parsed.graphNodePositions || parsed.nodePositions || {};
+        const edges = Array.isArray(parsed.graphEdges)
+          ? parsed.graphEdges
+          : Array.isArray(parsed.edges)
+          ? parsed.edges
+          : [];
+        useCtfStore.setState({
+          graphNodePositions: positions,
+          graphEdges: edges,
+        });
+      } catch (err) {
+        console.warn('[ZeroBox] Failed to synchronize cross-tab attack graph storage', err);
+      }
+    }
+  });
+
+  // Cross-tab BroadcastChannel listener for deep storage updates
+  syncChannel?.addEventListener('message', async (event) => {
+    if (handleRestoreBroadcast(event.data)) return;
+    const { type, payload } = event.data || {};
+    const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
+    if (type === 'WRITEUPS_UPDATED') {
+      if (!payload?.profileId || payload.profileId === currentProfileId) {
+        try {
+          const deep = await loadDeepProfileData(currentProfileId);
+          if (deep?.writeups && Object.keys(deep.writeups).length > 0) {
+            const currentMachines = useCtfStore.getState().machines;
+            const merged = mergeDeepPayloadsIntoMachines(currentMachines, deep.writeups);
+            useCtfStore.setState({ machines: merged });
+          }
+        } catch (err) {
+          console.warn('[ZeroBox] Could not sync writeups from BroadcastChannel:', err);
+        }
+      }
+    } else if (type === 'MACHINE_ADDED' && payload?.machine) {
+      if (!payload?.profileId || payload.profileId === currentProfileId) {
+        useCtfStore.setState((s) => {
+          if (s.machines.some((m) => m.id === payload.machine.id)) return s;
+          return { machines: [payload.machine, ...s.machines] };
+        });
+      }
+    } else if (type === 'MACHINE_DELETED' && payload?.id) {
+      if (!payload?.profileId || payload.profileId === currentProfileId) {
+        // Record the tombstone here too, or this tab's next save would drop it.
+        const deletedAt = typeof payload.deletedAt === 'string' ? Date.parse(payload.deletedAt) : NaN;
+        useCtfStore.setState((s) => ({
+          machines: s.machines.filter((m) => m.id !== payload.id),
+          deletedMachineIds: addMachineTombstone(
+            s.deletedMachineIds,
+            payload.id,
+            Number.isFinite(deletedAt) ? deletedAt : Date.now()
+          ),
+        }));
+      }
+    } else if (type === 'STATE_UPDATED') {
+      const profileData = loadInitialProfileData(currentProfileId);
+      if (profileData && Array.isArray(profileData.machines)) {
+        useCtfStore.setState({
+          machines: mergeMachinesWithCatalog(profileData.machines, profileData.userSolvesReset),
+          globalVars: profileData.globalVars || useCtfStore.getState().globalVars,
+          cheatsheets: profileData.cheatsheets || useCtfStore.getState().cheatsheets,
+        });
+      }
+    }
+  });
+
+  // Tauri v2 native close listener: flush profile immediately before process destruction
+  const isTauri = Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__);
+  if (isTauri) {
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen('tauri-app-close-requested', () => {
+        checkpointTimerAndFlush();
+      });
+    }).catch(() => {});
+  }
+
+  restoreFromResilientCopy(bootProfileId, bootResilientCheck);
+
+  // Asynchronously hydrate the user's imported notes from IndexedDB
+  loadVaultFromIndexedDb().then((vault) => {
+    if (vault?.notes && vault.notes.length > 0) {
+      useCtfStore.getState().setUserNotes(vault.notes);
+      if (vault.wikilinkMap) {
+        useCtfStore.getState().setUserWikilinkMap(vault.wikilinkMap);
+      }
+    }
+  }).catch((err) => {
+    console.warn('[ZeroBox] Could not hydrate user notes from IndexedDB', err);
+  });
+
+  // Asynchronously hydrate deep writeup payloads from IndexedDB
+  hydrateDeepProfile(bootProfileId, profileLoadGeneration, { refillNotes: !bootHasNotesList });
+}
+
+

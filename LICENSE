@@ -1,0 +1,77 @@
+ZEROBOX SOURCE-AVAILABLE NON-COMMERCIAL & EDUCATIONAL LICENSE (ZNSL 1.0)
+========================================================================
+
+Copyright (c) 2026 Daniel Dayan (@0xdnd). All Rights Reserved.
+Author Portfolio: https://0xdnd.github.io/
+Author GitHub:    https://github.com/0xdnd
+Author LinkedIn:  https://www.linkedin.com/in/daniel-dayan-a66322352/
+
+IMPORTANT NOTICE: PLEASE READ CAREFULLY BEFORE ACCESSING, DOWNLOADING,
+USING, OR COMPILING THIS SOFTWARE REPOSITORY.
+
+1. GRANT OF PERMITTED RIGHTS
+----------------------------
+Subject to the terms and restrictions of this License, Daniel Dayan ("Author" / "Licensor")
+hereby grants to any person obtaining a copy of this software and associated documentation
+files (the "Software"), a non-exclusive, non-transferable, royalty-free license to:
+
+  (a) Inspect, view, clone, and study the source code for personal, educational, and
+      academic research purposes.
+  (b) Compile, build, and run the Software locally on personal machines or private,
+      non-public offline environments for individual penetration testing practice,
+      CTF preparation (e.g. Hack The Box, TryHackMe, OffSec labs), and personal study.
+  (c) Submit non-commercial bug reports, pull requests, and feedback back to the
+      original upstream repository at https://github.com/0xdnd/ctf-tracker.
+
+2. STRICT PROHIBITIONS & COMMERCIAL RESTRICTIONS
+------------------------------------------------
+The following actions are STRICTLY PROHIBITED and constitute an immediate and automatic
+revocation of all rights granted under Section 1:
+
+  (a) NO COMMERCIAL USE OR MONETIZATION:
+      You may NOT sell, resell, rent, lease, sub-license, monetize, charge fees for,
+      or derive direct or indirect commercial revenue from the Software, in whole or in
+      part, or as part of any commercial training course, paid boot-camp, consulting
+      engagement, or commercial product offering.
+
+  (b) NO PUBLIC RE-PUBLISHING OR HOSTED SAAS DEPLOYMENT:
+      You may NOT publicly host, mirror, deploy as a Software-as-a-Service (SaaS),
+      or publish the Software on any public website, platform, application marketplace,
+      or package repository under your own name or any organization's name without
+      explicit prior written authorization from Daniel Dayan.
+
+  (c) NO DERIVATIVE MONETIZATION OR RE-BRANDING:
+      You may NOT remove, alter, or obscure the original creator branding, Daniel Dayan's
+      attribution, portfolio links, GitHub links, LinkedIn links, or copyright notices.
+      You may NOT distribute modified or derivative versions of this Software that claim
+      independent authorship or that remove these non-commercial restrictions.
+
+  (d) NO PERMISSIVE RE-LICENSING:
+      Derivative works, forks, or private adaptations of the Software remain bound by the
+      terms of this License and CANNOT be re-licensed under permissive licenses (such as
+      MIT, Apache 2.0, BSD, or Unlicense) that would permit commercial exploitation or
+      unattributed re-distribution.
+
+3. ATTRIBUTION REQUIREMENT
+--------------------------
+Any permitted reference, academic citation, or educational mention of the Software MUST
+prominently display the following attribution notice:
+
+  "ZeroBox Tactical CTF Platform is authored and copyrighted by Daniel Dayan (@0xdnd).
+   Official Portfolio: https://0xdnd.github.io/
+   Official Repository: https://github.com/0xdnd/ctf-tracker"
+
+4. TERMINATION
+--------------
+Any violation of any restriction in Section 2 automatically and immediately terminates
+your rights under this License without prejudice to any monetary or injunctive legal
+remedies available to the Author under applicable national and international copyright law.
+
+5. DISCLAIMER OF WARRANTY
+-------------------------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. IN NO EVENT SHALL DANIEL DAYAN OR
+ANY CONTRIBUTOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH
+THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
