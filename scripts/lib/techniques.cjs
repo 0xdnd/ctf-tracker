@@ -1,5 +1,6 @@
 // Curated technique groups for /techniques/<slug>/ hub pages.
 // matchTags: strings (exact, after lowercasing and turning -/_ into spaces) or RegExp (tested on that normalized tag).
+// Aliases and word-level RegExps live here too; MACHINE_OVERRIDES below is the last-resort per-machine fallback.
 // commandIds: ids from cheatsheetsData to show under "Key commands".
 const normTag = (t) => String(t).toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -22,7 +23,7 @@ const GROUPS = [
   },
   {
     slug: 'smb', name: 'SMB Enumeration and Exploitation',
-    matchTags: ['smb', 'smbclient', 'samba', 'rpc', 'smbmap'],
+    matchTags: [/(^| )smb( |$)/, /(^| )samba( |$)/, 'share enumeration', 'exploiting smb', 'exploiting samba', 'smb enumeration', 'smb', 'smbclient', 'samba', 'rpc', 'smbmap'],
     explainer: 'SMB exposes file shares, named pipes and RPC, so it is often the first place to look on Windows and Samba hosts. Start by checking for null or guest sessions, listing shares and reading anything that is world readable, since backups, scripts and configuration files frequently contain credentials. Tools such as smbclient, smbmap, rpcclient and NetExec cover share listing, user enumeration and password spraying. Writable shares can be abused to plant a payload or a poisoned file, and SMB signing status tells you whether relay attacks are realistic. On older systems, version-specific bugs and Samba misconfigurations can lead straight to a shell. Record every username you find; they feed Kerberos and password attacks later. These machines show SMB used as an entry point or as a source of loot.',
     cheatsheetTopics: ['network', 'file-transfer'], methodologyPhase: '02-service-enumeration',
     commandIds: ['rpcclient-null', 'smbmap-guest', 'netexec-smb', 'smb-netuse', 'impacket-smbserver'],
@@ -30,7 +31,7 @@ const GROUPS = [
   },
   {
     slug: 'sql-injection', name: 'SQL Injection',
-    matchTags: ['sqli', 'sql injection', 'basic sql injection', 'nosql injection', 'sqlmap'],
+    matchTags: ['sql', /(^| )sqli( |$)/, 'sqli', 'sql injection', 'basic sql injection', 'nosql injection', 'sqlmap'],
     explainer: 'SQL injection happens when user input is concatenated into a query, letting you change its logic. Test every parameter, header and cookie with a single quote, a comment sequence and boolean conditions, and watch for errors, timing differences or changed content. Depending on the result you can use UNION queries to read other tables, boolean or time based blind techniques, or stacked queries on some engines. Authentication bypasses and credential dumps are the common wins, and on MSSQL or MySQL with the right privileges you may reach file writes or command execution. sqlmap automates the work, but understand the manual payload first so you can fix it when filters or WAFs get in the way. Save the HTTP request to a file and let sqlmap reuse it. NoSQL variants use operators like $ne instead of quotes. The machines below feature injection as the foothold.',
     cheatsheetTopics: ['web', 'exploitation'], methodologyPhase: '04-initial-access',
     commandIds: ['sqlmap-auto', 'sqlmap-post', 'sqlmap-risk'],
@@ -46,7 +47,7 @@ const GROUPS = [
   },
   {
     slug: 'command-injection', name: 'Command Injection and RCE',
-    matchTags: ['command injection', 'cmd injection', 'rce', 'exploit modification', 'exploiting cve', 'webshell'],
+    matchTags: [/shellshock/, 'exploiting shellshock', 'backdoor', /(^| )rce( |$)/, 'xp cmdshell', 'command injection', 'cmd injection', 'rce', 'exploit modification', 'exploiting cve', 'webshell'],
     explainer: 'Command injection occurs when an application passes input to a system shell. Try separators such as ;, &&, |, backticks and $() after a legitimate value, and test blind cases with a sleep or an out-of-band request to your own listener. When spaces or specific characters are filtered, alternatives like ${IFS}, brace expansion and quoting tricks often bypass the check. Once you can run a command, prefer a short reverse shell or write a web shell, then stabilise the TTY before enumerating. Public remote code execution exploits for known CVEs follow the same pattern but usually need edits to the target address, payload or offsets, so read the code before running it. Identify the service version first, then match it to a trusted advisory. The machines here have a command execution foothold.',
     cheatsheetTopics: ['exploitation'], methodologyPhase: '05-shell-stabilization',
     commandIds: ['cmd-injection-space-bypass', 'php-mini-webshell', 'msfvenom-elf-rev', 'tty-upgrade-python'],
@@ -86,7 +87,7 @@ const GROUPS = [
   },
   {
     slug: 'linux-suid', name: 'Linux SUID Privilege Escalation',
-    matchTags: ['suid', 'exploiting suid files', 'gtfobins', 'setuid', 'path hijacking', 'cve 2019 14287'],
+    matchTags: [/(^| )suid( |$)/, 'suid', 'exploiting suid files', 'gtfobins', 'setuid', 'path hijacking', 'cve 2019 14287'],
     explainer: 'A SUID binary runs with the file owner privileges, often root, so any way to make it execute your commands is a privilege escalation. List candidates with find / -perm -4000 -type f 2>/dev/null and compare them against the GTFOBins catalogue for shell escapes. Custom binaries deserve a closer look: run strings or ltrace to spot calls to commands without absolute paths, then place a malicious binary earlier in PATH. Shared library injection and writable configuration files read by the binary are other routes. Remember that some shells drop privileges unless you pass -p. Document the exact binary and version you abused. The machines listed show SUID mistakes ranging from standard utilities to hand-written programs. Run the same check after every user change, since new groups expose new binaries.',
     cheatsheetTopics: ['linux-privesc'], methodologyPhase: '07-privilege-escalation',
     commandIds: ['suid-find', 'linpeas-fast', 'sudo-check'],
@@ -94,7 +95,7 @@ const GROUPS = [
   },
   {
     slug: 'sudo-misconfig', name: 'Sudo Misconfiguration',
-    matchTags: ['sudo', 'sudo privesc', 'sudoers', 'exploiting nopasswd', 'exploiting sudo nopasswd', 'nopasswd'],
+    matchTags: [/(^| )sudo( |$)/, 'sudo', 'sudo privesc', 'sudoers', 'exploiting nopasswd', 'exploiting sudo nopasswd', 'nopasswd'],
     explainer: 'Running sudo -l is one of the first checks after landing a shell, because allowed commands may be a direct path to root. Entries with NOPASSWD, wildcards, environment variables kept through env_keep, or editors and interpreters that can spawn shells are the usual wins, and GTFOBins lists the exact escape for each binary. Version issues also matter, for example older sudo releases with known bypasses. A rule that allows a script to run as root is only safe if that script and every file it loads are not writable by you. Watch for sudoers.d includes and for rules tied to a specific user or host. When sudo needs a password you do not have, reuse credentials from earlier loot. The boxes below hinge on a sudo mistake.',
     cheatsheetTopics: ['linux-privesc'], methodologyPhase: '07-privilege-escalation',
     commandIds: ['sudo-check', 'linpeas-fast', 'writable-passwd-root'],
@@ -118,7 +119,7 @@ const GROUPS = [
   },
   {
     slug: 'windows-privesc', name: 'Windows Privilege Escalation',
-    matchTags: ['seimpersonateprivilege', 'token impersonation', 'printspoofer', 'godpotato', 'potato', 'unquoted service path', 'uac bypass', 'alwaysinstallelevated', 'cve 2019 1388', 'registry', 'winpeas'],
+    matchTags: [/potato/, 'juicypotato', 'xp cmdshell', 'seimpersonateprivilege', 'token impersonation', 'printspoofer', 'godpotato', 'potato', 'unquoted service path', 'uac bypass', 'alwaysinstallelevated', 'cve 2019 1388', 'registry', 'winpeas'],
     explainer: 'Windows privilege escalation starts with understanding who you are and what the account can do. Run whoami /all and look for SeImpersonatePrivilege or SeAssignPrimaryTokenPrivilege, which service accounts usually hold and which potato style tools such as PrintSpoofer and GodPotato convert to SYSTEM. Other common paths are unquoted service paths, weak service binary or registry permissions, AlwaysInstallElevated, stored credentials, scheduled tasks and UAC bypasses when you are an administrator in a medium integrity shell. Automated scripts like WinPEAS list candidates quickly, but verify each finding by hand. Check the architecture and OS build before choosing an exploit. These machines cover the main Windows escalation families. Note the integrity level of your shell, because many techniques only work from a service context or an elevated prompt. Keep payloads small, test in a lab copy first, and clean up any service or registry change you make so the box stays stable for later steps.',
     cheatsheetTopics: ['active-directory'], methodologyPhase: '07-privilege-escalation',
     commandIds: ['winpeas-powershell', 'godpotato-privesc', 'printspoofer-privesc', 'unquoted-service-paths', 'always-install-elevated'],
@@ -134,7 +135,7 @@ const GROUPS = [
   },
   {
     slug: 'password-cracking', name: 'Password Cracking and Brute Force',
-    matchTags: ['hashcat', 'john', 'password cracking', 'hash cracking', 'hydra', 'brute force', 'bruteforce', 'default credentials', 'credential reuse', 'wordlist'],
+    matchTags: [/(^| )(hydra|john|hashcat)( |$)/, 'dictionary attack', 'no auth', 'admin bypass', 'authentication bypass', 'hashcat', 'john', 'password cracking', 'hash cracking', 'hydra', 'brute force', 'bruteforce', 'default credentials', 'credential reuse', 'wordlist'],
     explainer: 'Many boxes fall to a password that is weak, default or reused. Offline cracking turns a captured hash into plaintext: identify the hash type first, then choose the matching hashcat mode or John format, starting with rockyou and a rules file before heavier masks. Online attacks with Hydra or NetExec are slower and noisier, so use targeted username lists and watch for lockouts. Always try default credentials for the product you identified, and test every password you find against every service and user, because reuse is common. Build custom wordlists from site content with a tool like cewl when generic lists fail. Keep a running list of credentials in your notes. The machines below involve cracking or guessing a secret to progress.',
     cheatsheetTopics: ['exploitation'], methodologyPhase: '04-initial-access',
     commandIds: ['hashcat-ntlm', 'hashcat-sha512', 'hydra-ssh', 'hydra-http-post', 'jwt-crack'],
@@ -166,7 +167,7 @@ const GROUPS = [
   },
   {
     slug: 'cms-exploitation', name: 'CMS Exploitation (WordPress, Joomla)',
-    matchTags: ['wordpress', 'joomla', 'drupal', 'cms', 'wpscan', 'teamcity', 'jenkins', 'splunk'],
+    matchTags: [/(^| )cms( |$)/, 'fuel cms', 'cms made simple', 'nibbleblog', 'tomcat', 'elastix', 'wordpress', 'joomla', 'drupal', 'cms', 'wpscan', 'teamcity', 'jenkins', 'splunk'],
     explainer: 'Content management systems and common platforms are popular targets because they are widely deployed and often outdated. Identify the product and version from headers, generator tags and static file paths, then enumerate plugins, themes and users. WPScan covers WordPress, and similar scanners exist for Joomla and Drupal. A vulnerable plugin can give file read, SQL injection or upload, while an admin login lets you edit a theme or install a plugin containing a web shell. Weak or default passwords on admin panels, Jenkins script consoles and monitoring tools such as Splunk are a frequent shortcut. Check configuration files for database credentials once you have a foothold. These machines run recognisable software with exploitable weaknesses. Always back up what you change in an admin panel and remove the shell afterwards.',
     cheatsheetTopics: ['web'], methodologyPhase: '03-threat-modeling',
     commandIds: ['wpscan-full', 'ffuf-dir', 'feroxbuster-recurse', 'php-mini-webshell'],
@@ -174,7 +175,7 @@ const GROUPS = [
   },
   {
     slug: 'api-abuse', name: 'API and Web Application Logic Abuse',
-    matchTags: ['api', 'idor', 'graphql', 'jwt', 'rest', 'broken access control', 'burp suite', 'git'],
+    matchTags: ['authentication', 'api', 'idor', 'graphql', 'jwt', 'rest', 'broken access control', 'burp suite', 'git'],
     explainer: 'APIs expose application logic directly, so flaws are usually about authorisation rather than memory safety. Map every endpoint from documentation, JavaScript files and traffic in Burp, then test each one for missing access control: change object identifiers to read other users data (IDOR), call admin routes with a normal token and replay requests without authentication. Check JSON bodies for mass assignment by adding unexpected fields such as role or isAdmin. JWTs need their algorithm and secret examined, and GraphQL introspection can reveal the full schema. Exposed .git directories and old API versions often leak source and credentials. Rate limits and verbose errors are also worth noting. The machines listed centre on web application and API weaknesses. Test with at least two accounts so access control gaps become obvious.',
     cheatsheetTopics: ['web'], methodologyPhase: '03-threat-modeling',
     commandIds: ['graphql-introspection', 'jwt-crack', 'git-dump', 'ffuf-param', 'ffuf-dir'],
@@ -190,7 +191,7 @@ const GROUPS = [
   },
   {
     slug: 'network-services', name: 'Network Service Enumeration',
-    matchTags: ['ftp', 'nfs', 'snmp', 'ldap', 'redis', 'nmap', 'telnet', 'dns', 'tshark'],
+    matchTags: ['mysql', 'mariadb', 'mssql', 'mongodb', 'rsync', 'anonymous', 'ftp anonymous', 'anonymous login', 'subdomain takeover', 'port scanning', 'reconnaissance', 'ftp', 'nfs', 'snmp', 'ldap', 'redis', 'nmap', 'telnet', 'dns', 'tshark'],
     explainer: 'Good enumeration of network services decides most boxes before any exploit is run. After a full TCP scan and a quick UDP check, visit each port by hand: anonymous FTP may expose files, NFS exports can be mounted, SNMP community strings reveal users and processes, and unauthenticated Redis can write SSH keys or web shells. Grab banners, note versions and search for matching advisories, then look at default credentials for the product. Keep scan output per host and re-scan after you gain internal access, because new ports appear on localhost. Do not skip uncommon ports. The machines below are solved through careful service enumeration rather than a single exploit. Re-run the scans once credentials are known, since authenticated views expose far more detail. Compare the results of different tools instead of trusting one.',
     cheatsheetTopics: ['network'], methodologyPhase: '02-service-enumeration',
     commandIds: ['nmap-quick', 'nmap-full', 'nmap-udp', 'snmpwalk-public', 'dig-axfr'],
@@ -198,10 +199,50 @@ const GROUPS = [
   },
 ];
 
+// Explicit per-machine fallback (machine slug -> group slugs) for pages whose catalog tags are empty, generic or
+// version-only (CVE ids, "HTB", "techniques"). Applied on top of tag matching, so a page always links its topics.
+const MACHINE_OVERRIDES = {
+  'htb-twomillion': ['api-abuse', 'command-injection'],
+  'htb-knife': ['command-injection', 'sudo-misconfig'],
+  'htb-netmon': ['command-injection', 'network-services'],
+  'htb-jerry': ['cms-exploitation', 'password-cracking', 'file-upload'],
+  'htb-bashed': ['command-injection', 'sudo-misconfig', 'cron-jobs'],
+  'htb-blue': ['smb', 'windows-privesc'],
+  'htb-blocky': ['cms-exploitation', 'sudo-misconfig', 'source-code-review'],
+  'htb-granny': ['command-injection', 'file-upload', 'windows-privesc'],
+  'htb-grandpa': ['command-injection', 'file-upload', 'windows-privesc'],
+  'htb-optimum': ['command-injection', 'windows-privesc'],
+  'htb-beep': ['lfi-path-traversal', 'command-injection'],
+  'htb-devel': ['file-upload', 'windows-privesc'],
+  'htb-legacy': ['command-injection'],
+  'htb-lame': ['command-injection'],
+  'htb-archetype': ['smb', 'network-services', 'windows-privesc'],
+  'htb-preignition': ['network-services', 'password-cracking'],
+  'htb-mongod': ['network-services', 'password-cracking'],
+  'htb-synced': ['network-services', 'password-cracking'],
+  'htb-cap': ['linux-capabilities', 'network-services'],
+  'htb-nibbles': ['cms-exploitation', 'file-upload'],
+  'htb-bank': ['file-upload'],
+  'thm-w1seguy': ['source-code-review', 'password-cracking'],
+  'thm-md2pdf': ['api-abuse', 'source-code-review'],
+  'htb-appointment': ['api-abuse'],
+  'htb-base': ['api-abuse'],
+  'htb-crocodile': ['password-cracking'],
+  'htb-dancing': ['network-services'],
+  'htb-ignition': ['password-cracking'],
+  'htb-tactics': ['windows-lateral-movement'],
+  'thm-corridor': ['source-code-review'],
+  'thm-neighbour': ['password-cracking'],
+  'thm-recruit': ['api-abuse', 'source-code-review'],
+  'thm-rootme': ['command-injection'],
+  'thm-cyberheroes': ['source-code-review', 'api-abuse'],
+};
+const overrideSlugs = (m) => MACHINE_OVERRIDES[m.slug] || [];
+
 function matchesTag(group, tag) {
   const n = normTag(tag);
   return group.matchTags.some((m) => (m instanceof RegExp ? m.test(n) : normTag(m) === n));
 }
-const matchesMachine = (group, m) => (m.tags || []).some((t) => matchesTag(group, t));
+const matchesMachine = (group, m) => (m.tags || []).some((t) => matchesTag(group, t)) || overrideSlugs(m).includes(group.slug);
 
-module.exports = { GROUPS, matchesTag, matchesMachine, normTag };
+module.exports = { GROUPS, matchesTag, matchesMachine, normTag, overrideSlugs, MACHINE_OVERRIDES };

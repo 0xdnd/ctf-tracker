@@ -23,18 +23,21 @@ const model = getModel();
 const routes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
 const { execFileSync } = require('child_process');
 const lmCache = new Map();
-const BUILD_DATE = new Date().toISOString().slice(0, 10);
+// Last resort when not even the generator has a git date (no git at all): a fixed epoch-style date, not the build day.
+const FALLBACK_DATE = '2026-01-01';
 const git = (args) => execFileSync('git', args, { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-// Date a source file last changed: the build date while it has uncommitted edits, otherwise its last git commit date
-// (cached). Falls back to the build date when git or history is unavailable, so a page never ships without a lastmod.
+// Date a source file last changed: its last git commit date (cached, one git call per distinct path). Never the build date:
+// when git or history is unavailable (or the file is untracked) it falls back to the generator's own last commit date.
+const GEN_FILE = 'scripts/gen-content-pages.cjs';
 function gitDate(rel) {
   if (!lmCache.has(rel)) {
-    let v;
+    let v = '';
     try {
-      v = git(['status', '--porcelain', '--', rel]) ? BUILD_DATE : git(['log', '-1', '--format=%cI', '--', rel]).slice(0, 10) || BUILD_DATE;
+      v = git(['log', '-1', '--format=%cs', '--', rel]);
     } catch (e) {
-      v = BUILD_DATE;
+      v = '';
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) v = rel === GEN_FILE ? FALLBACK_DATE : gitDate(GEN_FILE);
     lmCache.set(rel, v);
   }
   return lmCache.get(rel);
@@ -51,6 +54,7 @@ const TYPE_SRC = {
   'machine-detail': 'machines', 'machines-hub': 'machines', cheatsheet: 'cheatsheet', 'cheatsheet-hub': 'cheatsheet',
   'methodology-phase': 'methodology', 'methodology-hub': 'methodology', revshells: 'revshells', 'pentest-note': 'notes', 'pentest-hub': 'notes',
 };
+const maxDateOf = (...rels) => maxDate(...rels.map(gitDate));
 const dmField = (key) => (gitDate(SRC[key]) ? { dateModified: gitDate(SRC[key]) } : {});
 const pages = []; // { loc, type, lastmod }
 const counts = {};
@@ -223,9 +227,18 @@ function machineDesc(m, summary, tagList) {
   const lead = `${m.name} ${m.platform} ${kindWord}: `;
   // A usable hint is a real sentence (not a stub like "Hack The Box Linux machine." or the generated "Solved ..." line).
   if (first && first.length >= 45 && !/^Solved /.test(first) && !/[{}]/.test(first) && /[.!?]$/.test(first) && lead.length + first.length <= 155) return lead + first;
-  const techs = techGroups.filter((g) => (m.tags || []).some((t) => TECH.matchesTag(g, t))).slice(0, 3).map((g) => g.name);
+  const techs = machineTech(m).slice(0, 3).map((e) => e.g.name);
   const diff = m.difficulty.toLowerCase();
   return `${m.name} is ${article(diff)} ${diff} ${m.os} machine on ${m.platform}. ${techs.length ? `My ${kindWord} covers ${techs.join(', ')}.` : `Read my ${kindWord} and the techniques it trains.`}`;
+}
+
+// Technique hubs a machine belongs to: tag matches first (most hits first), then the explicit per-machine fallbacks.
+function machineTech(m) {
+  const fallback = TECH.overrideSlugs(m);
+  return techGroups
+    .map((g) => ({ g, hits: (m.tags || []).filter((t) => TECH.matchesTag(g, t)) }))
+    .filter((e) => e.hits.length || fallback.includes(e.g.slug))
+    .sort((a, b) => b.hits.length - a.hits.length || a.g.name.localeCompare(b.g.name));
 }
 
 // "Related" block on a machine page: its certification hubs and the technique hubs its tags match.
@@ -234,12 +247,9 @@ function relatedHubs(m) {
     .map((c) => certHubs.find((h) => h.cert === c))
     .filter(Boolean)
     .map((h) => `<li>${h.cert === 'HTB-Starting-Point' ? 'Track' : 'Certification'}: <a href="/${h.slug}/">${esc(h.name)} machines (${h.machines.length})</a></li>`);
-  const techLinks = techGroups
-    .map((g) => [g, (m.tags || []).filter((t) => TECH.matchesTag(g, t)).length])
-    .filter((e) => e[1] > 0)
-    .sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
+  const techLinks = machineTech(m)
     .slice(0, 4)
-    .map(([g]) => `<li>Technique: <a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length} machines)</a></li>`);
+    .map(({ g }) => `<li>Technique: <a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length} machines)</a></li>`);
   const links = [...certLinks, ...techLinks, '<li>All machines: <a href="/machines/">Hack The Box and TryHackMe directory</a></li>'];
   return `<h2>Related</h2><ul>${links.join('')}</ul>`;
 }
@@ -269,12 +279,9 @@ function machineOverview(m, plat, tagList) {
 
 // "Techniques explained": each technique hub the machine's tags match, with the hub's first explainer sentence and the matching tags.
 function techniqueExplained(m) {
-  const items = techGroups
-    .map((g) => [g, (m.tags || []).filter((t) => TECH.matchesTag(g, t))])
-    .filter((e) => e[1].length)
-    .sort((a, b) => b[1].length - a[1].length || a[0].name.localeCompare(b[0].name))
+  const items = machineTech(m)
     .slice(0, 5)
-    .map(([g, hit]) => `<li><a href="/techniques/${g.slug}/">${esc(g.name)}</a>: ${esc(firstSentence(g.explainer))} Matched here by the ${hit.length > 1 ? 'tags' : 'tag'} ${esc(joinList(hit))}; ${g.machines.length} catalog machines practise it, ${solvedAll(g.machines)} of them solved by me.</li>`);
+    .map(({ g, hits: hit }) => `<li><a href="/techniques/${g.slug}/">${esc(g.name)}</a>: ${esc(firstSentence(g.explainer))} ${hit.length ? `Matched here by the ${hit.length > 1 ? 'tags' : 'tag'} ${esc(joinList(hit))}; ` : 'Listed here as a related technique; '}${g.machines.length} catalog machines practise it, ${solvedAll(g.machines)} of them solved by me.</li>`);
   return items.length ? `<h2>Techniques explained</h2><ul>${items.join('')}</ul>` : '';
 }
 
@@ -379,7 +386,8 @@ for (const m of withPage) {
         },
       ],
     }),
-    0.6
+    0.6,
+    maxDateOf(SRC.machines, 'scripts/data/machine-notes.json', 'scripts/lib/techniques.cjs')
   );
 }
 {
@@ -775,7 +783,7 @@ function itemListLd(name, url, ordered) {
 }
 const osLine = (list) => osCounts(list).map(([o, n]) => `${n} ${o}`).join(', ');
 const hubLastmod = gitDate(SRC.machines);
-const techLastmod = gitDate('scripts/lib/techniques.cjs') ? [hubLastmod, gitDate('scripts/lib/techniques.cjs')].filter(Boolean).sort().pop() : null;
+const techLastmod = maxDateOf(SRC.machines, 'scripts/lib/techniques.cjs');
 
 // ---- Certification hubs ----
 const CERT_INFO = {
@@ -947,7 +955,15 @@ emit(
 }
 
 // ===================== Guides (scripts/lib/guides.cjs) =====================
-for (const g of guides) emit('guide', g.path, g.html, 0.7, g.lastmod || BUILD_DATE);
+const GUIDE_SRC = {
+  '/oscp-exam-scoring-and-time-budget/': ['scripts/lib/guides/oscp-scoring.cjs'],
+  '/tj-null-list/': ['scripts/lib/guides/tj-null.cjs', SRC.machines],
+  '/oscp-report-template/': ['scripts/lib/guides/report-template.cjs'],
+  '/htb-progress-tracker/': ['scripts/lib/guides/progress-tracker.cjs'],
+  '/cpts-exam-guide/': ['scripts/lib/guides/cpts-exam.cjs'],
+  '/htb-vs-tryhackme/': ['scripts/lib/guides/htb-vs-tryhackme.cjs', SRC.machines],
+};
+for (const g of guides) emit('guide', g.path, g.html, 0.7, maxDateOf(...(GUIDE_SRC[g.path] || ['scripts/lib/guides.cjs'])));
 
 // ===================== Privacy and Terms (scripts/lib/legal.cjs) =====================
 {
@@ -967,14 +983,15 @@ fs.writeFileSync(path.join(distDir, 'static.css'), STATIC_CSS, 'utf8');
 // Designed 404 (replaces the plain app-shell copy postbuild.cjs leaves behind). Never listed in the sitemap.
 fs.writeFileSync(path.join(distDir, '404.html'), render404Page(), 'utf8');
 
-// lastmod comes from the last git commit of each page's source (BUILD_DATE while that source has uncommitted edits).
+// lastmod comes from the last git commit of each page's source (the generator's last commit date when that cannot be determined).
 // <priority> and <changefreq> are deliberately omitted: Google ignores both.
 const staticUrls = [
   { loc: '/', lastmod: maxDate(gitDate('scripts/templates/landing.html'), gitDate('scripts/prerender.cjs')) },
   ...routes.map((r) => ({ loc: r.path, lastmod: gitDate('src/seo/routeMeta.json') })),
 ];
-const seen = new Set();
-const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, lastmod: p.lastmod || BUILD_DATE }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
+const { SITEMAP_EXCLUDE } = require('./lib/sitemap-policy.cjs');
+const seen = new Set(SITEMAP_EXCLUDE);
+const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, lastmod: p.lastmod || gitDate(GEN_FILE) }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
 const missing = all.filter((u) => !fs.existsSync(path.join(distDir, u.loc.replace(/^\/|\/$/g, ''), 'index.html')));
 if (missing.length) throw new Error('gen-content-pages: sitemap URLs without a file in dist: ' + missing.map((u) => u.loc).join(', '));
 // Image sitemap: the landing screenshots (largest width of each) so Google Images can index them under the landing URL.

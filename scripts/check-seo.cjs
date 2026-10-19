@@ -9,8 +9,9 @@
 //   json-ld      : every application/ld+json block parses
 //   sitemap      : dist/sitemap.xml is well formed (no changefreq/priority, W3C dates, no duplicates, absolute https URLs),
 //                  every URL has a dist file whose canonical equals the URL, every indexable page (has a title, no noindex)
-//                  is listed, 404.html / app-shell.html are not, and every <image:loc> resolves to a dist file
+//                  is listed (except the thin app routes in lib/sitemap-policy.cjs, which must NOT be listed), 404.html / app-shell.html are not, and every <image:loc> resolves to a dist file
 //   404          : dist/404.html is noindex, has no canonical and returns the designed page
+//   topic links  : every indexable dist/machines/<slug>/ page links at least one /techniques/<slug>/ page
 //   depth        : every indexable dist/machines/<slug>/ page has at least MIN_WORDS (content-model) words of main content
 // Usage: node scripts/check-seo.cjs [--dist <dir>] [--verbose]
 const fs = require('fs');
@@ -100,6 +101,7 @@ for (const file of walk(DIST)) {
   if (!noindex && /^\/machines\/[^/]+\/$/.test(name)) {
     const words = mainWords(html);
     if (words < MIN_WORDS) bad(`main content has ${words} words, below the ${MIN_WORDS} minimum`);
+    if (!/href="\/techniques\/[a-z0-9-]+\/"/.test(html)) bad('links no specific /techniques/<slug>/ page');
   }
 
   if (!noindex) {
@@ -149,6 +151,7 @@ for (const [d, list] of descs) if (list.length > 1) offenders.push(`duplicate de
 // ---- sitemap integrity ----
 const sm = { urls: 0, images: 0, indexable: 0 };
 const { parseRoutes } = require('./route-parse.cjs');
+const { SITEMAP_EXCLUDE } = require('./lib/sitemap-policy.cjs');
 const spa404 = { routes: 0 };
 const smFile = path.join(DIST, 'sitemap.xml');
 if (!fs.existsSync(smFile)) offenders.push('sitemap.xml missing from dist');
@@ -188,6 +191,7 @@ else {
     }
   }
   if (/<image:image>/.test(xml) && !/xmlns:image="http:\/\/www\.google\.com\/schemas\/sitemap-image\/1\.1"/.test(xml)) offenders.push('sitemap.xml uses <image:image> without the xmlns:image declaration');
+  for (const x of SITEMAP_EXCLUDE) if (seenLoc.has(ORIGIN + x)) offenders.push(`${x}  excluded thin app route is in sitemap.xml`);
   for (const must of ['/privacy/', '/terms/']) {
     if (!seenLoc.has(ORIGIN + must)) offenders.push(`${must}  required legal page is missing from sitemap.xml`);
     const pg = byName.get(ORIGIN + must);
@@ -197,7 +201,9 @@ else {
     if (p.noindex) continue;
     sm.indexable++;
     if (!p.canonical) offenders.push(`${p.name}  indexable page has no canonical`);
-    if (!seenLoc.has(ORIGIN + p.name)) offenders.push(`${p.name}  indexable page is missing from sitemap.xml`);
+    if (SITEMAP_EXCLUDE.includes(p.name)) {
+      if (seenLoc.has(ORIGIN + p.name)) offenders.push(`${p.name}  thin app route must not be in sitemap.xml`);
+    } else if (!seenLoc.has(ORIGIN + p.name)) offenders.push(`${p.name}  indexable page is missing from sitemap.xml`);
   }
 }
 
