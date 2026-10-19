@@ -183,6 +183,33 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // Alt+K: "Open anything" switcher in the notes dock. Only while the dock is open, so it never
+      // swallows the chord elsewhere. (Ctrl/Cmd+P is print, Alt+O is the operator switcher.)
+      // On macOS Option+K types a dead-key character ("˚"), so there the physical-key match is skipped
+      // while typing in a field and only a literal k/K counts; elsewhere the physical key is safe.
+      const kTarget = e.target as HTMLElement | null;
+      const typingInField = Boolean(
+        kTarget && (kTarget.tagName === 'INPUT' || kTarget.tagName === 'TEXTAREA' || kTarget.isContentEditable)
+      );
+      const isMacPlatform =
+        typeof navigator !== 'undefined' &&
+        /mac|iphone|ipad/i.test(
+          (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ||
+            navigator.platform ||
+            ''
+        );
+      const kByCode = e.code === 'KeyK' && !(isMacPlatform && typingInField);
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (kByCode || e.key === 'k' || e.key === 'K')) {
+        const workspace = useNotesWorkspaceStore.getState();
+        if (workspace.isOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          workspace.setSwitcherOpen(!workspace.isSwitcherOpen);
+          if (soundEnabled) playCyberSound('toggle');
+          return;
+        }
+      }
+
       // Alt+F: Toggle Focus Mode
       if (e.altKey && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault();

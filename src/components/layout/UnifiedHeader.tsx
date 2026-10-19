@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -30,6 +31,7 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 
 const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
   const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
@@ -42,7 +44,7 @@ const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
 
 export const UnifiedHeader: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const engage = useEngageTarget();
 
   const {
     activeTargetId,
@@ -88,7 +90,7 @@ export const UnifiedHeader: React.FC = () => {
   const setOperatorProfileModalOpen = useAuthStore((s) => s.setOperatorProfileModalOpen);
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
-  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const openNotesCount = useOpenTabCount();
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const operatorRootedCount = useMemo(() => {
@@ -411,12 +413,8 @@ export const UnifiedHeader: React.FC = () => {
                 <button
                   key={m.id}
                   onClick={() => {
-                    const alreadyActive = activeTargetId === m.id;
-                    setActiveTarget(m.id);
-                    startTimer();
                     setTargetDropdownOpen(false);
-                    if (soundEnabled) playCyberSound('timer');
-                    if (!alreadyActive) navigate(`/target/${m.id}`);
+                    engage(m.id);
                   }}
                   className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
                     activeTargetId === m.id
@@ -637,14 +635,14 @@ export const UnifiedHeader: React.FC = () => {
             toggleNotesWorkspace();
             if (soundEnabled) playCyberSound('click');
           }}
-          className={`hidden xl:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
+          className={`hidden lg:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
           title="Toggle Notes Workspace Sidecar (Alt+N)"
           aria-label="Toggle Field Notes Sidecar"
         >
           <div className="relative flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
             {openNotesCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-[12px] h-3 text-center text-[9px] leading-[12px] px-0.5 rounded-full bg-accent text-on-accent font-medium tabular-nums">
+              <span title={`${openNotesCount} open`} aria-label={`${openNotesCount} open`} data-testid="notes-open-badge" className="absolute -top-1.5 -right-2 min-w-[12px] h-3 text-center text-[9px] leading-[12px] px-0.5 rounded-full bg-accent text-on-accent font-medium tabular-nums">
                 {openNotesCount}
               </span>
             )}

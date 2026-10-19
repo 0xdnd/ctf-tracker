@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { motion } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
@@ -85,7 +86,6 @@ export const MachineDetailModal: React.FC = () => {
     updateMachine,
     updateMachineStatus,
     activeTargetId,
-    setActiveTarget,
     isTimerRunning,
     startTimer,
     pauseTimer,
@@ -109,7 +109,6 @@ export const MachineDetailModal: React.FC = () => {
       updateMachine: s.updateMachine,
       updateMachineStatus: s.updateMachineStatus,
       activeTargetId: s.activeTargetId,
-      setActiveTarget: s.setActiveTarget,
       isTimerRunning: s.isTimerRunning,
       startTimer: s.startTimer,
       pauseTimer: s.pauseTimer,
@@ -130,6 +129,7 @@ export const MachineDetailModal: React.FC = () => {
   );
 
   const navigate = useNavigate();
+  const engage = useEngageTarget();
 
   const [showUserFlag, setShowUserFlag] = useState(false);
   const [showRootFlag, setShowRootFlag] = useState(false);
@@ -531,14 +531,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 <button
                   type="button"
                   onClick={() => {
-                    const alreadyActive = activeTargetId === machine.id;
-                    setActiveTarget(machine.id);
-                    startTimer();
-                    if (soundEnabled) playCyberSound('engage');
-                    if (!alreadyActive) {
-                      setSelectedMachineId(null);
-                      navigate(`/target/${machine.id}`);
-                    }
+                    engage(machine.id, { sound: 'engage', beforeNavigate: () => setSelectedMachineId(null) });
                   }}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-fg hover:opacity-90 font-medium text-xs transition-opacity"
                 >
@@ -950,14 +943,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {!isActiveTarget ? (
                 <button
                   onClick={() => {
-                    const alreadyActive = activeTargetId === machine.id;
-                    setActiveTarget(machine.id);
-                    startTimer();
-                    if (soundEnabled) playCyberSound('timer');
-                    if (!alreadyActive) {
-                      setSelectedMachineId(null);
-                      navigate(`/target/${machine.id}`);
-                    }
+                    engage(machine.id, { sound: 'timer', beforeNavigate: () => setSelectedMachineId(null) });
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-callout-success-bg border border-callout-success-border text-callout-success-fg hover:bg-callout-success-fg hover:text-primary font-semibold transition-colors"
                 >

@@ -277,6 +277,8 @@ interface CtfStoreState {
   notesImportModalOpen: boolean;
   setNotesImportModalOpen: (open: boolean) => void;
   userNotes: CptsNoteEntry[];
+  /** True once loadUserNotesFromDb has settled (success or failure); gates pruning of unresolved note tabs. */
+  userNotesHydrated: boolean;
   userWikilinkMap: Record<string, string>;
   setUserNotes: (notes: CptsNoteEntry[]) => void;
   setUserWikilinkMap: (map: Record<string, string>) => void;
@@ -1381,6 +1383,7 @@ export const useCtfStore = create<CtfStoreState>()(
       settingsModalOpen: false,
       notesImportModalOpen: false,
       userNotes: [],
+      userNotesHydrated: false,
       userWikilinkMap: {},
       mobileMenuOpen: false,
       assignIpMachineId: null,
@@ -1598,6 +1601,8 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         } catch (err) {
           console.warn('[ZeroBox] Could not load user notes from IndexedDB', err);
+        } finally {
+          set({ userNotesHydrated: true });
         }
       },
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),

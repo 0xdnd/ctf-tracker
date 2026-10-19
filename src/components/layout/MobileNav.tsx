@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../../store/useAuthStore';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
@@ -105,7 +106,7 @@ export const MobileNav: React.FC = () => {
   }, [mobileMenuOpen]);
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
-  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const openNotesCount = useOpenTabCount();
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const { totalMachines, rootedMachines } = React.useMemo(() => {
@@ -217,7 +218,7 @@ export const MobileNav: React.FC = () => {
             <div className="relative">
               <BookOpen className="w-4 h-4" />
               {openNotesCount > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 min-w-[14px] text-center text-[10px] leading-[14px] px-1 rounded-full bg-accent text-on-accent font-medium tabular-nums">
+                <span aria-label={`${openNotesCount} open`} className="absolute -top-1.5 -right-2.5 min-w-[14px] text-center text-[10px] leading-[14px] px-1 rounded-full bg-accent text-on-accent font-medium tabular-nums">
                   {openNotesCount}
                 </span>
               )}

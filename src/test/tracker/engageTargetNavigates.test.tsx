@@ -77,6 +77,18 @@ describe.each(views)('%s engage target navigation', (_name, renderView) => {
     if (btn) fireEvent.click(btn);
     expect(screen.getByTestId('where').textContent).toBe('/tracker');
   });
+
+  it('re-click on the active target changes nothing when the timer is running', () => {
+    useCtfStore.setState({ activeTargetId: 'box-1', isTimerRunning: true, unexportedChangesCount: 5, assignIpMachineId: null });
+    mount();
+    const btn = screen.queryAllByLabelText('Currently engaged target: Lame')[0];
+    if (btn) fireEvent.click(btn);
+    const st = useCtfStore.getState();
+    expect(st.unexportedChangesCount).toBe(5);
+    expect(st.assignIpMachineId).toBeNull();
+    expect(st.activeTargetId).toBe('box-1');
+    expect(screen.getByTestId('where').textContent).toBe('/tracker');
+  });
 });
 
 describe('header target picker and detail modal engage navigation', () => {

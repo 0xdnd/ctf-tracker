@@ -63,6 +63,7 @@ const HOTKEY_MAP: Record<string, Binding> = {
   'Alt+S': { init: { key: 's', altKey: true }, check: () => ctf().snippetsDrawerOpen },
   'Alt+E': { init: { key: 'e', altKey: true }, check: () => useExamStore.getState().isQuickDrawerOpen },
   'Alt+N': { init: { key: 'n', altKey: true }, check: () => useNotesWorkspaceStore.getState().isOpen },
+  'Alt+K': { init: { key: 'k', altKey: true }, check: () => useNotesWorkspaceStore.getState().isSwitcherOpen },
   'Alt+R': { init: { key: 'r', altKey: true }, check: () => ctf().revShellModalOpen },
   'Alt+O': { init: { key: 'o', altKey: true }, check: () => useAuthStore.getState().operatorProfileModalOpen },
   t: { init: { key: 't' }, check: () => ctf().isTimerRunning },
@@ -107,7 +108,7 @@ const resetSlices = () => {
   });
   useExamStore.setState({ isQuickDrawerOpen: false });
   useAuthStore.setState({ operatorProfileModalOpen: false });
-  useNotesWorkspaceStore.setState({ isOpen: false });
+  useNotesWorkspaceStore.setState({ isOpen: false, isSwitcherOpen: false });
 };
 
 describe('Keyboard shortcuts cheat sheet', () => {
@@ -166,6 +167,8 @@ describe('Keyboard shortcuts cheat sheet', () => {
       const b = HOTKEY_MAP[label];
       resetSlices();
       if (label === '1') useCtfStore.setState({ viewMode: 'grid' });
+      // The dock switcher chord only acts while the dock is open.
+      if (label === 'Alt+K') useNotesWorkspaceStore.setState({ isOpen: true });
       expect(b.check!(), `precondition for "${label}"`).toBe(false);
       press(b.init);
       expect(b.check!(), `binding "${label}" had no effect`).toBe(true);

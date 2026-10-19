@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { 
   Crosshair, 
   Flag, 
@@ -457,13 +457,10 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
 });
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) => {
-  const navigate = useNavigate();
   const {
     setSelectedMachineId,
     updateMachineStatus,
     activeTargetId,
-    setActiveTarget,
-    startTimer,
     soundEnabled,
     setReportMachineId,
     hideEmptyLanes,
@@ -472,8 +469,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       setSelectedMachineId: s.setSelectedMachineId,
       updateMachineStatus: s.updateMachineStatus,
       activeTargetId: s.activeTargetId,
-      setActiveTarget: s.setActiveTarget,
-      startTimer: s.startTimer,
       soundEnabled: s.soundEnabled,
       setReportMachineId: s.setReportMachineId,
       hideEmptyLanes: s.filters.hideEmptyLanes,
@@ -534,14 +529,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     if (soundEnabled) playCyberSound('toggle');
   }, [updateMachineStatus, soundEnabled]);
 
+  const engage = useEngageTarget();
   const handleSetTarget = React.useCallback((e: React.MouseEvent, machineId: string) => {
     e.stopPropagation();
-    const alreadyActive = activeTargetId === machineId;
-    setActiveTarget(machineId);
-    startTimer();
-    if (soundEnabled) playCyberSound('timer');
-    if (!alreadyActive) navigate(`/target/${machineId}`);
-  }, [activeTargetId, setActiveTarget, startTimer, soundEnabled, navigate]);
+    engage(machineId);
+  }, [engage]);
 
   const visibleLanes = React.useMemo(() => {
     if (!hideEmptyLanes) return LANES;

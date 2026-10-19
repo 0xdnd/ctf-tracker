@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Crosshair, 
@@ -431,8 +432,6 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
   const {
     setSelectedMachineId,
     activeTargetId,
-    setActiveTarget,
-    startTimer,
     setWriteupMachineId,
     setActiveTab,
     soundEnabled,
@@ -443,8 +442,6 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
     useShallow((s) => ({
       setSelectedMachineId: s.setSelectedMachineId,
       activeTargetId: s.activeTargetId,
-      setActiveTarget: s.setActiveTarget,
-      startTimer: s.startTimer,
       setWriteupMachineId: s.setWriteupMachineId,
       setActiveTab: s.setActiveTab,
       soundEnabled: s.soundEnabled,
@@ -477,13 +474,8 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
     if (!hasRoot) triggerRootCelebration();
   }, [toggleRootFlag]);
 
-  const handleEngageTarget = useCallback((id: string) => {
-    const alreadyActive = activeTargetId === id;
-    setActiveTarget(id);
-    startTimer();
-    if (soundEnabled) playCyberSound('timer');
-    if (!alreadyActive) navigate(`/target/${id}`);
-  }, [activeTargetId, setActiveTarget, startTimer, soundEnabled, navigate]);
+  const engage = useEngageTarget();
+  const handleEngageTarget = useCallback((id: string) => engage(id), [engage]);
 
   const handleOpenReport = useCallback((id: string) => {
     setReportMachineId(id);

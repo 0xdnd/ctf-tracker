@@ -436,6 +436,17 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   }, [defaultMode, location.pathname, location.search, allActiveNotes, setActiveObsidianNote]);
 
+  // /notes?new=1 (from the dock's empty state) opens the new-note modal once, then drops the param.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('new') !== '1') return;
+    setNewNoteInitialDir(undefined);
+    setIsNewCptsModalOpen(true);
+    params.delete('new');
+    const rest = params.toString();
+    navigate({ pathname: location.pathname, search: rest ? `?${rest}` : '' }, { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
   // New Custom Command Form Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -2189,6 +2200,16 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 <Trash2 className="w-3.5 h-3.5" />
                               </motion.button>
                             )}
+
+                            <button
+                              type="button"
+                              onClick={() => useNotesWorkspaceStore.getState().openCheat(cmd.id)}
+                              className="p-1 rounded text-muted hover:text-primary transition-colors"
+                              title="Open in Notes"
+                              aria-label={`Open ${cmd.title} in Notes`}
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                            </button>
 
                             <button
                               onClick={() => handleCopy(interpolated, cmd.id)}

@@ -187,6 +187,15 @@ export const CommandPalette: React.FC = () => {
     [navigate, setCommandPaletteOpen, setSelectedMachineId, setActiveTab]
   );
 
+  // Snippet hits open as a read-only tab in the notes dock instead of leaving the current page.
+  const openCheatInDock = React.useCallback(
+    (cheatId: string) => {
+      setCommandPaletteOpen(false);
+      useNotesWorkspaceStore.getState().openCheat(cheatId);
+    },
+    [setCommandPaletteOpen]
+  );
+
   // Define Quick Actions
   const quickActions = useMemo(
     () => [
@@ -491,16 +500,12 @@ export const CommandPalette: React.FC = () => {
       list.push({
         id: `cheat-${c.id}`,
         type: 'cheat',
-        execute: () => {
-          setActiveTab('cheatsheet');
-          setCommandPaletteOpen(false);
-          navigate('/cheatsheets');
-        },
+        execute: () => openCheatInDock(c.id),
       });
     });
 
     return list;
-  }, [filteredActions, filteredMachines, searchHits, executeHit, filteredCheats, setSelectedMachineId, setCommandPaletteOpen, setActiveTab, navigate]);
+  }, [filteredActions, filteredMachines, searchHits, executeHit, filteredCheats, openCheatInDock, setSelectedMachineId, setCommandPaletteOpen, setActiveTab, navigate]);
 
   // Reset selectedIndex to 0 on query change
   useEffect(() => {
@@ -738,11 +743,7 @@ export const CommandPalette: React.FC = () => {
                     <button
                       key={c.id}
                       data-palette-index={itemIndex}
-                      onClick={() => {
-                        setActiveTab('cheatsheet');
-                        setCommandPaletteOpen(false);
-                        navigate('/cheatsheets');
-                      }}
+                      onClick={() => openCheatInDock(c.id)}
                       className={`w-full p-2 rounded-lg border transition-[transform,background-color,border-color,color] active:scale-[0.97] text-left group cursor-pointer ${
                         isSelected
                           ? 'bg-surface-hover ring-1 ring-accent border-transparent'

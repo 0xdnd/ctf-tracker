@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { motion } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
@@ -474,8 +475,6 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
     setSelectedMachineId,
     updateMachineStatus,
     activeTargetId,
-    setActiveTarget,
-    startTimer,
     setWriteupMachineId,
     setActiveTab,
     soundEnabled,
@@ -487,8 +486,6 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
       setSelectedMachineId: s.setSelectedMachineId,
       updateMachineStatus: s.updateMachineStatus,
       activeTargetId: s.activeTargetId,
-      setActiveTarget: s.setActiveTarget,
-      startTimer: s.startTimer,
       setWriteupMachineId: s.setWriteupMachineId,
       setActiveTab: s.setActiveTab,
       soundEnabled: s.soundEnabled,
@@ -672,13 +669,8 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
     if (!hasRoot) triggerRootCelebration();
   }, [toggleRootFlag]);
 
-  const handleEngageTarget = useCallback((id: string) => {
-    const alreadyActive = activeTargetId === id;
-    setActiveTarget(id);
-    startTimer();
-    if (soundEnabled) playCyberSound('timer');
-    if (!alreadyActive) navigate(`/target/${id}`);
-  }, [activeTargetId, setActiveTarget, startTimer, soundEnabled, navigate]);
+  const engage = useEngageTarget();
+  const handleEngageTarget = useCallback((id: string) => engage(id), [engage]);
 
   const handleOpenTarget = useCallback((id: string) => {
     navigate(`/target/${id}`);

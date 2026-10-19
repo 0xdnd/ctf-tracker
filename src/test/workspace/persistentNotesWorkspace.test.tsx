@@ -159,7 +159,7 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
 
     const sidebarNotesBtn = screen.getByLabelText('Notes Workspace');
     expect(sidebarNotesBtn).toBeInTheDocument();
-    expect(screen.getByText('2 active')).toBeInTheDocument();
+    expect(screen.getByText('2 open')).toBeInTheDocument();
 
     // Clicking sidebar button toggles notes workspace open
     fireEvent.click(sidebarNotesBtn);
@@ -232,7 +232,7 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
     expect(mobileTab.className).toContain('overscroll-contain');
   });
 
-  it('resolves and renders custom user notes in NotesWorkspaceTabStrip', () => {
+  it('does not render tabs whose note no longer resolves', () => {
     act(() => {
       useNotesWorkspaceStore.setState({
         openTabIds: ['custom-privesc-notes'],
@@ -246,8 +246,8 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
       </BrowserRouter>
     );
 
-    // Tab renders with formatted title
-    expect(screen.getByText('custom privesc notes')).toBeInTheDocument();
+    // No phantom tab is drawn for an id with no note behind it
+    expect(screen.queryByText('custom privesc notes')).not.toBeInTheDocument();
   });
 
   it('resolves custom notes directly from useCtfStore with custom title and search dropdown', () => {
@@ -286,9 +286,9 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
     expect(screen.getByText('Custom AD Kerberoast Playbook')).toBeInTheDocument();
 
     // Clicking '+' button opens search and includes the custom note
-    const plusBtn = screen.getByLabelText('Open Note in Tab');
+    const plusBtn = screen.getByLabelText('Open anything');
     fireEvent.click(plusBtn);
-    expect(screen.getByPlaceholderText('Search field notes & guides...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Open a note or cheatsheet...')).toBeInTheDocument();
     expect(screen.getAllByText('Custom AD Kerberoast Playbook').length).toBeGreaterThan(0);
   });
 

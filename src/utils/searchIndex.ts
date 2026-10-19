@@ -6,16 +6,17 @@
  * or displayed. Do not add fields here without checking they are not secret-bearing.
  */
 import type { CptsNoteEntry } from './obsidianManualUtils';
-import type { Credential, LootItem, Machine } from '../types';
+import type { CheatsheetCommand, Credential, LootItem, Machine } from '../types';
 
-export type SearchSection = 'notes' | 'writeups' | 'vault';
+export type SearchSection = 'notes' | 'writeups' | 'vault' | 'cheats';
 
 export type SearchRef =
   | { kind: 'note'; id: string }
   | { kind: 'machine-note'; id: string }
   | { kind: 'writeup'; id: string }
   | { kind: 'loot'; id: string }
-  | { kind: 'credential'; id: string };
+  | { kind: 'credential'; id: string }
+  | { kind: 'cheat'; id: string };
 
 export interface SearchDoc {
   id: string;
@@ -55,6 +56,8 @@ export interface SearchInput {
   userNotes?: readonly CptsNoteEntry[];
   lootItems?: readonly Pick<LootItem, 'id' | 'title' | 'category'>[];
   credentials?: readonly Pick<Credential, 'id' | 'type' | 'username' | 'domain'>[];
+  /** Cheatsheet snippets (built-in and custom). Not secret-bearing: title, category, description, command, tags. */
+  cheatsheets?: readonly Pick<CheatsheetCommand, 'id' | 'title' | 'category' | 'description' | 'commandTemplate' | 'tags'>[];
 }
 
 /** Strips markdown syntax and collapses whitespace. Code content is kept, fences/markers are dropped. */
@@ -102,7 +105,7 @@ function makeDoc(
 }
 
 function noteBody(n: CptsNoteEntry): string {
-  return [n.summary, n.enSummary, n.rawMarkdown].filter(Boolean).join(' ');
+  return [n.summary, n.enSummary, n.tags?.join(' '), n.relPath, n.rawMarkdown].filter(Boolean).join(' ');
 }
 
 export function buildSearchIndex(input: SearchInput): SearchIndex {
@@ -139,6 +142,11 @@ export function buildSearchIndex(input: SearchInput): SearchIndex {
     docs.push(makeDoc(`cred-${c.id}`, 'vault', title, `credential ${c.type}`, { kind: 'credential', id: c.id }));
   }
 
+  for (const c of input.cheatsheets ?? []) {
+    const body = [c.description, c.commandTemplate, c.category, (c.tags ?? []).join(' ')].filter(Boolean).join(' ');
+    docs.push(makeDoc(`cheat-${c.id}`, 'cheats', c.title, body, { kind: 'cheat', id: c.id }));
+  }
+
   return { docs };
 }
 
@@ -147,7 +155,7 @@ let lastIndex: SearchIndex | null = null;
 
 /** Memoized on the identity of every input array, so unchanged state never rebuilds. */
 export function getSearchIndex(input: SearchInput): SearchIndex {
-  const key = [input.machines, input.customNotes, input.userNotes, input.lootItems, input.credentials];
+  const key = [input.machines, input.customNotes, input.userNotes, input.lootItems, input.credentials, input.cheatsheets];
   if (lastIndex && lastKey && key.every((k, i) => k === lastKey![i])) return lastIndex;
   lastIndex = buildSearchIndex(input);
   lastKey = key;

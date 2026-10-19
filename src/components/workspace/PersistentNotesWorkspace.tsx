@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   X, 
@@ -6,13 +6,20 @@ import {
   Maximize2, 
   Minimize2, 
   Type, 
-  Layers} from 'lucide-react';
-import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+  Layers,
+  PanelLeft} from 'lucide-react';
+import { useNotesWorkspaceStore, resolvedTabId, type ResolvedTab } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { NotesWorkspaceTabStrip } from './NotesWorkspaceTabStrip';
+import { SnippetTabContent } from './SnippetTabContent';
+import { DockQuickSwitcher } from './DockQuickSwitcher';
+import { DockNotesList } from './DockNotesList';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
 import { playCyberSound } from '../../utils/helpers';
+
+/** Below this dock width the Notes list no longer fits beside a note, so it opens as an overlay instead. */
+const NARROW_DOCK_PX = 520;
 
 export const PersistentNotesWorkspace: React.FC = () => {
   const {
@@ -31,6 +38,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
     setLanguage,
     setFontSize,
     openNote,
+    notesListCollapsed,
+    toggleNotesList,
   } = useNotesWorkspaceStore(
     useShallow((s) => ({
       isOpen: s.isOpen,
@@ -49,24 +58,86 @@ export const PersistentNotesWorkspace: React.FC = () => {
       setLanguage: s.setLanguage,
       setFontSize: s.setFontSize,
       openNote: s.openNote,
+      notesListCollapsed: s.notesListCollapsed,
+      toggleNotesList: s.toggleNotesList,
       setActiveTab: s.setActiveTab,
     }))
   );
 
-  const { globalVars, soundEnabled, customNotes, userNotes } = useCtfStore(
+  const { globalVars, soundEnabled, customNotes, userNotes, cheatsheets, userNotesHydrated } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
       soundEnabled: s.soundEnabled,
       customNotes: s.customNotes,
       userNotes: s.userNotes,
+      cheatsheets: s.cheatsheets,
+      userNotesHydrated: s.userNotesHydrated,
     }))
   );
 
-  const getActiveNote = useNotesWorkspaceStore((s) => s.getActiveNote);
-  const getOpenNotes = useNotesWorkspaceStore((s) => s.getOpenNotes);
-  // customNotes / userNotes are listed so the lookups re-run when the user's notes change
-  const activeNote = useMemo(() => getActiveNote(), [activeTabId, openTabIds, customNotes, userNotes, getActiveNote]);
-  const openNotes = useMemo(() => getOpenNotes(), [openTabIds, customNotes, userNotes, getOpenNotes]);
+  const getActiveTab = useNotesWorkspaceStore((s) => s.getActiveTab);
+  const getOpenTabs = useNotesWorkspaceStore((s) => s.getOpenTabs);
+  const pruneUnresolvedTabs = useNotesWorkspaceStore((s) => s.pruneUnresolvedTabs);
+  // customNotes / userNotes / cheatsheets are listed so the lookups re-run when they change
+  const activeTab = useMemo(
+    () => getActiveTab(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeTabId, openTabIds, customNotes, userNotes, cheatsheets, getActiveTab]
+  );
+  const openTabs = useMemo(
+    () => getOpenTabs(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [openTabIds, customNotes, userNotes, cheatsheets, getOpenTabs]
+  );
+  const activeResolvedId = activeTab ? resolvedTabId(activeTab) : null;
+  const activeTitle = activeTab ? (activeTab.kind === 'note' ? activeTab.note.title : activeTab.entry.title) : null;
+
+  // Drop tabs whose target is gone. Snippet tabs are checked immediately; note tabs only once the
+  // IndexedDB vault has hydrated (the store enforces this), so a slow load never discards valid tabs.
+  useEffect(() => {
+    pruneUnresolvedTabs();
+  }, [pruneUnresolvedTabs, userNotesHydrated, openTabIds, customNotes, userNotes, cheatsheets]);
+
+  const renderTabContent = (tab: ResolvedTab, isActive: boolean) =>
+    tab.kind === 'note' ? (
+      <ObsidianTabContent
+        note={tab.note}
+        isActive={isActive}
+        globalVars={globalVars}
+        soundEnabled={soundEnabled}
+        onNavigateToNote={handleNavigateToNote}
+        onOpenNote={(targetId) => openNote(targetId)}
+        defaultLanguage={language}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        fontSize={fontSize}
+        isMaximized={dockSize === 'expanded'}
+      />
+    ) : (
+      <SnippetTabContent entry={tab.entry} />
+    );
+
+  // Desktop: the list sits beside the note unless the dock is narrow (then it is an on-demand overlay).
+  // Mobile sheet: always an on-demand overlay.
+  const dockBodyRef = useRef<HTMLDivElement>(null);
+  const [dockBodyWidth, setDockBodyWidth] = useState(0);
+  const [overlayListOpen, setOverlayListOpen] = useState(false);
+  const [mobileListOpen, setMobileListOpen] = useState(false);
+  useLayoutEffect(() => {
+    const el = dockBodyRef.current;
+    if (!el) return;
+    const measure = () => setDockBodyWidth(el.clientWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isOpen]);
+  // An unmeasured (0) width counts as wide, so the persisted preference applies until a real width is known.
+  const isNarrowDock = dockBodyWidth > 0 && dockBodyWidth < NARROW_DOCK_PX;
+  const listDocked = !isNarrowDock && !notesListCollapsed;
+  const listToggled = isNarrowDock ? overlayListOpen : !notesListCollapsed;
+  const toggleList = () => (isNarrowDock ? setOverlayListOpen((v) => !v) : toggleNotesList());
 
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
@@ -115,6 +186,19 @@ export const PersistentNotesWorkspace: React.FC = () => {
         <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0 select-none">
           {/* Left Title & Status Indicator */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleList}
+              aria-pressed={listToggled}
+              aria-label="Toggle notes list"
+              data-testid="dock-list-toggle"
+              className={`active:scale-[0.97] p-1.5 -ml-1 rounded-md transition-interactive cursor-pointer ${
+                listToggled ? 'bg-accent-muted text-accent' : 'hover:bg-surface-hover text-muted hover:text-primary'
+              }`}
+              title={listToggled ? 'Hide notes list' : 'Show notes list'}
+            >
+              <PanelLeft className="w-3.5 h-3.5" />
+            </button>
             <span className="w-2 h-2 rounded-full bg-accent" />
             <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-accent" />
@@ -228,46 +312,46 @@ export const PersistentNotesWorkspace: React.FC = () => {
         {/* Multi-Tab Strip */}
         <NotesWorkspaceTabStrip />
 
+        <div ref={dockBodyRef} className="flex-1 min-h-0 flex relative">
+        {listDocked && <DockNotesList className="w-56 flex-shrink-0 border-r border-subtle" />}
+        {isNarrowDock && overlayListOpen && (
+          <DockNotesList
+            onOpened={() => setOverlayListOpen(false)}
+            className="absolute inset-y-0 left-0 w-64 max-w-[85%] z-10 border-r border-strong shadow-2xl"
+          />
+        )}
+
         {/* Active Note Content Stage (DOM Keep-Alive) */}
-        <div className="flex-1 overflow-y-auto min-h-0 relative bg-surface-card">
-          {openNotes.length > 0 ? (
-            openNotes.map((tabNote) => {
-              const isActive = tabNote.id === activeNote?.id;
+        <div className="flex-1 min-w-0 overflow-y-auto min-h-0 relative bg-surface-card">
+          {openTabs.length > 0 ? (
+            openTabs.map((tab) => {
+              const tabId = resolvedTabId(tab);
+              const isActive = tabId === activeResolvedId;
               return (
                 <div
-                  key={tabNote.id}
-                  data-testid={`dock-tab-content-${tabNote.id}`}
-                  data-tab-note-id={tabNote.id}
+                  key={tabId}
+                  data-testid={`dock-tab-content-${tabId}`}
+                  data-tab-note-id={tabId}
                   className={isActive ? 'h-full w-full flex-1 min-h-0 overflow-y-auto' : 'hidden'}
                   style={{ display: isActive ? undefined : 'none' }}
                 >
-                  <ObsidianTabContent
-                    note={tabNote}
-                    isActive={isActive}
-                    globalVars={globalVars}
-                    soundEnabled={soundEnabled}
-                    onNavigateToNote={handleNavigateToNote}
-                    onOpenNote={(targetId) => openNote(targetId)}
-                    defaultLanguage={language}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    fontSize={fontSize}
-                    isMaximized={dockSize === 'expanded'}
-                  />
+                  {renderTabContent(tab, isActive)}
                 </div>
               );
             })
           ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted space-y-3">
-              <Layers className="w-10 h-10 text-secondary" />
-              <div className="text-sm font-semibold text-secondary">
-                No note selected
-              </div>
-              <div className="text-xs max-w-sm">
-                Open a note from the tab strip above, click any field manual link, or browse cheatsheets to view notes here side-by-side.
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted">
+              <div className="w-full max-w-sm space-y-3 text-left">
+                <div className="text-center space-y-1">
+                  <Layers className="w-8 h-8 text-secondary mx-auto" />
+                  <div className="text-sm font-semibold text-secondary">Nothing open</div>
+                  <div className="text-xs">Pick a note or cheatsheet to read it here beside the page you are on.</div>
+                </div>
+                <DockQuickSwitcher variant="inline" />
               </div>
             </div>
           )}
+        </div>
         </div>
       </aside>
 
@@ -293,11 +377,23 @@ export const PersistentNotesWorkspace: React.FC = () => {
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
             <span className="text-xs font-semibold text-primary truncate max-w-[120px] sm:max-w-[180px]">
-              {activeNote?.title || 'Field Notes'}
+              {activeTitle || 'Field Notes'}
             </span>
           </div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileListOpen((v) => !v)}
+              aria-pressed={mobileListOpen}
+              aria-label="Toggle notes list"
+              className={`active:scale-[0.97] p-1.5 rounded-md transition-interactive cursor-pointer ${
+                mobileListOpen ? 'bg-accent-muted text-accent' : 'hover:bg-surface-hover text-muted hover:text-primary'
+              }`}
+              title={mobileListOpen ? 'Hide notes list' : 'Show notes list'}
+            >
+              <PanelLeft className="w-3.5 h-3.5" />
+            </button>
             {/* View Mode Switcher (Read | Raw) */}
             <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
               <button
@@ -372,37 +468,48 @@ export const PersistentNotesWorkspace: React.FC = () => {
         <NotesWorkspaceTabStrip />
 
         {/* Mobile Note Stage (DOM Keep-Alive) */}
-        <div className="flex-1 min-h-0 bg-surface-card p-1 overflow-hidden flex flex-col">
-          {openNotes.length > 0 ? (
-            openNotes.map((tabNote) => {
-              const isActive = tabNote.id === activeNote?.id;
+        <div className="relative flex-1 min-h-0 bg-surface-card p-1 overflow-hidden flex flex-col">
+          {mobileListOpen && (
+            <DockNotesList
+              onOpened={() => setMobileListOpen(false)}
+              className="absolute inset-y-0 left-0 w-[min(18rem,88%)] z-10 border-r border-strong shadow-2xl"
+            />
+          )}
+          {openTabs.length > 0 ? (
+            openTabs.map((tab) => {
+              const tabId = resolvedTabId(tab);
+              const isActive = tabId === activeResolvedId;
               return (
                 <div
-                  key={tabNote.id}
-                  data-testid={`mobile-dock-tab-content-${tabNote.id}`}
-                  data-tab-note-id={tabNote.id}
+                  key={tabId}
+                  data-testid={`mobile-dock-tab-content-${tabId}`}
+                  data-tab-note-id={tabId}
                   className={isActive ? 'h-full w-full flex-1 min-h-0 overflow-y-auto overscroll-contain' : 'hidden'}
                   style={{ display: isActive ? undefined : 'none', WebkitOverflowScrolling: 'touch' }}
                 >
-                  <ObsidianTabContent
-                    note={tabNote}
-                    isActive={isActive}
-                    globalVars={globalVars}
-                    soundEnabled={soundEnabled}
-                    onNavigateToNote={handleNavigateToNote}
-                    onOpenNote={(targetId) => openNote(targetId)}
-                    defaultLanguage={language}
-                    viewMode={viewMode === 'split' ? 'raw' : viewMode}
-                    onViewModeChange={(m) => setViewMode(m === 'split' ? 'raw' : m)}
-                    fontSize={fontSize}
-                    isMaximized={dockSize === 'expanded'}
-                  />
+                  {tab.kind === 'note' ? (
+                    <ObsidianTabContent
+                      note={tab.note}
+                      isActive={isActive}
+                      globalVars={globalVars}
+                      soundEnabled={soundEnabled}
+                      onNavigateToNote={handleNavigateToNote}
+                      onOpenNote={(targetId) => openNote(targetId)}
+                      defaultLanguage={language}
+                      viewMode={viewMode === 'split' ? 'raw' : viewMode}
+                      onViewModeChange={(m) => setViewMode(m === 'split' ? 'raw' : m)}
+                      fontSize={fontSize}
+                      isMaximized={dockSize === 'expanded'}
+                    />
+                  ) : (
+                    <SnippetTabContent entry={tab.entry} />
+                  )}
                 </div>
               );
             })
           ) : (
-            <div className="text-center py-12 text-muted text-xs">
-              No active note selected
+            <div className="p-3 overflow-y-auto">
+              <DockQuickSwitcher variant="inline" />
             </div>
           )}
         </div>

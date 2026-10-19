@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 
@@ -29,7 +30,7 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
-  const openNotesCount = useNotesWorkspaceStore((s) => s.openTabIds.length);
+  const openNotesCount = useOpenTabCount();
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const { 
@@ -222,7 +223,7 @@ export const Sidebar: React.FC = () => {
               <span className="truncate mr-2">Notes</span>
               {openNotesCount > 0 && (
                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
-                  {openNotesCount} active
+                  {openNotesCount} open
                 </span>
               )}
             </div>

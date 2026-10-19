@@ -8,9 +8,11 @@ import {
   Check, 
   Star, 
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useActiveTargetIp } from '../../hooks/useActiveTargetIp';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
@@ -232,6 +234,17 @@ export const SnippetsDrawer: React.FC = () => {
                         title={cmd.isStarred ? 'Unstar' : 'Star command'}
                       >
                         <Star className={`w-3.5 h-3.5 ${cmd.isStarred ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSnippetsDrawerOpen(false);
+                          useNotesWorkspaceStore.getState().openCheat(cmd.id);
+                        }}
+                        className="p-1 rounded text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse transition-colors cursor-pointer"
+                        title="Open in Notes"
+                        aria-label={`Open ${cmd.title} in Notes`}
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleCopy(cmd.id, interpolated)}
