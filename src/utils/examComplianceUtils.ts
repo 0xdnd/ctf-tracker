@@ -10,9 +10,28 @@
 
 import { OperatingSystem, Difficulty, Machine } from '../types';
 import type { Finding } from '../types/findings';
+import { createRng, generateExamSeed, selectExamMachines, shuffleWithRng, type SlotSelection } from './examTargetSelection';
 
 export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'PNPT' | 'OSWE';
 export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
+
+/**
+ * 'official': the published point split.
+ * 'weighted': same max score, redistributed by slot difficulty (OSCP standalones and OSWE only).
+ * 'legacy': official split plus the pre-Nov 2024 OSCP bonus (applies only when the score is above 0).
+ */
+export type ExamScoringMode = 'official' | 'weighted' | 'legacy';
+
+export const EXAM_SCORING_MODES: readonly ExamScoringMode[] = ['official', 'weighted', 'legacy'];
+
+/** Difficulty weights used by weighted mode. */
+export const EXAM_DIFFICULTY_WEIGHTS: Record<Difficulty, number> = {
+  'Very Easy': 1,
+  Easy: 1,
+  Medium: 1.5,
+  Hard: 2,
+  Insane: 2.5,
+};
 
 export interface ScreenshotProof {
   id: string;
@@ -49,6 +68,8 @@ export interface ExamBox {
   type: string;
   label: string;
   adRole?: AdRole;
+  /** Catalog machine this slot was filled from (absent for the hardcoded fallback and fixed-scenario tracks). */
+  machineId?: string;
   userPoints: number;
   rootPoints: number;
   userPwned: boolean;
@@ -96,6 +117,7 @@ export interface ExamSessionState {
   boxes: ExamBox[];
   scratchNotes: string;
   includeBonusPoints?: boolean;
+  scoringMode?: ExamScoringMode;
   /** Structured findings rendered as the report's Findings Summary / Detailed Findings sections. */
   findings?: Finding[];
 }
@@ -130,6 +152,25 @@ export interface ExamTrackConfig {
   reportWindowSeconds?: number;
   /** Length of the live report debrief, when the exam has one (minutes). Informational. */
   debriefMinutes?: number;
+  /** Short UI label for models that are approximations or objective-based. Informational. */
+  scoringNote?: string;
+}
+
+/** Weighted scoring redistributes points across slots: OSCP standalones and OSWE only. */
+export function supportsWeightedScoring(track: ExamTrack): boolean {
+  return track === 'OSCP' || track === 'OSWE';
+}
+
+/** The legacy (pre-Nov 2024) bonus only ever applied to OSCP. */
+export function supportsLegacyBonus(track: ExamTrack): boolean {
+  return track === 'OSCP';
+}
+
+/** Scoring mode a track can actually use (falls back to official). */
+export function resolveScoringMode(track: ExamTrack, mode: ExamScoringMode | undefined): ExamScoringMode {
+  if (mode === 'weighted') return supportsWeightedScoring(track) ? 'weighted' : 'official';
+  if (mode === 'legacy') return supportsLegacyBonus(track) ? 'legacy' : 'official';
+  return 'official';
 }
 
 export function isObjectiveTrack(track: ExamTrack): boolean {
@@ -166,6 +207,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     requiresAdFullChain: false,
     description: '48-hour Red Team Operator exam focusing on assumed breach operations, Cobalt Strike C2 infrastructure, Active Directory domain dominance, and operational security checkpoints. Passing threshold: 75 pts.',
     targetSummary: '8 C2 Red Team Objectives (12.5 pts each)',
+    scoringNote: 'Approximate layout',
   },
   OSEP: {
     id: 'OSEP',
@@ -176,6 +218,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     requiresAdFullChain: false,
     description: 'Evasion Techniques and Breaching Defenses 48-hour practical exam.',
     targetSummary: 'Enterprise Defense Evasion Lab',
+    scoringNote: 'Objective-based',
   },
   CRTP: {
     id: 'CRTP',
@@ -186,6 +229,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     requiresAdFullChain: false,
     description: 'Certified Red Team Professional Active Directory practical assessment.',
     targetSummary: 'Active Directory Domain Lab',
+    scoringNote: 'Objective-based',
   },
   // Modeled on the published PNPT rules (https://certifications.tcm-sec.com/pnpt/): 5 days of lab
   // time, 2 further days for the report, then a live 15-minute debrief. Pass is objective-based
@@ -204,13 +248,14 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     debriefMinutes: 15,
     description: 'Modeled on the published PNPT rules: 5 days of lab time, 2 days to write the report, then a live 15-minute debrief. Objective-based (OSINT, Active Directory exploitation, domain controller compromise); no flags or points.',
     targetSummary: '5 Objective Chain to Domain Controller (no flags)',
+    scoringNote: 'Objective-based',
   },
   // Modeled on the OffSec OSWE (WEB-300) exam guide and FAQ on help.offsec.com
   // (https://help.offsec.com/hc/en-us/articles/360046869951 and .../360046418812): 47h45m of
   // proctored lab time, 100 points available, 85 to pass, and 24 further hours to send the
-  // documentation. APPROXIMATE: the number of web applications and the per-application point
-  // split are not stated in the sources we could read, so the 2 x (25 + 25) layout below is
-  // an approximation.
+  // documentation. Per application: 35 points for the authentication bypass plus 15 for remote code
+  // execution. APPROXIMATE: the number of web applications is not stated in the sources we could
+  // read, so the 2-app layout below is an approximation.
   OSWE: {
     id: 'OSWE',
     name: 'OffSec OSWE (WEB-300)',
@@ -220,7 +265,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     requiresAdFullChain: false,
     reportWindowSeconds: 24 * 3600, // 24h to send documentation after the exam
     description: 'Modeled on the published OSWE rules: 47h45m proctored white-box web exam, 100 points available, 85 to pass, with 24 further hours to send documentation. Authentication bypass and remote code execution objectives per web application.',
-    targetSummary: '2 Web Apps: Auth Bypass + RCE (approx. 25 pts each)',
+    targetSummary: '2 Web Apps: Auth Bypass (35) + RCE (15) per app',
   },
 };
 
@@ -311,252 +356,146 @@ export function createDefaultProof(): ExamTargetProof {
   };
 }
 
-/**
- * Generates realistic exam targets matching track specifications
- */
-export function generateExamTargetsForTrack(track: ExamTrack, machines: Machine[] = []): ExamBox[] {
-  const adMachines = machines.filter(
-    (m) =>
-      m.tags.some(
-        (t) =>
-          t.toLowerCase().includes('active directory') ||
-          t.toLowerCase().includes('activedirectory') ||
-          t.toLowerCase().includes('kerberos')
-      )
-  );
-  const linuxMachines = machines.filter((m) => m.os === 'Linux');
-  const winMachines = machines.filter((m) => m.os === 'Windows');
+function gcd(a: number, b: number): number {
+  return b === 0 ? Math.abs(a) : gcd(b, a % b);
+}
 
-  const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => 0.5 - Math.random());
+/**
+ * Redistributes the points of `boxes` (their current sum is kept exactly) by difficulty weight, keeping each
+ * box's user/root ratio. Points move in whole units of the smallest whole user+root split, so every box ends up
+ * with whole user and root points and the group total never drifts (largest-remainder rounding).
+ */
+export function applyWeightedPoints(boxes: ExamBox[]): ExamBox[] {
+  if (boxes.length === 0) return boxes;
+  const total = boxes.reduce((sum, b) => sum + b.userPoints + b.rootPoints, 0);
+  const ref = boxes[0];
+  const divisor = gcd(ref.userPoints, ref.rootPoints) || 1;
+  const unitUser = ref.userPoints / divisor;
+  const unitRoot = ref.rootPoints / divisor;
+  const step = unitUser + unitRoot;
+  if (step <= 0) return boxes;
+  const units = Math.round(total / step);
+  const weights = boxes.map((b) => EXAM_DIFFICULTY_WEIGHTS[b.difficulty] ?? 1);
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  const exact = weights.map((w) => (units * w) / weightSum);
+  const allocated = exact.map((x) => Math.floor(x));
+  let leftover = units - allocated.reduce((a, b) => a + b, 0);
+  const byRemainder = exact
+    .map((x, i) => ({ i, rem: x - Math.floor(x) }))
+    .sort((a, b) => b.rem - a.rem || a.i - b.i);
+  for (let k = 0; leftover > 0 && k < byRemainder.length; k++, leftover--) {
+    allocated[byRemainder[k].i] += 1;
+  }
+  return boxes.map((b, i) => ({
+    ...b,
+    userPoints: allocated[i] * unitUser,
+    rootPoints: allocated[i] * unitRoot,
+  }));
+}
+
+interface CatalogBoxDef {
+  key: string;
+  ip: string;
+  fallbackName: string;
+  type: string;
+  adRole?: AdRole;
+  label: string | ((os: OperatingSystem, difficulty: Difficulty) => string);
+  userPoints: number;
+  rootPoints: number;
+}
+
+const OSCP_BOX_DEFS: CatalogBoxDef[] = [
+  { key: 'oscp-ad-1', ip: '192.168.1.30', fallbackName: 'CORP-WEB01', type: 'ad-foothold', adRole: 'foothold', label: 'AD Set: Initial Web Access', userPoints: 10, rootPoints: 0 },
+  { key: 'oscp-ad-2', ip: '192.168.1.20', fallbackName: 'CORP-SRV01', type: 'ad-lateral', adRole: 'lateral', label: 'AD Set: Lateral Movement', userPoints: 10, rootPoints: 0 },
+  { key: 'oscp-ad-3', ip: '192.168.1.10', fallbackName: 'CORP-DC01', type: 'ad-dc', adRole: 'dc', label: 'AD Set: Domain Controller', userPoints: 0, rootPoints: 20 },
+  { key: 'oscp-st-1', ip: '192.168.1.101', fallbackName: 'ALPHA', type: 'standalone-1', label: (os, d) => `Standalone 01 (${os} ${d})`, userPoints: 10, rootPoints: 10 },
+  { key: 'oscp-st-2', ip: '192.168.1.102', fallbackName: 'BRAVO', type: 'standalone-2', label: (os, d) => `Standalone 02 (${os} ${d})`, userPoints: 10, rootPoints: 10 },
+  { key: 'oscp-st-3', ip: '192.168.1.103', fallbackName: 'CHARLIE', type: 'standalone-3', label: (os, d) => `Standalone 03 (${os} ${d})`, userPoints: 10, rootPoints: 10 },
+];
+
+// CPTS Enterprise Network: 14 Flag Objectives across 7 Machines (14 flags totaling 100 points, 85 pt pass threshold)
+// Subnets: DMZ Perimeter (10.10.110.0/24), Internal Corporate (172.16.8.0/24), Restricted Vault (172.16.9.0/24)
+const CPTS_BOX_DEFS: CatalogBoxDef[] = [
+  { key: 'cpts-1', ip: '10.10.110.10', fallbackName: 'INTRANET-WEB', type: 'cpts-dmz-web', label: 'DMZ Perimeter: Public Web Application', userPoints: 7, rootPoints: 7 },
+  { key: 'cpts-2', ip: '10.10.110.15', fallbackName: 'DEV-BACKEND', type: 'cpts-internal-dev', label: 'Internal Dev & CI/CD Pipeline', userPoints: 7, rootPoints: 7 },
+  { key: 'cpts-3', ip: '172.16.8.50', fallbackName: 'CORP-JUMP', type: 'cpts-corp-jump', label: 'Corporate Jump Host / Dual-Homed Pivot', userPoints: 7, rootPoints: 7 },
+  { key: 'cpts-4', ip: '172.16.8.60', fallbackName: 'MSSQL-PROD', type: 'cpts-mssql-prod', label: 'Production Database Tier: MSSQL', userPoints: 7, rootPoints: 7 },
+  { key: 'cpts-5', ip: '172.16.8.70', fallbackName: 'WS-FINANCE', type: 'cpts-ws-finance', label: 'Finance Workstation: Kerberos Client', userPoints: 7, rootPoints: 7 },
+  { key: 'cpts-6', ip: '172.16.8.25', fallbackName: 'ADCS-PKI', type: 'cpts-adcs-pki', label: 'Active Directory Certificate Services (PKI)', userPoints: 7, rootPoints: 7 },
+  { key: 'cpts-7', ip: '172.16.8.5', fallbackName: 'CORP-DC01', type: 'cpts-ad-dc', adRole: 'dc', label: 'Domain Controller: Enterprise Forest Root', userPoints: 8, rootPoints: 8 },
+];
+
+const CRTP_BOX_DEFS: CatalogBoxDef[] = [
+  { key: 'crtp-1', ip: '10.0.0.3', fallbackName: 'WS01', type: 'crtp-ws', label: 'Initial Workstation Foothold', userPoints: 20, rootPoints: 10 },
+  { key: 'crtp-2', ip: '10.0.0.2', fallbackName: 'SRV01', type: 'crtp-srv', label: 'Domain Member Server', userPoints: 20, rootPoints: 15 },
+  { key: 'crtp-3', ip: '10.0.0.1', fallbackName: 'DC01', type: 'crtp-dc', label: 'Domain Controller (Forest Root)', userPoints: 0, rootPoints: 35 },
+];
+
+/** Builds the exam boxes of a catalog-driven track from the tiered machine selection. */
+function buildCatalogBoxes(defs: CatalogBoxDef[], selections: SlotSelection[]): ExamBox[] {
+  const byKey = new Map(selections.map((sel) => [sel.slot.key, sel]));
+  return defs.map((def) => {
+    const sel = byKey.get(def.key);
+    const machine = sel?.machine ?? null;
+    const slot = sel?.slot;
+    const os: OperatingSystem = machine ? machine.os : slot?.os ?? 'Linux';
+    const difficulty: Difficulty = machine ? machine.difficulty : slot?.difficulty ?? 'Medium';
+    return {
+      id: def.key,
+      name: machine ? machine.name : def.fallbackName,
+      ip: def.ip,
+      os,
+      difficulty,
+      type: def.type,
+      ...(def.adRole ? { adRole: def.adRole } : {}),
+      ...(machine ? { machineId: machine.id } : {}),
+      label: typeof def.label === 'function' ? def.label(os, difficulty) : def.label,
+      userPoints: def.userPoints,
+      rootPoints: def.rootPoints,
+      userPwned: false,
+      rootPwned: false,
+      userProof: createDefaultProof(),
+      rootProof: createDefaultProof(),
+    };
+  });
+}
+
+export interface GenerateExamTargetsOptions {
+  /** Short seed code; the same seed, catalog and solved set give the same machines. A random seed is used when omitted. */
+  seed?: string;
+  /** Ids of machines the user already solved (used only when a slot cannot be filled otherwise). */
+  solvedIds?: Iterable<string>;
+  /** Weighted mode bakes the redistributed points into the boxes (OSCP standalones and OSWE only). */
+  scoringMode?: ExamScoringMode;
+}
+
+/**
+ * Generates exam targets matching track specifications. OSCP, CPTS and CRTP fill their slots from the machine
+ * catalog (see examTargetSelection.ts); with an empty catalog they use the hardcoded fallback boxes.
+ */
+export function generateExamTargetsForTrack(
+  track: ExamTrack,
+  machines: Machine[] = [],
+  options: GenerateExamTargetsOptions = {}
+): ExamBox[] {
+  const seed = options.seed || generateExamSeed();
+  const weighted = options.scoringMode === 'weighted' && supportsWeightedScoring(track);
+  const selections = () => selectExamMachines(track, machines, { seed, solvedIds: options.solvedIds });
 
   if (track === 'OSCP') {
     // 2024 PEN-200 standard:
-    // AD Set: 40 points total (Foothold 10, Lateral 10, DC 20) — All-or-nothing
+    // AD Set: 40 points total (Foothold 10, Lateral 10, DC 20) - All-or-nothing
     // 3 Standalones: 20 pts each (10 user + 10 root)
-    const adDc = shuffle(adMachines)[0] || { name: 'CORP-DC01', ip: '192.168.1.10', os: 'Windows' as OperatingSystem };
-    const adLat = shuffle(winMachines)[0] || { name: 'CORP-SRV01', ip: '192.168.1.20', os: 'Windows' as OperatingSystem };
-    const adFoot = shuffle(linuxMachines)[0] || { name: 'CORP-WEB01', ip: '192.168.1.30', os: 'Linux' as OperatingSystem };
-
-    const stand1 = shuffle(linuxMachines)[1] || { name: 'ALPHA', ip: '192.168.1.101', os: 'Linux' as OperatingSystem };
-    const stand2 = shuffle(winMachines)[1] || { name: 'BRAVO', ip: '192.168.1.102', os: 'Windows' as OperatingSystem };
-    const stand3 = shuffle(linuxMachines)[2] || { name: 'CHARLIE', ip: '192.168.1.103', os: 'Linux' as OperatingSystem };
-
-    return [
-      {
-        id: 'oscp-ad-1',
-        name: adFoot.name,
-        ip: '192.168.1.30',
-        os: adFoot.os,
-        difficulty: 'Easy',
-        type: 'ad-foothold',
-        adRole: 'foothold',
-        label: 'AD Set: Initial Web Access',
-        userPoints: 10,
-        rootPoints: 0,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'oscp-ad-2',
-        name: adLat.name,
-        ip: '192.168.1.20',
-        os: adLat.os,
-        difficulty: 'Medium',
-        type: 'ad-lateral',
-        adRole: 'lateral',
-        label: 'AD Set: Lateral Movement',
-        userPoints: 10,
-        rootPoints: 0,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'oscp-ad-3',
-        name: adDc.name,
-        ip: '192.168.1.10',
-        os: 'Windows',
-        difficulty: 'Hard',
-        type: 'ad-dc',
-        adRole: 'dc',
-        label: 'AD Set: Domain Controller',
-        userPoints: 0,
-        rootPoints: 20,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'oscp-st-1',
-        name: stand1.name,
-        ip: '192.168.1.101',
-        os: stand1.os,
-        difficulty: 'Easy',
-        type: 'standalone-1',
-        label: 'Standalone 01 (Linux Easy)',
-        userPoints: 10,
-        rootPoints: 10,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'oscp-st-2',
-        name: stand2.name,
-        ip: '192.168.1.102',
-        os: stand2.os,
-        difficulty: 'Medium',
-        type: 'standalone-2',
-        label: 'Standalone 02 (Windows Medium)',
-        userPoints: 10,
-        rootPoints: 10,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'oscp-st-3',
-        name: stand3.name,
-        ip: '192.168.1.103',
-        os: stand3.os,
-        difficulty: 'Hard',
-        type: 'standalone-3',
-        label: 'Standalone 03 (Linux Hard)',
-        userPoints: 10,
-        rootPoints: 10,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-    ];
+    const boxes = buildCatalogBoxes(OSCP_BOX_DEFS, selections());
+    if (!weighted) return boxes;
+    // Weighted: the AD set stays 40 (all-or-nothing); only the standalones' 60 points are redistributed.
+    const adSet = boxes.filter((b) => isActiveDirectoryBox(b));
+    const standalones = applyWeightedPoints(boxes.filter((b) => !isActiveDirectoryBox(b)));
+    return [...adSet, ...standalones];
   }
 
   if (track === 'CPTS') {
-    // CPTS Enterprise Network: 14 Flag Objectives across 7 Machines (14 flags totaling 100 points, 85 pt pass threshold)
-    // Subnets: DMZ Perimeter (10.10.110.0/24), Internal Corporate (172.16.8.0/24), Restricted Vault (172.16.9.0/24)
-    const dmzWeb = shuffle(linuxMachines)[0] || { name: 'INTRANET-WEB', ip: '10.10.110.10', os: 'Linux' as OperatingSystem };
-    const devSrv = shuffle(linuxMachines)[1] || { name: 'DEV-BACKEND', ip: '10.10.110.15', os: 'Linux' as OperatingSystem };
-    const corpJump = shuffle(winMachines)[0] || { name: 'CORP-JUMP', ip: '172.16.8.50', os: 'Windows' as OperatingSystem };
-    const corpSql = shuffle(winMachines)[1] || { name: 'MSSQL-PROD', ip: '172.16.8.60', os: 'Windows' as OperatingSystem };
-    const wsFinance = shuffle(winMachines)[2] || { name: 'WS-FINANCE', ip: '172.16.8.70', os: 'Windows' as OperatingSystem };
-    const adcsPki = shuffle(winMachines)[3] || { name: 'ADCS-PKI', ip: '172.16.8.25', os: 'Windows' as OperatingSystem };
-    const corpDc = shuffle(adMachines)[0] || { name: 'CORP-DC01', ip: '172.16.8.5', os: 'Windows' as OperatingSystem };
-
-    return [
-      {
-        id: 'cpts-1',
-        name: dmzWeb.name,
-        ip: '10.10.110.10',
-        os: dmzWeb.os,
-        difficulty: 'Medium',
-        type: 'cpts-dmz-web',
-        label: 'DMZ Perimeter: Public Web Application',
-        userPoints: 7,
-        rootPoints: 7,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'cpts-2',
-        name: devSrv.name,
-        ip: '10.10.110.15',
-        os: devSrv.os,
-        difficulty: 'Medium',
-        type: 'cpts-internal-dev',
-        label: 'Internal Dev & CI/CD Pipeline',
-        userPoints: 7,
-        rootPoints: 7,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'cpts-3',
-        name: corpJump.name,
-        ip: '172.16.8.50',
-        os: corpJump.os,
-        difficulty: 'Medium',
-        type: 'cpts-corp-jump',
-        label: 'Corporate Jump Host / Dual-Homed Pivot',
-        userPoints: 7,
-        rootPoints: 7,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'cpts-4',
-        name: corpSql.name,
-        ip: '172.16.8.60',
-        os: corpSql.os,
-        difficulty: 'Hard',
-        type: 'cpts-mssql-prod',
-        label: 'Production Database Tier: MSSQL',
-        userPoints: 7,
-        rootPoints: 7,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'cpts-5',
-        name: wsFinance.name,
-        ip: '172.16.8.70',
-        os: wsFinance.os,
-        difficulty: 'Medium',
-        type: 'cpts-ws-finance',
-        label: 'Finance Workstation: Kerberos Client',
-        userPoints: 7,
-        rootPoints: 7,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'cpts-6',
-        name: adcsPki.name,
-        ip: '172.16.8.25',
-        os: adcsPki.os,
-        difficulty: 'Hard',
-        type: 'cpts-adcs-pki',
-        label: 'Active Directory Certificate Services (PKI)',
-        userPoints: 7,
-        rootPoints: 7,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-      {
-        id: 'cpts-7',
-        name: corpDc.name,
-        ip: '172.16.8.5',
-        os: 'Windows',
-        difficulty: 'Hard',
-        type: 'cpts-ad-dc',
-        adRole: 'dc',
-        label: 'Domain Controller: Enterprise Forest Root',
-        userPoints: 8,
-        rootPoints: 8,
-        userPwned: false,
-        rootPwned: false,
-        userProof: createDefaultProof(),
-        rootProof: createDefaultProof(),
-      },
-    ];
+    return buildCatalogBoxes(CPTS_BOX_DEFS, selections());
   }
 
   if (track === 'CRTO') {
@@ -642,78 +581,34 @@ export function generateExamTargetsForTrack(track: ExamTrack, machines: Machine[
   }
 
   if (track === 'OSWE') {
-    // White-box web exam: per application, an authentication bypass (user stage) and remote code
-    // execution (root stage). Layout is approximate; see the OSWE config comment.
+    // White-box web exam: per application, an authentication bypass (user stage, 35 pts) and remote code
+    // execution (root stage, 15 pts). The number of apps is approximate; see the OSWE config comment.
+    // Official mode keeps both apps at Hard. Weighted mode draws two distinct difficulties from the seed so the
+    // redistribution has something to weigh.
     const oswe = [
       { id: 'oswe-1', name: 'WEBAPP-1', ip: '192.168.50.11', label: 'Web App 1: Authentication Bypass + Remote Code Execution' },
       { id: 'oswe-2', name: 'WEBAPP-2', ip: '192.168.50.12', label: 'Web App 2: Authentication Bypass + Remote Code Execution' },
     ];
-    return oswe.map((app) => ({
+    const difficulties: Difficulty[] = weighted
+      ? shuffleWithRng<Difficulty>(['Medium', 'Hard', 'Insane'], createRng(`${seed}:oswe`))
+      : ['Hard', 'Hard'];
+    const boxes: ExamBox[] = oswe.map((app, i) => ({
       ...app,
       os: 'Linux' as OperatingSystem,
-      difficulty: 'Hard' as const,
+      difficulty: difficulties[i],
       type: 'oswe-webapp',
-      userPoints: 25,
-      rootPoints: 25,
-      userPwned: false,
-      rootPwned: false,
-      userProof: createDefaultProof(),
-      rootProof: createDefaultProof(),
-    }));
-  }
-
-  // Fallback / CRTP default
-  const dc1 = shuffle(adMachines)[0] || { name: 'DC01', ip: '10.0.0.1', os: 'Windows' as OperatingSystem };
-  const srv1 = shuffle(winMachines)[0] || { name: 'SRV01', ip: '10.0.0.2', os: 'Windows' as OperatingSystem };
-  const ws1 = shuffle(winMachines)[1] || { name: 'WS01', ip: '10.0.0.3', os: 'Windows' as OperatingSystem };
-
-  return [
-    {
-      id: 'crtp-1',
-      name: ws1.name,
-      ip: '10.0.0.3',
-      os: ws1.os,
-      difficulty: 'Medium',
-      type: 'crtp-ws',
-      label: 'Initial Workstation Foothold',
-      userPoints: 20,
-      rootPoints: 10,
-      userPwned: false,
-      rootPwned: false,
-      userProof: createDefaultProof(),
-      rootProof: createDefaultProof(),
-    },
-    {
-      id: 'crtp-2',
-      name: srv1.name,
-      ip: '10.0.0.2',
-      os: srv1.os,
-      difficulty: 'Medium',
-      type: 'crtp-srv',
-      label: 'Domain Member Server',
-      userPoints: 20,
+      userPoints: 35,
       rootPoints: 15,
       userPwned: false,
       rootPwned: false,
       userProof: createDefaultProof(),
       rootProof: createDefaultProof(),
-    },
-    {
-      id: 'crtp-3',
-      name: dc1.name,
-      ip: '10.0.0.1',
-      os: 'Windows',
-      difficulty: 'Hard',
-      type: 'crtp-dc',
-      label: 'Domain Controller (Forest Root)',
-      userPoints: 0,
-      rootPoints: 35,
-      userPwned: false,
-      rootPwned: false,
-      userProof: createDefaultProof(),
-      rootProof: createDefaultProof(),
-    },
-  ];
+    }));
+    return weighted ? applyWeightedPoints(boxes) : boxes;
+  }
+
+  // Fallback / CRTP default
+  return buildCatalogBoxes(CRTP_BOX_DEFS, selections());
 }
 
 export interface ExamScoreResult {
@@ -723,6 +618,8 @@ export interface ExamScoreResult {
   isPassing: boolean;
   pointsNeeded: number;
   adSetCompromised: boolean;
+  /** Legacy OSCP bonus actually added to totalScore (0 unless legacy mode is on and the exam score is above 0). */
+  bonusPointsAwarded: number;
   complianceIssues: string[];
   isCompliant: boolean;
 }
@@ -740,6 +637,7 @@ export function calculateExamScore(
   const passThreshold = config.passThreshold;
   const maxScore = config.maxScore;
   let adSetCompromised = false;
+  let bonusPointsAwarded = 0;
 
   // Track-specific rules:
   if (track === 'OSCP') {
@@ -766,9 +664,12 @@ export function calculateExamScore(
         if (b.rootPwned) totalScore += b.rootPoints;
       });
 
-    // Optional 10-point lab exercises bonus
-    if (options?.includeBonusPoints) {
-      totalScore = Math.min(maxScore, totalScore + 10);
+    // Legacy (pre-Nov 2024) 10-point lab exercises bonus. Sensible guard rather than a quoted OffSec rule:
+    // the bonus never turns a zero-point exam into a scoring one.
+    if (options?.includeBonusPoints && totalScore > 0) {
+      const withBonus = Math.min(maxScore, totalScore + 10);
+      bonusPointsAwarded = withBonus - totalScore;
+      totalScore = withBonus;
     }
   } else {
     // CPTS, CRTO, etc.
@@ -850,6 +751,7 @@ export function calculateExamScore(
     isPassing,
     pointsNeeded,
     adSetCompromised,
+    bonusPointsAwarded,
     complianceIssues,
     isCompliant: complianceIssues.length === 0,
   };
@@ -920,8 +822,8 @@ export function generateExamReportMarkdown(session: ExamSessionState): string {
     report += `| **${b.name}** | ${b.label} | \`${b.ip}\` | ${userStatus} | ${rootStatus} | **${pts} PTS** |\n`;
   });
 
-  if (session.track === 'OSCP' && session.includeBonusPoints) {
-    report += `| **OFFSEC BONUS LABS** | Official Lab Bonus | \`N/A\` | [x] COMPLETED | [x] COMPLETED | **10 PTS** |\n`;
+  if (session.track === 'OSCP' && session.includeBonusPoints && scoreData.bonusPointsAwarded > 0) {
+    report += `| **OFFSEC BONUS LABS** | Official Lab Bonus | \`N/A\` | [x] COMPLETED | [x] COMPLETED | **${scoreData.bonusPointsAwarded} PTS** |\n`;
   }
 
   report += `

@@ -391,13 +391,14 @@ describe('(d) deleting proofs removes the IndexedDB blob', () => {
   });
 
   it('startExam, shuffleTargets and setTrack discard the previous boxes blobs', async () => {
-    await addRefShot('sc_start');
-    useExamStore.getState().startExam('OSCP');
-    await waitFor(() => expect(blobKeys()).toHaveLength(0));
-
+    // shuffleTargets only re-rolls an idle preview, so it runs before the exam starts.
     await addRefShot('sc_shuffle');
     expect(blobKeys()).toHaveLength(1);
     useExamStore.getState().shuffleTargets();
+    await waitFor(() => expect(blobKeys()).toHaveLength(0));
+
+    await addRefShot('sc_start');
+    useExamStore.getState().startExam('OSCP');
     await waitFor(() => expect(blobKeys()).toHaveLength(0));
 
     useExamStore.getState().resetExam('OSCP'); // back to idle so the track can change

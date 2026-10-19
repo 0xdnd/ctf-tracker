@@ -22,12 +22,17 @@ import {
   ExamTargetProof,
   PassingStatus,
   EXAM_TRACK_CONFIGS,
+  ExamScoringMode,
+  EXAM_SCORING_MODES,
   generateExamTargetsForTrack,
+  resolveScoringMode,
   calculateExamScore,
   getPassingStatus as calculatePassingStatus,
   validateFlagFormat,
   isDomainControllerBox,
 } from '../utils/examComplianceUtils';
+import { generateExamSeed, normalizeExamSeed } from '../utils/examTargetSelection';
+import type { Machine } from '../types';
 import { playCyberAlert } from '../utils/audioAlerts';
 import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
 import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
@@ -91,7 +96,12 @@ export interface ExamSessionState {
   milestones: ExamMilestone[];
   isQuickDrawerOpen: boolean;
   scratchNotes: string;
+  /** Legacy OSCP bonus toggle; always equals `scoringMode === 'legacy'` (kept for older payloads and report code). */
   includeBonusPoints: boolean;
+  /** Short seed code of the current target roll (same seed + catalog + solved set = same machines). */
+  seed: string;
+  /** Official (default), weighted (redistributed by difficulty) or legacy (pre-Nov 2024 OSCP bonus). */
+  scoringMode: ExamScoringMode;
   /** Box the operator is currently working (rabbit-hole clock). */
   activeBoxId: string | null;
   /** Effective ms timestamp the active box session began (shifted forward across pauses). */
@@ -104,12 +114,23 @@ export interface ExamSessionState {
 
 export interface ExamStoreActions {
   // Session Lifecycle
-  startExam: (track?: ExamTrack, config?: Partial<{ candidateName: string; candidateCallsign: string; osid: string }>) => void;
+  /** Keeps the previewed boxes and seed when idle; otherwise re-generates from the current seed. */
+  startExam: (
+    track?: ExamTrack,
+    config?: Partial<{ candidateName: string; candidateCallsign: string; osid: string }>,
+    catalog?: Machine[],
+    solvedIds?: Iterable<string>
+  ) => void;
   pauseExam: () => void;
   resumeExam: () => void;
   resetExam: (track?: ExamTrack) => void;
-  setTrack: (track: ExamTrack) => void;
-  shuffleTargets: () => void;
+  setTrack: (track: ExamTrack, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
+  /** Re-roll: new random seed, new boxes. */
+  shuffleTargets: (catalog?: Machine[], solvedIds?: Iterable<string>) => void;
+  /** Re-rolls the boxes from a given seed (idle only). An unusable seed is ignored. */
+  setSeed: (seed: string, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
+  /** Switches scoring mode (weighted/official re-generate the boxes while idle). */
+  setScoringMode: (mode: ExamScoringMode, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
 
   // Flag & Proofs
   submitFlag: (boxId: string, flagType: 'user' | 'root', flagText: string) => boolean;
@@ -127,7 +148,7 @@ export interface ExamStoreActions {
   addMilestone: (targetId: string, type: ExamMilestone['type'], notes: string) => void;
   setCandidateInfo: (info: { candidateName?: string; candidateCallsign?: string; osid?: string }) => void;
   setScratchNotes: (notes: string) => void;
-  setIncludeBonusPoints: (include: boolean) => void;
+  setIncludeBonusPoints: (include: boolean, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
 
   // Rabbit-hole clock
   setActiveBox: (boxId: string | null) => void;
@@ -190,9 +211,29 @@ function resumedRabbitHoleClock(state: ExamSessionState, now: number): Partial<E
   };
 }
 
-function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
+interface InitialSessionOptions {
+  seed?: string;
+  scoringMode?: ExamScoringMode;
+  catalog?: Machine[];
+  solvedIds?: Iterable<string>;
+}
+
+/** A box with no progress or evidence attached (safe to keep as the previewed target). */
+function isPristineBox(box: ExamBox): boolean {
+  const untouched = (proof: ExamTargetProof) =>
+    !proof.flagText?.trim() && !proof.screenshotTaken && !(proof.screenshots && proof.screenshots.length > 0);
+  return !box.userPwned && !box.rootPwned && untouched(box.userProof) && untouched(box.rootProof);
+}
+
+function createInitialSession(track: ExamTrack = 'OSCP', options: InitialSessionOptions = {}): ExamSessionState {
   const config = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
-  const boxes = generateExamTargetsForTrack(track);
+  const seed = options.seed || generateExamSeed();
+  const scoringMode = resolveScoringMode(track, options.scoringMode);
+  const boxes = generateExamTargetsForTrack(track, options.catalog ?? [], {
+    seed,
+    solvedIds: options.solvedIds,
+    scoringMode,
+  });
 
   return {
     id: `exam_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -212,10 +253,40 @@ function createInitialSession(track: ExamTrack = 'OSCP'): ExamSessionState {
     breakHistory: [],
     milestones: [],
     isQuickDrawerOpen: false,
-    scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n- administrator : P@ssw0rd2024!\n\n## Active Tunnels & Pivots\n- Chisel SOCKS5 proxy on 127.0.0.1:1080 -> 172.16.1.0/24`,
-    includeBonusPoints: false,
+    scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n\n## Active Tunnels & Pivots\n`,
+    includeBonusPoints: scoringMode === 'legacy',
+    seed,
+    scoringMode,
     findings: [],
     ...NO_ACTIVE_BOX,
+  };
+}
+
+/**
+ * Fills the seed and scoring mode of a persisted or backed-up exam. Older payloads have neither: they default to
+ * official scoring, except that a persisted `includeBonusPoints: true` maps to legacy mode so a running exam
+ * keeps its score. `includeBonusPoints` is re-derived so it always matches `scoringMode`.
+ */
+export function normalizeExamModeFields<T extends Record<string, unknown>>(
+  persisted: T,
+  fallbackTrack?: ExamTrack
+): T & { seed: string; scoringMode: ExamScoringMode; includeBonusPoints: boolean } {
+  const track = (typeof persisted.track === 'string' && persisted.track in EXAM_TRACK_CONFIGS
+    ? persisted.track
+    : fallbackTrack ?? 'OSCP') as ExamTrack;
+  const rawMode = persisted.scoringMode;
+  const requested: ExamScoringMode = EXAM_SCORING_MODES.includes(rawMode as ExamScoringMode)
+    ? (rawMode as ExamScoringMode)
+    : persisted.includeBonusPoints === true
+      ? 'legacy'
+      : 'official';
+  const scoringMode = resolveScoringMode(track, requested);
+  const seed = typeof persisted.seed === 'string' ? normalizeExamSeed(persisted.seed) : '';
+  return {
+    ...persisted,
+    seed: seed || generateExamSeed(),
+    scoringMode,
+    includeBonusPoints: scoringMode === 'legacy',
   };
 }
 
@@ -263,18 +334,35 @@ export const useExamStore = create<ExamStore>()(
     (set, get) => ({
       ...createInitialSession('OSCP'),
 
-      startExam: (track, config) => {
+      startExam: (track, config, catalog, solvedIds) => {
         const selectedTrack = track || get().track;
         const trackConfig = EXAM_TRACK_CONFIGS[selectedTrack] || EXAM_TRACK_CONFIGS.OSCP;
         const now = Date.now();
         const duration = trackConfig.durationSeconds;
         const expiresAt = now + duration * 1000;
-        const boxes = generateExamTargetsForTrack(selectedTrack);
-        const previousBoxes = get().boxes;
+        const current = get();
+        const previousBoxes = current.boxes;
+        const scoringMode = resolveScoringMode(
+          selectedTrack,
+          selectedTrack === current.track ? current.scoringMode : 'official'
+        );
+        // Starting from the idle preview keeps the previewed boxes and seed. Any other start (another track,
+        // a restart of a running/finished exam, or a preview that already holds evidence) re-generates fresh
+        // boxes from the same seed.
+        const keepPreview =
+          current.status === 'idle' &&
+          selectedTrack === current.track &&
+          previousBoxes.length > 0 &&
+          previousBoxes.every(isPristineBox);
+        const boxes = keepPreview
+          ? previousBoxes
+          : generateExamTargetsForTrack(selectedTrack, catalog ?? [], { seed: current.seed, solvedIds, scoringMode });
 
         set({
           id: `exam_${now}_${Math.random().toString(36).substring(2, 7)}`,
           track: selectedTrack,
+          scoringMode,
+          includeBonusPoints: scoringMode === 'legacy',
           status: 'running',
           startedAt: now,
           examExpiresAt: expiresAt,
@@ -348,30 +436,67 @@ export const useExamStore = create<ExamStore>()(
       resetExam: (track) => {
         const targetTrack = track || get().track;
         const previousBoxes = get().boxes;
+        // A reset is a new exam: new seed. The page re-rolls with the catalog once it is loaded.
         const session = createInitialSession(targetTrack);
         set(session);
         purgeRemovedProofImages(previousBoxes, session.boxes);
         playCyberAlert('tick');
       },
 
-      setTrack: (track) => {
+      setTrack: (track, catalog, solvedIds) => {
         if (get().status === 'running') {
           console.warn('[ExamStore] Cannot switch track while an exam is actively running.');
           return;
         }
         const previousBoxes = get().boxes;
-        const session = createInitialSession(track);
+        // The seed (possibly entered by the user) and a still-valid scoring mode carry over to the new track.
+        const { seed, scoringMode } = get();
+        const session = createInitialSession(track, { seed, scoringMode, catalog, solvedIds });
         set(session);
         purgeRemovedProofImages(previousBoxes, session.boxes);
       },
 
-      shuffleTargets: () => {
-        const currentTrack = get().track;
-        const previousBoxes = get().boxes;
-        const newBoxes = generateExamTargetsForTrack(currentTrack);
-        set({ boxes: newBoxes });
+      shuffleTargets: (catalog, solvedIds) => {
+        if (get().status !== 'idle') return;
+        const { track: currentTrack, scoringMode, boxes: previousBoxes } = get();
+        const seed = generateExamSeed();
+        const newBoxes = generateExamTargetsForTrack(currentTrack, catalog ?? [], { seed, solvedIds, scoringMode });
+        set({ boxes: newBoxes, seed });
         purgeRemovedProofImages(previousBoxes, newBoxes);
         playCyberAlert('tick');
+      },
+
+      setSeed: (rawSeed, catalog, solvedIds) => {
+        const state = get();
+        if (state.status !== 'idle') return;
+        const seed = normalizeExamSeed(rawSeed);
+        if (!seed) return;
+        const newBoxes = generateExamTargetsForTrack(state.track, catalog ?? [], {
+          seed,
+          solvedIds,
+          scoringMode: state.scoringMode,
+        });
+        set({ boxes: newBoxes, seed });
+        purgeRemovedProofImages(state.boxes, newBoxes);
+      },
+
+      setScoringMode: (mode, catalog, solvedIds) => {
+        const state = get();
+        const next = resolveScoringMode(state.track, mode);
+        if (next === state.scoringMode) return;
+        if (state.status === 'idle') {
+          const newBoxes = generateExamTargetsForTrack(state.track, catalog ?? [], {
+            seed: state.seed,
+            solvedIds,
+            scoringMode: next,
+          });
+          set({ scoringMode: next, includeBonusPoints: next === 'legacy', boxes: newBoxes });
+          purgeRemovedProofImages(state.boxes, newBoxes);
+          return;
+        }
+        // Points are baked into the boxes at generation, so a started exam cannot move to or from weighted.
+        if (next === 'weighted' || state.scoringMode === 'weighted') return;
+        set({ scoringMode: next, includeBonusPoints: next === 'legacy' });
       },
 
       submitFlag: (boxId, flagType, flagText) => {
@@ -684,8 +809,10 @@ export const useExamStore = create<ExamStore>()(
         set({ scratchNotes });
       },
 
-      setIncludeBonusPoints: (includeBonusPoints) => {
-        set({ includeBonusPoints });
+      setIncludeBonusPoints: (include, catalog, solvedIds) => {
+        const { scoringMode } = get();
+        if (include) get().setScoringMode('legacy', catalog, solvedIds);
+        else if (scoringMode === 'legacy') get().setScoringMode('official', catalog, solvedIds);
       },
 
       setQuickDrawerOpen: (isQuickDrawerOpen) => {
@@ -867,6 +994,14 @@ export const useExamStore = create<ExamStore>()(
       // `findings` is likewise additive: older payloads lack it and keep the initial `[]`.
       version: 1,
       migrate: (persistedState) => persistedState as ExamSessionState,
+      // Older payloads have no seed or scoringMode: default them (legacy flag -> legacy mode) on every hydrate.
+      merge: (persistedState, currentState) => {
+        if (!persistedState) return currentState;
+        return {
+          ...currentState,
+          ...normalizeExamModeFields(persistedState as Record<string, unknown>),
+        };
+      },
       // Crucial: Only persist discrete state mutations!
       // Exclude rapid transient in-memory properties so 1Hz ticks do not cause write amplification
       partialize: (state) => ({
@@ -894,6 +1029,8 @@ export const useExamStore = create<ExamStore>()(
         milestones: state.milestones,
         scratchNotes: state.scratchNotes,
         includeBonusPoints: state.includeBonusPoints,
+        seed: state.seed,
+        scoringMode: state.scoringMode,
         findings: state.findings,
         activeBoxId: state.activeBoxId,
         activeBoxSince: state.activeBoxSince,
@@ -961,6 +1098,8 @@ const EXAM_SNAPSHOT_FIELDS = {
   milestones: 'array',
   scratchNotes: 'string',
   includeBonusPoints: 'boolean',
+  seed: 'string',
+  scoringMode: 'string',
   findings: 'array',
   activeBoxId: 'string?',
   activeBoxSince: 'number?',
@@ -1011,6 +1150,14 @@ export function restoreExamBackupSnapshot(raw: unknown): boolean {
   for (const [key, kind] of Object.entries(EXAM_SNAPSHOT_FIELDS)) {
     if (key in incoming && matchesKind(incoming[key], kind)) patch[key] = incoming[key];
   }
+  // Old backups predate seed/scoringMode (or carry an invalid value): default them explicitly.
+  Object.assign(
+    patch,
+    normalizeExamModeFields(
+      { track: patch.track ?? useExamStore.getState().track, seed: patch.seed, scoringMode: patch.scoringMode, includeBonusPoints: patch.includeBonusPoints },
+      incoming.track as ExamTrack
+    )
+  );
   const next = { ...useExamStore.getState(), ...patch } as ExamSessionState;
   const now = Date.now();
   const activeBreak: ExamBreakState = { ...DEFAULT_BREAK_STATE, ...(patch.activeBreak as Partial<ExamBreakState> | undefined) };

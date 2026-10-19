@@ -26,6 +26,10 @@ import {
   X
 } from 'lucide-react';
 import { useExamStore } from '../store/examStore';
+import { useCtfStore } from '../store/useCtfStore';
+import { getLoadedMachinesCatalog, loadMachinesCatalog } from '../data/loadMachinesCatalog';
+import { normalizeExamSeed } from '../utils/examTargetSelection';
+import type { Machine } from '../types';
 import { OsBadge } from '../components/common/OsBadge';
 import { DifficultyBadge } from '../components/common/DifficultyBadge';
 import { triggerRootCelebration } from '../utils/helpers';
@@ -37,7 +41,9 @@ import {
   EXAM_TRACK_CONFIGS,
   calculateExamScore, 
   generateExamReportMarkdown,
-  isActiveDirectoryBox} from '../utils/examComplianceUtils';
+  isActiveDirectoryBox,
+  supportsLegacyBonus,
+  supportsWeightedScoring} from '../utils/examComplianceUtils';
 import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
@@ -64,6 +70,8 @@ export const ExamSimulatorPage: React.FC = () => {
     milestones,
     scratchNotes,
     includeBonusPoints,
+    seed,
+    scoringMode,
     findings,
     candidateName,
     candidateCallsign,
@@ -77,7 +85,8 @@ export const ExamSimulatorPage: React.FC = () => {
     togglePwn,
     setCandidateInfo,
     setScratchNotes,
-    setIncludeBonusPoints,
+    setScoringMode,
+    setSeed,
     getRemainingSeconds,
     getBreakRemainingSeconds,
     getPassingStatus,
@@ -98,6 +107,8 @@ export const ExamSimulatorPage: React.FC = () => {
       milestones: s.milestones,
       scratchNotes: s.scratchNotes,
       includeBonusPoints: s.includeBonusPoints,
+      seed: s.seed,
+      scoringMode: s.scoringMode,
       findings: s.findings,
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
@@ -112,7 +123,8 @@ export const ExamSimulatorPage: React.FC = () => {
       togglePwn: s.togglePwn,
       setCandidateInfo: s.setCandidateInfo,
       setScratchNotes: s.setScratchNotes,
-      setIncludeBonusPoints: s.setIncludeBonusPoints,
+      setScoringMode: s.setScoringMode,
+      setSeed: s.setSeed,
       getRemainingSeconds: s.getRemainingSeconds,
       getBreakRemainingSeconds: s.getBreakRemainingSeconds,
       getScore: s.getScore,
@@ -120,6 +132,62 @@ export const ExamSimulatorPage: React.FC = () => {
       tick: s.tick,
     }))
   );
+
+  // Machine pool for target rolls: the lazy catalog chunk plus the user custom machines. The store never
+  // imports the catalog; the page loads it and passes it (with the solved ids) into the store actions.
+  const [catalog, setCatalog] = useState<Machine[] | null>(() => getLoadedMachinesCatalog());
+  const userMachines = useCtfStore((s) => s.machines);
+  useEffect(() => {
+    if (catalog) return;
+    let cancelled = false;
+    loadMachinesCatalog()
+      .then((loaded) => {
+        if (!cancelled) setCatalog(loaded);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [catalog]);
+  const pool = useMemo<Machine[] | undefined>(() => {
+    if (!catalog) return undefined;
+    const known = new Set(catalog.map((m) => m.id));
+    return [...catalog, ...userMachines.filter((m) => m.isCustom && !known.has(m.id))];
+  }, [catalog, userMachines]);
+  const solvedKey = useMemo(
+    () =>
+      userMachines
+        .filter((m) => m.status === 'completed' || Boolean(m.rootPwnedAt))
+        .map((m) => m.id)
+        .sort()
+        .join(','),
+    [userMachines]
+  );
+  const solvedIds = useMemo(() => (solvedKey ? solvedKey.split(',') : []), [solvedKey]);
+
+  // Once the catalog is available (or the solved set changes) re-roll the idle preview from the current seed.
+  useEffect(() => {
+    if (!pool || status !== 'idle') return;
+    const current = useExamStore.getState();
+    current.setSeed(current.seed, pool, solvedIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalog, solvedKey, status]);
+
+  const [seedDraft, setSeedDraft] = useState(seed);
+  useEffect(() => {
+    setSeedDraft(seed);
+  }, [seed]);
+  const [showLegacyOptions, setShowLegacyOptions] = useState(false);
+  const legacyVisible = supportsLegacyBonus(track) && (showLegacyOptions || scoringMode === 'legacy');
+
+  const applySeedDraft = () => {
+    const normalized = normalizeExamSeed(seedDraft);
+    if (!normalized) {
+      setSeedDraft(seed);
+      return;
+    }
+    setSeed(normalized, pool, solvedIds);
+  };
 
   // Expanded box card for evidence dropzones
   const [expandedBoxId, setExpandedBoxId] = useState<string | null>(null);
@@ -255,7 +323,7 @@ export const ExamSimulatorPage: React.FC = () => {
 
   // Handle Starting the Exam from Pre-flight Setup
   const handleStartExam = () => {
-    startExam(track, { candidateName, candidateCallsign, osid });
+    startExam(track, { candidateName, candidateCallsign, osid }, pool, solvedIds);
   };
 
   // Separate Active Directory boxes from Standalones
@@ -378,10 +446,10 @@ export const ExamSimulatorPage: React.FC = () => {
                     role="button"
                     tabIndex={0}
                     data-testid={`exam-track-select-${t.toLowerCase()}`}
-                    onClick={() => setTrack(t)}
+                    onClick={() => setTrack(t, pool, solvedIds)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        setTrack(t);
+                        setTrack(t, pool, solvedIds);
                       }
                     }}
                     className={`cursor-pointer p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge ${
@@ -399,7 +467,17 @@ export const ExamSimulatorPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-primary mb-1">{conf.name}</h3>
+                    <h3 className="text-sm font-semibold text-primary mb-1">
+                      {conf.name}
+                      {conf.scoringNote && (
+                        <span
+                          data-testid={`exam-track-note-${t.toLowerCase()}`}
+                          className="ml-2 align-middle text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle"
+                        >
+                          {conf.scoringNote}
+                        </span>
+                      )}
+                    </h3>
                     <p className="text-[11px] text-muted line-clamp-3 mb-3 leading-relaxed">
                       {conf.description}
                     </p>
@@ -471,24 +549,61 @@ export const ExamSimulatorPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bonus Points Option */}
-            <div className="pt-2">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-secondary">
-                <input
-                  type="checkbox"
-                  checked={includeBonusPoints}
-                  onChange={(e) => setIncludeBonusPoints(e.target.checked)}
-                  className="rounded border-strong bg-surface-sunken text-accent focus:ring-0"
-                />
-                <span className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-medium text-secondary">Legacy rubric (before Nov 2024):</span>
-                  <span>include +10 OffSec bonus lab points</span>
-                </span>
-              </label>
-              <p className="mt-1 text-[11px] text-muted pl-6 flex items-start gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px text-callout-warn-fg" aria-hidden="true" />
-                <span>OffSec removed the 10-point bonus on November 1, 2024 (OSCP+). The current rubric requires 70+ pts scored on exam targets only.</span>
+            {/* Scoring mode */}
+            <div className="pt-2 space-y-2" data-testid="exam-scoring-options">
+              <p className="text-[11px] text-muted">
+                Scoring: <strong className="font-medium text-secondary">{scoringMode === 'weighted' ? 'Weighted by difficulty' : scoringMode === 'legacy' ? 'Legacy (pre-Nov 2024)' : 'Official'}</strong>
               </p>
+              {supportsWeightedScoring(track) && (
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-secondary">
+                    <input
+                      type="checkbox"
+                      data-testid="exam-weighted-toggle"
+                      checked={scoringMode === 'weighted'}
+                      onChange={(e) => setScoringMode(e.target.checked ? 'weighted' : 'official', pool, solvedIds)}
+                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0"
+                    />
+                    <span className="font-medium text-secondary">Weight points by difficulty</span>
+                  </label>
+                  <p className="mt-1 text-[11px] text-muted pl-6">
+                    {track === 'OSCP'
+                      ? 'Redistributes the 60 standalone points (Easy 1, Medium 1.5, Hard 2, Insane 2.5). The 40-point AD set and the 70-point pass mark are unchanged.'
+                      : 'Redistributes the 100 points across the web apps by difficulty (Easy 1, Medium 1.5, Hard 2, Insane 2.5). The pass mark stays at 85%.'}
+                  </p>
+                </div>
+              )}
+              {supportsLegacyBonus(track) && !legacyVisible && (
+                <button
+                  type="button"
+                  data-testid="exam-legacy-options-btn"
+                  onClick={() => setShowLegacyOptions(true)}
+                  className="text-[11px] text-muted hover:text-primary underline underline-offset-2"
+                >
+                  Show legacy scoring options
+                </button>
+              )}
+              {legacyVisible && (
+                <div data-testid="exam-legacy-options">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-secondary">
+                    <input
+                      type="checkbox"
+                      data-testid="exam-legacy-bonus-toggle"
+                      checked={scoringMode === 'legacy'}
+                      onChange={(e) => setScoringMode(e.target.checked ? 'legacy' : 'official', pool, solvedIds)}
+                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0"
+                    />
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-medium text-secondary">Legacy rubric (before Nov 2024):</span>
+                      <span>include +10 OffSec bonus lab points</span>
+                    </span>
+                  </label>
+                  <p className="mt-1 text-[11px] text-muted pl-6 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px text-callout-warn-fg" aria-hidden="true" />
+                    <span>OffSec removed the 10-point bonus on November 1, 2024 (OSCP+). Here it is added only once you have scored above 0 on exam targets.</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -501,12 +616,47 @@ export const ExamSimulatorPage: React.FC = () => {
               </h2>
               <button
                 type="button"
-                onClick={shuffleTargets}
+                data-testid="exam-reroll-btn"
+                onClick={() => shuffleTargets(pool, solvedIds)}
                 className="px-2.5 py-1 max-sm:py-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-secondary text-xs font-medium border border-subtle flex items-center gap-1 active:scale-[0.97] transition-interactive"
               >
                 <Shuffle className="w-3.5 h-3.5" />
                 <span>Re-roll targets</span>
               </button>
+            </div>
+
+            <div className="flex flex-wrap items-end gap-2 text-xs">
+              <div>
+                <label htmlFor="exam-seed" className="block text-[11px] text-muted mb-1">
+                  Roll seed (same seed, catalog and solved set give the same machines)
+                </label>
+                <input
+                  id="exam-seed"
+                  name="examSeed"
+                  type="text"
+                  data-testid="exam-seed-input"
+                  value={seedDraft}
+                  maxLength={16}
+                  spellCheck={false}
+                  onChange={(e) => setSeedDraft(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') applySeedDraft();
+                  }}
+                  className="w-40 bg-surface-sunken border border-subtle rounded-lg px-3 py-1.5 text-primary text-xs font-mono tracking-wider focus:outline-none focus:border-accent transition-colors"
+                />
+              </div>
+              <button
+                type="button"
+                data-testid="exam-seed-apply-btn"
+                onClick={applySeedDraft}
+                disabled={normalizeExamSeed(seedDraft) === seed}
+                className="px-2.5 py-1.5 max-sm:py-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-secondary text-xs font-medium border border-subtle disabled:opacity-50 active:scale-[0.97] transition-interactive"
+              >
+                Use seed
+              </button>
+              <span className="text-[11px] text-muted pb-2">
+                Current seed: <strong data-testid="exam-seed-display" className="font-mono text-primary tracking-wider">{seed}</strong>
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

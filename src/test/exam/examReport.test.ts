@@ -248,13 +248,24 @@ describe('Certification Exam Submission Report Generator (R5)', () => {
       expect(markdown).toContain('Mandatory User proof screenshot is not confirmed');
     });
 
-    it('REPORT-06: Incorporates OffSec 10-point bonus lab exercises when toggled', () => {
-      const session = createMockExamSession('OSCP', false, false); // 0 box pts
+    it('REPORT-06: Incorporates the legacy 10-point bonus only when exam points were scored', () => {
+      const session = createMockExamSession('OSCP', false, false);
+      // One standalone user flag (10 pts) so the exam score is above 0.
+      session.boxes = session.boxes.map((b) => (b.id === 'st-1' ? { ...b, userPwned: true } : b));
       session.includeBonusPoints = true;
       const markdown = generateExamReportMarkdown(session);
 
       expect(markdown).toContain('| **OFFSEC BONUS LABS** | Official Lab Bonus | `N/A` | [x] COMPLETED | [x] COMPLETED | **10 PTS** |');
-      expect(markdown).toContain('10 / 100 PTS');
+      expect(markdown).toContain('20 / 100 PTS');
+    });
+
+    it('REPORT-06b: No bonus row when the exam score is 0', () => {
+      const session = createMockExamSession('OSCP', false, false); // 0 box pts
+      session.includeBonusPoints = true;
+      const markdown = generateExamReportMarkdown(session);
+
+      expect(markdown).not.toContain('OFFSEC BONUS LABS');
+      expect(markdown).toContain('0 / 100 PTS');
     });
   });
 

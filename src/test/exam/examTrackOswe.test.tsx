@@ -61,11 +61,14 @@ describe('OSWE track (modeled on the published OSWE rules)', () => {
     expect(boxes.reduce((s, b) => s + b.userPoints + b.rootPoints, 0)).toBe(100);
   });
 
-  it('scores against the 85-point pass mark', () => {
-    expect(calculateExamScore('OSWE', stages(3)).totalScore).toBe(75);
-    const partial = calculateExamScore('OSWE', stages(3));
+  it('scores against the 85-point pass mark (35 auth bypass + 15 RCE per app)', () => {
+    expect(calculateExamScore('OSWE', stages(1)).totalScore).toBe(35);
+    const partial = calculateExamScore('OSWE', stages(2));
+    expect(partial.totalScore).toBe(50);
     expect(partial.isPassing).toBe(false);
-    expect(partial.pointsNeeded).toBe(10);
+    expect(partial.pointsNeeded).toBe(35);
+    expect(calculateExamScore('OSWE', stages(3)).totalScore).toBe(85);
+    expect(calculateExamScore('OSWE', stages(3)).isPassing).toBe(true);
     const full = calculateExamScore('OSWE', stages(4));
     expect(full.totalScore).toBe(100);
     expect(full.isPassing).toBe(true);
@@ -94,7 +97,7 @@ describe('OSWE track (modeled on the published OSWE rules)', () => {
     expect(pacing.recommendation).not.toContain('objectives');
   });
 
-  it('builds a burndown series stepping 25 points toward 85', () => {
+  it('builds a burndown series stepping 35 then 15 points toward 85', () => {
     const start = Date.now() - 1000;
     const boxes = stages(3).map((b, i) => ({
       ...b,
@@ -105,8 +108,8 @@ describe('OSWE track (modeled on the published OSWE rules)', () => {
       track: 'OSWE',
     });
     expect(series.passThreshold).toBe(85);
-    expect(series.steps.map((p) => p.points)).toEqual([0, 25, 50, 75]);
-    expect(series.steps[series.steps.length - 1].remainingToPass).toBe(10);
+    expect(series.steps.map((p) => p.points)).toEqual([0, 35, 50, 85]);
+    expect(series.steps[series.steps.length - 1].remainingToPass).toBe(0);
   });
 
   it('report includes OSWE methodology and documentation checklist', () => {
