@@ -22,7 +22,6 @@ import {
   Settings,
   Users,
   Keyboard,
-  Film,
   BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -81,7 +80,6 @@ export const CommandPalette: React.FC = () => {
     setFlexCardModalOpen,
     setShortcutsModalOpen,
     setSettingsModalOpen,
-    setShowcaseModalOpen,
     globalVars,
     setSnippetsDrawerOpen,
     setRevShellModalOpen,
@@ -106,7 +104,6 @@ export const CommandPalette: React.FC = () => {
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       setShortcutsModalOpen: s.setShortcutsModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
-      setShowcaseModalOpen: s.setShowcaseModalOpen,
       globalVars: s.globalVars,
       activeTargetId: s.activeTargetId,
       setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
@@ -292,17 +289,6 @@ export const CommandPalette: React.FC = () => {
         execute: () => {
           setCommandPaletteOpen(false);
           setOperatorModalOpen(true);
-        },
-      },
-      {
-        id: 'action-showcase-video',
-        label: 'Watch ZeroBox Reel / Demo Video (Nano Banana AI 1080p)',
-        icon: Film,
-        colorClass: 'text-cyber-emerald',
-        bgHoverClass: 'hover:bg-surface-hover',
-        execute: () => {
-          setCommandPaletteOpen(false);
-          setShowcaseModalOpen(true);
         },
       },
       {

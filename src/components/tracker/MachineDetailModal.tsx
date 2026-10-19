@@ -531,9 +531,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 <button
                   type="button"
                   onClick={() => {
+                    const alreadyActive = activeTargetId === machine.id;
                     setActiveTarget(machine.id);
                     startTimer();
                     if (soundEnabled) playCyberSound('engage');
+                    if (!alreadyActive) {
+                      setSelectedMachineId(null);
+                      navigate(`/target/${machine.id}`);
+                    }
                   }}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-fg hover:opacity-90 font-medium text-xs transition-opacity"
                 >
@@ -945,9 +950,14 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {!isActiveTarget ? (
                 <button
                   onClick={() => {
+                    const alreadyActive = activeTargetId === machine.id;
                     setActiveTarget(machine.id);
                     startTimer();
                     if (soundEnabled) playCyberSound('timer');
+                    if (!alreadyActive) {
+                      setSelectedMachineId(null);
+                      navigate(`/target/${machine.id}`);
+                    }
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-callout-success-bg border border-callout-success-border text-callout-success-fg hover:bg-callout-success-fg hover:text-primary font-semibold transition-colors"
                 >

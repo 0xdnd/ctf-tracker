@@ -40,7 +40,6 @@ const KeyboardShortcutsModal = lazy(() => import('./components/common/KeyboardSh
 const BackupModal = lazy(() => import('./components/backup/BackupModal').then(m => ({ default: m.BackupModal })));
 const ReconAutomationModal = lazy(() => import('./components/automation/ReconAutomationModal').then(m => ({ default: m.ReconAutomationModal })));
 const SettingsModal = lazy(() => import('./components/common/SettingsModal').then(m => ({ default: m.SettingsModal })));
-const ZeroBoxShowcaseModal = lazy(() => import('./components/common/ZeroBoxShowcaseModal').then(m => ({ default: m.ZeroBoxShowcaseModal })));
 
 // Code-split global overlays: mounted (and fetched) only once they are first needed
 const SnippetsDrawer = lazy(() => import('./components/layout/SnippetsDrawer').then(m => ({ default: m.SnippetsDrawer })));
@@ -113,7 +112,6 @@ const MainAppContent: React.FC = () => {
   const flexCardModalOpen = useCtfStore((s) => s.flexCardModalOpen);
   const shortcutsModalOpen = useCtfStore((s) => s.shortcutsModalOpen);
   const settingsModalOpen = useCtfStore((s) => s.settingsModalOpen);
-  const showcaseModalOpen = useCtfStore((s) => s.showcaseModalOpen);
   const commandPaletteOpen = useCtfStore((s) => s.commandPaletteOpen);
   const snippetsDrawerOpen = useCtfStore((s) => s.snippetsDrawerOpen);
   const revShellModalOpen = useCtfStore((s) => s.revShellModalOpen);
@@ -182,8 +180,7 @@ const MainAppContent: React.FC = () => {
           notesImportModalOpen ||
           flexCardModalOpen ||
           shortcutsModalOpen ||
-          settingsModalOpen ||
-          showcaseModalOpen
+          settingsModalOpen
         );
         if (!isAnyModalOpen) {
           setFocusMode(false);
@@ -413,9 +410,6 @@ const MainAppContent: React.FC = () => {
           </AnimatePresence>
           <AnimatePresence>
             {settingsModalOpen && <SettingsModal key="settings-modal" />}
-          </AnimatePresence>
-          <AnimatePresence>
-            {showcaseModalOpen && <ZeroBoxShowcaseModal key="showcase-modal" />}
           </AnimatePresence>
         </Suspense>
       </RouteErrorBoundary>

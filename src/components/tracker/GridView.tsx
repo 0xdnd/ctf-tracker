@@ -478,10 +478,12 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
   }, [toggleRootFlag]);
 
   const handleEngageTarget = useCallback((id: string) => {
+    const alreadyActive = activeTargetId === id;
     setActiveTarget(id);
     startTimer();
     if (soundEnabled) playCyberSound('timer');
-  }, [setActiveTarget, startTimer, soundEnabled]);
+    if (!alreadyActive) navigate(`/target/${id}`);
+  }, [activeTargetId, setActiveTarget, startTimer, soundEnabled, navigate]);
 
   const handleOpenReport = useCallback((id: string) => {
     setReportMachineId(id);

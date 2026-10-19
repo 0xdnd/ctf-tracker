@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -42,6 +42,7 @@ const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
 
 export const UnifiedHeader: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const {
     activeTargetId,
@@ -410,10 +411,12 @@ export const UnifiedHeader: React.FC = () => {
                 <button
                   key={m.id}
                   onClick={() => {
+                    const alreadyActive = activeTargetId === m.id;
                     setActiveTarget(m.id);
                     startTimer();
                     setTargetDropdownOpen(false);
                     if (soundEnabled) playCyberSound('timer');
+                    if (!alreadyActive) navigate(`/target/${m.id}`);
                   }}
                   className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
                     activeTargetId === m.id

@@ -13,7 +13,6 @@ import {
   ShieldCheck, 
   SlidersHorizontal,
   Users,
-  Film,
   BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -23,7 +22,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
 import { useLocation } from 'react-router-dom';
-import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
 
 export const SettingsDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,7 +40,6 @@ export const SettingsDropdown: React.FC = () => {
     setLicenseModalOpen,
     setBackupModalOpen,
     setSettingsModalOpen,
-    setShowcaseModalOpen,
     exportWorkspace,
     importWorkspace,
     unexportedChangesCount,
@@ -59,7 +56,6 @@ export const SettingsDropdown: React.FC = () => {
       setLicenseModalOpen: s.setLicenseModalOpen,
       setBackupModalOpen: s.setBackupModalOpen,
       setSettingsModalOpen: s.setSettingsModalOpen,
-      setShowcaseModalOpen: s.setShowcaseModalOpen,
       exportWorkspace: s.exportWorkspace,
       importWorkspace: s.importWorkspace,
       unexportedChangesCount: s.unexportedChangesCount,
@@ -152,7 +148,7 @@ export const SettingsDropdown: React.FC = () => {
       />
 
       {isOpen && (
-        <div className="fixed right-3 sm:right-4 top-[54px] w-64 p-2 rounded-xl bg-surface-elevated border border-subtle shadow-xl z-[60] text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100 machined-edge">
+        <div className="fixed right-2 sm:right-4 top-[54px] w-64 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-54px-72px-env(safe-area-inset-bottom,0px))] md:max-h-[calc(100dvh-54px-8px)] overflow-y-auto overscroll-contain p-2 rounded-xl bg-surface-elevated border border-subtle shadow-xl z-[60] text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100 machined-edge">
           <div className="px-2 py-1 text-[11px] font-medium text-muted flex items-center justify-between border-b border-subtle pb-1.5">
             <span>Preferences and tools</span>
             {unexportedChangesCount > 0 && (
@@ -175,12 +171,6 @@ export const SettingsDropdown: React.FC = () => {
             </span>
             <span className={hintCls}>Open &rarr;</span>
           </button>
-
-          {/* Theme palette */}
-          <div className="px-2 py-1 flex items-center justify-between">
-            <span className="text-muted">Theme Preset</span>
-            <ThemePresetDropdown />
-          </div>
 
           {/* Sound FX toggle */}
           <button
@@ -332,26 +322,6 @@ export const SettingsDropdown: React.FC = () => {
               <span>Switch Operator / Log In</span>
             </span>
             <kbd className="text-[11px] text-muted font-mono">Alt+O</kbd>
-          </button>
-
-          {/* AI Video Showcase */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowcaseModalOpen(true);
-              setIsOpen(false);
-              if (soundEnabled) playCyberSound('click');
-            }}
-            className={itemCls}
-            title="Watch 1080p ZeroBox Showcase Video generated with Google Nano Banana AI"
-          >
-            <div className="flex items-center gap-2">
-              <Film className="w-4 h-4 text-cyber-emerald" />
-              <span>Watch ZeroBox Reel</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">
-              AI 1080p
-            </span>
           </button>
 
           {/* About */}

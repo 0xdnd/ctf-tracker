@@ -673,10 +673,12 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
   }, [toggleRootFlag]);
 
   const handleEngageTarget = useCallback((id: string) => {
+    const alreadyActive = activeTargetId === id;
     setActiveTarget(id);
     startTimer();
     if (soundEnabled) playCyberSound('timer');
-  }, [setActiveTarget, startTimer, soundEnabled]);
+    if (!alreadyActive) navigate(`/target/${id}`);
+  }, [activeTargetId, setActiveTarget, startTimer, soundEnabled, navigate]);
 
   const handleOpenTarget = useCallback((id: string) => {
     navigate(`/target/${id}`);

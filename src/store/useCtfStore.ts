@@ -274,8 +274,6 @@ interface CtfStoreState {
   setShortcutsModalOpen: (open: boolean) => void;
   settingsModalOpen: boolean;
   setSettingsModalOpen: (open: boolean) => void;
-  showcaseModalOpen: boolean;
-  setShowcaseModalOpen: (open: boolean) => void;
   notesImportModalOpen: boolean;
   setNotesImportModalOpen: (open: boolean) => void;
   userNotes: CptsNoteEntry[];
@@ -1381,7 +1379,6 @@ export const useCtfStore = create<CtfStoreState>()(
       flexCardModalOpen: false,
       shortcutsModalOpen: false,
       settingsModalOpen: false,
-      showcaseModalOpen: false,
       notesImportModalOpen: false,
       userNotes: [],
       userWikilinkMap: {},
@@ -1510,7 +1507,6 @@ export const useCtfStore = create<CtfStoreState>()(
       setFlexCardModalOpen: (open) => set({ flexCardModalOpen: open }),
       setShortcutsModalOpen: (open) => set({ shortcutsModalOpen: open }),
       setSettingsModalOpen: (open) => set({ settingsModalOpen: open }),
-      setShowcaseModalOpen: (open) => set({ showcaseModalOpen: open }),
       setNotesImportModalOpen: (open) => set({ notesImportModalOpen: open }),
       setUserNotes: (notes) => set({ userNotes: notes }),
       setUserWikilinkMap: (map) => set({ userWikilinkMap: map }),

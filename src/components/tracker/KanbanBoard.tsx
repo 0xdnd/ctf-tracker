@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Crosshair, 
   Flag, 
@@ -354,7 +355,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
           : 'border-subtle bg-surface-card/60'
       } backdrop-blur-sm ${
         isMobileActive ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'
-      } lg:h-[calc(100vh-270px)] lg:min-h-[480px]`}
+      } lg:h-[var(--kanban-h,calc(100vh-270px))] lg:min-h-[480px]`}
     >
       {/* Lane header: sentence-case title, mono count */}
       <div className="border-b border-subtle px-3 py-2.5 bg-surface-card/90 flex-shrink-0 flex items-center justify-between gap-3 font-sans">
@@ -456,6 +457,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
 });
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) => {
+  const navigate = useNavigate();
   const {
     setSelectedMachineId,
     updateMachineStatus,
@@ -481,6 +483,40 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
   const [laneLimits, setLaneLimits] = React.useState<Record<string, number>>({});
   const [mobileActiveLane, setMobileActiveLane] = React.useState<PipelineStatus>('backlog');
 
+  // Fill the main scroll area: lane height = visible main height - board offset - 20px gap.
+  // The wrapper's lg:-mb-7 cancels most of main's 48px bottom padding so no page-level scrollbar appears.
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const [laneHeight, setLaneHeight] = React.useState<number | null>(null);
+  React.useLayoutEffect(() => {
+    const grid = gridRef.current;
+    const main = grid?.closest('main') as HTMLElement | null;
+    if (!grid || !main) return;
+    const measure = () => {
+      if (!window.matchMedia('(min-width: 1024px)').matches) {
+        setLaneHeight((prev) => (prev === null ? prev : null));
+        return;
+      }
+      const mainRect = main.getBoundingClientRect();
+      const scale = main.offsetHeight > 0 ? mainRect.height / main.offsetHeight : 1;
+      const top = (grid.getBoundingClientRect().top - mainRect.top) / (scale || 1) + main.scrollTop;
+      const next = Math.max(480, Math.floor(main.clientHeight - top - 20));
+      setLaneHeight((prev) => (prev === next ? prev : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    let el: HTMLElement | null = grid.parentElement;
+    ro.observe(main);
+    while (el && el !== main) {
+      ro.observe(el);
+      el = el.parentElement;
+    }
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [filteredMachines.length]);
+
   const handleAdvance = React.useCallback((e: React.MouseEvent, m: Machine, nextStatus: PipelineStatus) => {
     e.stopPropagation();
     updateMachineStatus(m.id, nextStatus);
@@ -500,10 +536,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
 
   const handleSetTarget = React.useCallback((e: React.MouseEvent, machineId: string) => {
     e.stopPropagation();
+    const alreadyActive = activeTargetId === machineId;
     setActiveTarget(machineId);
     startTimer();
     if (soundEnabled) playCyberSound('timer');
-  }, [setActiveTarget, startTimer, soundEnabled]);
+    if (!alreadyActive) navigate(`/target/${machineId}`);
+  }, [activeTargetId, setActiveTarget, startTimer, soundEnabled, navigate]);
 
   const visibleLanes = React.useMemo(() => {
     if (!hideEmptyLanes) return LANES;
@@ -597,7 +635,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       onDragStart={handleDragStart} 
       onDragEnd={handleDragEnd}
     >
-      <div className="w-full pb-8">
+      <div style={laneHeight ? ({ '--kanban-h': `${laneHeight}px` } as React.CSSProperties) : undefined} className="w-full pb-8 lg:pb-0 lg:h-[calc(var(--kanban-h,calc(100vh-270px))-28px)] lg:min-h-[452px]">
       {/* 1. MOBILE RESPONSIVE STICKY LANE TABS (< lg) - Eliminates Nested Scroll Trap & Pinching */}
       <div className="lg:hidden sticky top-0 z-20 bg-surface-sunken/95 py-1.5 mb-2 backdrop-blur-md border-b border-subtle">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -628,7 +666,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       </div>
 
       {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
-      <div className={`grid ${gridColsClass} gap-3.5 items-start transition-colors`}>
+      <div
+        ref={gridRef}
+        className={`grid ${gridColsClass} gap-3.5 items-start transition-colors`}
+      >
         {visibleLanes.map((lane) => {
           const { laneMachines, displayedMachines } = laneData.get(lane.id)!;
           const limit = laneLimits[lane.id] ?? LANE_PAGE_SIZE;
