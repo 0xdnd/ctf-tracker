@@ -1,236 +1,203 @@
 <div align="center">
 
-<img src="public/logo-zerobox.webp" alt="ZeroBox logo" width="120" />
+<img src="public/logo-zerobox.webp" alt="ZeroBox logo" width="110" />
 
-# ⚡ ZeroBox — The CTF Tracker Built for Hackers
+# ZeroBox
 
-### Track every HTB & TryHackMe box, from recon to root, in one free, offline, keyboard-driven dashboard.
+### The free, offline CTF tracker for Hack The Box & TryHackMe
 
-**No signup. No backend. No tracking. Just open it and start hacking.**
+Track every box from recon to root, keep your loot and notes in one place, and prep for OSCP, CPTS and CRTO.
+**No signup. No backend. No tracking.**
 
 <br />
 
-[![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
+[![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20Launch%20ZeroBox-free%20in%20your%20browser-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
-[![GitHub Stars](https://img.shields.io/badge/Stars-23-F59E0B?style=for-the-badge&logo=github)](https://github.com/0xdnd/ctf-tracker/stargazers)
-[![Machines](https://img.shields.io/badge/Machines-1027-10B981?style=for-the-badge)](https://ctftracker.com/)
-[![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-130%2B-EF4444?style=for-the-badge)](https://ctftracker.com/)
-[![Tests](https://img.shields.io/badge/Tests-212%20suites%20%7C%203234%20passing-10B981?style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
-[![Live at ctftracker.com](https://img.shields.io/badge/Live_at-ctftracker.com-10B981?style=flat-square&logo=cloudflare)](https://ctftracker.com/)
-[![Creator](https://img.shields.io/badge/Creator-Daniel%20Dayan%20(@0xdnd)-10B981?style=flat-square&logo=github)](https://0xdnd.github.io/)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Daniel%20Dayan-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/daniel-dayan-a66322352/)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Daniel%20Dayan-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/0xdnd)
-[![License](https://img.shields.io/badge/License-Non--Commercial%20(ZNSL--1.0)-F59E0B?style=flat-square&logo=shield)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=flat-square&logo=github&color=F59E0B)](https://github.com/0xdnd/ctf-tracker/stargazers)
+[![CI](https://img.shields.io/github/actions/workflow/status/0xdnd/ctf-tracker/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/0xdnd/ctf-tracker/actions/workflows/ci.yml)
+[![Machines](https://img.shields.io/badge/machines-1027-10B981?style=flat-square)](https://ctftracker.com/)
+[![Reverse shells](https://img.shields.io/badge/reverse_shells-130%2B-EF4444?style=flat-square)](https://ctftracker.com/)
+[![License](https://img.shields.io/badge/license-ZNSL--1.0%20(non--commercial)-F59E0B?style=flat-square)](LICENSE)
 
 <a href="https://ctftracker.com/"><img src=".github/assets/screenshot.png" alt="ZeroBox Kanban board tracking HTB and THM machines" width="900" /></a>
 
-<a href="https://ctftracker.com"><img src=".github/assets/demo.gif" alt="ZeroBox demo: browsing HTB targets, dragging a machine across the Kanban board to Root Pwned, and the reverse shell generator" width="800" /></a>
-
-**[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)** · **[📝 Writeups](https://0xdnd.gitbook.io/thm-writeups/)**
+**[Try it live](https://ctftracker.com/)** · **[Features](#-features)** · **[Run locally](#-run-locally)** · **[FAQ](#-faq)** · **[Writeups](https://0xdnd.gitbook.io/thm-writeups/)**
 
 </div>
 
 ---
 
-**ZeroBox is a free, open-source CTF tracker** for [Hack The Box](https://www.hackthebox.com/) and [TryHackMe](https://tryhackme.com/). Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
-
----
-
 ## 🤔 Why ZeroBox?
 
-Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across browser tabs, a Notion page, a text file of creds and a cheatsheet you keep re-typing IPs into. ZeroBox puts it all in one place:
+Grinding for OSCP, CPTS or CRTO usually means progress scattered across browser tabs, a Notion page, a text file of creds and a cheatsheet you keep re-typing IPs into. ZeroBox puts it all in one place.
 
 | Instead of… | ZeroBox gives you… |
 |:---|:---|
-| 📋 A messy spreadsheet of boxes | **1027 HTB & THM machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
-| 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
+| 📋 A messy spreadsheet of boxes | **1,027 HTB & THM machines** pre-loaded on a Kanban board, from *Backlog* to *Pwned* |
+| 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet**: set `LHOST` / `LPORT` / `TARGET_IP` once and every command updates |
 | 🐚 Googling "python reverse shell" again | **130+ reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
-| 😰 Wondering if you're exam-ready | A **24h exam simulator** with OSCP/CPTS/CRTO-style scoring |
+| 😰 Wondering if you're exam-ready | A **24h exam simulator** with OSCP / CPTS / CRTO-style scoring |
 
-> 🔒 **100% private:** everything lives in your browser (LocalStorage + IndexedDB). Nothing is ever sent anywhere.
-
-> ⭐ **If ZeroBox saves you time, please [star the repo](https://github.com/0xdnd/ctf-tracker/stargazers)** — it's the best way to help more hackers find it!
+> 🔒 **Private by design.** Everything lives in your browser (LocalStorage + IndexedDB). Nothing is sent anywhere.
 
 ---
 
-## 🚀 Core Modules
+## ✨ Features
 
-### 1. 🛡️ Lab & Machine Tracker
-- **1027-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, plus custom targets, Pro Labs and exams.
-- **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
-- **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
-- **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and `CuratedPathways` for structured cert journeys (OSCP, CPTS, CRTO).
-- **Target dossier:** Per-machine detail page with multi-host Nmap/scan import, methodology checklist, flags, and user/root timers.
-- **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus syntax DSL search (`syntaxSearchUtils`) and a global command palette.
+<table>
+<tr>
+<td width="50%"><img src="public/images/landing/table-800.webp" alt="Machine table view" /></td>
+<td width="50%"><img src="public/images/landing/graph-800.webp" alt="Attack graph view" /></td>
+</tr>
+<tr>
+<td width="50%"><img src="public/images/landing/vault-800.webp" alt="Evidence and loot vault" /></td>
+<td width="50%"><img src="public/images/landing/exam-800.webp" alt="Exam simulator" /></td>
+</tr>
+</table>
 
-### 2. 🗝️ Evidence & Loot Vault
-- Credentials, hashes, flags, keys and tokens collected across every target in one place.
-- Automatic hash type identification (`hashIdentifier`) across 20+ hash formats.
-- Loot timeline, quick add, batch operations, and an export drawer for reports.
+### 🛡️ Lab & machine tracker
+- **1,027-machine catalog:** active and retired HTB machines, Starting Point labs and THM CTF rooms, plus your own custom targets, Pro Labs and exams.
+- **5-stage lifecycle:** Target Backlog → Active Recon → Foothold Obtained → System Pwned → Completed & Logged.
+- **Five views:** Kanban board, sortable table, card grid, attack graph (with a pivot inspector) and curated cert pathways for OSCP, CPTS and CRTO.
+- **Target dossier:** per-machine page with Nmap / scan import, a methodology checklist, flags and user/root timers.
+- **Fast navigation:** `/` or `Ctrl+K` / `Cmd+K` for search and the command palette, plus filters with MITRE ATT&CK tags.
 
-### 3. 🧭 Methodology & Field Manual
-- **Attack methodology:** Phase-by-phase tree with decision branches and playbooks.
-- **Dynamic cheatsheet:** Set `LHOST`, `LPORT`, `TARGET_IP` once and they are injected into every command.
-- **Reverse shell builder & modal:** 130+ Linux and Windows payloads (`RevShellModal`) with matching listeners and one-click copy.
-- **Offensive Forge Utilities:** Multi-host scan parsing, payload encoding, and transfer server presets (`offensiveForgeUtils`, `multiHostScanParser`).
-- **Notes workspace:** Obsidian-style note viewer with multi-tab docked notes and an IndexedDB-backed private vault.
+### 🗝️ Evidence & loot vault
+- Credentials, hashes, flags, keys and tokens from every target in one place.
+- Automatic hash-type identification for 20+ formats.
+- Loot timeline, quick add, batch actions and export for reports.
 
-### 4. 📝 Writeup Studio & Reports
-- Dual-pane Markdown editor with live preview.
-- Pentest report templates pre-filled with target data, exportable via `reportCompilerUtils` as `.md` or formatted HTML for Obsidian or GitBook.
+### 🧭 Methodology & field manual
+- Phase-by-phase attack methodology with decision branches and playbooks.
+- Dynamic cheatsheet that injects your `LHOST`, `LPORT` and `TARGET_IP` into every command.
+- Reverse shell generator: 130+ Linux and Windows payloads with listeners.
+- Payload encoders, file-transfer and TTY-stabilisation cheatsheets.
+- Obsidian-style notes workspace with multi-tab notes and a private IndexedDB vault.
 
-### 5. 📊 Analytics & ⏱️ Exam Simulator
-- **Skill radar & readiness analytics:** Real-time telemetry (`readinessAnalytics`) across Web, AD, Linux/Windows PrivEsc, Pivoting, and a **90-day activity heatmap**.
-- **24h exam simulator:** OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a live burn-down chart.
+### 📝 Writeups, analytics & exam prep
+- Markdown writeup studio with live preview and pentest report templates, exportable as Markdown or HTML.
+- Skill radar across Web, AD, Linux/Windows PrivEsc and Pivoting, plus a 90-day activity heatmap.
+- 24h exam simulator with OSCP, CPTS and CRTO-style rules, scoring, breaks, evidence and a live burn-down chart.
 
----
-
-## 🧱 Tech Stack
-
-- **UI:** React 18 + TypeScript, built with Vite
-- **Routing:** react-router 7
-- **Styling:** Tailwind CSS
-- **State:** Zustand
-- **Desktop:** Tauri
-- **Testing:** Vitest
-
----
-
-## 🤝 Contributing
-
-Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first, then open an issue using the [bug report or feature request templates](https://github.com/0xdnd/ctf-tracker/issues/new/choose).
+### 🎨 Built well
+- Dark (zinc / graphite / OLED) and light themes.
+- WCAG 2.1 AA contrast, full keyboard navigation and `prefers-reduced-motion` support.
+- One-click JSON backup and restore (optionally encrypted).
+- Runs in the browser or as a native desktop app (Tauri).
 
 ---
 
-## 🎨 Design & Principles
-- **Refined tactical UI:** calm dark (zinc / graphite / OLED) and light themes, switchable presets, Inter for text and monospace for IPs, hashes and commands.
-- **Accessible:** WCAG 2.1 AA contrast, visible focus states, keyboard navigation, and `prefers-reduced-motion` support.
-- **Offline-first & private:** zero backend and no outbound network requests. All data stays in your browser (LocalStorage + IndexedDB).
-- **Data portability:** one-click JSON backup and restore.
-- **Audio cues:** synthesized alerts with no external audio files.
+## 🛠️ Run locally
 
----
-
-## 🛠️ Local Development & Build
-
-### Prerequisites
-- Node.js 18+ (tested on Node.js 24)
-- npm 9+
+**Requirements:** Node.js 18+ (tested on 24) and npm 9+.
 
 ```bash
-# Clone the repository
 git clone https://github.com/0xdnd/ctf-tracker.git
 cd ctf-tracker
-
-# Install dependencies
 npm install
-
-# Start local development server
-npm run dev
-
-# Build production bundle
-npm run build
-
-# Preview production build locally
-npm run preview
+npm run dev        # start the dev server
 ```
 
-> **Windows shortcut:** after `npm install`, double-click `START-TRACKER.bat` to start the dev server and open the tracker in your browser. On macOS/Linux, use the npm commands above.
+| Command | What it does |
+|:---|:---|
+| `npm run build` | Production build |
+| `npm run preview` | Serve the production build locally |
+| `npm test` | Unit & component tests (Vitest) |
+| `npx tsc --noEmit` | Type check |
+| `npm run lint` | ESLint |
+| `npm run test:e2e:pw` | Playwright end-to-end tests |
+| `npm run tauri:dev` / `tauri:build` | Run or package the desktop app ([Tauri prerequisites](https://tauri.app/start/prerequisites/)) |
 
-### 🖥️ Desktop App (Tauri)
-ZeroBox also ships as a native desktop app. With the [Tauri prerequisites](https://tauri.app/start/prerequisites/) installed:
+> **Windows shortcut:** after `npm install`, double-click `START-TRACKER.bat` to start the dev server and open the tracker.
 
-```bash
-npm run tauri:dev     # run the desktop app in development
-npm run tauri:build   # build an installer
-```
-
-### ✅ Testing
-```bash
-npx tsc --noEmit   # type check
-npm test           # 212 test suites / 3,200+ unit & component tests (Vitest)
-npm run test:e2e   # browser E2E crawl (Python + Playwright)
-```
+**Tech stack:** React 18 · TypeScript · Vite · React Router 7 · Tailwind CSS · Zustand · Tauri · Vitest · Playwright
 
 ---
 
 ## ❓ FAQ
 
 **What is a CTF tracker?**
-A CTF tracker is a tool for keeping track of the capture the flag challenges you have started and finished. ZeroBox tracks HTB machines and TryHackMe rooms through each stage, from recon to root, and stores your flags, credentials and notes with them.
+A tool for keeping track of the capture-the-flag challenges you've started and finished. ZeroBox tracks HTB machines and TryHackMe rooms through each stage, from recon to root, and stores your flags, credentials and notes alongside them.
 
-**Is ZeroBox free?**
-Yes. It's free for personal and educational use, needs no account, and has no paywall. Open [ctftracker.com](https://ctftracker.com/) and start.
+**Is it free?**
+Yes. Free for personal and educational use, no account, no paywall. Open [ctftracker.com](https://ctftracker.com/) and start.
 
-**Does it work offline? Where is my data stored?**
-Everything is stored locally in your browser (LocalStorage + IndexedDB). There is no backend and nothing is uploaded. You can export a JSON backup at any time.
+**Does it work offline? Where is my data?**
+Everything is stored locally in your browser (LocalStorage + IndexedDB). There's no backend and nothing is uploaded. Export a JSON backup at any time.
 
-**Which platforms does it cover?**
-556 retired Hack The Box machines, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 451 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
+**Which platforms are covered?**
+556 retired and 20 active Hack The Box machines (active ones are name, OS, difficulty and link only), plus 451 TryHackMe CTF rooms. You can add custom targets from anywhere else: PG Practice, VulnHub or your own lab.
 
 **Can I use it to prepare for OSCP or CPTS?**
-Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
+Yes. There's a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
 
 ---
 
-## 👨‍💻 Creator & System Architect
+## 🤝 Contributing
 
-**ZeroBox** is designed, engineered, and maintained by **Daniel Dayan** ([@0xdnd](https://github.com/0xdnd)) — Cybersecurity Researcher, Penetration Tester, and Offensive Security Architect.
+Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first, then open an issue with the [bug report or feature request templates](https://github.com/0xdnd/ctf-tracker/issues/new/choose).
+
+⭐ **If ZeroBox saves you time, [star the repo](https://github.com/0xdnd/ctf-tracker/stargazers).** It's the best way to help other hackers find it.
+
+---
+
+## 📜 Platform rules & compliance
+
+ZeroBox is built to respect the terms of **Hack The Box** and **TryHackMe**.
+
+<details>
+<summary><b>Hack The Box (AUP §8.2 & §8.3)</b></summary>
+
+- **No active-content disclosure:** active machines are metadata only (name, OS, difficulty, release date, official link), stored in `src/data/activeMachines.json`. Hints, solutions, flags, tags and notes are stripped from them, including anything you type yourself. The active list is maintained by hand and may lag behind HTB.
+- **Retired content:** 556 retired machines are in the catalog; 141 of them (mostly retired since 2024) are listed by name, OS, difficulty and link only. HTB AUP §8.3 permits community walkthroughs and write-ups for retired content.
+- **No Pro Labs or exams bundled:** no Pro Lab, Fortress or certification exam content ships with ZeroBox. You can only add them as personal targets you name and fill in yourself.
+- **No scraping:** ZeroBox contains no scrapers, bots or crawlers targeting HTB (HTB UA §6.1).
+
+</details>
+
+<details>
+<summary><b>TryHackMe (Terms of Use §3 & §5)</b></summary>
+
+- Only public community challenge rooms are indexed (451 rooms; multiplayer / KoTH rooms excluded).
+- The demo solved roster uses synthetic tokens (e.g. `THM{flag_captured_daniel_dayan}`), never real flags.
+- No automated data extraction against THM infrastructure.
+
+</details>
+
+<details>
+<summary><b>Private notes</b></summary>
+
+- Course material (e.g. HTB Academy / CPTS modules) and private exam notes are never committed to this repository or bundled into builds.
+- Imported notes and Obsidian vaults stay in your browser's IndexedDB (`zerobox_vault_db`).
+
+</details>
+
+**Disclaimer:** ZeroBox is an independent project and is **not affiliated with, endorsed by or sponsored by Hack The Box Ltd or TryHackMe Ltd**. "Hack The Box", "HTB", "TryHackMe" and "THM" are trademarks of their respective owners.
+
+---
+
+## ⚖️ License
+
+ZeroBox is released under the **ZeroBox Source-Available Non-Commercial & Educational License (ZNSL 1.0)**.
+Copyright © 2026 Daniel Dayan ([@0xdnd](https://github.com/0xdnd)). All rights reserved.
+
+| | |
+|:---|:---|
+| ✅ **Allowed** | Clone, build and use ZeroBox for personal study, labs and CTF prep |
+| ❌ **Not allowed** | Selling, renting, sub-licensing or otherwise monetizing it |
+| ❌ **Not allowed** | Hosting a public instance or redistributing modified copies without written consent |
+| ❌ **Not allowed** | Bundling it into paid courses, bootcamps or subscriptions |
+| ⚠️ **Required** | Credit **Daniel Dayan** ([0xdnd.github.io](https://0xdnd.github.io/)) in any permitted mention |
+
+See [LICENSE](LICENSE) for the full text.
+
+---
 
 <div align="center">
 
-| Channel | Identifier | Link |
-|:---|:---|:---|
-| 🌐 **Official Portfolio** | `Daniel Dayan Security & Research` | [**0xdnd.github.io**](https://0xdnd.github.io/) |
-| 💼 **LinkedIn Profile** | `daniel-dayan-a66322352` | [**Connect on LinkedIn**](https://www.linkedin.com/in/daniel-dayan-a66322352/) |
-| 💻 **GitHub Repositories** | `@0xdnd` | [**Follow on GitHub**](https://github.com/0xdnd) |
-| 📝 **CTF Write-ups & Docs** | `THM & HTB Research Vault` | [**Read GitBook Writeups**](https://0xdnd.gitbook.io/thm-writeups/) |
-| ☕ **Buy Me a Coffee** | `0xdnd` | [**Support on Buy Me a Coffee**](https://buymeacoffee.com/0xdnd) |
+Made by **Daniel Dayan** ([@0xdnd](https://github.com/0xdnd))
+
+[Portfolio](https://0xdnd.github.io/) · [LinkedIn](https://www.linkedin.com/in/daniel-dayan-a66322352/) · [GitBook writeups](https://0xdnd.gitbook.io/thm-writeups/) · [Buy Me a Coffee](https://buymeacoffee.com/0xdnd)
 
 </div>
-
----
-
-## 📜 Terms of Service (ToS) & Acceptable Use Policy (AUP) Compliance
-
-ZeroBox is engineered to strictly uphold the Terms of Service, Acceptable Use Policies, and Community Guidelines of **Hack The Box (HTB)** and **TryHackMe (THM)**:
-
-### 1. 🛡️ Hack The Box Acceptable Use Policy (§8.2 & §8.3)
-- **Zero Active Content Disclosure:** In strict accordance with HTB AUP §8.2 (*"Sharing solutions, write-ups, flags, or hints for active content is strictly prohibited"*), active machines appear only as metadata-only entries: name, OS, difficulty, release date (recorded in `src/data/activeMachines.json`) and a link to the official machine page. Every hint, solution, flag, tag and note is stripped from them, including anything typed in by the user. The active list is maintained by hand and may lag behind Hack The Box.
-- **Retired Content:** The 556 retired HTB machines stay in the catalog; 141 of them (mostly retired since 2024) are listed by name, OS, difficulty and link only. HTB AUP §8.3 explicitly permits community walkthroughs, educational write-ups, and streaming for content that has been retired.
-- **Pro Labs & Exams Not Bundled:** No Pro Lab, Fortress or certification exam names or content ship with ZeroBox. Users can only add them as personal targets that they name and fill in themselves.
-- **Anti-Scraping / No-Crawling:** ZeroBox contains zero scrapers, bots, or automated crawlers targeting HTB servers (HTB UA §6.1).
-
-### 2. 🎯 TryHackMe Terms of Use (§3 & §5)
-- **Practice Challenge Rooms Only:** 451 public community challenge rooms are indexed for individual tracking (multiplayer/KoTH competition rooms excluded).
-- **Zero Raw Flag Dumping:** Solved milestones in Daniel Dayan's verified roster utilize synthetic educational tokens (e.g., `THM{flag_captured_daniel_dayan}`) rather than raw live challenge flags.
-- **Zero Data Harvesting:** No automated data extraction or scraping tools are used against THM infrastructure.
-
-### 3. 🔒 Zero-Leakage Private Notes & Vault Architecture
-- **Proprietary Course Materials Excluded:** Course material, official academy modules (such as CPTS / HTB Academy), and private exam notes are **never** committed into the git repository or bundled into public build artifacts.
-- **100% In-Browser IndexedDB Sandbox:** All imported field notes and obsidian vaults operate in-memory and inside the user's private client-side IndexedDB database (`zerobox_vault_db`).
-
-### 4. ⚖️ Independent Project & Trademark Disclaimer
-ZeroBox is an independent open-source tracking and educational dashboard created by Daniel Dayan. ZeroBox is **not affiliated with, endorsed by, sponsored by, or associated with Hack The Box Ltd or TryHackMe Ltd**. "Hack The Box", "HTB", "TryHackMe", and "THM" are trademarks or registered trademarks of their respective owners. All target metadata, room links, and writeup hyperlinks are referenced solely for non-commercial educational tracking and study under fair use.
-
----
-
-## ⚖️ License & Intellectual Property Protection
-
-ZeroBox is released under the **ZeroBox Source-Available Non-Commercial & Educational License (ZNSL 1.0)**.  
-Copyright © 2026 **Daniel Dayan** (`@0xdnd`). All Rights Reserved.
-
-### Summary of Terms:
-
-| Permission / Restriction | Status | Details |
-|:---|:---:|:---|
-| **Personal & Educational Use** | ✅ **ALLOWED** | You may inspect, clone, build, and use ZeroBox locally for individual study, practice labs, and CTF preparation. |
-| **Commercial Exploitation** | ❌ **FORBIDDEN** | You may **NOT** sell, rent, monetize, sub-license, or charge fees for this platform or any portion thereof. |
-| **Public Re-Publishing / SaaS** | ❌ **FORBIDDEN** | You may **NOT** host a public web instance, re-publish, or distribute modified copies under your name without written consent. |
-| **Course Bundling / Paid Training** | ❌ **FORBIDDEN** | You may **NOT** include ZeroBox in any paid course, bootcamp, or commercial subscription service. |
-| **Attribution Requirement** | ⚠️ **MANDATORY** | All permitted educational mentions or references must prominently cite **Daniel Dayan** ([0xdnd.github.io](https://0xdnd.github.io/)). |
-
-For the full legal text, see the official [**LICENSE**](LICENSE) file.
-
-
