@@ -78,6 +78,23 @@ describe('FilterDrawer component', () => {
     expect(updatedFilters.selectedTags).toEqual([]);
   });
 
+  it('defaults availability to All and sets Active/Retired via chips, with a removable chip', () => {
+    render(<FilterDrawer />);
+    const group = screen.getByRole('group', { name: 'Availability' });
+    expect(group).toBeInTheDocument();
+    expect(useCtfStore.getState().filters.selectedAvailability).toBe('ALL');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    expect(useCtfStore.getState().filters.selectedAvailability).toBe('ACTIVE');
+    expect(screen.getByText('Availability: Active')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retired' }));
+    expect(useCtfStore.getState().filters.selectedAvailability).toBe('RETIRED');
+
+    useCtfStore.getState().resetFilters();
+    expect(useCtfStore.getState().filters.selectedAvailability).toBe('ALL');
+  });
+
   it('allows searching tags and toggling a tag', () => {
     render(<FilterDrawer />);
 

@@ -32,6 +32,7 @@ import { playCyberSound } from '../../utils/helpers';
 import { Platform, Difficulty, OperatingSystem, Machine } from '../../types';
 import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
 import { isDueForReview } from '../../utils/spacedRepetition';
+import { matchesAvailability, AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
 import { computeReadiness } from '../../utils/readiness';
 import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
@@ -228,6 +229,11 @@ export const TrackerView: React.FC = () => {
       updates.selectedOs = os as OperatingSystem | 'ALL';
     }
 
+    const availability = params.get('availability')?.toUpperCase();
+    if (availability && ['ALL', 'ACTIVE', 'RETIRED'].includes(availability)) {
+      updates.selectedAvailability = availability as 'ALL' | 'ACTIVE' | 'RETIRED';
+    }
+
     const cert = params.get('cert');
     if (cert && ['OSCP', 'CPTS', 'CRTO', 'ALL'].includes(cert)) {
       updates.selectedCert = cert as 'OSCP' | 'CPTS' | 'CRTO' | 'ALL';
@@ -331,6 +337,7 @@ export const TrackerView: React.FC = () => {
     const platformFilter = deferredFilters.selectedPlatform;
     const diffFilter = deferredFilters.selectedDifficulty;
     const osFilter = deferredFilters.selectedOs;
+    const availabilityFilter = deferredFilters.selectedAvailability;
     const trackFilter = deferredFilters.selectedTrack;
     const catFilter = deferredFilters.selectedCategory;
     const vulnCatFilter = deferredFilters.selectedVulnCategory;
@@ -356,6 +363,7 @@ export const TrackerView: React.FC = () => {
       if (platformFilter !== 'ALL' && m.platform !== platformFilter) return false;
       if (diffFilter !== 'ALL' && m.difficulty !== diffFilter) return false;
       if (osFilter && osFilter !== 'ALL' && m.os !== osFilter) return false;
+      if (!matchesAvailability(m, availabilityFilter)) return false;
       if (certFilter !== 'ALL' && !m.certifications.includes(certFilter)) return false;
 
       // 2. HTB Target Status filter
@@ -522,6 +530,7 @@ export const TrackerView: React.FC = () => {
     if (filters.selectedPlatform !== 'ALL') count++;
     if (filters.selectedDifficulty !== 'ALL') count++;
     if (filters.selectedOs && filters.selectedOs !== 'ALL') count++;
+    if (filters.selectedAvailability && filters.selectedAvailability !== 'ALL') count++;
     if (filters.selectedCert !== 'ALL') count++;
     if (filters.selectedTracks && filters.selectedTracks.length > 0) {
       count += filters.selectedTracks.length;
@@ -573,6 +582,13 @@ export const TrackerView: React.FC = () => {
         id: 'os',
         label: `OS: ${filters.selectedOs}`,
         onRemove: () => setFilters({ selectedOs: 'ALL' }),
+      });
+    }
+    if (filters.selectedAvailability && filters.selectedAvailability !== 'ALL') {
+      pills.push({
+        id: 'availability',
+        label: `Availability: ${AVAILABILITY_LABELS[filters.selectedAvailability]}`,
+        onRemove: () => setFilters({ selectedAvailability: 'ALL' }),
       });
     }
     if (filters.selectedCert !== 'ALL') {

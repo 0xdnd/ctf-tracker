@@ -25,6 +25,7 @@ import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
 import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine, matchesCategory, matchesDomain, isActiveDirectory } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
+import { matchesAvailability, AVAILABILITY_LABELS, AvailabilityValue } from '../../utils/availabilityFilter';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 
 const STATUS_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
@@ -95,6 +96,10 @@ const OS_FILTER_OPTIONS: { value: 'ALL' | OperatingSystem; label: string }[] = [
   { value: 'macOS', label: 'macOS' },
   { value: 'Other', label: 'Other' },
 ];
+
+const AVAILABILITY_FILTER_OPTIONS: { value: AvailabilityValue; label: string }[] = (
+  ['ALL', 'ACTIVE', 'RETIRED'] as const
+).map((value) => ({ value, label: AVAILABILITY_LABELS[value] }));
 
 const DIFFICULTY_FILTER_OPTIONS: { value: Difficulty | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'All' },
@@ -360,6 +365,7 @@ export const FilterDrawer: React.FC = () => {
       if (filters.selectedPlatform !== 'ALL' && m.platform !== filters.selectedPlatform) return false;
       if (filters.selectedDifficulty !== 'ALL' && m.difficulty !== filters.selectedDifficulty) return false;
       if (filters.selectedOs && filters.selectedOs !== 'ALL' && m.os !== filters.selectedOs) return false;
+      if (!matchesAvailability(m, filters.selectedAvailability)) return false;
       if (certFilter !== 'ALL' && !m.certifications.includes(certFilter)) return false;
 
       if (statusFilter !== 'ALL') {
@@ -464,6 +470,13 @@ export const FilterDrawer: React.FC = () => {
       list.push({
         label: `OS: ${filters.selectedOs}`,
         onRemove: () => setFilters({ selectedOs: 'ALL' }),
+      });
+    }
+
+    if (filters.selectedAvailability && filters.selectedAvailability !== 'ALL') {
+      list.push({
+        label: `Availability: ${AVAILABILITY_LABELS[filters.selectedAvailability]}`,
+        onRemove: () => setFilters({ selectedAvailability: 'ALL' }),
       });
     }
 
@@ -767,7 +780,7 @@ export const FilterDrawer: React.FC = () => {
             sectionKey="target"
             isOpen={openSections.target}
             onToggle={toggleSection}
-            badgeCount={(filters.selectedPlatform !== 'ALL' ? 1 : 0) + (filters.selectedOs && filters.selectedOs !== 'ALL' ? 1 : 0) + (filters.selectedDifficulty !== 'ALL' ? 1 : 0)}
+            badgeCount={(filters.selectedPlatform !== 'ALL' ? 1 : 0) + (filters.selectedOs && filters.selectedOs !== 'ALL' ? 1 : 0) + (filters.selectedDifficulty !== 'ALL' ? 1 : 0) + (filters.selectedAvailability && filters.selectedAvailability !== 'ALL' ? 1 : 0)}
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -796,6 +809,23 @@ export const FilterDrawer: React.FC = () => {
                       active={(filters.selectedOs || 'ALL') === opt.value}
                       onClick={() => {
                         setFilters({ selectedOs: opt.value });
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                    >
+                      {opt.label}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-secondary">Availability</div>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Availability">
+                  {AVAILABILITY_FILTER_OPTIONS.map((opt) => (
+                    <FilterChip
+                      key={opt.value}
+                      active={(filters.selectedAvailability || 'ALL') === opt.value}
+                      onClick={() => {
+                        setFilters({ selectedAvailability: opt.value });
                         if (soundEnabled) playCyberSound('toggle');
                       }}
                     >

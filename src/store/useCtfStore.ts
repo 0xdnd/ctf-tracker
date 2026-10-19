@@ -122,6 +122,7 @@ export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivE
 export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
 export type SortDirection = 'asc' | 'desc';
 export type HtbTargetStatus = 'ALL' | 'UNCOMPLETED' | 'FOOTHOLD' | 'COMPLETED';
+export type AvailabilityFilter = 'ALL' | 'ACTIVE' | 'RETIRED';
 
 export interface FilterState {
   searchQuery: string;
@@ -129,6 +130,8 @@ export interface FilterState {
   selectedDifficulty: Difficulty | 'ALL';
   selectedCert: 'OSCP' | 'CPTS' | 'CRTO' | 'ALL';
   selectedOs: 'ALL' | OperatingSystem;
+  /** Missing (older state) is treated as 'ALL'. Unset isActive counts as retired. */
+  selectedAvailability?: AvailabilityFilter;
   selectedCategory: BoxVectorCategory;
   selectedVulnCategory?: string | 'ALL';
   excludeActiveDirectory?: boolean;
@@ -436,6 +439,7 @@ const DEFAULT_FILTERS: FilterState = {
   selectedDifficulty: 'ALL',
   selectedCert: 'ALL',
   selectedOs: 'ALL',
+  selectedAvailability: 'ALL',
   selectedCategory: 'ALL',
   selectedVulnCategory: 'ALL',
   excludeActiveDirectory: false,
