@@ -52,3 +52,8 @@ declare global {
     electronAPI?: ElectronAPI;
   }
 }
+
+declare global {
+  /** Injected at build time from package.json (vite.config.ts / vitest.config.ts). */
+  const __APP_VERSION__: string;
+}
