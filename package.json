@@ -25,7 +25,7 @@
     "kanban"
   ],
   "private": true,
-  "version": "2.4.0",
+  "version": "2.4.1",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Daniel Dayan <0xdnd>",
   "homepage": "https://ctftracker.com",
