@@ -7,7 +7,7 @@ const path = require('path');
 const { getModel, getGuides, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
-const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ctaBox, fitTitle, truncate, techArticleLd } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ctaBox, fitTitle, truncate, techArticleLd, stampArticle } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 // GEN_CONTENT_DIST points the generator at another output dir (used by tests); then public/sitemap.xml is left alone.
@@ -42,6 +42,21 @@ function gitDate(rel) {
   }
   return lmCache.get(rel);
 }
+// Date a source file was first committed (its earliest git commit); '' when git or history is unavailable.
+const firstCache = new Map();
+function firstGitDate(rel) {
+  if (!firstCache.has(rel)) {
+    let v = '';
+    try {
+      v = git(['log', '--reverse', '--format=%cs', '--', rel]).split(/\r?\n/)[0] || '';
+    } catch (e) {
+      v = '';
+    }
+    firstCache.set(rel, /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '');
+  }
+  return firstCache.get(rel);
+}
+const minFirstDate = (...rels) => rels.map(firstGitDate).filter(Boolean).sort()[0] || '';
 const maxDate = (...ds) => ds.filter(Boolean).sort().pop();
 const SRC = {
   machines: 'src/data/machinesCatalog.ts',
@@ -55,13 +70,16 @@ const TYPE_SRC = {
   'methodology-phase': 'methodology', 'methodology-hub': 'methodology', revshells: 'revshells', 'pentest-note': 'notes', 'pentest-hub': 'notes',
 };
 const maxDateOf = (...rels) => maxDate(...rels.map(gitDate));
-const dmField = (key) => (gitDate(SRC[key]) ? { dateModified: gitDate(SRC[key]) } : {});
+const MACHINE_SRC = [SRC.machines, 'scripts/data/machine-notes.json', 'scripts/lib/techniques.cjs'];
 const pages = []; // { loc, type, lastmod }
 const counts = {};
 const seenMeta = { title: new Map(), description: new Map() };
 
 // priority stays in the signature for the callers but is no longer written anywhere (Google ignores it).
-function emit(type, urlPath, html, priority, lastmodOverride) {
+// srcs: the page's source files, for datePublished (defaults to the type's source). lastmod is the page's dateModified and sitemap lastmod.
+function emit(type, urlPath, html, priority, lastmodOverride, srcs) {
+  const lastmod = lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]);
+  html = stampArticle(html, { modified: lastmod, published: minFirstDate(...(srcs || [SRC[TYPE_SRC[type]]]).filter(Boolean)) });
   const dir = path.join(distDir, urlPath.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), injectBeacon(html), 'utf8');
@@ -70,7 +88,7 @@ function emit(type, urlPath, html, priority, lastmodOverride) {
     if (v && seenMeta[k].has(v)) console.warn(`DUPLICATE ${k}: ${urlPath} and ${seenMeta[k].get(v)}`);
     else if (v) seenMeta[k].set(v, urlPath);
   }
-  pages.push({ loc: urlPath, type, priority, lastmod: lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]) });
+  pages.push({ loc: urlPath, type, priority, lastmod });
   counts[type] = (counts[type] || 0) + 1;
 }
 
@@ -133,6 +151,7 @@ function inline(s) {
 }
 
 // ===================== Machines =====================
+const PLATFORM_TAG = /^(htb|thm)$/i;
 const GENERIC_TAGS = new Set(['ctf', 'linux', 'windows', 'privesc', 'web', 'easy', 'medium', 'hard', 'insane', 'starting point', 'tier 0', 'tier 1', 'tier 2']);
 const withPage = model.machines.filter((m) => m.hasPage);
 const tagIndex = new Map();
@@ -213,6 +232,14 @@ const CERT_GUIDES = {
   OSEP: ['/htb-pro-labs-guide/'],
 };
 
+// Guide links for a page: the guides of its certifications (in the order given), then the general platform guides, deduped and capped.
+const DEFAULT_GUIDES = ['/htb-vs-tryhackme/', '/htb-progress-tracker/'];
+const guideLinks = (certs, max = 5) =>
+  [...new Set([...certs.flatMap((c) => CERT_GUIDES[c] || []), ...DEFAULT_GUIDES])]
+    .filter((p) => guideByPath.has(p))
+    .slice(0, max)
+    .map((p) => `<a href="${p}">${esc(GUIDE_LABEL[p] || guideByPath.get(p).title)}</a>`);
+
 const normTag = (t) => String(t).toLowerCase().replace(/[-_]+/g, ' ').trim();
 const tagTargets = [
   ...model.topics.map((t) => ({ keys: [t.id, t.slug, t.name], href: `/cheatsheets/${t.slug}/` })),
@@ -264,7 +291,8 @@ function relatedHubs(m) {
   const techLinks = machineTech(m)
     .slice(0, 4)
     .map(({ g }) => `<li>Technique: <a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length} machines)</a></li>`);
-  const links = [...certLinks, ...techLinks, '<li>All machines: <a href="/machines/">Hack The Box and TryHackMe directory</a></li>'];
+  const guideLine = guideLinks(m.certifications || []);
+  const links = [...certLinks, ...techLinks, ...(guideLine.length ? [`<li>Guides: ${guideLine.join(', ')}</li>`] : []), '<li>All machines: <a href="/machines/">Hack The Box and TryHackMe directory</a></li>'];
   return `<h2>Related</h2><ul>${links.join('')}</ul>`;
 }
 
@@ -272,6 +300,12 @@ function relatedHubs(m) {
 const firstSentence = (t) => String(t).replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s+/)[0];
 const joinList = (a) => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a[0] || '');
 const solvedAll = (list) => list.filter((x) => x.hasPage).length;
+
+// Second lead sentence: the technique hubs this machine maps to (from its own tags and overrides); empty when it maps to none.
+function leadTech(m) {
+  const names = machineTech(m).slice(0, 3).map((e) => e.g.name);
+  return names.length ? ` It maps to the ${names.length > 1 ? 'technique hubs' : 'technique hub'} ${esc(names.join('; '))}.` : '';
+}
 
 // "Overview" paragraph built only from catalog fields (platform, OS, difficulty, tags, certifications, timings, dates).
 function machineOverview(m, plat, tagList) {
@@ -287,7 +321,7 @@ function machineOverview(m, plat, tagList) {
   const du = fmtDate(m.userPwnedAt), dr = fmtDate(m.rootPwnedAt);
   if (du && dr) sentences.push(du === dr ? `Both stages were completed on ${du}.` : `User was owned on ${du} and root on ${dr}.`);
   const certs = m.certifications || [];
-  if (certs.length) sentences.push(`In the ZeroBox catalog it counts toward the ${esc(joinList(certs.map((c) => CERT_NAME[c] || c)))} practice ${certs.length > 1 ? 'lists' : 'list'}.`);
+  if (certs.length) sentences.push(`${esc(m.name)} counts toward the ${esc(joinList(certs.map((c) => CERT_NAME[c] || c)))} practice ${certs.length > 1 ? 'lists' : 'list'} in the ZeroBox catalog.`);
   return `<h2>Overview</h2><p>${sentences.join(' ')}</p>`;
 }
 
@@ -295,7 +329,7 @@ function machineOverview(m, plat, tagList) {
 function techniqueExplained(m) {
   const items = machineTech(m)
     .slice(0, 5)
-    .map(({ g, hits: hit }) => `<li><a href="/techniques/${g.slug}/">${esc(g.name)}</a>: ${esc(firstSentence(g.explainer))} ${hit.length ? `Matched here by the ${hit.length > 1 ? 'tags' : 'tag'} ${esc(joinList(hit))}; ` : 'Listed here as a related technique; '}${g.machines.length} catalog machines practise it, ${solvedAll(g.machines)} of them solved by me.</li>`);
+    .map(({ g, hits: hit }, i) => `<li><a href="/techniques/${g.slug}/">${esc(g.name)}</a>: ${i === 0 ? `${esc(firstSentence(g.explainer))} ` : ''}${hit.length ? `${esc(m.name)} matches it by the ${hit.length > 1 ? 'tags' : 'tag'} ${esc(joinList(hit))}; ` : `The catalog files ${esc(m.name)} under it; `}${g.machines.length} catalog machines practise it, ${solvedAll(g.machines)} of them solved by me.</li>`);
   return items.length ? `<h2>Techniques explained</h2><ul>${items.join('')}</ul>` : '';
 }
 
@@ -310,7 +344,7 @@ function machinePlace(m, plat) {
       const sameDiff = h.machines.filter((o) => o.difficulty === m.difficulty);
       return `<li><a href="/${h.slug}/">${esc(h.name)} machine list</a>: ${esc(m.name)} is one of ${sameDiff.length} ${esc(m.difficulty.toLowerCase())} machines on a list of ${h.machines.length}, and I solved ${solvedAll(h.machines)} of the ${h.machines.length}.</li>`;
     });
-  items.push(`<li>${esc(plat)} in the catalog: ${same.length} ${esc(m.difficulty.toLowerCase())} machines, ${sameOs.length} of them on ${esc(m.os)}, and I solved ${solvedAll(same)} of the ${same.length}. See the <a href="/machines/">full machine directory</a>.</li>`);
+  items.push(`<li>${esc(m.name)} is one of ${same.length} ${esc(m.difficulty.toLowerCase())} ${esc(plat)} machines in the catalog, ${sameOs.length} of them on ${esc(m.os)}, and I solved ${solvedAll(same)} of the ${same.length}.</li>`);
   return `<h2>Where it fits</h2><ul>${items.join('')}</ul>`;
 }
 
@@ -347,7 +381,7 @@ for (const m of withPage) {
     m.certifications && m.certifications.length ? ['Relevant for', m.certifications.map((c) => CERT_NAME[c] || c).join(', ')] : null,
   ].filter(Boolean);
     const body = [
-    `<p class="lead">${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself. This page is my short attack path summary and the techniques it trains.</p>`,
+    `<p class="lead">${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself.${leadTech(m)}</p>`,
     m.ownWriteup || m.roomUrl
       ? ctaBox({
           href: m.ownWriteup || m.roomUrl,
@@ -368,14 +402,14 @@ for (const m of withPage) {
       ? `<h2>Related solved machines</h2><p class="note">Other machines I solved that share techniques with ${esc(m.name)}.</p><ul>${rel
           .map((r) => {
             const mine = new Set(tagList.map((t) => t.toLowerCase()));
-            const shared = (r.tags || []).filter((t) => mine.has(t.toLowerCase()));
+            const shared = (r.tags || []).filter((t) => mine.has(t.toLowerCase()) && !PLATFORM_TAG.test(t));
             return `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})${shared.length ? `, shares ${esc(joinList(shared))}` : ''}</li>`;
           })
           .join('')}</ul>`
       : '',
     relatedHubs(m),
-    ctaBox({ title: `Track ${esc(m.name)} in ZeroBox.`, body: 'Log your progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.', href: '/tracker/', label: 'Open tracker' }),
-    `<p class="note">${esc(m.name)} belongs to ${esc(plat)}. This page contains only my own notes.</p>`,
+    ctaBox({ title: `Track ${esc(m.name)} in ZeroBox.`, body: `Log your ${esc(m.name)} progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.`, href: '/tracker/', label: 'Open tracker' }),
+    `<p class="note">${esc(m.name)} belongs to ${esc(plat)}; this page contains only my own notes.</p>`,
   ].join('\n');
   wordCounts.push([m.name, body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length]);
   emit(
@@ -394,7 +428,6 @@ for (const m of withPage) {
           '@type': 'TechArticle',
           headline: `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${m.ownWriteup ? 'writeup and attack path' : 'attack path and techniques'}`,
           url: ORIGIN + mUrl(m),
-          ...dmField('machines'),
           inLanguage: 'en',
           about: tagList.slice(0, 6),
           publisher: { '@type': 'Organization', name: 'ZeroBox', url: ORIGIN + '/' },
@@ -402,7 +435,8 @@ for (const m of withPage) {
       ],
     }),
     0.6,
-    maxDateOf(SRC.machines, 'scripts/data/machine-notes.json', 'scripts/lib/techniques.cjs')
+    maxDateOf(...MACHINE_SRC),
+    MACHINE_SRC
   );
 }
 {
@@ -546,7 +580,6 @@ for (const ph of model.phases) {
           headline: `${ph.title}: pentest methodology checklist`,
           url: ORIGIN + p,
           description: ph.description,
-          dateModified: gitDate(SRC.methodology),
         }),
       ],
     }),
@@ -600,7 +633,7 @@ emit(
       h1: 'Reverse shell one-liners by language',
       body,
       crumbs: [['Home', '/'], ['Reverse shells', '/revshells/']],
-      ld: [{ '@context': 'https://schema.org', '@type': 'TechArticle', headline: 'Reverse shell cheat sheet', url: ORIGIN + '/revshells/', ...dmField('revshells'), inLanguage: 'en' }],
+      ld: [{ '@context': 'https://schema.org', '@type': 'TechArticle', headline: 'Reverse shell cheat sheet', url: ORIGIN + '/revshells/', inLanguage: 'en' }],
     }),
     0.9
   );
@@ -705,7 +738,6 @@ const LEGACY_NOTES_HUB = '/cpts-notes/';
             headline: `Pentest methodology notes: ${name}`,
             url: ORIGIN + p,
             description: n.enSummary || n.summary,
-            dateModified: gitDate(SRC.notes),
             about: (n.tools || []).slice(0, 6),
           }),
         ],
@@ -904,6 +936,14 @@ for (const hub of certHubs) {
 const cheatItemById = new Map(model.topics.flatMap((t) => t.items.map((i) => [i.id, i])));
 const phaseBySlug = new Map(model.phases.map((ph) => [ph.slug, ph]));
 const topicBySlug = new Map(model.topics.map((t) => [t.slug, t]));
+// "Related guides" line on a technique page: guides of the two certifications most of its machines carry.
+function techGuideLine(g) {
+  const n = {};
+  for (const m of g.machines) for (const c of m.certifications || []) if (CERT_GUIDES[c]) n[c] = (n[c] || 0) + 1;
+  const top = Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b)).slice(0, 2);
+  const links = guideLinks(top, 4);
+  return links.length ? `<p class="note">Related guides: ${links.join(', ')}.</p>` : '';
+}
 for (const g of techGroups) {
   const p = `/techniques/${g.slug}/`;
   const { jump, tables, ordered } = machineSections(g.machines);
@@ -935,6 +975,7 @@ for (const g of techGroups) {
     jump,
     tables,
     related.length ? `<h2>Related techniques</h2><div class="chips">${related.map((o) => `<a href="/techniques/${o.slug}/">${esc(o.name)} (${o.machines.length})</a>`).join('')}<a href="/techniques/">All techniques</a></div>` : '',
+    techGuideLine(g),
     ctaBox({ title: 'Practise it, then track it.', body: 'Log every box and the commands you used in ZeroBox.', href: '/tracker/', label: 'Open tracker' }),
   ].join('\n');
   hubWords.tech.push([g.slug, wc(body)]);
@@ -1002,7 +1043,10 @@ const GUIDE_SRC = {
   '/htb-vs-tryhackme/': ['scripts/lib/guides/htb-vs-tryhackme.cjs', SRC.machines],
   '/htb-pro-labs-guide/': ['scripts/lib/guides/htb-pro-labs.cjs', 'src/data/proLabsData.ts'],
 };
-for (const g of guides) emit('guide', g.path, g.html, 0.7, maxDateOf(...(GUIDE_SRC[g.path] || ['scripts/lib/guides.cjs'])));
+for (const g of guides) {
+  const srcs = GUIDE_SRC[g.path] || ['scripts/lib/guides.cjs'];
+  emit('guide', g.path, g.html, 0.7, maxDateOf(...srcs), srcs);
+}
 
 // ===================== Privacy and Terms (scripts/lib/legal.cjs) =====================
 {

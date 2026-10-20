@@ -96,7 +96,7 @@ function build({ model, esc }) {
     crumb: 'TJ Null list',
     title: 'TJ Null List (2026): OSCP-Like HTB & THM Machines',
     description:
-      'The TJ Null list of OSCP-like machines explained: how to work it, which Hack The Box boxes from it you can track, plus other THM and HTB OSCP practice.',
+      'The full TJ Null OSCP list of practice machines, kept up to date, plus a free checklist to track your progress as you work through each box.',
     h1: 'TJ Null OSCP list: the boxes you can track',
     lead: "The TJ Null list is a community-maintained spreadsheet of OSCP-like practice machines, mostly Hack The Box, Proving Grounds and Vulnhub. This page credits the original, shows which of its Hack The Box machines are in the ZeroBox catalogue, and gives a suggested order.",
     body,

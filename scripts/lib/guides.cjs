@@ -60,7 +60,7 @@ function relatedSection(related) {
 
 function buildGuidePages({ model, renderPage, site } = {}) {
   void site;
-  const ctx = { model, esc, externalLink, sourcesSection, LAST_REVIEWED };
+  const ctx = { model, esc, externalLink, sourcesSection };
   return BUILDERS.map(({ build }) => {
     const g = build(ctx);
     for (const p of g.related) if (!LINKS[p]) throw new Error(`guides: unknown related link ${p} on ${g.path}`);
@@ -75,7 +75,7 @@ function buildGuidePages({ model, renderPage, site } = {}) {
       g.faq && g.faq.length ? faqSection(g.faq) : '',
       relatedSection(g.related),
       sourcesSection(g.sources),
-      `<p class="note">Last reviewed: ${LAST_REVIEWED}. ${esc(g.affil)}</p>`,
+      `<p class="note">${esc(g.affil)}</p>`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -94,9 +94,6 @@ function buildGuidePages({ model, renderPage, site } = {}) {
         url,
         mainEntityOfPage: url,
         inLanguage: 'en',
-        datePublished: LAST_REVIEWED,
-        dateModified: LAST_REVIEWED,
-        author: { '@type': 'Organization', name: 'ZeroBox', url: ORIGIN + '/' },
         publisher,
         image: ORIGIN + '/og.png',
       },

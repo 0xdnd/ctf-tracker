@@ -282,6 +282,37 @@ const techArticleLd = ({ headline, url, description, dateModified, about }) => (
   publisher: { '@type': 'Organization', name: 'ZeroBox', url: ORIGIN + '/' },
 });
 
+const LD_SCRIPT = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
+const unesc = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+/**
+ * Single place that dates and credits an article page. For a rendered page with a TechArticle JSON-LD block it sets
+ * dateModified (the same value the sitemap uses as lastmod), datePublished, the Person author, mainEntityOfPage and a description
+ * (the page's meta description when the block has none), and puts a visible "By <name> · Updated <date>" line under the H1.
+ * Pages without a TechArticle block are returned unchanged. published is clamped so it never follows modified.
+ */
+function stampArticle(html, { modified, published }) {
+  let stamped = false;
+  const metaDesc = (/<meta name="description" content="([^"]*)"/.exec(html) || [])[1];
+  const pub = published && published < modified ? published : modified;
+  const out = html.replace(LD_SCRIPT, (m, json) => {
+    let o;
+    try {
+      o = JSON.parse(json);
+    } catch (e) {
+      return m;
+    }
+    if (!o || o['@type'] !== 'TechArticle') return m;
+    stamped = true;
+    const url = o.url;
+    const next = { ...o, datePublished: pub, dateModified: modified, author: personLd(), mainEntityOfPage: { '@type': 'WebPage', '@id': url } };
+    if (!next.description && metaDesc) next.description = unesc(metaDesc);
+    return `<script type="application/ld+json">${jsonLd(next)}</script>`;
+  });
+  if (!stamped) return html;
+  const byline = `<p class="note">By <a href="${ABOUT_PATH}">${esc(personLd().name)}</a> · Updated <time datetime="${modified}">${modified}</time></p>`;
+  return out.replace('</h1>', () => `</h1>\n      ${byline}`);
+}
+
 /** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean } */
 /** Make every <pre> keyboard-focusable (scrollable-region-focusable) and a labelled region, named after the nearest preceding heading. */
 function a11yPres(html) {
@@ -414,4 +445,4 @@ ${siteFooter({ analyticsNote: '' })}
 `;
 }
 
-module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
+module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };

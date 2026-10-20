@@ -120,6 +120,7 @@ function staticBlock(route) {
 }
 
 // ---- Route pages ----
+const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/']);
 let written = 0;
 for (const route of routes) {
   const url = ORIGIN + route.path;
@@ -139,6 +140,9 @@ for (const route of routes) {
   // Route-specific structured data: WebPage (part of the WebSite) + BreadcrumbList. The shell's own block stays untouched.
   const routeLd = webPageGraphLd({ path: route.path, name: route.title, description: route.description, crumbs: [['Home', '/'], [NAV_LABEL[route.path] || route.h1, route.path]] });
   html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(routeLd)}</script>\n</head>`, '</head>');
+
+  // Private app surfaces (user data UIs) stay out of the index; /exam/ remains indexable.
+  if (NOINDEX_ROUTES.has(route.path)) html = html.replace('</head>', '    <meta name="robots" content="noindex">\n  </head>');
 
   const outDir = path.join(distDir, route.path.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(outDir, { recursive: true });
