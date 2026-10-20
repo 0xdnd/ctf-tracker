@@ -169,7 +169,7 @@ export const TrackPicker: React.FC<TrackPickerProps> = ({
         title={single ? single.name : 'Practice tracks'}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={handleTriggerKeyDown}
-        className={`${buttonClassName} min-w-0 ${count > 0 ? 'border-accent text-accent rounded-r-none' : ''}`}
+        className={`${buttonClassName} min-w-0 ${count > 0 ? 'rounded-r-none' : ''}`}
       >
         <Route className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
         <span className="truncate">{label}</span>
@@ -185,7 +185,7 @@ export const TrackPicker: React.FC<TrackPickerProps> = ({
             setOpen(false);
             onSelect(null);
           }}
-          className="inline-flex flex-shrink-0 items-center justify-center self-stretch px-1.5 rounded-r-lg border border-l-0 border-accent bg-surface-card text-tertiary hover:bg-surface-hover hover:text-primary transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:px-3"
+          className="inline-flex flex-shrink-0 items-center justify-center self-stretch px-1.5 rounded-r-lg border border-l-0 border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:px-3"
         >
           <X className="w-3.5 h-3.5" aria-hidden="true" />
         </button>

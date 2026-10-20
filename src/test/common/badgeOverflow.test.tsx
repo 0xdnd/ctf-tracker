@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { BadgeOverflow } from '../../components/common/BadgeOverflow';
@@ -34,18 +34,28 @@ describe('BadgeOverflow', () => {
     expect(screen.getByRole('button', { name: '1 more' })).toHaveTextContent('+1');
   });
 
-  it('lists the remaining badges in a tooltip on keyboard focus and closes on Escape', async () => {
+  it('does not open when the pill is focused programmatically', async () => {
+    render(<BadgeOverflow badges={badges} />);
+    const pill = screen.getByRole('button', { name: '2 more' });
+    act(() => pill.focus());
+    expect(pill).toHaveFocus();
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    expect(pill).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('opens on click and Enter, and closes on Escape', async () => {
     const user = userEvent.setup();
     render(<BadgeOverflow badges={badges} />);
-    await user.tab();
     const pill = screen.getByRole('button', { name: '2 more' });
-    expect(pill).toHaveFocus();
+    await user.click(pill);
     const tip = await screen.findByRole('tooltip');
     expect(tip).toHaveTextContent('HTB');
     expect(tip).toHaveTextContent('CPTS');
     expect(pill).toHaveAttribute('aria-describedby', tip.id);
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+    await user.keyboard('{Enter}');
+    expect(await screen.findByRole('tooltip')).toBeInTheDocument();
   });
 
   it('opens on hover and closes when the pointer leaves', async () => {

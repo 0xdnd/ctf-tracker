@@ -110,4 +110,24 @@ describe('per-machine views never borrow the engaged machine IP', () => {
     expect(screen.getAllByText(/probe/).length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toContain(ENGAGED_IP);
   });
+
+  it('MachineDetailModal: opening does not focus the +N chip or open its popover; click expands inline, again collapses', async () => {
+    useCtfStore.setState({ selectedMachineId: MACHINE_A.id });
+    render(
+      <MemoryRouter>
+        <MachineDetailModal />
+      </MemoryRouter>
+    );
+    const chip = screen.getByRole('button', { name: /\d+ more/ });
+    expect(chip).not.toHaveFocus();
+    expect(screen.getByRole('dialog')).toHaveFocus();
+    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    fireEvent.click(chip);
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    const less = screen.getByRole('button', { name: 'Show fewer' });
+    expect(less).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(less);
+    expect(screen.getByRole('button', { name: /\d+ more/ })).toHaveAttribute('aria-expanded', 'false');
+  });
 });

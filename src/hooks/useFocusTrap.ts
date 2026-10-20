@@ -4,6 +4,8 @@ export interface UseFocusTrapOptions {
   isActive: boolean;
   onClose?: () => void;
   autoFocusFirst?: boolean;
+  /** Where initial focus lands: first focusable (default) or the container itself (tabIndex=-1). */
+  initialFocus?: 'first' | 'container';
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -41,12 +43,12 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
     // 2. Shift initial focus into the trapped boundary
     if (options.autoFocusFirst !== false) {
       const focusable = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-      if (focusable.length > 0) {
+      if (options.initialFocus !== 'container' && focusable.length > 0) {
         // Prefer an element with autofocus attribute if present, else first focusable
         const autoFocusEl = Array.from(focusable).find((el) => el.hasAttribute('autofocus'));
         (autoFocusEl || focusable[0]).focus();
       } else {
-        container.setAttribute('tabindex', '-1');
+        if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1');
         container.focus();
       }
     }
@@ -117,7 +119,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
         previousActiveElementRef.current.focus();
       }
     };
-  }, [options.isActive, options.autoFocusFirst]);
+  }, [options.isActive, options.autoFocusFirst, options.initialFocus]);
 
   return containerRef;
 }

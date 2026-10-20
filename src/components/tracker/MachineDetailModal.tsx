@@ -204,6 +204,7 @@ export const MachineDetailModal: React.FC = () => {
   const modalRef = useFocusTrap<HTMLDivElement>({
     isActive: Boolean(selectedMachineId),
     onClose: () => setSelectedMachineId(null),
+    initialFocus: 'container',
   });
 
   // Prevent background body scroll when modal is open
@@ -317,6 +318,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
     >
       <motion.div 
         ref={modalRef}
+        tabIndex={-1}
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%', transition: DRAWER_SLIDE_TRANSITION.exit }}
@@ -324,7 +326,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
         role="dialog"
         aria-modal="true"
         aria-label={`Machine details for ${machine.name}`}
-        className="fixed inset-y-0 right-0 w-full sm:max-w-3xl md:max-w-4xl h-full flex flex-col sm:rounded-l-2xl border-l border-subtle shadow-2xl bg-surface-base surface-elevated-depth machined-edge overflow-hidden"
+        className="focus:outline-none fixed inset-y-0 right-0 w-full sm:max-w-3xl md:max-w-4xl h-full flex flex-col sm:rounded-l-2xl border-l border-subtle shadow-2xl bg-surface-base surface-elevated-depth machined-edge overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header (Pinned at Top) */}
@@ -334,6 +336,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <h2 className="text-xl font-semibold text-primary tracking-tight font-sans">{machine.name}</h2>
               <TargetTypeBadge machine={machine} size="sm" />
               <BadgeOverflow
+                inline
                 max={2}
                 badges={[
                   <OsBadge key="os" os={machine.os} size="sm" />,

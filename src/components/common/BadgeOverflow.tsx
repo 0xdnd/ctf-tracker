@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { EASE_OUT } from '../../utils/motion';
 
-/** Hover delay before opening; mirrors Tooltip. Focus and click open immediately. */
+/** Hover delay before opening; mirrors Tooltip. Click and Enter/Space open immediately; focus alone never opens. */
 const HOVER_DELAY_MS = 400;
 /** Moving between overflow pills within this window skips the delay (Tooltip skip-delay). */
 const SKIP_DELAY_WINDOW_MS = 300;
@@ -16,18 +16,20 @@ export interface BadgeOverflowProps {
   max?: number;
   /** Where the popover aligns to the pill. */
   align?: 'left' | 'right';
+  /** Expand the hidden badges inline (the row wraps, the pill becomes "Less") instead of a floating popover. */
+  inline?: boolean;
   className?: string;
 }
 
 /**
  * BadgeOverflow - caps inline badges and groups the rest behind a compact "+N" pill.
- * The pill is a real button: focus reveals (hover after a short delay, like Tooltip) the remaining badges, Enter/Space/click
- * pins them open on touch, Escape or an outside press closes. Exit is <= 150ms.
+ * The pill is a real button: hover (after a short delay, like Tooltip) or click/Enter/Space reveals the remaining badges; focus alone does not, Escape or an outside press closes. Exit is <= 150ms.
  */
 export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
   badges,
   max = 2,
   align = 'left',
+  inline = false,
   className = '',
 }) => {
   const [open, setOpen] = useState(false);
@@ -99,6 +101,28 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
 
   const skipMotion = Boolean(reduceMotion);
 
+  if (inline) {
+    const expanded = open;
+    return (
+      <span className={`inline-flex min-w-0 flex-wrap items-center gap-1 ${className}`}>
+        {(expanded ? visible : shown).map((badge, i) => (
+          <React.Fragment key={React.isValidElement(badge) && badge.key != null ? badge.key : i}>{badge}</React.Fragment>
+        ))}
+        {rest.length > 0 && (
+          <button
+            type="button"
+            aria-label={expanded ? 'Show fewer' : `${rest.length} more`}
+            aria-expanded={expanded}
+            onClick={() => setOpen((o) => !o)}
+            className="inline-flex h-6 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
+          >
+            {expanded ? 'Less' : `+${rest.length}`}
+          </button>
+        )}
+      </span>
+    );
+  }
+
   return (
     <span className={`inline-flex min-w-0 items-center gap-1 ${className}`}>
       {shown.map((badge, i) => (
@@ -110,7 +134,6 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
           className="relative inline-flex"
           onMouseEnter={openOnHover}
           onMouseLeave={closeNow}
-          onFocus={openNow}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         >
@@ -121,7 +144,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
             aria-describedby={open ? popoverId : undefined}
             aria-expanded={open}
             onClick={openNow}
-            className="inline-flex h-6 -my-0.5 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
+            className="inline-flex h-6 -my-0.5 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
           >
             +{rest.length}
           </button>
