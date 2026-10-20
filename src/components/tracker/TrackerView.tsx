@@ -29,10 +29,9 @@ import {
 import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
-import { Platform, Difficulty, OperatingSystem, Machine } from '../../types';
-import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
-import { isDueForReview } from '../../utils/spacedRepetition';
-import { matchesAvailability, AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
+import { Platform, Difficulty, OperatingSystem } from '../../types';
+import { createMachineFilter } from '../../utils/machineFilter';
+import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
 import { computeReadiness } from '../../utils/readiness';
 import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
@@ -42,14 +41,11 @@ const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default:
 const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { CanvasSkeleton, ViewSkeleton } from '../common/Skeleton';
-import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
+import { PRACTICE_TRACKS } from '../../data/tracksData';
 import { 
   VULN_CATEGORIES, 
   VulnDomainId, 
   classifyMachine, 
-  matchesCategory, 
-  matchesDomain, 
-  isActiveDirectory, 
   getCategoryDef 
 } from '../../utils/categoryUtils';
 
@@ -327,157 +323,7 @@ export const TrackerView: React.FC = () => {
 
   // Filter and sort machines based on active filter state
   const filteredMachines = useMemo(() => {
-    const parsedQuery = parseSearchQuery(deferredFilters.searchQuery ?? '');
-    const hasQuery = parsedQuery.text !== '' || Object.keys(parsedQuery.filters).length > 0;
-    const nowMs = Date.now();
-    const searchOpts = {
-      isDue: (m: Machine) => !m.isActive && isDueForReview(m, nowMs),
-      trackIds: (m: Machine) => PRACTICE_TRACKS.filter((t) => t.filterFn(m)).map((t) => t.id),
-    };
-    const platformFilter = deferredFilters.selectedPlatform;
-    const diffFilter = deferredFilters.selectedDifficulty;
-    const osFilter = deferredFilters.selectedOs;
-    const availabilityFilter = deferredFilters.selectedAvailability;
-    const trackFilter = deferredFilters.selectedTrack;
-    const catFilter = deferredFilters.selectedCategory;
-    const vulnCatFilter = deferredFilters.selectedVulnCategory;
-    const excludeAD = Boolean(deferredFilters.excludeActiveDirectory);
-    const certFilter = deferredFilters.selectedCert;
-    const hasTags = deferredFilters.selectedTags.length > 0;
-
-    // Multi-track active IDs (Union matching across all selected tracks)
-    const activeTrackIds: string[] = (deferredFilters.selectedTracks && deferredFilters.selectedTracks.length > 0)
-      ? deferredFilters.selectedTracks
-      : (trackFilter && trackFilter !== 'ALL')
-        ? [trackFilter]
-        : [];
-    const activeTracks = activeTrackIds.map((id) => PRACTICE_TRACKS.find((t) => t.id === id)).filter(Boolean) as PracticeTrack[];
-
-    const statusFilter = deferredFilters.selectedStatus || 'ALL';
-    const langFilter = deferredFilters.selectedLanguage;
-    const areaFilter = deferredFilters.selectedAreaOfInterest;
-    const techFilter = deferredFilters.selectedTechnique;
-
-    const list = machines.filter((m) => {
-      // 1. Fast primitive checks first (0 allocations, rejects immediately)
-      if (platformFilter !== 'ALL' && m.platform !== platformFilter) return false;
-      if (diffFilter !== 'ALL' && m.difficulty !== diffFilter) return false;
-      if (osFilter && osFilter !== 'ALL' && m.os !== osFilter) return false;
-      if (!matchesAvailability(m, availabilityFilter)) return false;
-      if (certFilter !== 'ALL' && !m.certifications.includes(certFilter)) return false;
-
-      // 2. HTB Target Status filter
-      if (statusFilter !== 'ALL') {
-        const isCompleted = m.status === 'root' || m.status === 'completed';
-        const isFoothold = m.status === 'foothold';
-        if (statusFilter === 'UNCOMPLETED' && isCompleted) return false;
-        if (statusFilter === 'FOOTHOLD' && !isFoothold) return false;
-        if (statusFilter === 'COMPLETED' && !isCompleted) return false;
-      }
-
-      // 3. Active Directory Exclusion Check
-      if (excludeAD && isActiveDirectory(m)) return false;
-
-      // 4. Vulnerability Domain filter (active when domain selected without specific category override)
-      if (selectedDomain !== 'all' && (!vulnCatFilter || vulnCatFilter === 'ALL')) {
-        if (!matchesDomain(m, selectedDomain)) return false;
-      }
-
-      // 5. Vulnerability Category filter
-      if (vulnCatFilter && vulnCatFilter !== 'ALL') {
-        if (!matchesCategory(m, vulnCatFilter)) return false;
-      }
-
-      // 6. Curated Track filter (Multi-Track Union matching: matches if ANY active track matches)
-      if (activeTracks.length > 0 && !activeTracks.some((t) => t.filterFn(m))) {
-        return false;
-      }
-
-      // 7. Search query (only evaluated on candidates that passed platform/diff)
-      if (hasQuery && !matchesSearchQuery(m, parsedQuery, searchOpts)) return false;
-
-      // 8. Legacy Exploit Vector filter compatibility
-      if (catFilter && catFilter !== 'ALL') {
-        const legacyTarget = catFilter === 'Binary / Pwn' ? 'Binary / BOF' : catFilter;
-        if (!matchesCategory(m, legacyTarget)) return false;
-      }
-
-      // 9. Selected Tags
-      if (hasTags) {
-        const hasAllTags = deferredFilters.selectedTags.every((t) => m.tags.includes(t));
-        if (!hasAllTags) return false;
-      }
-
-      // 10. Language filter
-      if (langFilter && langFilter !== 'ALL') {
-        const l = langFilter.toLowerCase();
-        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
-        let matchesLang = false;
-        if (l === 'python') matchesLang = /python|flask|django|\bpy\b/i.test(textToSearch);
-        else if (l === 'php') matchesLang = /php|laravel|wordpress/i.test(textToSearch);
-        else if (l === 'nodejs' || l === 'javascript') matchesLang = /node|javascript|\bjs\b|express/i.test(textToSearch);
-        else if (l === 'java') matchesLang = /java|spring|tomcat|log4j/i.test(textToSearch);
-        else if (l === 'c#' || l === '.net') matchesLang = /c#|\.net|csharp|asp\.net|iis/i.test(textToSearch);
-        else if (l === 'c/c++') matchesLang = /\bc\b|c\+\+|bof|buffer overflow|binary/i.test(textToSearch);
-        else if (l === 'go') matchesLang = /\bgo\b|golang/i.test(textToSearch);
-        else if (l === 'ruby') matchesLang = /ruby|rails/i.test(textToSearch);
-        else if (l === 'bash') matchesLang = /bash|shell|\bsh\b/i.test(textToSearch);
-        else if (l === 'powershell') matchesLang = /powershell|\bps1\b/i.test(textToSearch);
-        else matchesLang = textToSearch.includes(l);
-        if (!matchesLang) return false;
-      }
-
-      // 11. Area of Interest filter
-      if (areaFilter && areaFilter !== 'ALL') {
-        const a = areaFilter.toLowerCase();
-        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
-        let matchesArea = false;
-        if (a.includes('web')) matchesArea = classifyMachine(m).domains.includes('web') || /web|http|api|injection|xss|sqli|lfi/i.test(textToSearch);
-        else if (a.includes('active directory') || a.includes('ad')) matchesArea = isActiveDirectory(m) || /active directory|kerberos|domain controller|ldap|smb/i.test(textToSearch);
-        else if (a.includes('cloud')) matchesArea = /cloud|aws|azure|gcp|s3|iam|docker|k8s|kubernetes/i.test(textToSearch);
-        else if (a.includes('binary') || a.includes('pwn')) matchesArea = /bof|buffer overflow|pwn|rop|heap|stack|shellcode|binary/i.test(textToSearch);
-        else if (a.includes('crypto')) matchesArea = /crypto|cipher|rsa|aes|padding|hash|jwt|encoding/i.test(textToSearch);
-        else if (a.includes('revers')) matchesArea = /reversing|reverse engineering|decompile|ghidra|ida|radare|crack/i.test(textToSearch);
-        else if (a.includes('forensic')) matchesArea = /forensics|wireshark|pcap|volatility|memory|stego/i.test(textToSearch);
-        else if (a.includes('network')) matchesArea = /network|snmp|smb|ldap|pivoting|tunnel|port knocking|firewall/i.test(textToSearch);
-        else matchesArea = textToSearch.includes(a);
-        if (!matchesArea) return false;
-      }
-
-      // 12. Technique filter (OS-Adaptive)
-      if (techFilter && techFilter !== 'ALL') {
-        const t = techFilter.toLowerCase();
-        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
-        let matchesTech = false;
-        if (t.includes('suid') || t.includes('sgid')) matchesTech = /suid|sgid|gtfobins/i.test(textToSearch);
-        else if (t.includes('sudo')) matchesTech = /sudo|sudo -l|ld_preload|sudoers/i.test(textToSearch);
-        else if (t.includes('cron')) matchesTech = /cron|wildcard|tar\b|rsync/i.test(textToSearch);
-        else if (t.includes('kernel')) matchesTech = /kernel|dirty cow|cve-20/i.test(textToSearch);
-        else if (t.includes('capabilit')) matchesTech = /cap_setuid|capabilities|getcap|setcap/i.test(textToSearch);
-        else if (t.includes('nfs')) matchesTech = /nfs|no_root_squash|exports/i.test(textToSearch);
-        else if (t.includes('ssh')) matchesTech = /ssh|id_rsa|authorized_keys/i.test(textToSearch);
-        else if (t.includes('docker')) matchesTech = /docker|container breakout|docker\.sock/i.test(textToSearch);
-        else if (t.includes('log poison')) matchesTech = /log poison|auth\.log|access\.log/i.test(textToSearch);
-        else if (t.includes('systemd')) matchesTech = /systemd|service misconfig|\.service/i.test(textToSearch);
-        else if (t.includes('passwd') || t.includes('shadow')) matchesTech = /passwd|shadow|writable/i.test(textToSearch);
-        else if (t.includes('kerberoast')) matchesTech = /kerberoast|spn|tgs/i.test(textToSearch);
-        else if (t.includes('as-rep')) matchesTech = /as-rep|asrep|dontreqpreauth/i.test(textToSearch);
-        else if (t.includes('dcsync')) matchesTech = /dcsync|ntds|secretsdump|krbtgt/i.test(textToSearch);
-        else if (t.includes('seimpersonate') || t.includes('potato') || t.includes('printspoofer')) matchesTech = /seimpersonate|juicypotato|printspoofer|godpotato|rottenpotato/i.test(textToSearch);
-        else if (t.includes('unquoted')) matchesTech = /unquoted|service path/i.test(textToSearch);
-        else if (t.includes('alwaysinstall')) matchesTech = /alwaysinstallelevated|msi/i.test(textToSearch);
-        else if (t.includes('dll')) matchesTech = /dll hijack|dll search/i.test(textToSearch);
-        else if (t.includes('sam') || t.includes('lsass')) matchesTech = /sam|system hive|lsass|mimikatz/i.test(textToSearch);
-        else if (t.includes('token') || t.includes('incognito')) matchesTech = /token|incognito|impersonate/i.test(textToSearch);
-        else if (t.includes('bloodhound')) matchesTech = /bloodhound|sharphound|shortest path/i.test(textToSearch);
-        else if (t.includes('gpo')) matchesTech = /gpo|group policy/i.test(textToSearch);
-        else if (t.includes('laps')) matchesTech = /laps/i.test(textToSearch);
-        else matchesTech = textToSearch.includes(t);
-        if (!matchesTech) return false;
-      }
-
-      return true;
-    });
+    const list = machines.filter(createMachineFilter(deferredFilters, { domain: selectedDomain }));
 
     // Apply Sorting
     if (deferredFilters.sortBy) {
@@ -520,7 +366,7 @@ export const TrackerView: React.FC = () => {
     }
 
     return list;
-  }, [machines, deferredFilters, sessionSeed]);
+  }, [machines, deferredFilters, sessionSeed, selectedDomain]);
 
 
 

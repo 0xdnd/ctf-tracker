@@ -21,11 +21,12 @@ import {
   Filter} from 'lucide-react';
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { PRACTICE_TRACKS, PracticeTrack } from '../../data/tracksData';
+import { PRACTICE_TRACKS } from '../../data/tracksData';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
-import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine, matchesCategory, matchesDomain, isActiveDirectory } from '../../utils/categoryUtils';
+import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
-import { matchesAvailability, AVAILABILITY_LABELS, AvailabilityValue } from '../../utils/availabilityFilter';
+import { AVAILABILITY_LABELS, AvailabilityValue } from '../../utils/availabilityFilter';
+import { createMachineFilter } from '../../utils/machineFilter';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 
 const STATUS_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
@@ -347,106 +348,10 @@ export const FilterDrawer: React.FC = () => {
   };
 
   // Live matching target count computation
-  const matchingMachinesCount = useMemo(() => {
-    const q = filters.searchQuery ? filters.searchQuery.trim().toLowerCase() : '';
-    const statusFilter = filters.selectedStatus || 'ALL';
-    const certFilter = filters.selectedCert;
-    const excludeAD = Boolean(filters.excludeActiveDirectory);
-    const vulnCatFilter = filters.selectedVulnCategory;
-    const langFilter = filters.selectedLanguage;
-    const areaFilter = filters.selectedAreaOfInterest;
-    const techFilter = filters.selectedTechnique;
-
-    const activeTracks = activeTrackIds
-      .map((id) => PRACTICE_TRACKS.find((t) => t.id === id))
-      .filter(Boolean) as PracticeTrack[];
-
-    return machines.filter((m) => {
-      if (filters.selectedPlatform !== 'ALL' && m.platform !== filters.selectedPlatform) return false;
-      if (filters.selectedDifficulty !== 'ALL' && m.difficulty !== filters.selectedDifficulty) return false;
-      if (filters.selectedOs && filters.selectedOs !== 'ALL' && m.os !== filters.selectedOs) return false;
-      if (!matchesAvailability(m, filters.selectedAvailability)) return false;
-      if (certFilter !== 'ALL' && !m.certifications.includes(certFilter)) return false;
-
-      if (statusFilter !== 'ALL') {
-        const isCompleted = m.status === 'root' || m.status === 'completed';
-        const isFoothold = m.status === 'foothold';
-        if (statusFilter === 'UNCOMPLETED' && isCompleted) return false;
-        if (statusFilter === 'FOOTHOLD' && !isFoothold) return false;
-        if (statusFilter === 'COMPLETED' && !isCompleted) return false;
-      }
-
-      if (excludeAD && isActiveDirectory(m)) return false;
-
-      if (drawerDomain !== 'all' && (!vulnCatFilter || vulnCatFilter === 'ALL')) {
-        if (!matchesDomain(m, drawerDomain)) return false;
-      }
-
-      if (vulnCatFilter && vulnCatFilter !== 'ALL') {
-        if (!matchesCategory(m, vulnCatFilter)) return false;
-      }
-
-      if (activeTracks.length > 0 && !activeTracks.some((t) => t.filterFn(m))) {
-        return false;
-      }
-
-      if (q) {
-        const matchName = m.name.toLowerCase().includes(q);
-        const matchIp = m.ip.includes(q);
-        const matchOs = m.os.toLowerCase().includes(q);
-        const matchTag = m.tags.some((t) => t.toLowerCase().includes(q));
-        if (!matchName && !matchIp && !matchOs && !matchTag) return false;
-      }
-
-      if (filters.selectedTags.length > 0) {
-        if (!filters.selectedTags.every((t) => m.tags.includes(t))) return false;
-      }
-
-      if (langFilter && langFilter !== 'ALL') {
-        const l = langFilter.toLowerCase();
-        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')} ${m.hint || ''}`.toLowerCase();
-        let matchesLang = false;
-        if (l === 'python') matchesLang = /python|flask|django|\bpy\b/i.test(textToSearch);
-        else if (l === 'php') matchesLang = /php|laravel|wordpress/i.test(textToSearch);
-        else if (l === 'nodejs' || l === 'javascript') matchesLang = /node|javascript|\bjs\b|express/i.test(textToSearch);
-        else if (l === 'java') matchesLang = /java|spring|tomcat/i.test(textToSearch);
-        else if (l === 'c#') matchesLang = /c#|\.net|asp\.net|iis/i.test(textToSearch);
-        else if (l === 'c/c++') matchesLang = /\bc\b|\bc\+\+|bof|buffer overflow|binary/i.test(textToSearch);
-        else if (l === 'go') matchesLang = /\bgo\b|golang/i.test(textToSearch);
-        else if (l === 'ruby') matchesLang = /ruby|rails/i.test(textToSearch);
-        else if (l === 'bash') matchesLang = /bash|shell|sh\b/i.test(textToSearch);
-        else if (l === 'powershell') matchesLang = /powershell|ps1/i.test(textToSearch);
-        if (!matchesLang) return false;
-      }
-
-      if (areaFilter && areaFilter !== 'ALL') {
-        const a = areaFilter.toLowerCase();
-        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')}`.toLowerCase();
-        if (a.includes('web') && !textToSearch.includes('web') && !m.tags.some(t => /web|http|api|injection/i.test(t))) return false;
-        if (a.includes('active directory') && !isActiveDirectory(m)) return false;
-        if (a.includes('cloud') && !textToSearch.includes('cloud') && !m.tags.some(t => /cloud|aws|azure/i.test(t))) return false;
-        if (a.includes('binary') && !m.tags.some(t => /pwn|bof|binary|buffer/i.test(t))) return false;
-        if (a.includes('crypto') && !m.tags.some(t => /crypto|cipher|rsa/i.test(t))) return false;
-        if (a.includes('reverse') && !m.tags.some(t => /reverse|ghidra|reversing/i.test(t))) return false;
-        if (a.includes('forensics') && !m.tags.some(t => /forensics|wireshark|pcap|memory/i.test(t))) return false;
-      }
-
-      if (techFilter && techFilter !== 'ALL') {
-        const textToSearch = `${m.tags.join(' ')} ${m.name} ${m.officialSynopsis || ''} ${(m.skillsLearned || []).join(' ')}`.toLowerCase();
-        const t = techFilter.toLowerCase();
-        if (t.includes('suid') && !textToSearch.includes('suid')) return false;
-        if (t.includes('sudo') && !textToSearch.includes('sudo')) return false;
-        if (t.includes('cron') && !textToSearch.includes('cron')) return false;
-        if (t.includes('kerberoast') && !textToSearch.includes('kerberoast') && !textToSearch.includes('tgs')) return false;
-        if (t.includes('as-rep') && !textToSearch.includes('as-rep') && !textToSearch.includes('asrep')) return false;
-        if (t.includes('dcsync') && !textToSearch.includes('dcsync') && !textToSearch.includes('ntds')) return false;
-        if (t.includes('seimpersonate') && !textToSearch.includes('seimpersonate') && !textToSearch.includes('potato')) return false;
-        if (t.includes('bloodhound') && !textToSearch.includes('bloodhound')) return false;
-      }
-
-      return true;
-    }).length;
-  }, [machines, filters, activeTrackIds, drawerDomain]);
+  const matchingMachinesCount = useMemo(
+    () => machines.filter(createMachineFilter(filters, { domain: drawerDomain })).length,
+    [machines, filters, drawerDomain],
+  );
 
   // Construct active filter chips list
   const activeFilterList = useMemo(() => {
@@ -746,9 +651,9 @@ export const FilterDrawer: React.FC = () => {
                 },
                 {
                   label: 'CPTS Win',
-                  title: 'Filter for CPTS Windows track',
-                  active: activeTrackIds.includes('cpts-windows'),
-                  apply: () => setFilters({ selectedTracks: ['cpts-windows'], selectedTrack: 'cpts-windows' }),
+                  title: 'Filter for the CPTS track, Windows targets only',
+                  active: activeTrackIds.length === 1 && activeTrackIds[0] === 'cpts-path' && filters.selectedOs === 'Windows',
+                  apply: () => setFilters({ selectedTracks: ['cpts-path'], selectedTrack: 'cpts-path', selectedOs: 'Windows' }),
                 },
               ]).map((preset) => (
                 <button
