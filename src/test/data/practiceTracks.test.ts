@@ -48,7 +48,7 @@ describe('practice track membership', () => {
     expect(active.length).toBeGreaterThan(0);
     const listBased = PRACTICE_TRACKS.filter((t) => LIST_BASED_TRACK_IDS.has(t.id));
     expect(listBased.map((t) => t.id).sort()).toEqual(
-      ['cpts-path', 'crto-ad', 'cwee-web', 'ippsec-vault', 'osep', 'oswe', 'popular-classics', 'tjnull-oscp']
+      ['cpts-path', 'crto-ad', 'cwee-web', 'ippsec-cpts', 'ippsec-vault', 'osep', 'oswe', 'popular-classics', 'tjnull-oscp']
     );
     for (const t of listBased) {
       expect(active.filter(t.filterFn).map((m) => m.name), t.id).toEqual([]);

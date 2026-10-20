@@ -13,6 +13,7 @@ const BUILDERS = [
   require('./guides/progress-tracker.cjs'),
   require('./guides/cpts-exam.cjs'),
   require('./guides/htb-vs-tryhackme.cjs'),
+  require('./guides/htb-pro-labs.cjs'),
 ];
 
 // Internal link targets guides may use in Related lists (label shown on the page).
@@ -22,6 +23,11 @@ const LINKS = {
   '/machines/': 'Hack The Box and TryHackMe machine directory',
   '/oscp-like-machines/': 'OSCP-like machines by difficulty',
   '/cpts-like-machines/': 'CPTS-like machines by difficulty',
+  '/ippsec-cpts-machines/': 'Unofficial IppSec CPTS preparation track',
+  '/osep-like-machines/': 'OSEP-like machines by difficulty',
+  '/oswe-like-machines/': 'OSWE-like machines by difficulty',
+  '/cwee-like-machines/': 'CWEE-like machines by difficulty',
+  '/active-directory-machines/': 'HTB Active Directory machines by difficulty',
   '/pentest-notes/': 'Pentest methodology notes',
   '/methodology-guide/': 'Pentest methodology checklist',
   '/cheatsheet-library/': 'Pentest cheatsheet library',
@@ -33,6 +39,7 @@ const LINKS = {
   '/htb-progress-tracker/': 'HTB and TryHackMe progress tracker',
   '/cpts-exam-guide/': 'HTB CPTS exam guide',
   '/htb-vs-tryhackme/': 'HTB vs TryHackMe comparison',
+  '/htb-pro-labs-guide/': 'Hack The Box Pro Labs comparison guide',
   '/crto-like-machines/': 'CRTO-like machines by difficulty',
 };
 

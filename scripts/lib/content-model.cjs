@@ -29,6 +29,8 @@ export { CHEATSHEET_CATEGORIES, INITIAL_CHEATSHEET } from './src/data/cheatsheet
 export { ALL_SHELL_ITEMS } from './src/data/revshellsData';
 export { MASTER_METHODOLOGY_FRAMEWORK } from './src/data/methodologyFramework';
 export { EXAM_TRACK_CONFIGS } from './src/utils/examComplianceUtils';
+export { PRACTICE_TRACKS } from './src/data/tracksData';
+export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 `,
         resolveDir: rootDir,
         loader: 'ts',
@@ -54,9 +56,21 @@ const MIN_WORDS = 150;
 const CTF_MACHINE_COUNT = 1027;
 const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
+const TRACK_TO_CERT = {
+  'tjnull-oscp': 'OSCP',
+  'cpts-path': 'CPTS',
+  'ippsec-cpts': 'IppSec-CPTS',
+  'osep': 'OSEP',
+  'oswe': 'OSWE',
+  'cwee-web': 'CWEE',
+  'crto-ad': 'Active-Directory',
+};
+
 function getModel() {
   if (cached) return cached;
   const d = loadData();
+  const trackById = new Map((d.PRACTICE_TRACKS || []).map((t) => [t.id, t]));
+  const ippsecTrack = trackById.get('ippsec-vault');
 
   // ---- Machines ----
   const used = new Set();
@@ -78,9 +92,17 @@ function getModel() {
     const safe = isAct
       ? { ...m, ip: '', tags: [], userFlag: '', rootFlag: '', hint: '', writeupUrl: '', openPorts: [], services: [] }
       : m;
+    const certs = new Set(safe.certifications || []);
+    if (!isAct) {
+      for (const [tid, certKey] of Object.entries(TRACK_TO_CERT)) {
+        const tr = trackById.get(tid);
+        if (tr && tr.filterFn(safe)) certs.add(certKey);
+      }
+    }
+    const hasIppsec = Boolean(!isAct && ippsecTrack && ippsecTrack.filterFn(safe));
     const ownerSolved = !isAct && (m.status === 'completed' || /0xdnd\.gitbook\.io/.test(m.writeupUrl || ''));
     const ownWriteup = (!isAct && /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '')) ? m.writeupUrl : '';
-    return { ...safe, slug, ownWriteup, hasPage: ownerSolved };
+    return { ...safe, certifications: [...certs], hasIppsec, slug, ownWriteup, hasPage: ownerSolved };
   });
 
   // ---- Owner notes (scripts/data/machine-notes.json: { "<machine slug>": "note text" }, see scripts/data/README.md) ----
@@ -132,8 +154,9 @@ function getModel() {
 
   const examTracks = Object.values(d.EXAM_TRACK_CONFIGS).map((t) => t.id);
   const catalogCounts = { total: machines.length, ctf: CTF_MACHINE_COUNT, guided: machines.length - CTF_MACHINE_COUNT };
+  const proLabs = d.OFFICIAL_HTB_PRO_LABS || [];
 
-  cached = { machines, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, examTracks, catalogCounts, MIN_WORDS };
+  cached = { machines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, examTracks, catalogCounts, MIN_WORDS };
   return cached;
 }
 

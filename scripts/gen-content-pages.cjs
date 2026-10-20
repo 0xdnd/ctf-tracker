@@ -164,14 +164,23 @@ const CERT_MIN = 10;
 const TECH_MIN = 5;
 const certCountsAll = {};
 for (const m of model.machines) for (const c of m.certifications || []) certCountsAll[c] = (certCountsAll[c] || 0) + 1;
-const CERT_NAME = { 'HTB-Starting-Point': 'HTB Starting Point' };
+const CERT_NAME = {
+  'HTB-Starting-Point': 'HTB Starting Point',
+  'IppSec-CPTS': 'Unofficial IppSec CPTS',
+  'Active-Directory': 'HTB Active Directory',
+};
+const CERT_SLUG = {
+  'HTB-Starting-Point': 'htb-starting-point-machines',
+  'IppSec-CPTS': 'ippsec-cpts-machines',
+  'Active-Directory': 'active-directory-machines',
+};
 const certHubs = Object.entries(certCountsAll)
   .filter(([, n]) => n >= CERT_MIN)
   .sort((a, b) => b[1] - a[1])
   .map(([cert]) => ({
     cert,
     name: CERT_NAME[cert] || cert,
-    slug: (cert === 'HTB-Starting-Point' ? slugify(cert) + '-machines' : slugify(cert) + '-like-machines'),
+    slug: CERT_SLUG[cert] || (slugify(cert) + '-like-machines'),
     machines: model.machines.filter((m) => (m.certifications || []).includes(cert)),
   }));
 const techGroups = TECH.GROUPS.map((g) => ({ ...g, machines: model.machines.filter((m) => TECH.matchesMachine(g, m)) })).filter((g) => g.machines.length >= TECH_MIN);
@@ -191,12 +200,17 @@ const GUIDE_LABEL = {
   '/htb-progress-tracker/': 'HTB progress tracker',
   '/cpts-exam-guide/': 'HTB CPTS exam guide',
   '/htb-vs-tryhackme/': 'HTB vs TryHackMe',
+  '/htb-pro-labs-guide/': 'HTB Pro Labs guide',
 };
 const guideChips = (paths) => paths.filter((p) => guideByPath.has(p)).map((p) => `<a href="${p}">${esc(GUIDE_LABEL[p] || guideByPath.get(p).title)}</a>`).join('');
 // Guides that belong on a certification hub.
 const CERT_GUIDES = {
-  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-vs-tryhackme/'],
-  CPTS: ['/cpts-exam-guide/'],
+  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-vs-tryhackme/', '/htb-pro-labs-guide/'],
+  CPTS: ['/cpts-exam-guide/', '/htb-pro-labs-guide/', '/htb-vs-tryhackme/'],
+  'IppSec-CPTS': ['/cpts-exam-guide/', '/htb-pro-labs-guide/'],
+  CRTO: ['/htb-pro-labs-guide/'],
+  'Active-Directory': ['/htb-pro-labs-guide/', '/cpts-exam-guide/'],
+  OSEP: ['/htb-pro-labs-guide/'],
 };
 
 const normTag = (t) => String(t).toLowerCase().replace(/[-_]+/g, ' ').trim();
@@ -328,8 +342,9 @@ for (const m of withPage) {
     ['Platform', plat],
     ['Operating system', m.os],
     ['Difficulty', m.difficulty],
+    m.hasIppsec ? ['Walkthroughs', 'IppSec video walkthrough available'] : null,
     ...stats,
-    m.certifications && m.certifications.length ? ['Relevant for', m.certifications.join(', ')] : null,
+    m.certifications && m.certifications.length ? ['Relevant for', m.certifications.map((c) => CERT_NAME[c] || c).join(', ')] : null,
   ].filter(Boolean);
     const body = [
     `<p class="lead">${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself. This page is my short attack path summary and the techniques it trains.</p>`,
@@ -406,7 +421,7 @@ for (const m of withPage) {
   );
   parts.push(ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }));
   parts.push(
-    `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`
+    `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-pro-labs-guide/', '/cpts-exam-guide/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`
   );
   parts.push(`<div class="chips">${platforms.map((p) => `<a href="#${p.toLowerCase()}">${esc(PLATFORM_NAME[p] || p)} (${byPlatform[p].length})</a>`).join('')}</div>`);
   for (const p of platforms) {
@@ -724,7 +739,7 @@ const LEGACY_NOTES_HUB = '/cpts-notes/';
   // Hubs that no longer meet CERT_MIN / TECH_MIN would 404 once indexed; point them at /machines/ instead.
   for (const cert of new Set([...Object.keys(certCountsAll), 'HTB-Starting-Point'])) { // Starting Point was indexed earlier, so always stub it
     if (certHubs.some((h) => h.cert === cert)) continue;
-    writeRedirectStub(`/${cert === 'HTB-Starting-Point' ? slugify(cert) + '-machines' : slugify(cert) + '-like-machines'}/`, '/machines/');
+    writeRedirectStub(`/${CERT_SLUG[cert] || (slugify(cert) + '-like-machines')}/`, '/machines/');
   }
   for (const g of TECH.GROUPS) if (!techGroups.some((o) => o.slug === g.slug)) writeRedirectStub(`/techniques/${g.slug}/`, '/machines/');
 }
@@ -739,12 +754,14 @@ const osCounts = (list) => {
   for (const m of list) c[m.os] = (c[m.os] || 0) + 1;
   return Object.entries(c).sort((a, b) => b[1] - a[1]);
 };
-const nameCell = (m) =>
-  m.hasPage
+const nameCell = (m) => {
+  const link = m.hasPage
     ? `<a href="${mUrl(m)}">${esc(m.name)}</a>`
     : SAFE_ROOM.test(m.roomUrl || '')
       ? `<a href="${esc(m.roomUrl)}" rel="${ROOM_REL}">${esc(m.name)}</a>`
       : esc(m.name);
+  return m.hasIppsec ? `${link} <span class="tag" title="IppSec video walkthrough available">IppSec</span>` : link;
+};
 const orderMachines = (list) =>
   [...list].sort((a, b) => DIFF_ORDER.indexOf(a.difficulty) - DIFF_ORDER.indexOf(b.difficulty) || (b.hasPage ? 1 : 0) - (a.hasPage ? 1 : 0) || a.name.localeCompare(b.name));
 
@@ -799,6 +816,26 @@ const CERT_INFO = {
     what: 'CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a practical certification built around a multi-day exam in which you assess a realistic network and deliver a professional report. It covers enumeration, web attacks, Active Directory, pivoting and reporting.',
     why: 'The machines below cover the breadth that the exam expects: web application flaws, service enumeration, Windows and Linux escalation, Active Directory and tunnelling. Because CPTS rewards thorough notes and clean reporting, use each box to practise documenting evidence as you go.',
   },
+  'IppSec-CPTS': {
+    what: 'The Unofficial IppSec CPTS Preparation Track is the community-famous list of Hack The Box machines that align with the Certified Penetration Testing Specialist syllabus and have a full IppSec video walkthrough. It bridges the gap between guided academy modules and unguided black-box network assessments.',
+    why: 'Working through these boxes lets you attempt each target blind and then compare your enumeration, foothold and privilege escalation workflow directly against IppSec\'s methodology. Use the video walkthroughs after solving—or when genuinely stuck—to learn faster command-line habits and deeper post-exploitation checks.',
+  },
+  OSEP: {
+    what: 'OSEP, the Offensive Security Experienced Penetration Tester (PEN-300), is OffSec\'s advanced certification focused on bypassing network defences, antivirus and endpoint detection while compromising multi-layered enterprise environments and Active Directory trusts.',
+    why: 'These harder Hack The Box machines train the multi-step chains that OSEP demands: custom payload delivery, Linux and Windows lateral movement, MSSQL and Active Directory delegation abuse, and pivoting across segmented networks where standard public exploits fail out of the box.',
+  },
+  OSWE: {
+    what: 'OSWE, the Offensive Security Web Expert (WEB-300), is a white-box and grey-box web application security certification. The 48-hour practical exam requires reading source code to chain authentication bypasses, SQL injection, deserialization and server-side flaws into remote code execution.',
+    why: 'The web-heavy Hack The Box targets listed here focus on multi-step application logic flaws, source code recovery, SSTI, deserialization, SSRF and polyglot file uploads. Practise scripting your exploit chain from unauthenticated request to shell so you are ready for OSWE exam requirements.',
+  },
+  CWEE: {
+    what: 'CWEE, the Certified Web Exploitation Expert from Hack The Box, is an advanced web security certification that tests deep exploitation of modern web stacks, APIs, authentication protocols and white-box source review under realistic enterprise constraints.',
+    why: 'These machines emphasize complex web attack surfaces including OAuth and JWT abuse, GraphQL and REST API vulnerabilities, prototype pollution, server-side template injection and chained XSS-to-RCE paths. Use them to sharpen both black-box fuzzing and source-assisted vulnerability discovery.',
+  },
+  'Active-Directory': {
+    what: 'The HTB Active Directory Track groups Windows domain controllers and joined workstations on Hack The Box that train full domain compromise from external enumeration or a low-privilege foothold all the way to Domain Admin and forest trust abuse.',
+    why: 'Mastering BloodHound collection, Kerberoasting, AS-REP roasting, ADCS certificate templates, RBCD, Constrained Delegation, GPO abuse and NTLM relay on standalone domain boxes builds the exact muscle memory required for OSCP, CPTS, CRTO and enterprise internal pentests.',
+  },
   'HTB-Starting-Point': {
     what: 'HTB Starting Point is the guided beginner track on Hack The Box, organised into tiers that introduce core services, simple web flaws and first privilege escalations. It is not a certification, but it is the usual entry route before OSCP or CPTS style preparation.',
     why: 'These machines are short and forgiving, so they are ideal for building the habit of scanning, enumerating each service and writing down what you learn. Finish a tier, then repeat the box without the guide to check that the process has stuck.',
@@ -818,14 +855,15 @@ for (const hub of certHubs) {
     what: `${name} is a certification path covered by the machines listed on this page.`,
     why: 'Working through varied boxes builds the enumeration and exploitation habits that practical exams reward.',
   };
-  const isTrack = cert === 'HTB-Starting-Point';
+  const isTrack = cert === 'HTB-Starting-Point' || cert === 'IppSec-CPTS' || cert === 'Active-Directory';
   const label = isTrack ? `${name} Machines` : `${name}-Like Machines`;
   const plats = platLabel(machines);
   const solved = machines.filter((m) => m.hasPage).length;
+  const ippsecCount = machines.filter((m) => m.hasIppsec).length;
   const { jump, tables, ordered } = machineSections(machines);
   const intro = [
     `<p class="lead">${esc(info.what)}</p>`,
-    `<p>The ${machines.length} machines on this page are tagged ${esc(name)} in the ZeroBox catalog and come from ${esc(plats)}. By operating system that is ${esc(osLine(machines))}. ${esc(info.why)}</p>`,
+    `<p>The ${machines.length} machines on this page are tagged ${esc(name)} in the ZeroBox catalog and come from ${esc(plats)}${ippsecCount ? ` (${ippsecCount} with IppSec video walkthroughs)` : ''}. By operating system that is ${esc(osLine(machines))}. ${esc(info.why)}</p>`,
     `<p>To use the list, start at the easiest group and work upward, spending real time on enumeration before looking at any help. After each box, write down the foothold, the escalation and what you would do faster next time. ${solved ? `${solved} of these are targets I solved myself, so they link to an attack path summary on this site; the others link to the official room. ` : 'Each machine links to its official room. '}Once you are comfortable, rehearse under pressure in the <a href="/exam/">exam simulator</a>, and follow the phase-by-phase <a href="/methodology-guide/">pentest methodology checklist</a> so you do not skip steps. You can also browse the <a href="/techniques/">technique hubs</a> to drill one skill at a time.</p>`,
   ].join('\n');
   const introWords = wc(intro);
@@ -962,6 +1000,7 @@ const GUIDE_SRC = {
   '/htb-progress-tracker/': ['scripts/lib/guides/progress-tracker.cjs'],
   '/cpts-exam-guide/': ['scripts/lib/guides/cpts-exam.cjs'],
   '/htb-vs-tryhackme/': ['scripts/lib/guides/htb-vs-tryhackme.cjs', SRC.machines],
+  '/htb-pro-labs-guide/': ['scripts/lib/guides/htb-pro-labs.cjs', 'src/data/proLabsData.ts'],
 };
 for (const g of guides) emit('guide', g.path, g.html, 0.7, maxDateOf(...(GUIDE_SRC[g.path] || ['scripts/lib/guides.cjs'])));
 
@@ -1022,6 +1061,91 @@ const sitemap =
   `\n</urlset>\n`;
 fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap, 'utf8');
 if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'), sitemap, 'utf8');
+
+// ===================== llms-full.txt (Dual-Axis GEO Reference) =====================
+{
+  const lines = [
+    '# ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)',
+    '',
+    '> ZeroBox is a free, offline-first CTF and certification preparation tracker running in the browser. It tracks 1,027 Hack The Box and TryHackMe machines, 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/',
+    '',
+    'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.',
+    '',
+    '### AI Assistant Citation Guide (Claude, Gemini, ChatGPT, Perplexity)',
+    '- Use **Axis 1** below to answer "Which machines or Pro Labs should I practice for OSCP / CPTS / IppSec CPTS / CRTO / OSEP / OSWE / CWEE?"',
+    '- Use **Axis 2** below to answer "How do I prepare for OSCP / CPTS exams, structure my pentest methodology, or track CTF progress offline?"',
+    '',
+    '---',
+    '',
+    '## Axis 1: Which Machines to Practice for Which Certification?',
+    '',
+    '### Summary of Certification & Track Lists',
+    ...certHubs.map((h) => {
+      const ipp = h.machines.filter((m) => m.hasIppsec).length;
+      return `- **[${h.name}](https://ctftracker.com/${h.slug}/)**: ${h.machines.length} machines (${osLine(h.machines)})${ipp ? `, ${ipp} with IppSec video walkthroughs` : ''}`;
+    }),
+    `- **[HTB Pro Labs Guide](https://ctftracker.com/htb-pro-labs-guide/)**: ${(model.proLabs || []).length} multi-host Active Directory and enterprise simulation labs`,
+    '',
+  ];
+  for (const h of certHubs) {
+    const ordered = orderMachines(h.machines);
+    const info = CERT_INFO[h.cert];
+    lines.push(`### ${h.name} Machine List (https://ctftracker.com/${h.slug}/)`);
+    if (info) lines.push(info.what + ' ' + info.why);
+    lines.push('');
+    lines.push('| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |');
+    lines.push('|---|---|---|---|---|---|---|');
+    for (const m of ordered) {
+      const u = m.hasPage ? ORIGIN + mUrl(m) : (m.roomUrl || ORIGIN + '/machines/');
+      const tags = (m.tags || []).filter((t) => !GENERIC_TAGS.has(t.toLowerCase())).slice(0, 5).join(', ');
+      lines.push(`| ${m.name} | ${m.platform} | ${m.os} | ${m.difficulty} | ${m.hasIppsec ? 'Yes' : 'No'} | ${tags} | ${u} |`);
+    }
+    lines.push('');
+  }
+  if (model.proLabs && model.proLabs.length) {
+    lines.push('### Official Hack The Box Pro Labs (https://ctftracker.com/htb-pro-labs-guide/)');
+    lines.push('');
+    lines.push('| Pro Lab | Difficulty | Hosts | Flags | Exam Alignment | Description |');
+    lines.push('|---|---|---|---|---|---|');
+    for (const lab of model.proLabs) {
+      lines.push(`| ${lab.name} | ${lab.difficulty} | ${lab.hostCount} | ${lab.flagCount} | ${(lab.examAlignment || []).join(', ')} | ${lab.description} |`);
+    }
+    lines.push('');
+  }
+  lines.push('---');
+  lines.push('');
+  lines.push('## Axis 2: How to Prepare for Pentest & Red Team Certifications?');
+  lines.push('');
+  lines.push('### Long-Form Preparation Guides');
+  for (const g of guides) {
+    lines.push(`- **[${g.title}](https://ctftracker.com${g.path})**: ${g.description}`);
+  }
+  lines.push('');
+  lines.push('### Eight-Phase Pentest Methodology (https://ctftracker.com/methodology-guide/)');
+  for (const ph of model.phases) {
+    lines.push(`#### ${ph.title} (https://ctftracker.com/methodology/${ph.slug}/)`);
+    lines.push(ph.description);
+    const items = (ph.subcategories || []).flatMap((sub) => sub.items || []).slice(0, 6);
+    for (const st of items) {
+      const cmd = st.commandSnippet ? st.commandSnippet.split(/\r?\n/)[0].trim() : '';
+      lines.push(`- **${st.title}**: ${st.description}${cmd ? ` (e.g. \`${cmd}\`)` : ''}`);
+    }
+    lines.push('');
+  }
+  lines.push('### Technique Hubs & Practice Box Counts (https://ctftracker.com/techniques/)');
+  for (const g of techGroups) {
+    lines.push(`- **[${g.name}](https://ctftracker.com/techniques/${g.slug}/)** (${g.machines.length} machines): ${firstSentence(g.explainer)}`);
+  }
+  lines.push('');
+  lines.push('### Cheatsheet Topics (https://ctftracker.com/cheatsheet-library/)');
+  for (const t of model.topics) {
+    lines.push(`- **[${t.name}](https://ctftracker.com/cheatsheets/${t.slug}/)**: ${t.items.length} command templates (${t.items.slice(0, 4).map((i) => i.title).join(', ')})`);
+  }
+  lines.push('');
+  const llmsFull = lines.join('\n');
+  fs.writeFileSync(path.join(distDir, 'llms-full.txt'), llmsFull, 'utf8');
+  if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'llms-full.txt'), llmsFull, 'utf8');
+}
 
 console.log(`machines: ${model.machines.length} total, ${withPage.length} owner-solved pages`);
 console.log('pages by type:', counts, `total generated: ${pages.length}`);

@@ -141,12 +141,25 @@ const TRACKS: PracticeTrack[] = [
     name: 'Certified Penetration Testing Specialist (CPTS)',
     shortName: 'CPTS Track',
     category: 'certification',
-    description: 'Hack The Box Academy flagship path covering deep enumeration and complex pivot chains.',
+    description: 'Hack The Box Academy flagship path covering deep enumeration, Active Directory, and complex pivot chains.',
     badgeColor: 'border-cyber-cyan/40 bg-cyber-cyan/10 text-cyber-cyan',
     accentColor: '#06B6D4',
     filterFn: (m) => 
       m.certifications?.includes('CPTS') || 
       m.tags?.some(t => ['cpts', 'htb academy', 'academy', 'pivoting', 'trophy room'].includes(t.toLowerCase())),
+  },
+  {
+    id: 'ippsec-cpts',
+    name: 'Unofficial IppSec CPTS Preparation Track',
+    shortName: 'IppSec CPTS',
+    category: 'certification',
+    description: 'Unofficial IppSec CPTS preparation list: HTB CPTS syllabus machines paired with official IppSec video walkthroughs.',
+    badgeColor: 'border-sky-400/40 bg-sky-400/10 text-sky-400',
+    accentColor: '#38BDF8',
+    filterFn: (m) =>
+      listed(IPPSEC, m) &&
+      (m.certifications?.includes('CPTS') ||
+        m.tags?.some(t => ['cpts', 'htb academy', 'academy', 'pivoting', 'trophy room'].includes(t.toLowerCase()))),
   },
   {
     id: 'cwee-web',
@@ -260,7 +273,7 @@ const TRACKS: PracticeTrack[] = [
  * (HTB AUP §8.2: no walkthrough-linked lists for active content). Pure difficulty/OS/technique filters may.
  */
 export const LIST_BASED_TRACK_IDS: ReadonlySet<string> = new Set([
-  'tjnull-oscp', 'osep', 'oswe', 'cwee-web', 'popular-classics', 'ippsec-vault', 'crto-ad', 'cpts-path',
+  'tjnull-oscp', 'osep', 'oswe', 'cwee-web', 'popular-classics', 'ippsec-vault', 'crto-ad', 'cpts-path', 'ippsec-cpts',
 ]);
 
 export const PRACTICE_TRACKS: PracticeTrack[] = TRACKS.map((t) => {
