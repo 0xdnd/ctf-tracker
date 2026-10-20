@@ -42,6 +42,11 @@ describe('sortMachines', () => {
     expect(out.map((m) => m.name)).toEqual(['Gamma', 'Alpha', 'Beta', 'Delta', 'Epsilon']);
   });
 
+  it('ignores direction in track mode: listed machines keep track order, unlisted stay last', () => {
+    const out = sortMachines([...catalog], { mode: 'track', direction: 'desc', seed: 1, catalog, track });
+    expect(out.map((m) => m.name)).toEqual(['Gamma', 'Alpha', 'Beta', 'Delta', 'Epsilon']);
+  });
+
   it('reuses the precomputed index instead of rebuilding it', () => {
     sortMachines([...catalog], { mode: 'track', direction: 'asc', seed: 1, catalog, track });
     expect(buildTrackOrderIndex(track, catalog)).toBe(buildTrackOrderIndex(track, catalog));

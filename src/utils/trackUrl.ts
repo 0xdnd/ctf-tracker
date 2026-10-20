@@ -12,6 +12,3 @@ export const parseTrackParam = (value: string | null | undefined, isKnown: (id: 
   }
   return ids;
 };
-
-/** The parameter value for these ids: a single id stays plain, several are comma-separated, none gives an empty string. */
-export const serializeTrackParam = (ids: readonly string[]): string => ids.join(',');

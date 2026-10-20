@@ -49,10 +49,10 @@ export const sortMachines = (list: Machine[], ctx: SortContext): Machine[] => {
   const sign = direction === 'desc' ? -1 : 1;
 
   if (mode === 'track' && ctx.track) {
-    // Machines outside the track's list go last and keep their relative order (Array#sort is stable).
+    // Direction is ignored so unlisted machines always go last; they keep their relative order (Array#sort is stable).
     const index = buildTrackOrderIndex(ctx.track, ctx.catalog);
     const last = Number.MAX_SAFE_INTEGER;
-    return list.sort((a, b) => sign * ((index.get(a.id) ?? last) - (index.get(b.id) ?? last)));
+    return list.sort((a, b) => (index.get(a.id) ?? last) - (index.get(b.id) ?? last));
   }
 
   const hashString = (str: string) => {

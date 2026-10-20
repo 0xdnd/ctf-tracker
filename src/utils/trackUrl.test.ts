@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTrackParam, serializeTrackParam } from './trackUrl';
+import { parseTrackParam } from './trackUrl';
 
 const known = new Set(['tjnull-oscp', 'osep', 'cpts-path']);
 const isKnown = (id: string) => known.has(id);
@@ -21,18 +21,5 @@ describe('parseTrackParam', () => {
     expect(parseTrackParam(null, isKnown)).toEqual([]);
     expect(parseTrackParam('', isKnown)).toEqual([]);
     expect(parseTrackParam('nope,ALL', isKnown)).toEqual([]);
-  });
-});
-
-describe('serializeTrackParam', () => {
-  it('writes a single id plainly and several with commas', () => {
-    expect(serializeTrackParam(['osep'])).toBe('osep');
-    expect(serializeTrackParam(['tjnull-oscp', 'osep'])).toBe('tjnull-oscp,osep');
-    expect(serializeTrackParam([])).toBe('');
-  });
-
-  it('round-trips through parseTrackParam', () => {
-    const ids = ['cpts-path', 'tjnull-oscp'];
-    expect(parseTrackParam(serializeTrackParam(ids), isKnown)).toEqual(ids);
   });
 });
