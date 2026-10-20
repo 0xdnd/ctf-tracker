@@ -30,6 +30,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { countDueReviews } from '../../utils/spacedRepetition';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useShallow } from 'zustand/react/shallow';
@@ -125,9 +126,11 @@ export const MobileNav: React.FC = () => {
     setTimeout(() => setJustSavedMobile(false), 2000);
   };
 
-  const handleNavClick = (path: string, tabId: any) => {
+  const dueReviews = React.useMemo(() => countDueReviews(machines, Date.now()), [machines]);
+
+  const handleNavClick = (path: string, tabId: any, state?: { scrollTo: string }) => {
     setActiveTab(tabId);
-    navigate(path);
+    navigate(path, state ? { state } : undefined);
     setMobileMenuOpen(false);
     useNotesWorkspaceStore.getState().setIsOpen(false);
     if (soundEnabled) playCyberSound('click');
@@ -429,12 +432,18 @@ export const MobileNav: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => handleNavClick('/analytics', 'analytics')}
+                    onClick={() => handleNavClick('/analytics', 'analytics', dueReviews > 0 ? { scrollTo: 'review' } : undefined)}
                     className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/analytics')}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <BarChart3 className={iconCls} />
                       <span>Pwn Analytics & Radar</span>
+                      {dueReviews > 0 && (
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-mono font-bold tabular-nums">
+                          {dueReviews}
+                          <span className="sr-only"> {dueReviews === 1 ? 'review' : 'reviews'} due</span>
+                        </span>
+                      )}
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>

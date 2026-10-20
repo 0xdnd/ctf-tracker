@@ -52,7 +52,7 @@ export const TrackPicker: React.FC<TrackPickerProps> = ({
   let label = 'Tracks';
   let ariaLabel = 'Tracks';
   if (single) {
-    label = single.shortName;
+    label = singleProgress ? `${single.shortName} · ${singleProgress.done}/${singleProgress.total}` : single.shortName;
     ariaLabel = singleProgress
       ? `Tracks: ${single.shortName} ${singleProgress.done}/${singleProgress.total}`
       : `Tracks: ${single.shortName}`;
@@ -169,17 +169,27 @@ export const TrackPicker: React.FC<TrackPickerProps> = ({
         title={single ? single.name : 'Practice tracks'}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={handleTriggerKeyDown}
-        className={`${buttonClassName} min-w-0 ${count > 0 ? 'border-accent text-accent' : ''}`}
+        className={`${buttonClassName} min-w-0 ${count > 0 ? 'border-accent text-accent rounded-r-none' : ''}`}
       >
         <Route className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
         <span className="truncate">{label}</span>
-        {singleProgress && (
-          <span className="hidden sm:inline font-mono tabular-nums text-xs text-muted flex-shrink-0">
-            {singleProgress.done}/{singleProgress.total}
-          </span>
-        )}
         <ChevronDown className="w-3 h-3 flex-shrink-0 text-tertiary" aria-hidden="true" />
       </button>
+
+      {count > 0 && (
+        <button
+          type="button"
+          aria-label={count === 1 ? 'Clear track' : 'Clear tracks'}
+          title={count === 1 ? 'Clear track' : 'Clear tracks'}
+          onClick={() => {
+            setOpen(false);
+            onSelect(null);
+          }}
+          className="inline-flex flex-shrink-0 items-center justify-center self-stretch px-1.5 rounded-r-lg border border-l-0 border-accent bg-surface-card text-tertiary hover:bg-surface-hover hover:text-primary transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:px-3"
+        >
+          <X className="w-3.5 h-3.5" aria-hidden="true" />
+        </button>
+      )}
 
       {open && (
         <div
@@ -208,39 +218,51 @@ export const TrackPicker: React.FC<TrackPickerProps> = ({
           {tracks.map((track) => {
             const p = progress.get(track.id);
             const checked = selectedTrackIds.includes(track.id);
+            const origin = [track.source && `Source: ${track.source}`, track.asOf && `As of ${track.asOf}`]
+              .filter(Boolean)
+              .join(' · ');
+            const noteId = `${menuId}-${track.id}-note`;
             return (
-              <button
-                key={track.id}
-                type="button"
-                role="menuitemradio"
-                aria-checked={checked}
-                tabIndex={-1}
-                title={track.name}
-                onClick={() => choose(() => onSelect(track.id))}
-                className={`${ITEM_BASE} flex-col items-stretch gap-1 py-1.5 ${
-                  checked ? 'text-accent' : 'text-secondary hover:text-primary'
-                } hover:bg-surface-hover`}
-              >
-                <span className="flex items-center gap-2 min-w-0">
-                  <span className="w-3.5 h-3.5 flex-shrink-0 flex items-center justify-center" aria-hidden="true">
-                    {checked && <Check className="w-3.5 h-3.5" />}
+              <React.Fragment key={track.id}>
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={checked}
+                  aria-describedby={checked ? noteId : undefined}
+                  tabIndex={-1}
+                  title={track.name}
+                  onClick={() => choose(() => onSelect(track.id))}
+                  className={`${ITEM_BASE} flex-col items-stretch gap-1 py-1.5 ${
+                    checked ? 'text-accent' : 'text-secondary hover:text-primary'
+                  } hover:bg-surface-hover`}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="w-3.5 h-3.5 flex-shrink-0 flex items-center justify-center" aria-hidden="true">
+                      {checked && <Check className="w-3.5 h-3.5" />}
+                    </span>
+                    <span className="truncate flex-1 min-w-0">{track.shortName}</span>
+                    {p && (
+                      <span className="font-mono tabular-nums text-xs text-muted flex-shrink-0">
+                        {p.done}/{p.total}
+                      </span>
+                    )}
                   </span>
-                  <span className="truncate flex-1 min-w-0">{track.shortName}</span>
                   {p && (
-                    <span className="font-mono tabular-nums text-xs text-muted flex-shrink-0">
-                      {p.done}/{p.total}
+                    <span
+                      aria-hidden="true"
+                      className="ml-[22px] block h-1 rounded-full bg-surface-hover overflow-hidden"
+                    >
+                      <span className="block h-full bg-accent" style={{ width: `${p.percent}%` }} />
                     </span>
                   )}
-                </span>
-                {p && (
-                  <span
-                    aria-hidden="true"
-                    className="ml-[22px] block h-1 rounded-full bg-surface-hover overflow-hidden"
-                  >
-                    <span className="block h-full bg-accent" style={{ width: `${p.percent}%` }} />
-                  </span>
+                </button>
+                {checked && (
+                  <div id={noteId} role="none" className="px-2 pb-1.5 pl-[30px] text-[11px] leading-snug text-muted">
+                    <div>{track.name}</div>
+                    {origin && <div>{origin}</div>}
+                  </div>
                 )}
-              </button>
+              </React.Fragment>
             );
           })}
           </div>

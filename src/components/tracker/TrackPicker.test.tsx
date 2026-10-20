@@ -39,7 +39,7 @@ describe('TrackPicker', () => {
 
   it('labels the button with the short name and progress for one track, and "N tracks" for several', () => {
     const { trigger } = setup([oscp.id]);
-    expect(trigger).toHaveTextContent(`${oscp.shortName}3/10`);
+    expect(trigger).toHaveTextContent(`${oscp.shortName} · 3/10`);
     expect(trigger).toHaveAccessibleName(`Tracks: ${oscp.shortName} 3/10`);
   });
 
@@ -120,5 +120,36 @@ describe('TrackPicker', () => {
     fireEvent.click(trigger);
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('shows an inline x that clears the track without opening the menu', () => {
+    const { onSelect } = setup([oscp.id]);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear track' }));
+    expect(onSelect).toHaveBeenCalledWith(null);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('offers no x while nothing is selected, and "Clear tracks" in multi mode', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: /^Clear track/ })).not.toBeInTheDocument();
+  });
+
+  it('labels the x "Clear tracks" in multi mode', () => {
+    const { onSelect } = setup([oscp.id, cpts.id]);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear tracks' }));
+    expect(onSelect).toHaveBeenCalledWith(null);
+  });
+
+  it('shows the full name and origin under the active row only', () => {
+    const { trigger } = setup([oscp.id]);
+    fireEvent.click(trigger);
+    const active = screen.getByRole('menuitemradio', { name: new RegExp(oscp.shortName) });
+    expect(active.getAttribute('aria-describedby')).toBeTruthy();
+    const note = document.getElementById(active.getAttribute('aria-describedby')!)!;
+    expect(note).toHaveTextContent(oscp.name);
+    if (oscp.source) expect(note).toHaveTextContent(`Source: ${oscp.source}`);
+    if (oscp.asOf) expect(note).toHaveTextContent(`As of ${oscp.asOf}`);
+    const other = screen.getByRole('menuitemradio', { name: /CPTS Track/ });
+    expect(other).not.toHaveAttribute('aria-describedby');
   });
 });

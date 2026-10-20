@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -12,7 +12,7 @@ import {
   Calendar,
   Trophy
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useCtfStore } from '../../store/useCtfStore';
 import { formatSeconds, formatDurationHuman } from '../../utils/helpers';
 import { Difficulty, Platform } from '../../types';
@@ -20,6 +20,7 @@ import { classifyMachine } from '../../utils/categoryUtils';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { CyberButton } from '../common/CyberButton';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
+import { ReadinessSection } from './ReadinessSection';
 import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore';
 import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
 import { PageHeader } from '../common/PageHeader';
@@ -170,6 +171,7 @@ export const AnalyticsView: React.FC = () => {
   const weeklyRootTarget = useGoalsStore((s) => s.weeklyRootTarget);
   const setWeeklyRootTarget = useGoalsStore((s) => s.setWeeklyRootTarget);
   const navigate = useNavigate();
+  const location = useLocation();
   const [goalDraft, setGoalDraft] = useState('');
   const [editingGoal, setEditingGoal] = useState(false);
   const radarId = useId();
@@ -398,6 +400,14 @@ export const AnalyticsView: React.FC = () => {
     Object.keys(heatmapCounts).length > 0;
   const hasRooted = rootedMachines.length > 0;
 
+  // Arriving from the sidebar review badge: bring the review queue into view once it is rendered.
+  const scrollTarget = (location.state as { scrollTo?: string } | null)?.scrollTo;
+  useEffect(() => {
+    if (scrollTarget !== 'review' || !hasData) return;
+    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('review')?.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  }, [scrollTarget, hasData, location.key]);
+
   const saveGoal = () => {
     const n = Number(goalDraft);
     setWeeklyRootTarget(Number.isFinite(n) && n >= 1 ? n : null);
@@ -558,6 +568,8 @@ export const AnalyticsView: React.FC = () => {
           <p className="text-xs text-muted">Set a weekly target to track how many boxes you root.</p>
         )}
       </motion.div>
+
+      <ReadinessSection />
 
       {/* Main Grid: Skill Radar Chart + Difficulty Progress Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -29,3 +29,10 @@ export function isDueForReview(machine: Pick<Machine, 'nextReviewAt'> | null | u
   const at = machine?.nextReviewAt;
   return typeof at === 'number' && Number.isFinite(at) && at <= now;
 }
+
+/** Number of machines whose scheduled review is due at or before `now`. */
+export function countDueReviews(machines: ReadonlyArray<Pick<Machine, 'nextReviewAt'>>, now: number): number {
+  let n = 0;
+  for (const m of machines) if (isDueForReview(m, now)) n++;
+  return n;
+}

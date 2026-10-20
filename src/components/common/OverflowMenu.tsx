@@ -19,6 +19,10 @@ export interface OverflowMenuProps {
   /** Which edge of the trigger the menu aligns to (also the transform origin). */
   align?: 'left' | 'right';
   className?: string;
+  /** Replaces the icon-only trigger content, e.g. a text label with a chevron. */
+  triggerContent?: React.ReactNode;
+  /** Classes for the trigger when `triggerContent` is used. */
+  triggerClassName?: string;
 }
 
 /**
@@ -33,6 +37,8 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
   label = 'More actions',
   align = 'right',
   className = '',
+  triggerContent,
+  triggerClassName,
 }) => {
   const [open, setOpen] = useState(false);
   const [instant, setInstant] = useState(false);
@@ -139,9 +145,13 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
         aria-label={label}
         onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-secondary transition-[background-color,color,transform] duration-150 hover:bg-surface-hover hover:text-primary active:scale-[0.97] aria-expanded:bg-surface-hover aria-expanded:text-primary [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
+        className={
+          triggerContent
+            ? triggerClassName
+            : 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-secondary transition-[background-color,color,transform] duration-150 hover:bg-surface-hover hover:text-primary active:scale-[0.97] aria-expanded:bg-surface-hover aria-expanded:text-primary [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11'
+        }
       >
-        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+        {triggerContent ?? <MoreHorizontal className="h-4 w-4" aria-hidden="true" />}
       </button>
 
       <AnimatePresence>

@@ -23,6 +23,7 @@ import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
+import { countDueReviews } from '../../utils/spacedRepetition';
 
 export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -70,6 +71,9 @@ export const Sidebar: React.FC = () => {
     return { totalMachines: total, rootedMachines: rooted, footholdMachines: foothold, pwnPercentage: pct };
   }, [machines]);
 
+  // Reviews due, recomputed when the machine list changes
+  const dueReviews = useMemo(() => countDueReviews(machines, Date.now()), [machines]);
+
   const navItems = [
     {
       id: 'tracker',
@@ -109,6 +113,7 @@ export const Sidebar: React.FC = () => {
       path: '/analytics',
       label: 'Skill Radar & Analytics',
       icon: BarChart3,
+      dueBadge: dueReviews,
     },
     {
       id: 'exam',
@@ -121,7 +126,8 @@ export const Sidebar: React.FC = () => {
 
   const handleTabClick = (item: typeof navItems[number]) => {
     setActiveTab(item.id);
-    navigate(item.path);
+    if (item.id === 'analytics' && dueReviews > 0) navigate(item.path, { state: { scrollTo: 'review' } });
+    else navigate(item.path);
     if (soundEnabled) playCyberSound('click');
   };
 
@@ -187,7 +193,22 @@ export const Sidebar: React.FC = () => {
                       {item.badge}
                     </span>
                   )}
+                  {'dueBadge' in item && item.dueBadge > 0 && (
+                    <span
+                      data-testid="review-due-badge"
+                      title={`${item.dueBadge} ${item.dueBadge === 1 ? 'review' : 'reviews'} due`}
+                      className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning flex-shrink-0 font-mono font-bold whitespace-nowrap tabular-nums"
+                    >
+                      {item.dueBadge}
+                      <span className="sr-only"> {item.dueBadge === 1 ? 'review' : 'reviews'} due</span>
+                    </span>
+                  )}
                 </div>
+              )}
+              {collapsed && 'dueBadge' in item && item.dueBadge > 0 && (
+                <span data-testid="review-due-dot" className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-warning">
+                  <span className="sr-only">{item.dueBadge} {item.dueBadge === 1 ? 'review' : 'reviews'} due</span>
+                </span>
               )}
             </motion.button>
           );

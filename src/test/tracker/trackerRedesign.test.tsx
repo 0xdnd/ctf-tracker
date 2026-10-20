@@ -81,13 +81,22 @@ describe('Wave 2 lane B - tracker redesign', () => {
 
       expect(useCtfStore.getState().filters.selectedTrack).toBe('tjnull-oscp');
       expect(useCtfStore.getState().filters.selectedTracks).toEqual(['tjnull-oscp']);
-      expect(screen.getByText('Track: OSCP Track')).toBeInTheDocument();
-      expect(screen.getByRole('progressbar', { name: /OSCP Track progress/ })).toBeInTheDocument();
+      // The track shows on the Tracks button, not as a pill or a strip
+      expect(screen.queryByText('Track: OSCP Track')).toBeNull();
+      expect(screen.queryByRole('progressbar')).toBeNull();
 
       fireEvent.click(screen.getAllByRole('button', { name: /^Tracks: OSCP Track/ })[0]);
       fireEvent.click(screen.getByRole('menuitem', { name: 'Clear track' }));
       expect(useCtfStore.getState().filters.selectedTracks).toEqual([]);
-      expect(screen.queryByRole('progressbar')).toBeNull();
+    });
+
+    it('the inline x on the Tracks button clears the track', () => {
+      useCtfStore.getState().setFilters({ selectedTrack: 'tjnull-oscp', selectedTracks: ['tjnull-oscp'] });
+      wrap(<TrackerView />);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Clear track' })[0]);
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual([]);
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('ALL');
+      expect(screen.queryByRole('button', { name: 'Clear track' })).toBeNull();
     });
 
     it('opens the filter drawer from "Pick several…"', () => {
@@ -128,16 +137,35 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(screen.getAllByRole('button', { name: /^Tracks: CPTS Track/ }).length).toBeGreaterThan(0);
     });
 
-    it('hide completed in the track strip toggles the status filter', () => {
+    it('has no Hide completed toggle: the Unsolved status segment covers it', () => {
       useCtfStore.getState().setFilters({ selectedTrack: 'tjnull-oscp', selectedTracks: ['tjnull-oscp'] });
       wrap(<TrackerView />);
-      const toggle = screen.getByRole('button', { name: 'Hide completed' });
-      expect(toggle).toHaveAttribute('aria-pressed', 'false');
-      fireEvent.click(toggle);
+      expect(screen.queryByRole('button', { name: 'Hide completed' })).toBeNull();
+      const group = screen.getByRole('group', { name: 'Target status' });
+      fireEvent.click(within(group).getByRole('button', { name: 'Unsolved' }));
       expect(useCtfStore.getState().filters.selectedStatus).toBe('UNCOMPLETED');
-      expect(screen.getByRole('button', { name: 'Hide completed' })).toHaveAttribute('aria-pressed', 'true');
-      fireEvent.click(screen.getByRole('button', { name: 'Hide completed' }));
-      expect(useCtfStore.getState().filters.selectedStatus).toBe('ALL');
+    });
+
+    it('shows the next track machine as muted inline text that opens its detail', () => {
+      useCtfStore.setState({
+        machines: [makeMachine({ id: 'thm-kenobi', name: 'Kenobi', platform: 'THM', status: 'backlog', certifications: ['OSCP'] })],
+      });
+      useCtfStore.getState().setFilters({ selectedTrack: 'tjnull-oscp', selectedTracks: ['tjnull-oscp'] });
+      wrap(<TrackerView />);
+      expect(screen.queryByRole('region', { name: /track progress/ })).toBeNull();
+      const next = screen.getByRole('button', { name: /^Next: Kenobi/ });
+      expect(next).toBeInTheDocument();
+      // No other filter is active, so no Clear all
+      expect(screen.queryByRole('button', { name: /Clear all/i })).toBeNull();
+      fireEvent.click(next);
+      expect(useCtfStore.getState().selectedMachineId).toBe('thm-kenobi');
+    });
+
+    it('omits the Next text without a single track and keeps Clear all for other filters', () => {
+      useCtfStore.getState().setFilters({ selectedOs: 'Linux' });
+      wrap(<TrackerView />);
+      expect(screen.queryByRole('button', { name: /^Next:/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /Clear all/i })).toBeInTheDocument();
     });
 
     it('synchronizes selectedTrack and selectedTracks bidirectionally in useCtfStore', () => {
@@ -198,45 +226,40 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(useCtfStore.getState().filters.searchQuery).toBe('');
     });
 
-    it('readiness panel is collapsed by default and toggles on demand', () => {
+    it('shows the result count only while filters hide machines', () => {
       wrap(<TrackerView />);
-      // Not mounted by default (uncluttered view)
-      expect(screen.queryByRole('region', { name: 'Readiness summary' })).toBeNull();
+      expect(screen.queryByText(/\d+ of \d+/)).toBeNull();
+      act(() => {
+        useCtfStore.getState().setFilters({ searchQuery: 'Lame' });
+      });
+      expect(screen.getAllByText('1 of 2').length).toBeGreaterThan(0);
+    });
 
-      // Click toolbar Readiness button to expand
-      const readinessBtn = screen.getAllByRole('button', { name: 'Toggle readiness panel' })[0];
-      fireEvent.click(readinessBtn);
-      expect(screen.getByRole('region', { name: 'Readiness summary' })).toBeInTheDocument();
-
-      // Click dismiss button to collapse
-      fireEvent.click(screen.getByRole('button', { name: 'Close readiness overview' }));
+    it('has no readiness button in the toolbar', () => {
+      wrap(<TrackerView />);
+      expect(screen.queryByRole('button', { name: 'Toggle readiness panel' })).toBeNull();
       expect(screen.queryByRole('region', { name: 'Readiness summary' })).toBeNull();
     });
 
-    it('opens Bulk Import modal from toolbar button', () => {
+    it('offers scan output and bulk import from one Import menu', () => {
       wrap(<TrackerView />);
-      const bulkImportBtn = screen.getAllByRole('button', { name: 'Bulk import scan records' })[0];
-      fireEvent.click(bulkImportBtn);
+      const trigger = screen.getByRole('button', { name: 'Import' });
+      expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+      fireEvent.click(trigger);
+      const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
+      expect(items).toEqual(['Import scan output', 'Bulk import scan records']);
+
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Import scan output' }));
+      expect(useCtfStore.getState().reconAutomationModalOpen).toBe(true);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Bulk import scan records' }));
       expect(screen.getByRole('dialog', { name: 'Import multiple records' })).toBeInTheDocument();
     });
 
-    it('toggles review due filter and shows active filter chip', () => {
-      useCtfStore.setState({
-        machines: [
-          makeMachine({ id: 'box-due', status: 'root', nextReviewAt: Date.now() - 1000 }),
-        ],
-      });
+    it('keeps the Due for review filter chip removable', () => {
+      useCtfStore.getState().setFilters({ searchQuery: 'review:due' });
       wrap(<TrackerView />);
-      // Open readiness panel
-      fireEvent.click(screen.getAllByRole('button', { name: 'Toggle readiness panel' })[0]);
-
-      // Click review due
-      const reviewDueBtn = screen.getByRole('button', { name: /Due for review/i });
-      fireEvent.click(reviewDueBtn);
-      expect(useCtfStore.getState().filters.searchQuery).toContain('review:due');
-      expect(screen.getByLabelText('Remove filter Due for review')).toBeInTheDocument();
-
-      // Remove filter via chip
       fireEvent.click(screen.getByLabelText('Remove filter Due for review'));
       expect(useCtfStore.getState().filters.searchQuery).not.toContain('review:due');
     });
@@ -249,6 +272,20 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(screen.getByRole('group', { name: 'Platform' })).toBeInTheDocument();
       expect(screen.getByRole('group', { name: 'Operating system' })).toBeInTheDocument();
       expect(screen.getByRole('group', { name: 'Difficulty' })).toBeInTheDocument();
+    });
+
+    it('holds the Hide empty lanes setting for the Kanban board only', () => {
+      useCtfStore.setState({ filterDrawerOpen: true, viewMode: 'kanban' });
+      const { unmount } = render(<FilterDrawer />);
+      const toggle = screen.getByRole('switch', { name: /Hide empty lanes/ });
+      expect(toggle).toHaveAttribute('aria-checked', 'false');
+      fireEvent.click(toggle);
+      expect(useCtfStore.getState().filters.hideEmptyLanes).toBe(true);
+      unmount();
+
+      useCtfStore.setState({ viewMode: 'table' });
+      render(<FilterDrawer />);
+      expect(screen.queryByRole('switch', { name: /Hide empty lanes/ })).toBeNull();
     });
   });
 

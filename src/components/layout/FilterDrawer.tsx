@@ -189,6 +189,7 @@ export const FilterDrawer: React.FC = () => {
     resetFilters,
     machines: liveMachines,
     soundEnabled,
+    viewMode,
   } = useCtfStore(
     useShallow((s) => ({
       filterDrawerOpen: s.filterDrawerOpen,
@@ -198,6 +199,7 @@ export const FilterDrawer: React.FC = () => {
       resetFilters: s.resetFilters,
       machines: s.machines,
       soundEnabled: s.soundEnabled,
+      viewMode: s.viewMode,
     }))
   );
 
@@ -849,6 +851,33 @@ export const FilterDrawer: React.FC = () => {
                   />
                 </label>
               </div>
+
+              {viewMode === 'kanban' && (
+                <div className="pt-2 border-t border-subtle">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(filters.hideEmptyLanes)}
+                    onClick={() => {
+                      setFilters({ hideEmptyLanes: !filters.hideEmptyLanes });
+                      if (soundEnabled) playCyberSound('toggle');
+                    }}
+                    className="w-full flex items-center justify-between gap-3 text-left cursor-pointer group py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <span>
+                      <span className="text-xs font-semibold text-secondary group-hover:text-accent transition-colors">
+                        Hide empty lanes
+                      </span>
+                      <span className="block text-xs text-tertiary">
+                        Kanban board only: collapse lanes with no targets
+                      </span>
+                    </span>
+                    <span aria-hidden="true" className={`w-9 h-5 flex-shrink-0 rounded-full transition-colors flex items-center px-0.5 ${filters.hideEmptyLanes ? 'bg-accent' : 'bg-surface-hover'}`}>
+                      <span className={`w-4 h-4 rounded-full bg-surface-card transition-transform ${filters.hideEmptyLanes ? 'translate-x-4' : 'translate-x-0 bg-surface-hover'}`} />
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           </AccordionSection>
 

@@ -135,7 +135,7 @@ describe('AnalyticsView', () => {
     ])('heatmap places a 2026-10-06T23:30:00Z root pwn on the local day in %s', (tz, label) => {
       process.env.TZ = tz;
       useCtfStore.setState({
-        machines: [{ id: 'm1', rootPwnedAt: '2026-10-06T23:30:00Z' }] as never,
+        machines: [{ id: 'm1', tags: [], rootPwnedAt: '2026-10-06T23:30:00Z' }] as never,
         activitySessions: [],
       });
       render(<MemoryRouter><AnalyticsView /></MemoryRouter>);

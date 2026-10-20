@@ -6,11 +6,9 @@ import {
   Kanban, 
   Table, 
   LayoutGrid, 
-  Target,
   Zap,
   ArrowUpDown,
-  Eye,
-  EyeOff,
+  ChevronDown,
   SlidersHorizontal,
   Share2,
   X,
@@ -24,17 +22,16 @@ import { createMachineFilter, getActiveTrackIds } from '../../utils/machineFilte
 import { getTrackProgress, type TrackProgress } from '../../utils/trackProgress';
 import { getOrderedActiveTrack, resolveSortMode, sortMachines } from '../../utils/trackerSort';
 import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
-import { computeReadiness } from '../../utils/readiness';
 import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
 import { TrackPicker } from './TrackPicker';
-import { TrackStrip } from './TrackStrip';
 import { parseTrackParam } from '../../utils/trackUrl';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
 const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
+import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
 import { CanvasSkeleton, ViewSkeleton } from '../common/Skeleton';
 import { PRACTICE_TRACKS, TRACK_BY_ID } from '../../data/tracksData';
 import { 
@@ -300,11 +297,7 @@ export const TrackerView: React.FC = () => {
     if (filters.selectedOs && filters.selectedOs !== 'ALL') count++;
     if (filters.selectedAvailability && filters.selectedAvailability !== 'ALL') count++;
     if (filters.selectedCert !== 'ALL') count++;
-    if (filters.selectedTracks && filters.selectedTracks.length > 0) {
-      count += filters.selectedTracks.length;
-    } else if (filters.selectedTrack && filters.selectedTrack !== 'ALL') {
-      count++;
-    }
+    // Tracks are counted on their own button, not here.
     if (filters.selectedStatus && filters.selectedStatus !== 'ALL') count++;
     if (filters.selectedLanguage && filters.selectedLanguage !== 'ALL') count++;
     if (filters.selectedAreaOfInterest && filters.selectedAreaOfInterest !== 'ALL') count++;
@@ -378,29 +371,6 @@ export const TrackerView: React.FC = () => {
         onRemove: () => setFilters({ selectedStatus: 'ALL' }),
       });
     }
-    if (filters.selectedTracks && filters.selectedTracks.length > 0) {
-      filters.selectedTracks.forEach((trackId) => {
-        const tr = TRACK_BY_ID.get(trackId);
-        pills.push({
-          id: `track-${trackId}`,
-          label: `Track: ${tr?.shortName || trackId}`,
-          onRemove: () => {
-            const next = filters.selectedTracks.filter((x) => x !== trackId);
-            setFilters({
-              selectedTracks: next,
-              selectedTrack: next.length === 1 ? next[0] : (next.length > 1 ? 'MULTI' : 'ALL'),
-            });
-          },
-        });
-      });
-    } else if (filters.selectedTrack && filters.selectedTrack !== 'ALL') {
-      const tr = TRACK_BY_ID.get(filters.selectedTrack);
-      pills.push({
-        id: 'track',
-        label: `Track: ${tr?.shortName || filters.selectedTrack}`,
-        onRemove: () => setFilters({ selectedTrack: 'ALL', selectedTracks: [] }),
-      });
-    }
     if (filters.selectedLanguage && filters.selectedLanguage !== 'ALL') {
       pills.push({
         id: 'lang',
@@ -454,8 +424,6 @@ export const TrackerView: React.FC = () => {
   }, [filters, setFilters, dueFilterOn, toggleDueFilter]);
 
   const [multiImportOpen, setMultiImportOpen] = useState(false);
-  const [readinessOpen, setReadinessOpen] = useState(false);
-  const readiness = useMemo(() => computeReadiness(machines, Date.now()), [machines]);
 
   const activeTrackIds = getActiveTrackIds(filters);
   const activeTrack = activeTrackIds.length === 1 ? TRACK_BY_ID.get(activeTrackIds[0]) : undefined;
@@ -469,6 +437,34 @@ export const TrackerView: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   };
 
+  // The count only shows while filters hide part of the catalog.
+  const hiddenByFilters = filteredMachines.length !== machines.length;
+  const countLabel = (
+    <span className="font-mono tabular-nums text-xs text-muted whitespace-nowrap px-1" aria-live="polite">
+      {hiddenByFilters ? `${filteredMachines.length} of ${machines.length}` : ''}
+    </span>
+  );
+
+  const importItems: OverflowItem[] = [
+    {
+      id: 'scan',
+      label: 'Import scan output',
+      icon: <Zap className="w-3.5 h-3.5" />,
+      onSelect: () => setReconAutomationModalOpen(true),
+    },
+    {
+      id: 'bulk',
+      label: 'Bulk import scan records',
+      icon: <Upload className="w-3.5 h-3.5" />,
+      onSelect: () => {
+        setMultiImportOpen(true);
+        if (soundEnabled) playCyberSound('click');
+      },
+    },
+  ];
+
+  const nextMachine = activeTrack ? activeTrackProgress?.next ?? null : null;
+  const hasOtherFilters = activeFilterPills.length > 0;
   return (
     <div className="space-y-3 w-full">
       <MultiRecordImportModal
@@ -515,16 +511,6 @@ export const TrackerView: React.FC = () => {
               )}
             </div>
 
-            <TrackPicker
-              tracks={PRACTICE_TRACKS}
-              progress={trackProgress}
-              selectedTrackIds={activeTrackIds}
-              onSelect={selectTrack}
-              onOpenMulti={openTrackDrawer}
-              buttonClassName={`${TOOLBAR_BTN} h-11 px-3 max-w-[9.5rem]`}
-              className="flex-shrink-0"
-            />
-
             <button
               type="button"
               onClick={() => { setFilterDrawerOpen(true); if (soundEnabled) playCyberSound('click'); }}
@@ -539,6 +525,30 @@ export const TrackerView: React.FC = () => {
               {activeFilterCount > 0 && (
                 <span className="font-mono text-xs tabular-nums">{activeFilterCount}</span>
               )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <TrackPicker
+              tracks={PRACTICE_TRACKS}
+              progress={trackProgress}
+              selectedTrackIds={activeTrackIds}
+              onSelect={selectTrack}
+              onOpenMulti={openTrackDrawer}
+              buttonClassName={`${TOOLBAR_BTN} h-11 px-3 flex-1 justify-start`}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setMultiImportOpen(true);
+                if (soundEnabled) playCyberSound('click');
+              }}
+              className={`${TOOLBAR_BTN} h-11 px-2.5`}
+              title="Bulk import scan records"
+              aria-label="Bulk import scan records"
+            >
+              <Upload className="w-4 h-4" />
             </button>
           </div>
 
@@ -578,48 +588,14 @@ export const TrackerView: React.FC = () => {
                 <LayoutGrid className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setReadinessOpen((prev) => !prev);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`${TOOLBAR_BTN} h-11 px-2.5 text-xs flex items-center gap-1 ${readinessOpen ? 'border-accent text-accent' : ''}`}
-                title="Toggle readiness summary"
-                aria-label="Toggle readiness panel"
-              >
-                <Target className="w-4 h-4 text-accent" />
-                <span className="font-mono">{readiness.score}%</span>
-                {readiness.dueItems.length > 0 && (
-                  <span className="px-1 rounded-full bg-warning/20 text-warning text-[10px] font-mono font-bold">
-                    {readiness.dueItems.length}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMultiImportOpen(true);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className={`${TOOLBAR_BTN} h-11 px-2.5`}
-                title="Bulk import scan records"
-                aria-label="Bulk import scan records"
-              >
-                <Upload className="w-4 h-4" />
-              </button>
-              <div className="font-mono tabular-nums text-xs text-muted pl-1" aria-live="polite">
-                <span className="text-primary">{filteredMachines.length}</span> / {machines.length}
-              </div>
-            </div>
+            {countLabel}
           </div>
         </div>
 
         {/* DESKTOP (>= md): search, status, then filters / sort / count / view */}
         <div className="hidden md:flex flex-wrap items-center gap-2">
           {/* Search */}
-          <div className="relative h-8 w-52 2xl:w-60 flex-shrink-0 group">
+          <div className="relative h-8 w-44 2xl:w-60 flex-shrink-0 group">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-tertiary group-focus-within:text-accent transition-colors pointer-events-none" />
             <input
               type="text"
@@ -725,56 +701,23 @@ export const TrackerView: React.FC = () => {
               />
             </div>
 
-            {/* Result count (telemetry) */}
-            <div className="font-mono tabular-nums text-xs text-muted whitespace-nowrap px-1" aria-live="polite">
-              <span className="text-primary">{filteredMachines.length}</span> / {machines.length}
-            </div>
+            {/* Result count: only while filters hide machines */}
+            {hiddenByFilters && countLabel}
 
-            {/* Scan importer */}
-            <button
-              type="button"
-              onClick={() => setReconAutomationModalOpen(true)}
-              className={`${TOOLBAR_BTN} h-8 px-2.5`}
-              title="Import scan output"
-              aria-label="Import scan output"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span className="hidden 2xl:inline">Import</span>
-            </button>
-
-            {/* Bulk Scan Importer */}
-            <button
-              type="button"
-              onClick={() => { setMultiImportOpen(true); if (soundEnabled) playCyberSound('click'); }}
-              className={`${TOOLBAR_BTN} h-8 px-2.5`}
-              title="Bulk import targets from Nmap / NetExec multi-host scan"
-              aria-label="Bulk import scan records"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span className="hidden 2xl:inline">Bulk Import</span>
-            </button>
-
-            {/* Exam Readiness & Review Queue Toggle */}
-            <button
-              type="button"
-              onClick={() => {
-                setReadinessOpen((prev) => !prev);
-                if (soundEnabled) playCyberSound('click');
-              }}
-              aria-expanded={readinessOpen}
-              className={`${TOOLBAR_BTN} h-8 px-2.5 ${readinessOpen ? 'border-accent text-accent' : ''}`}
-              title="Exam readiness score and spaced repetition review queue"
-              aria-label="Toggle readiness panel"
-            >
-              <Target className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden 2xl:inline">Readiness</span>
-              <span className="font-mono tabular-nums font-semibold">{readiness.score}%</span>
-              {readiness.dueItems.length > 0 && (
-                <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-warning/20 text-warning text-[10px] font-mono font-bold">
-                  {readiness.dueItems.length}
-                </span>
-              )}
-            </button>
+            {/* Import: scan output and bulk records */}
+            <OverflowMenu
+              label="Import"
+              items={importItems}
+              align="right"
+              triggerClassName={`${TOOLBAR_BTN} h-8 px-2.5`}
+              triggerContent={
+                <>
+                  <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span className="hidden 2xl:inline">Import</span>
+                  <ChevronDown className="w-3 h-3 text-tertiary" aria-hidden="true" />
+                </>
+              }
+            />
 
             {/* View switcher */}
             <div role="group" aria-label="View mode" className={SEGMENT_WRAP}>
@@ -822,27 +765,12 @@ export const TrackerView: React.FC = () => {
               >
                 <Share2 className="w-3.5 h-3.5" />
               </button>
-              {viewMode === 'kanban' && (
-                <>
-                  <div className="w-px h-4 bg-surface-hover mx-0.5" aria-hidden="true" />
-                  <button
-                    type="button"
-                    aria-pressed={Boolean(filters.hideEmptyLanes)}
-                    onClick={() => { setFilters({ hideEmptyLanes: !filters.hideEmptyLanes }); if (soundEnabled) playCyberSound('toggle'); }}
-                    className={`${VIEW_BTN} w-7 h-7 ${filters.hideEmptyLanes ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                    title={filters.hideEmptyLanes ? 'Show Empty Lanes' : 'Hide Empty Lanes'}
-                    aria-label={filters.hideEmptyLanes ? 'Show Empty Lanes' : 'Hide Empty Lanes'}
-                  >
-                    {filters.hideEmptyLanes ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </>
-              )}
             </div>
           </div>
         </div>
 
         {/* Active filters: chips, only when something is applied */}
-        {activeFilterPills.length > 0 && (
+        {(hasOtherFilters || nextMachine) && (
           <div className="flex flex-wrap items-center gap-1.5">
             {activeFilterPills.map((pill) => (
               <span
@@ -864,109 +792,39 @@ export const TrackerView: React.FC = () => {
                 </button>
               </span>
             ))}
-            <button
-              type="button"
-              onClick={() => {
-                resetFilters();
-                if (soundEnabled) playCyberSound('toggle');
-              }}
-              className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-medium text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
-              title="Reset all filters"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Clear all</span>
-            </button>
+            {hasOtherFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  if (soundEnabled) playCyberSound('toggle');
+                }}
+                className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs font-medium text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
+                title="Reset all filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Clear all</span>
+              </button>
+            )}
+            {nextMachine && (
+              <button
+                type="button"
+                onClick={() => setSelectedMachineId(nextMachine.id)}
+                className="inline-flex items-center gap-1 min-h-6 px-1 rounded-md text-xs text-muted hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:min-h-11"
+              >
+                <span className="truncate max-w-[16rem]">Next: {nextMachine.name}</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            )}
           </div>
         )}
       </div>
-
-      {/* Collapsible Readiness & Spaced Repetition Panel */}
-      {readinessOpen && (
-        <div
-          role="region"
-          aria-label="Readiness summary"
-          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-subtle bg-surface-card p-3 text-xs shadow-sm"
-        >
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 min-w-0">
-            <span className="text-secondary flex items-center gap-1.5">
-              <Target className="w-4 h-4 text-accent flex-shrink-0" />
-              <span>Readiness: <strong className="font-mono tabular-nums text-primary">{readiness.score}%</strong></span>
-              <span className="text-muted">({readiness.solved}/{readiness.attempted} solved)</span>
-            </span>
-
-            {readiness.weakestTags.length > 0 && (
-              <span className="text-secondary hidden sm:inline">
-                Weakest:{' '}
-                <span className="text-primary font-mono">
-                  {readiness.weakestTags.map((t) => `${t.tag} (${t.solved}/${t.attempted})`).join(', ')}
-                </span>
-              </span>
-            )}
-
-            {readiness.nextSuggested.length > 0 && (
-              <span className="text-secondary min-w-0 truncate">
-                Next:{' '}
-                {readiness.nextSuggested.map((m, i) => (
-                  <React.Fragment key={m.id}>
-                    {i > 0 && ', '}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMachineId(m.id)}
-                      className="text-accent hover:underline cursor-pointer font-medium"
-                    >
-                      {m.name}
-                    </button>
-                  </React.Fragment>
-                ))}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              type="button"
-              onClick={toggleDueFilter}
-              disabled={readiness.dueItems.length === 0 && !dueFilterOn}
-              aria-pressed={dueFilterOn}
-              className={`${TOOLBAR_BTN} h-7 px-2.5 disabled:opacity-40 disabled:cursor-not-allowed ${
-                dueFilterOn ? 'border-accent text-accent' : ''
-              }`}
-              title="Show only items due for review"
-            >
-              <span>Due for review</span>
-              <span className="font-mono tabular-nums font-semibold">{readiness.dueItems.length}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setReadinessOpen(false)}
-              className="w-7 h-7 flex items-center justify-center rounded text-tertiary hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer"
-              title="Close readiness overview"
-              aria-label="Close readiness overview"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Slide-over Filter Drawer */}
       {filterDrawerSeen && (
         <React.Suspense fallback={null}>
           <FilterDrawer />
         </React.Suspense>
-      )}
-
-      {activeTrack && activeTrackProgress && (
-        <TrackStrip
-          track={activeTrack}
-          progress={activeTrackProgress}
-          onOpenMachine={setSelectedMachineId}
-          hideCompleted={filters.selectedStatus === 'UNCOMPLETED'}
-          onToggleHideCompleted={() => {
-            setFilters({ selectedStatus: filters.selectedStatus === 'UNCOMPLETED' ? 'ALL' : 'UNCOMPLETED' });
-            if (soundEnabled) playCyberSound('toggle');
-          }}
-        />
       )}
 
       {/* Main View Renderer */}
