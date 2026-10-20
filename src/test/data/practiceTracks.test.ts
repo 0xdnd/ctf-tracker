@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import { appendActiveMachines } from '../../data/activeMachines';
-import { LIST_BASED_TRACK_IDS, PRACTICE_TRACKS, TRACK_NAME_LISTS, trackNameSlug } from '../../data/tracksData';
+import { LIST_BASED_TRACK_IDS, PRACTICE_TRACKS, TRACK_BY_ID, TRACK_NAME_LISTS, trackNameSlug } from '../../data/tracksData';
 import oscp from '../../data/trackSources/offsec-oscp.json';
 import osep from '../../data/trackSources/offsec-osep.json';
 import oswe from '../../data/trackSources/offsec-oswe.json';
@@ -12,7 +12,7 @@ import ippsec from '../../data/trackSources/ippsec-videos.json';
 const CATALOG = appendActiveMachines(INITIAL_MACHINES);
 const SOURCES = { oscp, osep, oswe, ad, ippsec };
 const track = (id: string) => {
-  const t = PRACTICE_TRACKS.find((x) => x.id === id);
+  const t = TRACK_BY_ID.get(id);
   if (!t) throw new Error(`missing track ${id}`);
   return t;
 };

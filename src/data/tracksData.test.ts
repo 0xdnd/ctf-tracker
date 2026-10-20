@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PRACTICE_TRACKS } from './tracksData';
+import { PRACTICE_TRACKS, TRACK_BY_ID } from './tracksData';
 import { Machine } from '../types';
 
 describe('PRACTICE_TRACKS Configuration', () => {
@@ -20,7 +20,7 @@ describe('PRACTICE_TRACKS Configuration', () => {
   });
 
   it('accurately identifies OSCP+ list and TJ_Null THM boxes', () => {
-    const oscpTrack = PRACTICE_TRACKS.find((t) => t.id === 'tjnull-oscp')!;
+    const oscpTrack = TRACK_BY_ID.get('tjnull-oscp')!;
     expect(oscpTrack).toBeDefined();
 
     const sampleBox1: Machine = {
@@ -58,7 +58,7 @@ describe('PRACTICE_TRACKS Configuration', () => {
   });
 
   it('accurately identifies CWEE / Advanced Web boxes', () => {
-    const cweeTrack = PRACTICE_TRACKS.find((t) => t.id === 'cwee-web')!;
+    const cweeTrack = TRACK_BY_ID.get('cwee-web')!;
     expect(cweeTrack).toBeDefined();
 
     const webBox: Machine = {
@@ -80,7 +80,7 @@ describe('PRACTICE_TRACKS Configuration', () => {
   });
 
   it('accurately identifies IppSec video masterclass boxes', () => {
-    const ippsecTrack = PRACTICE_TRACKS.find((t) => t.id === 'ippsec-vault')!;
+    const ippsecTrack = TRACK_BY_ID.get('ippsec-vault')!;
     expect(ippsecTrack).toBeDefined();
 
     const ippsecBox: Machine = {
@@ -103,7 +103,7 @@ describe('PRACTICE_TRACKS Configuration', () => {
   });
 
   it('accurately identifies Popular Hall of Fame boxes', () => {
-    const popularTrack = PRACTICE_TRACKS.find((t) => t.id === 'popular-classics')!;
+    const popularTrack = TRACK_BY_ID.get('popular-classics')!;
     expect(popularTrack).toBeDefined();
 
     const popularBox: Machine = {

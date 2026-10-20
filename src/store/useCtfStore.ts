@@ -99,6 +99,7 @@ import { useGoalsStore } from './useGoalsStore';
 import { getExamBackupSnapshot, restoreExamBackupSnapshot } from './examStore';
 import { BACKUP_FORMAT_VERSION } from '../utils/backupChecksum';
 import { toLocalDateKey } from '../utils/analyticsHeatmap';
+import type { VulnDomainId } from '../utils/categoryUtils';
 import { DEMO_SOLVED_ROSTER } from '../data/demoSolvedRoster';
 
 export type MergeBackupResult =
@@ -134,6 +135,8 @@ export interface FilterState {
   selectedAvailability?: AvailabilityFilter;
   selectedCategory: BoxVectorCategory;
   selectedVulnCategory?: string | 'ALL';
+  /** Domain tab of the vulnerability filter, shared by the filter drawer and the target list. Missing (older state) is 'all'. */
+  selectedDomain?: VulnDomainId;
   excludeActiveDirectory?: boolean;
   selectedTrack: string | 'ALL';
   selectedTracks: string[];
@@ -442,6 +445,7 @@ const DEFAULT_FILTERS: FilterState = {
   selectedAvailability: 'ALL',
   selectedCategory: 'ALL',
   selectedVulnCategory: 'ALL',
+  selectedDomain: 'all',
   excludeActiveDirectory: false,
   selectedTrack: 'ALL',
   selectedTracks: [],

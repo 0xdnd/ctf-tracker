@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FilterDrawer } from './FilterDrawer';
 import { useCtfStore } from '../../store/useCtfStore';
+import { createMachineFilter } from '../../utils/machineFilter';
+import { VULN_DOMAINS } from '../../utils/categoryUtils';
 
 describe('FilterDrawer component', () => {
   beforeEach(() => {
@@ -118,5 +120,21 @@ describe('FilterDrawer component', () => {
 
     fireEvent.click(applyBtn);
     expect(useCtfStore.getState().filterDrawerOpen).toBe(false);
+  });
+
+  it('keeps the domain in the shared filter state, so the drawer count equals the list count', () => {
+    render(<FilterDrawer />);
+    fireEvent.click(screen.getByRole('button', { name: /Vulnerability Domains/i }));
+    const web = VULN_DOMAINS.find((d) => d.id === 'web')!;
+    fireEvent.click(screen.getByRole('button', { name: web.label }));
+
+    const { filters, machines } = useCtfStore.getState();
+    expect(filters.selectedDomain).toBe('web');
+    const listCount = machines.filter(createMachineFilter(filters)).length;
+    expect(listCount).toBeLessThan(machines.length);
+    expect(screen.getByRole('button', { name: `Show ${listCount} Targets` })).toBeInTheDocument();
+
+    useCtfStore.getState().resetFilters();
+    expect(useCtfStore.getState().filters.selectedDomain).toBe('all');
   });
 });

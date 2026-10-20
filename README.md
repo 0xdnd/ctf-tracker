@@ -60,7 +60,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 - **1027-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, plus custom targets, Pro Labs and exams.
 - **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
-- **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and `CuratedPathways` for structured cert journeys (OSCP, CPTS, CRTO).
+- **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO).
 - **Target dossier:** Per-machine detail page with multi-host Nmap/scan import, methodology checklist, flags, and user/root timers.
 - **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus syntax DSL search (`syntaxSearchUtils`) and a global command palette.
 

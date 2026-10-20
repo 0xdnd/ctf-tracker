@@ -15,6 +15,15 @@ export interface PracticeTrack {
   badgeColor: string;
   accentColor: string;
   filterFn: (machine: Machine) => boolean;
+  /**
+   * List-type tracks only: the curated sequence as `PLATFORM:slug` keys (see {@link trackOrderKey}), in the
+   * order of the source list. Members that match the track by tag or certification but are not on the list sort last.
+   */
+  order?: readonly string[];
+  /** Where the list comes from (URL without protocol). Only set where the source file states it. */
+  source?: string;
+  /** Date the list was taken from its source (YYYY-MM-DD). Only set where the source file states it. */
+  asOf?: string;
 }
 
 /** Machine names per platform. A name only ever matches a row on the platform it is listed under. */
@@ -90,6 +99,21 @@ const cachedSlug = (name: string): string => {
 /** True when the row's name is listed for the row's own platform (HTB or THM). */
 const listed = (set: NameSet, m: Machine): boolean =>
   (m.platform === 'HTB' || m.platform === 'THM') && typeof m.name === 'string' && set[m.platform].has(cachedSlug(m.name));
+
+/** Key of a machine in a track's `order`: its platform plus the name slug (catalog ids do not follow the name). */
+export const trackOrderKey = (m: Pick<Machine, 'platform' | 'name'>): string => `${m.platform}:${cachedSlug(m.name)}`;
+
+/** `PLATFORM:slug` keys for the lists, HTB names first, then THM; a name repeated across lists keeps its first place. */
+const orderOf = (...lists: TrackNameList[]): string[] => {
+  const keys = new Set<string>();
+  for (const platform of ['HTB', 'THM'] as const) {
+    for (const l of lists) for (const name of l[platform]) keys.add(`${platform}:${cachedSlug(name)}`);
+  }
+  return [...keys];
+};
+
+/** "https://0xdf.gitlab.io/cheatsheets/offsec" -> "0xdf.gitlab.io/cheatsheets/offsec"; a trailing "(note)" is dropped. */
+const sourceLabel = (url: string): string => url.replace(/^https?:\/\//, '').replace(/\s*\([^)]*\)\s*$/, '');
 
 const L = TRACK_NAME_LISTS;
 const OSCP = toSet(L.oscp);
@@ -276,8 +300,31 @@ export const LIST_BASED_TRACK_IDS: ReadonlySet<string> = new Set([
   'tjnull-oscp', 'osep', 'oswe', 'cwee-web', 'popular-classics', 'ippsec-vault', 'crto-ad', 'cpts-path', 'ippsec-cpts',
 ]);
 
+type ListMeta = Pick<PracticeTrack, 'order' | 'source' | 'asOf'>;
+const listMeta = (src: { source: string; asOf: string }, ...lists: TrackNameList[]): ListMeta => ({
+  order: orderOf(...lists),
+  source: sourceLabel(src.source),
+  asOf: src.asOf,
+});
+
+/** Sequence (and, where a source file states it, source and date) of each list-type track. */
+const TRACK_LIST_META: Record<string, ListMeta> = {
+  'tjnull-oscp': listMeta(oscpSource, L.oscp),
+  osep: listMeta(osepSource, L.osep),
+  oswe: listMeta(osweSource, L.oswe),
+  'crto-ad': listMeta(adSource, L.ad),
+  'ippsec-cpts': listMeta(ippsecSource, L.ippsec),
+  'ippsec-vault': listMeta(ippsecSource, L.ippsec),
+  // Hand-kept lists: a sequence but no source file, so no source or date.
+  'cwee-web': { order: orderOf(L.cwee, L.oswe) },
+  'popular-classics': { order: orderOf(L.popular) },
+};
+
 export const PRACTICE_TRACKS: PracticeTrack[] = TRACKS.map((t) => {
   if (!LIST_BASED_TRACK_IDS.has(t.id)) return t;
   const match = t.filterFn;
-  return { ...t, filterFn: (m: Machine) => !m.isActive && match(m) };
+  return { ...t, ...TRACK_LIST_META[t.id], filterFn: (m: Machine) => !m.isActive && match(m) };
 });
+
+/** Every practice track by id; the one place to resolve a track id. */
+export const TRACK_BY_ID: ReadonlyMap<string, PracticeTrack> = new Map(PRACTICE_TRACKS.map((t) => [t.id, t]));

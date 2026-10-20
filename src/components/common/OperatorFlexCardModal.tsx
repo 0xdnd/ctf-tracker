@@ -11,7 +11,8 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
-import { PRACTICE_TRACKS } from '../../data/tracksData';
+import { TRACK_BY_ID } from '../../data/tracksData';
+import { getTrackProgress } from '../../utils/trackProgress';
 import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
 
 // Resolve an "R G B" CSS custom property to a canvas-safe rgb() string.
@@ -78,15 +79,15 @@ export const OperatorFlexCardModal: React.FC = () => {
   const htbPwned = machines.filter(m => m.platform === 'HTB' && (m.status === 'root' || m.status === 'completed' || m.status === 'foothold')).length;
   const thmPwned = machines.filter(m => m.platform === 'THM' && (m.status === 'root' || m.status === 'completed' || m.status === 'foothold')).length;
 
-  const oscpTrack = PRACTICE_TRACKS.find(t => t.id === 'tjnull-oscp');
-  const oscpTotal = oscpTrack ? machines.filter(oscpTrack.filterFn).length : 61;
-  const oscpPwned = oscpTrack ? machines.filter(oscpTrack.filterFn).filter(m => m.status === 'root' || m.status === 'completed').length : 0;
-  const oscpPct = oscpTotal > 0 ? Math.round((oscpPwned / oscpTotal) * 100) : 0;
+  const oscpTrack = TRACK_BY_ID.get('tjnull-oscp');
+  const { done: oscpPwned, total: oscpTotal, percent: oscpPct } = oscpTrack
+    ? getTrackProgress(oscpTrack, machines)
+    : { done: 0, total: 0, percent: 0 };
 
-  const cptsTrack = PRACTICE_TRACKS.find(t => t.id === 'cpts-path');
-  const cptsTotal = cptsTrack ? machines.filter(cptsTrack.filterFn).length : 89;
-  const cptsPwned = cptsTrack ? machines.filter(cptsTrack.filterFn).filter(m => m.status === 'root' || m.status === 'completed').length : 0;
-  const cptsPct = cptsTotal > 0 ? Math.round((cptsPwned / cptsTotal) * 100) : 0;
+  const cptsTrack = TRACK_BY_ID.get('cpts-path');
+  const { done: cptsPwned, total: cptsTotal, percent: cptsPct } = cptsTrack
+    ? getTrackProgress(cptsTrack, machines)
+    : { done: 0, total: 0, percent: 0 };
 
   useEffect(() => {
     if (!flexCardModalOpen) return;

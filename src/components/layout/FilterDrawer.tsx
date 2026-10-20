@@ -21,7 +21,7 @@ import {
   Filter} from 'lucide-react';
 import { useCtfStore, HtbTargetStatus } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { PRACTICE_TRACKS } from '../../data/tracksData';
+import { PRACTICE_TRACKS, TRACK_BY_ID } from '../../data/tracksData';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
 import { VULN_CATEGORIES, VULN_DOMAINS, VulnDomainId, classifyMachine } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
@@ -211,7 +211,9 @@ export const FilterDrawer: React.FC = () => {
 
   const [tagSearchTerm, setTagSearchTerm] = useState('');
   const [trackSearchTerm, setTrackSearchTerm] = useState('');
-  const [drawerDomain, setDrawerDomain] = useState<VulnDomainId>('all');
+  // The domain tab lives in the shared filter state so the drawer count and the target list agree.
+  const drawerDomain: VulnDomainId = filters.selectedDomain ?? 'all';
+  const setDrawerDomain = (selectedDomain: VulnDomainId) => setFilters({ selectedDomain });
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     target: true,
@@ -349,8 +351,8 @@ export const FilterDrawer: React.FC = () => {
 
   // Live matching target count computation
   const matchingMachinesCount = useMemo(
-    () => machines.filter(createMachineFilter(filters, { domain: drawerDomain })).length,
-    [machines, filters, drawerDomain],
+    () => machines.filter(createMachineFilter(filters)).length,
+    [machines, filters],
   );
 
   // Construct active filter chips list
@@ -408,7 +410,7 @@ export const FilterDrawer: React.FC = () => {
     }
 
     activeTrackIds.forEach((tId) => {
-      const track = PRACTICE_TRACKS.find(t => t.id === tId);
+      const track = TRACK_BY_ID.get(tId);
       list.push({
         label: `Track: ${track ? track.shortName : tId}`,
         onRemove: () => handleToggleTrack(tId)
@@ -488,7 +490,7 @@ export const FilterDrawer: React.FC = () => {
   const tracksSubtitle = useMemo(() => {
     if (activeTrackIds.length === 0) return 'No tracks selected';
     if (activeTrackIds.length === 1) {
-      const tr = PRACTICE_TRACKS.find(t => t.id === activeTrackIds[0]);
+      const tr = TRACK_BY_ID.get(activeTrackIds[0]);
       return tr ? tr.name : '1 Track selected';
     }
     return `${activeTrackIds.length} Tracks selected`;

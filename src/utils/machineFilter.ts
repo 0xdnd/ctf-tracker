@@ -1,6 +1,6 @@
 import type { Machine } from '../types';
 import type { FilterState } from '../store/useCtfStore';
-import { PRACTICE_TRACKS, type PracticeTrack } from '../data/tracksData';
+import { PRACTICE_TRACKS, TRACK_BY_ID, type PracticeTrack } from '../data/tracksData';
 import { classifyMachine, isActiveDirectory, matchesCategory, matchesDomain, type VulnDomainId } from './categoryUtils';
 import { matchesAvailability } from './availabilityFilter';
 import { parseSearchQuery, matchesSearchQuery } from './searchQuery';
@@ -29,7 +29,7 @@ export type FilterDimension =
   | 'technique';
 
 export interface MachineFilterContext {
-  /** Domain tab of the filter UI. Only applies while no specific vulnerability category is chosen. */
+  /** Overrides `filters.selectedDomain`. Only applies while no specific vulnerability category is chosen. */
   domain?: VulnDomainId;
   /** Clock for the "review:due" search operator. */
   nowMs?: number;
@@ -48,6 +48,7 @@ export type MachineFilters = Pick<
   | 'selectedAvailability'
   | 'selectedCategory'
   | 'selectedVulnCategory'
+  | 'selectedDomain'
   | 'excludeActiveDirectory'
   | 'selectedTrack'
   | 'selectedTracks'
@@ -154,7 +155,7 @@ export const createMachineFilter = (
   const status = on('status') ? filters.selectedStatus || 'ALL' : 'ALL';
   const excludeAD = on('excludeAD') && Boolean(filters.excludeActiveDirectory);
   const vulnCategory = on('vulnCategory') ? filters.selectedVulnCategory : 'ALL';
-  const domain = on('domain') ? ctx.domain ?? 'all' : 'all';
+  const domain = on('domain') ? ctx.domain ?? filters.selectedDomain ?? 'all' : 'all';
   const legacyCategory = on('category') ? filters.selectedCategory : 'ALL';
   const tags = on('tags') ? filters.selectedTags : [];
   const language = on('language') ? filters.selectedLanguage : 'ALL';
@@ -163,7 +164,7 @@ export const createMachineFilter = (
 
   // Union across all selected tracks; unknown ids (e.g. the 'MULTI' marker) resolve to nothing and are dropped.
   const activeTracks = (on('tracks') ? getActiveTrackIds(filters) : [])
-    .map((id) => PRACTICE_TRACKS.find((t) => t.id === id))
+    .map((id) => TRACK_BY_ID.get(id))
     .filter(Boolean) as PracticeTrack[];
 
   return (m: Machine): boolean => {

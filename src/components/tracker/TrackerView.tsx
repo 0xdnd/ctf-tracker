@@ -30,18 +30,21 @@ import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfSto
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
-import { createMachineFilter } from '../../utils/machineFilter';
+import { createMachineFilter, getActiveTrackIds } from '../../utils/machineFilter';
+import { getTrackProgress, type TrackProgress } from '../../utils/trackProgress';
+import { getOrderedActiveTrack, resolveSortMode, sortMachines } from '../../utils/trackerSort';
 import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
 import { computeReadiness } from '../../utils/readiness';
 import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
+import { TrackChipRow } from './TrackChipRow';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
 const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { CanvasSkeleton, ViewSkeleton } from '../common/Skeleton';
-import { PRACTICE_TRACKS } from '../../data/tracksData';
+import { PRACTICE_TRACKS, TRACK_BY_ID } from '../../data/tracksData';
 import { 
   VULN_CATEGORIES, 
   VulnDomainId, 
@@ -136,14 +139,21 @@ export const TrackerView: React.FC = () => {
 
   const sessionSeed = React.useMemo(() => Math.floor(Math.random() * 1000000), []);
 
+  // Progress per track (chip row, strip and track counts all read this one pass over the catalog)
+  const trackProgress = React.useMemo(() => {
+    const byTrack = new Map<string, TrackProgress>();
+    PRACTICE_TRACKS.forEach((t) => byTrack.set(t.id, getTrackProgress(t, machines)));
+    return byTrack;
+  }, [machines]);
+
   // Memoized machine counts per track for badge telemetry
   const trackCounts = React.useMemo(() => {
     const counts: Record<string, number> = { ALL: machines.length };
-    PRACTICE_TRACKS.forEach((t) => {
-      counts[t.id] = machines.filter(t.filterFn).length;
+    trackProgress.forEach((p, id) => {
+      counts[id] = p.total;
     });
     return counts;
-  }, [machines]);
+  }, [machines.length, trackProgress]);
 
   const dynamicOtherTrackOptions = React.useMemo<CyberSelectOption<string>[]>(() => [
     { value: 'ALL', label: 'All targets' },
@@ -270,16 +280,15 @@ export const TrackerView: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const [selectedDomain, setSelectedDomain] = useState<VulnDomainId>('all');
   // Synchronize domain tab when a specific category is selected
   React.useEffect(() => {
     if (filters.selectedVulnCategory && filters.selectedVulnCategory !== 'ALL') {
       const def = getCategoryDef(filters.selectedVulnCategory);
-      if (def) {
-        setSelectedDomain(def.domain);
+      if (def && def.domain !== (filters.selectedDomain ?? 'all')) {
+        setFilters({ selectedDomain: def.domain });
       }
     }
-  }, [filters.selectedVulnCategory]);
+  }, [filters.selectedVulnCategory, filters.selectedDomain, setFilters]);
 
   // Extract all unique tags across machines
 
@@ -321,52 +330,28 @@ export const TrackerView: React.FC = () => {
   // Deferred filter state for 120 FPS typing responsiveness
   const deferredFilters = React.useDeferredValue(filters);
 
+  // The sort the filters resolve to: with the default sort and one ordered track active, the track's order.
+  const sortMode = resolveSortMode(deferredFilters);
+  const orderedTrack = getOrderedActiveTrack(deferredFilters);
+
+  // The default entry is labelled for what it does right now: following the track, or shuffling.
+  const followsTrack = resolveSortMode(filters) === 'track';
+  const sortOptions = React.useMemo(
+    () => SORT_OPTIONS.map((o) => (o.value === 'default' && followsTrack ? { ...o, label: 'Track order' } : o)),
+    [followsTrack],
+  );
+
   // Filter and sort machines based on active filter state
   const filteredMachines = useMemo(() => {
-    const list = machines.filter(createMachineFilter(deferredFilters, { domain: selectedDomain }));
-
-    // Apply Sorting
-    if (deferredFilters.sortBy) {
-      const difficultyWeights: Record<string, number> = {
-        'Very Easy': 1,
-        'Easy': 2,
-        'Medium': 3,
-        'Hard': 4,
-        'Insane': 5,
-      };
-
-      const hashString = (str: string) => {
-        let hash = sessionSeed;
-        for (let i = 0; i < str.length; i++) {
-          hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
-        }
-        return hash;
-      };
-
-      list.sort((a, b) => {
-        let cmp = 0;
-        if (deferredFilters.sortBy === 'default') {
-          cmp = hashString(a.id) - hashString(b.id);
-        } else if (deferredFilters.sortBy === 'difficulty') {
-          const wa = difficultyWeights[a.difficulty] || 0;
-          const wb = difficultyWeights[b.difficulty] || 0;
-          cmp = wa - wb;
-        } else if (deferredFilters.sortBy === 'name') {
-          cmp = a.name.localeCompare(b.name);
-        } else if (deferredFilters.sortBy === 'ip') {
-          cmp = a.ip.localeCompare(b.ip, undefined, { numeric: true });
-        } else if (deferredFilters.sortBy === 'recent') {
-          const dateA = a.rootPwnedAt || a.userPwnedAt || a.updatedAt || a.createdAt || '';
-          const dateB = b.rootPwnedAt || b.userPwnedAt || b.updatedAt || b.createdAt || '';
-          cmp = dateB.localeCompare(dateA);
-        }
-
-        return deferredFilters.sortDirection === 'desc' ? -cmp : cmp;
-      });
-    }
-
-    return list;
-  }, [machines, deferredFilters, sessionSeed, selectedDomain]);
+    const list = machines.filter(createMachineFilter(deferredFilters));
+    return sortMachines(list, {
+      mode: sortMode,
+      direction: deferredFilters.sortDirection,
+      seed: sessionSeed,
+      catalog: machines,
+      track: orderedTrack,
+    });
+  }, [machines, deferredFilters, sessionSeed, sortMode, orderedTrack]);
 
 
 
@@ -458,7 +443,7 @@ export const TrackerView: React.FC = () => {
     }
     if (filters.selectedTracks && filters.selectedTracks.length > 0) {
       filters.selectedTracks.forEach((trackId) => {
-        const tr = PRACTICE_TRACKS.find((t) => t.id === trackId);
+        const tr = TRACK_BY_ID.get(trackId);
         pills.push({
           id: `track-${trackId}`,
           label: `Track: ${tr?.shortName || trackId}`,
@@ -472,7 +457,7 @@ export const TrackerView: React.FC = () => {
         });
       });
     } else if (filters.selectedTrack && filters.selectedTrack !== 'ALL') {
-      const tr = PRACTICE_TRACKS.find((t) => t.id === filters.selectedTrack);
+      const tr = TRACK_BY_ID.get(filters.selectedTrack);
       pills.push({
         id: 'track',
         label: `Track: ${tr?.shortName || filters.selectedTrack}`,
@@ -778,10 +763,10 @@ export const TrackerView: React.FC = () => {
               <CyberSelect
                 id="tracker-sort-select"
                 name="tracker-sort-select"
-                aria-label={`Sort targets - ${SORT_OPTIONS.find(o => o.value === (filters.sortBy || 'default'))?.label || 'Default Order'}`}
+                aria-label={`Sort targets - ${sortOptions.find(o => o.value === (filters.sortBy || 'default'))?.label || 'Default Order'}`}
                 value={filters.sortBy || 'default'}
                 onChange={(val) => setFilters({ sortBy: val as any })}
-                options={SORT_OPTIONS}
+                options={sortOptions}
                 variant="transparent"
                 size="xs"
                 triggerClassName="h-7 py-0 px-1.5 border-none bg-transparent hover:bg-transparent text-secondary text-xs font-medium"
@@ -1019,6 +1004,18 @@ export const TrackerView: React.FC = () => {
           <FilterDrawer />
         </React.Suspense>
       )}
+
+      <TrackChipRow
+        tracks={PRACTICE_TRACKS}
+        progress={trackProgress}
+        activeTrackId={getActiveTrackIds(filters).length === 1 ? getActiveTrackIds(filters)[0] : null}
+        selectedTrackIds={getActiveTrackIds(filters)}
+        onSelect={(trackId) => {
+          setFilters(trackId ? { selectedTrack: trackId, selectedTracks: [trackId] } : { selectedTrack: 'ALL', selectedTracks: [] });
+          if (soundEnabled) playCyberSound('toggle');
+        }}
+        onOpenMachine={setSelectedMachineId}
+      />
 
       {/* Main View Renderer */}
       {filteredMachines.length === 0 ? (
