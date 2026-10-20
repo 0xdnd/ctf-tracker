@@ -562,7 +562,7 @@ CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team t
 
 ### Long-Form Preparation Guides
 - **[OSCP Exam Scoring & 24h Time Budget (2026 Changes)](https://ctftracker.com/oscp-exam-scoring-and-time-budget/)**: OSCP point structure, which combinations reach 70, an hour-by-hour 24h plan with a 90 minute rabbit-hole cap, and the December 2026 scaled scoring change.
-- **[TJ Null List (2026): OSCP-Like HTB & THM Machines](https://ctftracker.com/tj-null-list/)**: The TJ Null list of OSCP-like machines explained: how to work it, which Hack The Box boxes from it you can track, plus other THM and HTB OSCP practice.
+- **[TJ Null List (2026): OSCP-Like HTB & THM Machines](https://ctftracker.com/tj-null-list/)**: The full TJ Null OSCP list of practice machines, kept up to date, plus a free checklist to track your progress as you work through each box.
 - **[OSCP Report Template (Markdown) with CVSS Findings](https://ctftracker.com/oscp-report-template/)**: Copyable Markdown OSCP report skeleton, a finding template, a CVSS 3.1 worked example (9.8 Critical), proof screenshot rules and packaging steps.
 - **[HTB & TryHackMe Progress Tracker (Free, Offline)](https://ctftracker.com/htb-progress-tracker/)**: What HTB and TryHackMe profiles do not track, how a spreadsheet compares with ZeroBox, plus a workflow with nmap imports. Free and offline.
 - **[HTB CPTS Exam Guide: Flags, Passing Score, Pacing](https://ctftracker.com/cpts-exam-guide/)**: HTB CPTS exam format, the 10 day window, flags and passing requirement, the report, and a day-by-day pacing plan, with sources cited.

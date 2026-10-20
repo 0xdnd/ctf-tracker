@@ -252,11 +252,6 @@ function tagLink(t) {
   const hit = tagTargets.find((x) => x.keys.includes(n));
   return hit ? `<a class="tag" href="${hit.href}">${esc(t)}</a>` : `<span class="tag">${esc(t)}</span>`;
 }
-const fmtDur = (s) => {
-  const h = Math.floor(s / 3600), mi = Math.round((s % 3600) / 60);
-  return h ? `${h}h ${mi}m` : `${mi}m`;
-};
-const fmtDate = (d) => (d ? String(d).slice(0, 10) : '');
 const ROOM_REL = 'nofollow noopener';
 // "a" or "an" by the first letter of the word that follows (an easy, an insane, a medium).
 const article = (word) => (/^[aeiou]/i.test(String(word).trim()) ? 'an' : 'a');
@@ -307,19 +302,11 @@ function leadTech(m) {
   return names.length ? ` It maps to the ${names.length > 1 ? 'technique hubs' : 'technique hub'} ${esc(names.join('; '))}.` : '';
 }
 
-// "Overview" paragraph built only from catalog fields (platform, OS, difficulty, tags, certifications, timings, dates).
+// "Overview" paragraph built only from catalog fields (platform, OS, difficulty, tags, certifications).
 function machineOverview(m, plat, tagList) {
   const parts = [];
   parts.push(`${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine from ${esc(plat)}`);
   const sentences = [`${parts[0]}${tagList.length ? ` that I tagged with ${esc(joinList(tagList.slice(0, 6)))}` : ''}.`];
-  const u = m.timeToUserSeconds, r = m.timeToRootSeconds;
-  if (u && r) {
-    sentences.push(`I reached user access after ${fmtDur(u)} and root after ${fmtDur(r)}${r > u ? `, so the privilege escalation stage took about ${fmtDur(r - u)}` : ''}.`);
-  } else if (u || r) {
-    sentences.push(`I reached ${r ? 'root' : 'user'} access after ${fmtDur(r || u)}.`);
-  }
-  const du = fmtDate(m.userPwnedAt), dr = fmtDate(m.rootPwnedAt);
-  if (du && dr) sentences.push(du === dr ? `Both stages were completed on ${du}.` : `User was owned on ${du} and root on ${dr}.`);
   const certs = m.certifications || [];
   if (certs.length) sentences.push(`${esc(m.name)} counts toward the ${esc(joinList(certs.map((c) => CERT_NAME[c] || c)))} practice ${certs.length > 1 ? 'lists' : 'list'} in the ZeroBox catalog.`);
   return `<h2>Overview</h2><p>${sentences.join(' ')}</p>`;
@@ -366,18 +353,11 @@ for (const m of withPage) {
   // The meta description keeps its own rules (machineDesc), so the SEO baseline does not move.
   const hint = String(m.hint || '').replace(/\s+/g, ' ').trim();
   const summary = /[.!?]$/.test(hint) ? hint : template;
-  const stats = [
-    m.timeToUserSeconds ? ['Time to user', fmtDur(m.timeToUserSeconds)] : null,
-    m.timeToRootSeconds ? ['Time to root', fmtDur(m.timeToRootSeconds)] : null,
-    m.userPwnedAt ? ['User owned', fmtDate(m.userPwnedAt)] : null,
-    m.rootPwnedAt ? ['Root owned', fmtDate(m.rootPwnedAt)] : null,
-  ].filter(Boolean);
   const facts = [
     ['Platform', plat],
     ['Operating system', m.os],
     ['Difficulty', m.difficulty],
     m.hasIppsec ? ['Walkthroughs', 'IppSec video walkthrough available'] : null,
-    ...stats,
     m.certifications && m.certifications.length ? ['Relevant for', m.certifications.map((c) => CERT_NAME[c] || c).join(', ')] : null,
   ].filter(Boolean);
     const body = [
