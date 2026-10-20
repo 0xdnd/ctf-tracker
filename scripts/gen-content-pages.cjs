@@ -97,7 +97,7 @@ function emit(type, urlPath, html, priority, lastmodOverride, srcs) {
 const redirects = [];
 function writeRedirectStub(fromPath, toPath) {
   const target = ORIGIN + toPath;
-  const html = `<!doctype html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />

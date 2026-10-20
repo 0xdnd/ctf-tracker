@@ -4,12 +4,14 @@
     "src/main.tsx",
     "scripts/**/*.{js,cjs,mjs,ts}",
     "e2e/**/*.ts",
+    "e2e-static/**/*.ts",
     "vite.config.ts",
     "vitest.config.ts",
     "playwright.config.ts",
+    "playwright.static.config.ts",
     "src/test/setup.ts",
     "src/**/*.{test,spec}.{ts,tsx}"
   ],
-  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{js,cjs,mjs,ts}", "e2e/**/*.ts"],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{js,cjs,mjs,ts}", "e2e/**/*.ts", "e2e-static/**/*.ts"],
   "ignore": ["src/data/**"]
 }

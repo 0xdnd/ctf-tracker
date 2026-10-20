@@ -42,7 +42,7 @@ function build({ model, esc }) {
 <p>Hack The Box and TryHackMe both show you a profile: owned machines or completed rooms, a rank or level, and badges. That is useful as a scoreboard and tells you nothing about how you got there. A profile will not tell you which technique cost you three hours, which box you abandoned at the foothold, or what you did differently the second time.</p>
 <p>It also stops at the platform's edge. Proving Grounds, Vulnhub, event CTFs and a home lab do not appear on either profile, and neither platform keeps your private notes in a form you can search later.</p>
 <h2>Profile, spreadsheet or ZeroBox</h2>
-<table><thead><tr><th>Need</th><th>Platform profile</th><th>Spreadsheet</th><th>ZeroBox</th></tr></thead><tbody>${cmp}</tbody></table>
+<table><thead><tr><th scope="col">Need</th><th scope="col">Platform profile</th><th scope="col">Spreadsheet</th><th scope="col">ZeroBox</th></tr></thead><tbody>${cmp}</tbody></table>
 <p>A spreadsheet is a fine answer if you only want a list and a status column. It gets slow once you want the target IP, a log of commands, flags and screenshots in the same place. ZeroBox is built for that case, and has the weakness of any local tool: your data lives in one browser until you back it up.</p>
 <h2>A workflow that holds up</h2>
 <ol>

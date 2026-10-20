@@ -333,7 +333,8 @@ Nmap scan report for 10.129.14.21
         if (!img) return;
         f.setAttribute('role', 'button');
         f.setAttribute('aria-haspopup', 'dialog');
-        f.setAttribute('aria-label', 'Enlarge: ' + img.alt);
+        var bar = f.querySelector('.win-bar');
+        f.setAttribute('aria-label', (bar ? bar.textContent.trim() + ' ' : '') + 'Enlarge: ' + img.alt);
         f.tabIndex = 0;
         f.addEventListener('click', function () { openPreview(f); });
         f.addEventListener('keydown', function (e) {
