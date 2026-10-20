@@ -12,20 +12,25 @@ const progress = new Map([
   [cpts.id, { done: 0, total: 4, percent: 0, next: null }],
 ]);
 
-const setup = (activeTrackId: string | null) => {
+const setup = (activeTrackId: string | null, extra: { selected?: string[]; hideCompleted?: boolean } = {}) => {
   const onSelect = vi.fn();
   const onOpenMachine = vi.fn();
+  const onOpenMulti = vi.fn();
+  const onToggleHideCompleted = vi.fn();
   render(
     <TrackChipRow
       tracks={[oscp, cpts]}
       progress={progress}
       activeTrackId={activeTrackId}
-      selectedTrackIds={activeTrackId ? [activeTrackId] : []}
+      selectedTrackIds={extra.selected ?? (activeTrackId ? [activeTrackId] : [])}
       onSelect={onSelect}
       onOpenMachine={onOpenMachine}
+      onOpenMulti={onOpenMulti}
+      hideCompleted={extra.hideCompleted ?? false}
+      onToggleHideCompleted={onToggleHideCompleted}
     />,
   );
-  return { onSelect, onOpenMachine };
+  return { onSelect, onOpenMachine, onOpenMulti, onToggleHideCompleted };
 };
 
 describe('TrackChipRow', () => {
@@ -59,5 +64,33 @@ describe('TrackChipRow', () => {
     expect(cpts.source).toBeUndefined();
     expect(screen.queryByText(/Source:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/As of/)).not.toBeInTheDocument();
+  });
+
+  it('shows no MULTI chip for zero or one selected track', () => {
+    setup(null);
+    expect(screen.queryByRole('button', { name: /MULTI/ })).not.toBeInTheDocument();
+  });
+
+  it('shows an active MULTI chip that opens the drawer when several tracks are selected, with no strip', () => {
+    const { onOpenMulti } = setup(null, { selected: [oscp.id, cpts.id] });
+    const multi = screen.getByRole('button', { name: /MULTI \(2\)/ });
+    expect(multi).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /OSCP Track/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    fireEvent.click(multi);
+    expect(onOpenMulti).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles hide completed from the strip and reflects it in aria-pressed', () => {
+    const first = setup(oscp.id);
+    const toggle = screen.getByRole('button', { name: 'Hide completed' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(toggle);
+    expect(first.onToggleHideCompleted).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks hide completed pressed when the status filter hides solved machines', () => {
+    setup(oscp.id, { hideCompleted: true });
+    expect(screen.getByRole('button', { name: 'Hide completed' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

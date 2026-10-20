@@ -57,27 +57,66 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(document.getElementById('tracker-search-input-mobile')).not.toBeNull();
     });
 
-    it('replaces the seven track chips with a single track select and drops OS/difficulty/cert selects from the toolbar', () => {
+    it('has no track dropdown in the toolbar and drops OS/difficulty/cert selects too', () => {
       wrap(<TrackerView />);
-      expect(document.getElementById('tracker-track-select')).not.toBeNull();
+      expect(document.getElementById('tracker-track-select')).toBeNull();
+      expect(screen.queryByRole('combobox', { name: 'Practice track' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Practice track' })).toBeNull();
       expect(document.getElementById('htb-os-select')).toBeNull();
       expect(document.getElementById('htb-difficulty-select')).toBeNull();
       expect(document.getElementById('tracker-cert-select')).toBeNull();
     });
 
-    it('filters targets when a track is selected from the track select dropdown', () => {
+    it('filters targets when a track chip is tapped, and clears when it is tapped again', () => {
       wrap(<TrackerView />);
-      const selectBtn = document.getElementById('tracker-track-select');
-      expect(selectBtn).not.toBeNull();
-      fireEvent.click(selectBtn!);
-
-      // Click OSCP track option
-      const oscpOption = screen.getByRole('option', { name: /OSCP/i });
-      fireEvent.click(oscpOption);
+      const group = screen.getByRole('group', { name: 'Choose a practice track' });
+      fireEvent.click(within(group).getByRole('button', { name: /OSCP Track/ }));
 
       expect(useCtfStore.getState().filters.selectedTrack).toBe('tjnull-oscp');
       expect(useCtfStore.getState().filters.selectedTracks).toEqual(['tjnull-oscp']);
       expect(screen.getByText('Track: OSCP Track')).toBeInTheDocument();
+
+      fireEvent.click(within(group).getByRole('button', { name: /OSCP Track/ }));
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual([]);
+    });
+
+    it('loads several tracks from ?track= and shows the MULTI chip without opening the drawer', () => {
+      render(
+        <MemoryRouter initialEntries={['/tracker?track=tjnull-oscp,nope,cpts-path']}>
+          <TrackerView />
+        </MemoryRouter>,
+      );
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual(['tjnull-oscp', 'cpts-path']);
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('MULTI');
+      expect(useCtfStore.getState().filterDrawerOpen).toBe(false);
+
+      const multi = screen.getByRole('button', { name: /MULTI \(2\)/ });
+      expect(multi).toHaveAttribute('aria-pressed', 'true');
+      fireEvent.click(multi);
+      expect(useCtfStore.getState().filterDrawerOpen).toBe(true);
+    });
+
+    it('still accepts a single track id in ?track=', () => {
+      render(
+        <MemoryRouter initialEntries={['/tracker?track=cpts-path']}>
+          <TrackerView />
+        </MemoryRouter>,
+      );
+      expect(useCtfStore.getState().filters.selectedTracks).toEqual(['cpts-path']);
+      expect(useCtfStore.getState().filters.selectedTrack).toBe('cpts-path');
+      expect(screen.queryByRole('button', { name: /MULTI/ })).toBeNull();
+    });
+
+    it('hide completed in the track strip toggles the status filter', () => {
+      useCtfStore.getState().setFilters({ selectedTrack: 'tjnull-oscp', selectedTracks: ['tjnull-oscp'] });
+      wrap(<TrackerView />);
+      const toggle = screen.getByRole('button', { name: 'Hide completed' });
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      fireEvent.click(toggle);
+      expect(useCtfStore.getState().filters.selectedStatus).toBe('UNCOMPLETED');
+      expect(screen.getByRole('button', { name: 'Hide completed' })).toHaveAttribute('aria-pressed', 'true');
+      fireEvent.click(screen.getByRole('button', { name: 'Hide completed' }));
+      expect(useCtfStore.getState().filters.selectedStatus).toBe('ALL');
     });
 
     it('synchronizes selectedTrack and selectedTracks bidirectionally in useCtfStore', () => {

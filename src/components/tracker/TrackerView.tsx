@@ -6,11 +6,7 @@ import {
   Kanban, 
   Table, 
   LayoutGrid, 
-  Globe,
-  Terminal,
-  Sparkles,
   Target,
-  Trophy,
   Zap,
   ArrowUpDown,
   Eye,
@@ -18,12 +14,6 @@ import {
   SlidersHorizontal,
   Share2,
   X,
-  GraduationCap,
-  Crosshair,
-  Tv,
-  Network,
-  Flame,
-  ShieldAlert,
   Upload
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
@@ -38,6 +28,7 @@ import { computeReadiness } from '../../utils/readiness';
 import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
 import { TrackChipRow } from './TrackChipRow';
+import { parseTrackParam } from '../../utils/trackUrl';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
@@ -73,23 +64,6 @@ const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
   { value: 'UNCOMPLETED', label: 'Unsolved' },
   { value: 'FOOTHOLD', label: 'Foothold' },
   { value: 'COMPLETED', label: 'Pwned' },
-];
-
-interface PrimaryTrackPill {
-  id: string;
-  label: string;
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  iconColor: string;
-}
-
-const PRIMARY_TRACK_PILLS: PrimaryTrackPill[] = [
-  { id: 'ALL', label: 'All targets', title: 'All Target Machines', icon: Target, iconColor: 'text-accent' },
-  { id: 'tjnull-oscp', label: 'OSCP', title: "TJ_Null's OSCP NetSec Preparation", icon: GraduationCap, iconColor: 'text-callout-warn-fg' },
-  { id: 'cpts-path', label: 'CPTS', title: 'Certified Penetration Testing Specialist', icon: Crosshair, iconColor: 'text-callout-success-fg' },
-  { id: 'ippsec-vault', label: 'IppSec', title: 'IppSec Video Walkthroughs', icon: Tv, iconColor: 'text-callout-info-fg' },
-  { id: 'crto-ad', label: 'Active Directory', title: 'Enterprise AD & Red Team Warfare', icon: Network, iconColor: 'text-callout-tip-fg' },
-  { id: 'popular-classics', label: 'Hall of fame', title: 'Community Classics & Popular Boxes', icon: Trophy, iconColor: 'text-callout-warn-fg' },
 ];
 
 export const TrackerView: React.FC = () => {
@@ -145,45 +119,6 @@ export const TrackerView: React.FC = () => {
     PRACTICE_TRACKS.forEach((t) => byTrack.set(t.id, getTrackProgress(t, machines)));
     return byTrack;
   }, [machines]);
-
-  // Memoized machine counts per track for badge telemetry
-  const trackCounts = React.useMemo(() => {
-    const counts: Record<string, number> = { ALL: machines.length };
-    trackProgress.forEach((p, id) => {
-      counts[id] = p.total;
-    });
-    return counts;
-  }, [machines.length, trackProgress]);
-
-  const dynamicOtherTrackOptions = React.useMemo<CyberSelectOption<string>[]>(() => [
-    { value: 'ALL', label: 'All targets' },
-    { value: 'cwee-web', label: 'CWEE Web Exploits', icon: <Globe className="w-3.5 h-3.5 text-callout-info-fg" />, badge: `${trackCounts['cwee-web'] ?? 0}` },
-    { value: 'web-master', label: 'Web Master Pathway', icon: <Zap className="w-3.5 h-3.5 text-callout-warn-fg" />, badge: `${trackCounts['web-master'] ?? 0}` },
-    { value: 'linux-privesc', label: 'Linux PrivEsc', icon: <Terminal className="w-3.5 h-3.5 text-callout-warn-fg" />, badge: `${trackCounts['linux-privesc'] ?? 0}` },
-    { value: 'windows-privesc', label: 'Windows PrivEsc', icon: <ShieldAlert className="w-3.5 h-3.5 text-callout-info-fg" />, badge: `${trackCounts['windows-privesc'] ?? 0}` },
-    { value: 'beginner-essentials', label: 'Beginner Essentials', icon: <Sparkles className="w-3.5 h-3.5 text-callout-success-fg" />, badge: `${trackCounts['beginner-essentials'] ?? 0}` },
-    { value: 'insane-hardcore', label: 'Hardcore / Insane', icon: <Flame className="w-3.5 h-3.5 text-callout-danger-fg" />, badge: `${trackCounts['insane-hardcore'] ?? 0}` },
-  ], [trackCounts]);
-
-  // Single track selector: primary tracks + specialised tracks, with live counts
-  const trackSelectOptions = React.useMemo<CyberSelectOption<string>[]>(() => {
-    const primary: CyberSelectOption<string>[] = PRIMARY_TRACK_PILLS.map((trk) => ({
-      value: trk.id,
-      label: trk.label,
-      badge: <span className="font-mono tabular-nums text-xs text-muted">{trackCounts[trk.id] ?? 0}</span>,
-    }));
-    const extra = dynamicOtherTrackOptions.filter((o) => o.value !== 'ALL');
-    const multiCount = filters.selectedTracks ? filters.selectedTracks.length : 0;
-    return multiCount > 1
-      ? [...primary, ...extra, { value: 'MULTI', label: `${multiCount} tracks` }]
-      : [...primary, ...extra];
-  }, [trackCounts, dynamicOtherTrackOptions, filters.selectedTracks]);
-
-  const trackSelectValue = (filters.selectedTracks && filters.selectedTracks.length > 1)
-    ? 'MULTI'
-    : (filters.selectedTracks && filters.selectedTracks.length === 1)
-      ? filters.selectedTracks[0]
-      : (filters.selectedTrack && trackSelectOptions.some((o) => o.value === filters.selectedTrack) ? filters.selectedTrack : 'ALL');
 
   // Lazy-load master machine catalog when TrackerView mounts
   React.useEffect(() => {
@@ -245,9 +180,10 @@ export const TrackerView: React.FC = () => {
       updates.selectedCert = cert as 'OSCP' | 'CPTS' | 'CRTO' | 'ALL';
     }
 
-    const track = params.get('track');
-    if (track) {
-      updates.selectedTrack = track;
+    const trackIds = parseTrackParam(params.get('track'), (id) => TRACK_BY_ID.has(id));
+    if (trackIds.length > 0) {
+      updates.selectedTracks = trackIds;
+      updates.selectedTrack = trackIds.length === 1 ? trackIds[0] : 'MULTI';
     }
 
     if (Object.keys(updates).length > 0) {
@@ -657,7 +593,7 @@ export const TrackerView: React.FC = () => {
           </div>
         </div>
 
-        {/* DESKTOP (>= md): search, track, status, then filters / sort / count / view */}
+        {/* DESKTOP (>= md): search, status, then filters / sort / count / view */}
         <div className="hidden md:flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative h-8 w-52 lg:w-60 flex-shrink-0 group">
@@ -694,27 +630,6 @@ export const TrackerView: React.FC = () => {
               </kbd>
             )}
           </div>
-
-          {/* Track selector (replaces the seven track chips) */}
-          <CyberSelect<string>
-            id="tracker-track-select"
-            name="tracker-track-select"
-            aria-label="Practice track"
-            value={trackSelectValue}
-            onChange={(val) => {
-              if (val === 'ALL') {
-                setFilters({ selectedTrack: 'ALL', selectedTracks: [] });
-              } else if (val !== 'MULTI') {
-                setFilters({ selectedTrack: val, selectedTracks: [val] });
-              }
-              if (soundEnabled) playCyberSound('toggle');
-            }}
-            options={trackSelectOptions}
-            size="xs"
-            variant="hardware"
-            triggerClassName="h-8 py-0 px-2.5 text-xs rounded-lg border-subtle min-w-[10.5rem]"
-            soundEnabled={soundEnabled}
-          />
 
           {/* Status segmented control */}
           <div role="group" aria-label="Target status" className={SEGMENT_WRAP}>
@@ -1015,6 +930,15 @@ export const TrackerView: React.FC = () => {
           if (soundEnabled) playCyberSound('toggle');
         }}
         onOpenMachine={setSelectedMachineId}
+        onOpenMulti={() => {
+          setFilterDrawerOpen(true);
+          if (soundEnabled) playCyberSound('click');
+        }}
+        hideCompleted={filters.selectedStatus === 'UNCOMPLETED'}
+        onToggleHideCompleted={() => {
+          setFilters({ selectedStatus: filters.selectedStatus === 'UNCOMPLETED' ? 'ALL' : 'UNCOMPLETED' });
+          if (soundEnabled) playCyberSound('toggle');
+        }}
       />
 
       {/* Main View Renderer */}

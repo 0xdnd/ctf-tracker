@@ -19,6 +19,11 @@ interface TrackChipRowProps {
   /** Called with the track to select, or null to clear it (the active chip was tapped again). */
   onSelect: (trackId: string | null) => void;
   onOpenMachine: (machineId: string) => void;
+  /** Opens the filter drawer, where several tracks are picked. Shown as a MULTI chip while more than one is selected. */
+  onOpenMulti: () => void;
+  /** True while only unsolved machines are listed. */
+  hideCompleted: boolean;
+  onToggleHideCompleted: () => void;
 }
 
 export const TrackChipRow: React.FC<TrackChipRowProps> = ({
@@ -28,6 +33,9 @@ export const TrackChipRow: React.FC<TrackChipRowProps> = ({
   selectedTrackIds,
   onSelect,
   onOpenMachine,
+  onOpenMulti,
+  hideCompleted,
+  onToggleHideCompleted,
 }) => {
   const activeTrack = activeTrackId ? tracks.find((t) => t.id === activeTrackId) : undefined;
   const activeProgress = activeTrack ? progress.get(activeTrack.id) : undefined;
@@ -57,6 +65,17 @@ export const TrackChipRow: React.FC<TrackChipRowProps> = ({
             </button>
           );
         })}
+        {selectedTrackIds.length > 1 && (
+          <button
+            type="button"
+            aria-pressed={true}
+            onClick={onOpenMulti}
+            title="Several tracks are selected. Open the filters to change them."
+            className={`${CHIP_BASE} ${CHIP_ON}`}
+          >
+            <span>MULTI ({selectedTrackIds.length})</span>
+          </button>
+        )}
       </div>
 
       {activeTrack && activeProgress && (
@@ -88,18 +107,28 @@ export const TrackChipRow: React.FC<TrackChipRowProps> = ({
             </span>
           </div>
 
-          {next ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {next ? (
+              <button
+                type="button"
+                onClick={() => onOpenMachine(next.id)}
+                className="inline-flex items-center gap-1.5 self-start h-8 px-3 rounded-lg border border-subtle bg-surface-sunken text-xs font-medium text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-10"
+              >
+                <span>Next: {next.name}</span>
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            ) : (
+              activeProgress.total > 0 && <p className="text-xs text-muted">Every machine in this track is done.</p>
+            )}
             <button
               type="button"
-              onClick={() => onOpenMachine(next.id)}
-              className="inline-flex items-center gap-1.5 self-start h-8 px-3 rounded-lg border border-subtle bg-surface-sunken text-xs font-medium text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-10"
+              aria-pressed={hideCompleted}
+              onClick={onToggleHideCompleted}
+              className={`${CHIP_BASE} ${hideCompleted ? CHIP_ON : CHIP_OFF}`}
             >
-              <span>Next: {next.name}</span>
-              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Hide completed</span>
             </button>
-          ) : (
-            activeProgress.total > 0 && <p className="text-xs text-muted">Every machine in this track is done.</p>
-          )}
+          </div>
         </div>
       )}
     </section>
