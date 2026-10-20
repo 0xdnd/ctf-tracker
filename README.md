@@ -12,7 +12,7 @@
 
 [![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
-[![GitHub Stars](https://img.shields.io/badge/Stars-23-F59E0B?style=for-the-badge&logo=github)](https://github.com/0xdnd/ctf-tracker/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=for-the-badge&logo=github&color=F59E0B&labelColor=0B0F19)](https://github.com/0xdnd/ctf-tracker/stargazers)
 [![Machines](https://img.shields.io/badge/Machines-1027-10B981?style=for-the-badge)](https://ctftracker.com/)
 [![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-130%2B-EF4444?style=for-the-badge)](https://ctftracker.com/)
 [![Tests](https://img.shields.io/badge/Tests-212%20suites%20%7C%203234%20passing-10B981?style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
