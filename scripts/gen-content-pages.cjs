@@ -1067,7 +1067,7 @@ if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'),
   const lines = [
     '# ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)',
     '',
-    '> ZeroBox is a free, offline-first CTF and certification preparation tracker running in the browser. It tracks 1,027 Hack The Box and TryHackMe machines, 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/',
+    `> ZeroBox is a free, offline-first CTF and certification preparation tracker running in the browser. It tracks ${model.catalogCounts.ctf.toLocaleString('en-US')} Hack The Box and TryHackMe machines, ${(model.proLabs || []).length} official HTB Pro Labs, ${model.phases.length} methodology phases, ${model.topics.length} cheatsheet topics, ${techGroups.length} technique hubs, ${model.notes.length} pentest methodology notes, and a ${model.examTracks.length}-track exam simulator (${model.examTracks.join(', ')}). Site: https://ctftracker.com/`,
     '',
     'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.',
     '',
