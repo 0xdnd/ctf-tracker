@@ -67,20 +67,37 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(document.getElementById('tracker-cert-select')).toBeNull();
     });
 
-    it('filters targets when a track chip is tapped, and clears when it is tapped again', () => {
+    it('has no chip row above the grid and shows no track strip while nothing is selected', () => {
       wrap(<TrackerView />);
-      const group = screen.getByRole('group', { name: 'Choose a practice track' });
-      fireEvent.click(within(group).getByRole('button', { name: /OSCP Track/ }));
+      expect(screen.queryByRole('group', { name: 'Choose a practice track' })).toBeNull();
+      expect(screen.queryByRole('progressbar')).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Tracks' }).length).toBeGreaterThan(0);
+    });
+
+    it('filters targets when a track is picked from the Tracks menu, and clears it from the menu', () => {
+      wrap(<TrackerView />);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Tracks' })[0]);
+      fireEvent.click(screen.getByRole('menuitemradio', { name: /OSCP Track/ }));
 
       expect(useCtfStore.getState().filters.selectedTrack).toBe('tjnull-oscp');
       expect(useCtfStore.getState().filters.selectedTracks).toEqual(['tjnull-oscp']);
       expect(screen.getByText('Track: OSCP Track')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar', { name: /OSCP Track progress/ })).toBeInTheDocument();
 
-      fireEvent.click(within(group).getByRole('button', { name: /OSCP Track/ }));
+      fireEvent.click(screen.getAllByRole('button', { name: /^Tracks: OSCP Track/ })[0]);
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Clear track' }));
       expect(useCtfStore.getState().filters.selectedTracks).toEqual([]);
+      expect(screen.queryByRole('progressbar')).toBeNull();
     });
 
-    it('loads several tracks from ?track= and shows the MULTI chip without opening the drawer', () => {
+    it('opens the filter drawer from "Pick several…"', () => {
+      wrap(<TrackerView />);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Tracks' })[0]);
+      fireEvent.click(screen.getByRole('menuitem', { name: /Pick several/ }));
+      expect(useCtfStore.getState().filterDrawerOpen).toBe(true);
+    });
+
+    it('loads several tracks from ?track= and labels the Tracks button "N tracks" without opening the drawer', () => {
       render(
         <MemoryRouter initialEntries={['/tracker?track=tjnull-oscp,nope,cpts-path']}>
           <TrackerView />
@@ -90,9 +107,12 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(useCtfStore.getState().filters.selectedTrack).toBe('MULTI');
       expect(useCtfStore.getState().filterDrawerOpen).toBe(false);
 
-      const multi = screen.getByRole('button', { name: /MULTI \(2\)/ });
-      expect(multi).toHaveAttribute('aria-pressed', 'true');
+      const multi = screen.getAllByRole('button', { name: 'Tracks: 2 selected' })[0];
+      expect(multi).toHaveTextContent('2 tracks');
+      expect(screen.queryByRole('progressbar')).toBeNull();
       fireEvent.click(multi);
+      expect(screen.getAllByRole('menuitemradio', { checked: true })).toHaveLength(2);
+      fireEvent.click(screen.getByRole('menuitem', { name: /Pick several/ }));
       expect(useCtfStore.getState().filterDrawerOpen).toBe(true);
     });
 
@@ -104,7 +124,8 @@ describe('Wave 2 lane B - tracker redesign', () => {
       );
       expect(useCtfStore.getState().filters.selectedTracks).toEqual(['cpts-path']);
       expect(useCtfStore.getState().filters.selectedTrack).toBe('cpts-path');
-      expect(screen.queryByRole('button', { name: /MULTI/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Tracks: 2 selected' })).toBeNull();
+      expect(screen.getAllByRole('button', { name: /^Tracks: CPTS Track/ }).length).toBeGreaterThan(0);
     });
 
     it('hide completed in the track strip toggles the status filter', () => {

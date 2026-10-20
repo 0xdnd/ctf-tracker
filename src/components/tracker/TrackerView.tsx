@@ -27,7 +27,8 @@ import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
 import { computeReadiness } from '../../utils/readiness';
 import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
-import { TrackChipRow } from './TrackChipRow';
+import { TrackPicker } from './TrackPicker';
+import { TrackStrip } from './TrackStrip';
 import { parseTrackParam } from '../../utils/trackUrl';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
@@ -456,6 +457,18 @@ export const TrackerView: React.FC = () => {
   const [readinessOpen, setReadinessOpen] = useState(false);
   const readiness = useMemo(() => computeReadiness(machines, Date.now()), [machines]);
 
+  const activeTrackIds = getActiveTrackIds(filters);
+  const activeTrack = activeTrackIds.length === 1 ? TRACK_BY_ID.get(activeTrackIds[0]) : undefined;
+  const activeTrackProgress = activeTrack ? trackProgress.get(activeTrack.id) : undefined;
+  const selectTrack = (trackId: string | null) => {
+    setFilters(trackId ? { selectedTrack: trackId, selectedTracks: [trackId] } : { selectedTrack: 'ALL', selectedTracks: [] });
+    if (soundEnabled) playCyberSound('toggle');
+  };
+  const openTrackDrawer = () => {
+    setFilterDrawerOpen(true);
+    if (soundEnabled) playCyberSound('click');
+  };
+
   return (
     <div className="space-y-3 w-full">
       <MultiRecordImportModal
@@ -471,7 +484,7 @@ export const TrackerView: React.FC = () => {
         {/* MOBILE (< md): search + Filters, then view switcher + count */}
         <div className="md:hidden space-y-2">
           <div className="flex items-center gap-2">
-            <div className="relative flex-1 group">
+            <div className="relative flex-1 min-w-[7.5rem] group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-accent transition-colors pointer-events-none" />
               <input
                 type="text"
@@ -501,6 +514,16 @@ export const TrackerView: React.FC = () => {
                 </button>
               )}
             </div>
+
+            <TrackPicker
+              tracks={PRACTICE_TRACKS}
+              progress={trackProgress}
+              selectedTrackIds={activeTrackIds}
+              onSelect={selectTrack}
+              onOpenMulti={openTrackDrawer}
+              buttonClassName={`${TOOLBAR_BTN} h-11 px-3 max-w-[9.5rem]`}
+              className="flex-shrink-0"
+            />
 
             <button
               type="button"
@@ -596,7 +619,7 @@ export const TrackerView: React.FC = () => {
         {/* DESKTOP (>= md): search, status, then filters / sort / count / view */}
         <div className="hidden md:flex flex-wrap items-center gap-2">
           {/* Search */}
-          <div className="relative h-8 w-52 lg:w-60 flex-shrink-0 group">
+          <div className="relative h-8 w-52 2xl:w-60 flex-shrink-0 group">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-tertiary group-focus-within:text-accent transition-colors pointer-events-none" />
             <input
               type="text"
@@ -654,7 +677,20 @@ export const TrackerView: React.FC = () => {
             })}
           </div>
 
-          <div className="flex items-center gap-2 ml-auto flex-wrap">
+          {/* display: contents so every control wraps in this one row. A nested wrapping flex container
+              under-measures its height in some engines and lets the next block overlap it. */}
+          <div className="contents">
+            {/* Tracks: compact picker with progress, replaces the old chip row */}
+            <TrackPicker
+              tracks={PRACTICE_TRACKS}
+              progress={trackProgress}
+              selectedTrackIds={activeTrackIds}
+              onSelect={selectTrack}
+              onOpenMulti={openTrackDrawer}
+              buttonClassName={`${TOOLBAR_BTN} h-8 px-2.5 max-w-[16rem]`}
+              className="ml-auto"
+            />
+
             {/* Filters (OS, difficulty, platform, certs and more live in the drawer) */}
             <button
               type="button"
@@ -703,7 +739,7 @@ export const TrackerView: React.FC = () => {
               aria-label="Import scan output"
             >
               <Zap className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Import</span>
+              <span className="hidden 2xl:inline">Import</span>
             </button>
 
             {/* Bulk Scan Importer */}
@@ -715,7 +751,7 @@ export const TrackerView: React.FC = () => {
               aria-label="Bulk import scan records"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Bulk Import</span>
+              <span className="hidden 2xl:inline">Bulk Import</span>
             </button>
 
             {/* Exam Readiness & Review Queue Toggle */}
@@ -731,7 +767,7 @@ export const TrackerView: React.FC = () => {
               aria-label="Toggle readiness panel"
             >
               <Target className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden xl:inline">Readiness</span>
+              <span className="hidden 2xl:inline">Readiness</span>
               <span className="font-mono tabular-nums font-semibold">{readiness.score}%</span>
               {readiness.dueItems.length > 0 && (
                 <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-warning/20 text-warning text-[10px] font-mono font-bold">
@@ -920,26 +956,18 @@ export const TrackerView: React.FC = () => {
         </React.Suspense>
       )}
 
-      <TrackChipRow
-        tracks={PRACTICE_TRACKS}
-        progress={trackProgress}
-        activeTrackId={getActiveTrackIds(filters).length === 1 ? getActiveTrackIds(filters)[0] : null}
-        selectedTrackIds={getActiveTrackIds(filters)}
-        onSelect={(trackId) => {
-          setFilters(trackId ? { selectedTrack: trackId, selectedTracks: [trackId] } : { selectedTrack: 'ALL', selectedTracks: [] });
-          if (soundEnabled) playCyberSound('toggle');
-        }}
-        onOpenMachine={setSelectedMachineId}
-        onOpenMulti={() => {
-          setFilterDrawerOpen(true);
-          if (soundEnabled) playCyberSound('click');
-        }}
-        hideCompleted={filters.selectedStatus === 'UNCOMPLETED'}
-        onToggleHideCompleted={() => {
-          setFilters({ selectedStatus: filters.selectedStatus === 'UNCOMPLETED' ? 'ALL' : 'UNCOMPLETED' });
-          if (soundEnabled) playCyberSound('toggle');
-        }}
-      />
+      {activeTrack && activeTrackProgress && (
+        <TrackStrip
+          track={activeTrack}
+          progress={activeTrackProgress}
+          onOpenMachine={setSelectedMachineId}
+          hideCompleted={filters.selectedStatus === 'UNCOMPLETED'}
+          onToggleHideCompleted={() => {
+            setFilters({ selectedStatus: filters.selectedStatus === 'UNCOMPLETED' ? 'ALL' : 'UNCOMPLETED' });
+            if (soundEnabled) playCyberSound('toggle');
+          }}
+        />
+      )}
 
       {/* Main View Renderer */}
       {filteredMachines.length === 0 ? (
