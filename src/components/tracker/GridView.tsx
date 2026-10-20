@@ -24,6 +24,7 @@ import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
 import { OsBadge } from '../common/OsBadge';
+import { PlatformBadge } from '../common/PlatformBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
@@ -136,6 +137,7 @@ const GridCard = React.memo<GridCardProps>(({
     }`;
 
   const metaBadges: React.ReactNode[] = [
+    ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
     <OsBadge key="os" os={m.os} size="xs" />,
     <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
     ...m.tags.filter((t) => !isTargetTypeTag(m, t)).map((t) => (
@@ -233,9 +235,9 @@ const GridCard = React.memo<GridCardProps>(({
             </div>
             <div className="mt-0.5 pl-4 text-xs text-muted font-sans">{statusLabel}</div>
 
-            {/* Max two badges, rest behind +N */}
+            {/* Platform, OS and difficulty inline, rest behind +N */}
             <div className="mt-3 pl-4">
-              <BadgeOverflow badges={metaBadges} max={2} />
+              <BadgeOverflow badges={metaBadges} max={3} />
             </div>
 
             {/* Hint spoiler */}

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Machine, Platform, OperatingSystem, Difficulty } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
-import { PlatformIcon } from '../common/PlatformBadge';
+import { PlatformIcon, platformFullName } from '../common/PlatformBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { LINUX_TUX_PATH } from '../common/OsBadge';
@@ -787,7 +787,25 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
 
       {/* Row 1: Header (OS Icon, Machine Name, Status Beacon) */}
       {/* OS Vector Icon */}
-      <g transform={`translate(${cardX + 10}, ${cardY + 8})`}>
+      {node.platform && (
+        <g className="pointer-events-none" aria-label={`Platform: ${platformFullName(node.platform)}`}>
+          <title>{`Platform: ${platformFullName(node.platform)}`}</title>
+          <rect x={cardX + 8} y={cardY + 9} width="26" height="14" rx="3" fill={tokens.codeBg} stroke={tokens.codeBorder} strokeWidth="0.8" />
+          <text
+            x={cardX + 21}
+            y={cardY + 19}
+            fill={tokens.accent}
+            fontSize="8"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            fontWeight="700"
+            textAnchor="middle"
+            className="select-none"
+          >
+            {node.platform}
+          </text>
+        </g>
+      )}
+      <g transform={`translate(${cardX + (node.platform ? 38 : 10)}, ${cardY + 8})`}>
         {node.os?.toLowerCase() === 'linux' ? (
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#F97316">
             <path d={LINUX_TUX_PATH} />
@@ -818,7 +836,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
 
       {/* Target Hostname */}
       <text
-        x={cardX + 32}
+        x={cardX + (node.platform ? 60 : 32)}
         y={cardY + 20}
         fill={isSelected ? tokens.accent : tokens.textPrimary}
         fontSize="12"

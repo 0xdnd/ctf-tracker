@@ -10,6 +10,9 @@ interface PlatformBadgeProps {
   variant?: 'default' | 'hardware';
 }
 
+const PLATFORM_FULL_NAMES: Record<string, string> = { HTB: 'Hack The Box', THM: 'TryHackMe' };
+export const platformFullName = (platform: string): string => PLATFORM_FULL_NAMES[platform] ?? platform;
+
 export const PlatformIcon: React.FC<{ platform: Platform; className?: string; monochrome?: boolean; variant?: 'default' | 'hardware' }> = ({
   platform,
   className = 'w-3.5 h-3.5',
@@ -50,6 +53,8 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
   className = '',
   variant = 'default',
 }) => {
+  if (!platform) return null;
+  const fullName = platformFullName(platform);
   const sizeClasses = {
     sm: 'h-4 text-[11px] px-1 gap-1',
     md: 'h-5 text-xs px-1.5 gap-1',
@@ -68,6 +73,8 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
     return (
       <span
         className={`inline-flex items-center rounded border font-sans tabular-nums transition-colors select-none cursor-default font-medium ${hwTheme} ${sizeClasses} ${className}`}
+        title={`Platform: ${fullName}`}
+        aria-label={`Platform: ${fullName}`}
       >
         <PlatformIcon platform={platform} className={`${iconSizeClasses} flex-shrink-0`} monochrome={true} />
         {showLabel && <span>{platform}</span>}
@@ -80,6 +87,8 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
   return (
     <span
       className={`inline-flex items-center rounded border font-sans tabular-nums font-medium transition-colors select-none cursor-default ${sizeClasses} ${themeClasses} ${className}`}
+      title={`Platform: ${fullName}`}
+      aria-label={`Platform: ${fullName}`}
     >
       <PlatformIcon platform={platform} className={`${iconSizeClasses} flex-shrink-0`} />
       {showLabel && <span>{platform}</span>}

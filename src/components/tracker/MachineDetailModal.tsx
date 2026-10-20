@@ -337,11 +337,11 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <TargetTypeBadge machine={machine} size="sm" />
               <BadgeOverflow
                 inline
-                max={2}
+                max={3}
                 badges={[
+                  ...(machine.platform ? [<PlatformBadge key="plat" platform={machine.platform} size="md" />] : []),
                   <OsBadge key="os" os={machine.os} size="sm" />,
                   <DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />,
-                  <PlatformBadge key="plat" platform={machine.platform} size="sm" />,
                   ...(!machine.isActive ? [<CategoryBadge key="cat" machine={machine} size="sm" />] : []),
                 ]}
               />

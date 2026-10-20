@@ -21,6 +21,7 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { OsBadge } from '../common/OsBadge';
+import { PlatformBadge } from '../common/PlatformBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
@@ -157,6 +158,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
     }`;
 
   const metaBadges: React.ReactNode[] = [
+    ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
     <OsBadge key="os" os={m.os} size="xs" />,
     <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
     ...(m.certifications || []).map((cert) => (
@@ -257,9 +259,9 @@ const KanbanCard = React.memo<KanbanCardProps>(({
             </div>
           </div>
 
-          {/* Row 3: max two badges (+N), flags and utility actions on hover */}
-          <div className="mt-2 flex items-center justify-between gap-2 pl-4">
-            <BadgeOverflow badges={metaBadges} max={2} />
+          {/* Row 3: platform/OS/difficulty badges (+N) (+N), flags and utility actions on hover */}
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 pl-4">
+            <BadgeOverflow badges={metaBadges} max={3} className="flex-wrap" />
             <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
               <span
                 className={flagChip(hasUser, 'warn')}

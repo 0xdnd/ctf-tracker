@@ -3,6 +3,17 @@ import { describe, it, expect } from 'vitest';
 import { PlatformBadge, PlatformIcon } from './PlatformBadge';
 
 describe('PlatformBadge component', () => {
+  it('exposes the full platform name via title and aria-label', () => {
+    render(<PlatformBadge platform="HTB" size="sm" />);
+    const el = screen.getByLabelText('Platform: Hack The Box');
+    expect(el).toHaveAttribute('title', 'Platform: Hack The Box');
+  });
+
+  it('renders nothing when platform is empty', () => {
+    const { container } = render(<PlatformBadge platform={'' as never} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('renders HTB platform badge with label and styling', () => {
     render(<PlatformBadge platform="HTB" />);
 

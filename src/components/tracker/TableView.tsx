@@ -416,9 +416,9 @@ const StackedCard = React.memo<TableRowProps>(({
       ) : (
         <BadgeOverflow
           badges={[
+            ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
             <OsBadge key="os" os={m.os} size="xs" />,
             <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-            <PlatformBadge key="plat" platform={m.platform} size="sm" />,
             ...(m.certifications || []).map((c) => (
               <span
                 key={c}
@@ -428,7 +428,7 @@ const StackedCard = React.memo<TableRowProps>(({
               </span>
             )),
           ]}
-          max={2}
+          max={3}
         />
       )}
     </div>

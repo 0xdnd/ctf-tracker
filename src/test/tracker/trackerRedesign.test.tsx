@@ -308,10 +308,20 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(screen.getByLabelText(/User flag pending for Lame/i)).toBeInTheDocument();
     });
 
-    it('caps inline badges at two and groups the rest behind a +N pill', () => {
+    it('caps inline badges at three and groups the rest behind a +N pill', () => {
       wrap(<KanbanBoard filteredMachines={[makeMachine()]} />);
-      // OS + difficulty inline, two certifications overflow
+      // Platform + OS + difficulty inline, two certifications overflow
       expect(screen.getByRole('button', { name: '2 more' })).toBeInTheDocument();
+    });
+
+    it('shows the platform badge first, inline, and absent without a platform', () => {
+      const { unmount } = wrap(<KanbanBoard filteredMachines={[makeMachine({ platform: 'THM' })]} />);
+      const badge = screen.getByLabelText('Platform: TryHackMe');
+      expect(badge).toHaveTextContent('THM');
+      expect(screen.queryAllByLabelText('Platform: TryHackMe')).toHaveLength(1);
+      unmount();
+      wrap(<KanbanBoard filteredMachines={[makeMachine({ platform: '' as never })]} />);
+      expect(screen.queryByLabelText(/^Platform:/)).toBeNull();
     });
 
     it('empty backlog lane offers an Add machine CTA', () => {
