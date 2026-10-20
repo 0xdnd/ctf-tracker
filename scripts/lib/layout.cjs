@@ -26,9 +26,11 @@ const STATIC_CSS = CSS_FILES.map((f) => {
 }).join('');
 // Content-hashed href so a changed stylesheet is never served stale from the browser cache or the service worker.
 const CSS_HREF = '/static.css?v=' + crypto.createHash('sha1').update(STATIC_CSS).digest('hex').slice(0, 8);
-// Blocking theme bootstrap (public/theme.js). Hashed so a changed script is never served stale by the service worker.
-const THEME_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'theme.js'), 'utf8');
-const THEME_SRC = '/theme.js?v=' + crypto.createHash('sha1').update(THEME_JS).digest('hex').slice(0, 8);
+// Theme bootstrap (public/theme.js) inlined into <head>: no blocking request, and it still runs before first paint (no theme flash).
+// apply-csp.cjs hashes inline scripts at build, so the pages' script-src stays hash-based. public/theme.js is still deployed for pages cached before this change.
+const THEME_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'theme.js'), 'utf8').replace(/\r\n?/g, '\n').trim();
+if (/<\/script/i.test(THEME_JS)) throw new Error('layout: theme.js must not contain </script');
+const THEME_SCRIPT = `<script>${THEME_JS}</script>`;
 const FONT_PATHS = ['/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2'];
 
 const esc = (s) =>
@@ -287,12 +289,13 @@ const unesc = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quo
 /**
  * Single place that dates and credits an article page. For a rendered page with a TechArticle JSON-LD block it sets
  * dateModified (the same value the sitemap uses as lastmod), datePublished, the Person author, mainEntityOfPage and a description
- * (the page's meta description when the block has none), and puts a visible "By <name> · Updated <date>" line under the H1.
+ * (the page's meta description when the block has none), image (the page's absolute og:image URL when the block has none), and puts a visible "By <name> · Updated <date>" line under the H1.
  * Pages without a TechArticle block are returned unchanged. published is clamped so it never follows modified.
  */
 function stampArticle(html, { modified, published }) {
   let stamped = false;
   const metaDesc = (/<meta name="description" content="([^"]*)"/.exec(html) || [])[1];
+  const ogImage = unesc((/<meta property="og:image" content="(https?:\/\/[^"]*)"/.exec(html) || [])[1] || '');
   const pub = published && published < modified ? published : modified;
   const out = html.replace(LD_SCRIPT, (m, json) => {
     let o;
@@ -306,6 +309,7 @@ function stampArticle(html, { modified, published }) {
     const url = o.url;
     const next = { ...o, datePublished: pub, dateModified: modified, author: personLd(), mainEntityOfPage: { '@type': 'WebPage', '@id': url } };
     if (!next.description && metaDesc) next.description = unesc(metaDesc);
+    if (!next.image && ogImage) next.image = ogImage;
     return `<script type="application/ld+json">${jsonLd(next)}</script>`;
   });
   if (!stamped) return html;
@@ -358,7 +362,7 @@ function renderPage(opts) {
   <link rel="canonical" href="${url}" />
 ${ICON_LINKS}
   <link rel="manifest" href="/manifest.webmanifest" />
-  <script src="${THEME_SRC}"></script>
+  ${THEME_SCRIPT}
   <link rel="stylesheet" href="${CSS_HREF}" />${opts.preloadFonts ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
@@ -421,7 +425,7 @@ function render404Page() {
   <meta name="theme-color" content="#09090b" />
 ${ICON_LINKS}
   <link rel="manifest" href="/manifest.webmanifest" />
-  <script src="${THEME_SRC}"></script>
+  ${THEME_SCRIPT}
   <script src="${NF_SRC}"></script>
   <link rel="stylesheet" href="${CSS_HREF}" />
   <meta http-equiv="Content-Security-Policy" content="${SHELL_CSP}" />
@@ -445,4 +449,4 @@ ${siteFooter({ analyticsNote: '' })}
 `;
 }
 
-module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, STATIC_CSS, CSS_HREF, THEME_SRC, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
+module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };

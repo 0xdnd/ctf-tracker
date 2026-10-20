@@ -35,7 +35,7 @@ fs.writeFileSync(
 
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
-const { CSS_HREF, THEME_SRC, webPageGraphLd, personLd, PERSON_ID } = require('./lib/layout.cjs');
+const { CSS_HREF, THEME_SCRIPT, webPageGraphLd, personLd, PERSON_ID } = require('./lib/layout.cjs');
 // The two hero images (window + pacing card) are part of the first paint, so every width of them is precached too.
 let heroShots = [];
 try {
@@ -44,7 +44,7 @@ try {
   heroShots = [];
 }
 const heroAssets = heroShots.flatMap((x) => (x.srcset || []).map((v) => v.src));
-const staticShellAssets = [CSS_HREF, THEME_SRC, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2', ...heroAssets];
+const staticShellAssets = [CSS_HREF, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2', ...heroAssets];
 const shellAssets = [...new Set([...[...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]), ...staticShellAssets])];
 const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
@@ -120,7 +120,7 @@ function staticBlock(route) {
 }
 
 // ---- Route pages ----
-const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/']);
+const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/', '/exam/', '/cheatsheets/']);
 let written = 0;
 for (const route of routes) {
   const url = ORIGIN + route.path;
@@ -141,7 +141,7 @@ for (const route of routes) {
   const routeLd = webPageGraphLd({ path: route.path, name: route.title, description: route.description, crumbs: [['Home', '/'], [NAV_LABEL[route.path] || route.h1, route.path]] });
   html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(routeLd)}</script>\n</head>`, '</head>');
 
-  // Private app surfaces (user data UIs) stay out of the index; /exam/ remains indexable.
+  // App surfaces (user data UIs, and the thin /exam/ and /cheatsheets/ shells) stay out of the index; the content hubs are indexable.
   if (NOINDEX_ROUTES.has(route.path)) html = html.replace('</head>', '    <meta name="robots" content="noindex">\n  </head>');
 
   const outDir = path.join(distDir, route.path.replace(/^\/|\/$/g, ''));
@@ -371,7 +371,7 @@ const guideList = GUIDES.map(
 let landing = fs.readFileSync(path.join(__dirname, 'templates', 'landing.html'), 'utf8');
 const subs = {
   '{{CSS_HREF}}': CSS_HREF,
-  '{{THEME_SRC}}': THEME_SRC,
+  '{{THEME_SCRIPT}}': THEME_SCRIPT,
   '{{FONT_PRELOAD}}': fontPreloadTags(),
   '{{HERO_PRELOAD}}': heroPreload(),
   '{{SITE_HEADER}}': siteHeader({ current: '/' }),

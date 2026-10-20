@@ -8,7 +8,7 @@
  *   node scripts/capture-landing-shots.mjs --only=graph,table   (re-capture only these shots; the manifest keeps the others)
  *
  * Output:
- *   public/images/landing/{name}-2400.webp, {name}-1600.webp, {name}-800.webp
+ *   public/images/landing/{name}-2400.webp, {name}-1600.webp, {name}-800.webp  (hero-app also gets -1050)
  *   scripts/templates/landing-shots.json   (read by prerender)
  *
  * How it works
@@ -64,7 +64,10 @@ const SCALE = 3;
 const T0 = new Date('2026-10-01T09:00:00Z');
 const PAUSE_AT = new Date('2026-10-01T09:00:30Z');
 const WIDTHS = [2400, 1600, 800];
-const BUDGET_KB = { 2400: 380, 1600: 200, 800: 70 };
+const BUDGET_KB = { 2400: 380, 1600: 200, 1050: 110, 800: 70 };
+// Extra widths for single shots: the hero is shown at calc(100vw - 32px) on phones, where 800w is too small and the native 1575w too big.
+const EXTRA_WIDTHS = { 'hero-app': [1050] };
+const widthsFor = (name) => [...new Set([...WIDTHS, ...(EXTRA_WIDTHS[name] || [])])].sort((a, b) => b - a);
 // WebP quality window (percent). Quality drops below the floor only if a budget cannot be met.
 const Q_MAX = 92;
 const Q_MIN = 88;
@@ -410,7 +413,7 @@ function encodeWithPillow(name, png) {
     fs.writeFileSync(src, png);
     const r = spawnSync(
       'python',
-      ['-I', '-c', PY_ENCODER, src, dir, name, String(Q_MAX), JSON.stringify(WIDTHS), JSON.stringify(BUDGET_KB)],
+      ['-I', '-c', PY_ENCODER, src, dir, name, String(Q_MAX), JSON.stringify(widthsFor(name)), JSON.stringify(BUDGET_KB)],
       { encoding: 'utf8' },
     );
     if (r.status !== 0) throw new Error(`Pillow encoding failed: ${r.stderr}`);
@@ -427,7 +430,7 @@ function encodeWithPillow(name, png) {
 /** Fallback: in-page canvas -> toDataURL('image/webp', q). */
 async function encodeWithCanvas(page, name, png) {
   const out = [];
-  for (const w of WIDTHS) {
+  for (const w of widthsFor(name)) {
     const enc = await page.evaluate(
       async ({ b64, width, maxBytes, qMax }) => {
         const img = new Image();
