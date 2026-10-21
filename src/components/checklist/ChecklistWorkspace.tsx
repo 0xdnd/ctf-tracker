@@ -27,6 +27,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { generateApplicablePhases } from '../../data/methodologyFramework';
 import { detectAndParseScan } from '../../utils/scanParserUtils';
 import { Modal } from '../common/Modal';
+import { computeChecklistProgress } from '../../utils/checklistProgress';
 import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter';
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
 import { interpolateCommand, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
@@ -85,29 +86,10 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   }, [machine]);
 
   // Compute overall statistics
-  const stats = useMemo(() => {
-    let total = 0;
-    let completed = 0;
-    let inProgress = 0;
-    let na = 0;
-
-    applicablePhases.forEach((phase) => {
-      phase.subcategories.forEach((subcat) => {
-        subcat.items.forEach((item) => {
-          const status = itemsState[item.id]?.status || 'todo';
-          if (status === 'done') completed++;
-          else if (status === 'in_progress') inProgress++;
-          else if (status === 'na') na++;
-          total++;
-        });
-      });
-    });
-
-    const activeTotal = total - na;
-    const percentage = activeTotal > 0 ? Math.round((completed / activeTotal) * 100) : 0;
-
-    return { total, completed, inProgress, na, activeTotal, percentage };
-  }, [applicablePhases, itemsState]);
+  const stats = useMemo(
+    () => computeChecklistProgress(applicablePhases, itemsState),
+    [applicablePhases, itemsState]
+  );
 
   // Determine current active objective breadcrumb
   const currentBreadcrumb = useMemo(() => {
