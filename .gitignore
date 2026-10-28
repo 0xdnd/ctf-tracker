@@ -118,3 +118,10 @@ public/sitemap.xml
 .mcp.json.bak
 .playwright-mcp/
 ctftracker.com-audit/
+
+# Promo video projects and renders (kept out of the repo and the Pages deploy)
+promo-hyperframes/
+promo-mobile/
+promo-opus/
+public/videos/
+skills-lock.json
