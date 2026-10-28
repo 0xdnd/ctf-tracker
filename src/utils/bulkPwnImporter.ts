@@ -96,9 +96,13 @@ export function extractCandidateNames(raw: string): string[] {
 
 /** Platform named by a candidate's prefix, e.g. "HTB - Retro", "[THM] Retro", "tryhackme: Retro". */
 function platformHint(raw: string): Platform | undefined {
-  const m = /^\s*\[?(htb|hackthebox|thm|tryhackme)\b/i.exec(raw);
+  const m = /^\s*\[?(htb|hackthebox|thm|tryhackme|pg|vulnhub)\b/i.exec(raw);
   if (!m) return undefined;
-  return /^(htb|hackthebox)$/i.test(m[1]) ? 'HTB' : 'THM';
+  const p = m[1].toLowerCase();
+  if (p === 'htb' || p === 'hackthebox') return 'HTB';
+  if (p === 'pg') return 'PG';
+  if (p === 'vulnhub') return 'VulnHub';
+  return 'THM';
 }
 
 /**
@@ -144,7 +148,7 @@ export function matchCandidateNamesToCatalog(
 
     // 2. Derived ID match (e.g. "Pickle Rick" -> "thm-picklerick")
     if (!match) {
-      match = idMap.get(`htb-${norm}`) || idMap.get(`thm-${norm}`);
+      match = idMap.get(`htb-${norm}`) || idMap.get(`thm-${norm}`) || idMap.get(`pg-${norm}`) || idMap.get(`vulnhub-${norm}`);
       if (match) confidence = 0.95;
     }
 

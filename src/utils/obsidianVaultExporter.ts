@@ -27,6 +27,7 @@ export async function generateObsidianVaultZip(
   const completedSolves = machines.filter((m) => m.status === 'completed');
   const htbSolves = completedSolves.filter((m) => m.platform === 'HTB');
   const thmSolves = completedSolves.filter((m) => m.platform === 'THM');
+  const otherSolves = completedSolves.filter((m) => m.platform !== 'HTB' && m.platform !== 'THM');
   const inProgress = machines.filter((m) => m.status === 'recon' || m.status === 'foothold' || m.status === 'root');
 
   const categories = Array.from(new Set(cheatsheets.map((c) => c.category)));
@@ -47,7 +48,7 @@ tags:
 
 # ⚡ ZEROBOX // TACTICAL CTF FIELD VAULT
 > **Operator:** Daniel Dayan (\`0xdnd\`)  
-> **Operational Track Record:** **${completedSolves.length} Pwns** (${htbSolves.length} Hack The Box + ${thmSolves.length} TryHackMe)  
+> **Operational Track Record:** **${completedSolves.length} Pwns** (${htbSolves.length} Hack The Box + ${thmSolves.length} TryHackMe${otherSolves.length > 0 ? ` + ${otherSolves.length} PG / VulnHub / Custom` : ''})  
 > **Export Date:** ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 ---

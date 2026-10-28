@@ -45,7 +45,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus, Difficulty, Machine } from '../../types';
 import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard, sanitizeExternalUrl, interpolateCommand } from '../../utils/helpers';
 import { ChecklistWorkspace } from '../checklist/ChecklistWorkspace';
-import { PlatformBadge } from '../common/PlatformBadge';
+import { PlatformBadge, platformFullName } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
@@ -787,7 +787,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {(() => {
                 const safeHref = machine.roomUrl ? sanitizeExternalUrl(machine.roomUrl) : undefined;
                 if (!safeHref) return null;
-                const platformName = machine.platform === 'HTB' ? 'Hack The Box' : machine.platform === 'THM' ? 'TryHackMe' : machine.platform;
+                const platformName = platformFullName(machine.platform);
                 return (
                   <div className="p-4 rounded-xl bg-surface-sunken/80 border border-subtle">
                     <a

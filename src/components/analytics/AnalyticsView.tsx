@@ -252,7 +252,7 @@ export const AnalyticsView: React.FC = () => {
 
   // Platform Distribution
   const platformStats = useMemo(() => {
-    const platforms: Platform[] = ['HTB', 'THM', 'Custom'];
+    const platforms: Platform[] = ['HTB', 'THM', 'PG', 'VulnHub', 'Custom'];
     return platforms.map((p) => {
       const total = machines.filter((m) => m.platform === p).length;
       const rooted = rootedMachines.filter((m) => m.platform === p).length;
