@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -40,6 +40,10 @@ import { DomainVhostSection } from '../components/tracker/DomainVhostSection';
 import { PortTriageTable } from '../components/tracker/PortTriageTable';
 import { LabFindingsPanel } from '../components/tracker/LabFindingsPanel';
 import { LabTimelineAndIndependence } from '../components/tracker/LabTimelineAndIndependence';
+import { MachineSummaryStrip } from '../components/tracker/MachineSummaryStrip';
+import { HostLootPanel } from '../components/tracker/HostLootPanel';
+import { getMachineLoot } from '../utils/machineLoot';
+import { isUserFlagDone, isRootFlagDone } from '../utils/machineGlance';
 
 const TargetDetailTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === machineId ? s.activeTimerSeconds : 0));
@@ -87,6 +91,14 @@ export const TargetDetailPage: React.FC = () => {
     }))
   );
 
+  const { credentials, credAttempts, lootItems } = useCtfStore(
+    useShallow((s) => ({
+      credentials: s.credentials,
+      credAttempts: s.credAttempts,
+      lootItems: s.lootItems,
+    }))
+  );
+
   useEffect(() => {
     if (!isCatalogLoaded) {
       loadCatalog();
@@ -106,6 +118,12 @@ export const TargetDetailPage: React.FC = () => {
       mname.replace(/[^a-z0-9]/g, '') === normalizedId.replace(/[^a-z0-9]/g, '')
     );
   });
+
+  const machineId = machine?.id;
+  const machineLoot = useMemo(
+    () => getMachineLoot({ credentials, credAttempts, lootItems }, machineId ?? ''),
+    [credentials, credAttempts, lootItems, machineId]
+  );
 
   const [activeTab, setActiveTab] = useState<'checklist' | 'overview' | 'commands' | 'recon'>('checklist');
   const [showUserFlag, setShowUserFlag] = useState(false);
@@ -164,19 +182,8 @@ export const TargetDetailPage: React.FC = () => {
 
   const isActiveTarget = activeTargetId === machine.id;
 
-  const isUserPwned = Boolean(
-    machine && (
-      Boolean(machine.userFlag?.trim()) ||
-      ((machine.status === 'foothold' || machine.status === 'root' || machine.status === 'completed') && Boolean(machine.userPwnedAt))
-    )
-  );
-
-  const isRootPwned = Boolean(
-    machine && (
-      Boolean(machine.rootFlag?.trim()) ||
-      ((machine.status === 'root' || machine.status === 'completed') && Boolean(machine.rootPwnedAt))
-    )
-  );
+  const isUserPwned = isUserFlagDone(machine);
+  const isRootPwned = isRootFlagDone(machine);
 
   const handleCopy = (text: string, type: 'user' | 'root') => {
     if (!text) return;
@@ -436,6 +443,8 @@ export const TargetDetailPage: React.FC = () => {
         </div>
       ) : (
         <>
+          <MachineSummaryStrip machine={machine} machineLoot={machineLoot} onNavigate={setActiveTab} />
+
           {/* Navigation tabs: single line, horizontally scrollable */}
           <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
             <div className="flex min-w-max items-center gap-1">
@@ -604,6 +613,9 @@ export const TargetDetailPage: React.FC = () => {
               </div>
             </div>
           </section>
+
+          {/* Loot on this host */}
+          <HostLootPanel key={machine.id} machine={machine} machineLoot={machineLoot} />
 
           {/* Domain & Virtual Hosts */}
           <DomainVhostSection machine={machine} />

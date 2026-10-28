@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key, Terminal } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -109,6 +109,7 @@ export const lootItemToEvidenceItem = (l: LootItem, machines: Machine[]): VaultE
 
 export const EvidenceVaultPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem, setGlobalVars } = useCtfStore(
     useShallow((s) => ({
@@ -135,7 +136,11 @@ export const EvidenceVaultPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<EvidenceCategory>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
-  const [selectedTargetId, setSelectedTargetId] = useState<string>('all');
+  const [selectedTargetId, setSelectedTargetId] = useState<string>(() => {
+    // Deep link: /vault?target=<machineId> preselects that machine, read once on load
+    const t = searchParams.get('target');
+    return t && machines.some((m) => m.id === t) ? t : 'all';
+  });
   const [viewMode, setViewMode] = useState<'table' | 'timeline' | 'matrix'>('table');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
