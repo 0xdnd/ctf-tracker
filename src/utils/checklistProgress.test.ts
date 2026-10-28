@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeChecklistProgress, computeChecklistProgressForMachine } from './checklistProgress';
 import { generateApplicablePhases } from '../data/methodologyFramework';
+import type { Machine as MachineLike } from '../types';
 
 const phases = [
   {
@@ -10,7 +11,7 @@ const phases = [
     ],
   },
   { subcategories: [{ items: [{ id: 'f' }] }] },
-] as any;
+] as never;
 
 describe('computeChecklistProgress', () => {
   it('counts each status', () => {
@@ -37,7 +38,7 @@ describe('computeChecklistProgress', () => {
 
   it('returns 0 when everything is na or the list is empty', () => {
     const allNa = Object.fromEntries('abcdef'.split('').map((id) => [id, { status: 'na' }]));
-    expect(computeChecklistProgress(phases, allNa as any).percentage).toBe(0);
+    expect(computeChecklistProgress(phases, allNa as never).percentage).toBe(0);
     expect(computeChecklistProgress([], {})).toEqual({
       total: 0, completed: 0, inProgress: 0, na: 0, activeTotal: 0, percentage: 0,
     });
@@ -51,12 +52,12 @@ describe('computeChecklistProgress', () => {
 
 describe('computeChecklistProgressForMachine', () => {
   it('matches the core fn over the machine phases', () => {
-    const base = { id: 'm', name: 'M', os: 'Linux', openPorts: [80] } as any;
+    const base = { id: 'm', name: 'M', os: 'Linux', openPorts: [80] } as unknown as MachineLike;
     const first = generateApplicablePhases(base, [80])[0].subcategories[0].items[0].id;
-    const machine = { ...base, checklist: { itemsState: { [first]: { status: 'done' } } } } as any;
+    const machine = { ...base, checklist: { itemsState: { [first]: { status: 'done' } } } } as unknown as MachineLike;
     const expected = computeChecklistProgress(
       generateApplicablePhases(machine, [80]),
-      machine.checklist.itemsState
+      machine.checklist?.itemsState
     );
     expect(computeChecklistProgressForMachine(machine)).toEqual(expected);
     expect(expected.completed).toBe(1);

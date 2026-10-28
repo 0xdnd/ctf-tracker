@@ -70,9 +70,9 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   const [notesOpenMap, setNotesOpenMap] = useState<Record<string, boolean>>({});
   const [copiedMarkdown, setCopiedMarkdown] = useState(false);
 
-  const openPorts = machine.openPorts || [];
+  const openPorts = useMemo(() => machine.openPorts || [], [machine.openPorts]);
   const checklist = machine.checklist;
-  const itemsState = checklist?.itemsState || {};
+  const itemsState = useMemo(() => checklist?.itemsState || {}, [checklist?.itemsState]);
   const activeItemId = checklist?.activeItemId;
 
   // Generate applicable methodology phases based on OS and detected ports

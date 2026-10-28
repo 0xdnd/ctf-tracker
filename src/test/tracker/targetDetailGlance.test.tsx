@@ -39,7 +39,7 @@ describe('TargetDetailPage glance', () => {
         { ...base, id: 'box-1', name: 'Lame', isActive: false },
         { ...base, id: 'box-2', name: 'Seasonal', isActive: true },
       ],
-    } as any);
+    } as never);
   });
   afterEach(() => cleanup());
 
