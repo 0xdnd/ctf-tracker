@@ -45,7 +45,7 @@ describe('hard-coded catalog counts', () => {
   it.each(UI_FILES)('every headline machine literal in %s equals the CTF count (never the total)', (file) => {
     const totals = all(
       read(file),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
+      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines| HTB, THM, PG & VulnHub machines| Hack The Box, TryHackMe, Proving Grounds & VulnHub machines)\b/g
     );
     expect(totals.length, file).toBeGreaterThan(0);
     for (const n of totals) expect(n, file).toBe(PURE_CTF_TOTAL);
@@ -54,10 +54,22 @@ describe('hard-coded catalog counts', () => {
   it('every pure CTF challenge literal in README.md equals the full catalog total', () => {
     const totals = all(
       read('README.md'),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
+      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines| HTB, THM, PG & VulnHub machines| Hack The Box, TryHackMe, Proving Grounds & VulnHub machines)\b/g
     );
     expect(totals.length).toBeGreaterThan(0);
     for (const n of totals) expect(n).toBe(PURE_CTF_TOTAL);
+  });
+
+  it('copy scoped to HTB and THM keeps the HTB+THM count, never the full total', () => {
+    const nf = new Intl.NumberFormat('en-US');
+    const llms = read('public/llms.txt');
+    expect(llms).toContain(`full directory of ${nf.format(HTB_THM_TOTAL)} HTB and THM machines`);
+    expect(llms).not.toContain(`${nf.format(PURE_CTF_TOTAL)} HTB`);
+    expect(read('scripts/gen-content-pages.cjs')).toContain('catalogCounts.htbThm');
+    // A scope-naming phrase may only sit next to the HTB+THM count.
+    for (const file of ['README.md', 'public/llms.txt', ...UI_FILES]) {
+      expect(read(file), file).not.toMatch(/1,?372 (?:HTB and THM|HTB & THM|Hack The Box and TryHackMe)/);
+    }
   });
 
   it('README badge and platform breakdowns match the catalog', () => {

@@ -1,6 +1,6 @@
 # ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)
 
-> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks 1,372 Hack The Box and TryHackMe machines, 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
+> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks 1,027 Hack The Box and TryHackMe machines, 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
 
 ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.
 

@@ -448,7 +448,7 @@ for (const m of withPage) {
   const platforms = Object.keys(byPlatform).sort();
   const parts = [];
   parts.push(
-    `<p class="lead">Browse ${model.catalogCounts.ctf} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
+    `<p class="lead">Browse ${model.catalogCounts.htbThm} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
   );
   parts.push(ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }));
   parts.push(
@@ -487,8 +487,8 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: fitTitle(`Hack The Box Machines List: ${model.catalogCounts.ctf.toLocaleString('en-US')} HTB & THM Boxes`, `Hack The Box Machines List: ${model.catalogCounts.ctf.toLocaleString('en-US')} Boxes`),
-    description: `Browse ${model.catalogCounts.ctf.toLocaleString('en-US')} Hack The Box and TryHackMe machines by platform, OS and difficulty, with attack paths for solved boxes and a free tracker.`,
+    title: fitTitle(`Hack The Box Machines List: ${model.catalogCounts.htbThm.toLocaleString('en-US')} HTB & THM Boxes`, `Hack The Box Machines List: ${model.catalogCounts.htbThm.toLocaleString('en-US')} Boxes`),
+    description: `Browse ${model.catalogCounts.htbThm.toLocaleString('en-US')} Hack The Box and TryHackMe machines by platform, OS and difficulty, with attack paths for solved boxes and a free tracker.`,
     h1: 'Hack The Box and TryHackMe machines list and tracker',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
@@ -1108,7 +1108,7 @@ if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'),
   const lines = [
     '# ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)',
     '',
-    `> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks ${model.catalogCounts.ctf.toLocaleString('en-US')} Hack The Box and TryHackMe machines, ${(model.proLabs || []).length} official HTB Pro Labs, ${model.phases.length} methodology phases, ${model.topics.length} cheatsheet topics, ${techGroups.length} technique hubs, ${model.notes.length} pentest methodology notes, and a ${model.examTracks.length}-track exam simulator (${model.examTracks.join(', ')}). Site: https://ctftracker.com/`,
+    `> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks ${model.catalogCounts.htbThm.toLocaleString('en-US')} Hack The Box and TryHackMe machines, ${(model.proLabs || []).length} official HTB Pro Labs, ${model.phases.length} methodology phases, ${model.topics.length} cheatsheet topics, ${techGroups.length} technique hubs, ${model.notes.length} pentest methodology notes, and a ${model.examTracks.length}-track exam simulator (${model.examTracks.join(', ')}). Site: https://ctftracker.com/`,
     '',
     'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.',
     '',
