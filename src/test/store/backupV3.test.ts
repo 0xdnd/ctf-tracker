@@ -85,7 +85,7 @@ beforeEach(async () => {
     globalVars: { ...get().globalVars, lhost: '10.10.14.7', customVars: { API_TOKEN: 'tok-123', wordlist: 'rockyou' } },
     customNotes: [],
   });
-  useExamStore.setState({ scratchNotes: 'exam log: pivot via chisel', candidateName: 'Backup Tester' });
+  useExamStore.setState({ scratchNotes: 'exam log: pivot via chisel', candidateName: 'Backup Tester', reportExamDate: '2026-03-14' });
   await saveVaultToIndexedDb({ notes: [note('n1', 'SQLi'), note('n2', 'SSRF')], wikilinkMap: { sqli: 'n1' } });
 });
 
@@ -127,7 +127,7 @@ describe('backup v3: import', () => {
     const text = await buildBackupFile();
 
     useCtfStore.setState({ machines: [], globalVars: { ...get().globalVars, lhost: '1.2.3.4' } });
-    useExamStore.setState({ scratchNotes: 'overwritten', candidateName: 'Someone Else' });
+    useExamStore.setState({ scratchNotes: 'overwritten', candidateName: 'Someone Else', reportExamDate: null });
     await saveVaultToIndexedDb({ notes: [note('n1', 'SQLi edited later'), note('n3', 'Local only')], wikilinkMap: {} });
 
     const result = await importBackupFile(text);
@@ -136,6 +136,7 @@ describe('backup v3: import', () => {
     expect(get().globalVars.lhost).toBe('10.10.14.7');
     expect(useExamStore.getState().scratchNotes).toBe('exam log: pivot via chisel');
     expect(useExamStore.getState().candidateName).toBe('Backup Tester');
+    expect(useExamStore.getState().reportExamDate).toBe('2026-03-14');
     expect(vaultNotes(fake)).toEqual(['n1', 'n2', 'n3']);
     const vault = fake.records.get('vault_data') as { notes: CptsNoteEntry[]; wikilinkMap: Record<string, string> };
     expect(vault.notes.find((n) => n.id === 'n1')?.title).toBe('SQLi'); // the backup copy wins

@@ -36,6 +36,24 @@ ${row('Active Directory or Kerberos tags', ad)}
 ${row('With a ZeroBox attack path page', (m) => m.hasPage)}
 </tbody></table>`;
 
+  const cmp = [
+    ['Learning style', 'Guided rooms with tasks and questions', 'Standalone machines, usually unguided'],
+    ['Best for', 'Beginners learning a topic from scratch', 'OSCP-style practice without a walkthrough'],
+    ['Difficulty curve', 'Gradual, topic by topic', 'Machines rated from Easy to Insane'],
+    ['OSCP-relevant content', 'OSCP-style rooms; not part of the TJ Null list', 'Has its own tab on the TJ Null list; see the OSCP-like machines page'],
+    ['Free access', 'Free content plus a paid subscription', 'Free content plus a paid subscription; see current pricing'],
+    ['Certification path', 'Its own certifications', 'CPTS and other HTB certifications'],
+  ]
+    .map(([k, t, h]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(t)}</td><td>${esc(h)}</td></tr>`)
+    .join('\n');
+  const compare = `<table><caption>Hack The Box compared with TryHackMe</caption><thead><tr><th scope="col">Aspect</th><th scope="col">TryHackMe</th><th scope="col">Hack The Box</th></tr></thead><tbody>
+${cmp}
+</tbody></table>`;
+
+  const directAnswer = `<h2>Should you use Hack The Box or TryHackMe for OSCP prep?</h2>
+<p>For OSCP prep, use TryHackMe first if you need guided, beginner-friendly learning, and Hack The Box for OSCP-style practice on unguided machines. TryHackMe rooms explain a topic step by step, while Hack The Box machines leave the foothold and escalation to you, as the OSCP exam does. Many people use both in sequence.</p>
+${compare}`;
+
   const body = `<h2>What each platform is</h2>
 <p><strong>Hack The Box (HTB)</strong> hosts machines and labs that you attack as standalone targets, usually with no built-in walkthrough. You find the foothold and the escalation yourself, which is closer to how a practical exam feels.</p>
 <p><strong>TryHackMe (THM)</strong> is built around guided rooms. A room typically walks through a topic in tasks with questions to answer, and some rooms are full challenge machines. That structure makes it easier to learn a concept from scratch.</p>
@@ -66,6 +84,7 @@ ${table}
     description: `HTB vs TryHackMe compared with catalogue data: ${H()} HTB and ${T()} THM machines by OS, difficulty and OSCP tags, and which to use. Free.`,
     h1: 'HTB vs TryHackMe: which platform for OSCP prep, beginners and Active Directory',
     lead: esc(`Hack The Box and TryHackMe are the two platforms behind the ${total} machines in the ZeroBox catalogue. This page compares them using that data, then says which fits OSCP preparation, a first month of practice and Active Directory work.`),
+    directAnswer,
     body,
     topCta: { body: 'Track HTB and THM machines together in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' },
     cta: { title: 'One tracker for both platforms.', body: 'Keep Hack The Box and TryHackMe progress, notes and flags in one offline board. No account.', href: '/tracker/', label: 'Open tracker' },

@@ -52,8 +52,13 @@ export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 }
 
 const MIN_WORDS = 150;
-// Pure CTF challenge machines (HTB + THM); the rest of the catalog is guided labs. README and llms.txt state the same split.
-const CTF_MACHINE_COUNT = 1027;
+// CTF machines = the HTB + THM rows in machinesCatalog.ts (counted from data) plus the PG and VulnHub source rows
+// (loaded at runtime by loadMachinesCatalog); the rest of machinesCatalog.ts is guided labs.
+// catalogCounts.htbThm scopes copy that names only HTB/THM; catalogCounts.ctf is the full count.
+const EXTRA_PLATFORM_COUNT = ['pg', 'vulnhub'].reduce(
+  (n, f) => n + JSON.parse(fs.readFileSync(path.join(rootDir, 'src', 'data', 'catalogSources', f + '.json'), 'utf8')).length,
+  0
+);
 const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
 const TRACK_TO_CERT = {
@@ -153,7 +158,8 @@ function getModel() {
     .map((n) => ({ ...n, slug: slugify(n.id) }));
 
   const examTracks = Object.values(d.EXAM_TRACK_CONFIGS).map((t) => t.id);
-  const catalogCounts = { total: machines.length, ctf: CTF_MACHINE_COUNT, guided: machines.length - CTF_MACHINE_COUNT };
+  const htbThm = machines.filter((m) => m.platform === 'HTB' || m.platform === 'THM').length;
+  const catalogCounts = { total: machines.length, htbThm, ctf: htbThm + EXTRA_PLATFORM_COUNT, guided: machines.length - htbThm };
   const proLabs = d.OFFICIAL_HTB_PRO_LABS || [];
 
   cached = { machines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, examTracks, catalogCounts, MIN_WORDS };
@@ -184,4 +190,41 @@ function getGuides() {
   return guidesCache;
 }
 
-module.exports = { getModel, getGuides, slugify };
+let writeupsCache;
+/**
+ * Owner writeups from content/writeups/*.md (see ./writeups.cjs): [{ slug, fm, html, toc, relPath }].
+ * Joins on the machine slug: sets hasSiteWriteup + siteWriteup on the machine. Never touches ownWriteup (page title/H1 depend on it).
+ * Tolerant of a missing folder (returns []); any invalid writeup throws, so the build fails.
+ */
+/** Technique hub slugs that are actually emitted (>= 5 machines, same cut as gen-content-pages TECH_MIN); the rest are redirect stubs. */
+function getTechSlugs() {
+  const { GROUPS, matchesMachine } = require('./techniques.cjs');
+  const machines = getModel().machines;
+  return new Set(GROUPS.filter((g) => machines.filter((m) => matchesMachine(g, m)).length >= 5).map((g) => g.slug));
+}
+
+/**
+ * Side-effect-free variant for tooling (scripts/check-writeups.cjs): validates with loader options (files, includeDrafts, dir),
+ * bypasses the cache and does not touch the machine model.
+ */
+function checkWriteups(opts) {
+  const { loadWriteups } = require('./writeups.cjs');
+  const bySlug = new Map(getModel().machines.map((m) => [m.slug, m]));
+  return loadWriteups({ ...opts, machinesBySlug: bySlug, techSlugs: getTechSlugs() });
+}
+
+function getWriteups() {
+  if (writeupsCache) return writeupsCache;
+  const { loadWriteups } = require('./writeups.cjs');
+  const machines = getModel().machines;
+  const bySlug = new Map(machines.map((m) => [m.slug, m]));
+  writeupsCache = loadWriteups({ machinesBySlug: bySlug, techSlugs: getTechSlugs() });
+  for (const w of writeupsCache) {
+    const m = bySlug.get(w.slug);
+    m.hasSiteWriteup = true;
+    m.siteWriteup = w;
+  }
+  return writeupsCache;
+}
+
+module.exports = { getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify };

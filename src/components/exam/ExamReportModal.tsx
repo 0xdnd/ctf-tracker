@@ -73,6 +73,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
       osid: s.osid,
+      reportExamDate: s.reportExamDate,
     }))
   );
 
@@ -115,20 +116,35 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   const [downloadFeedback, setDownloadFeedback] = useState<string | null>(null);
   const [bundling, setBundling] = useState<boolean>(false);
 
-  // Sync internal state when modal opens or baseSession changes
+  // Header fields (name, callsign, OSID, date) are saved to the exam store per session, so a reopened modal
+  // (or a reload) shows what the operator typed. A passed-in session is a read-only snapshot: edits stay local.
+  const persistsHeader = !propSession;
+  const storedReportDate = persistsHeader ? store.reportExamDate : null;
+  const saveHeader = (info: { candidateName?: string; candidateCallsign?: string; osid?: string; reportExamDate?: string | null }) => {
+    if (persistsHeader) useExamStore.getState().setCandidateInfo(info);
+  };
+
+  // Header: load once per opening / session (not on every store change, which our own edits cause).
   useEffect(() => {
     if (isOpen) {
-      setCandidateName(baseSession.candidateName || 'Daniel Dayan');
-      setCandidateCallsign(baseSession.candidateCallsign || '0xdnd');
-      setOsid(baseSession.osid || 'OS-94821');
-      setSelectedTrack(baseSession.track || 'OSCP');
-      setIncludeBonusPoints(Boolean(baseSession.includeBonusPoints));
-      const today = new Date(baseSession.examStartedAt || Date.now()).toISOString().slice(0, 10);
-      setExamDate(today);
+      setCandidateName(persistsHeader ? baseSession.candidateName : baseSession.candidateName || 'Daniel Dayan');
+      setCandidateCallsign(persistsHeader ? baseSession.candidateCallsign : baseSession.candidateCallsign || '0xdnd');
+      setOsid(persistsHeader ? baseSession.osid : baseSession.osid || 'OS-94821');
+      const startedDate = new Date(baseSession.examStartedAt || Date.now()).toISOString().slice(0, 10);
+      setExamDate(storedReportDate || startedDate);
       setCopied(false);
       setDownloadFeedback(null);
     }
-  }, [isOpen, baseSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, baseSession.id]);
+
+  // Sync report options when the modal opens or the session's own values change
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedTrack(baseSession.track || 'OSCP');
+      setIncludeBonusPoints(Boolean(baseSession.includeBonusPoints));
+    }
+  }, [isOpen, baseSession.track, baseSession.includeBonusPoints]);
 
   const trapRef = useFocusTrap<HTMLDivElement>({
     isActive: isOpen,
@@ -430,7 +446,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   data-testid="report-candidate-name"
                   type="text"
                   value={candidateName}
-                  onChange={(e) => setCandidateName(e.target.value)}
+                  onChange={(e) => {
+                    setCandidateName(e.target.value);
+                    saveHeader({ candidateName: e.target.value });
+                  }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
                   placeholder="Daniel Dayan"
                 />
@@ -448,7 +467,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   data-testid="report-candidate-callsign"
                   type="text"
                   value={candidateCallsign}
-                  onChange={(e) => setCandidateCallsign(e.target.value)}
+                  onChange={(e) => {
+                    setCandidateCallsign(e.target.value);
+                    saveHeader({ candidateCallsign: e.target.value });
+                  }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
                   placeholder="0xdnd"
                 />
@@ -466,7 +488,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   data-testid="report-candidate-osid"
                   type="text"
                   value={osid}
-                  onChange={(e) => setOsid(e.target.value)}
+                  onChange={(e) => {
+                    setOsid(e.target.value);
+                    saveHeader({ osid: e.target.value });
+                  }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
                   placeholder="OS-94821"
                 />
@@ -484,7 +509,10 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                   data-testid="report-exam-date"
                   type="date"
                   value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
+                  onChange={(e) => {
+                    setExamDate(e.target.value);
+                    saveHeader({ reportExamDate: e.target.value || null });
+                  }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
                 />
               </div>

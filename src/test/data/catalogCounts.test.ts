@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import { ACTIVE_MACHINES, appendActiveMachines } from '../../data/activeMachines';
+import pg from '../../data/catalogSources/pg.json';
+import vulnhub from '../../data/catalogSources/vulnhub.json';
 
 // Every hard-coded machine count in the docs and UI must equal the computed catalog numbers.
 const read = (rel: string) => readFileSync(resolve(__dirname, '../../..', rel), 'utf8');
@@ -17,10 +19,12 @@ const METADATA_ONLY_RETIRED = INITIAL_MACHINES.filter(
   (m) => m.platform === 'HTB' && m.isActive === false && m.tags.length === 0 && !m.hint && !m.writeupUrl
 ).length;
 
-const PURE_CTF_TOTAL = 1027;
+// INITIAL_MACHINES + activeMachines.json hold only the 1,027 HTB and THM rows; PG and VulnHub rows
+// come from src/data/catalogSources and join at runtime (loadMachinesCatalog). The copy counts all of them.
+const HTB_THM_TOTAL = 1027;
+const PURE_CTF_TOTAL = 1372;
 
 const UI_FILES = [
-  'index.html',
   'src/components/auth/OperatorProfileModal.tsx',
   'src/components/common/StartCleanModal.tsx',
   'src/components/backup/BackupModal.tsx',
@@ -33,25 +37,39 @@ describe('hard-coded catalog counts', () => {
   it('computed numbers add up', () => {
     expect(ACTIVE).toBe(ACTIVE_MACHINES.machines.length);
     expect(TOTAL).toBe(RETIRED_HTB + ACTIVE + THM);
+    expect(TOTAL).toBe(HTB_THM_TOTAL);
+    expect(HTB_THM_TOTAL + pg.length + vulnhub.length).toBe(PURE_CTF_TOTAL);
     console.log('[catalog counts]', JSON.stringify({ TOTAL, RETIRED_HTB, ACTIVE, THM, METADATA_ONLY_RETIRED }));
   });
 
   it.each(UI_FILES)('every headline machine literal in %s equals the CTF count (never the total)', (file) => {
     const totals = all(
       read(file),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
+      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines| HTB, THM, PG & VulnHub machines| Hack The Box, TryHackMe, Proving Grounds & VulnHub machines)\b/g
     );
     expect(totals.length, file).toBeGreaterThan(0);
     for (const n of totals) expect(n, file).toBe(PURE_CTF_TOTAL);
   });
 
-  it('every pure CTF challenge literal in README.md equals 1027', () => {
+  it('every pure CTF challenge literal in README.md equals the full catalog total', () => {
     const totals = all(
       read('README.md'),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines)\b/g
+      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines| HTB, THM, PG & VulnHub machines| Hack The Box, TryHackMe, Proving Grounds & VulnHub machines)\b/g
     );
     expect(totals.length).toBeGreaterThan(0);
     for (const n of totals) expect(n).toBe(PURE_CTF_TOTAL);
+  });
+
+  it('copy scoped to HTB and THM keeps the HTB+THM count, never the full total', () => {
+    const nf = new Intl.NumberFormat('en-US');
+    const llms = read('public/llms.txt');
+    expect(llms).toContain(`full directory of ${nf.format(HTB_THM_TOTAL)} HTB and THM machines`);
+    expect(llms).not.toContain(`${nf.format(PURE_CTF_TOTAL)} HTB`);
+    expect(read('scripts/gen-content-pages.cjs')).toContain('catalogCounts.htbThm');
+    // A scope-naming phrase may only sit next to the HTB+THM count.
+    for (const file of ['README.md', 'public/llms.txt', ...UI_FILES]) {
+      expect(read(file), file).not.toMatch(/1,?372 (?:HTB and THM|HTB & THM|Hack The Box and TryHackMe)/);
+    }
   });
 
   it('README badge and platform breakdowns match the catalog', () => {
@@ -71,7 +89,7 @@ describe('public/llms.txt catalog counts', () => {
     const m = llms.match(/Tracks ([\d,]+) CTF machines(?: \(plus ([\d,]+) guided labs\))?/);
     expect(m, 'llms.txt catalog line').not.toBeNull();
     expect(m![1]).toBe(nf.format(PURE_CTF_TOTAL));
-    expect(m![2] ?? '0').toBe(nf.format(TOTAL - PURE_CTF_TOTAL));
+    expect(m![2] ?? '0').toBe(nf.format(TOTAL - HTB_THM_TOTAL));
   });
 });
 

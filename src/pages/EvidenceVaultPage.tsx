@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key, Terminal } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,6 +16,7 @@ import { AddLootModal } from '../components/loot/AddLootModal';
 import { ExportLootDrawer } from '../components/loot/ExportLootDrawer';
 import { LootVerificationMatrix } from '../components/loot/LootVerificationMatrix';
 import { identifyHash, getCrackingCommands } from '../utils/hashIdentifier';
+import { toCsv } from '../utils/csv';
 import { toast } from '../store/useToastStore';
 import { confirmAction } from '../store/useConfirmStore';
 
@@ -108,6 +109,7 @@ export const lootItemToEvidenceItem = (l: LootItem, machines: Machine[]): VaultE
 
 export const EvidenceVaultPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem, setGlobalVars } = useCtfStore(
     useShallow((s) => ({
@@ -134,7 +136,11 @@ export const EvidenceVaultPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<EvidenceCategory>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
-  const [selectedTargetId, setSelectedTargetId] = useState<string>('all');
+  const [selectedTargetId, setSelectedTargetId] = useState<string>(() => {
+    // Deep link: /vault?target=<machineId> preselects that machine, read once on load
+    const t = searchParams.get('target');
+    return t && machines.some((m) => m.id === t) ? t : 'all';
+  });
   const [viewMode, setViewMode] = useState<'table' | 'timeline' | 'matrix'>('table');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -373,18 +379,18 @@ export const EvidenceVaultPage: React.FC = () => {
   const handleExportCsv = useCallback(() => {
     const headers = ['Target', 'IP', 'Platform', 'Category', 'Type', 'Identity/Username', 'Secret', 'DiscoveredAt', 'Notes'];
     const rows = filteredItems.map((item) => [
-      `"${item.targetName.replace(/"/g, '""')}"`,
-      `"${item.targetIp.replace(/"/g, '""')}"`,
-      `"${item.platform}"`,
-      `"${item.category}"`,
-      `"${item.typeLabel}"`,
-      `"${item.username.replace(/"/g, '""')}"`,
-      `"${item.secret.replace(/"/g, '""')}"`,
-      `"${item.discoveredAt}"`,
-      `"${item.notes.replace(/"/g, '""')}"`,
+      item.targetName,
+      item.targetIp,
+      item.platform,
+      item.category,
+      item.typeLabel,
+      item.username,
+      item.secret,
+      item.discoveredAt,
+      item.notes,
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = toCsv(headers, rows);
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

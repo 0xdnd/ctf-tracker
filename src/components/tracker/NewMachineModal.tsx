@@ -15,6 +15,8 @@ const TARGET_TYPES: TargetType[] = ['machine', 'pro-lab', 'exam'];
 const PLATFORM_OPTIONS: CyberSelectOption<Platform>[] = [
   { value: 'HTB', label: 'Hack The Box', icon: <PlatformIcon platform="HTB" /> },
   { value: 'THM', label: 'TryHackMe', icon: <PlatformIcon platform="THM" /> },
+  { value: 'PG', label: 'OffSec Proving Grounds', icon: <PlatformIcon platform="PG" /> },
+  { value: 'VulnHub', label: 'VulnHub', icon: <PlatformIcon platform="VulnHub" /> },
   { value: 'Custom', label: 'Custom / Private Lab', icon: <PlatformIcon platform="Custom" /> },
 ];
 

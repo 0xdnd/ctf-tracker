@@ -60,6 +60,7 @@ import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
 import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
+import { extractCommands, parseFrontmatterAndBody } from '../utils/markdownFrontmatter';
 import { 
   extractDeepWriteups, 
   stripDeepFieldsFromMachines, 
@@ -82,6 +83,7 @@ import {
   isNewerSchemaVersion,
   engageSchemaWriteGate,
   onSchemaWriteGateEngaged,
+  onSchemaWriteGateReleased,
   initSchemaVersionGate,
   recordSchemaVersion,
 } from '../utils/schemaWriteGate';
@@ -360,6 +362,14 @@ interface CtfStoreState {
   userSolvesReset: boolean;
   addCustomNote: (note: Partial<CptsNoteEntry> & { title: string }) => void;
   updateNoteContent: (noteId: string, rawMarkdown: string) => void | Promise<void>;
+  /**
+   * Rewrite several notes' markdown at once (IP templating apply / undo). Same semantics as
+   * updateNoteContent — dateModified stamped, customNotes flushed, vault save awaited — plus
+   * `commands` re-derived from the new markdown. An authored copy wins over an imported note.
+   */
+  applyNoteContentBatch: (
+    edits: { noteId: string; rawMarkdown: string }[]
+  ) => Promise<{ updated: string[]; missing: string[] }>;
   deleteNote: (noteId: string) => void;
   restoreDeletedNotes: () => void;
   resetSolvesToZero: () => void;
@@ -1159,12 +1169,22 @@ export const mergeMachinesWithCatalog = (
     // order rules (name: last wins, slug: first wins). For newer pairs an HTB row never displaces another
     // platform's row, so a legacy row without a platform keeps resolving to THM "Retro", not HTB "Retro".
     const legacyPair = LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(nameSlug);
+    // PG/VulnHub rows only fill an empty name/slug slot and are displaced by any other platform, so a stored
+    // HTB/THM row matched by name alone never lands on a same-named PG/VulnHub row.
+    const isOffsecOrVulnhub = m.platform === 'PG' || m.platform === 'VulnHub';
     const prevByName = nameMap.get(normName);
-    if (legacyPair || !prevByName || m.platform !== 'HTB' || prevByName.platform === 'HTB') {
+    const prevIsOffsecOrVulnhub = prevByName?.platform === 'PG' || prevByName?.platform === 'VulnHub';
+    if (!prevByName || (isOffsecOrVulnhub ? false : prevIsOffsecOrVulnhub || legacyPair || m.platform !== 'HTB' || prevByName.platform === 'HTB')) {
       nameMap.set(normName, entry);
     }
     const prevBySlug = nameSlug ? slugMap.get(nameSlug) : undefined;
-    if (nameSlug && (!prevBySlug || (!legacyPair && prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))) {
+    const prevSlugIsOffsecOrVulnhub = prevBySlug?.platform === 'PG' || prevBySlug?.platform === 'VulnHub';
+    if (
+      nameSlug &&
+      (!prevBySlug ||
+        (!isOffsecOrVulnhub && prevSlugIsOffsecOrVulnhub) ||
+        (!isOffsecOrVulnhub && !legacyPair && prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))
+    ) {
       slugMap.set(nameSlug, entry);
     }
     if (idSlug && !idSlugMap.has(idSlug)) {
@@ -2693,6 +2713,41 @@ export const useCtfStore = create<CtfStoreState>()(
         console.warn(`[ZeroBox] Note with id "${noteId}" not found for update.`);
       },
 
+      applyNoteContentBatch: async (edits) => {
+        const state = get();
+        const now = new Date().toISOString();
+        const byId = new Map(edits.map((e) => [e.noteId, e.rawMarkdown]));
+        const updated = new Set<string>();
+        const rewrite = (n: CptsNoteEntry): CptsNoteEntry => {
+          const rawMarkdown = byId.get(n.id);
+          if (rawMarkdown === undefined) return n;
+          updated.add(n.id);
+          const commands = extractCommands(parseFrontmatterAndBody(rawMarkdown).body);
+          return { ...n, rawMarkdown, commands, dateModified: now };
+        };
+
+        const customIds = new Set(state.customNotes.map((n) => n.id));
+        const customHit = state.customNotes.some((n) => byId.has(n.id));
+        const userNotes = state.userNotes || [];
+        const userHit = userNotes.some((n) => byId.has(n.id) && !customIds.has(n.id));
+
+        if (customHit) {
+          set({ customNotes: state.customNotes.map(rewrite) });
+          flushProfileSave();
+        }
+        if (userHit) {
+          const updatedUserNotes = userNotes.map((n) => (customIds.has(n.id) ? n : rewrite(n)));
+          set({ userNotes: updatedUserNotes });
+          // Awaited, and a failure rejects, exactly like updateNoteContent.
+          await saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap: state.userWikilinkMap || {} });
+        }
+
+        return {
+          updated: Array.from(updated),
+          missing: edits.map((e) => e.noteId).filter((id) => !updated.has(id)),
+        };
+      },
+
       deleteNote: (noteId) => {
         const userNotes = get().userNotes || [];
         const isUserNote = userNotes.some((n) => n.id === noteId);
@@ -3168,6 +3223,9 @@ export const useCtfStore = create<CtfStoreState>()(
         },
         setItem: (name: string, value: StorageValue<any>): void => {
           if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
+          // Gated (newer schema / restore): nothing is written and nothing is recorded, neither as persisted nor
+          // as failed, so the release listener below re-flushes this snapshot once the gate lifts.
+          if (isSchemaWriteGated()) return;
           // A failed write (quota) is retried on the next real change, not on every transient set() (timer ticks).
           if (value.state === lastFailedSnapshot) return;
           if (safeLocalStorage.setItem(name, JSON.stringify(value))) {
@@ -3639,6 +3697,14 @@ useCtfStore.subscribe((state, prev) => {
   saveDebounceTimer = setTimeout(flushProfileSave, 1200);
 });
 
+/** Writes the current persisted snapshot of the tactical store (no-op when unchanged or still gated). */
+function flushTacticalBlob() {
+  if (isSchemaWriteGated()) return;
+  const { storage, partialize, name, version } = useCtfStore.persist.getOptions();
+  if (!storage || !partialize || !name) return;
+  void storage.setItem(name, { state: partialize(useCtfStore.getState()), version });
+}
+
 /**
  * Close/background save: fold the live timer into the active machine first, so the persisted store blob (which
  * wins at boot) carries the exact seconds too, not just the profile copy. Then write through the usual path.
@@ -3657,6 +3723,8 @@ if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', checkpointTimerAndFlush);
   // An aborted restore in another tab released our gate: save whatever was held back while it was engaged.
   onRestoreLockReleased(flushProfileSave);
+  // Same for the tactical persist blob: changes made while gated were never written (see storage.setItem).
+  onSchemaWriteGateReleased(flushTacticalBlob);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       checkpointTimerAndFlush();

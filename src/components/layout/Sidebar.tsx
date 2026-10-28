@@ -99,7 +99,7 @@ export const Sidebar: React.FC = () => {
     {
       id: 'cheatsheet',
       path: '/cheatsheets',
-      label: 'Snippets & Cheatsheets',
+      label: 'Rev-Shells & Snippets',
       icon: Terminal,
       badge: `${cheatsheets.length + userNotes.length}`,
     },

@@ -96,9 +96,13 @@ export function extractCandidateNames(raw: string): string[] {
 
 /** Platform named by a candidate's prefix, e.g. "HTB - Retro", "[THM] Retro", "tryhackme: Retro". */
 function platformHint(raw: string): Platform | undefined {
-  const m = /^\s*\[?(htb|hackthebox|thm|tryhackme)\b/i.exec(raw);
+  const m = /^\s*\[?(htb|hackthebox|thm|tryhackme|pg|vulnhub)\b/i.exec(raw);
   if (!m) return undefined;
-  return /^(htb|hackthebox)$/i.test(m[1]) ? 'HTB' : 'THM';
+  const p = m[1].toLowerCase();
+  if (p === 'htb' || p === 'hackthebox') return 'HTB';
+  if (p === 'pg') return 'PG';
+  if (p === 'vulnhub') return 'VulnHub';
+  return 'THM';
 }
 
 /**
@@ -122,10 +126,15 @@ export function matchCandidateNamesToCatalog(
     if (rows) rows.push(m);
     else normMap.set(key, [m]);
   }
-  const pick = (key: string, rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined =>
-    rows &&
-    ((hint && rows.find((m) => m.platform === hint)) ||
-      (LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(key) ? rows[rows.length - 1] : rows[0]));
+  const pick = (key: string, rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined => {
+    if (!rows) return undefined;
+    const hinted = hint && rows.find((m) => m.platform === hint);
+    if (hinted) return hinted;
+    // Unhinted names prefer HTB/THM rows so PG/VulnHub rows (last in catalog order) never steal them.
+    const core = rows.filter((m) => m.platform === 'HTB' || m.platform === 'THM');
+    const pool = core.length > 0 ? core : rows;
+    return LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(key) ? pool[pool.length - 1] : pool[0];
+  };
 
   const allMatches: BulkPwnMatch[] = [];
   const newSolves: BulkPwnMatch[] = [];
@@ -144,7 +153,7 @@ export function matchCandidateNamesToCatalog(
 
     // 2. Derived ID match (e.g. "Pickle Rick" -> "thm-picklerick")
     if (!match) {
-      match = idMap.get(`htb-${norm}`) || idMap.get(`thm-${norm}`);
+      match = idMap.get(`htb-${norm}`) || idMap.get(`thm-${norm}`) || idMap.get(`pg-${norm}`) || idMap.get(`vulnhub-${norm}`);
       if (match) confidence = 0.95;
     }
 

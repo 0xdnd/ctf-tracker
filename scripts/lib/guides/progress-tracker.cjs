@@ -2,7 +2,7 @@
 const PATH = '/htb-progress-tracker/';
 
 function build({ model, esc }) {
-  const total = model.catalogCounts.ctf;
+  const total = model.catalogCounts.htbThm;
   const cmp = [
     ['Counts machines you own', 'Yes, on that platform only', 'Only what you type in', 'Yes, across both platforms and your own targets'],
     ['Covers other labs (Proving Grounds, Vulnhub, custom)', 'No', 'Yes, manually', 'Yes, add any target'],

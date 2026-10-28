@@ -4,7 +4,7 @@
 // Old URLs that moved get small noindex redirect stubs (meta refresh + canonical); they stay out of the sitemap.
 const fs = require('fs');
 const path = require('path');
-const { getModel, getGuides, slugify } = require('./lib/content-model.cjs');
+const { getModel, getGuides, getWriteups, slugify } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
 const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ctaBox, fitTitle, truncate, techArticleLd, stampArticle } = require('./lib/layout.cjs');
@@ -20,6 +20,7 @@ if (!fs.existsSync(path.join(distDir, 'index.html'))) {
 
 fs.rmSync(path.join(distDir, 'machines'), { recursive: true, force: true });
 const model = getModel();
+getWriteups(); // marks machines with an on-site writeup (hasSiteWriteup); throws on an invalid writeup file
 const routes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
 const { execFileSync } = require('child_process');
 const lmCache = new Map();
@@ -258,7 +259,7 @@ const article = (word) => (/^[aeiou]/i.test(String(word).trim()) ? 'an' : 'a');
 
 // Meta description for a machine page: the hint's first sentence when it fits as a complete sentence, else a facts-based sentence.
 function machineDesc(m, summary, tagList) {
-  const kindWord = m.ownWriteup ? 'writeup' : 'attack path';
+  const kindWord = (m.ownWriteup || m.hasSiteWriteup) ? 'writeup' : 'attack path';
   const first = String(summary).replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s+/)[0];
   const lead = `${m.name} ${m.platform} ${kindWord}: `;
   // A usable hint is a real sentence (not a stub like "Hack The Box Linux machine." or the generated "Solved ..." line).
@@ -335,10 +336,28 @@ function machinePlace(m, plat) {
   return `<h2>Where it fits</h2><ul>${items.join('')}</ul>`;
 }
 
+// On-site writeup (content/writeups/<slug>.md, rendered by lib/writeups.cjs). Takeaway, meta strip, time table and TOC come from the frontmatter (stampArticle adds the byline and Updated date).
+const fmtMin = (n) => (n >= 60 ? `${Math.floor(n / 60)} h${n % 60 ? ` ${n % 60} min` : ''}` : `${n} min`);
+function writeupSection(m, w) {
+  const fm = w.fm;
+  const toc = [...w.toc, { id: 'w-time-breakdown', text: 'Time breakdown' }];
+  const time = `<h2 id="w-time-breakdown">Time breakdown</h2><table class="wu-time"><caption>Where the ${esc(fmtMin(Math.round(fm.time * 60)))} on ${esc(m.name)} went</caption><thead><tr><th scope="col">Phase</th><th scope="col">Time</th></tr></thead><tbody>${fm.timeBreakdown.map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(fmtMin(v))}</td></tr>`).join('')}</tbody></table>`;
+  return `<section id="writeup" class="writeup">
+<div class="wu-takeaway"><h2>Key takeaway</h2><p>${esc(fm.takeaway)}</p></div>
+<ul class="wu-meta"><li><span>Time spent</span> ${esc(fmtMin(Math.round(fm.time * 60)))}</li><li><span>Solved</span> <time datetime="${fm.solved}">${fm.solved}</time></li></ul>
+<div class="wu-layout"><nav class="wu-toc" aria-label="On this page"><p>On this page</p><ul>${toc.map((t) => `<li><a href="#${t.id}">${esc(t.text)}</a></li>`).join('')}</ul></nav>
+<div class="wu-body">${w.html}${time}</div></div>
+</section>`;
+}
+
 for (const m of withPage) {
+  const w = m.hasSiteWriteup ? m.siteWriteup : null;
+  const srcs = w ? [...MACHINE_SRC, w.relPath] : MACHINE_SRC;
+  const lastmod = maxDateOf(...srcs);
   const plat = PLATFORM_NAME[m.platform] || m.platform;
-  const kind = m.ownWriteup ? 'Writeup & Attack Path' : 'Attack Path & Techniques';
-  const kindShort = m.ownWriteup ? 'Writeup' : 'Attack Path';
+  const hasWriteup = Boolean(w || m.ownWriteup);
+  const kind = hasWriteup ? 'Writeup & Attack Path' : 'Attack Path & Techniques';
+  const kindShort = hasWriteup ? 'Writeup' : 'Attack Path';
   const title = fitTitle(
     `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${kind} | ZeroBox`,
     `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${kindShort} | ZeroBox`,
@@ -362,19 +381,17 @@ for (const m of withPage) {
   ].filter(Boolean);
     const body = [
     `<p class="lead">${esc(m.name)} is ${article(m.difficulty)} ${esc(m.difficulty.toLowerCase())} ${esc(m.os)} machine on ${esc(plat)} that I solved myself.${leadTech(m)}</p>`,
-    m.ownWriteup || m.roomUrl
-      ? ctaBox({
-          href: m.ownWriteup || m.roomUrl,
-          label: m.ownWriteup ? 'Read the full writeup' : `Open on ${plat}`,
-          icon: 'ext',
-          rel: m.ownWriteup ? 'noopener' : ROOM_REL,
-          ...(m.ownWriteup && m.roomUrl ? { linkHref: m.roomUrl, linkLabel: `Open ${m.name} on ${plat}`, linkRel: ROOM_REL } : {}),
-        })
-      : '',
+    ctaBox({
+      href: `/tracker/?target=${encodeURIComponent(m.id)}`,
+      label: `Open ${m.name} in the tracker`,
+      links: [
+        m.ownWriteup ? { href: m.ownWriteup, label: 'Read the full writeup', rel: 'noopener' } : null,
+        m.roomUrl ? { href: m.roomUrl, label: `Open ${m.name} on ${plat}`, rel: ROOM_REL } : null,
+      ].filter(Boolean),
+    }),
     machineOverview(m, plat, tagList),
     `<table class="facts"><tbody>${facts.map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</tbody></table>`,
-    `<h2>Attack path summary</h2><p>${esc(summary)}</p>`,
-    m.myNotes ? `<h2>My notes</h2>${m.myNotes.split(/\r?\n[ \t]*\r?\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('')}` : '',
+    ...(w ? [writeupSection(m, w)] : [`<h2>Attack path summary</h2><p>${esc(summary)}</p>`, m.myNotes ? `<h2>My notes</h2>${m.myNotes.split(/\r?\n[ \t]*\r?\n/).map((p) => p.trim()).filter(Boolean) .map((p) => `<p>${esc(p)}</p>`).join('')}` : '']),
     tagList.length ? `<h2>Techniques</h2><p>${tagList.map(tagLink).join(' ')}</p>` : '',
     techniqueExplained(m),
     machinePlace(m, plat),
@@ -388,7 +405,7 @@ for (const m of withPage) {
           .join('')}</ul>`
       : '',
     relatedHubs(m),
-    ctaBox({ title: `Track ${esc(m.name)} in ZeroBox.`, body: `Log your ${esc(m.name)} progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.`, href: '/tracker/', label: 'Open tracker' }),
+    ctaBox({ title: `Track ${esc(m.name)} in ZeroBox.`, body: `Log your ${esc(m.name)} progress, notes and flags offline in your browser, and follow the <a href="/methodology-guide/">pentest methodology checklist</a>.`, href: `/tracker/?target=${encodeURIComponent(m.id)}`, label: `Open ${m.name} in the tracker` }),
     `<p class="note">${esc(m.name)} belongs to ${esc(plat)}; this page contains only my own notes.</p>`,
   ].join('\n');
   wordCounts.push([m.name, body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length]);
@@ -399,14 +416,14 @@ for (const m of withPage) {
       path: mUrl(m),
       title,
       description: machineDesc(m, m.hint || template, tagList),
-      h1: m.ownWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`,
+      h1: hasWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`,
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [m.name, mUrl(m)]],
       ld: [
         {
           '@context': 'https://schema.org',
           '@type': 'TechArticle',
-          headline: `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${m.ownWriteup ? 'writeup and attack path' : 'attack path and techniques'}`,
+          headline: `${m.name} (${m.platform} ${m.os} ${m.difficulty}) ${hasWriteup ? 'writeup and attack path' : 'attack path and techniques'}`,
           url: ORIGIN + mUrl(m),
           inLanguage: 'en',
           about: tagList.slice(0, 6),
@@ -415,8 +432,8 @@ for (const m of withPage) {
       ],
     }),
     0.6,
-    maxDateOf(...MACHINE_SRC),
-    MACHINE_SRC
+    lastmod,
+    srcs
   );
 }
 {
@@ -431,7 +448,7 @@ for (const m of withPage) {
   const platforms = Object.keys(byPlatform).sort();
   const parts = [];
   parts.push(
-    `<p class="lead">Browse ${model.catalogCounts.ctf} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
+    `<p class="lead">Browse ${model.catalogCounts.htbThm} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox.</p>`
   );
   parts.push(ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }));
   parts.push(
@@ -470,8 +487,8 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: fitTitle(`Hack The Box Machines List: ${model.catalogCounts.ctf.toLocaleString('en-US')} HTB & THM Boxes`, `Hack The Box Machines List: ${model.catalogCounts.ctf.toLocaleString('en-US')} Boxes`),
-    description: `Browse ${model.catalogCounts.ctf.toLocaleString('en-US')} Hack The Box and TryHackMe machines by platform, OS and difficulty, with attack paths for solved boxes and a free tracker.`,
+    title: fitTitle(`Hack The Box Machines List: ${model.catalogCounts.htbThm.toLocaleString('en-US')} HTB & THM Boxes`, `Hack The Box Machines List: ${model.catalogCounts.htbThm.toLocaleString('en-US')} Boxes`),
+    description: `Browse ${model.catalogCounts.htbThm.toLocaleString('en-US')} Hack The Box and TryHackMe machines by platform, OS and difficulty, with attack paths for solved boxes and a free tracker.`,
     h1: 'Hack The Box and TryHackMe machines list and tracker',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
@@ -1037,7 +1054,7 @@ for (const g of guides) {
 // ===================== About (scripts/lib/about.cjs) =====================
 {
   const { buildAboutPages, ABOUT_SRC } = require('./lib/about.cjs');
-  const stats = { machines: model.catalogCounts.ctf, guidedLabs: model.catalogCounts.guided, solved: withPage.length, writeups: withPage.filter((m) => m.ownWriteup).length, techniqueHubs: techGroups.length };
+  const stats = { machines: model.catalogCounts.ctf, guidedLabs: model.catalogCounts.guided, solved: withPage.length, writeups: withPage.filter((m) => m.ownWriteup || m.hasSiteWriteup).length, techniqueHubs: techGroups.length };
   for (const p of buildAboutPages({ renderPage, stats })) emit('about', p.path, p.html, 0.5, gitDate(ABOUT_SRC));
 }
 
@@ -1091,7 +1108,7 @@ if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'),
   const lines = [
     '# ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)',
     '',
-    `> ZeroBox is a free, offline-first CTF and certification preparation tracker running in the browser. It tracks ${model.catalogCounts.ctf.toLocaleString('en-US')} Hack The Box and TryHackMe machines, ${(model.proLabs || []).length} official HTB Pro Labs, ${model.phases.length} methodology phases, ${model.topics.length} cheatsheet topics, ${techGroups.length} technique hubs, ${model.notes.length} pentest methodology notes, and a ${model.examTracks.length}-track exam simulator (${model.examTracks.join(', ')}). Site: https://ctftracker.com/`,
+    `> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks ${model.catalogCounts.htbThm.toLocaleString('en-US')} Hack The Box and TryHackMe machines, ${(model.proLabs || []).length} official HTB Pro Labs, ${model.phases.length} methodology phases, ${model.topics.length} cheatsheet topics, ${techGroups.length} technique hubs, ${model.notes.length} pentest methodology notes, and a ${model.examTracks.length}-track exam simulator (${model.examTracks.join(', ')}). Site: https://ctftracker.com/`,
     '',
     'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.',
     '',

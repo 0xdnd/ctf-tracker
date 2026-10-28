@@ -45,7 +45,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus, Difficulty, Machine } from '../../types';
 import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard, sanitizeExternalUrl, interpolateCommand } from '../../utils/helpers';
 import { ChecklistWorkspace } from '../checklist/ChecklistWorkspace';
-import { PlatformBadge } from '../common/PlatformBadge';
+import { PlatformBadge, platformFullName } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
@@ -56,12 +56,16 @@ import { BadgeOverflow } from '../common/BadgeOverflow';
 import { classifyMachine, VULN_CATEGORIES } from '../../utils/categoryUtils';
 import { getRecommendedNotesForMachine, mergeUserNotePools } from '../../utils/obsidianManualUtils';
 import { QuickCommandsTab } from './QuickCommandsTab';
+import { QuickNotesField } from './QuickNotesField';
+import { ObsidianMarkdownBody } from '../cheatsheet/ObsidianMarkdownBody';
 import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { DomainVhostSection } from './DomainVhostSection';
 import { PortTriageTable } from './PortTriageTable';
 import { LabFindingsPanel } from './LabFindingsPanel';
 import { LabTimelineAndIndependence } from './LabTimelineAndIndependence';
+import { communityLink, ownWriteupHref } from '../../utils/machineLinks';
+import { isTauriTarget } from '../../utils/runtimeTarget';
 
 const HEADER_ICON_BTN =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
@@ -219,6 +223,8 @@ export const MachineDetailModal: React.FC = () => {
   }, [selectedMachineId]);
 
   if (!machine) return null;
+  const ownHref = ownWriteupHref(machine);
+  const community = communityLink(machine);
 
   const handleCopy = async (text: string, type: 'user' | 'root') => {
     if (!text) return;
@@ -376,14 +382,23 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     Official room <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
-                {Boolean(sanitizeExternalUrl(machine.writeupUrl)) && (
+                {ownHref && (
                   <a
-                    href={sanitizeExternalUrl(machine.writeupUrl)}
+                    href={ownHref}
+                    {...(isTauriTarget() ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                  >
+                    Writeup
+                  </a>
+                )}
+                {community && (
+                  <a
+                    href={community.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
                   >
-                    Writeup <ExternalLink className="w-3 h-3" />
+                    {ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label} <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
@@ -674,7 +689,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 {machine.quickNotes && (
                   <div className="p-3 rounded-lg bg-surface-card border border-subtle space-y-1 machined-edge">
                     <div className="text-xs text-tertiary font-semibold">Assessor Field Notes:</div>
-                    <div className="text-secondary whitespace-pre-wrap">{machine.quickNotes}</div>
+                    <div className="text-secondary">
+                      <ObsidianMarkdownBody
+                        content={machine.quickNotes}
+                        globalVars={globalVars}
+                        soundEnabled={soundEnabled}
+                        fontSize="sm"
+                        targetIp={machine.ip || undefined}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -719,9 +742,9 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   </h3>
                   {machine.officialPdf && (
                     <div className="text-xs text-tertiary mt-1 flex items-center gap-1.5">
-                      <span>Source Archive:</span>
-                      <span className="text-callout-info-fg font-mono text-xs bg-surface-card px-1.5 py-0.5 rounded border border-subtle">
-                        {machine.officialPdf}
+                      <span>Source:</span>
+                      <span title={machine.officialPdf} className="text-callout-info-fg font-mono text-xs bg-surface-card px-1.5 py-0.5 rounded border border-subtle">
+                        {`${machine.name} — ${machine.platform} Official Writeup`}
                       </span>
                     </div>
                   )}
@@ -774,7 +797,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               {(() => {
                 const safeHref = machine.roomUrl ? sanitizeExternalUrl(machine.roomUrl) : undefined;
                 if (!safeHref) return null;
-                const platformName = machine.platform === 'HTB' ? 'Hack The Box' : machine.platform === 'THM' ? 'TryHackMe' : machine.platform;
+                const platformName = platformFullName(machine.platform);
                 return (
                   <div className="p-4 rounded-xl bg-surface-sunken/80 border border-subtle">
                     <a
@@ -1165,12 +1188,15 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 Auto-saved to target dossier
               </span>
             </div>
-            <textarea
+            <QuickNotesField
               id={`machine-field-notes-${machine.id}`}
               name="machine-field-notes"
               aria-label="Target Field Notes"
               value={machine.quickNotes || ''}
-              onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
+              onChange={(quickNotes) => updateMachine(machine.id, { quickNotes })}
+              globalVars={globalVars}
+              soundEnabled={soundEnabled}
+              targetIp={machine.ip || undefined}
               placeholder="Record tactical field notes, credentials, and pivot paths (supports Markdown and [[wikilinks]]). Stored strictly offline in your browser."
               rows={4}
               className="w-full p-3 rounded-md border border-subtle bg-surface-sunken text-primary placeholder:text-tertiary text-xs font-sans leading-relaxed focus:outline-none focus:border-accent selection:bg-accent/20 resize-y shadow-xs"

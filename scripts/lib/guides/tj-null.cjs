@@ -4,15 +4,9 @@ const SHEET = 'https://docs.google.com/spreadsheets/d/1dwSMIAPIam0PuRBkCiDI88pU3
 const GUIDE = 'https://www.netsecfocus.com/oscp/2021/05/06/The_Journey_to_Try_Harder-_TJnull-s_Preparation_Guide_for_PEN-200_PWK_OSCP_2.0.html';
 const MIRROR = 'https://0xdf.gitlab.io/cheatsheets/offsec';
 
-// Hack The Box names under "OSCPv3 OSCP-like machines" as mirrored by 0xdf (see MIRROR), checked 2026-10-08.
-// The live sheet is the source of truth and changes over time.
-const V3_HTB = [
-  'Eighteen', 'Browsed', 'Expressway', 'Signed', 'Editor', 'Outbound', 'Voleur', 'TombWatcher', 'Puppy', 'Fluffy', 'TheFrizz',
-  'Dog', 'Titanic', 'Administrator', 'LinkVortex', 'Certified', 'Cicada', 'Editorial', 'BoardLight', 'Mailing', 'Usage',
-  'Monitored', 'Manager', 'CozyHosting', 'Builder', 'Keeper', 'Sau', 'Broker', 'Intentions', 'Aero', 'Busqueda', 'Escape',
-  'Soccer', 'Flight', 'UpDown', 'Support', 'StreamIO', 'Timelapse', 'Pandora', 'Return', 'Jeeves', 'Intelligence', 'Blackfield',
-  'Magic', 'Cascade', 'Sauna', 'ServMon', 'Monteverde', 'Forest', 'Heist', 'Networked', 'Help', 'Access', 'Active',
-];
+// Names per tab of TJ Null's PWK V3 sheet, checked on SOURCE.asOf. The live sheet is the source of truth and changes over time.
+const SOURCE = require('../../../src/data/trackSources/tjnull-oscp.json');
+const V3_HTB = SOURCE.names.htb;
 const key = (s) => String(s).toLowerCase().replace(/\s+/g, '');
 const V3 = new Set(V3_HTB.map(key));
 const DIFF = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
@@ -35,6 +29,7 @@ function build({ model, esc }) {
   const medWin = onList.filter((m) => m.difficulty === 'Medium' && m.os === 'Windows');
   const hard = onList.filter((m) => m.difficulty === 'Hard' || m.difficulty === 'Insane');
 
+  const nameList = (arr) => `<ul>${arr.map((e) => `<li>${esc(e.name)}${e.os || e.difficulty ? ` (${[e.os, e.difficulty].filter(Boolean).map(esc).join(', ')})` : ''}</li>`).join('')}</ul>`;
   const rowsA = onList
     .map((m) => `<tr><td>${link(m)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td>${isTagged(m) ? 'Yes' : 'No'}</td></tr>`)
     .join('');
@@ -67,7 +62,7 @@ function build({ model, esc }) {
 
   const body = `<h2>What the TJ Null list is</h2>
 <p>TJ Null, writing on NetSec Focus, put together lists of practice machines that resemble what the OSCP exam rewards: a clear enumeration path, public exploits that need small edits, and classic privilege escalation. The original post, <a href="${GUIDE}" rel="noopener">The Journey to Try Harder</a>, links the spreadsheet, and the sheet itself is at the <a href="${SHEET}" rel="noopener">NetSec Focus Trophy Room</a>. It has lists for Proving Grounds, Hack The Box and Vulnhub. The current Hack The Box tab is headed "OSCPv3 OSCP-like machines", and the list changes, so use the sheet as the source of truth.</p>
-<p>This page does not copy the sheet. It shows which of its Hack The Box machines exist in the ZeroBox catalogue so you can track them, using the names as mirrored on <a href="${MIRROR}" rel="noopener">0xdf's cheat sheet</a> on 2026-10-08.</p>
+<p>This page lists machine names only, with credit to the sheet (checked ${SOURCE.asOf}), not its notes or layout. It shows which of its Hack The Box machines exist in the ZeroBox catalogue so you can track them, using the names as mirrored on <a href="${MIRROR}" rel="noopener">0xdf's cheat sheet</a>.</p>
 <h2>How to work through it</h2>
 <ul>
 <li>Spend the first 45 minutes of every box on enumeration alone. Write down every port, every version and every odd page before you try an exploit.</li>
@@ -82,6 +77,12 @@ function build({ model, esc }) {
 <h2>Other machines the catalogue tags OSCP</h2>
 <p>These ${others.length} carry the ZeroBox OSCP tag but are not on the Hack The Box tab above, mostly TryHackMe rooms. They are useful practice, but they are not TJ Null's picks. For the same machines grouped by difficulty, see <a href="/oscp-like-machines/">OSCP-like machines</a>.</p>
 <table><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>${rowsB}</tbody></table>
+<h2>Proving Grounds Play</h2>
+<p>The ${SOURCE.names.pgPlay.length} machines on the Proving Grounds Play tab. Play is free to use with an OffSec account. Names are listed as they appear on the sheet (${SOURCE.asOf}); these are not in the ZeroBox catalogue.</p>
+${nameList(SOURCE.names.pgPlay)}
+<h2>Proving Grounds Practice</h2>
+<p>The ${SOURCE.names.pgPractice.length} machines on the Proving Grounds Practice tab. Practice requires a paid OffSec subscription. Names are listed as they appear on the sheet (${SOURCE.asOf}); these are not in the ZeroBox catalogue.</p>
+${nameList(SOURCE.names.pgPractice)}
 <h2>A suggested order</h2>
 <ol>
 <li>Easy Linux for the loop of scan, web enumeration, foothold and sudo or SUID escalation: ${esc(names(easyLinux, 5))}.</li>

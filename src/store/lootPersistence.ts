@@ -21,6 +21,8 @@ import type {
   LootItemCategory,
   LootItemPatch,
   LootState,
+  LootVerification,
+  LootVerificationStatus,
   NewCredAttemptInput,
   NewCredentialInput,
   NewLootItemInput,
@@ -108,6 +110,7 @@ const CRED_SERVICES: readonly CredService[] = [
 ];
 const ATTEMPT_RESULTS: readonly CredAttemptResult[] = ['tried', 'valid', 'invalid'];
 const LOOT_CATEGORIES: readonly LootItemCategory[] = ['flag', 'service', 'file', 'note'];
+const VERIFICATION_STATUSES: readonly LootVerificationStatus[] = ['untested', 'failed', 'user', 'admin'];
 
 const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const oneOf = <T extends string>(list: readonly T[], v: unknown): T | undefined =>
@@ -115,6 +118,23 @@ const oneOf = <T extends string>(list: readonly T[], v: unknown): T | undefined 
 const optStr = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() !== '' ? v.trim() : undefined);
 const isoOrNow = (v: unknown): string =>
   typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : new Date().toISOString();
+
+function normalizeVerifications(raw: unknown): Record<string, LootVerification> | undefined {
+  if (!isRecord(raw)) return undefined;
+  const out: Record<string, LootVerification> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const machineId = key.trim();
+    if (!machineId || !isRecord(value)) continue;
+    const status = oneOf(VERIFICATION_STATUSES, value.status);
+    if (!status) continue;
+    const entry: LootVerification = { status };
+    const protocol = optStr(value.protocol);
+    if (protocol) entry.protocol = protocol;
+    if (typeof value.updatedAt === 'string') entry.updatedAt = value.updatedAt;
+    out[machineId] = entry;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 export function normalizeCredential(raw: unknown): Credential | null {
   if (!isRecord(raw)) return null;
@@ -137,6 +157,8 @@ export function normalizeCredential(raw: unknown): Credential | null {
   const notes = optStr(raw.notes);
   if (notes) cred.notes = notes;
   if (raw.redacted === true || secret === REDACTED) cred.redacted = true;
+  const verifications = normalizeVerifications(raw.verifications);
+  if (verifications) cred.verifications = verifications;
   return cred;
 }
 
@@ -176,6 +198,8 @@ export function normalizeLootItem(raw: unknown): LootItem | null {
   if (notes) item.notes = notes;
   const machineId = optStr(raw.machineId);
   if (machineId) item.machineId = machineId;
+  const verifications = normalizeVerifications(raw.verifications);
+  if (verifications) item.verifications = verifications;
   return item;
 }
 

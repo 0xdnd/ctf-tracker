@@ -85,6 +85,8 @@ const PLATFORM_FILTER_OPTIONS: { value: Platform | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'All' },
   { value: 'HTB', label: 'HTB' },
   { value: 'THM', label: 'THM' },
+  { value: 'PG', label: 'PG' },
+  { value: 'VulnHub', label: 'VulnHub' },
   { value: 'Custom', label: 'Custom' },
 ];
 

@@ -99,6 +99,8 @@ const CATEGORY_CAT_INDEX: Record<string, CatIndex> = {
 const PLATFORM_CAT_INDEX: Record<string, CatIndex> = {
   HTB: 6,
   THM: 5,
+  PG: 3,
+  VulnHub: 7,
 };
 
 export const OS_CAT_INDEX: Record<string, CatIndex> = {

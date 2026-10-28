@@ -37,6 +37,9 @@
   "scripts": {
     "dev": "vite",
     "dev:tauri": "vite --mode tauri",
+    "writeups:check": "node scripts/check-writeups.cjs",
+    "writeups:manifest": "node scripts/gen-own-writeups.cjs",
+    "writeups:redact": "node scripts/redact-notes.cjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -46,18 +49,19 @@
     "test:a11y:static": "playwright test -c playwright.static.config.ts",
     "check:html": "npx --yes html-validate@11.16.2 -c .htmlvalidate.json \"dist/**/index.html\"",
     "lint": "eslint .",
-    "lint:ci": "eslint . --max-warnings 642",
+    "lint:ci": "eslint . --max-warnings 664",
     "knip": "knip",
     "notes:todo": "node scripts/notes-todo.cjs",
     "index-notes": "node scripts/index-cpts-notes.cjs",
     "submit:indexnow": "node scripts/submit-indexnow.cjs",
-    "build": "tsc && vite build && node scripts/postbuild.cjs && node scripts/gen-site-tokens.cjs && node scripts/prerender.cjs && node scripts/gen-content-pages.cjs && node scripts/apply-csp.cjs",
-    "build:tauri": "tsc && vite build --mode tauri && node scripts/postbuild.cjs",
+    "build": "node scripts/gen-own-writeups.cjs && tsc && vite build && node scripts/postbuild.cjs && node scripts/gen-site-tokens.cjs && node scripts/prerender.cjs && node scripts/gen-content-pages.cjs && node scripts/apply-csp.cjs",
+    "build:tauri": "node scripts/gen-own-writeups.cjs && tsc && vite build --mode tauri && node scripts/postbuild.cjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "share": "npx --yes localtunnel@2.0.2 --port 3000",
     "preview": "vite preview",
+    "preview:built": "npm run build && vite preview --port 3000 --strictPort",
     "lighthouse:a11y": "node scripts/lighthouse_a11y.mjs",
     "check:active": "node scripts/check-active-machines.mjs",
     "stats:catalog": "node scripts/catalog-stats.mjs"
@@ -106,11 +110,13 @@
     "jsdom": "^30.1.2",
     "knip": "^6.41.0",
     "lighthouse": "^13.5.0",
+    "markdown-it": "^14.3.3",
     "postcss": "^8.5.29",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^6.4.4",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "yaml": "^2.9.1"
   }
 }

@@ -154,7 +154,7 @@ export const TrackerView: React.FC = () => {
     if (search !== null) updates.searchQuery = search;
 
     const platform = params.get('platform');
-    if (platform && ['HTB', 'THM', 'Custom', 'ALL'].includes(platform)) {
+    if (platform && ['HTB', 'THM', 'PG', 'VulnHub', 'Custom', 'ALL'].includes(platform)) {
       updates.selectedPlatform = platform as Platform | 'ALL';
     }
 

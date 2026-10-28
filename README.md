@@ -2,9 +2,11 @@
 
 <img src="public/logo-zerobox.webp" alt="ZeroBox logo" width="120" />
 
-# ⚡ ZeroBox — The CTF Tracker Built for Hackers
+# ⚡ ZeroBox — Free OSCP & CTF Tracker for HackTheBox and TryHackMe
 
 ### Track every HTB & TryHackMe box, from recon to root, in one free, offline, keyboard-driven dashboard.
+
+**Use it free at [ctftracker.com](https://ctftracker.com/)**
 
 **No signup. No backend. No tracking. Just open it and start hacking.**
 
@@ -13,7 +15,7 @@
 [![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
 [![GitHub Stars](https://img.shields.io/badge/Stars-23-F59E0B?style=for-the-badge&logo=github)](https://github.com/0xdnd/ctf-tracker/stargazers)
-[![Machines](https://img.shields.io/badge/Machines-1027-10B981?style=for-the-badge)](https://ctftracker.com/)
+[![Machines](https://img.shields.io/badge/Machines-1372-10B981?style=for-the-badge)](https://ctftracker.com/)
 [![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-130%2B-EF4444?style=for-the-badge)](https://ctftracker.com/)
 [![Tests](https://img.shields.io/badge/Tests-212%20suites%20%7C%203234%20passing-10B981?style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
 [![Live at ctftracker.com](https://img.shields.io/badge/Live_at-ctftracker.com-10B981?style=flat-square&logo=cloudflare)](https://ctftracker.com/)
@@ -42,7 +44,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 
 | Instead of… | ZeroBox gives you… |
 |:---|:---|
-| 📋 A messy spreadsheet of boxes | **1027 HTB & THM machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
+| 📋 A messy spreadsheet of boxes | **1372 HTB, THM, PG & VulnHub machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
 | 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
 | 🐚 Googling "python reverse shell" again | **130+ reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
@@ -57,7 +59,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ## 🚀 Core Modules
 
 ### 1. 🛡️ Lab & Machine Tracker
-- **1027-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, plus custom targets, Pro Labs and exams.
+- **1372-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, OffSec Proving Grounds and VulnHub boxes, plus custom targets, Pro Labs and exams.
 - **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
 - **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO).

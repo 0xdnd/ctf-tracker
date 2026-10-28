@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -20,6 +20,8 @@ import {
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus } from '../types';
+import { communityLink, ownWriteupHref } from '../utils/machineLinks';
+import { isTauriTarget } from '../utils/runtimeTarget';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../utils/helpers';
 import { PlatformBadge } from '../components/common/PlatformBadge';
@@ -27,6 +29,7 @@ import { OsBadge } from '../components/common/OsBadge';
 import { DifficultyBadge } from '../components/common/DifficultyBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
 import { QuickCommandsTab } from '../components/tracker/QuickCommandsTab';
+import { QuickNotesField } from '../components/tracker/QuickNotesField';
 import { TargetReconDropzone } from '../components/tracker/TargetReconDropzone';
 import { PageHeader } from '../components/common/PageHeader';
 import { BadgeOverflow } from '../components/common/BadgeOverflow';
@@ -38,6 +41,10 @@ import { DomainVhostSection } from '../components/tracker/DomainVhostSection';
 import { PortTriageTable } from '../components/tracker/PortTriageTable';
 import { LabFindingsPanel } from '../components/tracker/LabFindingsPanel';
 import { LabTimelineAndIndependence } from '../components/tracker/LabTimelineAndIndependence';
+import { MachineSummaryStrip } from '../components/tracker/MachineSummaryStrip';
+import { HostLootPanel } from '../components/tracker/HostLootPanel';
+import { getMachineLoot } from '../utils/machineLoot';
+import { isUserFlagDone, isRootFlagDone } from '../utils/machineGlance';
 
 const TargetDetailTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === machineId ? s.activeTimerSeconds : 0));
@@ -64,6 +71,7 @@ export const TargetDetailPage: React.FC = () => {
     startTimer,
     pauseTimer,
     soundEnabled,
+    globalVars,
     setWriteupMachineId,
     isCatalogLoaded,
     loadCatalog,
@@ -79,9 +87,18 @@ export const TargetDetailPage: React.FC = () => {
       pauseTimer: s.pauseTimer,
       resetTimer: s.resetTimer,
       soundEnabled: s.soundEnabled,
+      globalVars: s.globalVars,
       setWriteupMachineId: s.setWriteupMachineId,
       isCatalogLoaded: s.isCatalogLoaded,
       loadCatalog: s.loadCatalog,
+    }))
+  );
+
+  const { credentials, credAttempts, lootItems } = useCtfStore(
+    useShallow((s) => ({
+      credentials: s.credentials,
+      credAttempts: s.credAttempts,
+      lootItems: s.lootItems,
     }))
   );
 
@@ -104,6 +121,12 @@ export const TargetDetailPage: React.FC = () => {
       mname.replace(/[^a-z0-9]/g, '') === normalizedId.replace(/[^a-z0-9]/g, '')
     );
   });
+
+  const machineId = machine?.id;
+  const machineLoot = useMemo(
+    () => getMachineLoot({ credentials, credAttempts, lootItems }, machineId ?? ''),
+    [credentials, credAttempts, lootItems, machineId]
+  );
 
   const [activeTab, setActiveTab] = useState<'checklist' | 'overview' | 'commands' | 'recon'>('checklist');
   const [showUserFlag, setShowUserFlag] = useState(false);
@@ -162,19 +185,8 @@ export const TargetDetailPage: React.FC = () => {
 
   const isActiveTarget = activeTargetId === machine.id;
 
-  const isUserPwned = Boolean(
-    machine && (
-      Boolean(machine.userFlag?.trim()) ||
-      ((machine.status === 'foothold' || machine.status === 'root' || machine.status === 'completed') && Boolean(machine.userPwnedAt))
-    )
-  );
-
-  const isRootPwned = Boolean(
-    machine && (
-      Boolean(machine.rootFlag?.trim()) ||
-      ((machine.status === 'root' || machine.status === 'completed') && Boolean(machine.rootPwnedAt))
-    )
-  );
+  const isUserPwned = isUserFlagDone(machine);
+  const isRootPwned = isRootFlagDone(machine);
 
   const handleCopy = (text: string, type: 'user' | 'root') => {
     if (!text) return;
@@ -246,7 +258,8 @@ export const TargetDetailPage: React.FC = () => {
   ];
 
   const roomUrl = sanitizeExternalUrl(machine.roomUrl);
-  const writeupUrl = sanitizeExternalUrl(machine.writeupUrl);
+  const community = communityLink(machine);
+  const ownHref = ownWriteupHref(machine);
 
   return (
     <motion.div
@@ -380,14 +393,23 @@ export const TargetDetailPage: React.FC = () => {
                 Official room <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             )}
-            {!machine.isActive && writeupUrl && (
+            {!machine.isActive && ownHref && (
               <a
-                href={writeupUrl}
+                href={ownHref}
+                {...(isTauriTarget() ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
+              >
+                Writeup
+              </a>
+            )}
+            {!machine.isActive && community && (
+              <a
+                href={community.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
               >
-                Writeup <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                {ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             )}
           </div>
@@ -424,6 +446,8 @@ export const TargetDetailPage: React.FC = () => {
         </div>
       ) : (
         <>
+          <MachineSummaryStrip machine={machine} machineLoot={machineLoot} onNavigate={setActiveTab} />
+
           {/* Navigation tabs: single line, horizontally scrollable */}
           <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
             <div className="flex min-w-max items-center gap-1">
@@ -593,6 +617,9 @@ export const TargetDetailPage: React.FC = () => {
             </div>
           </section>
 
+          {/* Loot on this host */}
+          <HostLootPanel key={machine.id} machine={machine} machineLoot={machineLoot} />
+
           {/* Domain & Virtual Hosts */}
           <DomainVhostSection machine={machine} />
 
@@ -687,13 +714,17 @@ export const TargetDetailPage: React.FC = () => {
           {/* Field notes */}
           <section className="space-y-2" aria-labelledby="target-notes-heading">
             <h2 id="target-notes-heading" className="text-sm font-semibold text-primary">Field notes</h2>
-            <textarea
+            <QuickNotesField
               id="target-detail-field-notes"
               name="target-detail-field-notes"
               aria-label="Tactical field notes"
               rows={4}
               value={machine.quickNotes || ''}
-              onChange={(e) => updateMachine(machine.id, { quickNotes: e.target.value })}
+              onChange={(quickNotes) => updateMachine(machine.id, { quickNotes })}
+              globalVars={globalVars}
+              soundEnabled={soundEnabled}
+              targetIp={machine.ip || undefined}
+              previewClassName="rounded-xl"
               placeholder="Record tactical field notes, credentials, and pivot paths (supports Markdown and [[wikilinks]]). Stored strictly offline in your browser."
               className="w-full resize-none rounded-xl border border-subtle bg-surface-sunken p-3 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none"
             />

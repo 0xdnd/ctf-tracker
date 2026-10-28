@@ -18,7 +18,7 @@ const OG_IMAGE_ALT ='ZeroBox logo, a glowing blue open box, above the tagline Fr
 
 // Stylesheet sources, concatenated in this exact order (later files override earlier ones).
 const CSS_DIR = path.join(__dirname, '..', 'site', 'css');
-const CSS_FILES = ['00-tokens.generated.css', '00-tokens.css', '10-base.css', '20-chrome.css', '30-content.css', '40-landing.css', '50-motion.css', '60-light.css'];
+const CSS_FILES = ['00-tokens.generated.css', '00-tokens.css', '10-base.css', '20-chrome.css', '30-content.css', '35-writeups.css', '40-landing.css', '50-motion.css', '60-light.css'];
 const STATIC_CSS = CSS_FILES.map((f) => {
   const file = path.join(CSS_DIR, f);
   if (!fs.existsSync(file)) throw new Error(`layout: missing CSS source ${path.relative(process.cwd(), file)}`);
@@ -93,12 +93,13 @@ const ICON = {
  * Primary button goes to href (icon: 'arrow' into the app, 'ext' for off-site, '' for none).
  * Optional secondary link-arrow (always an off-site link): linkHref/linkLabel/linkRel.
  */
-function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', linkHref = '', linkLabel = '', linkRel = 'nofollow noopener' }) {
+function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', linkHref = '', linkLabel = '', linkRel = 'nofollow noopener', links = [] }) {
   const text = [title ? `<p><strong>${title}</strong></p>` : '', body ? `<p>${body}</p>` : ''].filter(Boolean).join('');
   const relAttr = rel ? ` rel="${esc(rel)}"` : '';
   const btn = href ? `<a class="btn" href="${esc(href)}"${relAttr}>${esc(label)}${ICON[icon] || ''}</a>` : '';
   const link = linkHref ? `<a class="link-arrow" href="${esc(linkHref)}" rel="${esc(linkRel)}">${esc(linkLabel)}${ICON.ext}</a>` : '';
-  return `<div class="cta-box">${text ? `<div class="cta-text">${text}</div>` : ''}<div class="cta-actions">${btn}${link}</div></div>`;
+  const extra = links.map((l) => `<a class="link-arrow" href="${esc(l.href)}"${l.rel === '' ? '' : ` rel="${esc(l.rel || 'nofollow noopener')}"`}>${esc(l.label)}${l.icon === undefined ? ICON.ext : l.icon}</a>`).join('');
+  return `<div class="cta-box">${text ? `<div class="cta-text">${text}</div>` : ''}<div class="cta-actions">${btn}${link}${extra}</div></div>`;
 }
 
 /** current: path of the page being rendered; exact match gets aria-current="page", a parent section gets "true". */
@@ -357,8 +358,7 @@ function renderPage(opts) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>${esc(opts.title)}</title>
-  <meta name="description" content="${desc}" />
-  <meta name="theme-color" content="#09090b" />
+  <meta name="description" content="${desc}" />  <meta name="theme-color" content="#09090b" />
   <link rel="canonical" href="${url}" />
 ${ICON_LINKS}
   <link rel="manifest" href="/manifest.webmanifest" />

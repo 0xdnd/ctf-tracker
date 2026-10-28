@@ -130,7 +130,7 @@ const TRACKS: PracticeTrack[] = [
     name: "TJ_Null's OSCP NetSec Preparation",
     shortName: 'OSCP Track',
     category: 'certification',
-    description: "OffSec Certified Professional prep: the current OSCP+ (PEN-200 2023+) list of HTB machines, as of Oct 2026, plus TJ_Null's classic TryHackMe rooms.",
+    description: "OffSec Certified Professional prep: the current OSCP+ (PEN-200 2023+) list of HTB machines, as of Oct 2026, plus TJ_Null's classic TryHackMe rooms and Proving Grounds boxes.",
     badgeColor: 'border-cyber-emerald/40 bg-cyber-emerald/10 text-cyber-emerald',
     accentColor: '#10B981',
     // HTB rows: the current list only. Other platforms (THM, custom targets) may also opt in by OSCP cert or tag.
