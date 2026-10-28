@@ -126,10 +126,15 @@ export function matchCandidateNamesToCatalog(
     if (rows) rows.push(m);
     else normMap.set(key, [m]);
   }
-  const pick = (key: string, rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined =>
-    rows &&
-    ((hint && rows.find((m) => m.platform === hint)) ||
-      (LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(key) ? rows[rows.length - 1] : rows[0]));
+  const pick = (key: string, rows: Machine[] | undefined, hint: Platform | undefined): Machine | undefined => {
+    if (!rows) return undefined;
+    const hinted = hint && rows.find((m) => m.platform === hint);
+    if (hinted) return hinted;
+    // Unhinted names prefer HTB/THM rows so PG/VulnHub rows (last in catalog order) never steal them.
+    const core = rows.filter((m) => m.platform === 'HTB' || m.platform === 'THM');
+    const pool = core.length > 0 ? core : rows;
+    return LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(key) ? pool[pool.length - 1] : pool[0];
+  };
 
   const allMatches: BulkPwnMatch[] = [];
   const newSolves: BulkPwnMatch[] = [];

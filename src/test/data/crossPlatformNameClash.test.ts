@@ -61,6 +61,18 @@ describe('cross-platform name clashes (Retro, Watcher, Reset, Compiled)', () => 
       expect(matchOne('Reset')).toBe('htb-reset');
     });
 
+    it('keeps unhinted names on HTB/THM when a PG row with the same name sorts last', () => {
+      const cat = [
+        box({ id: 'thm-heist', name: 'Heist', platform: 'THM' }),
+        box({ id: 'htb-heist', name: 'Heist', platform: 'HTB' }),
+        box({ id: 'pg-heist', name: 'Heist', platform: 'PG' }),
+      ];
+      const one = (raw: string) => matchCandidateNamesToCatalog([raw], cat).allMatches[0]?.machineId;
+      expect(one('Heist')).toBe('htb-heist');
+      expect(one('pg heist')).toBe('pg-heist');
+      expect(one('[PG] Heist')).toBe('pg-heist');
+    });
+
     it("keeps main's winner (HTB) for a pre-existing pair like Blue, and shows the platform", () => {
       const [match] = matchCandidateNamesToCatalog(['Blue'], catalog()).allMatches;
       expect(match.machineId).toBe('htb-blue');
