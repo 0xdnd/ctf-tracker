@@ -262,7 +262,9 @@
       "DC Series",
       "Also-on-PG-Play"
     ],
-    "certifications": [],
+    "certifications": [
+      "OSCP"
+    ],
     "roomUrl": "https://www.vulnhub.com/?q=DC-9",
     "writeupUrl": "",
     "hint": "",
@@ -377,7 +379,9 @@
       "Stapler",
       "Also-on-PG-Play"
     ],
-    "certifications": [],
+    "certifications": [
+      "OSCP"
+    ],
     "roomUrl": "https://www.vulnhub.com/?q=Stapler%201",
     "writeupUrl": "",
     "hint": "",
@@ -780,7 +784,9 @@
       "Funbox",
       "Also-on-PG-Play"
     ],
-    "certifications": [],
+    "certifications": [
+      "OSCP"
+    ],
     "roomUrl": "https://www.vulnhub.com/?q=Funbox%3A%201",
     "writeupUrl": "",
     "hint": "",
@@ -896,7 +902,9 @@
       "DriftingBlues",
       "Also-on-PG-Play"
     ],
-    "certifications": [],
+    "certifications": [
+      "OSCP"
+    ],
     "roomUrl": "https://www.vulnhub.com/?q=DriftingBlues%206",
     "writeupUrl": "",
     "hint": "",
