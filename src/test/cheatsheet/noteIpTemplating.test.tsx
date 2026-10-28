@@ -83,6 +83,31 @@ describe('noteIpTemplating — planning', () => {
     ]);
   });
 
+  it('a failed history read rejects the save instead of wiping older batches', async () => {
+    await saveUndoBatch([{ noteId: 'a', rawMarkdown: 'v1' }], { a: { title: 'A', rawMarkdown: 'v0' } });
+    const factory = indexedDB as unknown as { open: (...args: unknown[]) => unknown };
+    const realOpen = factory.open;
+    let opens = 0;
+    // Only the first open (the read) fails; the write that would follow would succeed.
+    factory.open = (...args: unknown[]) => {
+      if (opens++ > 0) return realOpen(...args);
+      const request = { error: new Error('read failed'), onerror: null as (() => void) | null, onsuccess: null };
+      setTimeout(() => request.onerror?.(), 0);
+      return request;
+    };
+    try {
+      await expect(
+        saveUndoBatch([{ noteId: 'a', rawMarkdown: 'v2' }], { a: { title: 'A', rawMarkdown: 'v1' } })
+      ).rejects.toThrow('read failed');
+    } finally {
+      factory.open = realOpen;
+    }
+    expect(opens).toBe(1);
+    const batches = await listUndoBatches();
+    expect(batches).toHaveLength(1);
+    expect(batches[0].entries[0].before).toBe('v0');
+  });
+
   it('stores undo batches newest first, capped, and deletes by id', async () => {
     for (let i = 0; i < MAX_UNDO_BATCHES + 2; i++) {
       await saveUndoBatch([{ noteId: 'a', rawMarkdown: `v${i}` }], { a: { title: 'A', rawMarkdown: `v${i - 1}` } });
@@ -169,6 +194,35 @@ describe('TemplatizeNotesModal', () => {
     });
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Skipped 1'));
     expect(useCtfStore.getState().userNotes.find((n) => n.id === 'scan')!.rawMarkdown).toBe('# my own edit');
+  });
+
+  it('keeps the pre-image of a note that is not loaded yet, and restores it on a later undo', async () => {
+    renderModal();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Replace 3 IPs/ }));
+    });
+    await waitFor(() => screen.getByRole('button', { name: /Undo last replacement/ }));
+    const templated = useCtfStore.getState().userNotes.find((n) => n.id === 'scan')!;
+
+    // The vault is not loaded (e.g. still hydrating): the note is 'missing', so the batch must survive.
+    act(() => useCtfStore.setState({ userNotes: [] }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Undo last replacement/ }));
+    });
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Skipped 1'));
+    const kept = await listUndoBatches();
+    expect(kept).toHaveLength(1);
+    expect(kept[0].entries.map((e) => e.noteId)).toEqual(['scan']);
+    expect(kept[0].entries[0].before).toBe(SCAN_MD);
+
+    // Once the note is back, the same undo restores it and only then drops the batch.
+    act(() => useCtfStore.setState({ userNotes: [templated, note('other', OTHER_MD)] }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Undo last replacement/ }));
+    });
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Restored 1 note'));
+    expect(useCtfStore.getState().userNotes.find((n) => n.id === 'scan')!.rawMarkdown).toBe(SCAN_MD);
+    expect(await listUndoBatches()).toHaveLength(0);
   });
 
   it('lets the user switch a role and deselect', async () => {

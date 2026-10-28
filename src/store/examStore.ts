@@ -1104,6 +1104,7 @@ const EXAM_SNAPSHOT_FIELDS = {
   milestones: 'array',
   scratchNotes: 'string',
   includeBonusPoints: 'boolean',
+  reportExamDate: 'string?',
   seed: 'string',
   scoringMode: 'string',
   findings: 'array',

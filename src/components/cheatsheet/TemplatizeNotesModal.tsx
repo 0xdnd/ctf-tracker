@@ -10,6 +10,7 @@ import {
   buildTemplateEdits,
   defaultPlanSelections,
   deleteUndoBatch,
+  replaceUndoBatch,
   listUndoBatches,
   planNotesTemplating,
   planUndo,
@@ -141,8 +142,20 @@ export const TemplatizeNotesModal: React.FC<TemplatizeNotesModalProps> = ({ open
     try {
       const plan = planUndo(lastBatch, allNotes());
       if (plan.restore.length > 0) await applyNoteContentBatch(plan.restore);
-      await deleteUndoBatch(lastBatch.id);
-      setLastBatch(null);
+      // A 'missing' note may only be not loaded yet (vault still hydrating): keep its pre-image for a later undo.
+      const keepForLater = plan.skipped.some((s) => s.reason === 'missing');
+      if (keepForLater) {
+        const restored = new Set(plan.restore.map((r) => r.noteId));
+        const remaining: TemplateUndoBatch = {
+          ...lastBatch,
+          entries: lastBatch.entries.filter((e) => !restored.has(e.noteId)),
+        };
+        await replaceUndoBatch(remaining);
+        setLastBatch(remaining);
+      } else {
+        await deleteUndoBatch(lastBatch.id);
+        setLastBatch(null);
+      }
       if (soundEnabled) playCyberSound('click');
       setFeedback({
         type: plan.restore.length > 0 ? 'success' : 'error',

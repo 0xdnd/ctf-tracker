@@ -233,7 +233,8 @@ export async function saveUndoBatch(
       })),
   };
   const key = batchesKey();
-  const existing = await readBatches(key).catch(() => [] as TemplateUndoBatch[]);
+  // A failed read rejects: writing `[batch]` over an unreadable history would wipe the older undo records.
+  const existing = await readBatches(key);
   await writeBatches([batch, ...existing].slice(0, MAX_UNDO_BATCHES), key);
   return batch;
 }
@@ -253,6 +254,14 @@ export async function deleteUndoBatch(batchId: string): Promise<void> {
   const key = batchesKey();
   const existing = await readBatches(key);
   await writeBatches(existing.filter((b) => b.id !== batchId), key);
+}
+
+/** Replace a stored batch in place (same id), e.g. to keep only the entries an undo could not restore yet. */
+export async function replaceUndoBatch(batch: TemplateUndoBatch): Promise<void> {
+  if (isSchemaWriteGated()) return;
+  const key = batchesKey();
+  const existing = await readBatches(key);
+  await writeBatches(existing.map((b) => (b.id === batch.id ? batch : b)), key);
 }
 
 export interface UndoPlan {
