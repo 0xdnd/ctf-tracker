@@ -16,10 +16,18 @@ export function getLoadedMachinesCatalog(): Machine[] | null {
 export function loadMachinesCatalog(): Promise<Machine[]> {
   if (cached) return Promise.resolve(cached);
   if (!inflight) {
-    inflight = import('./machinesCatalog')
-      .then((mod) => {
-        // Active HTB machines (activeMachines.json) join as metadata-only rows.
-        cached = appendActiveMachines(mod.INITIAL_MACHINES);
+    inflight = Promise.all([
+      import('./machinesCatalog'),
+      import('./catalogSources/pg.json'),
+      import('./catalogSources/vulnhub.json'),
+    ])
+      .then(([mod, pg, vulnhub]) => {
+        // Active HTB machines (activeMachines.json) join as metadata-only rows, then PG and VulnHub sources.
+        cached = [
+          ...appendActiveMachines(mod.INITIAL_MACHINES),
+          ...(pg.default as unknown as Machine[]),
+          ...(vulnhub.default as unknown as Machine[]),
+        ];
         return cached;
       })
       .finally(() => {

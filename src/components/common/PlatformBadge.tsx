@@ -10,7 +10,12 @@ interface PlatformBadgeProps {
   variant?: 'default' | 'hardware';
 }
 
-const PLATFORM_FULL_NAMES: Record<string, string> = { HTB: 'Hack The Box', THM: 'TryHackMe' };
+const PLATFORM_FULL_NAMES: Record<string, string> = {
+  HTB: 'Hack The Box',
+  THM: 'TryHackMe',
+  PG: 'OffSec Proving Grounds',
+  VulnHub: 'VulnHub',
+};
 export const platformFullName = (platform: string): string => PLATFORM_FULL_NAMES[platform] ?? platform;
 
 export const PlatformIcon: React.FC<{ platform: Platform; className?: string; monochrome?: boolean; variant?: 'default' | 'hardware' }> = ({

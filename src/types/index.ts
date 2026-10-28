@@ -1,4 +1,4 @@
-export type Platform = 'HTB' | 'THM' | 'Custom';
+export type Platform = 'HTB' | 'THM' | 'PG' | 'VulnHub' | 'Custom';
 
 export type OperatingSystem = 'Linux' | 'Windows' | 'BSD' | 'Android' | 'macOS' | 'Other';
 

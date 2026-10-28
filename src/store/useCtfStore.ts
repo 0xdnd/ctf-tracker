@@ -1159,12 +1159,22 @@ export const mergeMachinesWithCatalog = (
     // order rules (name: last wins, slug: first wins). For newer pairs an HTB row never displaces another
     // platform's row, so a legacy row without a platform keeps resolving to THM "Retro", not HTB "Retro".
     const legacyPair = LEGACY_CROSS_PLATFORM_NAME_SLUGS.has(nameSlug);
+    // PG/VulnHub rows only fill an empty name/slug slot and are displaced by any other platform, so a stored
+    // HTB/THM row matched by name alone never lands on a same-named PG/VulnHub row.
+    const isOffsecOrVulnhub = m.platform === 'PG' || m.platform === 'VulnHub';
     const prevByName = nameMap.get(normName);
-    if (legacyPair || !prevByName || m.platform !== 'HTB' || prevByName.platform === 'HTB') {
+    const prevIsOffsecOrVulnhub = prevByName?.platform === 'PG' || prevByName?.platform === 'VulnHub';
+    if (!prevByName || (isOffsecOrVulnhub ? false : prevIsOffsecOrVulnhub || legacyPair || m.platform !== 'HTB' || prevByName.platform === 'HTB')) {
       nameMap.set(normName, entry);
     }
     const prevBySlug = nameSlug ? slugMap.get(nameSlug) : undefined;
-    if (nameSlug && (!prevBySlug || (!legacyPair && prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))) {
+    const prevSlugIsOffsecOrVulnhub = prevBySlug?.platform === 'PG' || prevBySlug?.platform === 'VulnHub';
+    if (
+      nameSlug &&
+      (!prevBySlug ||
+        (!isOffsecOrVulnhub && prevSlugIsOffsecOrVulnhub) ||
+        (!isOffsecOrVulnhub && !legacyPair && prevBySlug.platform === 'HTB' && m.platform !== 'HTB'))
+    ) {
       slugMap.set(nameSlug, entry);
     }
     if (idSlug && !idSlugMap.has(idSlug)) {

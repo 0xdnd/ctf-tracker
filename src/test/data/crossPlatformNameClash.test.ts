@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
+import pgRows from '../../data/catalogSources/pg.json';
+import vulnhubRows from '../../data/catalogSources/vulnhub.json';
 import { matchCandidateNamesToCatalog } from '../../utils/bulkPwnImporter';
 import { mergeMachinesWithCatalog } from '../../store/useCtfStore';
 import type { Machine } from '../../types';
@@ -107,5 +109,50 @@ describe('cross-platform name clashes (Retro, Watcher, Reset, Compiled)', () => 
       const prefixed = { id: 'htb-retro-old', name: 'Retro', platform: undefined as unknown as Machine['platform'] };
       expect(mergedRow(prefixed)).toEqual(['htb-retro']);
     });
+  });
+});
+
+describe('PG/VulnHub names that clash with HTB/THM names', () => {
+  const newRows = [...(pgRows as unknown as Machine[]), ...(vulnhubRows as unknown as Machine[])];
+  const base = INITIAL_MACHINES.filter((m) => m.platform === 'HTB' || m.platform === 'THM');
+  const baseNames = new Set(base.map((m) => m.name.toLowerCase().trim()));
+  const clashes = newRows.filter((m) => baseNames.has(m.name.toLowerCase().trim()));
+  const full = [...INITIAL_MACHINES, ...newRows];
+
+  it('has at least one clash (Nibbles)', () => {
+    expect(clashes.map((m) => m.name)).toContain('Nibbles');
+  });
+
+  it('merges a name-only HTB/THM stored row into the HTB/THM row, never PG/VulnHub', () => {
+    const bad: string[] = [];
+    for (const nr of clashes) {
+      const targets = base.filter((b) => b.name.toLowerCase().trim() === nr.name.toLowerCase().trim());
+      for (const target of targets) {
+        const stored = { ...target, id: `old-${target.id}`, status: 'completed', timeSpentSeconds: 11 } as Machine;
+        const out = mergeMachinesWithCatalog([stored], false, full);
+        // The stored row replaces the catalog row it matched (keeping its own id); the PG/VulnHub row stays pristine.
+        const ids = new Set(out.map((m) => m.id));
+        const newRowOut = out.find((m) => m.id === nr.id);
+        if (!ids.has(target.id) && ids.has(stored.id) && newRowOut?.timeSpentSeconds === 0 && newRowOut.status === 'backlog') continue;
+        bad.push(`${nr.id} vs ${target.id}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it('a platform-less legacy row matched by name alone never folds into a PG/VulnHub row', () => {
+    const bad: string[] = [];
+    for (const nr of clashes) {
+      const stored = {
+        ...box({ id: `legacy-${nr.id}`, name: nr.name, status: 'completed', timeSpentSeconds: 11 }),
+        platform: undefined as unknown as Machine['platform'],
+      };
+      const out = mergeMachinesWithCatalog([stored], false, full);
+      const ids = new Set(out.map((m) => m.id));
+      const newRowOut = out.find((m) => m.id === nr.id);
+      if (ids.has(nr.id) && newRowOut?.timeSpentSeconds === 0) continue;
+      bad.push(nr.id);
+    }
+    expect(bad).toEqual([]);
   });
 });
