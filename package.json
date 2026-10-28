@@ -61,6 +61,7 @@
     "tauri:build": "tauri build",
     "share": "npx --yes localtunnel@2.0.2 --port 3000",
     "preview": "vite preview",
+    "preview:built": "npm run build && vite preview --port 3000 --strictPort",
     "lighthouse:a11y": "node scripts/lighthouse_a11y.mjs",
     "check:active": "node scripts/check-active-machines.mjs",
     "stats:catalog": "node scripts/catalog-stats.mjs"
