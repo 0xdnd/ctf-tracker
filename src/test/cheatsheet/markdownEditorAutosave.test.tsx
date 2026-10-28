@@ -11,7 +11,7 @@ const renderEditor = () =>
 describe('MarkdownEditor autosave', () => {
   beforeEach(() => {
     updateNoteContent = vi.fn().mockResolvedValue(undefined);
-    useCtfStore.setState({ updateNoteContent } as any);
+    useCtfStore.setState({ updateNoteContent } as unknown as Parameters<typeof useCtfStore.setState>[0]);
   });
   afterEach(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });

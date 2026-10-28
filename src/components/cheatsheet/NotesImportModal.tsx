@@ -138,14 +138,14 @@ export const NotesImportModal: React.FC = () => {
   };
 
   const stageJsonImport = async (text: string, message: (count: number) => string) => {
-    let parsed: any = null;
+    let parsed: { notes?: unknown; wikilinkMap?: Record<string, string> } | CptsNoteEntry[] | null = null;
     try {
       parsed = JSON.parse(text);
     } catch {
       parsed = null;
     }
     const notes: CptsNoteEntry[] | null = parsed
-      ? Array.isArray(parsed) ? parsed : Array.isArray(parsed.notes) ? parsed.notes : null
+      ? Array.isArray(parsed) ? parsed : Array.isArray(parsed.notes) ? (parsed.notes as CptsNoteEntry[]) : null
       : null;
     if (!notes || notes.length === 0) {
       // Let the store report its usual error for malformed payloads.
@@ -159,7 +159,7 @@ export const NotesImportModal: React.FC = () => {
       }
       return;
     }
-    await stageImport(notes, (!Array.isArray(parsed) && parsed.wikilinkMap) || {}, message(notes.length), 'json');
+    await stageImport(notes, (parsed && !Array.isArray(parsed) && parsed.wikilinkMap) || {}, message(notes.length), 'json');
   };
 
   const handleCommitPending = async (useReplacements: boolean) => {
@@ -173,9 +173,9 @@ export const NotesImportModal: React.FC = () => {
       const suffix = replaced > 0 ? ` Replaced ${replaced} IP${replaced === 1 ? '' : 's'} with placeholders.` : '';
       // Keep the review open (and the parsed notes) unless the save succeeded.
       if (await finishImport(notes, p.wikilinkMap, p.message + suffix, p.kind)) setPendingImport(null);
-    } catch (err: any) {
+    } catch (err) {
       if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: err?.message || 'Error saving imported notes.' });
+      setFeedback({ type: 'error', message: (err as Error | undefined)?.message || 'Error saving imported notes.' });
     } finally {
       setIsProcessing(false);
     }

@@ -114,7 +114,9 @@ export function releaseRestoreWriteGate(): void {
   releaseListeners.forEach((cb) => {
     try {
       cb();
-    } catch {}
+    } catch {
+      /* a failing listener must not block the others */
+    }
   });
 }
 

@@ -62,7 +62,7 @@ describe('EditableIpBadge clearing and blur', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
       ],
-    } as any);
+    } as unknown as Parameters<typeof useCtfStore.setState>[0]);
   });
   const ip = () => useCtfStore.getState().machines.find((m) => m.id === 'ip-box')!.ip;
   const startEdit = () => {

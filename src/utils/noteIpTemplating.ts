@@ -190,7 +190,7 @@ async function writeBatches(batches: TemplateUndoBatch[], key: string): Promise<
     const done = (err?: unknown) => {
       if (settled) return;
       settled = true;
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* already closed */ }
       if (err) reject(err);
       else resolve();
     };
