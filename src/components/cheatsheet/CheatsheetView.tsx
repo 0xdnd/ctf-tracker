@@ -2015,6 +2015,26 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         )
       ) : (
         <>
+          {/* Featured: reverse shell generator */}
+          <div className="flex flex-col gap-3 rounded-lg border border-accent bg-accent-muted p-4 sm:flex-row sm:items-center sm:gap-4">
+            <Terminal className="h-6 w-6 flex-shrink-0 text-accent" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-primary">Reverse Shell Generator</h3>
+              <p className="text-xs text-secondary">Set LHOST, LPORT and target once — copy a ready-to-paste payload.</p>
+            </div>
+            <CyberButton
+              variant="primary"
+              size="md"
+              onClick={() => {
+                if (soundEnabled) playCyberSound('click');
+                setSelectedCategory('revshell');
+              }}
+              className="w-full sm:w-auto [@media(pointer:coarse)]:h-11"
+            >
+              Open generator
+            </CyberButton>
+          </div>
+
           {/* Parameter injection: LHOST / LPORT / target */}
           <div className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-end gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
             <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lhost-input">
