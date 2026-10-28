@@ -6,6 +6,7 @@ import { buildBackupFile, importBackupFile } from '../../store/backupFile';
 import { toast } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
+import { buildMachinesCsv } from '../../utils/machinesCsv';
 import { 
   Save, 
   Check, 
@@ -110,6 +111,20 @@ export const UserMenu: React.FC = () => {
     const a = document.createElement('a');
     a.href = url;
     a.download = `ctf-tracker-${activeName.toLowerCase().replace(/\s+/g, '-')}-backup.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    playCyberSound('export');
+  };
+
+  // 1-Click Export machine list as CSV (client-side only)
+  const handleExportCsv = () => {
+    const blob = new Blob([buildMachinesCsv(machines)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zerobox-machines-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -343,6 +358,15 @@ export const UserMenu: React.FC = () => {
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Import backup</span>
+            </button>
+
+            <button
+              onClick={handleExportCsv}
+              className="col-span-2 p-2 max-sm:py-3 rounded-xl bg-surface-card hover:bg-surface-hover border border-subtle text-primary text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+              title="Download machine list as CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
             </button>
           </div>
 

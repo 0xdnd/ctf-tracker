@@ -16,6 +16,7 @@ import { AddLootModal } from '../components/loot/AddLootModal';
 import { ExportLootDrawer } from '../components/loot/ExportLootDrawer';
 import { LootVerificationMatrix } from '../components/loot/LootVerificationMatrix';
 import { identifyHash, getCrackingCommands } from '../utils/hashIdentifier';
+import { toCsv } from '../utils/csv';
 import { toast } from '../store/useToastStore';
 import { confirmAction } from '../store/useConfirmStore';
 
@@ -373,18 +374,18 @@ export const EvidenceVaultPage: React.FC = () => {
   const handleExportCsv = useCallback(() => {
     const headers = ['Target', 'IP', 'Platform', 'Category', 'Type', 'Identity/Username', 'Secret', 'DiscoveredAt', 'Notes'];
     const rows = filteredItems.map((item) => [
-      `"${item.targetName.replace(/"/g, '""')}"`,
-      `"${item.targetIp.replace(/"/g, '""')}"`,
-      `"${item.platform}"`,
-      `"${item.category}"`,
-      `"${item.typeLabel}"`,
-      `"${item.username.replace(/"/g, '""')}"`,
-      `"${item.secret.replace(/"/g, '""')}"`,
-      `"${item.discoveredAt}"`,
-      `"${item.notes.replace(/"/g, '""')}"`,
+      item.targetName,
+      item.targetIp,
+      item.platform,
+      item.category,
+      item.typeLabel,
+      item.username,
+      item.secret,
+      item.discoveredAt,
+      item.notes,
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = toCsv(headers, rows);
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

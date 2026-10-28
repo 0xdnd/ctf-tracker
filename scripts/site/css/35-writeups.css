@@ -1,0 +1,25 @@
+/* 35-writeups: on-site writeup block on machine pages (takeaway, meta strip, TOC, body, time table) */
+.writeup{margin:var(--s6) 0}
+.wu-takeaway{margin:0 0 var(--s4);padding:var(--s5);border:1px solid var(--line-strong);border-radius:12px;background:var(--card)}
+.wu-takeaway h2{margin:0 0 var(--s2);padding:0;border:0;color:var(--accent);font-size:.8125rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.wu-takeaway p{margin:0;max-width:var(--prose);color:var(--text);font-size:1.125rem;line-height:1.6}
+.wu-meta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);margin:0 0 var(--s5);padding:0;list-style:none;color:var(--text-2);font-size:var(--fs-small)}
+.wu-meta li{margin:0}
+.wu-meta span{margin-right:var(--s1);color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.wu-layout{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s4) var(--s6)}
+.wu-body{flex:1 1 32rem;min-width:0;max-width:var(--prose)}
+.wu-body>h2:first-child{margin-top:0;padding-top:0;border-top:0}
+.wu-body p,.wu-body ul,.wu-body ol{font-size:var(--fs-prose);line-height:1.7}
+.wu-toc{flex:0 1 14rem;min-width:min(100%,12rem);padding:var(--s4);border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.wu-toc p{margin:0 0 var(--s2);color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.wu-toc ul{margin:0;padding:0;list-style:none}
+.wu-toc li{margin:0 0 var(--s2);font-size:var(--fs-small);line-height:1.4}
+.wu-toc a{color:var(--text-2);text-decoration:none}
+.wu-time caption{padding:0 0 var(--s2);color:var(--muted);font-size:var(--fs-small);text-align:left}
+.wu-time tbody th{color:var(--text);font-weight:500}
+.wu-time td{white-space:nowrap}
+@media(min-width:900px){
+.wu-layout{flex-wrap:nowrap}
+.wu-toc{position:sticky;top:calc(var(--header-h) + var(--s4));order:2}
+}
+@media(hover:hover) and (pointer:fine){.wu-toc a:hover{color:var(--accent);text-decoration:underline}}

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import { EvidenceVaultPage } from './EvidenceVaultPage';
 import { useCtfStore } from '../store/useCtfStore';
@@ -155,5 +155,53 @@ describe('EvidenceVaultPage component', () => {
     });
 
     expect(screen.getByText('backup_admin')).toBeInTheDocument();
+  });
+
+  it('exports CSV with formula guard, BOM and CRLF', async () => {
+    const payload = "=cmd|' /C calc'!A0";
+    useCtfStore.setState({
+      machines: [
+        {
+          id: 'box-x',
+          name: 'Evil',
+          ip: '10.10.10.9',
+          platform: 'HTB',
+          os: 'Linux',
+          tags: [],
+          certifications: [],
+          difficulty: 'Easy',
+          status: 'foothold',
+          userFlag: payload,
+          timeSpentSeconds: 0,
+          quickNotes: `Credentials: ${payload}:pw`,
+          createdAt: '2026-09-02T09:00:00Z',
+          updatedAt: '2026-09-02T10:00:00Z',
+        },
+      ],
+    });
+    let blob: Blob | undefined;
+    const createUrl = vi.fn((b: Blob) => {
+      blob = b;
+      return 'blob:test';
+    });
+    Object.assign(URL, { createObjectURL: createUrl, revokeObjectURL: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(
+      <BrowserRouter>
+        <EvidenceVaultPage />
+      </BrowserRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Download CSV' }));
+
+    expect(blob).toBeDefined();
+    const bytes = new Uint8Array(await blob!.arrayBuffer());
+    expect(Array.from(bytes.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf]);
+    const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes);
+    expect(text).toContain('\r\n');
+    expect(text).not.toMatch(/(?<!\r)\n/);
+    expect(text).toContain(`'${payload}`);
+    expect(text).not.toMatch(/(^|,)=cmd/m);
   });
 });

@@ -184,4 +184,41 @@ function getGuides() {
   return guidesCache;
 }
 
-module.exports = { getModel, getGuides, slugify };
+let writeupsCache;
+/**
+ * Owner writeups from content/writeups/*.md (see ./writeups.cjs): [{ slug, fm, html, toc, relPath }].
+ * Joins on the machine slug: sets hasSiteWriteup + siteWriteup on the machine. Never touches ownWriteup (page title/H1 depend on it).
+ * Tolerant of a missing folder (returns []); any invalid writeup throws, so the build fails.
+ */
+/** Technique hub slugs that are actually emitted (>= 5 machines, same cut as gen-content-pages TECH_MIN); the rest are redirect stubs. */
+function getTechSlugs() {
+  const { GROUPS, matchesMachine } = require('./techniques.cjs');
+  const machines = getModel().machines;
+  return new Set(GROUPS.filter((g) => machines.filter((m) => matchesMachine(g, m)).length >= 5).map((g) => g.slug));
+}
+
+/**
+ * Side-effect-free variant for tooling (scripts/check-writeups.cjs): validates with loader options (files, includeDrafts, dir),
+ * bypasses the cache and does not touch the machine model.
+ */
+function checkWriteups(opts) {
+  const { loadWriteups } = require('./writeups.cjs');
+  const bySlug = new Map(getModel().machines.map((m) => [m.slug, m]));
+  return loadWriteups({ ...opts, machinesBySlug: bySlug, techSlugs: getTechSlugs() });
+}
+
+function getWriteups() {
+  if (writeupsCache) return writeupsCache;
+  const { loadWriteups } = require('./writeups.cjs');
+  const machines = getModel().machines;
+  const bySlug = new Map(machines.map((m) => [m.slug, m]));
+  writeupsCache = loadWriteups({ machinesBySlug: bySlug, techSlugs: getTechSlugs() });
+  for (const w of writeupsCache) {
+    const m = bySlug.get(w.slug);
+    m.hasSiteWriteup = true;
+    m.siteWriteup = w;
+  }
+  return writeupsCache;
+}
+
+module.exports = { getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify };

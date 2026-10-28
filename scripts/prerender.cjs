@@ -209,7 +209,9 @@ const webAppLd = {
       url: ORIGIN + '/',
       license: REPO_URL + '/blob/main/LICENSE',
       applicationCategory: 'SecurityApplication',
-      operatingSystem: 'Web browser',
+      operatingSystem: 'Web browser, Windows',
+      downloadUrl: REPO_URL + '/releases/latest',
+      sameAs: [REPO_URL],
       browserRequirements: 'Requires JavaScript and modern browser',
       description:
         'Free offline CTF tracker for Hack The Box, TryHackMe and OSCP/CPTS prep with a Kanban board, reverse shell cheatsheet and 24h OSCP exam simulator.',

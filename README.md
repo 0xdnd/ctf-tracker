@@ -2,9 +2,11 @@
 
 <img src="public/logo-zerobox.webp" alt="ZeroBox logo" width="120" />
 
-# ⚡ ZeroBox — The CTF Tracker Built for Hackers
+# ⚡ ZeroBox — Free OSCP & CTF Tracker for HackTheBox and TryHackMe
 
 ### Track every HTB & TryHackMe box, from recon to root, in one free, offline, keyboard-driven dashboard.
+
+**Use it free at [ctftracker.com](https://ctftracker.com/)**
 
 **No signup. No backend. No tracking. Just open it and start hacking.**
 

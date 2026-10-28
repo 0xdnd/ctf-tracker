@@ -20,7 +20,6 @@ const METADATA_ONLY_RETIRED = INITIAL_MACHINES.filter(
 const PURE_CTF_TOTAL = 1027;
 
 const UI_FILES = [
-  'index.html',
   'src/components/auth/OperatorProfileModal.tsx',
   'src/components/common/StartCleanModal.tsx',
   'src/components/backup/BackupModal.tsx',

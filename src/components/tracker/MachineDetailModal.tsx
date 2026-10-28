@@ -62,6 +62,8 @@ import { DomainVhostSection } from './DomainVhostSection';
 import { PortTriageTable } from './PortTriageTable';
 import { LabFindingsPanel } from './LabFindingsPanel';
 import { LabTimelineAndIndependence } from './LabTimelineAndIndependence';
+import { communityLink, ownWriteupHref } from '../../utils/machineLinks';
+import { isTauriTarget } from '../../utils/runtimeTarget';
 
 const HEADER_ICON_BTN =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
@@ -219,6 +221,8 @@ export const MachineDetailModal: React.FC = () => {
   }, [selectedMachineId]);
 
   if (!machine) return null;
+  const ownHref = ownWriteupHref(machine);
+  const community = communityLink(machine);
 
   const handleCopy = async (text: string, type: 'user' | 'root') => {
     if (!text) return;
@@ -376,14 +380,23 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     Official room <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
-                {Boolean(sanitizeExternalUrl(machine.writeupUrl)) && (
+                {ownHref && (
                   <a
-                    href={sanitizeExternalUrl(machine.writeupUrl)}
+                    href={ownHref}
+                    {...(isTauriTarget() ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                  >
+                    Writeup
+                  </a>
+                )}
+                {community && (
+                  <a
+                    href={community.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
                   >
-                    Writeup <ExternalLink className="w-3 h-3" />
+                    {ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label} <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
@@ -719,9 +732,9 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   </h3>
                   {machine.officialPdf && (
                     <div className="text-xs text-tertiary mt-1 flex items-center gap-1.5">
-                      <span>Source Archive:</span>
-                      <span className="text-callout-info-fg font-mono text-xs bg-surface-card px-1.5 py-0.5 rounded border border-subtle">
-                        {machine.officialPdf}
+                      <span>Source:</span>
+                      <span title={machine.officialPdf} className="text-callout-info-fg font-mono text-xs bg-surface-card px-1.5 py-0.5 rounded border border-subtle">
+                        {`${machine.name} — ${machine.platform} Official Writeup`}
                       </span>
                     </div>
                   )}

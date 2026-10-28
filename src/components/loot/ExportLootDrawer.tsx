@@ -14,6 +14,7 @@ import {
 import { VaultEvidenceItem } from '../../pages/EvidenceVaultPage';
 import { DRAWER_RIGHT_VARIANTS } from '../../utils/motionTokens';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { toCsv } from '../../utils/csv';
 
 export interface ExportLootDrawerProps {
   isOpen: boolean;
@@ -60,7 +61,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
   };
 
   // Generate RFC 4180 CSV format
-  const generateCsv = () => {
+  const generateCsv = (bom = true) => {
     const headers = [
       'Target Name',
       'Target IP',
@@ -73,29 +74,19 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
       'Tactical Notes',
     ];
 
-    const escapeCsv = (val: string | undefined | null) => {
-      const s = String(val || '');
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    };
+    const rows = activeItems.map((item) => [
+      item.targetName,
+      item.targetIp,
+      item.platform,
+      item.category,
+      item.typeLabel,
+      item.username,
+      item.secret,
+      item.discoveredAt,
+      item.notes,
+    ]);
 
-    const rows = activeItems.map((item) =>
-      [
-        escapeCsv(item.targetName),
-        escapeCsv(item.targetIp),
-        escapeCsv(item.platform),
-        escapeCsv(item.category),
-        escapeCsv(item.typeLabel),
-        escapeCsv(item.username),
-        escapeCsv(item.secret),
-        escapeCsv(item.discoveredAt),
-        escapeCsv(item.notes),
-      ].join(',')
-    );
-
-    return [headers.join(','), ...rows].join('\n');
+    return toCsv(headers, rows, { bom });
   };
 
   // Generate Markdown Pentest Table
@@ -146,7 +137,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
   const handleCopy = (format: 'json' | 'csv' | 'markdown') => {
     let content = '';
     if (format === 'json') content = generateJson();
-    else if (format === 'csv') content = generateCsv();
+    else if (format === 'csv') content = generateCsv(false);
     else if (format === 'markdown') content = generateMarkdown();
 
     safeCopyToClipboard(content);

@@ -20,6 +20,8 @@ import {
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus } from '../types';
+import { communityLink, ownWriteupHref } from '../utils/machineLinks';
+import { isTauriTarget } from '../utils/runtimeTarget';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../utils/helpers';
 import { PlatformBadge } from '../components/common/PlatformBadge';
@@ -246,7 +248,8 @@ export const TargetDetailPage: React.FC = () => {
   ];
 
   const roomUrl = sanitizeExternalUrl(machine.roomUrl);
-  const writeupUrl = sanitizeExternalUrl(machine.writeupUrl);
+  const community = communityLink(machine);
+  const ownHref = ownWriteupHref(machine);
 
   return (
     <motion.div
@@ -380,14 +383,23 @@ export const TargetDetailPage: React.FC = () => {
                 Official room <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             )}
-            {!machine.isActive && writeupUrl && (
+            {!machine.isActive && ownHref && (
               <a
-                href={writeupUrl}
+                href={ownHref}
+                {...(isTauriTarget() ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
+              >
+                Writeup
+              </a>
+            )}
+            {!machine.isActive && community && (
+              <a
+                href={community.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
               >
-                Writeup <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                {ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             )}
           </div>
