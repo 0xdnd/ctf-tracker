@@ -41,6 +41,11 @@ export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 
 const { INITIAL_MACHINES, ACTIVE_MACHINES, appendActiveMachines, PRACTICE_TRACKS, OFFICIAL_HTB_PRO_LABS } = loadData();
 const all = appendActiveMachines(INITIAL_MACHINES);
+// PG and VulnHub rows live in src/data/catalogSources and join the catalog at runtime (loadMachinesCatalog).
+const readCatalogSource = (f) => JSON.parse(fs.readFileSync(path.join(root, 'src/data/catalogSources', f), 'utf8'));
+const pgRows = readCatalogSource('pg.json');
+const vulnhubRows = readCatalogSource('vulnhub.json');
+const ctfTotal = all.length + pgRows.length + vulnhubRows.length;
 const htb = all.filter((m) => m.platform === 'HTB');
 const htbActive = htb.filter((m) => m.isActive);
 const htbRetired = htb.filter((m) => !m.isActive);
@@ -95,19 +100,21 @@ const lines = [
   table(
     ['מדד', 'מספר'],
     [
-      ['סה"כ מכונות ויעדים בודדים בקטלוג', `**${all.length}**`],
-      ['מתוכן מכונות אתגר טהורות (Pure CTF Challenges)', `**${all.length}** (${htb.length} HTB + ${thm.length} THM)`],
+      ['סה"כ מכונות ויעדים בודדים בקטלוג', `**${ctfTotal}**`],
+      ['מתוכן מכונות אתגר טהורות (Pure CTF Challenges)', `**${ctfTotal}** (${htb.length} HTB + ${thm.length} THM + ${pgRows.length} PG + ${vulnhubRows.length} VulnHub)`],
       ['מתוכן מעבדות מודרכות ושותפים (Guided Labs)', '0 (הוסרו כליל מהקטלוג)'],
       ['Hack The Box (HTB)', htb.length],
       ['מתוכן מפורשות (Retired)', htbRetired.length],
       ['מתוכן פעילות (Active), מטא-דאטה בלבד', htbActive.length],
       ['TryHackMe (THM)', thm.length],
+      ['Proving Grounds (PG)', pgRows.length],
+      ['VulnHub', vulnhubRows.length],
       ['מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs)', `**${OFFICIAL_HTB_PRO_LABS.length}** מעבדות (170 שרתים, 280 דגלים)`],
       ...(other.length ? [['פלטפורמות אחרות', other.length]] : []),
     ]
   ),
   '',
-  'הקטלוג המובנה כולל 1,027 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
+  'הקטלוג המובנה כולל ' + ctfTotal.toLocaleString('en-US') + ' יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
   '',
   '## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה',
   '',

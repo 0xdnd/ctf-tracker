@@ -52,8 +52,14 @@ export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 }
 
 const MIN_WORDS = 150;
-// Pure CTF challenge machines (HTB + THM); the rest of the catalog is guided labs. README and llms.txt state the same split.
-const CTF_MACHINE_COUNT = 1027;
+// Pure CTF challenge machines: the 1027 HTB + THM rows in machinesCatalog.ts plus the PG and VulnHub source rows
+// (loaded at runtime by loadMachinesCatalog); the rest of machinesCatalog.ts is guided labs. README and llms.txt state the same split.
+const HTB_THM_MACHINE_COUNT = 1027;
+const EXTRA_PLATFORM_COUNT = ['pg', 'vulnhub'].reduce(
+  (n, f) => n + JSON.parse(fs.readFileSync(path.join(rootDir, 'src', 'data', 'catalogSources', f + '.json'), 'utf8')).length,
+  0
+);
+const CTF_MACHINE_COUNT = HTB_THM_MACHINE_COUNT + EXTRA_PLATFORM_COUNT;
 const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
 const TRACK_TO_CERT = {
@@ -153,7 +159,7 @@ function getModel() {
     .map((n) => ({ ...n, slug: slugify(n.id) }));
 
   const examTracks = Object.values(d.EXAM_TRACK_CONFIGS).map((t) => t.id);
-  const catalogCounts = { total: machines.length, ctf: CTF_MACHINE_COUNT, guided: machines.length - CTF_MACHINE_COUNT };
+  const catalogCounts = { total: machines.length, ctf: CTF_MACHINE_COUNT, guided: machines.length - HTB_THM_MACHINE_COUNT };
   const proLabs = d.OFFICIAL_HTB_PRO_LABS || [];
 
   cached = { machines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, examTracks, catalogCounts, MIN_WORDS };

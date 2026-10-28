@@ -6,16 +6,18 @@
 
 | מדד | מספר |
 | --- | --- |
-| סה"כ מכונות ויעדים בודדים בקטלוג | **1027** |
-| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **1027** (576 HTB + 451 THM) |
+| סה"כ מכונות ויעדים בודדים בקטלוג | **1372** |
+| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **1372** (576 HTB + 451 THM + 223 PG + 122 VulnHub) |
 | מתוכן מעבדות מודרכות ושותפים (Guided Labs) | 0 (הוסרו כליל מהקטלוג) |
 | Hack The Box (HTB) | 576 |
 | מתוכן מפורשות (Retired) | 556 |
 | מתוכן פעילות (Active), מטא-דאטה בלבד | 20 |
 | TryHackMe (THM) | 451 |
+| Proving Grounds (PG) | 223 |
+| VulnHub | 122 |
 | מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs) | **10** מעבדות (170 שרתים, 280 דגלים) |
 
-הקטלוג המובנה כולל 1,027 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts` ו-`src/data/activeMachines.json`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
+הקטלוג המובנה כולל 1,372 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
 
 ## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה
 
@@ -90,9 +92,10 @@
 | `osep` | OSEP Evasion & Lateral Movement Preparation | certification | 27 | 0 | **27** |
 | `oswe` | OSWE Web Exploitation & Code Review Preparation | certification | 23 | 0 | **23** |
 | `cpts-path` | Certified Penetration Testing Specialist (CPTS) | certification | 49 | 2 | **51** |
+| `ippsec-cpts` | Unofficial IppSec CPTS Preparation Track | certification | 44 | 0 | **44** |
 | `cwee-web` | HTB CWEE & CWES Advanced Web Exploitation | certification | 76 | 7 | **83** |
 | `popular-classics` | Community Classics & Hall of Fame | curated | 40 | 13 | **53** |
-| `ippsec-vault` | IppSec Video Walkthrough Masterclass | curated | 447 | 0 | **447** |
+| `ippsec-vault` | IppSec Video Walkthrough Masterclass | curated | 449 | 0 | **449** |
 | `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 77 | 11 | **88** |
 | `web-master` | Web Exploitation Master Pathway | technique | 56 | 33 | **89** |
 | `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 31 | **39** |
@@ -108,7 +111,7 @@
 | `offsec-osep.json` | רשימת OSEP של 0xdf | 27 | 2026-10-12 | https://0xdf.gitlab.io/cheatsheets/offsec |
 | `offsec-oswe.json` | רשימת OSWE של 0xdf | 23 | 2026-10-12 | https://0xdf.gitlab.io/cheatsheets/offsec |
 | `htb-active-directory.json` | מכונות Active Directory ב-HTB | 84 | 2026-10-12 | https://github.com/seriotonctf/HackTheBox-AD-Machines |
-| `ippsec-videos.json` | מכונות HTB עם סרטון של IppSec | 447 | 2026-10-12 | https://github.com/IppSec/ippsec.github.io (dataset.json) |
+| `ippsec-videos.json` | מכונות HTB עם סרטון של IppSec | 449 | 2026-10-12 | https://github.com/IppSec/ippsec.github.io (dataset.json) |
 
 ## מעבדות ארגוניות (HTB Pro Labs Presets)
 
