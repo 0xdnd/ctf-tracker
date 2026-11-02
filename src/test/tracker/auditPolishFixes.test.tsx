@@ -55,14 +55,15 @@ describe('ZEROBOX Audit & Polish Verification Suite', () => {
     expect(htmlContent).toContain('<meta name="twitter:image"');
   });
 
-  it('R2 (Sidebar): navigation label is Rev-Shells & Snippets', () => {
+  it('R2 (Sidebar): navigation labels are Reverse Shells and Snippets', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>
     );
 
-    const navItem = screen.getByText('Rev-Shells & Snippets');
+    expect(screen.getByText('Reverse Shells')).toBeInTheDocument();
+    const navItem = screen.getByText('Snippets');
     expect(navItem).toBeInTheDocument();
     // Badge shows combined snippets + vault notes: 85 + 12 = 97
     expect(screen.getByText('97')).toBeInTheDocument();

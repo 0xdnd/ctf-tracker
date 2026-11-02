@@ -172,7 +172,7 @@ export function parseMarkdownToHtml(markdown: string): string {
           <div class="codeblock-container">
             <div class="codeblock-header">
               <span class="codeblock-lang">${escapeHtml(langDisplay)}</span>
-              <button class="codeblock-copy-btn" onclick="copyCode(this)">Copy</button>
+              <button class="codeblock-copy-btn">Copy</button>
             </div>
             <pre><code class="language-${escapeHtml(langDisplay)}">${escapedCode}</code></pre>
           </div>

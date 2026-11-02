@@ -219,11 +219,11 @@ export const ExamSimulatorPage: React.FC = () => {
   const handleResetExam = async () => {
     const ok = await confirmAction({
       title: 'Reset this exam session?',
-      body: 'Timer, flags, screenshots and notes for the current simulation will be cleared. This cannot be undone.',
+      body: 'Timer, flags, screenshots and notes for the current simulation will be cleared. This cannot be undone. The same machines (same seed) come back; use Re-roll targets on the setup screen for a new set.',
       confirmLabel: 'Reset exam',
       tone: 'danger',
     });
-    if (ok) resetExam(track);
+    if (ok) resetExam(track, pool, solvedIds);
   };
 
   // Dynamic Pacing Telemetry
@@ -416,6 +416,7 @@ export const ExamSimulatorPage: React.FC = () => {
                 variant="primary"
                 size="md"
                 data-testid="exam-start-btn"
+                data-tour="exam-start"
                 className="max-sm:h-11 max-sm:flex-1"
                 iconLeft={<Play className="w-3.5 h-3.5 fill-current" />}
                 onClick={handleStartExam}
@@ -436,7 +437,7 @@ export const ExamSimulatorPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div data-tour="exam-tracks" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {(Object.keys(EXAM_TRACK_CONFIGS) as ExamTrack[]).map((t) => {
                 const conf = EXAM_TRACK_CONFIGS[t];
                 const isSelected = track === t;
@@ -496,7 +497,7 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
 
           {/* Candidate Profile & Configuration */}
-          <div className="space-y-4 pt-2">
+          <div data-tour="exam-candidate" className="space-y-4 pt-2">
             <h2 className="text-sm font-semibold text-primary flex items-center gap-1.5">
               <User className="w-4 h-4 text-muted" />
               <span>2. Candidate identity and lab parameters</span>
@@ -514,7 +515,7 @@ export const ExamSimulatorPage: React.FC = () => {
                   value={candidateName}
                   onChange={(e) => setCandidateInfo({ candidateName: e.target.value })}
                   className="w-full bg-surface-sunken border border-subtle rounded-lg px-3 py-1.5 text-primary text-xs focus:outline-none focus:border-accent transition-colors"
-                  placeholder="Daniel Dayan"
+                  placeholder="Your name"
                 />
               </div>
 
@@ -529,7 +530,7 @@ export const ExamSimulatorPage: React.FC = () => {
                   value={candidateCallsign}
                   onChange={(e) => setCandidateInfo({ candidateCallsign: e.target.value })}
                   className="w-full bg-surface-sunken border border-subtle rounded-lg px-3 py-1.5 text-primary text-xs focus:outline-none focus:border-accent transition-colors"
-                  placeholder="0xdnd"
+                  placeholder="Your callsign"
                 />
               </div>
 
@@ -544,7 +545,7 @@ export const ExamSimulatorPage: React.FC = () => {
                   value={osid}
                   onChange={(e) => setCandidateInfo({ osid: e.target.value })}
                   className="w-full bg-surface-sunken border border-subtle rounded-lg px-3 py-1.5 text-primary text-xs focus:outline-none focus:border-accent transition-colors"
-                  placeholder="OS-94821"
+                  placeholder="Your ID"
                 />
               </div>
             </div>
@@ -700,11 +701,13 @@ export const ExamSimulatorPage: React.FC = () => {
               title={trackConfig.name}
               description={`Candidate ${candidateName} (${candidateCallsign}) · OSID ${osid}`}
               icon={<GraduationCap />}
+              overflowAnchor="exam-room-menu"
               actions={
                 <CyberButton
                   variant="secondary"
                   size="md"
                   data-testid="exam-open-bio-break-btn"
+                  data-tour="exam-room-break"
                   onClick={() => setIsBioBreakModalOpen(true)}
                   title="Open the bio-break manager"
                   iconLeft={<Coffee className="w-3.5 h-3.5" />}
@@ -756,7 +759,7 @@ export const ExamSimulatorPage: React.FC = () => {
             {/* Telemetry Numbers Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Card 1: Score Counter */}
-              <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
+              <div data-tour="exam-room-score" className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
                 <div>
                   <span className="text-xs text-muted font-medium">
                     Total exam score
@@ -789,7 +792,7 @@ export const ExamSimulatorPage: React.FC = () => {
               </div>
 
               {/* Card 2: Countdown Timer */}
-              <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
+              <div data-tour="exam-room-clock" className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
                 <div>
                   <span className="text-xs text-muted font-medium flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -913,7 +916,7 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
 
           {/* Target Inventory Sections */}
-          <div className="space-y-4">
+          <div data-tour="exam-room-targets" className="space-y-4">
             {/* Section A: Active Directory Set (for OSCP / AD tracks) */}
             {adBoxes.length > 0 && (
               <div className="space-y-3">
@@ -954,7 +957,7 @@ export const ExamSimulatorPage: React.FC = () => {
           </div>
 
           {/* Exam Scratchpad & Evidence Vault */}
-          <div className="space-y-3">
+          <div data-tour="exam-room-notes" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-1">
               <span className="text-sm font-semibold text-primary flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-muted" />

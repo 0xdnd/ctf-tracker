@@ -11,7 +11,6 @@ import { CyberButton } from '../../components/common/CyberButton';
 import { CyberBadge } from '../../components/common/CyberBadge';
 import { PlatformBadge } from '../../components/common/PlatformBadge';
 import { DifficultyBadge } from '../../components/common/DifficultyBadge';
-import { StatusBadge } from '../../components/common/StatusBadge';
 import { useCtfStore } from '../../store/useCtfStore';
 import { applyThemeToDOM, ThemeProvider } from '../../hooks/useTheme';
 import { Machine } from '../../types';
@@ -98,7 +97,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
   // CHALLENGE 1: Token Resolution Across All 6 Preset/Mode Combinations
   // ===========================================================================
   describe('CHALLENGE 1: Token Resolution across all 6 Preset / Mode Combinations', () => {
-    // 3 presets: obsidian, monolith, htb x 2 modes: dark, light
+    // 3 presets: obsidian, offsec, htb x 2 modes: dark, light
     const presets = [
       {
         name: 'obsidian',
@@ -112,14 +111,14 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
         selector: /\.dark,\s*\n\[data-theme="obsidian"\]\.dark[^{]*\{([^}]+)\}/,
       },
       {
-        name: 'monolith',
+        name: 'offsec',
         mode: 'light',
-        selector: /\[data-theme="monolith"\]:not\(\.dark\)[^{]*\{([^}]+)\}/,
+        selector: /\[data-theme="offsec"\]:not\(\.dark\)[^{]*\{([^}]+)\}/,
       },
       {
-        name: 'monolith',
+        name: 'offsec',
         mode: 'dark',
-        selector: /\[data-theme="monolith"\]\.dark[^{]*\{([^}]+)\}/,
+        selector: /\[data-theme="offsec"\]\.dark[^{]*\{([^}]+)\}/,
       },
       {
         name: 'htb',
@@ -232,8 +231,8 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       const combos = [
         { theme: 'obsidian', isDark: true, expectedClass: 'dark', expectedTheme: 'obsidian' },
         { theme: 'obsidian', isDark: false, expectedClass: 'light', expectedTheme: 'obsidian' },
-        { theme: 'monolith', isDark: true, expectedClass: 'dark', expectedTheme: 'monolith' },
-        { theme: 'monolith', isDark: false, expectedClass: 'light', expectedTheme: 'monolith' },
+        { theme: 'offsec', isDark: true, expectedClass: 'dark', expectedTheme: 'offsec' },
+        { theme: 'offsec', isDark: false, expectedClass: 'light', expectedTheme: 'offsec' },
         { theme: 'htb', isDark: true, expectedClass: 'dark', expectedTheme: 'htb' },
         { theme: 'htb', isDark: false, expectedClass: 'light', expectedTheme: 'htb' },
       ];
@@ -291,7 +290,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
     it('empirically verifies textPrimary contrast against surfaceHover in all 3 light presets', () => {
       const lightPresets = [
         { name: 'obsidian', selector: /\[data-theme="obsidian"\]:not\(\.dark\)[^{]*\{([^}]+)\}/ },
-        { name: 'monolith', selector: /\[data-theme="monolith"\]:not\(\.dark\)[^{]*\{([^}]+)\}/ },
+        { name: 'offsec', selector: /\[data-theme="offsec"\]:not\(\.dark\)[^{]*\{([^}]+)\}/ },
         { name: 'htb', selector: /\[data-theme="htb"\]:not\(\.dark\)[^{]*\{([^}]+)\}/ },
       ];
 
@@ -361,14 +360,12 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(badge?.className).toContain('font-mono');
     });
 
-    it('verifies PlatformBadge, DifficultyBadge, and StatusBadge enforce tabular-nums', () => {
+    it('verifies PlatformBadge and DifficultyBadge enforce tabular-nums', () => {
       const { container: c1 } = render(<PlatformBadge platform="HTB" />);
       const { container: c2 } = render(<DifficultyBadge difficulty="Hard" />);
-      const { container: c3 } = render(<StatusBadge status="root" />);
 
       expect(c1.innerHTML).toContain('tabular-nums');
       expect(c2.innerHTML).toContain('tabular-nums');
-      expect(c3.innerHTML).toContain('tabular-nums');
     });
 
     it('verifies UnifiedHeader variables inputs (L, R, P) enforce tabular-nums and font-mono', () => {

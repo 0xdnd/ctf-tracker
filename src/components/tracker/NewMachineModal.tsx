@@ -126,7 +126,7 @@ export const NewMachineModal: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs scrollbar-thin">
-          <fieldset>
+          <fieldset data-tour="new-machine-type">
             <legend className="block text-muted mb-1 font-semibold">Target type</legend>
             <div className="inline-flex rounded-lg border border-subtle bg-surface-sunken p-0.5">
               {TARGET_TYPES.map((t) => (
@@ -187,7 +187,7 @@ export const NewMachineModal: React.FC = () => {
             )}
           </fieldset>
 
-          <div>
+          <div data-tour="new-machine-name">
             <label htmlFor="new-machine-name-input" className="block text-muted mb-1 font-semibold">
               {isPersonal ? `${TARGET_TYPE_LABELS[targetType]} name *` : 'Machine / Room Name *'}
             </label>
@@ -260,7 +260,7 @@ export const NewMachineModal: React.FC = () => {
           {!effectiveIsActive && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                <div data-tour="new-machine-ip">
                   <label htmlFor="new-machine-ip-input" className="block text-muted mb-1 font-semibold">
                     Target IP
                   </label>
@@ -375,6 +375,7 @@ export const NewMachineModal: React.FC = () => {
             </button>
             <button
               type="submit"
+              data-tour="new-machine-submit"
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-callout-success-fg text-surface-base font-semibold text-xs hover:bg-callout-success-fg transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
             >
               <Plus className="w-4 h-4" /> Deploy Machine

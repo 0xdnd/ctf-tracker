@@ -22,7 +22,11 @@ import {
   Flame, 
   HelpCircle,
   Cpu,
-  Columns
+  Columns,
+  Sparkles,
+  Zap,
+  Search,
+  Radar
 } from 'lucide-react';
 import { GlobalVariables } from '../../types';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
@@ -30,6 +34,8 @@ import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import { useCtfStore } from '../../store/useCtfStore';
 import { sanitizeHtml } from '../../utils/securityUtils';
 import { parseMarkdownToHtml } from '../../utils/writeupHtmlExporter';
+import { NOTE_TEMPLATES } from '../../data/noteTemplates';
+import { useToastStore } from '../../store/useToastStore';
 
 export interface MarkdownEditorProps {
   noteId: string;
@@ -59,6 +65,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty'>('saved');
   const [calloutDropdownOpen, setCalloutDropdownOpen] = useState<boolean>(false);
   const [varDropdownOpen, setVarDropdownOpen] = useState<boolean>(false);
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState<boolean>(false);
+  const [snippetDropdownOpen, setSnippetDropdownOpen] = useState<boolean>(false);
+  const [snippetQuery, setSnippetQuery] = useState<string>('');
+  const [nmapDropdownOpen, setNmapDropdownOpen] = useState<boolean>(false);
+  const [rawNmapInput, setRawNmapInput] = useState<string>('');
   const [showSplitPreview, setShowSplitPreview] = useState<boolean>(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,6 +77,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const updateNoteContent = useCtfStore((s) => s.updateNoteContent);
   const storeGlobalVars = useCtfStore((s) => s.globalVars);
+  const cheatsheets = useCtfStore((s) => s.cheatsheets);
+  const filteredSnippets = useMemo(() => {
+    const q = snippetQuery.trim().toLowerCase();
+    if (!q) return cheatsheets.slice(0, 8);
+    return cheatsheets
+      .filter(
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.commandTemplate.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q) ||
+          c.tags?.some((t) => t.toLowerCase().includes(q))
+      )
+      .slice(0, 8);
+  }, [cheatsheets, snippetQuery]);
   // Engaged target's IP wins over the global RHOST (shared precedence helper).
   const effectiveVars = useEffectiveGlobalVars(globalVars ?? storeGlobalVars);
   const previewHtml = useMemo(() => sanitizeHtml(parseMarkdownToHtml(content)), [content]);
@@ -557,6 +582,244 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 >
                   <span>LPORT</span>
                   <span className="font-mono text-[9px] text-muted">{globalVars?.lport || 'unset'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Tactical Templates Inserter */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setTemplateDropdownOpen(!templateDropdownOpen)}
+              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-accent transition-colors cursor-pointer"
+              title="Insert Offensive Note Templates (Recon, Web, Foothold, PrivEsc, Loot)"
+              aria-label="Note Templates"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-semibold hidden sm:inline">Templates</span>
+              <ChevronDown className="w-2.5 h-2.5" />
+            </button>
+
+            {templateDropdownOpen && (
+              <div 
+                className="absolute left-0 top-full mt-1 w-64 p-1.5 rounded-lg bg-surface-card border border-strong shadow-2xl z-50 text-[11px] space-y-1"
+                onMouseLeave={() => setTemplateDropdownOpen(false)}
+              >
+                <div className="text-[10px] font-semibold text-muted px-2 py-0.5 uppercase tracking-wider">
+                  Offensive Templates
+                </div>
+                {NOTE_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => {
+                      const separator = content.trim() ? '\n\n---\n\n' : '';
+                      const newContent = content + separator + tmpl.content;
+                      setContent(newContent);
+                      setIsDirty(true);
+                      setSaveStatus('dirty');
+                      onContentChange(newContent);
+                      scheduleSave(newContent);
+                      setTemplateDropdownOpen(false);
+                      if (soundEnabled) playCyberSound('root');
+                      useToastStore.getState().addToast({
+                        type: 'success',
+                        message: `Inserted ${tmpl.title} template`,
+                      });
+                    }}
+                    className="w-full px-2 py-1.5 rounded flex flex-col text-left hover:bg-surface-sunken transition-colors group cursor-pointer"
+                  >
+                    <span className="font-semibold text-accent group-hover:text-primary">{tmpl.title}</span>
+                    <span className="text-[10px] text-muted line-clamp-1">{tmpl.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Tier 1 Upgrade #3: Quick Cheatsheet Snippet Dropper */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setSnippetDropdownOpen((prev) => !prev);
+                setSnippetQuery('');
+              }}
+              data-testid="snippets-dropdown-btn"
+              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-accent transition-colors cursor-pointer"
+              title="Drop Pentest Command Snippet from 85+ Cheatsheets"
+              aria-label="Insert Cheatsheet Snippet"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-semibold hidden sm:inline">Snippets</span>
+              <ChevronDown className="w-2.5 h-2.5" />
+            </button>
+
+            {snippetDropdownOpen && (
+              <div
+                data-testid="snippets-dropdown-panel"
+                className="absolute left-0 top-full mt-1 w-80 p-2 rounded-lg bg-surface-card border border-strong shadow-2xl z-50 text-[11px] space-y-1.5"
+              >
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">
+                    Command Snippets ({cheatsheets.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSnippetDropdownOpen(false)}
+                    className="text-[10px] text-muted hover:text-primary cursor-pointer"
+                  >
+                    Esc
+                  </button>
+                </div>
+                <div className="relative">
+                  <Search className="w-3 h-3 text-muted absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={snippetQuery}
+                    onChange={(e) => setSnippetQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        setSnippetDropdownOpen(false);
+                      }
+                    }}
+                    placeholder="Search nmap, ffuf, BloodHound, SUID..."
+                    aria-label="Search cheatsheet snippets"
+                    autoFocus
+                    className="w-full h-7 pl-6 pr-2 rounded border border-subtle bg-surface-sunken text-[11px] text-primary placeholder-muted focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5">
+                  {filteredSnippets.length === 0 ? (
+                    <div className="py-3 text-center text-muted text-[10px]">No matching commands</div>
+                  ) : (
+                    filteredSnippets.map((cmd) => (
+                      <button
+                        key={cmd.id}
+                        type="button"
+                        onClick={() => {
+                          insertTextAtCursor(`\n\`\`\`bash\n# ${cmd.title}\n${cmd.commandTemplate}\n\`\`\`\n`, '', '');
+                          setSnippetDropdownOpen(false);
+                          setSnippetQuery('');
+                          useToastStore.getState().addToast({
+                            type: 'success',
+                            message: `Dropped snippet: ${cmd.title}`,
+                          });
+                        }}
+                        className="w-full px-2 py-1.5 rounded flex flex-col text-left hover:bg-surface-sunken transition-colors group cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-accent group-hover:text-primary truncate">{cmd.title}</span>
+                          <span className="text-[9px] text-muted rounded border border-subtle px-1 flex-shrink-0">{cmd.category}</span>
+                        </div>
+                        <code className="text-[10px] text-secondary font-mono truncate mt-0.5">{cmd.commandTemplate}</code>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Phase 2 Power Tool: Raw Nmap Output to Markdown Table & Port Sync */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNmapDropdownOpen((prev) => !prev)}
+              data-testid="nmap-parser-btn"
+              className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-callout-success-fg transition-colors cursor-pointer"
+              title="Paste Nmap Output -> Convert to Markdown Table & Sync Open Ports"
+              aria-label="Parse Nmap Output to Markdown Table"
+            >
+              <Radar className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-semibold hidden sm:inline">Parse Nmap</span>
+              <ChevronDown className="w-2.5 h-2.5" />
+            </button>
+
+            {nmapDropdownOpen && (
+              <div
+                data-testid="nmap-parser-panel"
+                className="absolute left-0 top-full mt-1 w-80 p-2.5 rounded-lg bg-surface-card border border-strong shadow-2xl z-50 text-[11px] space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-callout-success-fg uppercase tracking-wider">
+                    Paste Raw Nmap Output
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setNmapDropdownOpen(false)}
+                    className="text-[10px] text-muted hover:text-primary cursor-pointer"
+                  >
+                    Esc
+                  </button>
+                </div>
+                <textarea
+                  value={rawNmapInput}
+                  onChange={(e) => setRawNmapInput(e.target.value)}
+                  placeholder={"22/tcp open  ssh     OpenSSH 8.9p1\n80/tcp open  http    Apache httpd 2.4.52\n445/tcp open microsoft-ds"}
+                  aria-label="Raw Nmap output"
+                  rows={4}
+                  className="w-full p-2 rounded border border-subtle bg-surface-sunken font-mono text-[10px] text-primary placeholder-muted focus:outline-none focus:border-accent resize-y"
+                />
+                <button
+                  type="button"
+                  disabled={!rawNmapInput.trim()}
+                  onClick={() => {
+                    const hints: Record<number, string> = {
+                      21: 'Check anonymous login & ftp-anon',
+                      22: 'Test captured creds / SSH key auth',
+                      53: 'Run dig axfr @{TARGET} zone transfer',
+                      80: 'Run ffuf dir/vhost & inspect source',
+                      88: 'Kerberos: AS-REP Roast (GetNPUsers) & Kerberoast',
+                      135: 'RPC: enumdomusers / rpcdump.py',
+                      139: 'SMB: check null session & shares',
+                      389: 'LDAP: domain dump & BloodHound collection',
+                      443: 'Check TLS cert CN/SANs & vhosts',
+                      445: 'SMB: nxc smb {TARGET} --shares & RID brute',
+                      1433: 'MSSQL: check xp_cmdshell & service auth',
+                      3306: 'MySQL: check default creds / UDF / file read',
+                      3389: 'RDP: verify creds with nxc rdp {TARGET}',
+                      5985: 'WinRM: evil-winrm -i {TARGET} -u {USER} -p {PASS}',
+                      8080: 'Web proxy/app: ffuf & check actuator/admin',
+                    };
+                    const lines = rawNmapInput.split(/\r?\n/);
+                    const parsedRows: string[] = [];
+                    const portNums: number[] = [];
+                    for (const line of lines) {
+                      const m = line.trim().match(/^(\d+)\/(tcp|udp)\s+(open|filtered)\s+(\S+)(?:\s+(.*))?$/i);
+                      if (m) {
+                        const portNum = parseInt(m[1], 10);
+                        const proto = m[2].toLowerCase();
+                        const service = m[4];
+                        const version = (m[5] || '-').trim();
+                        const noteHint = hints[portNum] || 'Enumerate service banner & CVEs';
+                        portNums.push(portNum);
+                        parsedRows.push(`| ${portNum}/${proto} | ${service} | ${version} | ${noteHint} |`);
+                      }
+                    }
+                    if (parsedRows.length === 0) {
+                      useToastStore.getState().addToast({
+                        type: 'warning',
+                        message: 'No open port lines (e.g. "80/tcp open http") found in pasted text',
+                      });
+                      return;
+                    }
+                    const tableMd = `\n### Parsed Nmap Scan (${portNums.length} Open Ports)\n| Port | Service | Version | Tactical Next Step |\n| :--- | :--- | :--- | :--- |\n${parsedRows.join('\n')}\n`;
+                    insertTextAtCursor(tableMd, '', '');
+                    const st = useCtfStore.getState();
+                    if (st.activeTargetId && portNums.length > 0) {
+                      st.setMachineOpenPorts(st.activeTargetId, Array.from(new Set(portNums)));
+                    }
+                    setRawNmapInput('');
+                    setNmapDropdownOpen(false);
+                    useToastStore.getState().addToast({
+                      type: 'success',
+                      message: `Inserted ${portNums.length} ports table${st.activeTargetId ? ' & synced to target checklist' : ''}`,
+                    });
+                  }}
+                  className="w-full h-7 rounded bg-callout-success-bg hover:bg-surface-hover border border-callout-success-border text-callout-success-fg font-semibold text-[11px] cursor-pointer disabled:opacity-40"
+                >
+                  Convert to Table & Sync Ports
                 </button>
               </div>
             )}

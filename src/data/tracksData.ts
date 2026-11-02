@@ -5,6 +5,7 @@ import osepSource from './trackSources/offsec-osep.json';
 import osweSource from './trackSources/offsec-oswe.json';
 import adSource from './trackSources/htb-active-directory.json';
 import ippsecSource from './trackSources/ippsec-videos.json';
+import tjnullSource from './trackSources/tjnull-oscp.json';
 
 export interface PracticeTrack {
   id: string;
@@ -30,14 +31,21 @@ export interface PracticeTrack {
 export interface TrackNameList {
   HTB: readonly string[];
   THM: readonly string[];
+  /** Optional Proving Grounds names. A PG name also matches a VulnHub row with the same slug. */
+  PG?: readonly string[];
 }
 
 /** "Active (2018 Retired)" -> "active": trailing parenthetical dropped, then letters and digits only. */
 export const trackNameSlug = (name: string): string => normalizeMachineSlug(name.replace(/\s*\([^)]*\)\s*$/, ''));
 
+/** Names from a source list whose entries are plain strings or `{ name, ... }` objects. */
+const sourceNames = (list: readonly (string | { name: string })[]): string[] =>
+  list.map((e) => (typeof e === 'string' ? e : e.name));
+
 /**
  * Every name list a track matches on, keyed by list id. HTB lists come from src/data/trackSources/
- * (as-of date and source URL in each file); the THM lists are TJ_Null-era classics kept by hand.
+ * (as-of date and source URL in each file); the THM lists are TJ_Null-era classics kept by hand,
+ * and the PG list is TJ_Null's Proving Grounds Play + Practice names.
  */
 export const TRACK_NAME_LISTS: Record<'oscp' | 'osep' | 'oswe' | 'ad' | 'ippsec' | 'cwee' | 'popular', TrackNameList> = {
   // HTB: 0xdf's current OSCP+ (PEN-200 2023+) Like + Harder list. THM: TJ_Null's OSCP rooms.
@@ -47,6 +55,11 @@ export const TRACK_NAME_LISTS: Record<'oscp' | 'osep' | 'oswe' | 'ad' | 'ippsec'
       'RootMe', 'Kenobi', 'Steel Mountain', 'Vulnversity', 'Game Zone', 'Skynet', 'Alfred', 'HackPark',
       'Internal', 'Blaster', 'Retro', 'Anthem', 'Bounty Hacker', 'Ignite', 'Pickle Rick', 'Agent Sudo',
       'Simple CTF', 'Brooklyn Nine Nine',
+    ],
+    // TJ_Null's Proving Grounds lists: Play first, then Practice, in file order.
+    PG: [
+      ...sourceNames(tjnullSource.names.pgPlay as (string | { name: string })[]),
+      ...sourceNames(tjnullSource.names.pgPractice as (string | { name: string })[]),
     ],
   },
   osep: { HTB: osepSource.names.HTB, THM: [] },
@@ -80,10 +93,11 @@ export const TRACK_NAME_LISTS: Record<'oscp' | 'osep' | 'oswe' | 'ad' | 'ippsec'
   },
 };
 
-type NameSet = { HTB: Set<string>; THM: Set<string> };
+type NameSet = { HTB: Set<string>; THM: Set<string>; PG: Set<string> };
 const toSet = (...lists: TrackNameList[]): NameSet => ({
   HTB: new Set(lists.flatMap((l) => l.HTB.map(trackNameSlug))),
   THM: new Set(lists.flatMap((l) => l.THM.map(trackNameSlug))),
+  PG: new Set(lists.flatMap((l) => (l.PG ?? []).map(trackNameSlug))),
 });
 
 const slugCache = new Map<string, string>();
@@ -96,18 +110,31 @@ const cachedSlug = (name: string): string => {
   return s;
 };
 
-/** True when the row's name is listed for the row's own platform (HTB or THM). */
-const listed = (set: NameSet, m: Machine): boolean =>
-  (m.platform === 'HTB' || m.platform === 'THM') && typeof m.name === 'string' && set[m.platform].has(cachedSlug(m.name));
+/** True when the row's name is listed for the row's own platform (HTB, THM or PG; a VulnHub row matches the PG list). */
+const listed = (set: NameSet, m: Machine): boolean => {
+  if (typeof m.name !== 'string') return false;
+  if (m.platform === 'HTB' || m.platform === 'THM') return set[m.platform].has(cachedSlug(m.name));
+  if (m.platform === 'PG' || m.platform === 'VulnHub') return set.PG.has(cachedSlug(m.name));
+  return false;
+};
 
 /** Key of a machine in a track's `order`: its platform plus the name slug (catalog ids do not follow the name). */
 export const trackOrderKey = (m: Pick<Machine, 'platform' | 'name'>): string => `${m.platform}:${cachedSlug(m.name)}`;
 
-/** `PLATFORM:slug` keys for the lists, HTB names first, then THM; a name repeated across lists keeps its first place. */
+/**
+ * `PLATFORM:slug` keys for the lists, HTB names first, then THM, then PG; a name repeated across lists keeps its
+ * first place. Each PG key is followed by the matching `VulnHub:slug` key.
+ */
 const orderOf = (...lists: TrackNameList[]): string[] => {
   const keys = new Set<string>();
-  for (const platform of ['HTB', 'THM'] as const) {
-    for (const l of lists) for (const name of l[platform]) keys.add(`${platform}:${cachedSlug(name)}`);
+  for (const platform of ['HTB', 'THM', 'PG'] as const) {
+    for (const l of lists) {
+      for (const name of l[platform] ?? []) {
+        const slug = cachedSlug(name);
+        keys.add(`${platform}:${slug}`);
+        if (platform === 'PG') keys.add(`VulnHub:${slug}`);
+      }
+    }
   }
   return [...keys];
 };
@@ -130,7 +157,7 @@ const TRACKS: PracticeTrack[] = [
     name: "TJ_Null's OSCP NetSec Preparation",
     shortName: 'OSCP Track',
     category: 'certification',
-    description: "OffSec Certified Professional prep: the current OSCP+ (PEN-200 2023+) list of HTB machines, as of Oct 2026, plus TJ_Null's classic TryHackMe rooms and Proving Grounds boxes.",
+    description: "OffSec Certified Professional prep: the current OSCP+ (PEN-200 2023+) list of HTB machines, as of Oct 2026, plus TJ_Null's classic TryHackMe rooms and his Proving Grounds Play and Practice lists.",
     badgeColor: 'border-cyber-emerald/40 bg-cyber-emerald/10 text-cyber-emerald',
     accentColor: '#10B981',
     // HTB rows: the current list only. Other platforms (THM, custom targets) may also opt in by OSCP cert or tag.

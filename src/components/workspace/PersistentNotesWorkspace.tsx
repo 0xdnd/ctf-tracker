@@ -270,6 +270,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               aria-pressed={listToggled}
               aria-label="Toggle notes list"
               data-testid="dock-list-toggle"
+              data-tour="notes-list-toggle"
               className={`active:scale-[0.97] p-1.5 -ml-1 rounded-md transition-interactive cursor-pointer ${
                 listToggled ? 'bg-accent-muted text-accent' : 'hover:bg-surface-hover text-muted hover:text-primary'
               }`}
@@ -292,7 +293,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
           {/* Right Action Tools */}
           <div className="flex items-center gap-1">
             {/* Tri-Mode View Switcher (Read | Split | Raw) */}
-            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
+            <div data-tour="notes-views" className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
               <button
                 type="button"
                 onClick={() => setViewMode('reading')}
@@ -402,7 +403,9 @@ export const PersistentNotesWorkspace: React.FC = () => {
         {targetBar}
 
         {/* Multi-Tab Strip */}
-        <NotesWorkspaceTabStrip />
+        <div data-tour="notes-tabs">
+          <NotesWorkspaceTabStrip />
+        </div>
 
         <div ref={dockBodyRef} className="flex-1 min-h-0 flex relative">
         {listDocked && <DockNotesList className="w-56 flex-shrink-0 border-r border-subtle" />}
@@ -479,6 +482,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               onClick={() => setMobileListOpen((v) => !v)}
               aria-pressed={mobileListOpen}
               aria-label="Toggle notes list"
+              data-tour="notes-list-toggle"
               className={`active:scale-[0.97] p-1.5 rounded-md transition-interactive cursor-pointer ${
                 mobileListOpen ? 'bg-accent-muted text-accent' : 'hover:bg-surface-hover text-muted hover:text-primary'
               }`}
@@ -487,7 +491,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               <PanelLeft className="w-3.5 h-3.5" />
             </button>
             {/* View Mode Switcher (Read | Raw) */}
-            <div className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
+            <div data-tour="notes-views" className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
               <button
                 type="button"
                 onClick={() => setViewMode('reading')}
@@ -571,7 +575,9 @@ export const PersistentNotesWorkspace: React.FC = () => {
         {targetBar}
 
         {/* Tab Strip */}
-        <NotesWorkspaceTabStrip />
+        <div data-tour="notes-tabs">
+          <NotesWorkspaceTabStrip />
+        </div>
 
         {/* Mobile Note Stage (DOM Keep-Alive) */}
         <div className="relative flex-1 min-h-0 bg-surface-card p-1 overflow-hidden flex flex-col">

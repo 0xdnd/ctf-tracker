@@ -464,6 +464,7 @@ export const EvidenceVaultPage: React.FC = () => {
         title="Evidence vault"
         description="Credentials, flags, hashes, keys and recon findings across your targets."
         icon={<Database />}
+        overflowAnchor="vault-menu"
         primaryAction={
           <CyberButton
             variant="primary"
@@ -471,6 +472,7 @@ export const EvidenceVaultPage: React.FC = () => {
             className="max-sm:h-11 max-sm:flex-1"
             iconLeft={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setIsAddModalOpen(true)}
+            data-tour="vault-add"
           >
             Log evidence
           </CyberButton>
@@ -481,6 +483,7 @@ export const EvidenceVaultPage: React.FC = () => {
               variant="secondary"
               size="md"
               onClick={handleToggleAllRevealed}
+              data-tour="vault-reveal"
               title={allRevealed ? 'Mask all secrets' : 'Reveal all secrets'}
               iconLeft={allRevealed ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
             >
@@ -490,6 +493,7 @@ export const EvidenceVaultPage: React.FC = () => {
               variant="secondary"
               size="md"
               onClick={() => setIsExportDrawerOpen(true)}
+              data-tour="vault-export"
               title="Open the evidence exporter"
               iconLeft={<Download className="w-3.5 h-3.5" />}
             >
@@ -555,7 +559,7 @@ export const EvidenceVaultPage: React.FC = () => {
       {/* 3. Toolbar: one row on desktop; search + Filters at 390px */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 min-w-0">
+          <div data-tour="vault-search" className="relative flex-1 min-w-0">
             <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"

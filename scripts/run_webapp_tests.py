@@ -529,7 +529,7 @@ def run_tests():
         print(f"  ✓ Switched back to Dark Mode (data-mode='{data_mode}', classes='{html_classes}')")
         assert "dark" in html_classes or data_mode == "dark", "DOM failed to re-enter dark mode"
 
-        # 2. Test Presets (obsidian, monolith, htb)
+        # 2. Test Presets (obsidian, offsec, htb)
         settings_btn = page.locator("button[aria-label='Settings and options']").first
         assert settings_btn.is_visible(), "Settings button missing in header"
         if settings_btn.is_visible():
@@ -549,7 +549,7 @@ def run_tests():
             page.keyboard.press("Escape")
             page.wait_for_timeout(200)
 
-        for preset in ["monolith", "obsidian", "htb"]:
+        for preset in ["offsec", "obsidian", "htb"]:
             page.evaluate(f"() => {{ document.documentElement.setAttribute('data-theme', '{preset}'); }}")
             page.wait_for_timeout(100)
             active_theme = page.evaluate("() => document.documentElement.getAttribute('data-theme')")

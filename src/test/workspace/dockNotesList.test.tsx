@@ -156,11 +156,16 @@ describe('dock notes list', () => {
       useNotesWorkspaceStore.setState({ openTabIds: ['cheat:nmap-quick'], activeTabId: 'cheat:nmap-quick' });
     });
     renderDock();
-    expect(list().querySelector('[data-dock-list-empty]')).not.toBeNull();
+    // Still loading: no premature empty state, and a stable (non-numeric) placeholder in place
+    // of folders that would otherwise pop in with their final counts once hydration lands.
+    expect(list().querySelector('[data-dock-list-empty]')).toBeNull();
+    const pending = within(list()).getByText('Imported notes').closest('[data-dock-list-folder]') as HTMLElement;
+    expect(within(pending).getByText('…')).toBeTruthy();
     act(() => {
       useCtfStore.setState({ userNotes: FIXTURE_IMPORTED_NOTES.map((n) => ({ ...n })), userNotesHydrated: true });
     });
     expect(list().querySelector('[data-dock-list-empty]')).toBeNull();
+    expect(screen.queryByText('Imported notes')).toBeNull();
     expect(list().querySelectorAll('[data-dock-list-folder]').length).toBeGreaterThanOrEqual(3);
     // A later import adds to the same list.
     act(() => {

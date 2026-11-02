@@ -43,3 +43,23 @@ export const ownWriteupHref = (machine: { id: string }): string | null => {
     ? `https://ctftracker.com/machines/${slug}/#writeup`
     : `/machines/${slug}/#writeup`;
 };
+
+/**
+ * A batch of catalog rows (starterMachines.ts / machinesCatalog.ts) has `writeupUrl` set to the
+ * root of an external writeup hub rather than a page for that specific target.
+ */
+const HUB_ROOT_WRITEUP_URLS: ReadonlySet<string> = new Set(['https://0xdnd.gitbook.io/thm-writeups/']);
+
+/**
+ * Resolves a `writeupUrl` that is actually one of the hub roots above (not a page for this
+ * specific target) to this app's own machine page — using the same existence check as
+ * `ownWriteupHref` — or to `null` when no such page exists yet (never a guessed deeper external
+ * URL). Returns `undefined` when `writeupUrl` isn't a hub root at all, so the caller falls back
+ * to its normal resolution (e.g. `communityLink`) unchanged.
+ */
+export const resolveHubRootWriteupHref = (machine: LinkableMachine): string | null | undefined => {
+  if (!machine.writeupUrl || !HUB_ROOT_WRITEUP_URLS.has(machine.writeupUrl)) return undefined;
+  const slug = OWN_WRITEUPS[machine.id];
+  if (!slug) return null;
+  return isTauriTarget() ? `https://ctftracker.com/machines/${slug}/` : `/machines/${slug}/`;
+};

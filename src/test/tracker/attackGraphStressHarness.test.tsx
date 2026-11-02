@@ -347,7 +347,7 @@ describe('Challenger M2 Stress Harness: Canvas Engine & Mathematical Invariants'
       expect(useCtfStore.getState().graphNodePositions['node-alpha']).toEqual(initialPos);
 
       // Node selection should be active (flyout opens)
-      expect(screen.getByText('Engage Target')).toBeInTheDocument();
+      expect(screen.getByText('Set as active machine')).toBeInTheDocument();
     });
 
     it('computeCanvasDelta scales correctly across zoom scales 0.2x to 3.0x', () => {

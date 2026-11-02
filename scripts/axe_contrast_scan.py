@@ -2,7 +2,7 @@
 Offline axe-core contrast / WCAG scanner for ZeroBox.
 
 Zero network beyond localhost: axe is injected from node_modules/axe-core/axe.min.js.
-Scans each main route x 3 presets (obsidian, monolith, htb) x 2 modes (light, dark):
+Scans each main route x 3 presets (obsidian, offsec, htb) x 2 modes (light, dark):
   - pass 1: runOnly color-contrast
   - pass 2: runOnly wcag2a + wcag2aa tags (all rules)
 Also runs a keyboard Tab-through focus-ring check on the tracker route.
@@ -41,7 +41,7 @@ ROUTES = {
     "vault": "/vault",
     "target-detail": "/target/__FIRST__",  # resolved from persisted machines, if any
 }
-PRESETS = ["obsidian", "monolith", "htb"]
+PRESETS = ["obsidian", "offsec", "htb"]
 MODES = ["light", "dark"]
 
 server_proc = None

@@ -26,7 +26,6 @@ const PURE_CTF_TOTAL = 1372;
 
 const UI_FILES = [
   'src/components/auth/OperatorProfileModal.tsx',
-  'src/components/common/StartCleanModal.tsx',
   'src/components/backup/BackupModal.tsx',
 ];
 

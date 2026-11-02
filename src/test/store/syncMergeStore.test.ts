@@ -248,13 +248,21 @@ describe('mergeBackup (store)', () => {
     file.goals = { weeklyRootTarget: 42 };
     file.graphNodePositions = { 'custom-1-alpha': { x: 999, y: 999 } };
     useGoalsStore.getState().setWeeklyRootTarget(3);
-    useCtfStore.setState({ themePreset: 'monolith', graphNodePositions: { 'custom-1-alpha': { x: 1, y: 2 } } });
+    useCtfStore.setState({ themePreset: 'offsec', graphNodePositions: { 'custom-1-alpha': { x: 1, y: 2 } } });
     const vars = get().globalVars;
     expect((await get().mergeBackup(JSON.stringify(file))).status).toBe('merged');
     expect(get().globalVars).toBe(vars);
-    expect(get().themePreset).toBe('monolith');
+    expect(get().themePreset).toBe('offsec');
     expect(useGoalsStore.getState().weeklyRootTarget).toBe(3);
     expect(get().graphNodePositions).toEqual({ 'custom-1-alpha': { x: 1, y: 2 } });
+  });
+
+  it('a sync file carrying the retired monolith theme never changes the local theme', async () => {
+    const file = JSON.parse(await get().exportSyncFile());
+    file.themePreset = 'monolith';
+    useCtfStore.setState({ themePreset: 'htb' });
+    expect((await get().mergeBackup(JSON.stringify(file))).status).toBe('merged');
+    expect(get().themePreset).toBe('htb');
   });
 
   it('a legacy backup (no sync fields) merges as a union without conflicts (invariant 5)', async () => {

@@ -7,12 +7,16 @@
 import JSZip from 'jszip';
 import { Machine, CheatsheetCommand } from '../types';
 import { MASTER_METHODOLOGY_FRAMEWORK } from '../data/methodologyFramework';
+import { useAuthStore } from '../store/useAuthStore';
 
 export async function generateObsidianVaultZip(
   machines: Machine[],
   cheatsheets: CheatsheetCommand[]
 ): Promise<Blob> {
   const zip = new JSZip();
+  const operatorProfile = useAuthStore.getState().user;
+  const operatorName = operatorProfile?.name || "Operator";
+  const operatorCallsign = operatorProfile?.callsign || "operator";
 
   // 1. Obsidian Vault Configuration (.obsidian/app.json)
   const obsidianConfig = {
@@ -34,8 +38,8 @@ export async function generateObsidianVaultZip(
 
   let indexContent = `---
 title: "ZeroBox Tactical CTF Vault // Operator Dashboard"
-callsign: "0xdnd"
-operator: "Daniel Dayan"
+callsign: "${operatorCallsign}"
+operator: "${operatorName}"
 solves: ${completedSolves.length}
 htb_solves: ${htbSolves.length}
 thm_solves: ${thmSolves.length}
@@ -47,7 +51,7 @@ tags:
 ---
 
 # ⚡ ZEROBOX // TACTICAL CTF FIELD VAULT
-> **Operator:** Daniel Dayan (\`0xdnd\`)  
+> **Operator:** ${operatorName} (\`${operatorCallsign}\`)  
 > **Operational Track Record:** **${completedSolves.length} Pwns** (${htbSolves.length} Hack The Box + ${thmSolves.length} TryHackMe${otherSolves.length > 0 ? ` + ${otherSolves.length} PG / VulnHub / Custom` : ''})  
 > **Export Date:** ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
 

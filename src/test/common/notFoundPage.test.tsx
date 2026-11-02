@@ -28,9 +28,11 @@ describe('NotFoundPage (In-App 404 Component)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /Page not found/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /isn.t on the board/i })).toBeInTheDocument();
     expect(screen.getByText('404')).toBeInTheDocument();
-    expect(screen.getByText('Unresolved route')).toBeInTheDocument();
+    expect(screen.getByText('404.404.404.404')).toBeInTheDocument();
+    expect(screen.getByText('Not found')).toBeInTheDocument();
+    expect(screen.getByText('No foothold')).toBeInTheDocument();
     expect(screen.getAllByText('/some-broken-path').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -41,7 +43,7 @@ describe('NotFoundPage (In-App 404 Component)', () => {
         <NotFoundPage />
       </MemoryRouter>
     );
-    expect(screen.getByText('Looking for this page?')).toBeInTheDocument();
+    expect(screen.getByText(/Did you mean/)).toBeInTheDocument();
     expect(screen.getAllByText('Evidence Vault').length).toBeGreaterThanOrEqual(1);
     unmount();
 
@@ -51,7 +53,7 @@ describe('NotFoundPage (In-App 404 Component)', () => {
         <NotFoundPage />
       </MemoryRouter>
     );
-    expect(screen.getByText('Looking for this page?')).toBeInTheDocument();
+    expect(screen.getByText(/Did you mean/)).toBeInTheDocument();
     expect(screen.getAllByText('Exam Simulator').length).toBeGreaterThanOrEqual(1);
   });
 

@@ -265,6 +265,98 @@ const deepResults = [];
 await browser.close();
 srv.close();
 
+// Static checks on the built HTML (no browser): content rules the page-level checks above cannot see.
+const decodeText = (s) => s.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+const staticFails = [];
+const staticNotes = [];
+{
+  // /revshells/: every entry has a real code block (non-empty, not just its own heading) or the "Unavailable" note, and the visible counts add up.
+  const f = resolveFile('/revshells/');
+  if (!f) staticFails.push('revshells: /revshells/ not found in dist');
+  else {
+    const html = fs.readFileSync(f, 'utf8');
+    const start = html.indexOf('<!--email_off-->');
+    const end = html.indexOf('<!--/email_off-->');
+    const region = start >= 0 ? html.slice(start, end > start ? end : undefined) : html;
+    const entries = region.split(/(?=<h3>)/).filter((c) => c.startsWith('<h3>'));
+    let withCode = 0;
+    let unavailable = 0;
+    for (const e of entries) {
+      const name = decodeText(e.match(/^<h3>([\s\S]*?)<\/h3>/)[1]);
+      const body = e.replace(/^<h3>[\s\S]*?<\/h3>/, '').split(/<h2[ >]/)[0];
+      const pres = [...body.matchAll(/<pre[^>]*>([\s\S]*?)<\/pre>/g)].map((m) => decodeText(m[1]));
+      const note = /class="[^"]*\bshell-unavailable\b[^"]*"/.test(body);
+      if (note) {
+        unavailable++;
+        if (pres.length) staticFails.push(`revshells: "${name}" is marked Unavailable but has a code block`);
+        continue;
+      }
+      if (!pres.length) staticFails.push(`revshells: "${name}" has no code block and no Unavailable note`);
+      else if (pres.some((p) => !p)) staticFails.push(`revshells: "${name}" has an empty code block`);
+      else if (pres[0] === name) staticFails.push(`revshells: "${name}" code block is just its heading`);
+      else withCode++;
+    }
+    if (!entries.length) staticFails.push('revshells: no entries found');
+    const lead = Number((html.match(/<p class="lead">(\d+) reverse shell/) || [])[1]);
+    if (lead !== withCode) staticFails.push(`revshells: lead says ${lead} one-liners, ${withCode} entries have code`);
+    const chips = [...html.matchAll(/<a href="#[^"]*">[^<]*\((\d+)\)<\/a>/g)].reduce((a, m) => a + Number(m[1]), 0);
+    if (chips !== withCode) staticFails.push(`revshells: language chips add up to ${chips}, ${withCode} entries have code`);
+    staticNotes.push(`revshells: ${entries.length} entries, ${withCode} with code, ${unavailable} unavailable`);
+  }
+
+  // Machine pages: the technique hubs named in the intro (lead and Overview) are exactly those under "Techniques explained".
+  const hubs = (s) => [...s.matchAll(/href="\/techniques\/([^/"]+)\/"/g)].map((m) => m[1]);
+  const machinesDir = path.join(DIST, 'machines');
+  let checked = 0;
+  for (const e of fs.existsSync(machinesDir) ? fs.readdirSync(machinesDir, { withFileTypes: true }) : []) {
+    const file = path.join(machinesDir, e.name, 'index.html');
+    if (!e.isDirectory() || !fs.existsSync(file)) continue;
+    const html = fs.readFileSync(file, 'utf8');
+    const lead = (html.match(/<p class="lead">([\s\S]*?)<\/p>/) || [])[1];
+    if (lead === undefined) continue;
+    const overview = (html.match(/<h2>Overview<\/h2>([\s\S]*?)(?=<h2|<table)/) || [])[1] || '';
+    const explained = (html.match(/<h2>Techniques explained<\/h2>([\s\S]*?)(?=<h2|$)/) || [])[1] || '';
+    const intro = new Set([...hubs(lead), ...hubs(overview)]);
+    const section = new Set(hubs(explained));
+    const onlyIntro = [...intro].filter((h) => !section.has(h));
+    const onlySection = [...section].filter((h) => !intro.has(h));
+    if (onlyIntro.length || onlySection.length)
+      staticFails.push(`machines/${e.name}: intro vs Techniques explained differ (only in intro: ${onlyIntro.join(', ') || '-'}; only in section: ${onlySection.join(', ') || '-'})`);
+    checked++;
+  }
+  if (!checked) staticFails.push('machine pages: none found to check intro vs Techniques explained');
+  staticNotes.push(`machine pages: ${checked} checked, intro hubs = Techniques explained hubs`);
+}
+
+{
+  // Tag links (technique hub or /machines/?tag=): one displayed label always goes to one destination, across every page,
+  // and only the filtered-list links carry rel="nofollow".
+  const dests = new Map();
+  let links = 0;
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.html')) {
+        const html = fs.readFileSync(p, 'utf8');
+        for (const m of html.matchAll(/<a (?:class="tag" )?href="(\/techniques\/[^"?]+\/|\/machines\/\?tag=[^"]+)"( rel="nofollow")?>([^<]+)<\/a>/g)) {
+          links++;
+          const isList = m[1].startsWith('/machines/?tag=');
+          if (isList && !m[2]) staticFails.push(`tag links: ${m[1]} on ${path.relative(DIST, p)} has no rel="nofollow"`);
+          if (!isList && m[2]) staticFails.push(`tag links: hub link ${m[1]} on ${path.relative(DIST, p)} has rel="nofollow"`);
+          const label = decodeText(m[3]);
+          if (!dests.has(label)) dests.set(label, new Set());
+          dests.get(label).add(m[1]);
+        }
+      }
+    }
+  };
+  walk(DIST);
+  const split = [...dests].filter(([, s]) => s.size > 1);
+  for (const [label, s] of split) staticFails.push(`tag links: "${label}" goes to ${s.size} destinations (${[...s].join(', ')})`);
+  staticNotes.push(`tag links: ${links} links, ${dests.size} labels, ${split.length} with two destinations`);
+}
+
 const pad = (s, n) => String(s).padEnd(n);
 console.log(`\nverify-site: ${DIST}`);
 console.log(pad('page', 12) + variants.map((v) => pad(`${v.w}${v.scheme[0]}${v.rm ? 'R' : ''}`, 7)).join('') + 'fails');
@@ -293,5 +385,9 @@ for (const pg of pages) {
   }
 }
 for (const d of deepResults) { total += d.fails.length; console.log(`deep-link ${d.url}: ${d.fails.length ? d.fails.join("; ") : "ok"}`); }
-console.log(`\n${total ? 'FAIL' : 'PASS'}: ${total} failure(s) across ${results.length} page/variant runs + ${deepResults.length} deep-link boots${axeSrc ? '' : ' (axe SKIPPED)'}`);
+staticNotes.forEach((n) => console.log(`static ${n}`));
+staticFails.slice(0, 20).forEach((f) => console.log(`static FAIL: ${f}`));
+if (staticFails.length > 20) console.log(`static FAIL: ... ${staticFails.length - 20} more`);
+total += staticFails.length;
+console.log(`\n${total ? 'FAIL' : 'PASS'}: ${total} failure(s) across ${results.length} page/variant runs + ${deepResults.length} deep-link boots + ${staticNotes.length} static check groups${axeSrc ? '' : ' (axe SKIPPED)'}`);
 process.exit(total ? 1 : 0);

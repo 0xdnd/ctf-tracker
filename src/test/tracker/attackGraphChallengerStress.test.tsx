@@ -74,9 +74,9 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
         </MemoryRouter>
       );
 
-      // Verify header capsule displays 0 / 0 NODES and 0 SUBNETS
-      expect(screen.getByText('0 / 0 NODES')).toBeInTheDocument();
-      expect(screen.getByText('0 SUBNETS')).toBeInTheDocument();
+      // Verify header capsule displays 0 of 0 machines and 0 subnets
+      expect(screen.getByText('0 of 0 machines')).toBeInTheDocument();
+      expect(screen.getByText('0 subnets')).toBeInTheDocument();
 
       // Viewport transform group exists at 1:1 scale
       const viewport = screen.getByTestId('canvas-viewport');
@@ -223,7 +223,7 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
       });
     });
 
-    it('renders "NO OPEN PORTS" message when both openPorts and services are empty or absent', () => {
+    it('renders "No open ports" message when both openPorts and services are empty or absent', () => {
       const zeroPortMachine = createTestMachine({
         id: 'box-zero-ports',
         name: 'SilentBox',
@@ -258,7 +258,7 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
         </svg>
       );
 
-      expect(screen.getByText('NO OPEN PORTS')).toBeInTheDocument();
+      expect(screen.getByText('No open ports')).toBeInTheDocument();
     });
 
     it('correctly extracts ports from services when openPorts is missing or empty', () => {
@@ -391,8 +391,8 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
         </svg>
       );
 
-      // Truncated to 11 chars + '…'
-      expect(screen.getByText('EnterpriseM…')).toBeInTheDocument();
+      // Truncated to 9 chars + '…'
+      expect(screen.getByText('Enterpris…')).toBeInTheDocument();
     });
   });
 

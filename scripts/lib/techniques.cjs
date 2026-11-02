@@ -2,7 +2,8 @@
 // matchTags: strings (exact, after lowercasing and turning -/_ into spaces) or RegExp (tested on that normalized tag).
 // Aliases and word-level RegExps live here too; MACHINE_OVERRIDES below is the last-resort per-machine fallback.
 // commandIds: ids from cheatsheetsData to show under "Key commands".
-const normTag = (t) => String(t).toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+// generalCommands: true marks a group whose commands are general helpers, not specific to the topic (the hub page says so).
+const { normTag } = require('./tags.cjs');
 
 const GROUPS = [
   {
@@ -66,7 +67,26 @@ const GROUPS = [
     matchTags: ['deserialization', 'java deserialization', 'log4j', 'pickle', 'ysoserial', 'jenkins'],
     explainer: 'Insecure deserialization lets an attacker supply a crafted serialized object that triggers dangerous code during parsing. It is most common in Java, PHP, Python pickle and .NET applications. Look for serialized blobs in cookies, hidden fields and API bodies: Java streams start with rO0 in base64 and PHP uses readable O:4:"User" strings. Gadget chains in libraries on the classpath do the actual damage, and tools such as ysoserial generate them for Java. Even without a working chain, tampering with a serialized object can change roles or flags. The bug class also shows up in Jenkins, Log4j style JNDI lookups and other Java middleware, where a patched version is the only complete fix. Always confirm the framework version before sending payloads. These machines are good practice for spotting and exploiting the pattern.',
     cheatsheetTopics: ['exploitation'], methodologyPhase: '04-initial-access',
-    commandIds: ['msfvenom-elf-rev', 'tty-upgrade-python'],
+    localCommands: [
+      {
+        id: 'local-identify-serialized-format',
+        title: 'Recognise a Serialized Data Format',
+        category: 'exploitation',
+        description: 'Spot the format of a blob found in a cookie, hidden field or API body before picking a gadget-chain tool: Java streams start with rO0 in base64 (or ac ed in hex), PHP uses readable O:4:"User" strings, and Python pickle starts with \\x80.',
+        commandTemplate: 'echo "<captured_value>" | base64 -d 2>/dev/null | xxd | head -n 1',
+        tags: ['deserialization', 'recon'],
+        platform: 'Both',
+      },
+      {
+        id: 'local-decode-serialized-blob',
+        title: 'Decode a Captured Serialized Blob',
+        category: 'exploitation',
+        description: 'Base64-decode an intercepted serialized object to a file so its structure can be inspected before building or modifying a gadget chain.',
+        commandTemplate: 'echo "<captured_value>" | base64 -d > blob.bin && xxd blob.bin | less',
+        tags: ['deserialization', 'analysis'],
+        platform: 'Both',
+      },
+    ],
     related: ['ssti', 'command-injection', 'source-code-review'],
   },
   {
@@ -154,7 +174,26 @@ const GROUPS = [
     matchTags: ['buffer overflow', 'binary exploitation', 'x86', 'reverse engineering', 'stack overflow', 'pwn', 'rop', 'shellcode'],
     explainer: 'A classic stack buffer overflow overwrites the saved return address so execution jumps to code you control. The standard workflow is to fuzz the input until the program crashes, find the exact offset with a cyclic pattern, identify bad characters, locate a JMP ESP instruction in a module without protections and generate shellcode with msfvenom. Debuggers such as Immunity, x64dbg or gdb with pwndbg make each step visible. Modern targets add ASLR, DEP and stack canaries, which call for return-oriented programming or information leaks. Practise the manual process until it is repeatable, because exam style tasks reward a clean methodology. Write down offsets and bad characters as you go. These machines include overflow or binary analysis tasks. Restart the vulnerable service between attempts to keep memory layout predictable.',
     cheatsheetTopics: ['exploitation'], methodologyPhase: '04-initial-access',
-    commandIds: ['msfvenom-windows-exe', 'msfvenom-elf-rev'],
+    localCommands: [
+      {
+        id: 'local-checksec-binary-protections',
+        title: "Check a Binary's Protections",
+        category: 'exploitation',
+        description: 'Inspect a binary for NX, PIE, stack canary and RELRO before planning an exploit, since each mitigation changes the approach.',
+        commandTemplate: 'checksec --file=./vulnerable_binary',
+        tags: ['buffer-overflow', 'recon'],
+        platform: 'Linux',
+      },
+      {
+        id: 'local-gdb-pattern-offset',
+        title: 'Find the Crash Offset with a Debugger',
+        category: 'exploitation',
+        description: 'Generate a unique byte pattern, crash the binary under a debugger, and read the offset to the saved return address from the resulting register or stack value.',
+        commandTemplate: 'gdb -q ./vulnerable_binary\n(gdb) run $(python3 -c \'from pwn import *; print(cyclic(400).decode())\')\n(gdb) x/wx $rsp\npython3 -c \'from pwn import *; print(cyclic_find(0xDEADBEEF))\'',
+        tags: ['buffer-overflow', 'debugger'],
+        platform: 'Linux',
+      },
+    ],
     related: ['command-injection', 'source-code-review', 'linux-capabilities'],
   },
   {

@@ -1,6 +1,5 @@
 export interface User {
   id: string;
-  googleId: string;
   email: string;
   name: string; // Operator Callsign / Display Name
   callsign?: string;
@@ -35,15 +34,11 @@ export interface AuthState {
   isLoading: boolean;
   token: string | null;
   guestDataMigrated: boolean;
-  googleClientId: string | null;
   operatorProfileModalOpen: boolean;
   
   // Actions
   setOperatorProfileModalOpen: (open: boolean) => void;
-  setGoogleClientId: (clientId: string) => void;
   loginAsOperator: (options: OperatorLoginOptions | string, email?: string, avatarUrl?: string) => Promise<void>;
-  loginWithGoogleCredential: (credential: string) => Promise<void>;
-  loginWithGoogleUserInfo: (userInfo: { sub: string; email: string; name: string; picture?: string }, token: string) => Promise<void>;
   switchProfile: (profileId: string) => void;
   createProfile: (options: OperatorLoginOptions | string) => void;
   renameProfile: (newName: string, newCallsign?: string) => void;

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Palette, ChevronDown, Check, Zap, Terminal, Moon, Sun } from 'lucide-react';
+import { Palette, ChevronDown, Check, Zap, Terminal, Moon, Sun, Crosshair } from 'lucide-react';
 import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
@@ -24,20 +24,20 @@ const THEME_OPTIONS: ThemeOption[] = [
     icon: Zap,
   },
   {
-    id: 'monolith',
-    name: 'Clean Monolith',
-    tagline: 'Architectural off-white and crisp graphite',
-    darkHex: 'rgb(56 189 248)',
-    lightHex: 'rgb(2 132 199)',
-    icon: Sun,
-  },
-  {
     id: 'htb',
     name: 'Hack The Box',
     tagline: 'OLED black and official HTB lime',
     darkHex: 'rgb(159 239 0)',
     lightHex: 'rgb(21 128 61)',
     icon: Terminal,
+  },
+  {
+    id: 'offsec',
+    name: 'Red Team / OffSec',
+    tagline: 'Carbon charcoal and tactical crimson',
+    darkHex: 'rgb(255 70 70)',
+    lightHex: 'rgb(185 28 28)',
+    icon: Crosshair,
   },
 ];
 

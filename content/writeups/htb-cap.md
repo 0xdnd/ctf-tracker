@@ -99,7 +99,7 @@ getcap -r / 2>/dev/null
 /usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper = cap_net_bind_service,cap_net_admin+ep
 ```
 
-The output revealed an unusual capability set on the Python binary: `/usr/bin/python3.8` had `cap_setuid` enabled. In Linux, [Linux capabilities](/techniques/linux-capabilities/) break down traditional root privileges into granular units. The `cap_setuid` capability permits an unprivileged process to arbitrarily alter its effective and real user IDs.
+The output revealed an unusual capability set on the Python binary: `/usr/bin/python3.8` had `cap_setuid` enabled. In Linux, Linux capabilities break down traditional root privileges into granular units. The `cap_setuid` capability permits an unprivileged process to arbitrarily alter its effective and real user IDs.
 
 Because the Python binary possessed `cap_setuid`, I executed a one-line command to invoke `os.setuid(0)` and spawn a root Bash shell:
 

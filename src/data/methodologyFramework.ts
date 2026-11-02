@@ -295,15 +295,13 @@ export const MASTER_METHODOLOGY_FRAMEWORK: MethodologyPhase[] = [
           {
             id: 'p03-default-creds',
             title: 'Default Credentials Verification on Management Consoles',
-            commandSnippet: 'Testing admin:admin, admin:password, root:root, etc.',
-            description: 'Check administrative dashboards, routers, Jenkins, Tomcat, and Webmin.',
+            description: 'Check administrative dashboards, routers, Jenkins, Tomcat, and Webmin. Testing admin:admin, admin:password, root:root, etc.',
           },
           {
             id: 'p03-web-auth-session',
             title: 'Branch A: Authentication & Session Analysis (JWT, IDOR, Cookies)',
             serviceBranch: 'web',
-            commandSnippet: 'Inspect Set-Cookie, test JWT algorithm none / weak secret key',
-            description: 'Examine authorization mechanisms for broken object-level access (IDOR) and weak tokens.',
+            description: 'Examine authorization mechanisms for broken object-level access (IDOR) and weak tokens. Inspect Set-Cookie, test JWT algorithm none / weak secret key.',
           },
           {
             id: 'p03-smb-protocol-cves',
@@ -339,21 +337,20 @@ export const MASTER_METHODOLOGY_FRAMEWORK: MethodologyPhase[] = [
           },
           {
             id: 'p04-web-upload-bypass',
-            title: 'Branch A: File Upload Filter Bypass (Webshell Delivery)',
+            title: 'Branch B: File Upload Filter Bypass (Webshell Delivery)',
             serviceBranch: 'web',
-            commandSnippet: 'Upload .phtml, .php5, .phar, double extension or Content-Type spoofing',
-            description: 'Bypass file upload restrictions to write interactive webshell to webroot.',
+            description: 'Bypass file upload restrictions to write interactive webshell to webroot. Upload .phtml, .php5, .phar, double extension or Content-Type spoofing.',
           },
           {
             id: 'p04-db-oob-exec',
-            title: 'Branch D: Out-of-Band Command Execution via Database',
+            title: 'Branch C: Out-of-Band Command Execution via Database',
             serviceBranch: 'database',
             commandSnippet: 'EXEC xp_cmdshell \'powershell ...\' or COPY table FROM PROGRAM \'bash -i ...\'',
             description: 'Leverage database administrative privileges to execute system commands.',
           },
           {
             id: 'p04-cred-access-remote',
-            title: 'Branch C: Credential Validation & Remote Shell Connect',
+            title: 'Branch D: Credential Validation & Remote Shell Connect',
             serviceBranch: 'remote_access',
             commandSnippet: 'ssh -i id_rsa user@{TARGET_IP} or evil-winrm -i {TARGET_IP} -u {USER} -p "{PASSWORD}"',
             description: 'Establish authenticated command session using discovered credentials or SSH keys.',
@@ -583,8 +580,7 @@ export const MASTER_METHODOLOGY_FRAMEWORK: MethodologyPhase[] = [
           {
             id: 'p08-writeup-sync',
             title: 'Document Full Kill-Chain in Writeup Studio',
-            commandSnippet: 'Export checklist to Markdown and sync with Obsidian vault',
-            description: 'Ensure all vulnerabilities, PoCs, and remediation suggestions are thoroughly preserved.',
+            description: 'Ensure all vulnerabilities, PoCs, and remediation suggestions are thoroughly preserved. Export checklist to Markdown and sync with Obsidian vault.',
           },
         ],
       },

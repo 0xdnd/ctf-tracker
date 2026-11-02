@@ -125,7 +125,8 @@ export interface ExamStoreActions {
   ) => void;
   pauseExam: () => void;
   resumeExam: () => void;
-  resetExam: (track?: ExamTrack) => void;
+  /** Clears the session (timer, flags, proofs, notes) but keeps the seed, so the same mock machines come back. */
+  resetExam: (track?: ExamTrack, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
   setTrack: (track: ExamTrack, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
   /** Re-roll: new random seed, new boxes. */
   shuffleTargets: (catalog?: Machine[], solvedIds?: Iterable<string>) => void;
@@ -240,9 +241,9 @@ function createInitialSession(track: ExamTrack = 'OSCP', options: InitialSession
   return {
     id: `exam_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     track,
-    candidateName: 'Daniel Dayan',
-    candidateCallsign: '0xdnd',
-    osid: 'OS-94821',
+    candidateName: '',
+    candidateCallsign: '',
+    osid: '',
     status: 'idle',
     startedAt: null,
     examExpiresAt: null,
@@ -437,11 +438,13 @@ export const useExamStore = create<ExamStore>()(
         playCyberAlert('tick');
       },
 
-      resetExam: (track) => {
-        const targetTrack = track || get().track;
-        const previousBoxes = get().boxes;
-        // A reset is a new exam: new seed. The page re-rolls with the catalog once it is loaded.
-        const session = createInitialSession(targetTrack);
+      resetExam: (track, catalog, solvedIds) => {
+        const { track: currentTrack, seed, scoringMode, boxes: previousBoxes } = get();
+        const targetTrack = track || currentTrack;
+        // Same seed (and the scoring mode that shaped the points), so the same machines return with progress
+        // cleared. Pass the catalog: without it the boxes are the hardcoded fallback set until the page
+        // re-rolls from this seed. Roll a new set with shuffleTargets / setSeed.
+        const session = createInitialSession(targetTrack, { seed, scoringMode, catalog, solvedIds });
         set(session);
         purgeRemovedProofImages(previousBoxes, session.boxes);
         playCyberAlert('tick');

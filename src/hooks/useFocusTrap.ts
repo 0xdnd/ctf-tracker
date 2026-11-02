@@ -17,6 +17,12 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
+/**
+ * Non-modal UI that floats over a trapped modal (the onboarding PageHint) marks itself with this
+ * attribute. The top-most trap then includes it in its Tab cycle, so keyboard users can reach it.
+ */
+export const TRAP_COMPANION_ATTR = 'data-trap-companion';
+
 // Stack of active traps; only the top-most trap handles keys (nested modals).
 const activeTrapStack: symbol[] = [];
 
@@ -73,13 +79,18 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
       if (!currentContainer) return;
 
       const isJsdom = typeof window !== 'undefined' && (window.navigator?.userAgent?.includes('jsdom') || !('offsetParent' in HTMLElement.prototype));
-      const focusable = Array.from(
-        currentContainer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-      ).filter((el) => {
-        if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') return false;
-        if (isJsdom) return true;
-        return el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0;
+      const scopes: HTMLElement[] = [currentContainer];
+      document.querySelectorAll<HTMLElement>(`[${TRAP_COMPANION_ATTR}]`).forEach((c) => {
+        if (!currentContainer.contains(c) && !c.contains(currentContainer)) scopes.push(c);
       });
+      const inScope = (node: Element | null) => scopes.some((scope) => scope.contains(node));
+      const focusable = scopes
+        .flatMap((scope) => Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)))
+        .filter((el) => {
+          if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') return false;
+          if (isJsdom) return true;
+          return el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0;
+        });
 
       if (focusable.length === 0) {
         e.preventDefault();
@@ -91,13 +102,13 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
 
       if (e.shiftKey) {
         // Shift + Tab: Wrap from first to last
-        if (document.activeElement === firstEl || !currentContainer.contains(document.activeElement)) {
+        if (document.activeElement === firstEl || !inScope(document.activeElement)) {
           e.preventDefault();
           lastEl.focus();
         }
       } else {
         // Tab: Wrap from last to first
-        if (document.activeElement === lastEl || !currentContainer.contains(document.activeElement)) {
+        if (document.activeElement === lastEl || !inScope(document.activeElement)) {
           e.preventDefault();
           firstEl.focus();
         }

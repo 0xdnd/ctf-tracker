@@ -1,7 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  BarChart3,
   Flame,
   Award,
   Clock,
@@ -24,6 +23,7 @@ import { ReadinessSection } from './ReadinessSection';
 import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore';
 import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
 import { PageHeader } from '../common/PageHeader';
+import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { buildHeatmapWeeks, WEEKDAY_LONG, WEEKDAY_SHORT, type HeatLevel } from '../../utils/analyticsHeatmap';
 
 // Theme-token paint for SVG attributes (Tailwind has no stroke/fill utilities for the text/border token sets).
@@ -435,9 +435,9 @@ export const AnalyticsView: React.FC = () => {
       <PageHeader
         title="Analytics and skill radar"
         description="Time benchmarks, difficulty progress and your attack-vector strengths."
-        icon={<BarChart3 aria-hidden="true" />}
+        icon={<AnalyticsMonitorIcon aria-hidden="true" />}
       >
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div data-tour="analytics-totals" className="flex flex-wrap items-center gap-2 text-xs">
           <span className="px-3 py-1 rounded-lg bg-surface-sunken border border-subtle text-secondary font-medium">
             <span className="tabular-nums font-mono text-primary">{rootedMachines.length}</span> targets rooted
           </span>
@@ -455,7 +455,7 @@ export const AnalyticsView: React.FC = () => {
       ) : (
       <>
       {/* KPI Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div data-tour="analytics-kpis" className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
@@ -576,6 +576,7 @@ export const AnalyticsView: React.FC = () => {
 
         {/* Left: Skill Radar Chart */}
         <motion.div
+          data-tour="analytics-radar"
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
@@ -703,6 +704,7 @@ export const AnalyticsView: React.FC = () => {
 
       {/* Activity Heatmap: weekday rows by week columns */}
       <motion.div
+        data-tour="analytics-heatmap"
         initial={{ opacity: 0, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}

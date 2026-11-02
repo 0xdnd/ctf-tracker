@@ -48,6 +48,10 @@ jobs:
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v6
 
+      - name: Snapshot Live Sitemap for IndexNow Diff
+        continue-on-error: true
+        run: curl -fsSL https://ctftracker.com/sitemap.xml -o live-sitemap.xml || true
+
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -60,19 +64,4 @@ jobs:
       - name: Notify IndexNow
         if: success()
         continue-on-error: true
-        run: |
-          node -e '
-          (async () => {
-            const origin = "https://ctftracker.com";
-            const key = require("./src/seo/site.json").indexNowKey;
-            const xml = require("fs").readFileSync("dist/sitemap.xml", "utf8");
-            const urlList = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
-            if (!urlList.length) throw new Error("no urls in sitemap");
-            const res = await fetch("https://api.indexnow.org/indexnow", {
-              method: "POST",
-              headers: { "Content-Type": "application/json; charset=utf-8" },
-              body: JSON.stringify({ host: "ctftracker.com", key, keyLocation: origin + "/" + key + ".txt", urlList }),
-            });
-            console.log("IndexNow submitted " + urlList.length + " URLs, status " + res.status);
-          })().catch((e) => { console.error(e); process.exit(1); });
-          '
+        run: node scripts/submit-indexnow.cjs --prev live-sitemap.xml

@@ -26,6 +26,7 @@ import { OperatorLoginOptions } from '../../types/auth';
 import { CYBER_AVATAR_PRESETS, getAvatarSvgDataUri } from '../../data/avatarPresets';
 import { evaluateOperatorGamification, syncOperatorTrophies } from '../../utils/gamificationEngine';
 import { TrophyCategory } from '../../types/gamification';
+import { SAMPLE_SOLVE_COUNT } from '../../data/demoSolvedRoster';
 
 const ROLE_OPTIONS = [
   { id: 'Tactical CTF Operator', label: 'General CTF Operator', icon: Target },
@@ -432,14 +433,14 @@ export const OperatorProfileModal: React.FC = () => {
                   </span>
                 ) : (
                   <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-surface-card text-secondary border border-subtle">
-                    Creator showcase (63 solves)
+                    Sample solves ({SAMPLE_SOLVE_COUNT})
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-tertiary">
                 {userSolvesReset
                   ? 'Tracking your own progress from 0%. All 1372 targets ready.'
-                  : 'Daniel Dayan\'s solved machines are loaded as reference walkthroughs.'}
+                  : 'Sample solves are loaded as reference walkthroughs.'}
               </p>
             </div>
           </div>
@@ -448,15 +449,23 @@ export const OperatorProfileModal: React.FC = () => {
             {userSolvesReset ? (
               <button
                 type="button"
-                onClick={() => {
-                  restoreDanielSolves();
-                  if (soundEnabled) playCyberSound('engage');
+                onClick={async () => {
+                  const ok = await confirmAction({
+                    title: 'Load sample solves?',
+                    body: `This replaces your current progress on catalog items with ${SAMPLE_SOLVE_COUNT} sample solves (flags and timestamps). Custom items are kept.`,
+                    confirmLabel: 'Load sample solves',
+                    tone: 'danger',
+                  });
+                  if (ok) {
+                    restoreDanielSolves();
+                    if (soundEnabled) playCyberSound('engage');
+                  }
                 }}
                 className="px-2.5 py-1 max-sm:py-2.5 rounded-lg text-xs font-medium bg-surface-card text-secondary border border-subtle hover:bg-surface-hover transition-colors flex items-center gap-1.5 cursor-pointer"
-                title="Load Daniel's 63 solved machines as a reference baseline"
+                title={`Load ${SAMPLE_SOLVE_COUNT} sample solves as a reference baseline`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Load reference solves (63)</span>
+                <span>Load sample solves ({SAMPLE_SOLVE_COUNT})</span>
               </button>
             ) : (
               <button
@@ -464,7 +473,7 @@ export const OperatorProfileModal: React.FC = () => {
                 onClick={async () => {
                   const ok = await confirmAction({
                     title: 'Reset all catalog solves to 0?',
-                    body: 'Track your own progress from scratch. You can restore reference solves anytime.',
+                    body: 'Track your own progress from scratch. You can load the sample solves later, but that does not bring back your own progress.',
                     confirmLabel: 'Reset solves',
                     tone: 'danger',
                   });
@@ -538,7 +547,7 @@ export const OperatorProfileModal: React.FC = () => {
                     No custom profiles created yet
                   </div>
                   <p className="text-[11px] text-tertiary max-w-sm mx-auto">
-                    Progress is stored locally. Create a named operator to track your solves, or explore Daniel's reference profile below.
+                    Progress is stored locally. Create a named operator to track your solves, or explore the creator profile below.
                   </p>
                 </div>
               )}
@@ -699,7 +708,7 @@ export const OperatorProfileModal: React.FC = () => {
                             </span>
                           </div>
                           <div className="text-[11px] text-tertiary truncate">
-                            Lead pentester, 63 verified solves
+                            Lead pentester, {SAMPLE_SOLVE_COUNT} sample solves
                           </div>
                         </div>
                       </div>
@@ -707,7 +716,7 @@ export const OperatorProfileModal: React.FC = () => {
 
                     <div className="mt-3 pt-2.5 border-t border-subtle flex items-center justify-between text-xs">
                       <div className="text-[11px] text-secondary">
-                        <span className="font-mono tabular-nums font-semibold">63</span> rooted machines
+                        <span className="font-mono tabular-nums font-semibold">{SAMPLE_SOLVE_COUNT}</span> sample solves
                       </div>
 
                       <button

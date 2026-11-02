@@ -14,6 +14,12 @@ export interface ShellItem {
   notes?: string;
   extension: string;
   isFullScript?: boolean;
+  /**
+   * True when the original source for this row's command was lost (git history confirms it never
+   * held anything but its own name) and no replacement content may be invented. `command` is `''`
+   * for these rows; the generator shows an "Unavailable" label instead of a code body.
+   */
+  unavailable?: boolean;
 }
 
 export const ALL_SHELL_ITEMS: ShellItem[] = [
@@ -515,11 +521,12 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "category": "Reverse",
     "language": "PowerShell",
     "platform": "Both",
-    "command": "PowerShell #3 (Base64)",
+    "command": "",
     "listener": "nc -lvnp {port}",
     "notes": "",
     "extension": ".ps1",
-    "isFullScript": false
+    "isFullScript": false,
+    "unavailable": true
   },
   {
     "id": "rev-powershell-5-stderr-support-base64",
@@ -527,11 +534,12 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "category": "Reverse",
     "language": "PowerShell",
     "platform": "Both",
-    "command": "PowerShell #5 (stderr support) (Base64)",
+    "command": "",
     "listener": "nc -lvnp {port}",
     "notes": "",
     "extension": ".ps1",
-    "isFullScript": false
+    "isFullScript": false,
+    "unavailable": true
   },
   {
     "id": "rev-p0wny-shell-webshell",
@@ -1590,3 +1598,6 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "isFullScript": false
   }
 ];
+
+/** `ALL_SHELL_ITEMS` minus rows marked `unavailable` — the set to use for any displayed count. */
+export const availableShellItems: ShellItem[] = ALL_SHELL_ITEMS.filter((s) => !s.unavailable);

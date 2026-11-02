@@ -32,6 +32,16 @@ describe('CyberLogo component', () => {
     expect(screen.getByTitle('ZeroBox (htb)').className).not.toContain('drop-shadow');
   });
 
+  it('renders the red OffSec logo and its sized srcset when theme is offsec', () => {
+    render(<CyberLogo theme="offsec" />);
+
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('alt', 'ZeroBox logo - offsec');
+    expect(img).toHaveAttribute('src', '/logo-offsec.webp');
+    expect(img).toHaveAttribute('srcset', expect.stringContaining('/logo-offsec-64.webp 64w'));
+    expect(img).toHaveAttribute('srcset', expect.stringContaining('/logo-offsec-224.webp 224w'));
+  });
+
   it('renders the Midnight Blue logo when theme is midnight-blue', () => {
     render(<CyberLogo theme="midnight-blue" />);
 

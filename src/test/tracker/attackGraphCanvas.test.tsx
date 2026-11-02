@@ -241,8 +241,8 @@ describe('Milestone 2: Visual Attack Graph & Pivot Topology Canvas Engine', () =
         </svg>
       );
 
-      // Name truncated with ellipsis at 11 chars + ellipsis
-      expect(screen.getByText('CorporateAc…')).toBeInTheDocument();
+      // Name truncated with ellipsis at 9 chars + ellipsis (14px name beside the HTB chip)
+      expect(screen.getByText('Corporate…')).toBeInTheDocument();
       // IP pill
       expect(screen.getByText('10.10.11.20')).toBeInTheDocument();
       // Difficulty pill
@@ -285,7 +285,7 @@ describe('Milestone 2: Visual Attack Graph & Pivot Topology Canvas Engine', () =
       expect(screen.getByText('+2')).toBeInTheDocument();
     });
 
-    it('renders fallback "NO OPEN PORTS" when machine has no ports', () => {
+    it('renders fallback "No open ports" when machine has no ports', () => {
       const node: GraphNode = {
         id: 'box-bsd-insane',
         name: 'BSDBeast',
@@ -314,7 +314,7 @@ describe('Milestone 2: Visual Attack Graph & Pivot Topology Canvas Engine', () =
         </svg>
       );
 
-      expect(screen.getByText('NO OPEN PORTS')).toBeInTheDocument();
+      expect(screen.getByText('No open ports')).toBeInTheDocument();
     });
 
     it('renders pulsing beacon halo for rooted nodes and tactical selection reticle', () => {
@@ -576,7 +576,7 @@ describe('Milestone 2: Visual Attack Graph & Pivot Topology Canvas Engine', () =
       });
 
       // Flyout should open with engage target button
-      expect(screen.getByText('Engage Target')).toBeInTheDocument();
+      expect(screen.getByText('Set as active machine')).toBeInTheDocument();
       expect(screen.getByTestId('flyout-close-btn')).toBeInTheDocument();
     });
 

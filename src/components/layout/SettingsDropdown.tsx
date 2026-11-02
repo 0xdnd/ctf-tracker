@@ -23,6 +23,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
 import { useLocation } from 'react-router-dom';
+import { formatBackupAge, hasMeaningfulData, isBackupOverdue, useBackupReminderStore } from '../../utils/backupReminder';
 
 export const SettingsDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,6 +63,11 @@ export const SettingsDropdown: React.FC = () => {
       unexportedChangesCount: s.unexportedChangesCount,
     }))
   );
+
+  const backupReminder = useBackupReminderStore(useShallow((s) => ({ lastBackupAt: s.lastBackupAt, firstActivityAt: s.firstActivityAt, snoozeUntil: s.snoozeUntil })));
+  const lastBackupAt = backupReminder.lastBackupAt;
+  const hasData = useCtfStore((s) => hasMeaningfulData(s));
+  const backupOverdue = isBackupOverdue(backupReminder, Date.now(), hasData);
 
   // Close dropdown on outside click or Escape key
   useEffect(() => {
@@ -131,6 +137,7 @@ export const SettingsDropdown: React.FC = () => {
             : 'bg-transparent border-subtle text-secondary hover:bg-surface-hover hover:text-primary hover:border-strong'
         }`}
         title="Settings & Workspace Utilities"
+        data-tour="settings-menu"
         aria-label="Settings and options"
       >
         <Settings className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -269,9 +276,17 @@ export const SettingsDropdown: React.FC = () => {
             }}
             className={itemCls}
           >
-            <span className="flex items-center gap-2">
-              <ShieldCheck className={iconCls} />
-              <span>Backup & Vault Manager</span>
+            <span className="flex flex-col items-start gap-0.5">
+              <span className="flex items-center gap-2">
+                <ShieldCheck className={iconCls} />
+                <span>Backup & Vault Manager</span>
+              </span>
+              <span
+                data-testid="settings-last-backup"
+                className={`pl-[22px] text-[11px] ${backupOverdue ? 'text-callout-warn-fg' : 'text-muted'}`}
+              >
+                {lastBackupAt ? `Last backup: ${formatBackupAge(lastBackupAt, Date.now())}` : 'Never backed up'}
+              </span>
             </span>
           </button>
 

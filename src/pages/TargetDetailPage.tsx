@@ -20,10 +20,11 @@ import {
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus } from '../types';
-import { communityLink, ownWriteupHref } from '../utils/machineLinks';
+import { communityLink, ownWriteupHref, resolveHubRootWriteupHref } from '../utils/machineLinks';
 import { isTauriTarget } from '../utils/runtimeTarget';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../utils/helpers';
+import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../utils/roomLink';
 import { PlatformBadge } from '../components/common/PlatformBadge';
 import { OsBadge } from '../components/common/OsBadge';
 import { DifficultyBadge } from '../components/common/DifficultyBadge';
@@ -228,7 +229,7 @@ export const TargetDetailPage: React.FC = () => {
 
   const openWriteup = () => {
     setWriteupMachineId(machine.id);
-    navigate('/writeup');
+    navigate(`/writeup/${encodeURIComponent(machine.id)}`);
   };
 
   const engage = () => {
@@ -258,7 +259,14 @@ export const TargetDetailPage: React.FC = () => {
   ];
 
   const roomUrl = sanitizeExternalUrl(machine.roomUrl);
-  const community = communityLink(machine);
+  // A writeupUrl that is actually an external hub root (not a page for this target) resolves to
+  // our own machine page when one exists, or shows no writeup link at all — never a guessed URL.
+  const hubRootWriteup = resolveHubRootWriteupHref(machine);
+  const community = hubRootWriteup !== undefined
+    ? hubRootWriteup
+      ? { href: hubRootWriteup, label: 'Writeup' }
+      : null
+    : communityLink(machine);
   const ownHref = ownWriteupHref(machine);
 
   return (
@@ -268,7 +276,7 @@ export const TargetDetailPage: React.FC = () => {
       transition={{ duration: 0.2 }}
       className="mx-auto max-w-6xl space-y-5 pb-12 text-sm"
     >
-      <div className="space-y-2">
+      <div data-tour="machine-header" className="space-y-2">
         <button
           aria-label="Back to target list"
           onClick={() => navigate('/tracker')}
@@ -281,6 +289,7 @@ export const TargetDetailPage: React.FC = () => {
 
         <PageHeader
           title={machine.name}
+          overflowAnchor="machine-menu"
           primaryAction={
             isActiveTarget ? (
               <CyberButton
@@ -290,6 +299,7 @@ export const TargetDetailPage: React.FC = () => {
                 aria-label={isTimerRunning ? 'Pause timer' : 'Resume timer'}
                 title={isTimerRunning ? 'Pause' : 'Resume'}
                 onClick={isTimerRunning ? pauseTimer : startTimer}
+                data-tour="machine-engage"
                 className="[@media(pointer:coarse)]:h-11"
               >
                 {isTimerRunning ? 'Pause' : 'Resume'}
@@ -299,6 +309,7 @@ export const TargetDetailPage: React.FC = () => {
                 variant="primary"
                 size="md"
                 onClick={engage}
+                data-tour="machine-engage"
                 className="[@media(pointer:coarse)]:h-11"
               >
                 Engage
@@ -336,6 +347,7 @@ export const TargetDetailPage: React.FC = () => {
                       size="md"
                       iconLeft={<Eye className="h-3.5 w-3.5" />}
                       title="Exit Focus Mode"
+                      data-tour="machine-exit-focus"
                       onClick={() => navigate(`/target/${machine.id}`)}
                     >
                       Exit focus
@@ -390,7 +402,7 @@ export const TargetDetailPage: React.FC = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
               >
-                Official room <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                {isStartingPointHubUrl(machine.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Official room'} <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             )}
             {!machine.isActive && ownHref && (
@@ -446,10 +458,12 @@ export const TargetDetailPage: React.FC = () => {
         </div>
       ) : (
         <>
-          <MachineSummaryStrip machine={machine} machineLoot={machineLoot} onNavigate={setActiveTab} />
+          <div data-tour="machine-summary">
+            <MachineSummaryStrip machine={machine} machineLoot={machineLoot} onNavigate={setActiveTab} />
+          </div>
 
           {/* Navigation tabs: single line, horizontally scrollable */}
-          <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+          <div data-tour="machine-tabs" className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
             <div className="flex min-w-max items-center gap-1">
               {tabs.map((tab) => {
                 const selected = activeTab === tab.id;

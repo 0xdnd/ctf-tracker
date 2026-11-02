@@ -111,7 +111,7 @@ describe('Attack graph large-graph performance modes', () => {
   it('drops status-beacon pulses once the graph exceeds the large-graph threshold', () => {
     const machines = makeMachines(LARGE_GRAPH_NODE_COUNT + 10);
     const { container } = renderGraph(machines);
-    fireEvent.click(screen.getByLabelText('Show all targets in topology graph'));
+    fireEvent.click(screen.getByLabelText('Group all by subnet'));
     expect(container.querySelectorAll('[data-node-id]').length).toBe(machines.length);
     expect(container.querySelectorAll('[data-node-id] animate').length).toBe(0);
   });
@@ -119,7 +119,7 @@ describe('Attack graph large-graph performance modes', () => {
   it('renders compact cards below the LOD scale on large graphs and keeps every node interactive', () => {
     const machines = makeMachines(LARGE_GRAPH_NODE_COUNT + 10);
     const { container } = renderGraph(machines);
-    fireEvent.click(screen.getByLabelText('Show all targets in topology graph'));
+    fireEvent.click(screen.getByLabelText('Group all by subnet'));
 
     // Full cards carry 4 docking anchors each
     expect(container.querySelectorAll('[data-node-id] circle[r="2.5"]').length).toBe(machines.length * 4);
@@ -144,7 +144,7 @@ describe('Attack graph large-graph performance modes', () => {
   it('does not cull cards when the container has no measurable size (jsdom)', () => {
     const machines = makeMachines(LARGE_GRAPH_NODE_COUNT + 10);
     const { container } = renderGraph(machines);
-    fireEvent.click(screen.getByLabelText('Show all targets in topology graph'));
+    fireEvent.click(screen.getByLabelText('Group all by subnet'));
     for (let i = 0; i < 5; i++) {
       act(() => {
         fireEvent.click(screen.getByTestId('graph-zoom-in'));
@@ -189,7 +189,7 @@ describe('Attack graph large-graph performance modes', () => {
     const machines = makeMachines(LARGE_GRAPH_NODE_COUNT + 10);
     machines[0] = { ...machines[0], name: 'WWWWWWWWWWWWWWWW' };
     renderGraph(machines);
-    fireEvent.click(screen.getByLabelText('Show all targets in topology graph'));
+    fireEvent.click(screen.getByLabelText('Group all by subnet'));
     for (let i = 0; i < 3; i++) {
       act(() => {
         fireEvent.click(screen.getByTestId('graph-zoom-out'));
@@ -232,7 +232,7 @@ describe('Attack graph large-graph performance modes', () => {
     expect(btn.getAttribute('aria-disabled')).toBeNull();
     expect(btn.title).toContain('arrange nodes');
 
-    fireEvent.click(screen.getByLabelText('Show all targets in topology graph'));
+    fireEvent.click(screen.getByLabelText('Group all by subnet'));
     expect(btn.disabled).toBe(true);
     expect(btn.getAttribute('aria-disabled')).toBe('true');
     expect(btn.title).toBe('Auto layout is available in scoped view');
@@ -240,14 +240,14 @@ describe('Attack graph large-graph performance modes', () => {
     fireEvent.click(btn);
     expect(JSON.stringify(useCtfStore.getState().graphNodePositions)).toBe(before);
 
-    fireEvent.click(screen.getByLabelText('Switch to scoped 48 targets'));
+    fireEvent.click(screen.getByLabelText('Compact layout'));
     expect(btn.disabled).toBe(false);
     expect(btn.getAttribute('aria-disabled')).toBeNull();
   });
 
   describe('scoped / SHOW ALL position isolation', () => {
-    const showAllBtn = () => screen.getByLabelText('Show all targets in topology graph');
-    const scopedBtn = () => screen.getByLabelText('Switch to scoped 48 targets');
+    const showAllBtn = () => screen.getByLabelText('Group all by subnet');
+    const scopedBtn = () => screen.getByLabelText('Compact layout');
 
     it('keeps SHOW ALL drags out of the store and out of the scoped view', () => {
       const machines = makeVariedMachines(70);
@@ -406,7 +406,7 @@ describe('Attack graph large-graph performance modes', () => {
       const scopedTransform = viewport.getAttribute('transform');
       expect(scopedTransform).toContain('scale(1.2)');
 
-      fireEvent.click(screen.getByLabelText('Show all targets in topology graph'));
+      fireEvent.click(screen.getByLabelText('Group all by subnet'));
 
       const centers = cardCenters(container);
       expect(centers.size).toBe(929);
@@ -436,7 +436,7 @@ describe('Attack graph large-graph performance modes', () => {
       expect(other.querySelectorAll('circle[r="2.5"]').length).toBe(4);
 
       // Back to scoped: previous scoped view is restored
-      fireEvent.click(screen.getByLabelText('Switch to scoped 48 targets'));
+      fireEvent.click(screen.getByLabelText('Compact layout'));
       expect(viewport.getAttribute('transform')).toBe(scopedTransform);
       expect(screen.getByTestId('graph-minimap-svg').getAttribute('viewBox')).toBe('0 0 1600 1200');
     });

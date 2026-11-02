@@ -7,13 +7,12 @@ import { CYBER_AVATAR_PRESETS, getAvatarPresetById } from '../data/avatarPresets
 import { clearDeepProfileData } from '../utils/indexedDbDeepStorage';
 
 const AUTH_STORAGE_KEY = 'rootvector_auth_session';
-const CLIENT_ID_STORAGE_KEY = 'rootvector_google_client_id';
+const LEGACY_CLIENT_ID_STORAGE_KEY = 'rootvector_google_client_id';
 
 export const DEFAULT_AVATAR_DATA_URI = CYBER_AVATAR_PRESETS[0].dataUri;
 
 export const DEFAULT_DANIEL_PROFILE: User = {
   id: 'usr_daniel',
-  googleId: '',
   email: 'daniel@operator.lab',
   name: 'Daniel',
   callsign: '0xdnd',
@@ -29,15 +28,18 @@ export const DEFAULT_DANIEL_PROFILE: User = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-export const PUBLIC_GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
-
-const getInitialGoogleClientId = (): string => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(CLIENT_ID_STORAGE_KEY);
-    if (stored && stored.includes('.apps.googleusercontent.com')) return stored;
-  }
-  return PUBLIC_GOOGLE_CLIENT_ID;
+// Legacy Google sign-in leftovers: drop the old client-id key and strip retired fields from persisted state.
+const stripLegacyGoogleFields = <T extends object>(u: T): T => {
+  if (!u || typeof u !== 'object') return u;
+  const { googleId: _googleId, ...rest } = u as T & { googleId?: unknown };
+  return rest as T;
 };
+
+try {
+  if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_CLIENT_ID_STORAGE_KEY);
+} catch {
+  // storage unavailable
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -48,18 +50,10 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       token: null,
       guestDataMigrated: false,
-      googleClientId: getInitialGoogleClientId(),
       operatorProfileModalOpen: false,
 
       setOperatorProfileModalOpen: (open: boolean) => {
         set({ operatorProfileModalOpen: open });
-      },
-
-      setGoogleClientId: (clientId: string) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(CLIENT_ID_STORAGE_KEY, clientId);
-        }
-        set({ googleClientId: clientId });
       },
 
       // Simple Operator Profile Login (1-Click Seamless Login based on Callsign + Avatar)
@@ -92,8 +86,7 @@ export const useAuthStore = create<AuthState>()(
             updatedAt: new Date().toISOString(),
           } : {
             id: profileId,
-            googleId: '',
-            email: opts.email?.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '')}@operator.lab`,
+                      email: opts.email?.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '')}@operator.lab`,
             name: cleanName,
             callsign: cleanCallsign,
             role: opts.role || 'Tactical Operator',
@@ -209,109 +202,13 @@ export const useAuthStore = create<AuthState>()(
             set({ user: remaining[0], profiles: remaining });
             useCtfStore.getState().loadProfileData(remaining[0].id);
           } else {
-            set({ user: DEFAULT_DANIEL_PROFILE, profiles: [DEFAULT_DANIEL_PROFILE], isAuthenticated: true });
-            useCtfStore.getState().loadProfileData('usr_daniel');
+            set({ user: null, profiles: [], isAuthenticated: false, token: null });
+            useCtfStore.getState().loadProfileData('guest');
           }
         } else {
           set({ profiles: remaining });
         }
         playCyberSound('toggle');
-      },
-
-      // Live Google Identity Services ID Token (JWT) Handler
-      loginWithGoogleCredential: async (credential: string) => {
-        set({ isLoading: true });
-        try {
-          const base64Url = credential.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(
-            atob(base64)
-              .split('')
-              .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-              .join('')
-          );
-          const decoded = JSON.parse(jsonPayload);
-
-          const user: User = {
-            id: `usr_google_${decoded.sub}`,
-            googleId: decoded.sub,
-            email: decoded.email,
-            name: decoded.name || decoded.email.split('@')[0],
-            callsign: (decoded.name || decoded.email.split('@')[0]).replace(/\s+/g, '-'),
-            role: 'Google Verified Operator',
-            badgeColor: 'cyan',
-            avatarId: 'terminal-sentinel',
-            avatarUrl: decoded.picture || CYBER_AVATAR_PRESETS[3].dataUri,
-            unlockedTrophies: {},
-            totalXp: 0,
-            rankTier: 1,
-            rankTitle: 'NOVICE PROBE',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          const updatedProfiles = get().profiles.some((p) => p.id === user.id)
-            ? get().profiles.map((p) => (p.id === user.id ? user : p))
-            : [...get().profiles, user];
-
-          set({
-            user,
-            profiles: updatedProfiles,
-            token: credential,
-            isAuthenticated: true,
-            isLoading: false,
-            operatorProfileModalOpen: false,
-          });
-
-          useCtfStore.getState().loadProfileData(user.id);
-          playCyberSound('root');
-        } catch (err) {
-          console.error('Google OAuth credential processing error:', err);
-          set({ isLoading: false });
-        }
-      },
-
-      // Live Google OAuth 2.0 Access Token & UserInfo Handler
-      loginWithGoogleUserInfo: async (userInfo, token) => {
-        set({ isLoading: true });
-        try {
-          const user: User = {
-            id: `usr_google_${userInfo.sub}`,
-            googleId: userInfo.sub,
-            email: userInfo.email,
-            name: userInfo.name || userInfo.email.split('@')[0],
-            callsign: (userInfo.name || userInfo.email.split('@')[0]).replace(/\s+/g, '-'),
-            role: 'Google Verified Operator',
-            badgeColor: 'cyan',
-            avatarId: 'terminal-sentinel',
-            avatarUrl: userInfo.picture || CYBER_AVATAR_PRESETS[3].dataUri,
-            unlockedTrophies: {},
-            totalXp: 0,
-            rankTier: 1,
-            rankTitle: 'NOVICE PROBE',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          const updatedProfiles = get().profiles.some((p) => p.id === user.id)
-            ? get().profiles.map((p) => (p.id === user.id ? user : p))
-            : [...get().profiles, user];
-
-          set({
-            user,
-            profiles: updatedProfiles,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            operatorProfileModalOpen: false,
-          });
-
-          useCtfStore.getState().loadProfileData(user.id);
-          playCyberSound('root');
-        } catch (err) {
-          console.error('Failed to log in with Google UserInfo:', err);
-          set({ isLoading: false });
-        }
       },
 
       // Logout and reset to unauthenticated guest
@@ -396,8 +293,15 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
         guestDataMigrated: state.guestDataMigrated,
-        googleClientId: state.googleClientId,
       }),
+      merge: (persistedState, currentState) => {
+        const p = (persistedState ?? {}) as Record<string, unknown>;
+        const { googleClientId: _legacyClientId, ...rest } = p;
+        const merged = { ...currentState, ...rest } as AuthState;
+        if (merged.user) merged.user = stripLegacyGoogleFields(merged.user);
+        if (Array.isArray(merged.profiles)) merged.profiles = merged.profiles.map(stripLegacyGoogleFields);
+        return merged;
+      },
     }
   )
 );

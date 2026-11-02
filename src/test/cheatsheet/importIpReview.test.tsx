@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { useCtfStore } from '../../store/useCtfStore';
-import { saveVaultToIndexedDb } from '../../utils/indexedDbVault';
+import { saveVaultStrict, snapshotVaultBeforeImport } from '../../utils/indexedDbVault';
 import { NotesImportModal } from '../../components/cheatsheet/NotesImportModal';
 
 const SCAN_MD = '# Scan\n\n```bash\nnmap -sV 10.129.5.5\n```\n';
@@ -23,7 +23,8 @@ async function selectFolder(files: File[]) {
 
 describe('NotesImportModal — IP review before saving', () => {
   beforeEach(() => {
-    vi.mocked(saveVaultToIndexedDb).mockClear();
+    vi.mocked(saveVaultStrict).mockClear();
+    vi.mocked(snapshotVaultBeforeImport).mockClear();
     act(() => {
       useCtfStore.setState({
         notesImportModalOpen: true,
@@ -39,7 +40,7 @@ describe('NotesImportModal — IP review before saving', () => {
     await selectFolder([mdFile('vault/recon/scan.md', SCAN_MD), mdFile('vault/recon/plain.md', '# Plain\ntext')]);
 
     await waitFor(() => screen.getByTestId('import-ip-review'));
-    expect(saveVaultToIndexedDb).not.toHaveBeenCalled();
+    expect(saveVaultStrict).not.toHaveBeenCalled();
     expect(useCtfStore.getState().userNotes).toHaveLength(0);
 
     await act(async () => {
@@ -50,7 +51,8 @@ describe('NotesImportModal — IP review before saving', () => {
     expect(scan.rawMarkdown).toContain('nmap -sV {TARGET}');
     expect(scan.rawMarkdown).toContain('original_ips_target: 10.129.5.5');
     expect(scan.commands).toEqual(['nmap -sV {TARGET}']);
-    expect(saveVaultToIndexedDb).toHaveBeenCalledTimes(1);
+    expect(snapshotVaultBeforeImport).toHaveBeenCalledTimes(1);
+    expect(saveVaultStrict).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/Replaced 1 IP with placeholders/)).toBeTruthy();
   });
 
@@ -66,7 +68,7 @@ describe('NotesImportModal — IP review before saving', () => {
   });
 
   it('keeps the pending import for retry when saving fails', async () => {
-    vi.mocked(saveVaultToIndexedDb).mockRejectedValueOnce(new Error('disk full'));
+    vi.mocked(saveVaultStrict).mockRejectedValueOnce(new Error('disk full'));
     render(<NotesImportModal />);
     await selectFolder([mdFile('vault/scan.md', SCAN_MD)]);
     await waitFor(() => screen.getByTestId('import-ip-review'));
@@ -90,7 +92,7 @@ describe('NotesImportModal — IP review before saving', () => {
     await waitFor(() => screen.getByTestId('import-ip-review'));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel import' }));
     expect(screen.queryByTestId('import-ip-review')).toBeNull();
-    expect(saveVaultToIndexedDb).not.toHaveBeenCalled();
+    expect(saveVaultStrict).not.toHaveBeenCalled();
     expect(useCtfStore.getState().userNotes).toHaveLength(0);
   });
 

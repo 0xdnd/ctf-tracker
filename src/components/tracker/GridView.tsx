@@ -23,6 +23,7 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
+import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roomLink';
 import { OsBadge } from '../common/OsBadge';
 import { PlatformBadge } from '../common/PlatformBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
@@ -402,8 +403,8 @@ const GridCard = React.memo<GridCardProps>(({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={ICON_BTN}
-                title="Open Room Link"
-                aria-label={`Open external room link for ${m.name}`}
+                title={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Open Room Link'}
+                aria-label={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`}
               >
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>

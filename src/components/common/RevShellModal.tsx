@@ -158,7 +158,7 @@ export const RevShellModal: React.FC = () => {
         </div>
 
         {/* Live variable sync */}
-        <div className="px-4 py-3 border-b border-inverse grid grid-cols-3 gap-3 text-xs">
+        <div data-tour="revshell-details" className="px-4 py-3 border-b border-inverse grid grid-cols-3 gap-3 text-xs">
           <div>
             <label htmlFor="revshell-lhost" className={labelCls}>
               LHOST (Tun0 / Attacker)
@@ -216,7 +216,7 @@ export const RevShellModal: React.FC = () => {
         </div>
 
         {/* Category tabs */}
-        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-inverse overflow-x-auto text-xs scrollbar-none">
+        <div data-tour="revshell-filters" className="flex items-center gap-1.5 px-4 py-2 border-b border-inverse overflow-x-auto text-xs scrollbar-none">
           {(['All', 'Linux', 'Windows', 'Web', 'Listener'] as const).map((cat) => (
             <button
               key={cat}
@@ -233,7 +233,7 @@ export const RevShellModal: React.FC = () => {
         </div>
 
         {/* Payload list */}
-        <div className="p-4 space-y-3 overflow-y-auto flex-1">
+        <div data-tour="revshell-list" className="p-4 space-y-3 overflow-y-auto flex-1">
           {filteredTemplates.map((t) => {
             const rawCmd = t.command(lhost, lport, rhost);
             const isCopied = copiedId === t.id;
@@ -274,8 +274,9 @@ export const RevShellModal: React.FC = () => {
           <button
             onClick={() => {
               setRevShellModalOpen(false);
-              navigate('/cheatsheets?tab=revshell');
+              navigate('/reverse-shell');
             }}
+            data-tour="revshell-full"
             className="flex items-center gap-1 text-syntax-flag hover:underline text-xs cursor-pointer"
           >
             <span>Full RevShell arsenal</span>

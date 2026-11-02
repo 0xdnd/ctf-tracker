@@ -38,7 +38,7 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
     consoleErrors.length = 0;
     uncaughtPageErrors.length = 0;
 
-    // Seed onboarding completion so StartCleanModal does not intercept clicks
+    // Seed onboarding completion so the first-run welcome tour does not intercept clicks
     await page.addInitScript(() => {
       localStorage.setItem('zerobox_onboarding_completed', 'true');
     });

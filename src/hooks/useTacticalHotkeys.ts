@@ -8,6 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../utils/helpers';
 import { ViewMode } from '../types';
 import { stripTrailingSlash } from '../utils/pathUtils';
+import { useOnboardingStore } from '../onboarding/useOnboardingStore';
 
 export function useTacticalHotkeys() {
   const navigate = useNavigate();
@@ -84,6 +85,18 @@ export function useTacticalHotkeys() {
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
+      // The first-visit tour, section guides and Guide Center are modal: no global shortcuts (Ctrl+K, ?, ...) while one is up,
+      // or while a guide launch is on its way to its page.
+      // A hands-on step lets through only the shortcut it asks the visitor to try.
+      const onboarding = useOnboardingStore.getState();
+      if (onboarding.tourActive || onboarding.guide || onboarding.finishedGuide || onboarding.guideCenterOpen || onboarding.launchPending) {
+        const plain = !e.ctrlKey && !e.altKey && !e.metaKey;
+        const allowed =
+          (onboarding.handsOn === 'layout' && plain && ['1', '2', '3', '4'].includes(e.key)) ||
+          (onboarding.handsOn === 'palette' && (e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'));
+        if (!allowed) return;
+      }
+
       // 0. Escape Key: Dismiss open modals / selections, but blur active inputs first
       if (e.key === 'Escape') {
         const activeEl = document.activeElement as HTMLElement | null;

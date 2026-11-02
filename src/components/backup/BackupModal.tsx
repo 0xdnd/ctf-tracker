@@ -32,6 +32,8 @@ import type { ConflictChoice, SyncConflict, SyncMergeSummary } from '../../utils
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
 import { extractCandidateNames, matchCandidateNamesToCatalog } from '../../utils/bulkPwnImporter';
+import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
+import { formatBackupAge, recordBackupSuccess, useBackupReminderStore } from '../../utils/backupReminder';
 import { PipelineStatus } from '../../types';
 import {
   BackupCryptoError,
@@ -47,6 +49,7 @@ import {
 } from '../../utils/backupCrypto';
 import { buildBackupFile, checkBackupIntegrity, importBackupFile, isV3BackupText } from '../../store/backupFile';
 import { isChecksumAvailable } from '../../utils/backupChecksum';
+import { SAMPLE_SOLVE_COUNT } from '../../data/demoSolvedRoster';
 
 const STRENGTH_LABEL: Record<PassphraseStrength, string> = {
   'too-short': 'Too short',
@@ -122,7 +125,19 @@ export const BackupModal: React.FC = () => {
     }))
   );
 
-  const [activeTab, setActiveTab] = useState<'backup' | 'bulk_pwn'>('backup');
+  // The first-visit guide can ask for the bulk import tab (see onboarding "Already rooted some machines?").
+  const lastBackupAt = useBackupReminderStore((s) => s.lastBackupAt);
+  const [activeTab, setActiveTab] = useState<'backup' | 'bulk_pwn'>(
+    () => useOnboardingStore.getState().requestedBackupTab ?? 'backup',
+  );
+  useEffect(() => {
+    const onboarding = useOnboardingStore.getState();
+    onboarding.requestBackupTab(null);
+    return () => onboarding.setBackupTab(null);
+  }, []);
+  useEffect(() => {
+    useOnboardingStore.getState().setBackupTab(activeTab);
+  }, [activeTab]);
 
   // A pre-update snapshot restore is writing storage and about to reload: Esc / close are disabled meanwhile.
   const [snapshotRestoring, setSnapshotRestoring] = useState(false);
@@ -267,6 +282,7 @@ export const BackupModal: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    if (kind === 'backup') recordBackupSuccess();
     if (soundEnabled) playCyberSound('root');
   };
 
@@ -545,7 +561,7 @@ export const BackupModal: React.FC = () => {
   const handleResetSolvesToZero = async () => {
     const ok = await confirmAction({
       title: 'Start fresh CTF journey?',
-      body: "This will reset all 1372 targets to unsolved (0% progress) so you can track your own personal solves from scratch. You can restore Daniel Dayan's 63 baseline solves at any time with 1 click.",
+      body: `This will reset all 1372 targets to unsolved (0% progress) so you can track your own personal solves from scratch. You can load the ${SAMPLE_SOLVE_COUNT} sample solves later with 1 click, but that does not bring back your own progress.`,
       confirmLabel: 'Reset to 0%',
       tone: 'danger',
     });
@@ -557,9 +573,10 @@ export const BackupModal: React.FC = () => {
 
   const handleRestoreDanielSolves = async () => {
     const ok = await confirmAction({
-      title: "Restore Daniel Dayan's baseline solves?",
-      body: "This will load Daniel Dayan's 55 verified completed solves (37 HTB + 18 THM + 6 footholds) with flags, timestamps, and notes.",
+      title: "Restore sample solves?",
+      body: `This replaces your current progress on catalog items with ${SAMPLE_SOLVE_COUNT} sample solves (flags and timestamps). Custom items are kept.`,
       confirmLabel: 'Restore solves',
+      tone: 'danger',
     });
     if (ok) {
       restoreDanielSolves();
@@ -600,7 +617,7 @@ export const BackupModal: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center border-b border-subtle bg-surface-sunken px-4 pt-2 gap-2 flex-shrink-0 text-xs overflow-x-auto scrollbar-none">
+        <div data-tour="backup-tabs" className="flex items-center border-b border-subtle bg-surface-sunken px-4 pt-2 gap-2 flex-shrink-0 text-xs overflow-x-auto scrollbar-none">
           <button
             onClick={() => {
               setActiveTab('backup');
@@ -628,7 +645,7 @@ export const BackupModal: React.FC = () => {
  }`}
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>Bulk import (HTB / THM)</span>
+            <span>Bulk import (HTB / THM / PG / VulnHub)</span>
           </button>
         </div>
 
@@ -638,12 +655,15 @@ export const BackupModal: React.FC = () => {
           {activeTab === 'backup' ? (
             <>
               {/* Section 1: Export JSON */}
-              <div className="p-3.5 rounded-lg bg-surface-card border border-subtle space-y-3">
+              <div data-tour="backup-export" className="p-3.5 rounded-lg bg-surface-card border border-subtle space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-semibold text-primary text-sm block">Export state (JSON)</span>
                     <span className="text-muted text-[11px]">
                       Snapshot of machine flags, writeups, custom boxes, timers and payloads.
+                    </span>
+                    <span data-testid="backup-last-backup" className="text-muted text-[11px] block mt-0.5">
+                      {lastBackupAt ? `Last backup: ${formatBackupAge(lastBackupAt, Date.now())}` : 'Never backed up'}
                     </span>
                     <span id="backup-export-contents-note" className="text-muted text-[11px] block mt-0.5">
                       {isChecksumAvailable()
@@ -872,7 +892,7 @@ export const BackupModal: React.FC = () => {
               </div>
 
               {/* Section 2: Import */}
-              <div className="p-3.5 rounded-lg bg-surface-card border border-subtle space-y-3">
+              <div data-tour="backup-restore" className="p-3.5 rounded-lg bg-surface-card border border-subtle space-y-3">
                 <div>
                   <span className="font-semibold text-primary text-sm block">Restore or merge state</span>
                   <span className="text-muted text-[11px]">
@@ -1123,12 +1143,12 @@ export const BackupModal: React.FC = () => {
                         </span>
                       ) : (
                         <span className="text-[11px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary font-medium">
-                          Daniel Dayan baseline (63 solves)
+                          Sample solves ({SAMPLE_SOLVE_COUNT})
                         </span>
                       )}
                     </div>
                     <span className="text-muted text-[11px] block mt-0.5">
-                      Track your own progress from 0%, or explore Daniel Dayan's verified baseline solves. Currently solved: <strong className="text-primary font-mono tabular-nums">{solvedCount}</strong> targets.
+                      Track your own progress from 0%, or explore the sample solves. Currently solved: <strong className="text-primary font-mono tabular-nums">{solvedCount}</strong> targets.
                     </span>
                   </div>
                 </div>
@@ -1158,10 +1178,10 @@ export const BackupModal: React.FC = () => {
                     <div>
                       <div className="font-semibold text-primary text-xs flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-muted" />
-                        <span>Restore Daniel's solves</span>
+                        <span>Restore sample solves</span>
                       </div>
                       <p className="text-muted text-[11px] leading-relaxed mt-1">
-                        Restores Daniel Dayan's 63 verified solves (45 HTB + 18 THM + 6 footholds) with flags, timestamps and notes.
+                        Restores {SAMPLE_SOLVE_COUNT} sample solves with flags and timestamps.
                       </p>
                     </div>
                     <button
@@ -1170,7 +1190,7 @@ export const BackupModal: React.FC = () => {
                       className="w-full py-1.5 max-sm:py-3 px-3 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle text-primary text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Restore Daniel Dayan (63 solves)</span>
+                      <span>Restore sample solves ({SAMPLE_SOLVE_COUNT})</span>
                     </button>
                   </div>
                 </div>
@@ -1179,7 +1199,7 @@ export const BackupModal: React.FC = () => {
               <PreUpdateSnapshots key={snapshotListVersion} onBusyChange={setSnapshotRestoring} />
 
               {/* Section 3: Reset */}
-              <div className="p-3.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border space-y-2">
+              <div data-tour="backup-reset" className="p-3.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border space-y-2">
                 <div className="flex items-center gap-2 text-callout-danger-fg">
                   <AlertTriangle className="w-4 h-4" />
                   <span className="font-semibold">Danger zone: reset all target states</span>
@@ -1304,7 +1324,7 @@ export const BackupModal: React.FC = () => {
               </div>
 
               {/* Target Status Selector */}
-              <div className="flex items-center gap-3 bg-surface-card p-2.5 rounded-xl border border-subtle">
+              <div data-tour="bulk-status" className="flex items-center gap-3 bg-surface-card p-2.5 rounded-xl border border-subtle">
                 <span className="text-muted text-xs font-medium">Apply as</span>
                 <label className="flex items-center gap-1.5 cursor-pointer text-xs">
                   <input
@@ -1339,7 +1359,7 @@ export const BackupModal: React.FC = () => {
               </div>
 
               {/* Paste Text Area */}
-              <div className="space-y-1.5">
+              <div data-tour="bulk-input" className="space-y-1.5">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-muted font-medium">Machine names or CSV</span>
                   {candidates.length > 0 && (
@@ -1435,6 +1455,7 @@ export const BackupModal: React.FC = () => {
 
                 <button
                   onClick={handleApplyBulkSolves}
+                  data-tour="bulk-apply"
                   disabled={parseResult.newSolves.length === 0 || bulkApplied}
                   className="flex items-center gap-2 px-4 py-2 max-sm:py-3 rounded-xl text-xs font-medium bg-accent hover:brightness-110 text-on-accent disabled:opacity-40 disabled:cursor-not-allowed transition-[filter,transform] active:scale-[0.97]"
                 >

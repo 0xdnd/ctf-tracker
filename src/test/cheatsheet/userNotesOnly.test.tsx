@@ -94,16 +94,16 @@ describe('Notes area ships no bundled notes', () => {
 
     const empty = screen.getByTestId('notes-empty-state');
     expect(empty).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'No notes yet' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your field manual is empty' })).toBeInTheDocument();
     expect(
-      screen.getByText('Import your own Obsidian vault or markdown notes, or write a new note.')
+      screen.getByText('It shows your own Markdown notes, for example an Obsidian vault. You need to import them first.')
     ).toBeInTheDocument();
     // The workspace explorer is not rendered without notes
     expect(screen.queryByText('FIELD MANUAL')).not.toBeInTheDocument();
     // No bundled-catalog wording anywhere in the view
     expect(document.body.textContent || '').not.toMatch(/cpts/i);
 
-    const importBtn = Array.from(empty.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Import notes');
+    const importBtn = Array.from(empty.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Import your notes');
     expect(importBtn).toBeDefined();
     fireEvent.click(importBtn!);
     expect(useCtfStore.getState().notesImportModalOpen).toBe(true);

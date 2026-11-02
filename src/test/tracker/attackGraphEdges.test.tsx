@@ -413,7 +413,7 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
       expect(screen.getByText(/:1080/)).toBeInTheDocument();
     });
 
-    it('toggles vector connection mode when PIVOT LINK toolbar button is clicked', () => {
+    it('toggles vector connection mode when Add link toolbar button is clicked', () => {
       render(
         <MemoryRouter>
           <GraphView filteredMachines={mockMachines} />
@@ -427,10 +427,10 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
 
       // Connecting banner should appear
       expect(screen.getByTestId('connect-vector-banner')).toBeInTheDocument();
-      expect(screen.getByText(/Click pivot host to select origin machine/i)).toBeInTheDocument();
+      expect(screen.getByText(/Click the machine to link from/i)).toBeInTheDocument();
 
       // Cancel button exits connecting mode
-      const cancelBtn = screen.getByTitle('Cancel Link Connection');
+      const cancelBtn = screen.getByTitle('Cancel linking');
       act(() => {
         fireEvent.click(cancelBtn);
       });
@@ -445,7 +445,7 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
         </MemoryRouter>
       );
 
-      // 1. Enter PIVOT LINK mode
+      // 1. Enter Add link mode
       const pivotLinkBtn = screen.getByTestId('graph-connect-vector');
       act(() => {
         fireEvent.click(pivotLinkBtn);
@@ -458,7 +458,7 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
       });
 
       // Prompt updates to destination
-      expect(screen.getByText(/Click destination target machine to connect vector/i)).toBeInTheDocument();
+      expect(screen.getByText(/Click the machine to link to/i)).toBeInTheDocument();
 
       // 3. Click destination node (Database01)
       const dbNode = screen.getByTestId('attack-node-box-db-server');
@@ -501,7 +501,7 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
         </MemoryRouter>
       );
 
-      const canvasBtn = screen.getByText('.CANVAS');
+      const canvasBtn = screen.getByText('Canvas file');
       const svgBtn = screen.getByText('SVG');
 
       expect(canvasBtn).toBeInTheDocument();

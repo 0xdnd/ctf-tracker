@@ -12,9 +12,11 @@ describe('NotFoundPage Component', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Page not found')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /isn.t on the board/i })).toBeInTheDocument();
     expect(screen.getByText('404')).toBeInTheDocument();
-    expect(screen.getByText('Unresolved route')).toBeInTheDocument();
+    expect(screen.getByText('404.404.404.404')).toBeInTheDocument();
+    expect(screen.getByText('Not found')).toBeInTheDocument();
+    expect(screen.getByText('No foothold')).toBeInTheDocument();
     expect(screen.getAllByText('/non-existent-vector').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -25,9 +27,9 @@ describe('NotFoundPage Component', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/Looking for this page\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Did you mean/i)).toBeInTheDocument();
     expect(screen.getAllByText('Cheatsheets').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Open Cheatsheets')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Cheatsheets' })[0]).toHaveAttribute('href', '/cheatsheets');
   });
 
   it('detects suggestion for vault / loot keywords', () => {
@@ -37,9 +39,9 @@ describe('NotFoundPage Component', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/Looking for this page\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Did you mean/i)).toBeInTheDocument();
     expect(screen.getAllByText('Evidence Vault').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Open Evidence Vault')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Evidence Vault' })[0]).toHaveAttribute('href', '/vault');
   });
 
   it('renders primary recovery actions and directory grid', () => {
@@ -51,7 +53,7 @@ describe('NotFoundPage Component', () => {
 
     expect(screen.getByText('Back to tracker')).toBeInTheDocument();
     expect(screen.getByText('Search (Ctrl+K)')).toBeInTheDocument();
-    expect(screen.getByText('Back')).toBeInTheDocument();
+    expect(screen.getByText('Go back')).toBeInTheDocument();
 
     // Section directory
     expect(screen.getByText('Machine Tracker')).toBeInTheDocument();

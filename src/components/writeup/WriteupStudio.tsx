@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
@@ -20,12 +20,26 @@ import {
   Globe,
   Lock,
   ImageOff,
-  ListChecks
+  ListChecks,
+  Bold,
+  Terminal,
+  Table,
+  CheckSquare,
+  AlertTriangle,
+  Image as ImageIcon,
+  KeyRound,
+  Radar,
+  Flag,
+  Crown,
+  Sparkles,
+  Heading2,
+  Heading3
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
+import { useToastStore } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
-import { playCyberSound, interpolateCommand } from '../../utils/helpers';
+import { playCyberSound, interpolateCommand, safeCopyToClipboard } from '../../utils/helpers';
 import { downloadWriteupHtml } from '../../utils/writeupHtmlExporter';
 import { sanitizeFilename } from '../../utils/workspaceStorage';
 import { PentestReportModal } from './PentestReportModal';
@@ -94,6 +108,7 @@ export const useResolvedImageUrls = (content: string, profileId: string): ImageU
 
   return urls;
 };
+
 export const renderInlineMarkdown = (text: string, keyPrefix: string | number): React.ReactNode => {
   if (!text) return text;
 
@@ -188,12 +203,51 @@ const renderLineWithWikilinks = (text: string, keyPrefix: string | number) => {
 const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
   const lines = text.split('\n');
   let inFrontmatter = false;
-  let frontmatterLines: string[] = [];
+  const frontmatterLines: string[] = [];
   let inCodeBlock = false;
   let codeBlockLang = '';
   let codeBlockLines: string[] = [];
+  let tableBuffer: string[] = [];
 
   const elements: React.ReactNode[] = [];
+
+  const flushTable = (keyIdx: number) => {
+    if (tableBuffer.length === 0) return;
+    const rows = tableBuffer
+      .map((r) => r.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim()))
+      .filter((r) => r.length > 0 && !r.every((cell) => /^:?-+:?$/.test(cell)));
+
+    if (rows.length > 0) {
+      const [header, ...body] = rows;
+      elements.push(
+        <div key={`tbl-${keyIdx}`} className="my-3 overflow-x-auto rounded-lg border border-subtle">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="bg-surface-sunken border-b border-subtle text-secondary">
+              <tr>
+                {header.map((cell, cIdx) => (
+                  <th key={cIdx} className="px-3 py-2 font-semibold">
+                    {renderLineWithWikilinks(cell, `th-${keyIdx}-${cIdx}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-subtle bg-surface-card">
+              {body.map((row, rIdx) => (
+                <tr key={rIdx} className="hover:bg-surface-sunken/60 transition-colors">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="px-3 py-1.5 text-primary font-sans">
+                      {renderLineWithWikilinks(cell, `td-${keyIdx}-${rIdx}-${cIdx}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    tableBuffer = [];
+  };
 
   lines.forEach((line, idx) => {
     // Frontmatter detection
@@ -222,22 +276,33 @@ const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
 
     // Codeblock detection
     if (line.startsWith('```')) {
+      flushTable(idx);
       if (!inCodeBlock) {
         inCodeBlock = true;
         codeBlockLang = line.replace('```', '').trim();
         codeBlockLines = [];
       } else {
         inCodeBlock = false;
+        const rawCmdText = codeBlockLines.join('\n');
         elements.push(
-          <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-inverse bg-surface-inverse">
-            {codeBlockLang && (
-              <div className="bg-surface-inverse-elevated px-3 py-1 text-[11px] text-on-inverse-muted font-mono border-b border-inverse flex items-center justify-between">
-                <span>{codeBlockLang}</span>
-                <Code className="w-3 h-3" />
-              </div>
-            )}
+          <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-inverse bg-surface-inverse group relative">
+            <div className="bg-surface-inverse-elevated px-3 py-1 text-[11px] text-on-inverse-muted font-mono border-b border-inverse flex items-center justify-between">
+              <span>{codeBlockLang || 'shell'}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  safeCopyToClipboard(rawCmdText);
+                  useToastStore.getState().addToast({ type: 'success', message: 'Copied code block' });
+                }}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-card/10 hover:bg-surface-card/20 text-[10px] text-on-inverse cursor-pointer"
+                title="Copy code block"
+              >
+                <Copy className="w-2.5 h-2.5" />
+                <span>Copy</span>
+              </button>
+            </div>
             <pre tabIndex={0} aria-label={codeBlockLang ? `${codeBlockLang} code block` : 'Code block'} className="p-3 text-xs text-on-inverse font-mono overflow-x-auto whitespace-pre-wrap">
-              {codeBlockLines.join('\n')}
+              {rawCmdText}
             </pre>
           </div>
         );
@@ -248,6 +313,14 @@ const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
     if (inCodeBlock) {
       codeBlockLines.push(line);
       return;
+    }
+
+    // Markdown Table line detection
+    if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+      tableBuffer.push(line);
+      return;
+    } else if (tableBuffer.length > 0) {
+      flushTable(idx);
     }
 
     // Pasted screenshot stored in the local image store
@@ -276,6 +349,55 @@ const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
       return;
     }
 
+    // Obsidian Callouts & Blockquotes (> [!NOTE] or > text)
+    if (line.startsWith('>')) {
+      const cleanQuote = line.replace(/^>\s?/, '');
+      const calloutMatch = cleanQuote.match(/^\[!(NOTE|TIP|WARNING|DANGER|INFO)\]\s*(.*)$/i);
+      if (calloutMatch) {
+        const kind = calloutMatch[1].toUpperCase();
+        const title = calloutMatch[2] || kind;
+        const styleMap: Record<string, string> = {
+          NOTE: 'border-callout-info-border bg-callout-info-bg text-callout-info-fg',
+          INFO: 'border-callout-info-border bg-callout-info-bg text-callout-info-fg',
+          TIP: 'border-callout-success-border bg-callout-success-bg text-callout-success-fg',
+          WARNING: 'border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg',
+          DANGER: 'border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg',
+        };
+        elements.push(
+          <div key={idx} className={`my-2 px-3 py-2 rounded-lg border-l-4 text-xs font-semibold ${styleMap[kind] || styleMap.NOTE}`}>
+            {renderLineWithWikilinks(title, idx)}
+          </div>
+        );
+      } else {
+        elements.push(
+          <blockquote key={idx} className="my-1 pl-3 border-l-2 border-accent/50 text-xs text-secondary italic">
+            {renderLineWithWikilinks(cleanQuote, idx)}
+          </blockquote>
+        );
+      }
+      return;
+    }
+
+    // Task Checklists (- [ ] or - [x])
+    const taskMatch = line.match(/^-\s+\[([ xX])\]\s+(.*)$/);
+    if (taskMatch) {
+      const checked = taskMatch[1].toLowerCase() === 'x';
+      elements.push(
+        <div key={idx} className="flex items-start gap-2 my-1 ml-1 text-xs">
+          <input
+            type="checkbox"
+            checked={checked}
+            readOnly
+            className="mt-0.5 rounded border-subtle accent-red-500 pointer-events-none"
+          />
+          <span className={checked ? 'line-through text-muted' : 'text-primary'}>
+            {renderLineWithWikilinks(taskMatch[2], idx)}
+          </span>
+        </div>
+      );
+      return;
+    }
+
     // Headings
     if (line.startsWith('# ')) {
       elements.push(
@@ -285,7 +407,7 @@ const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
       );
     } else if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={idx} className="text-base font-semibold text-primary mt-4 mb-1.5 flex items-center gap-2">
+        <h2 key={idx} className="text-base font-semibold text-accent mt-4 mb-1.5 flex items-center gap-2">
           {renderLineWithWikilinks(line.replace('## ', ''), idx)}
         </h2>
       );
@@ -313,6 +435,8 @@ const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
       );
     }
   });
+
+  flushTable(lines.length);
 
   // Group consecutive list items into a real <ul> so <li> always has a list parent.
   const grouped: React.ReactNode[] = [];
@@ -351,6 +475,14 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
   const profileId = useCtfStore((s) => s.currentProfileId) || 'guest';
   const imageUrls = useResolvedImageUrls(deferredContent, profileId);
 
+  const headings = useMemo(() => {
+    return deferredContent
+      .split('\n')
+      .filter((l) => l.startsWith('## '))
+      .map((l) => l.replace('## ', '').trim())
+      .slice(0, 6);
+  }, [deferredContent]);
+
   const renderedPreview = useMemo(() => {
     return renderMarkdownPreview(deferredContent, imageUrls);
   }, [deferredContent, imageUrls]);
@@ -360,11 +492,24 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
       className={`flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
       style={{ contain: 'content' }}
     >
-      <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
         <span className="font-semibold text-primary flex items-center gap-2">
-          <Eye className="w-4 h-4 text-muted" /> Preview
+          <Eye className="w-4 h-4 text-accent" /> Preview
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {headings.length > 0 && (
+            <div className="hidden xl:flex items-center gap-1">
+              {headings.map((h, i) => (
+                <span
+                  key={i}
+                  className="px-1.5 py-0.5 rounded bg-surface-card border border-subtle text-[10px] text-secondary truncate max-w-[110px]"
+                  title={h}
+                >
+                  {h}
+                </span>
+              ))}
+            </div>
+          )}
           {isStale && (
             <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-card text-muted border border-subtle">
               Syncing
@@ -389,17 +534,57 @@ export const computeWriteupTelemetry = (text: string) => {
   };
 };
 
+/**
+ * Machine the studio opens on: the route id (`/writeup/:id`) wins outright; otherwise the active
+ * target when the selector lists it (retired machines only); otherwise the first retired machine,
+ * then the first machine.
+ */
+export const pickWriteupMachine = <M extends { id: string; isActive?: boolean }>(
+  machines: readonly M[],
+  pickedId: string | null,
+  activeTargetId: string | null
+): M => {
+  const retired = machines.filter((m) => !m.isActive);
+  return (
+    (pickedId ? machines.find((m) => m.id === pickedId) : undefined) ||
+    (activeTargetId ? retired.find((m) => m.id === activeTargetId) : undefined) ||
+    retired[0] ||
+    machines[0]
+  );
+};
+
 export const WriteupStudio: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { machines, writeupMachineId, setWriteupMachineId, updateMachine, soundEnabled, globalVars, appBrand, isDeepStorageLoaded, customNotes, userNotes, currentProfileId } = useCtfStore(
+  const navigate = useNavigate();
+  const {
+    machines,
+    activeTargetId,
+    setWriteupMachineId,
+    updateMachine,
+    toggleUserFlag,
+    toggleRootFlag,
+    soundEnabled,
+    globalVars,
+    appBrand,
+    isDeepStorageLoaded,
+    customNotes,
+    userNotes,
+    credentials,
+    cheatsheets,
+    currentProfileId,
+  } = useCtfStore(
     useShallow((s) => ({
       customNotes: s.customNotes,
       userNotes: s.userNotes,
+      credentials: s.credentials,
+      cheatsheets: s.cheatsheets,
       currentProfileId: s.currentProfileId,
       machines: s.machines,
-      writeupMachineId: s.writeupMachineId,
+      activeTargetId: s.activeTargetId,
       setWriteupMachineId: s.setWriteupMachineId,
       updateMachine: s.updateMachine,
+      toggleUserFlag: s.toggleUserFlag,
+      toggleRootFlag: s.toggleRootFlag,
       soundEnabled: s.soundEnabled,
       globalVars: s.globalVars,
       appBrand: s.appBrand,
@@ -414,7 +599,7 @@ export const WriteupStudio: React.FC = () => {
   }, [id, machines, setWriteupMachineId]);
 
   const retiredMachines = useMemo(() => machines.filter((m) => !m.isActive), [machines]);
-  const selectedMachine = machines.find((m) => m.id === writeupMachineId) || retiredMachines[0] || machines[0];
+  const selectedMachine = pickWriteupMachine(machines, id ?? null, activeTargetId);
 
   const [copied, setCopied] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -422,6 +607,12 @@ export const WriteupStudio: React.FC = () => {
   const [cptsDrawerOpen, setCptsDrawerOpen] = useState(false);
   const [cptsSearch, setCptsSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [studioLayout, setStudioLayout] = useState<'split' | 'editor' | 'preview'>('split');
+  const [nmapPopoverOpen, setNmapPopoverOpen] = useState(false);
+  const [rawNmapText, setRawNmapText] = useState('');
+  const [snippetPopoverOpen, setSnippetPopoverOpen] = useState(false);
+  const [snippetQuery, setSnippetQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search query by 150ms to maintain 120 FPS
   useEffect(() => {
@@ -431,8 +622,6 @@ export const WriteupStudio: React.FC = () => {
     return () => clearTimeout(timer);
   }, [cptsSearch]);
 
-  // Capped at top 20 matches as mandated by Fable Advisor
-  // Recommendations and search use only the user's own notes; the section hides when there are none.
   const userNotePool = useMemo(() => mergeUserNotePools(customNotes, userNotes), [customNotes, userNotes]);
   const hasUserNotes = userNotePool.length > 0;
   const matchingNotes = useMemo(() => {
@@ -445,9 +634,22 @@ export const WriteupStudio: React.FC = () => {
     return searchCptsNotes(debouncedSearch, 'ALL', null, userNotePool).slice(0, 20);
   }, [debouncedSearch, selectedMachine, userNotePool]);
 
+  const filteredSnippets = useMemo(() => {
+    const q = snippetQuery.trim().toLowerCase();
+    if (!q) return cheatsheets.slice(0, 8);
+    return cheatsheets
+      .filter(
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.commandTemplate.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [cheatsheets, snippetQuery]);
+
   const handleInsertNote = (note: CptsNoteEntry) => {
     if (!selectedMachine) return;
-    const targetVars = { ...globalVars, targetIp: selectedMachine.ip || globalVars.targetIp };
+    const targetVars = { ...globalVars, targetIp: selectedMachine.ip || '' };
     const cmdsFormatted = note.commands && note.commands.length > 0
       ? `\n\`\`\`bash\n# ${note.title}\n${note.commands.map(c => interpolateCommand(c, targetVars)).join('\n')}\n\`\`\`\n`
       : '';
@@ -500,9 +702,10 @@ nmap -sC -sV -Pn --min-rate 2000 -oN nmap_quick.txt ${m.ip}
 \`\`\`
 
 ### Discovered Services:
-- **Port 22/tcp:** Open (OpenSSH 8.4p1)
-- **Port 80/tcp:** Open (Apache httpd 2.4.41)
-- **Port 445/tcp:** Filtered (SMB)
+| Port | Service | Version | Notes / Attack Surface |
+| :--- | :--- | :--- | :--- |
+| 22/tcp | ssh | OpenSSH 8.4p1 | Check banner & key auth |
+| 80/tcp | http | Apache 2.4.41 | Enumerate vhosts & endpoints |
 
 ### Web Directory & Endpoint Fuzzing
 \`\`\`bash
@@ -531,8 +734,8 @@ cat /home/*/user.txt
 
 ## 4. Privilege Escalation & Proof of Concept
 ### Internal Enumeration:
-- Ran LinPEAS / WinPEAS automated audit.
-- Identified misconfigured SUID / Sudo permissions:
+- [ ] Run LinPEAS / WinPEAS automated audit
+- [ ] Check SUID / Sudo permissions (\`sudo -l\`)
 \`\`\`bash
 sudo -l
 \`\`\`
@@ -571,14 +774,12 @@ cat /root/root.txt
     }
   };
 
-  // Flush debounced writeup updates on unmount
   useEffect(() => {
     return () => {
       flushDebouncedSave();
     };
   }, []);
 
-  // Synchronize editor content with selected machine writeup safely
   useEffect(() => {
     if (!selectedMachine) return;
 
@@ -603,6 +804,23 @@ cat /root/root.txt
   }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, selectedMachine?.isActive, isDeepStorageLoaded]);
 
   const telemetry = useMemo(() => computeWriteupTelemetry(editorContent), [editorContent]);
+
+  // Writeup Completeness & Quality Readiness Meter
+  const readiness = useMemo(() => {
+    const lower = editorContent.toLowerCase();
+    const checks = [
+      { id: 'recon', label: 'Recon & Ports', ok: lower.includes('nmap') || lower.includes('port') },
+      { id: 'foothold', label: 'Foothold', ok: lower.includes('foothold') || lower.includes('exploit') || lower.includes('user.txt') },
+      { id: 'privesc', label: 'PrivEsc', ok: lower.includes('privilege') || lower.includes('root.txt') || lower.includes('sudo') },
+      { id: 'code', label: 'PoC Commands', ok: (editorContent.match(/```/g)?.length ?? 0) >= 4 },
+      { id: 'depth', label: '250+ Words', ok: telemetry.words >= 250 },
+    ];
+    const passed = checks.filter((c) => c.ok).length;
+    return {
+      checks,
+      score: Math.round((passed / checks.length) * 100),
+    };
+  }, [editorContent, telemetry.words]);
 
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -654,6 +872,86 @@ cat /root/root.txt
     });
   };
 
+  // Pull Field Log from Notes Workspace or Machine Quick Notes
+  const handlePullFieldLog = () => {
+    if (!selectedMachine) return;
+    const targetLower = selectedMachine.name.toLowerCase();
+    const boundNote =
+      customNotes.find((n) => n.title.toLowerCase().includes(targetLower)) ||
+      userNotes.find((n) => n.title.toLowerCase().includes(targetLower));
+
+    const quick = selectedMachine.quickNotes?.trim();
+    if (!boundNote && !quick) {
+      useToastStore.getState().addToast({
+        type: 'info',
+        message: `No Field Log or Quick Notes found for ${selectedMachine.name} yet`,
+      });
+      return;
+    }
+
+    const parts: string[] = [];
+    if (boundNote?.rawMarkdown) {
+      parts.push(`\n\n---\n\n## Imported Field Log (${boundNote.title})\n\n${boundNote.rawMarkdown.trim()}`);
+    }
+    if (quick) {
+      parts.push(`\n\n---\n\n## Imported Quick Notes\n\n${quick}`);
+    }
+    insertAtCursor(parts.join('\n') + '\n');
+    if (soundEnabled) playCyberSound('root');
+    useToastStore.getState().addToast({
+      type: 'success',
+      message: `Pulled Field Log into ${selectedMachine.name} writeup`,
+    });
+  };
+
+  // Insert Captured Credentials from Vault
+  const handleInsertVaultLoot = () => {
+    if (!selectedMachine) return;
+    const machineCreds = credentials.filter((c) => c.sourceMachineId === selectedMachine.id);
+    const pool = machineCreds.length > 0 ? machineCreds : credentials.slice(0, 10);
+    if (pool.length === 0) {
+      useToastStore.getState().addToast({
+        type: 'info',
+        message: 'No credentials in Vault yet. Use "+ Loot" to capture credentials first.',
+      });
+      return;
+    }
+    const rows = pool.map(
+      (c) => `| \`${c.username}\` | \`${c.secret}\` | ${c.type} | ${c.notes || selectedMachine.name} |`
+    );
+    const tableMd = `\n\n### Captured Credentials & Loot\n| Username | Secret / Hash | Type | Notes |\n| :--- | :--- | :--- | :--- |\n${rows.join('\n')}\n`;
+    insertAtCursor(tableMd);
+    if (soundEnabled) playCyberSound('root');
+    useToastStore.getState().addToast({
+      type: 'success',
+      message: `Inserted ${pool.length} credential(s) from Vault`,
+    });
+  };
+
+  // Handle Screenshot File Upload Button
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !selectedMachine || selectedMachine.isActive) return;
+    const machineId = selectedMachine.id;
+    void (async () => {
+      try {
+        const compressed = await compressToWebp(file);
+        const imageId = newImageId();
+        await putImage(profileId, imageId, compressed);
+        if (selectedMachineIdRef.current !== machineId) return;
+        insertAtCursor(`\n![screenshot](${IMAGE_URL_SCHEME}${imageId})\n`);
+        if (soundEnabled) playCyberSound('root');
+        useToastStore.getState().addToast({
+          type: 'success',
+          message: 'Screenshot compressed to WebP & embedded in writeup',
+        });
+      } catch (err) {
+        console.warn('Could not store uploaded image', err);
+      }
+    })();
+  };
+
   const labSummary = useMemo(
     () => (selectedMachine && !selectedMachine.isActive ? buildLabSummaryMarkdown(selectedMachine) : ''),
     [selectedMachine]
@@ -669,8 +967,6 @@ cat /root/root.txt
     if (soundEnabled) playCyberSound('root');
   };
 
-  // Pasted screenshots are compressed into the local image store and referenced by id, never inlined as base64.
-  // Text (or mixed text + image) pastes are left to the browser.
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = Array.from(e.clipboardData?.items ?? []);
     if (items.some((it) => it.kind === 'string' && it.type === 'text/plain')) return;
@@ -686,7 +982,6 @@ cat /root/root.txt
         const compressed = await compressToWebp(file);
         const imageId = newImageId();
         await putImage(profileId, imageId, compressed);
-        // The user may have switched machines while the image was being compressed.
         if (selectedMachineIdRef.current !== machineId) return;
         insertAtCursor(`![screenshot](${IMAGE_URL_SCHEME}${imageId})`, range);
       } catch (err) {
@@ -752,7 +1047,6 @@ cat /root/root.txt
     if (soundEnabled) playCyberSound('export');
   };
 
-
   const overflowItems: OverflowItem[] = [
     ...(hasUserNotes
       ? [
@@ -804,8 +1098,14 @@ cat /root/root.txt
   const toolbarBtn =
     'flex items-center gap-1.5 px-3 h-8 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]';
 
+  const miniToolBtn =
+    'inline-flex items-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-secondary hover:text-primary text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.97]';
+
+  const userPwned = Boolean(selectedMachine?.userPwnedAt);
+  const rootPwned = Boolean(selectedMachine?.rootPwnedAt);
+
   return (
-    <div className="space-y-4 w-full font-sans">
+    <div className="space-y-3 w-full font-sans">
       <PageHeader
         title="Writeup studio"
         description="Write in Markdown with a live preview. Exports to Obsidian and GitBook."
@@ -817,6 +1117,7 @@ cat /root/root.txt
               size="md"
               className="max-sm:h-11 max-sm:flex-1"
               onClick={handleDownloadHtml}
+              data-tour="writeup-export"
               title="Export a self-contained HTML writeup with one-click Print to PDF"
               iconLeft={<Globe className="w-3.5 h-3.5" />}
             >
@@ -883,38 +1184,137 @@ cat /root/root.txt
                 type="button"
                 onClick={handleDownloadMarkdown}
                 className={toolbarBtn}
-              title="Export raw Markdown (.md) for Obsidian or GitBook"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export .md</span>
-            </button>
-          </>
+                title="Export raw Markdown (.md) for Obsidian or GitBook"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export .md</span>
+              </button>
+            </>
           )
         }
         overflow={selectedMachine?.isActive ? [] : overflowItems}
       >
-        {/* Machine selector + official walkthrough shortcut: one row */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 max-sm:py-2 rounded-lg border border-subtle max-sm:w-full">
-            <span className="text-xs font-medium text-muted flex-shrink-0">Target</span>
-            <CyberSelect
-              value={selectedMachine?.id || ''}
-              onChange={setWriteupMachineId}
-              options={retiredMachines.map((m) => ({
-                value: m.id,
-                label: `${m.name} (${m.platform})`,
-                icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
-                description: `${m.ip} · ${m.difficulty}`,
-              }))}
-              searchable
-              searchPlaceholder="Search box by name, IP..."
-              variant="transparent"
-              size="xs"
-              triggerClassName="py-0 px-1 border-none bg-transparent hover:bg-transparent max-w-[210px] max-sm:max-w-none"
-              soundEnabled={soundEnabled}
-            />
+        {/* Machine selector + Target Intelligence & Writeup Readiness Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
+          <div className="flex flex-wrap items-center gap-2">
+            <div data-tour="writeup-target" className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 max-sm:py-2 rounded-lg border border-subtle max-sm:w-full">
+              <span className="text-xs font-medium text-muted flex-shrink-0">Target</span>
+              <CyberSelect
+                value={selectedMachine?.id || ''}
+                onChange={(v) => {
+                  setWriteupMachineId(v);
+                  navigate(`/writeup/${encodeURIComponent(v)}`);
+                }}
+                options={retiredMachines.map((m) => ({
+                  value: m.id,
+                  label: `${m.name} (${m.platform})`,
+                  icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
+                  description: `${m.ip} · ${m.difficulty}`,
+                }))}
+                searchable
+                searchPlaceholder="Search box by name, IP..."
+                variant="transparent"
+                size="xs"
+                triggerClassName="py-0 px-1 border-none bg-transparent hover:bg-transparent max-w-[210px] max-sm:max-w-none"
+                soundEnabled={soundEnabled}
+              />
+            </div>
+
+            {selectedMachine && !selectedMachine.isActive && (
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="px-2 py-1 rounded-md border border-subtle bg-surface-sunken font-mono text-secondary">
+                  {selectedMachine.ip || '10.10.x.x'}
+                </span>
+                <span className="px-2 py-1 rounded-md border border-subtle bg-surface-sunken text-secondary">
+                  {selectedMachine.os} · {selectedMachine.difficulty}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => toggleUserFlag(selectedMachine.id)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border font-mono text-[10px] font-semibold cursor-pointer transition-colors ${
+                    userPwned
+                      ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                      : 'border-subtle bg-surface-sunken text-muted hover:text-primary'
+                  }`}
+                  title="Toggle user.txt flag"
+                >
+                  <Flag className="w-2.5 h-2.5" />
+                  <span>user.txt</span>
+                  {userPwned && <Check className="w-2.5 h-2.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleRootFlag(selectedMachine.id)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border font-mono text-[10px] font-semibold cursor-pointer transition-colors ${
+                    rootPwned
+                      ? 'border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg'
+                      : 'border-subtle bg-surface-sunken text-muted hover:text-primary'
+                  }`}
+                  title="Toggle root.txt flag"
+                >
+                  <Crown className="w-2.5 h-2.5" />
+                  <span>root.txt</span>
+                  {rootPwned && <Check className="w-2.5 h-2.5" />}
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* Writeup Readiness Meter & Layout Mode Switcher */}
+          {selectedMachine && !selectedMachine.isActive && (
+            <div data-testid="writeup-readiness-bar" className="flex flex-wrap items-center gap-2 ml-auto">
+              <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-subtle bg-surface-sunken text-[10px]">
+                <span className="font-semibold text-muted uppercase tracking-wider">Readiness</span>
+                <span className={`font-mono font-bold ${readiness.score >= 80 ? 'text-callout-success-fg' : readiness.score >= 40 ? 'text-callout-warn-fg' : 'text-accent'}`}>
+                  {readiness.score}%
+                </span>
+                <div className="flex items-center gap-1 ml-1">
+                  {readiness.checks.map((c) => (
+                    <span
+                      key={c.id}
+                      className={`px-1.5 py-0.5 rounded border text-[9px] font-medium ${
+                        c.ok
+                          ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                          : 'border-subtle bg-surface-card text-muted'
+                      }`}
+                    >
+                      {c.ok ? '✓ ' : ''}{c.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="inline-flex items-center rounded-lg border border-subtle bg-surface-sunken p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setStudioLayout('split')}
+                  className={`px-2 py-0.5 rounded-md font-medium cursor-pointer transition-colors ${
+                    studioLayout === 'split' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  Split
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudioLayout('editor')}
+                  className={`px-2 py-0.5 rounded-md font-medium cursor-pointer transition-colors ${
+                    studioLayout === 'editor' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudioLayout('preview')}
+                  className={`px-2 py-0.5 rounded-md font-medium cursor-pointer transition-colors ${
+                    studioLayout === 'preview' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  Preview
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </PageHeader>
 
@@ -947,7 +1347,6 @@ cat /root/root.txt
             </button>
           </div>
 
-          {/* Quick Search Bar */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-muted absolute left-3 top-2.5" />
             <input
@@ -962,7 +1361,6 @@ cat /root/root.txt
             />
           </div>
 
-          {/* Matching Notes Grid */}
           <div tabIndex={0} role="region" aria-label="Matching notes" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
             {matchingNotes.length === 0 ? (
               <div className="col-span-full p-4 text-center text-xs text-muted">
@@ -990,7 +1388,7 @@ cat /root/root.txt
 
                   {note.commands && note.commands.length > 0 && (
                     <div className="p-1.5 rounded bg-surface-inverse border border-inverse font-mono text-[11px] text-on-inverse truncate">
-                      {interpolateCommand(note.commands[0], { ...globalVars, targetIp: selectedMachine?.ip || globalVars.targetIp })}
+                      {interpolateCommand(note.commands[0], { ...globalVars, targetIp: selectedMachine?.ip || '' })}
                     </div>
                   )}
 
@@ -1029,36 +1427,214 @@ cat /root/root.txt
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch lg:min-h-[calc(100vh-250px)]">
+          <div className={`grid grid-cols-1 ${studioLayout === 'split' ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-4 items-stretch lg:min-h-[calc(100vh-250px)]`}>
             
-            {/* Left Pane: Raw Markdown Editor */}
-            <div className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden" style={{ contain: 'content' }}>
-              <div className="flex items-center justify-between border-b border-subtle px-4 py-2.5 bg-surface-sunken text-xs">
-                <span className="font-semibold text-primary flex items-center gap-2">
-                  <Code className="w-4 h-4 text-muted" /> Markdown
-                </span>
-                <span className="text-[11px] text-muted font-mono tabular-nums">
-                  {telemetry.chars} chars · {telemetry.lines} lines
-                </span>
+            {/* Left Pane: Raw Markdown Editor + Tactical Authoring Toolbar */}
+            {studioLayout !== 'preview' && (
+              <div data-tour="writeup-editor" className="flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden" style={{ contain: 'content' }}>
+                <div className="flex items-center justify-between border-b border-subtle px-4 py-2 bg-surface-sunken text-xs">
+                  <span className="font-semibold text-primary flex items-center gap-2">
+                    <Code className="w-4 h-4 text-accent" /> Markdown
+                  </span>
+                  <span className="text-[11px] text-muted font-mono tabular-nums">
+                    {telemetry.chars} chars · {telemetry.words} words · {telemetry.lines} lines
+                  </span>
+                </div>
+
+                {/* Tactical Writeup Authoring Toolbar */}
+                <div
+                  data-testid="writeup-editor-toolbar"
+                  className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 bg-surface-sunken/70 border-b border-subtle text-[11px]"
+                >
+                  <button type="button" onClick={() => insertAtCursor('\n## Section Heading\n')} className={miniToolBtn} title="Insert H2 Heading">
+                    <Heading2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => insertAtCursor('\n### Subheading\n')} className={miniToolBtn} title="Insert H3 Heading">
+                    <Heading3 className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => insertAtCursor('**bold**')} className={miniToolBtn} title="Bold">
+                    <Bold className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => insertAtCursor('\n```bash\n# Command\n```\n')} className={miniToolBtn} title="Insert Bash Code Block">
+                    <Terminal className="w-3.5 h-3.5 text-accent" />
+                    <span>Bash</span>
+                  </button>
+                  <button type="button" onClick={() => insertAtCursor('\n| Port | Service | Version | Notes |\n| :--- | :--- | :--- | :--- |\n| 80/tcp | http | Apache | Enumerate |\n')} className={miniToolBtn} title="Insert Markdown Table">
+                    <Table className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => insertAtCursor('\n- [ ] Task item\n')} className={miniToolBtn} title="Insert Checklist">
+                    <CheckSquare className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => insertAtCursor('\n> [!NOTE] Tactical Observation\n> Detail critical finding here\n')} className={miniToolBtn} title="Insert Obsidian Callout">
+                    <AlertTriangle className="w-3.5 h-3.5 text-callout-warn-fg" />
+                    <span>Callout</span>
+                  </button>
+
+                  <div className="w-px h-3.5 bg-subtle mx-0.5" />
+
+                  {/* Upload Screenshot Button */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="upload-screenshot-btn"
+                    className={miniToolBtn}
+                    title="Upload & compress screenshot (or Ctrl+V paste in editor)"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-accent" />
+                    <span>Screenshot</span>
+                  </button>
+
+                  {/* Pull Field Log from Notes Workspace */}
+                  <button
+                    type="button"
+                    onClick={handlePullFieldLog}
+                    data-testid="pull-field-log-btn"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/40 bg-accent-muted text-accent text-[10px] font-semibold hover:bg-surface-hover cursor-pointer"
+                    title="Import Field Log note & Quick Notes for this target"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    <span>Pull Field Log</span>
+                  </button>
+
+                  {/* Insert Vault Loot Table */}
+                  <button
+                    type="button"
+                    onClick={handleInsertVaultLoot}
+                    data-testid="insert-vault-loot-btn"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg text-[10px] font-semibold hover:bg-surface-hover cursor-pointer"
+                    title="Insert captured credentials from Vault as a Markdown table"
+                  >
+                    <KeyRound className="w-3 h-3" />
+                    <span>Vault Loot</span>
+                  </button>
+
+                  {/* Parse Nmap Popover */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setNmapPopoverOpen((p) => !p)}
+                      data-testid="writeup-nmap-btn"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-callout-success-border bg-callout-success-bg text-callout-success-fg text-[10px] font-semibold hover:bg-surface-hover cursor-pointer"
+                      title="Paste raw Nmap output and convert to Markdown table"
+                    >
+                      <Radar className="w-3 h-3" />
+                      <span>Parse Nmap</span>
+                    </button>
+                    {nmapPopoverOpen && (
+                      <div className="absolute left-0 top-full mt-1 w-72 p-2.5 rounded-lg bg-surface-card border border-strong shadow-2xl z-50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-callout-success-fg uppercase">Paste Raw Nmap</span>
+                          <button type="button" onClick={() => setNmapPopoverOpen(false)} className="text-muted hover:text-primary cursor-pointer">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <textarea
+                          value={rawNmapText}
+                          onChange={(e) => setRawNmapText(e.target.value)}
+                          placeholder={"22/tcp open ssh OpenSSH 8.9\n80/tcp open http Apache 2.4"}
+                          rows={4}
+                          className="w-full p-2 rounded border border-subtle bg-surface-sunken font-mono text-[10px] text-primary"
+                        />
+                        <button
+                          type="button"
+                          disabled={!rawNmapText.trim()}
+                          onClick={() => {
+                            const rows: string[] = [];
+                            for (const line of rawNmapText.split(/\r?\n/)) {
+                              const m = line.trim().match(/^(\d+)\/(tcp|udp)\s+(open|filtered)\s+(\S+)(?:\s+(.*))?$/i);
+                              if (m) {
+                                rows.push(`| ${m[1]}/${m[2]} | ${m[4]} | ${(m[5] || '-').trim()} | Enumerate banner & CVEs |`);
+                              }
+                            }
+                            if (rows.length > 0) {
+                              insertAtCursor(`\n### Nmap Scan Results\n| Port | Service | Version | Notes |\n| :--- | :--- | :--- | :--- |\n${rows.join('\n')}\n`);
+                              setRawNmapText('');
+                              setNmapPopoverOpen(false);
+                              useToastStore.getState().addToast({ type: 'success', message: `Inserted ${rows.length} ports into writeup` });
+                            }
+                          }}
+                          className="w-full h-7 rounded bg-callout-success-bg border border-callout-success-border text-callout-success-fg font-semibold text-[11px] cursor-pointer disabled:opacity-40"
+                        >
+                          Convert & Insert
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Cheatsheet Snippets Popover */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setSnippetPopoverOpen((p) => !p)}
+                      data-testid="writeup-snippets-btn"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-subtle bg-surface-card text-secondary hover:text-primary text-[10px] font-semibold cursor-pointer"
+                      title="Drop command from 85+ Cheatsheets"
+                    >
+                      <Sparkles className="w-3 h-3 text-accent" />
+                      <span>Snippets</span>
+                    </button>
+                    {snippetPopoverOpen && (
+                      <div className="absolute right-0 top-full mt-1 w-72 p-2 rounded-lg bg-surface-card border border-strong shadow-2xl z-50 space-y-1.5">
+                        <input
+                          type="text"
+                          value={snippetQuery}
+                          onChange={(e) => setSnippetQuery(e.target.value)}
+                          placeholder="Search 85+ commands..."
+                          autoFocus
+                          className="w-full h-7 px-2 rounded border border-subtle bg-surface-sunken text-[11px] text-primary"
+                        />
+                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                          {filteredSnippets.map((cmd) => (
+                            <button
+                              key={cmd.id}
+                              type="button"
+                              onClick={() => {
+                                const resolved = interpolateCommand(cmd.commandTemplate, {
+                                  ...globalVars,
+                                  targetIp: selectedMachine?.ip || '',
+                                });
+                                insertAtCursor(`\n\`\`\`bash\n# ${cmd.title}\n${resolved}\n\`\`\`\n`);
+                                setSnippetPopoverOpen(false);
+                              }}
+                              className="w-full px-2 py-1 rounded text-left hover:bg-surface-sunken flex flex-col cursor-pointer"
+                            >
+                              <span className="font-semibold text-accent text-[11px] truncate">{cmd.title}</span>
+                              <code className="text-[10px] text-secondary font-mono truncate">{cmd.commandTemplate}</code>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <textarea
+                  ref={editorRef}
+                  id="writeup-markdown-editor"
+                  name="writeup-markdown-editor"
+                  aria-label="Markdown report editor"
+                  value={editorContent}
+                  onChange={handleEditorChange}
+                  onPaste={handlePaste}
+                  onBlur={flushDebouncedSave}
+                  placeholder="Write your penetration testing report or paste notes here..."
+                  className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
+                  spellCheck={false}
+                />
               </div>
+            )}
 
-              <textarea
-                ref={editorRef}
-                id="writeup-markdown-editor"
-                name="writeup-markdown-editor"
-                aria-label="Markdown report editor"
-                value={editorContent}
-                onChange={handleEditorChange}
-                onPaste={handlePaste}
-                onBlur={flushDebouncedSave}
-                placeholder="Write your penetration testing report or paste notes here..."
-                className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
-                spellCheck={false}
-              />
-            </div>
-
-            {/* Right Pane: Live Rendered Preview (Deferred AST tokenization) */}
-            <DeferredMarkdownPreviewPane content={editorContent} />
+            {/* Right Pane: Live Rendered Preview (with Tables, Callouts, Checklists & Copyable Code Blocks) */}
+            {studioLayout !== 'editor' && (
+              <DeferredMarkdownPreviewPane content={editorContent} />
+            )}
 
           </div>
 

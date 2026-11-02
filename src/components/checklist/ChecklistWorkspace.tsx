@@ -25,6 +25,7 @@ import { ChecklistItemStatus } from '../../types/checklist';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { generateApplicablePhases } from '../../data/methodologyFramework';
+import { hiddenItemsMessage } from '../../utils/hiddenItems';
 import { detectAndParseScan } from '../../utils/scanParserUtils';
 import { Modal } from '../common/Modal';
 import { computeChecklistProgress } from '../../utils/checklistProgress';
@@ -79,6 +80,8 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   const applicablePhases = useMemo(() => {
     return generateApplicablePhases(machine, openPorts);
   }, [machine, openPorts]);
+
+  const hiddenNote = useMemo(() => hiddenItemsMessage(applicablePhases, machine.os), [applicablePhases, machine.os]);
 
   // Rabbit hole status evaluation
   const rabbitHoleEval = useMemo(() => {
@@ -303,6 +306,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
             <span>Pending: <strong className="text-callout-warn-fg">{stats.activeTotal - stats.completed - stats.inProgress}</strong></span>
             <span>N/A: <strong className="text-muted">{stats.na}</strong></span>
           </div>
+          {hiddenNote && <p className="text-[10px] text-muted pt-0.5">{hiddenNote}</p>}
         </div>
 
       </div>

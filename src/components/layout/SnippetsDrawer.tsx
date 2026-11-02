@@ -133,7 +133,7 @@ export const SnippetsDrawer: React.FC = () => {
 
           {/* Search and auto-bound variables */}
           <div className="p-3 border-b border-inverse space-y-2">
-            <div className="relative">
+            <div data-tour="drawer-search" className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-on-inverse-muted" />
               <input
                 ref={searchInputRef}
@@ -154,7 +154,7 @@ export const SnippetsDrawer: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-[11px] text-on-inverse-muted overflow-x-auto pb-0.5">
+            <div data-tour="drawer-values" className="flex items-center gap-2 text-[11px] text-on-inverse-muted overflow-x-auto pb-0.5">
               <span>Auto-bound</span>
               <span className="px-1.5 py-0.5 rounded bg-surface-inverse-elevated border border-inverse text-on-inverse-muted">
                 LHOST <strong className="font-mono tabular-nums font-medium text-on-inverse">{globalVars.lhost || '10.10.14.X'}</strong>
@@ -169,7 +169,7 @@ export const SnippetsDrawer: React.FC = () => {
           </div>
 
           {/* Category pills */}
-          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-inverse overflow-x-auto text-xs scrollbar-none">
+          <div data-tour="drawer-categories" className="flex items-center gap-1.5 px-3 py-2 border-b border-inverse overflow-x-auto text-xs scrollbar-none">
             {[
               { id: 'all', label: `All (${cheatsheets.length})` },
               { id: 'starred', label: 'Starred' },
@@ -191,7 +191,7 @@ export const SnippetsDrawer: React.FC = () => {
           </div>
 
           {/* Snippet list */}
-          <div className="p-3 space-y-2.5 overflow-y-auto flex-1">
+          <div data-tour="drawer-list" className="p-3 space-y-2.5 overflow-y-auto flex-1">
             {filteredCommands.map((cmd) => {
               // Cheatsheet content: legacy mode ({ip} = TARGET). Unresolved-token
               // reporting below comes from this same call, so the modes always match.

@@ -32,6 +32,7 @@ import {
 } from '../../data/cheatsheetsData';
 import { interpolateCommand, playCyberSound } from '../../utils/helpers';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import { useSnippetTotals } from '../../hooks/useSnippetTotals';
 import {
   CptsNoteEntry,
   CptsTreeNode,
@@ -49,7 +50,7 @@ import { ObsidianNoteViewer } from './ObsidianNoteViewer';
 import { SplitOrientation } from '../../types/workspace';
 import { CptsTreeItem } from './CptsTreeItem';
 import { NewCptsNoteModal } from './NewCptsNoteModal';
-import { ReverseShellGenerator } from './ReverseShellGenerator';
+import { YourDetailsCard } from './YourDetailsCard';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { PageHeader } from '../common/PageHeader';
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
@@ -80,7 +81,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const {
     cheatsheets,
     globalVars,
-    setGlobalVars,
     addCustomCommand,
     deleteCustomCommand,
     toggleStarCommand,
@@ -97,7 +97,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     useShallow((s) => ({
       cheatsheets: s.cheatsheets,
       globalVars: s.globalVars,
-      setGlobalVars: s.setGlobalVars,
       addCustomCommand: s.addCustomCommand,
       deleteCustomCommand: s.deleteCustomCommand,
       toggleStarCommand: s.toggleStarCommand,
@@ -326,6 +325,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     const deletedSet = new Set(deletedNoteIds);
     return mergeUserNotePools(customNotes, userNotes).filter((n) => !deletedSet.has(n.id));
   }, [deletedNoteIds, customNotes, userNotes]);
+  const totals = useSnippetTotals();
 
   const activeObsidianNote = useMemo(() => {
     if (!activeObsidianNoteId) return null;
@@ -430,11 +430,16 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
 
     const catParam = params.get('category') || params.get('cat') || params.get('tab');
+    if (catParam === 'revshell') {
+      // The generator moved to its own section; old deep links land there.
+      navigate('/reverse-shell', { replace: true });
+      return;
+    }
     if (catParam) {
       setSelectedCategory(catParam);
       setViewMode('tactical');
     }
-  }, [defaultMode, location.pathname, location.search, allActiveNotes, setActiveObsidianNote]);
+  }, [defaultMode, location.pathname, location.search, allActiveNotes, setActiveObsidianNote, navigate]);
 
   // /notes?new=1 (from the dock's empty state) opens the new-note modal once, then drops the param.
   useEffect(() => {
@@ -492,7 +497,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         if (!cmd.isStarred) return false;
       } else if (selectedCategory === 'custom') {
         if (!cmd.isCustom) return false;
-      } else if (selectedCategory !== 'all' && selectedCategory !== 'revshell') {
+      } else if (selectedCategory !== 'all') {
         if (cmd.category !== selectedCategory) return false;
       }
 
@@ -1817,21 +1822,19 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
   const switchBase =
     'inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11';
-  const varInputBase =
-    'h-9 w-full rounded-md border border-subtle bg-surface-sunken px-2 font-mono text-xs tabular-nums text-primary transition-colors focus:border-accent focus:outline-none sm:h-8';
   const catBase =
     'flex min-h-11 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-left text-[13px] transition-colors select-none cursor-pointer lg:min-h-8 lg:w-full';
   const catOn = 'border-accent bg-accent-muted font-medium text-primary lg:border-transparent lg:bg-surface-hover';
   const catOff = 'border-subtle text-secondary hover:bg-surface-hover hover:text-primary lg:border-transparent';
 
   return (
-    <div className={`w-full ${viewMode === 'cpts-manual' ? 'space-y-3 pb-2' : 'space-y-5 pb-12'} text-sm`}>
+    <div className={`w-full ${viewMode === 'cpts-manual' ? 'space-y-3 pb-2' : 'space-y-6 pb-12'} text-sm`}>
       <PageHeader
         title={viewMode === 'cpts-manual' ? 'Field manual' : 'Snippets & payloads'}
         icon={viewMode === 'cpts-manual' ? <BookOpen /> : <Terminal />}
         description={
           viewMode === 'tactical'
-            ? 'Commands and reverse shells with your LHOST, LPORT and target filled in.'
+            ? 'Ready-made commands for common hacking jobs, with your own details filled in.'
             : undefined
         }
         className={viewMode === 'cpts-manual' ? 'mb-1' : ''}
@@ -1842,6 +1845,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               size="md"
               iconLeft={<Plus className="h-3.5 w-3.5" />}
               onClick={() => setIsNewModalOpen(true)}
+              data-tour="snippets-add"
               className="[@media(pointer:coarse)]:h-11"
             >
               Add snippet
@@ -1852,6 +1856,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               size="md"
               iconLeft={<Upload className="h-3.5 w-3.5" />}
               title="Import or manage your own notes (stored only in this browser)"
+              data-tour="notes-page-import"
               onClick={() => {
                 if (soundEnabled) playCyberSound('click');
                 setNotesImportModalOpen(true);
@@ -1898,6 +1903,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           <div className="flex min-w-max items-center gap-3 sm:min-w-0 sm:flex-wrap">
             <div
               role="group"
+              data-tour="snippets-library"
               aria-label="Library"
               className="inline-flex items-center gap-0.5 rounded-lg border border-subtle bg-surface-sunken p-0.5"
             >
@@ -1991,10 +1997,10 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           >
             <EmptyState
               icon={BookOpen}
-              title="No notes yet"
-              description="Import your own Obsidian vault or markdown notes, or write a new note."
+              title="Your field manual is empty"
+              description="It shows your own Markdown notes, for example an Obsidian vault. You need to import them first."
               action={{
-                label: 'Import notes',
+                label: 'Import your notes',
                 icon: Upload,
                 onClick: () => {
                   if (soundEnabled) playCyberSound('click');
@@ -2015,80 +2021,27 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         )
       ) : (
         <>
-          {/* Featured: reverse shell generator */}
-          <div className="flex flex-col gap-3 rounded-lg border border-accent bg-accent-muted p-4 sm:flex-row sm:items-center sm:gap-4">
-            <Terminal className="h-6 w-6 flex-shrink-0 text-accent" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-primary">Reverse Shell Generator</h3>
-              <p className="text-xs text-secondary">Set LHOST, LPORT and target once — copy a ready-to-paste payload.</p>
-            </div>
-            <CyberButton
-              variant="primary"
-              size="md"
-              onClick={() => {
-                if (soundEnabled) playCyberSound('click');
-                setSelectedCategory('revshell');
-              }}
-              className="w-full sm:w-auto [@media(pointer:coarse)]:h-11"
-            >
-              Open generator
-            </CyberButton>
-          </div>
-
-          {/* Parameter injection: LHOST / LPORT / target */}
-          <div className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-end gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
-            <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lhost-input">
-              <span>LHOST</span>
-              <input
-                type="text"
-                id="cheatsheet-lhost-input"
-                name="cheatsheet-lhost"
-                aria-label="Attacker Host LHOST"
-                value={globalVars.lhost}
-                onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-                className={`${varInputBase} sm:w-32`}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-lport-input">
-              <span>LPORT</span>
-              <input
-                type="text"
-                id="cheatsheet-lport-input"
-                name="cheatsheet-lport"
-                aria-label="Attacker Port LPORT"
-                value={globalVars.lport}
-                onChange={(e) => setGlobalVars({ lport: e.target.value })}
-                className={`${varInputBase} sm:w-20`}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-xs text-muted sm:flex-row sm:items-center sm:gap-2" htmlFor="cheatsheet-target-input">
-              <span>TARGET</span>
-              <input
-                type="text"
-                id="cheatsheet-target-input"
-                name="cheatsheet-target"
-                aria-label="Target IP Address"
-                value={globalVars.targetIp}
-                onChange={(e) => setGlobalVars({ targetIp: e.target.value })}
-                className={`${varInputBase} sm:w-32`}
-              />
-            </label>
-          </div>
+          {/* LHOST / LPORT / target, shared with the Reverse shells page */}
+          <YourDetailsCard tourAnchor="snippets-params" />
 
           {/* Main workspace: categories + commands panel */}
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-4">
 
             {/* Left column: categories */}
             <div className="space-y-1">
+              {totals.notes > 0 && (
+                <p data-testid="snippets-scope-note" className="px-2 pb-1 text-xs text-muted">
+                  {totals.snippets} snippets here. The sidebar badge also counts your {totals.notes}{' '}
+                  {totals.notes === 1 ? 'note' : 'notes'} ({totals.total} in total).
+                </p>
+              )}
               <div className="items-center justify-between px-2 py-1 text-xs font-medium text-muted select-none hidden lg:flex">
                 <span>Categories</span>
                 <span className="tabular-nums">{cheatsheets.length}</span>
               </div>
 
               <div className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0 max-lg:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-lg:pr-14 lg:[mask-image:none]">
-                {CHEATSHEET_CATEGORIES.map((cat) => {
+                {CHEATSHEET_CATEGORIES.filter((cat) => cat.id !== 'revshell').map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
                     <button
@@ -2120,7 +2073,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               
               {/* SEARCH */}
               <div className="flex items-center gap-3">
-                <div className="relative flex-1">
+                <div data-tour="snippets-search" className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                   <input
                     type="text"
@@ -2144,11 +2097,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   )}
                 </div>
               </div>
-
-              {/* DEDICATED REVERSE SHELL GENERATOR & PENTESTMONKEY ARSENAL */}
-              {(selectedCategory === 'all' || selectedCategory === 'revshell') && !searchQuery && (
-                <ReverseShellGenerator />
-              )}
 
               {/* COMMAND SNIPPETS LIST with Scroll Entrance */}
               <div className="space-y-3">

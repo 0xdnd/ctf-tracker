@@ -1,6 +1,6 @@
 // /htb-vs-tryhackme/
-// The catalogue holds no Proving Grounds machines, so this compares Hack The Box and TryHackMe only (PG is mentioned, not counted).
-// Every number comes from model.machines at build time.
+// The catalogue has four sources (HTB, THM, Proving Grounds, VulnHub); this page compares only HTB and THM, the machines of the static directory that have a full entry (the directory also lists the PG and VulnHub rows without pages).
+// Every number comes from model.machines and model.catalogCounts at build time.
 const PATH = '/htb-vs-tryhackme/';
 const DIFF_HARD = ['Hard', 'Insane'];
 const AD_TAG = /active[ -]?directory|kerberos|bloodhound|dcsync|domain controller|domain admin|ad cs|adcs/i;
@@ -13,14 +13,16 @@ function build({ model, esc }) {
   const win = (m) => m.os === 'Windows';
   const hard = (m) => DIFF_HARD.includes(m.difficulty);
   const ad = (m) => (m.tags || []).some((t) => AD_TAG.test(t));
-  const pg = all.filter((m) => /proving/i.test(m.platform)).length;
   const plats = ['HTB', 'THM'];
   const row = (label, f) => `<tr><td>${esc(label)}</td>${plats.map((p) => `<td>${by(p, f)}</td>`).join('')}</tr>`;
   const H = (f) => by('HTB', f);
   const T = (f) => by('THM', f);
-  const total = all.length.toLocaleString('en-US');
+  const total = model.catalogCounts.htbThm.toLocaleString('en-US');
+  const catalogTotal = model.catalogCounts.ctf.toLocaleString('en-US');
+  // Per-source split from the same helper as /about/ (required here, not at load time, so the guide modules stay independent of it).
+  const pgCount = require('../about.cjs').sourceCounts().pg.toLocaleString('en-US');
 
-  const table = `<table><thead><tr><th>In the ZeroBox catalogue</th><th>Hack The Box</th><th>TryHackMe</th></tr></thead><tbody>
+  const table = `<table><thead><tr><th>In the machine directory</th><th>Hack The Box</th><th>TryHackMe</th></tr></thead><tbody>
 ${row('Machines', () => true)}
 ${row('Linux', (m) => m.os === 'Linux')}
 ${row('Windows', win)}
@@ -57,9 +59,9 @@ ${compare}`;
   const body = `<h2>What each platform is</h2>
 <p><strong>Hack The Box (HTB)</strong> hosts machines and labs that you attack as standalone targets, usually with no built-in walkthrough. You find the foothold and the escalation yourself, which is closer to how a practical exam feels.</p>
 <p><strong>TryHackMe (THM)</strong> is built around guided rooms. A room typically walks through a topic in tasks with questions to answer, and some rooms are full challenge machines. That structure makes it easier to learn a concept from scratch.</p>
-<p><strong>Proving Grounds (PG)</strong> is OffSec's own practice platform. The ZeroBox catalogue ${pg === 0 ? "holds no Proving Grounds machines" : `holds ${pg} Proving Grounds machines`}, so this page compares only Hack The Box and TryHackMe in numbers. The community TJ Null spreadsheet does list Proving Grounds boxes; the <a href="/tj-null-list/">TJ Null list</a> page explains how it overlaps with this catalogue.</p>
+<p><strong>Proving Grounds (PG)</strong> is OffSec's own practice platform, and the catalogue holds ${pgCount} Proving Grounds entries. The full ZeroBox catalogue has four sources, Hack The Box, TryHackMe, Proving Grounds and VulnHub (${catalogTotal} entries in all), but this page compares only Hack The Box and TryHackMe, ${total} machines in all. The <a href="/machines/">machine directory</a> lists those ${total} and also the Proving Grounds and VulnHub entries, without pages, ${catalogTotal} in all. The community TJ Null spreadsheet does list Proving Grounds boxes; the <a href="/tj-null-list/">TJ Null list</a> page explains how it overlaps with this catalogue.</p>
 <h2>The numbers</h2>
-<p>Counts come straight from the catalogue and change when it does. A certification tag means ZeroBox tags the machine for that track, which is not an official endorsement by the platform or the certification body.</p>
+<p>Counts come straight from the machine directory data and change when it does. A certification tag means ZeroBox tags the machine for that track, which is not an official endorsement by the platform or the certification body.</p>
 ${table}
 <h2>Reading the table</h2>
 <ul>
@@ -83,7 +85,7 @@ ${table}
     title: 'HTB vs TryHackMe: Which for OSCP, Beginners, AD?',
     description: `HTB vs TryHackMe compared with catalogue data: ${H()} HTB and ${T()} THM machines by OS, difficulty and OSCP tags, and which to use. Free.`,
     h1: 'HTB vs TryHackMe: which platform for OSCP prep, beginners and Active Directory',
-    lead: esc(`Hack The Box and TryHackMe are the two platforms behind the ${total} machines in the ZeroBox catalogue. This page compares them using that data, then says which fits OSCP preparation, a first month of practice and Active Directory work.`),
+    lead: esc(`Hack The Box and TryHackMe are the two platforms behind ${total} of the ${catalogTotal} machines in the machine directory, which also lists the Proving Grounds and VulnHub entries of the ZeroBox catalogue without pages. This page compares them using that data, then says which fits OSCP preparation, a first month of practice and Active Directory work.`),
     directAnswer,
     body,
     topCta: { body: 'Track HTB and THM machines together in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' },

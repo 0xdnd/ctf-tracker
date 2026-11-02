@@ -252,7 +252,7 @@ describe('Adversarial Challenger Verification: Interactive Workspaces & Exporter
       expect(useCtfStore.getState().graphNodePositions['box-01']).toEqual(initialPos);
 
       // Verify that sub-threshold release cleanly selected the node (flyout header visible)
-      expect(screen.getByText('Engage Target')).toBeInTheDocument();
+      expect(screen.getByText('Set as active machine')).toBeInTheDocument();
     });
 
     it('activates dragging when movement reaches or exceeds 4px (dx=4, dy=0) and persists coordinates on release', () => {

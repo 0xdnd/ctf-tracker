@@ -3,20 +3,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { stripTrailingSlash } from '../../utils/pathUtils';
-import { 
-  Crosshair, 
-  Compass, 
-  Terminal, 
-  FileText, 
-  Zap, 
-  Menu, 
-  X, 
-  BarChart3, 
-  GraduationCap, 
-  Volume2, 
-  VolumeX, 
-  Database, 
-  Plus, 
+import {
+  Crosshair,
+  Zap,
+  Menu,
+  X,
+  Volume2,
+  VolumeX,
+  Database,
+  Plus,
   Search,
   Server,
   Copy,
@@ -27,9 +22,17 @@ import {
   Scale,
   Settings,
   User,
-  BookOpen
+  KeyRound,
+  Route,
+  SquareTerminal,
+  Code,
+  NotebookPen,
+  Timer,
+  NotebookText,
+  Compass
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import { countDueReviews } from '../../utils/spacedRepetition';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
@@ -37,6 +40,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../../store/useAuthStore';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { CyberLogo } from '../common/CyberLogo';
+import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
 
@@ -162,7 +166,7 @@ export const MobileNav: React.FC = () => {
   return (
     <>
       {/* Fixed mobile bottom navigation (screens < 768px) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-card border-t border-subtle px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] font-sans">
+      <nav data-tour="sidebar-nav" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-card border-t border-subtle px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] font-sans">
         <div className="flex items-center justify-around">
           {/* Targets */}
           <button
@@ -181,7 +185,7 @@ export const MobileNav: React.FC = () => {
             aria-current={location.pathname.startsWith('/methodology') ? 'page' : undefined}
             className={`${tabBase} ${tabState(location.pathname.startsWith('/methodology'))}`}
           >
-            <Compass className="w-4 h-4" />
+            <Route className="w-4 h-4" />
             <span className="text-[11px] mt-0.5">Method</span>
             {location.pathname.startsWith('/methodology') && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
@@ -205,8 +209,8 @@ export const MobileNav: React.FC = () => {
             aria-current={location.pathname.startsWith('/cheatsheet') ? 'page' : undefined}
             className={`${tabBase} ${tabState(location.pathname.startsWith('/cheatsheet'))}`}
           >
-            <Terminal className="w-4 h-4" />
-            <span className="text-[11px] mt-0.5">Cheats</span>
+            <Code className="w-4 h-4" />
+            <span className="text-[11px] mt-0.5">Snippets</span>
             {location.pathname.startsWith('/cheatsheet') && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
 
@@ -219,7 +223,7 @@ export const MobileNav: React.FC = () => {
             className={`${tabBase} ${tabState(isNotesOpen)}`}
           >
             <div className="relative">
-              <BookOpen className="w-4 h-4" />
+              <NotebookText className="w-4 h-4" />
               {openNotesCount > 0 && (
                 <span aria-label={`${openNotesCount} open`} className="absolute -top-1.5 -right-2.5 min-w-[14px] text-center text-[10px] leading-[14px] px-1 rounded-full bg-accent text-on-accent font-medium tabular-nums">
                   {openNotesCount}
@@ -403,8 +407,19 @@ export const MobileNav: React.FC = () => {
                     className={`${rowBase} ${rowState(location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot'))}`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Database className={iconCls} />
+                      <KeyRound className={iconCls} />
                       <span>Vault</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
+                  </button>
+
+                  <button
+                    onClick={() => handleNavClick('/reverse-shell', 'revshell')}
+                    className={`${rowBase} ${rowState(location.pathname.startsWith('/reverse-shell'))}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <SquareTerminal className={iconCls} />
+                      <span>Reverse Shells</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
@@ -414,7 +429,7 @@ export const MobileNav: React.FC = () => {
                     className={`${rowBase} ${rowState(location.pathname.startsWith('/writeup'))}`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <FileText className={iconCls} />
+                      <NotebookPen className={iconCls} />
                       <span>Writeup Studio</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
@@ -425,7 +440,7 @@ export const MobileNav: React.FC = () => {
                     className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/exam')}`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <GraduationCap className={iconCls} />
+                      <Timer className={iconCls} />
                       <span>24h Exam Simulator (OSCP)</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
@@ -436,7 +451,7 @@ export const MobileNav: React.FC = () => {
                     className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/analytics')}`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <BarChart3 className={iconCls} />
+                      <AnalyticsMonitorIcon className={iconCls} />
                       <span>Pwn Analytics & Radar</span>
                       {dueReviews > 0 && (
                         <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-mono font-bold tabular-nums">
@@ -505,7 +520,7 @@ export const MobileNav: React.FC = () => {
                   <div className="px-3 min-h-[56px] rounded-lg bg-surface-base border border-subtle flex items-center justify-between">
                     <div>
                       <div className="text-sm font-medium text-primary">Theme Preset</div>
-                      <div className="text-[11px] text-muted">Obsidian, Clean Monolith, Hack The Box</div>
+                      <div className="text-[11px] text-muted">Obsidian, Red Team / OffSec, Hack The Box</div>
                     </div>
                     <ThemePresetDropdown />
                   </div>
@@ -521,6 +536,21 @@ export const MobileNav: React.FC = () => {
                     <div className="flex items-center gap-2.5">
                       <Settings className={iconCls} />
                       <span>Operator Settings & Themes</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      useOnboardingStore.getState().openGuideCenter();
+                      if (soundEnabled) playCyberSound('click');
+                    }}
+                    className={`${rowBase} ${rowState(false)}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Compass className={iconCls} />
+                      <span>Full guide</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>

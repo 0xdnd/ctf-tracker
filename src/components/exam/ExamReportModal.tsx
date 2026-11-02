@@ -127,9 +127,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   // Header: load once per opening / session (not on every store change, which our own edits cause).
   useEffect(() => {
     if (isOpen) {
-      setCandidateName(persistsHeader ? baseSession.candidateName : baseSession.candidateName || 'Daniel Dayan');
-      setCandidateCallsign(persistsHeader ? baseSession.candidateCallsign : baseSession.candidateCallsign || '0xdnd');
-      setOsid(persistsHeader ? baseSession.osid : baseSession.osid || 'OS-94821');
+      setCandidateName(baseSession.candidateName);
+      setCandidateCallsign(baseSession.candidateCallsign);
+      setOsid(baseSession.osid);
       const startedDate = new Date(baseSession.examStartedAt || Date.now()).toISOString().slice(0, 10);
       setExamDate(storedReportDate || startedDate);
       setCopied(false);
@@ -451,7 +451,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                     saveHeader({ candidateName: e.target.value });
                   }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
-                  placeholder="Daniel Dayan"
+                  placeholder="Your name"
                 />
               </div>
 
@@ -472,7 +472,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                     saveHeader({ candidateCallsign: e.target.value });
                   }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
-                  placeholder="0xdnd"
+                  placeholder="Your callsign"
                 />
               </div>
 
@@ -493,7 +493,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
                     saveHeader({ osid: e.target.value });
                   }}
                   className="w-full bg-surface-card border border-subtle rounded-lg px-2.5 py-1.5 text-primary focus:outline-none focus:border-accent text-xs"
-                  placeholder="OS-94821"
+                  placeholder="Your ID"
                 />
               </div>
 

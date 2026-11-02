@@ -4,6 +4,8 @@ import { X, BookOpen, Plus, Terminal, Folder } from 'lucide-react';
 import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { Modal } from '../common/Modal';
+import { NOTE_TEMPLATES } from '../../data/noteTemplates';
+import { Sparkles } from 'lucide-react';
 
 const STAGE_OPTIONS: CyberSelectOption[] = [
   { value: '0 — Methodology', label: '0 — Methodology', color: 'rgb(var(--text-tertiary))' },
@@ -140,6 +142,34 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs scrollbar-thin">
+          {/* Quick Offensive Template Selector */}
+          <div className="space-y-1.5 p-2.5 rounded-xl bg-surface-sunken border border-subtle">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              <span>Start from an Offensive Template (optional):</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {NOTE_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  onClick={() => {
+                    setTitleEn(tmpl.title);
+                    setMarkdownContent(tmpl.content);
+                    if (tmpl.category === 'recon') setStage('1 — Enumeration');
+                    else if (tmpl.category === 'exploit') setStage('2 — Foothold');
+                    else if (tmpl.category === 'privesc') setStage('3 — PrivEsc');
+                    else if (tmpl.category === 'loot') setStage('2 — Foothold');
+                  }}
+                  className="px-2 py-1 rounded-md text-[10px] font-medium bg-surface-card hover:bg-surface-hover text-secondary hover:text-accent border border-subtle hover:border-accent transition-colors cursor-pointer"
+                  title={tmpl.description}
+                >
+                  {tmpl.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Titles: EN & HE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

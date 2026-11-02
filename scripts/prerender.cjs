@@ -78,7 +78,8 @@ const splashHtml = splashMatch[0];
 const NAV_LABEL = {
   '/tracker/': 'CTF tracker',
   '/methodology/': 'Methodology',
-  '/cheatsheets/': 'Cheatsheet',
+  '/reverse-shell/': 'Reverse shells',
+  '/cheatsheets/': 'Snippets',
   '/notes/': 'Notes',
   '/exam/': 'Exam simulator',
   '/writeup/': 'Writeups',
@@ -120,7 +121,7 @@ function staticBlock(route) {
 }
 
 // ---- Route pages ----
-const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/', '/exam/', '/cheatsheets/']);
+const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/', '/exam/', '/cheatsheets/', '/reverse-shell/']);
 let written = 0;
 for (const route of routes) {
   const url = ORIGIN + route.path;
@@ -159,7 +160,7 @@ const { ctf: CTF_MACHINES, guided: GUIDED_LABS } = model.catalogCounts;
 const EXAM_TRACKS = model.examTracks;
 const FAQ = [
   ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under the ZeroBox Source-Available Non-Commercial License (ZNSL 1.0).'],
-  ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, zero telemetry, and 100% of your data stays on your device.'],
+  ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, the app has no telemetry, and your data stays on your device.'],
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
   ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
   ['Which platforms and machines are supported?', `ZeroBox ships with a pre-loaded catalog of ${nf.format(CTF_MACHINES)} CTF machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub${GUIDED_LABS > 0 ? `, plus ${GUIDED_LABS} guided labs` : ""}. It also has 10 Pro Lab presets, such as Dante, Zephyr and Offshore, that fill in only the public lab name, difficulty and official link when you add a Pro Lab as your own target. You can also add custom targets for any other lab or live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.`],
@@ -171,6 +172,7 @@ const FAQ = [
 const CARD_DESC = {
   '/tracker/': 'CTF progress tracker: Kanban, table and grid board for Hack The Box and TryHackMe machines.',
   '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
+  '/reverse-shell/': 'Reverse shell generator that fills in your LHOST and LPORT.',
   '/cheatsheets/': 'Interactive pentest cheatsheets with dynamic LHOST, LPORT and IP substitution.',
   '/notes/': 'Notes app for your own Obsidian vault, with wikilinks and a private local vault.',
   '/exam/': 'OSCP exam simulator with CPTS, CRTO, OSEP, CRTP, PNPT and OSWE tracks and scoring.',
@@ -330,7 +332,7 @@ const DESKTOP_HREF = REPO + '/releases/latest';
 const proofItem = (value, label) => `          <li><span class="num">${esc(value)}</span><span class="lbl">${esc(label)}</span></li>`;
 const proofStrip = [
   proofItem(nf.format(CTF_MACHINES), 'machines catalogued'),
-  proofItem(nf.format(model.shellCount), 'reverse shells'),
+  proofItem(nf.format(model.shellAvailableCount), 'reverse shells'),
   proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
   `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source available on GitHub${ICON.ext}</a></li>`,
 ].join('\n');
@@ -338,7 +340,7 @@ const proofStrip = [
 // [href, title, description, count]; count is optional (mono figure after the title, with its unit).
 const GUIDES = [
   ['/machines/', 'Hack The Box and TryHackMe machine list', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(model.catalogCounts.htbThm)} boxes`],
-  ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', `${nf.format(model.shellCount)} shells`],
+  ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', `${nf.format(model.shellAvailableCount)} shells`],
   ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', `${model.phases.length} phases`],
   ['/cheatsheet-library/', 'OSCP and CTF cheatsheets', 'Recon, web, privesc, Active Directory, pivoting.', `${model.topics.length} topics`],
   ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', `${model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length} boxes`],

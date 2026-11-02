@@ -26,6 +26,9 @@ const STATIC_CSS = CSS_FILES.map((f) => {
 }).join('');
 // Content-hashed href so a changed stylesheet is never served stale from the browser cache or the service worker.
 const CSS_HREF = '/static.css?v=' + crypto.createHash('sha1').update(STATIC_CSS).digest('hex').slice(0, 8);
+// Search/filter/sort script for the machine list pages (public/table-filter.js), loaded only where renderPage gets tableFilter: true.
+const TF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'table-filter.js'), 'utf8');
+const TF_SRC = '/table-filter.js?v=' + crypto.createHash('sha1').update(TF_JS).digest('hex').slice(0, 8);
 // Theme bootstrap (public/theme.js) inlined into <head>: no blocking request, and it still runs before first paint (no theme flash).
 // apply-csp.cjs hashes inline scripts at build, so the pages' script-src stays hash-based. public/theme.js is still deployed for pages cached before this change.
 const THEME_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'theme.js'), 'utf8').replace(/\r\n?/g, '\n').trim();
@@ -318,7 +321,7 @@ function stampArticle(html, { modified, published }) {
   return out.replace('</h1>', () => `</h1>\n      ${byline}`);
 }
 
-/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean } */
+/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean, tableFilter?: boolean } */
 /** Make every <pre> keyboard-focusable (scrollable-region-focusable) and a labelled region, named after the nearest preceding heading. */
 function a11yPres(html) {
   let last = '';
@@ -363,7 +366,8 @@ function renderPage(opts) {
 ${ICON_LINKS}
   <link rel="manifest" href="/manifest.webmanifest" />
   ${THEME_SCRIPT}
-  <link rel="stylesheet" href="${CSS_HREF}" />${opts.preloadFonts ? `
+  <link rel="stylesheet" href="${CSS_HREF}" />${opts.tableFilter ? `
+  <script src="${TF_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
   <meta property="og:site_name" content="ZeroBox" />
@@ -406,12 +410,8 @@ const NF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', '404.js
 const NF_SRC = '/404.js?v=' + crypto.createHash('sha1').update(NF_JS).digest('hex').slice(0, 8);
 const SHELL_CSP = "default-src 'none'; manifest-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: ws: wss:; media-src 'self' data: blob:;";
 const NF_LINKS = [
-  ['/machines/', 'Machines'],
+  ['/', 'Back to home'],
   ['/cheatsheet-library/', 'Cheatsheets'],
-  ['/methodology-guide/', 'Methodology'],
-  ['/revshells/', 'Reverse shells'],
-  ['/exam/', 'Exam simulator'],
-  ['/#guides', 'Guides'],
 ];
 function render404Page() {
   const chips = NF_LINKS.map(([h, l]) => `<a href="${h}">${esc(l)}</a>`).join('');
@@ -434,13 +434,23 @@ ${ICON_LINKS}
 ${siteHeader({ current: '' })}
   <div class="wrap">
     <main id="main" class="nf">
-      <h1>This box isn't on the board</h1>
-      <p class="lead">There is no page at <code data-nf-path>this address</code>. The link may be old or mistyped.</p>
-      <div class="cta-actions"><a class="btn" href="/">Back to home</a><a class="btn btn-secondary" href="/tracker/">Open tracker</a></div>
-      <pre class="code nf-term" tabindex="0" role="region" aria-label="Server response for the requested path"><code><span class="t-dim">$</span> curl -I <span data-nf-path>/missing-page</span>
-HTTP/2 <span class="nf-st">404</span></code></pre>
-      <h2>Popular destinations</h2>
-      <div class="chips">${chips}</div>
+      <p class="nf-num" aria-hidden="true">404</p>
+      <h1>This one isn't on the board</h1>
+      <p class="lead">Nothing lives at this address. The link may be old or mistyped.</p>
+      <div class="nf-drop">
+        <div class="nf-card" role="group" aria-label="The address you asked for">
+          <div class="nf-head"><span class="nf-dot" aria-hidden="true"></span><code class="nf-title" data-nf-path>/missing-page</code></div>
+          <dl class="nf-field"><dt>IP</dt><dd>404.404.404.404</dd></dl>
+          <ul class="nf-pills"><li>Not found</li><li>No foothold</li></ul>
+        </div>
+      </div>
+      <form class="nf-search" action="/machines/" method="get" role="search">
+        <label for="nf-q">Search the machine list</label>
+        <div class="nf-search-row"><input id="nf-q" type="search" name="q" placeholder="Name or tag" autocomplete="off" spellcheck="false" maxlength="100" /><button class="btn" type="submit">Search</button></div>
+      </form>
+      <div class="nf-mean" data-nf-mean aria-live="polite"></div>
+      <div class="cta-actions"><a class="btn" href="/machines/">Machines</a><a class="btn btn-secondary" href="/methodology-guide/">Methodology</a></div>
+      <nav class="chips" aria-label="Popular destinations">${chips}</nav>
     </main>
   </div>
 ${siteFooter({ analyticsNote: '' })}

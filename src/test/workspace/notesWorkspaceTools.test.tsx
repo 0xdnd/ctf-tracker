@@ -99,6 +99,29 @@ describe('notes workspace tools', () => {
       fireEvent.blur(input);
       expect(useCtfStore.getState().globalVars.targetIp).toBe('10.10.11.77');
     });
+    it('creates and opens a bound field log note when Open target note is clicked', () => {
+      renderWorkspace();
+      const bar = within(desktopBar());
+      fireEvent.click(bar.getByRole('button', { name: 'Open target note' }));
+      const created = useCtfStore.getState().customNotes.find((n) => n.title.includes('Lab Box — Field Log'));
+      expect(created).toBeDefined();
+      expect(useNotesWorkspaceStore.getState().activeTabId).toBe(created?.id);
+    });
+
+    it('toggles user.txt and root.txt pwn flags on the engaged machine right from the target bar', () => {
+      renderWorkspace();
+      const bar = within(desktopBar());
+      const userBtn = bar.getByRole('button', { name: 'Toggle user.txt flag' });
+      const rootBtn = bar.getByRole('button', { name: 'Toggle root.txt flag' });
+
+      expect(useCtfStore.getState().machines[0].userPwnedAt).toBeFalsy();
+      fireEvent.click(userBtn);
+      expect(useCtfStore.getState().machines[0].userPwnedAt).toBeTruthy();
+
+      expect(useCtfStore.getState().machines[0].rootPwnedAt).toBeFalsy();
+      fireEvent.click(rootBtn);
+      expect(useCtfStore.getState().machines[0].rootPwnedAt).toBeTruthy();
+    });
   });
 
   describe('search', () => {

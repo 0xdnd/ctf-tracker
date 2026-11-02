@@ -15,6 +15,8 @@ export interface PageHeaderProps {
   actions?: React.ReactNode;
   /** Everything else, collapsed into an OverflowMenu. Always reachable, including at 390px. */
   overflow?: OverflowItem[];
+  /** Optional data-tour value placed on the overflow menu wrapper (first-visit guides). */
+  overflowAnchor?: string;
   /** Optional sub-row, e.g. tabs or filters. */
   children?: React.ReactNode;
   className?: string;
@@ -34,6 +36,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   primaryAction,
   actions,
   overflow,
+  overflowAnchor,
   children,
   className = '',
 }) => {
@@ -59,7 +62,14 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           <div className="flex w-full flex-shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
             {actions && <div className="hidden items-center gap-2 sm:flex">{actions}</div>}
             {primaryAction}
-            {hasOverflow && <OverflowMenu items={overflow!} />}
+            {hasOverflow &&
+              (overflowAnchor ? (
+                <span className="inline-flex" data-tour={overflowAnchor}>
+                  <OverflowMenu items={overflow!} />
+                </span>
+              ) : (
+                <OverflowMenu items={overflow!} />
+              ))}
           </div>
         )}
       </div>

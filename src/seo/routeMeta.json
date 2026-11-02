@@ -45,6 +45,21 @@
     ]
   },
   {
+    "path": "/reverse-shell/",
+    "title": "Reverse Shell Generator with Your LHOST and LPORT | ZeroBox",
+    "description": "Reverse shell generator: set LHOST and LPORT once, pick a payload and copy it with the matching listener command. Free, runs offline in your browser.",
+    "h1": "Reverse shell generator",
+    "intro": "Set your LHOST and LPORT once, pick a shell and payload, and copy a ready-to-paste reverse shell with the matching listener command. Everything runs in your browser.",
+    "bullets": [
+      "130+ Linux and Windows reverse shell payloads",
+      "LHOST, LPORT and target IP filled in for you",
+      "Encoding and wrapper options for tricky targets",
+      "Matching listener commands for nc, ncat, socat and more",
+      "Copy to clipboard or save as a script",
+      "Works offline in the browser"
+    ]
+  },
+  {
     "path": "/notes/",
     "title": "Private Notes App for Your Obsidian Vault | ZeroBox",
     "description": "An Obsidian-style viewer for your own pentest notes, with wikilinks, multi-tab docked notes and a private local vault. Import your vault. Free and offline.",

@@ -2,27 +2,29 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { 
-  Search, 
-  Terminal, 
-  ShieldAlert, 
-  Plus, 
-  Database, 
-  FileText, 
-  X, 
-  ChevronRight, 
-  Sliders, 
-  Sun,
-  Compass, 
-  Zap, 
+import {
+  Search,
+  Terminal,
+  ShieldAlert,
+  Plus,
+  Database,
+  X,
+  ChevronRight,
+  Sliders,
+  Zap,
   Award,
-  Radio,
   Crosshair,
   Copy,
   Settings,
   Users,
   Keyboard,
-  BookOpen
+  KeyRound,
+  Route,
+  SquareTerminal,
+  Code,
+  NotebookPen,
+  Timer,
+  NotebookText
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -226,7 +228,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-snippets',
         label: 'Open snippets drawer (Alt+S)',
-        icon: Terminal,
+        icon: Code,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -237,7 +239,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-notes-workspace',
         label: 'Toggle Field Notes Workspace Sidecar (Alt+N)',
-        icon: BookOpen,
+        icon: NotebookText,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -259,7 +261,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-exam',
         label: 'Jump to Exam Simulator (Alt+E)',
-        icon: ShieldAlert,
+        icon: Timer,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -270,7 +272,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-vault',
         label: 'Jump to Evidence & Loot Vault',
-        icon: Database,
+        icon: KeyRound,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -323,9 +325,20 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-reverse-shells',
+        label: 'Reverse Shells',
+        icon: SquareTerminal,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          navigate('/reverse-shell');
+        },
+      },
+      {
         id: 'action-methodology',
         label: 'Attack Methodology (8-Phases)',
-        icon: Compass,
+        icon: Route,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -336,7 +349,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-writeup',
         label: 'Open Writeup Studio',
-        icon: FileText,
+        icon: NotebookPen,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -368,6 +381,17 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'theme-offsec',
+        label: 'Switch theme: Red Team / OffSec',
+        icon: Crosshair,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setThemePreset('offsec');
+          setCommandPaletteOpen(false);
+        },
+      },
+      {
         id: 'theme-htb',
         label: 'Switch theme: Hack The Box',
         icon: Terminal,
@@ -390,25 +414,14 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'theme-monolith',
-        label: 'Switch theme: Clean Monolith',
-        icon: Sun,
-        colorClass: 'text-muted',
-        bgHoverClass: 'hover:bg-surface-hover',
-        execute: () => {
-          setThemePreset('monolith');
-          setCommandPaletteOpen(false);
-        },
-      },
-      {
         id: 'action-revshell-forge',
         label: 'Reverse shell forge (payloads and listener)',
-        icon: Terminal,
+        icon: SquareTerminal,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
           setCommandPaletteOpen(false);
-          navigate('/cheatsheets?tab=revshell');
+          navigate('/reverse-shell');
         },
       },
       {
@@ -425,7 +438,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-vault-view',
         label: 'Evidence and loot vault',
-        icon: Database,
+        icon: KeyRound,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {
@@ -437,7 +450,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-exam-view',
         label: '24h Exam Simulator (OSCP / CPTS)',
-        icon: Radio,
+        icon: Timer,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
         execute: () => {

@@ -253,9 +253,9 @@ export function generateExamReportMarkdown(
   options?: ExamReportOptions
 ): string {
   const effectiveTrack: ExamTrack = options?.template || session.track || 'OSCP';
-  const candidateName = options?.candidateName || session.candidateName || 'Daniel Dayan';
-  const candidateCallsign = options?.candidateCallsign || session.candidateCallsign || '0xdnd';
-  const osid = options?.osid || session.osid || 'OS-94821';
+  const candidateName = options?.candidateName || session.candidateName || 'Candidate';
+  const candidateCallsign = options?.candidateCallsign || session.candidateCallsign || 'N/A';
+  const osid = options?.osid || session.osid || 'N/A';
   const effectiveIncludeBonus = options?.includeBonusPoints !== undefined
     ? options.includeBonusPoints
     : Boolean(session.includeBonusPoints);

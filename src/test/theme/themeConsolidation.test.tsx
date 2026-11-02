@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ThemePresetDropdown } from '../../components/common/ThemePresetDropdown';
 import { SettingsModal } from '../../components/common/SettingsModal';
-import { useCtfStore, normalizeThemePreset, applyThemePreset } from '../../store/useCtfStore';
+import { useCtfStore, normalizeThemePreset, applyThemePreset, SCHEMA_VERSION } from '../../store/useCtfStore';
 import { ThemeProvider, useTheme } from '../../hooks/useTheme';
 import { getCanvasThemeTokens } from '../../components/tracker/GraphView';
 import { exportWorkspaceToJson, validateWorkspacePayload } from '../../utils/workspaceStorage';
@@ -34,7 +34,7 @@ const TestSettingsModalWrapper: React.FC = () => {
   );
 };
 
-describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', () => {
+describe('Theme System Consolidation (3 Core Themes: Obsidian, OffSec, HTB)', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.className = '';
@@ -57,8 +57,9 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
     it('normalizes all legacy presets and aliases to valid 3 core presets', () => {
       // Core presets are preserved
       expect(normalizeThemePreset('obsidian')).toBe('obsidian');
-      expect(normalizeThemePreset('monolith')).toBe('monolith');
       expect(normalizeThemePreset('htb')).toBe('htb');
+      expect(normalizeThemePreset('offsec')).toBe('offsec');
+      expect(normalizeThemePreset('red-team')).toBe('offsec');
 
       // Legacy presets normalize to obsidian
       expect(normalizeThemePreset('oled')).toBe('obsidian');
@@ -68,15 +69,17 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(normalizeThemePreset('midnight-blue')).toBe('obsidian');
       expect(normalizeThemePreset('slate')).toBe('obsidian');
 
-      // Legacy light alias normalizes to monolith
-      expect(normalizeThemePreset('light')).toBe('monolith');
-      expect(normalizeThemePreset('clean monolith')).toBe('monolith');
-      expect(normalizeThemePreset('clean-monolith')).toBe('monolith');
+      // The retired Clean Monolith theme (and its legacy 'light' alias) lands on Red Team / OffSec
+      expect(normalizeThemePreset('monolith')).toBe('offsec');
+      expect(normalizeThemePreset('MONOLITH')).toBe('offsec');
+      expect(normalizeThemePreset('light')).toBe('offsec');
+      expect(normalizeThemePreset('clean monolith')).toBe('offsec');
+      expect(normalizeThemePreset('clean-monolith')).toBe('offsec');
       expect(normalizeThemePreset('hack the box')).toBe('htb');
 
       // Case-insensitivity and whitespace trimming
       expect(normalizeThemePreset('HTB')).toBe('htb');
-      expect(normalizeThemePreset('  monolith  ')).toBe('monolith');
+      expect(normalizeThemePreset('  monolith  ')).toBe('offsec');
       expect(normalizeThemePreset('OBSIDIAN')).toBe('obsidian');
 
       // Unknown or empty fallbacks
@@ -103,10 +106,11 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
 
       // Check all 3 themes are present
       expect(screen.getAllByText('Obsidian Dark / Zinc').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Clean Monolith')).toBeInTheDocument();
       expect(screen.getByText('Hack The Box')).toBeInTheDocument();
+      expect(screen.getByText('Red Team / OffSec')).toBeInTheDocument();
 
-      // Ensure removed presets (oled, industrial) are NOT present
+      // Ensure removed presets (oled, industrial, Clean Monolith) are NOT present
+      expect(screen.queryByText('Clean Monolith')).toBeNull();
       expect(screen.queryByText(/Dark OLED/i)).toBeNull();
       expect(screen.queryByText(/Industrial High Contrast/i)).toBeNull();
     });
@@ -144,13 +148,15 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
 
       // Rendered options in SettingsModal
       expect(screen.getByText('Obsidian Dark / Zinc')).toBeInTheDocument();
-      expect(screen.getByText('Clean Monolith')).toBeInTheDocument();
       expect(screen.getByText('Hack The Box')).toBeInTheDocument();
+      expect(screen.getByText('Red Team / OffSec')).toBeInTheDocument();
+      expect(screen.queryByText('Clean Monolith')).toBeNull();
 
       // Badges
       expect(screen.getByText('Zinc dark')).toBeInTheDocument();
-      expect(screen.getByText('Monolith')).toBeInTheDocument();
+      expect(screen.getByText('Red Team')).toBeInTheDocument();
       expect(screen.getByText('HTB OLED')).toBeInTheDocument();
+      expect(screen.queryByText('Monolith')).toBeNull();
 
       // Removed presets are not shown
       expect(screen.queryByText(/Industrial High Contrast/i)).toBeNull();
@@ -177,18 +183,18 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       const triggerBtn = screen.getByRole('button', { name: /Obsidian Dark \/ Zinc/i });
       fireEvent.click(triggerBtn);
 
-      // Select Clean Monolith
-      const monolithOption = screen.getByText('Clean Monolith');
-      fireEvent.click(monolithOption);
+      // Select Red Team / OffSec
+      const offsecOption = screen.getByText('Red Team / OffSec');
+      fireEvent.click(offsecOption);
 
       // Active mode MUST remain light!
-      expect(useCtfStore.getState().themePreset).toBe('monolith');
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
       expect(screen.getByTestId('active-mode').textContent).toBe('light');
       expect(document.documentElement.classList.contains('light')).toBe(true);
       expect(document.documentElement.classList.contains('dark')).toBe(false);
 
       // Re-open and select Hack The Box
-      fireEvent.click(screen.getByRole('button', { name: /Clean Monolith/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Red Team \/ OffSec/i }));
       const htbOption = screen.getByText('Hack The Box');
       fireEvent.click(htbOption);
 
@@ -210,7 +216,7 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(document.documentElement.classList.contains('dark')).toBe(false);
     });
 
-    it('preserves Dark mode when selecting Clean Monolith in ThemePresetDropdown', () => {
+    it('preserves Dark mode when selecting Red Team / OffSec in ThemePresetDropdown', () => {
       render(
         <MemoryRouter>
           <ThemeProvider>
@@ -224,13 +230,13 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(screen.getByTestId('active-mode').textContent).toBe('dark');
       expect(document.documentElement.classList.contains('dark')).toBe(true);
 
-      // Open dropdown and select Clean Monolith
+      // Open dropdown and select Red Team / OffSec
       const triggerBtn = screen.getByRole('button', { name: /Obsidian Dark \/ Zinc/i });
       fireEvent.click(triggerBtn);
-      fireEvent.click(screen.getByText('Clean Monolith'));
+      fireEvent.click(screen.getByText('Red Team / OffSec'));
 
-      // Monolith in Dark mode: mode MUST stay Dark!
-      expect(useCtfStore.getState().themePreset).toBe('monolith');
+      // OffSec in Dark mode: mode MUST stay Dark!
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
       expect(screen.getByTestId('active-mode').textContent).toBe('dark');
       expect(document.documentElement.classList.contains('dark')).toBe(true);
       expect(document.documentElement.classList.contains('light')).toBe(false);
@@ -260,11 +266,11 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(screen.getByTestId('modal-active-mode').textContent).toBe('light');
       expect(document.documentElement.classList.contains('light')).toBe(true);
 
-      // Switch to Clean Monolith
-      const monolithCard = screen.getByRole('button', { name: /Clean Monolith/i });
-      fireEvent.click(monolithCard);
+      // Switch to Red Team / OffSec
+      const offsecCard = screen.getByRole('button', { name: /Red Team \/ OffSec/i });
+      fireEvent.click(offsecCard);
 
-      expect(useCtfStore.getState().themePreset).toBe('monolith');
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
       expect(screen.getByTestId('modal-active-mode').textContent).toBe('light');
     });
 
@@ -278,8 +284,8 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(document.documentElement.classList.contains('light')).toBe(true);
       expect(document.documentElement.classList.contains('dark')).toBe(false);
 
-      applyThemePreset('monolith');
-      expect(document.documentElement.getAttribute('data-theme')).toBe('monolith');
+      applyThemePreset('offsec');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
       expect(document.documentElement.classList.contains('light')).toBe(true);
       expect(document.documentElement.classList.contains('dark')).toBe(false);
 
@@ -287,10 +293,47 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       document.documentElement.classList.remove('light');
       document.documentElement.classList.add('dark');
 
-      applyThemePreset('monolith');
-      expect(document.documentElement.getAttribute('data-theme')).toBe('monolith');
+      applyThemePreset('offsec');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
       expect(document.documentElement.classList.contains('dark')).toBe(true);
       expect(document.documentElement.classList.contains('light')).toBe(false);
+    });
+  });
+
+  describe('Retired Clean Monolith theme', () => {
+    it('applyThemePreset("monolith") applies the OffSec theme, never a data-theme with no CSS', () => {
+      applyThemePreset('monolith');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
+      applyThemePreset('Clean Monolith');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
+    });
+
+    it('applyThemePreset("offsec") points every icon link at the red favicon', () => {
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = '/favicon-zerobox.png';
+      document.head.appendChild(link);
+      applyThemePreset('offsec');
+      expect(link.getAttribute('href')).toBe('/favicon-offsec.png');
+      applyThemePreset('htb');
+      expect(link.getAttribute('href')).toBe('/favicon-htb.png');
+      link.remove();
+    });
+
+    it('setThemePreset("monolith") stores offsec', () => {
+      useCtfStore.getState().setThemePreset('monolith');
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
+    });
+
+    it('rehydrating a persisted blob that saved monolith lands on offsec', async () => {
+      localStorage.setItem(
+        'zerobox-tactical-store',
+        JSON.stringify({ state: { themePreset: 'monolith' }, version: SCHEMA_VERSION })
+      );
+      await useCtfStore.persist.rehydrate();
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
     });
   });
 
@@ -321,13 +364,17 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       const obsidianMutedContrast = getContrastRatio([82, 82, 91], [255, 255, 255]);
       expect(obsidianMutedContrast).toBeGreaterThan(5.5); // Well above 4.5:1
 
-      // 2. Monolith Light: Primary text #09090b on #fafafa base
-      const monolithContrast = getContrastRatio([9, 9, 11], [250, 250, 250]);
-      expect(monolithContrast).toBeGreaterThan(14.0);
+      // 2. OffSec Light: Primary text #0f172a on #f8fafc base
+      const offsecContrast = getContrastRatio([15, 23, 42], [248, 250, 252]);
+      expect(offsecContrast).toBeGreaterThan(14.0);
 
-      // Monolith Light: Muted text #52525b on #fafafa
-      const monolithMutedContrast = getContrastRatio([82, 82, 91], [250, 250, 250]);
-      expect(monolithMutedContrast).toBeGreaterThan(5.0);
+      // OffSec Light: Muted text #475569 on #f8fafc
+      const offsecMutedContrast = getContrastRatio([71, 85, 105], [248, 250, 252]);
+      expect(offsecMutedContrast).toBeGreaterThan(5.0);
+
+      // OffSec Light: white button text on blood-red accent #b91c1c
+      const offsecButtonContrast = getContrastRatio([255, 255, 255], [185, 28, 28]);
+      expect(offsecButtonContrast).toBeGreaterThan(4.5);
 
       // 3. HTB Light: Primary text #0f172a on #ffffff
       const htbTextContrast = getContrastRatio([15, 23, 42], [255, 255, 255]);
@@ -351,13 +398,19 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       const obsidianMuted = getContrastRatio([161, 161, 170], [18, 18, 21]);
       expect(obsidianMuted).toBeGreaterThan(5.0);
 
-      // 2. Monolith Dark: Primary text #f4f4f5 on #27272a card
-      const monolithContrast = getContrastRatio([244, 244, 245], [39, 39, 42]);
-      expect(monolithContrast).toBeGreaterThan(10.0);
+      // 2. OffSec Dark: Primary text #f4f4f5 on #101015 card
+      const offsecContrast = getContrastRatio([244, 244, 245], [16, 16, 21]);
+      expect(offsecContrast).toBeGreaterThan(10.0);
 
-      // Monolith Dark: Muted text #a1a1aa on #27272a card
-      const monolithMuted = getContrastRatio([161, 161, 170], [39, 39, 42]);
-      expect(monolithMuted).toBeGreaterThan(4.5);
+      // OffSec Dark: Muted text #a1a1aa on #101015 card
+      const offsecMuted = getContrastRatio([161, 161, 170], [16, 16, 21]);
+      expect(offsecMuted).toBeGreaterThan(4.5);
+
+      // OffSec Dark: black button text on tactical red accent #ff4646 (rest and the 85% hover mix)
+      const offsecButtonContrast = getContrastRatio([0, 0, 0], [255, 70, 70]);
+      expect(offsecButtonContrast).toBeGreaterThan(4.5);
+      const hoverMix = [255 * 0.85 + 5 * 0.15, 70 * 0.85 + 5 * 0.15, 70 * 0.85 + 8 * 0.15] as [number, number, number];
+      expect(getContrastRatio([0, 0, 0], hoverMix)).toBeGreaterThan(4.5);
 
       // 3. HTB Dark: Primary text #f8fafc on #141d2b card
       const htbContrast = getContrastRatio([248, 250, 252], [20, 29, 43]);
@@ -385,15 +438,15 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(htbDark.cardHoverBorder).toBe('#9FEF00');
       expect(htbDark.statusRoot).toBe('#9FEF00');
 
-      // 2. Monolith Light Mode
-      const monoLight = getCanvasThemeTokens('monolith', false);
-      expect(monoLight.canvasBg).toBe('#FAFAFA');
-      expect(monoLight.accent).toBe('#0284C7');
+      // 2. OffSec Light Mode
+      const offsecLight = getCanvasThemeTokens('offsec', false);
+      expect(offsecLight.canvasBg).toBe('#F8FAFC');
+      expect(offsecLight.accent).toBe('#B91C1C');
 
-      // Monolith Dark Mode
-      const monoDark = getCanvasThemeTokens('monolith', true);
-      expect(monoDark.canvasBg).toBe('#18181B');
-      expect(monoDark.accent).toBe('#38BDF8');
+      // OffSec Dark Mode
+      const offsecDark = getCanvasThemeTokens('offsec', true);
+      expect(offsecDark.canvasBg).toBe('#09090C');
+      expect(offsecDark.accent).toBe('#FF4646');
 
       // 3. Obsidian Light Mode
       const obsLight = getCanvasThemeTokens('obsidian', false);
@@ -410,8 +463,11 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(htbUpperDark.accent).toBe('#9FEF00');
       const htbSpacedLight = getCanvasThemeTokens('hack the box', false);
       expect(htbSpacedLight.accent).toBe('#15803D');
+      // The retired Clean Monolith name resolves to the OffSec canvas tokens
       const monoCleanDark = getCanvasThemeTokens('Clean Monolith', true);
-      expect(monoCleanDark.accent).toBe('#38BDF8');
+      expect(monoCleanDark.accent).toBe('#FF4646');
+      const monoLegacyLight = getCanvasThemeTokens('monolith', false);
+      expect(monoLegacyLight.accent).toBe('#B91C1C');
     });
   });
 
@@ -433,15 +489,21 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, Monolith, HTB)', 
       expect(useCtfStore.getState().themePreset).toBe('obsidian');
       expect(document.documentElement.getAttribute('data-theme')).toBe('obsidian');
 
-      // Import legacy 'light' -> should normalize to 'monolith'
+      // Import legacy 'light' (the retired Clean Monolith) -> should normalize to 'offsec'
       const legacyLightPayload = JSON.stringify({
         machines: [],
         themePreset: 'light',
       });
       const lightSuccess = useCtfStore.getState().importBackup(legacyLightPayload);
       expect(lightSuccess).toBe(true);
-      expect(useCtfStore.getState().themePreset).toBe('monolith');
-      expect(document.documentElement.getAttribute('data-theme')).toBe('monolith');
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
+
+      // Import 'monolith' directly -> should normalize to 'offsec'
+      const monolithSuccess = useCtfStore.getState().importBackup(JSON.stringify({ machines: [], themePreset: 'monolith' }));
+      expect(monolithSuccess).toBe(true);
+      expect(useCtfStore.getState().themePreset).toBe('offsec');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('offsec');
 
       // Import unknown corrupted string -> should normalize safely to 'obsidian'
       const corruptedPayload = JSON.stringify({

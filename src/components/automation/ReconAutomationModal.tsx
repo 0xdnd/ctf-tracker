@@ -183,7 +183,7 @@ export const ReconAutomationModal: React.FC = () => {
     return availableMachines.find((m) => m.id === targetMachineId) || availableMachines[0];
   }, [availableMachines, targetMachineId]);
 
-  // Frozen Solve Protection Guard: Daniel Dayan's completed solves cannot be overwritten
+  // Frozen Solve Protection Guard: completed targets cannot be overwritten
   const isTargetFrozen = useMemo(() => {
     return targetMachine?.status === 'completed';
   }, [targetMachine]);
@@ -277,7 +277,7 @@ export const ReconAutomationModal: React.FC = () => {
   };
 
   // Dynamic Tactical Payloads Catalog
-  const payloadTargetIp = targetMachine?.ip || globalVars.targetIp || '10.10.10.X';
+  const payloadTargetIp = targetMachine?.ip || '10.10.10.X';
   const lhost = globalVars.lhost || '10.10.14.X';
   const lport = globalVars.lport || '4444';
 
@@ -601,7 +601,7 @@ export const ReconAutomationModal: React.FC = () => {
                       Target completed. Editing is locked.
                     </div>
                     <p className="text-callout-warn-fg leading-relaxed text-[11px]">
-                      Target <strong className="text-primary font-semibold">{targetMachine?.name}</strong> is one of Daniel Dayan's 63 completed solves. 
+                      Target <strong className="text-primary font-semibold">{targetMachine?.name}</strong> is already marked completed.
                       Solve statuses, flags, and checklist milestones are strictly frozen to preserve operational integrity. 
                       To apply this scan, please select an in-progress or backlog target from the dropdown above.
                     </p>

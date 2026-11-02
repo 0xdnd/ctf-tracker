@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { useCtfStore } from '../../store/useCtfStore';
 import { WriteupStudio } from '../../components/writeup/WriteupStudio';
@@ -66,10 +66,10 @@ beforeAll(() => {
 
 beforeEach(() => {
   useCtfStore.setState({
-    globalVars: { lhost: '10.10.14.2', lport: '9001', targetIp: '', interface: 'tun0', customVars: {} },
+    globalVars: { lhost: '10.10.14.2', lport: '9001', targetIp: ENGAGED_IP, interface: 'tun0', customVars: {} },
     machines: [MACHINE_A, MACHINE_B],
     activeTargetId: MACHINE_B.id,
-    writeupMachineId: MACHINE_A.id,
+    writeupMachineId: null,
     selectedMachineId: null,
     customNotes: [NOTE],
     userNotes: [],
@@ -81,9 +81,14 @@ afterEach(() => cleanup());
 
 describe('per-machine views never borrow the engaged machine IP', () => {
   it('WriteupStudio: machine A (no IP) does not resolve {TARGET_IP} to engaged B', () => {
+    // B is the active target, but the studio is opened directly on A via a route param (which
+    // always wins over the active target) so the per-machine IP concern this test covers is
+    // actually exercised: A rendered while a DIFFERENT machine is engaged.
     render(
-      <MemoryRouter>
-        <WriteupStudio />
+      <MemoryRouter initialEntries={['/writeup/box-a']}>
+        <Routes>
+          <Route path="/writeup/:id" element={<WriteupStudio />} />
+        </Routes>
       </MemoryRouter>
     );
     fireEvent.click(screen.getByTitle('Toggle the quick reference from your notes'));
@@ -97,6 +102,8 @@ describe('per-machine views never borrow the engaged machine IP', () => {
     const saved = useCtfStore.getState().machines.find((m) => m.id === MACHINE_A.id)?.writeupMarkdown ?? '';
     expect(saved).toContain('probe');
     expect(saved).not.toContain(ENGAGED_IP);
+    // Empty machine IP leaves the visible placeholder, not an empty string.
+    expect(saved).toContain('probe 10.10.10.X');
   });
 
   it('MachineDetailModal: machine A (no IP) does not resolve {TARGET_IP} to engaged B', () => {

@@ -10,11 +10,11 @@ export interface CyberLogoProps {
 
 const THEME_LOGO_MAP: Record<string, string> = {
   obsidian: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
-  monolith: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
   industrial: `${import.meta.env.BASE_URL}logo-oled.webp`,
   zerobox: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
   neon: `${import.meta.env.BASE_URL}logo-zerobox.webp`,
   htb: `${import.meta.env.BASE_URL}logo-htb.webp`,
+  offsec: `${import.meta.env.BASE_URL}logo-offsec.webp`,
   'midnight-blue': `${import.meta.env.BASE_URL}logo-midnight.webp`,
   slate: `${import.meta.env.BASE_URL}logo-midnight.webp`,
   oled: `${import.meta.env.BASE_URL}logo-oled.webp`,

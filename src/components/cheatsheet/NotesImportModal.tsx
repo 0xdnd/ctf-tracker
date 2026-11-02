@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { 
   FileText, 
@@ -14,13 +14,14 @@ import {
   Terminal,
   RefreshCw,
   Archive,
-  Wand2
+  Wand2,
+  RotateCcw
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { confirmAction } from '../../store/useConfirmStore';
-import { loadVaultFromIndexedDb, saveVaultToIndexedDb } from '../../utils/indexedDbVault';
+import { loadVaultFromIndexedDb, loadLastImportSnapshot } from '../../utils/indexedDbVault';
 import { parseObsidianVaultZip, VaultZipImportProgress } from '../../utils/zipVaultImporter';
 import { parseObsidianVaultDirectory, extractFilesFromDataTransfer } from '../../utils/directoryVaultImporter';
 import { TemplatizeNotesModal } from './TemplatizeNotesModal';
@@ -40,7 +41,7 @@ interface PendingImport {
   wikilinkMap: Record<string, string>;
   /** Success message shown once the import is saved. */
   message: string;
-  /** 'json' imports go through the store's importNotesFromJson; parsed vaults save directly. */
+  /** 'json' imports go through the store's importNotesFromJson; parsed vaults go through replaceUserNotes (both snapshot the current vault first). */
   kind: 'vault' | 'json';
   plans: NoteTemplatePlan[];
   selections: Record<string, IpSelection>;
@@ -51,20 +52,20 @@ export const NotesImportModal: React.FC = () => {
     notesImportModalOpen, 
     setNotesImportModalOpen, 
     userNotes, 
-    setUserNotes,
-    setUserWikilinkMap,
+    replaceUserNotes,
     importNotesFromJson, 
     clearUserNotes,
     soundEnabled,
     globalVars,
+    restoreLastNotesSnapshot,
   } = useCtfStore(
     useShallow((s) => ({
       notesImportModalOpen: s.notesImportModalOpen,
       setNotesImportModalOpen: s.setNotesImportModalOpen,
       userNotes: s.userNotes,
-      setUserNotes: s.setUserNotes,
-      setUserWikilinkMap: s.setUserWikilinkMap,
+      replaceUserNotes: s.replaceUserNotes,
       importNotesFromJson: s.importNotesFromJson,
+      restoreLastNotesSnapshot: s.restoreLastNotesSnapshot,
       clearUserNotes: s.clearUserNotes,
       soundEnabled: s.soundEnabled,
       globalVars: s.globalVars,
@@ -82,8 +83,50 @@ export const NotesImportModal: React.FC = () => {
   const folderInputRef = useRef<HTMLInputElement>(null);
   const [templatizeOpen, setTemplatizeOpen] = useState(false);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
+  const [hasSnapshot, setHasSnapshot] = useState(false);
+
+  const refreshSnapshotState = async () => setHasSnapshot(Boolean(await loadLastImportSnapshot()));
+
+  useEffect(() => {
+    if (notesImportModalOpen) void refreshSnapshotState();
+  }, [notesImportModalOpen]);
 
   if (!notesImportModalOpen) return null;
+
+  // Importing replaces the whole vault, so ask first when there is something to lose.
+  const confirmReplaceNotes = async () => {
+    if (userNotes.length === 0) return true;
+    return confirmAction({
+      title: 'Replace your current notes?',
+      body: `This import will replace your ${userNotes.length} existing ${userNotes.length === 1 ? 'note' : 'notes'}. A copy of your current notes is kept so you can restore them from this window.`,
+      confirmLabel: 'Replace notes',
+      tone: 'danger',
+    });
+  };
+
+  const handleRestoreSnapshot = async () => {
+    const ok = await confirmAction({
+      title: 'Restore previous notes?',
+      body: `This replaces your ${userNotes.length} current ${userNotes.length === 1 ? 'note' : 'notes'} with the copy saved before your last import.`,
+      confirmLabel: 'Restore notes',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setIsProcessing(true);
+    setFeedback(null);
+    try {
+      const res = await restoreLastNotesSnapshot();
+      if (res.success) {
+        if (soundEnabled) playCyberSound('flag');
+        setFeedback({ type: 'success', message: `Restored ${res.count} notes from before your last import.` });
+      } else {
+        if (soundEnabled) playCyberSound('toggle');
+        setFeedback({ type: 'error', message: res.error || 'Could not restore the previous notes.' });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleClose = () => {
     if (soundEnabled) playCyberSound('click');
@@ -103,16 +146,16 @@ export const NotesImportModal: React.FC = () => {
   ): Promise<boolean> => {
     if (kind === 'json') {
       const res = await importNotesFromJson(JSON.stringify({ notes, wikilinkMap }));
+      void refreshSnapshotState();
       if (!res.success) {
         if (soundEnabled) playCyberSound('toggle');
         setFeedback({ type: 'error', message: res.error || 'Failed to parse notes JSON.' });
         return false;
       }
     } else {
-      // Save directly to local IndexedDB, then hydrate the in-memory store
-      await saveVaultToIndexedDb({ notes, wikilinkMap });
-      setUserNotes(notes);
-      setUserWikilinkMap(wikilinkMap);
+      // Snapshot the current vault, save to local IndexedDB and hydrate the in-memory store
+      await replaceUserNotes(notes, wikilinkMap);
+      void refreshSnapshotState();
     }
     if (soundEnabled) playCyberSound('flag');
     setFeedback({ type: 'success', message });
@@ -194,6 +237,7 @@ export const NotesImportModal: React.FC = () => {
 
       // CASE 1: Obsidian Vault .ZIP Archive
       if (fileName.endsWith('.zip')) {
+        if (!(await confirmReplaceNotes())) return;
         const result = await parseObsidianVaultZip(file, (p) => {
           setZipProgress(p);
         });
@@ -207,6 +251,7 @@ export const NotesImportModal: React.FC = () => {
       }  
       // CASE 2: JSON Backup / Export
       else {
+        if (!(await confirmReplaceNotes())) return;
         const text = await file.text();
         await stageJsonImport(
           text,
@@ -232,6 +277,7 @@ export const NotesImportModal: React.FC = () => {
     setZipProgress(null);
 
     try {
+      if (!(await confirmReplaceNotes())) return;
       const result = await parseObsidianVaultDirectory(files, (p) => {
         setZipProgress(p);
       });
@@ -269,6 +315,7 @@ export const NotesImportModal: React.FC = () => {
     try {
       // Check if a single ZIP file was dropped
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
+        if (!(await confirmReplaceNotes())) return;
         const result = await parseObsidianVaultZip(files[0], (p) => setZipProgress(p));
         await stageImport(
           result.notes,
@@ -281,6 +328,7 @@ export const NotesImportModal: React.FC = () => {
 
       // Check if a single JSON file was dropped
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.json')) {
+        if (!(await confirmReplaceNotes())) return;
         const text = await files[0].text();
         await stageJsonImport(text, (count) => `Successfully imported ${count} notes from JSON!`);
         return;
@@ -289,6 +337,7 @@ export const NotesImportModal: React.FC = () => {
       // Traversal for dropped directory or multiple markdown files
       const extracted = await extractFilesFromDataTransfer(e.dataTransfer);
       if (extracted.length > 0) {
+        if (!(await confirmReplaceNotes())) return;
         const result = await parseObsidianVaultDirectory(extracted, (p) => setZipProgress(p));
         await stageImport(
           result.notes,
@@ -314,6 +363,7 @@ export const NotesImportModal: React.FC = () => {
       return;
     }
 
+    if (!(await confirmReplaceNotes())) return;
     setIsProcessing(true);
     setFeedback(null);
     try {
@@ -421,7 +471,7 @@ export const NotesImportModal: React.FC = () => {
           </div>
 
           {/* Vault Status Card */}
-          <div className="px-6 py-3.5 bg-black/40 border-b border-subtle flex items-center justify-between">
+          <div data-tour="notes-import-status" className="px-6 py-3.5 bg-black/40 border-b border-subtle flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${userNotes.length > 0 ? 'bg-callout-success-fg' : 'bg-callout-warn-fg'}`} />
               <div>
@@ -436,6 +486,18 @@ export const NotesImportModal: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+            {hasSnapshot && (
+              <button
+                onClick={handleRestoreSnapshot}
+                disabled={isProcessing}
+                className="px-3 py-1.5 text-xs rounded border transition-colors flex items-center gap-1.5 bg-surface-card text-secondary border-subtle hover:text-primary disabled:opacity-40"
+              >
+                <RotateCcw size={13} />
+                <span>Restore previous notes</span>
+              </button>
+            )}
 
             {userNotes.length > 0 && (
               <div className="flex items-center gap-2">
@@ -457,10 +519,11 @@ export const NotesImportModal: React.FC = () => {
               </button>
               </div>
             )}
+            </div>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="px-6 pt-4 flex gap-2 border-b border-cyber-card">
+          <div data-tour="notes-import-tabs" className="px-6 pt-4 flex gap-2 border-b border-cyber-card">
             <button
               onClick={() => { setActiveTab('upload'); setFeedback(null); }}
               className={`pb-2 px-3 text-xs font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
@@ -603,6 +666,7 @@ export const NotesImportModal: React.FC = () => {
                     setIsDragging(false);
                   }}
                   onDrop={handleDrop}
+                  data-tour="notes-import-drop"
                   className={`border-2 border-dashed rounded-xl p-5 text-center transition-colors ${
                     isDragging
                       ? 'border-callout-success-border bg-callout-success-bg'

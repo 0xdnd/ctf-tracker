@@ -285,7 +285,7 @@ export const OperatorDossierModal: React.FC = () => {
                       <span>Sponsor Daniel Dayan</span>
                       <ExternalLink className="w-3 h-3 text-muted opacity-60" />
                     </div>
-                    <div className="text-[11px] text-muted truncate">buymeacoffee.com/0xdnd. Supports open-source offensive security tools.</div>
+                    <div className="text-[11px] text-muted truncate">buymeacoffee.com/0xdnd. Supports free offensive security tools.</div>
                   </div>
                 </a>
                 <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end flex-shrink-0">

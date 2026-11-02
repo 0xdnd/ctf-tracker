@@ -1,5 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect, useDeferredValue } from 'react';
-import { BookOpen, Link as LinkIcon, Clock, List, Edit3 } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect, useDeferredValue, useCallback } from 'react';
+import { BookOpen, Link as LinkIcon, Clock, List, Edit3, Copy, Download, FileCheck2 } from 'lucide-react';
+import { useCtfStore } from '../../store/useCtfStore';
+import { useToastStore } from '../../store/useToastStore';
+import { safeCopyToClipboard } from '../../utils/helpers';
 import { CptsNoteEntry, parseObsidianNote, getBacklinksForNote } from '../../utils/obsidianManualUtils';
 import { playCyberSound } from '../../utils/helpers';
 import { GlobalVariables } from '../../types';
@@ -47,6 +50,64 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
 
   // Real-time live editable content state
   const [liveContent, setLiveContent] = useState<string>(() => note.rawMarkdown || (note as any).content || '');
+  const updateNoteContent = useCtfStore((s) => s.updateNoteContent);
+
+  const handleToggleCheckbox = useCallback((lineIndex: number, newChecked: boolean) => {
+    const lines = liveContent.split('\n');
+    if (lineIndex >= 0 && lineIndex < lines.length) {
+      const line = lines[lineIndex];
+      const updatedLine = newChecked
+        ? line.replace(/^([-*]\s+\[)[ ](\])/, '$1x$2')
+        : line.replace(/^([-*]\s+\[)[xX](\])/, '$1 $2');
+      lines[lineIndex] = updatedLine;
+      const newText = lines.join('\n');
+      setLiveContent(newText);
+      updateNoteContent(note.id, newText);
+    }
+  }, [liveContent, note.id, updateNoteContent]);
+
+  const handleCopyNote = useCallback(() => {
+    safeCopyToClipboard(liveContent);
+    if (soundEnabled) playCyberSound('copy');
+    useToastStore.getState().addToast({
+      type: 'success',
+      message: 'Copied note markdown to clipboard',
+    });
+  }, [liveContent, soundEnabled]);
+
+  const handleDownloadNote = useCallback(() => {
+    const blob = new Blob([liveContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeTitle = (note.titleEn || note.title || 'note').replace(/[^a-zA-Z0-9_-]/g, '_');
+    a.download = `${safeTitle}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (soundEnabled) playCyberSound('root');
+    useToastStore.getState().addToast({
+      type: 'success',
+      message: 'Downloaded note as .md file',
+    });
+  }, [liveContent, note.title, note.titleEn, soundEnabled]);
+
+  const handleOpenWriteupReport = useCallback(() => {
+    const st = useCtfStore.getState();
+    const targetId = st.activeTargetId || st.machines[0]?.id;
+    if (targetId) {
+      st.updateMachine(targetId, { writeupMarkdown: liveContent });
+      st.setReportMachineId(targetId);
+      if (soundEnabled) playCyberSound('root');
+      useToastStore.getState().addToast({
+        type: 'success',
+        message: 'Synced note to target writeup & opened Pentest Report generator',
+      });
+    } else {
+      handleDownloadNote();
+    }
+  }, [liveContent, soundEnabled, handleDownloadNote]);
 
   // Defer heavy AST re-parsing in live preview during high-frequency typing
   const deferredContent = useDeferredValue(liveContent);
@@ -73,6 +134,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
       onNavigateToNote={onNavigateToNote}
       onOpenNote={onOpenNote}
       onOpenNotePicker={onOpenNotePicker}
+      onToggleCheckbox={handleToggleCheckbox}
     />
   );
 
@@ -194,6 +256,35 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 {note.dateModified}
               </span>
             )}
+            <button
+              type="button"
+              onClick={handleCopyNote}
+              className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-sunken hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-interactive flex items-center gap-1 cursor-pointer"
+              title="Copy entire note markdown"
+            >
+              <Copy className="w-2.5 h-2.5" />
+              <span>Copy</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadNote}
+              className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-sunken hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-interactive flex items-center gap-1 cursor-pointer"
+              title="Download note as .md"
+            >
+              <Download className="w-2.5 h-2.5" />
+              <span>.md</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenWriteupReport}
+              data-testid="export-writeup-report-btn"
+              aria-label="Generate full writeup report"
+              className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-sunken hover:bg-surface-hover text-callout-success-fg border border-callout-success-border transition-interactive flex items-center gap-1 cursor-pointer"
+              title="Sync note to engaged target & open full Pentest Writeup Report"
+            >
+              <FileCheck2 className="w-2.5 h-2.5" />
+              <span>Report</span>
+            </button>
             {onViewModeChange && viewMode === 'reading' && (
               <button
                 type="button"

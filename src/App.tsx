@@ -18,7 +18,9 @@ import { useNotesWorkspaceStore } from './store/useNotesWorkspaceStore';
 import { useAuthStore } from './store/useAuthStore';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
 import { ensurePersistence, bindExportGuard } from './utils/resilientStorage';
-import { StartCleanModal } from './components/common/StartCleanModal';
+import { OnboardingLayer } from './onboarding/OnboardingLayer';
+import { BackupReminderCard } from './components/common/BackupReminderCard';
+import { useFirstRunTour } from './onboarding/useFirstRunTour';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
 import { AlertTriangle, Database } from 'lucide-react';
@@ -61,6 +63,7 @@ const CheatsheetView = lazy(() => import('./components/cheatsheet/CheatsheetView
 const WriteupStudio = lazy(() => import('./components/writeup/WriteupStudio').then(m => ({ default: m.WriteupStudio })));
 const AnalyticsView = lazy(() => import('./components/analytics/AnalyticsView').then(m => ({ default: m.AnalyticsView })));
 const TargetDetailPage = lazy(() => import('./pages/TargetDetailPage').then(m => ({ default: m.TargetDetailPage })));
+const ReverseShellsPage = lazy(() => import('./pages/ReverseShellsPage').then(m => ({ default: m.ReverseShellsPage })));
 const MethodologyPage = lazy(() => import('./pages/MethodologyPage').then(m => ({ default: m.MethodologyPage })));
 const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m => ({ default: m.ExamSimulatorPage })));
 const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
@@ -128,11 +131,8 @@ const MainAppContent: React.FC = () => {
   const uiScale = useCtfStore((s) => s.uiScale || 'auto');
   const isHydrated = useCtfStore((s) => s.isHydrated);
 
-  // First-run workspace setup detection
-  const [showOnboarding, setShowOnboarding] = React.useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !localStorage.getItem('zerobox_onboarding_completed');
-  });
+  // First visit: open the Welcome screen / guided tour once.
+  useFirstRunTour(!isPopout);
 
   // Storage quota / error notification banner
   const [storageAlert, setStorageAlert] = React.useState<{ kind: string; message: string } | null>(null);
@@ -286,6 +286,8 @@ const MainAppContent: React.FC = () => {
     const path = location.pathname;
     if (path.startsWith('/methodology')) {
       setActiveTab('methodology');
+    } else if (path.startsWith('/reverse-shell')) {
+      setActiveTab('revshell');
     } else if (path.startsWith('/field-manual')) {
       setActiveTab('field-manual');
     } else if (path.startsWith('/cheatsheet') || path.startsWith('/notes') || path.startsWith('/cpts')) {
@@ -429,15 +431,9 @@ const MainAppContent: React.FC = () => {
       {/* Ephemeral Memory Fallback Storage Alert Banner */}
       <EphemeralStorageBanner />
 
-      {/* First-Run Start Clean Workspace Setup Modal */}
-      <AnimatePresence>
-        {showOnboarding && (
-          <StartCleanModal
-            isOpen={showOnboarding}
-            onClose={() => setShowOnboarding(false)}
-          />
-        )}
-      </AnimatePresence>
+      {/* First-visit tour and one-time page hints */}
+      {!isPopout && <OnboardingLayer />}
+      {!isPopout && <BackupReminderCard />}
 
       {/* Storage Quota Alert Banner with 1-Click Export Action */}
       <AnimatePresence>
@@ -515,6 +511,7 @@ const MainAppContent: React.FC = () => {
                     <Route path="/targets/:id" element={<TargetDetailPage />} />
                     <Route path="/targets/:id/focus" element={<TargetDetailPage />} />
                     <Route path="/methodology" element={<MethodologyPage />} />
+                    <Route path="/reverse-shell" element={<ReverseShellsPage />} />
                     <Route path="/cheatsheets" element={<CheatsheetView />} />
                     <Route path="/cheatsheet" element={<CheatsheetView />} />
                     <Route path="/notes" element={<CheatsheetView defaultMode="cpts-manual" />} />

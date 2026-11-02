@@ -32,6 +32,7 @@ import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
+import { useTrackerCounts } from '../../hooks/useTrackerCounts';
 
 const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
   const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
@@ -93,9 +94,7 @@ export const UnifiedHeader: React.FC = () => {
   const openNotesCount = useOpenTabCount();
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
-  const operatorRootedCount = useMemo(() => {
-    return machines.filter((m) => m.status === 'root' || m.status === 'completed').length;
-  }, [machines]);
+  const { totalMachines, rootedMachines: operatorRootedCount } = useTrackerCounts(machines);
 
   const [targetDropdownOpen, setTargetDropdownOpen] = useState(false);
   const [targetSearch, setTargetSearch] = useState('');
@@ -134,7 +133,8 @@ export const UnifiedHeader: React.FC = () => {
     const p = location.pathname;
     if (p.startsWith('/tracker')) return 'Labs / Targets';
     if (p.startsWith('/vault') || p.startsWith('/evidence') || p.startsWith('/loot')) return 'Evidence Vault';
-    if (p.startsWith('/cheatsheets') || p.startsWith('/notes') || p.startsWith('/cpts') || p.startsWith('/field-manual')) return 'Field Manual';
+    if (p.startsWith('/cheatsheets') || p.startsWith('/notes') || p.startsWith('/cpts') || p.startsWith('/field-manual')) return p.startsWith('/cheatsheets') ? 'Snippets' : 'Field Manual';
+    if (p.startsWith('/reverse-shell')) return 'Reverse Shells';
     if (p.startsWith('/writeup')) return 'Writeup Studio';
     if (p.startsWith('/analytics')) return 'Analytics';
     if (p.startsWith('/methodology')) return 'Methodology';
@@ -384,7 +384,7 @@ export const UnifiedHeader: React.FC = () => {
           <div className="fixed left-1/2 -translate-x-1/2 top-[54px] w-72 p-2.5 rounded-xl bg-surface-elevated border border-subtle shadow-xl machined-edge z-[60] text-xs space-y-2">
             <div className="text-[11px] text-muted px-1 font-medium flex items-center justify-between">
               <span>Engage target</span>
-              <span className="text-secondary font-mono tabular-nums">{machines.length} total</span>
+              <span className="text-secondary font-mono tabular-nums">{totalMachines} total</span>
             </div>
             <input
               type="text"
@@ -658,6 +658,7 @@ export const UnifiedHeader: React.FC = () => {
           }}
           className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           title="Open Command Palette (Ctrl+K)"
+          data-tour="command-palette"
           aria-label="Open Command Palette"
         >
           <Search className="w-3.5 h-3.5 flex-shrink-0" />

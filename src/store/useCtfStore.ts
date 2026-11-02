@@ -59,8 +59,15 @@ import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 
 import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachinesCatalog';
 import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
-import { saveVaultToIndexedDb, loadVaultFromIndexedDb, clearVaultFromIndexedDb } from '../utils/indexedDbVault';
 import { extractCommands, parseFrontmatterAndBody } from '../utils/markdownFrontmatter';
+import {
+  saveVaultToIndexedDb,
+  loadVaultFromIndexedDb,
+  clearVaultFromIndexedDb,
+  snapshotVaultBeforeImport,
+  restoreLastImportSnapshot,
+  saveVaultStrict,
+} from '../utils/indexedDbVault';
 import { 
   extractDeepWriteups, 
   stripDeepFieldsFromMachines, 
@@ -76,6 +83,7 @@ import {
   validateWorkspacePayload 
 } from '../utils/workspaceStorage';
 import { saveWorkspaceToIdb, loadWorkspaceFromIdb } from '../utils/resilientStorage';
+import { recordBackupSuccess } from '../utils/backupReminder';
 import {
   SCHEMA_VERSION,
   SCHEMA_VERSION_STORAGE_KEY,
@@ -172,16 +180,19 @@ export const ZEROBOX_BRAND: BrandTheme = {
 
 export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];
 
-export type CoreThemePreset = 'obsidian' | 'monolith' | 'htb';
-export type LegacyThemePreset = 'industrial' | 'neon' | 'zerobox' | 'oled' | 'light';
-export type ThemePreset = 'obsidian' | 'monolith' | 'htb';
+export type CoreThemePreset = 'obsidian' | 'htb' | 'offsec';
+export type LegacyThemePreset = 'industrial' | 'neon' | 'zerobox' | 'oled' | 'light' | 'monolith';
+export type ThemePreset = 'obsidian' | 'htb' | 'offsec';
 
 
 export function normalizeThemePreset(preset: string | null | undefined): ThemePreset {
   if (!preset) return 'obsidian';
   const p = String(preset).toLowerCase().trim();
-  if (p === 'monolith' || p === 'light' || p === 'clean-monolith' || p === 'clean monolith') return 'monolith';
   if (p === 'htb' || p === 'hackthebox' || p === 'hack-the-box' || p === 'htb-oled' || p === 'hack the box') return 'htb';
+  // 'monolith' (and its legacy 'light' / 'clean-monolith' aliases) was retired: saved values, backups and sync
+  // imports land on the Red Team / OffSec theme. No schema bump; the stored string is rewritten on next persist.
+  if (p === 'offsec' || p === 'red-team' || p === 'redteam' || p === 'red team' || p === 'crimson') return 'offsec';
+  if (p === 'monolith' || p === 'light' || p === 'clean-monolith' || p === 'clean monolith') return 'offsec';
   // Legacy aliases ('oled', 'industrial', 'zerobox', 'neon', 'midnight-blue', 'slate', etc.) map to 'obsidian'
   return 'obsidian';
 }
@@ -197,8 +208,8 @@ export function applyThemePreset(preset: ThemePreset | string) {
     try {
       const faviconMap: Record<string, string> = {
         obsidian: `${import.meta.env.BASE_URL}favicon-zerobox.png`,
-        monolith: `${import.meta.env.BASE_URL}favicon-zerobox.png`,
         htb: `${import.meta.env.BASE_URL}favicon-htb.png`,
+        offsec: `${import.meta.env.BASE_URL}favicon-offsec.png`,
       };
       const iconPath = faviconMap[normalizedPreset] || `${import.meta.env.BASE_URL}favicon-zerobox.png`;
       const favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
@@ -211,7 +222,7 @@ export function applyThemePreset(preset: ThemePreset | string) {
   }
 }
 
-export type ActiveTab = 'tracker' | 'cheatsheet' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme' | 'vault';
+export type ActiveTab = 'tracker' | 'cheatsheet' | 'revshell' | 'field-manual' | 'writeup' | 'analytics' | 'methodology' | 'exam' | 'theme' | 'vault';
 
 interface CtfStoreState {
   machines: Machine[];
@@ -288,6 +299,8 @@ interface CtfStoreState {
   setUserNotes: (notes: CptsNoteEntry[]) => void;
   setUserWikilinkMap: (map: Record<string, string>) => void;
   importNotesFromJson: (jsonStr: string) => Promise<{ success: boolean; count: number; error?: string }>;
+  replaceUserNotes: (notes: CptsNoteEntry[], wikilinkMap: Record<string, string>) => Promise<void>;
+  restoreLastNotesSnapshot: () => Promise<{ success: boolean; count: number; error?: string }>;
   clearUserNotes: () => Promise<void>;
   loadUserNotesFromDb: () => Promise<void>;
   setMobileMenuOpen: (open: boolean) => void;
@@ -1364,11 +1377,16 @@ const initialProfileId = getInitialProfileId();
 const initialProfileData = loadInitialProfileData(initialProfileId);
 const initialAttackGraphData = loadInitialAttackGraphState(initialProfileId);
 const initialLootData = loadLootState(initialProfileId);
+// First load with no saved profile data starts clean (the same state "Reset to 0%" produces); the sample set stays
+// opt-in. 'usr_daniel' keeps its sample roster, and any saved profile keeps its own flag.
+const bootUserSolvesReset = initialProfileData
+  ? Boolean(initialProfileData.userSolvesReset)
+  : initialProfileId !== 'usr_daniel';
 
 export const useCtfStore = create<CtfStoreState>()(
   persist(
     (set, get): CtfStoreState => ({
-      machines: mergeMachinesWithCatalog(initialProfileData?.machines, Boolean(initialProfileData?.userSolvesReset)),
+      machines: mergeMachinesWithCatalog(initialProfileData?.machines, bootUserSolvesReset),
       activeTargetId: initialProfileData?.activeTargetId || null,
       globalVars: initialProfileData?.globalVars || DEFAULT_GLOBAL_VARS,
       cheatsheets: initialProfileData?.cheatsheets || INITIAL_CHEATSHEET,
@@ -1377,7 +1395,7 @@ export const useCtfStore = create<CtfStoreState>()(
       customNotes: initialProfileData?.customNotes || [],
       deletedNoteIds: initialProfileData?.deletedNoteIds || [],
       deletedMachineIds: normalizeMachineTombstones(initialProfileData?.deletedMachineIds),
-      userSolvesReset: Boolean(initialProfileData?.userSolvesReset),
+      userSolvesReset: bootUserSolvesReset,
       isHydrated: true,
       setIsHydrated: (val) => set({ isHydrated: val }),
 
@@ -1461,6 +1479,7 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset: state.userSolvesReset,
         });
         triggerWorkspaceDownload(json, 'zerobox-workspace');
+        recordBackupSuccess();
         set({ unexportedChangesCount: 0 });
       },
       importWorkspace: (jsonStr: string) => {
@@ -1549,11 +1568,32 @@ export const useCtfStore = create<CtfStoreState>()(
           }
 
           const wikilinkMap: Record<string, string> = parsed.wikilinkMap || {};
-          await saveVaultToIndexedDb({ notes, wikilinkMap });
-          set({ userNotes: notes, userWikilinkMap: wikilinkMap });
+          await get().replaceUserNotes(notes, wikilinkMap);
           return { success: true, count: notes.length };
-        } catch (err: any) {
-          return { success: false, count: 0, error: err?.message || 'Invalid JSON format' };
+        } catch (err) {
+          return { success: false, count: 0, error: (err as Error)?.message || 'Invalid JSON format' };
+        }
+      },
+      // Single path for every import: keep a copy of the current vault first; if that fails nothing is overwritten.
+      replaceUserNotes: async (notes, wikilinkMap) => {
+        try {
+          await snapshotVaultBeforeImport();
+        } catch (err) {
+          throw new Error(
+            `Could not save a copy of your current notes, so nothing was imported. ${(err as Error)?.message || ''}`.trim()
+          );
+        }
+        await saveVaultStrict({ notes, wikilinkMap });
+        set({ userNotes: notes, userWikilinkMap: wikilinkMap });
+      },
+      restoreLastNotesSnapshot: async () => {
+        try {
+          const snapshot = await restoreLastImportSnapshot();
+          if (!snapshot) return { success: false, count: 0, error: 'There is no previous notes snapshot to restore.' };
+          set({ userNotes: snapshot.notes, userWikilinkMap: snapshot.wikilinkMap });
+          return { success: true, count: snapshot.notes.length };
+        } catch (err) {
+          return { success: false, count: 0, error: (err as Error)?.message || 'Could not restore the previous notes.' };
         }
       },
       clearUserNotes: async () => {

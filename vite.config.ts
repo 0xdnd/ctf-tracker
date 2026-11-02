@@ -1,15 +1,44 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { join, normalize, resolve } from 'node:path';
+import type { Plugin } from 'vite';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version: string };
+
+// Preview only: mimic GitHub Pages. Paths that match no file (or folder with index.html) in dist
+// get dist/404.html with status 404; public/404.js then boots the app shell for real client routes.
+function pagesFallbackPreview(): Plugin {
+  return {
+    name: 'pages-404-fallback-preview',
+    configurePreviewServer(server) {
+      const outDir = resolve(server.config.root, server.config.build.outDir);
+      server.middlewares.use((req, res, next) => {
+        if ((req.method !== 'GET' && req.method !== 'HEAD') || !req.url) return next();
+        let pathname: string;
+        try { pathname = decodeURIComponent(req.url.split('?')[0].split('#')[0]); } catch { return next(); }
+        const target = normalize(join(outDir, pathname));
+        if (!target.startsWith(outDir)) return next();
+        const isFile = (f: string) => existsSync(f) && statSync(f).isFile();
+        if (isFile(target) || isFile(join(target, 'index.html'))) return next();
+        const page = join(outDir, '404.html');
+        if (!isFile(page)) return next();
+        const body = readFileSync(page);
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Content-Length', body.length);
+        res.end(req.method === 'HEAD' ? undefined : body);
+      });
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Tauri desktop builds (`--mode tauri`) use hash routing + relative assets; web uses clean URLs at '/'.
   const isTauri = mode === 'tauri';
   return {
-  plugins: [react()],
+  plugins: [react(), ...(isTauri ? [] : [pagesFallbackPreview()])],
   base: isTauri ? './' : '/',
   esbuild: { legalComments: 'eof' },
   define: {

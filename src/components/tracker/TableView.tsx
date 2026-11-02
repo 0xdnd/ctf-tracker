@@ -22,6 +22,7 @@ import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
+import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roomLink';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
@@ -172,8 +173,8 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
           target="_blank"
           rel="noopener noreferrer"
           className={ICON_BTN}
-          title="Open Room Link"
-          aria-label={`Open external room link for ${m.name}`}
+          title={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Open Room Link'}
+          aria-label={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`}
         >
           <ExternalLink className="w-3.5 h-3.5" />
         </a>

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { OsBadge, OsIcon } from './OsBadge';
 
 describe('OsBadge Component', () => {
-  it('renders Linux badge with orange categorical tokens (cat-4)', () => {
+  it('renders Linux badge with yellow categorical tokens (cat-7)', () => {
     render(<OsBadge os="Linux" />);
 
     const label = screen.getByText('Linux');
@@ -11,10 +11,10 @@ describe('OsBadge Component', () => {
 
     const badge = label.closest('.inline-flex');
     expect(badge).toBeInTheDocument();
-    // Cat-4 orange tokens
-    expect(badge?.className).toContain('bg-cat-4-bg');
-    expect(badge?.className).toContain('text-cat-4-fg');
-    expect(badge?.className).toContain('border-cat-4-border');
+    // Cat-7 yellow tokens
+    expect(badge?.className).toContain('bg-cat-7-bg');
+    expect(badge?.className).toContain('text-cat-7-fg');
+    expect(badge?.className).toContain('border-cat-7-border');
   });
 
   it('renders Windows badge with blue categorical tokens (cat-1)', () => {
@@ -52,25 +52,25 @@ describe('OsBadge Component', () => {
     const label = screen.getByText('Linux');
     const badge = label.closest('.inline-flex');
     expect(badge).toBeInTheDocument();
-    expect(badge?.className).toContain('bg-cat-4-bg');
+    expect(badge?.className).toContain('bg-cat-7-bg');
   });
 
   it('renders OsIcon correctly with Tux SVG path for Linux', () => {
     const { container } = render(<OsIcon os="Linux" />);
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
-    expect(svg?.className.baseVal || svg?.getAttribute('class')).toContain('text-cat-4-fg');
+    expect(svg?.className.baseVal || svg?.getAttribute('class')).toContain('text-cat-7-fg');
   });
 
-  it('renders OsBadge and OsIcon with orange Tux styling for lowercase "linux"', () => {
+  it('renders OsBadge and OsIcon with yellow Tux styling for lowercase "linux"', () => {
     const { container } = render(<OsBadge os="linux" />);
     const badge = container.querySelector('.inline-flex');
     expect(badge).toBeInTheDocument();
-    expect(badge?.className).toContain('bg-cat-4-bg');
-    expect(badge?.className).toContain('text-cat-4-fg');
+    expect(badge?.className).toContain('bg-cat-7-bg');
+    expect(badge?.className).toContain('text-cat-7-fg');
 
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
-    expect(svg?.className.baseVal || svg?.getAttribute('class')).toContain('text-cat-4-fg');
+    expect(svg?.className.baseVal || svg?.getAttribute('class')).toContain('text-cat-7-fg');
   });
 });

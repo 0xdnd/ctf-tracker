@@ -91,6 +91,7 @@ export interface ObsidianMarkdownBodyProps {
    * target's IP wins over the global RHOST.
    */
   targetIp?: string;
+  onToggleCheckbox?: (lineIndex: number, newChecked: boolean) => void;
 }
 
 /**
@@ -107,6 +108,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
   onOpenNote,
   onOpenNotePicker,
   targetIp,
+  onToggleCheckbox,
 }) => {
   const [openCallouts, setOpenCallouts] = useState<Record<number, boolean>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
@@ -135,13 +137,17 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
     if (soundEnabled) playCyberSound('click');
   }, [soundEnabled]);
 
-  const toggleChecklist = useCallback((idx: number) => {
+  const toggleChecklist = useCallback((idx: number, currentChecked: boolean) => {
+    const nextState = !currentChecked;
     setCheckedItems((prev) => ({
       ...prev,
-      [idx]: !prev[idx],
+      [idx]: nextState,
     }));
+    if (onToggleCheckbox) {
+      onToggleCheckbox(idx, nextState);
+    }
     if (soundEnabled) playCyberSound('click');
-  }, [soundEnabled]);
+  }, [onToggleCheckbox, soundEnabled]);
 
   // Inline `code` spans render as <code> with placeholder chips; the rest
   // of the line goes through the wikilink renderer.
@@ -571,7 +577,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
               key={`chk-${i}`}
               onClick={(e) => {
                 if ((e.target as HTMLElement).tagName.toLowerCase() !== 'input') {
-                  toggleChecklist(i);
+                  toggleChecklist(i, isChecked);
                 }
               }}
               className={`flex items-start gap-2.5 my-1.5 px-2.5 py-1.5 rounded hover:bg-accent-muted transition-colors cursor-pointer select-none ${sizeClasses.body} font-sans`}
@@ -580,7 +586,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
                 type="checkbox"
                 checked={isChecked}
                 onClick={(e) => e.stopPropagation()}
-                onChange={() => toggleChecklist(i)}
+                onChange={() => toggleChecklist(i, isChecked)}
                 className="mt-1 w-4 h-4 rounded border-accent/50 bg-surface-sunken text-accent focus:ring-accent cursor-pointer flex-shrink-0"
               />
               <span className={isChecked ? 'line-through text-muted opacity-70' : 'text-primary'}>

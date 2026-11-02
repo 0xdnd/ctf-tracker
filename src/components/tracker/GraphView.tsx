@@ -108,22 +108,22 @@ export interface CanvasThemeTokens {
 export function getCanvasThemeTokens(themePreset: string = 'obsidian', isDark: boolean = true): CanvasThemeTokens {
   const p = String(themePreset || 'obsidian').toLowerCase().trim();
   if (!isDark || p === 'light') {
-    if (p === 'monolith' || p === 'clean-monolith' || p === 'clean monolith') {
+    if (p === 'offsec' || p === 'monolith' || p === 'clean-monolith' || p === 'clean monolith' || p === 'red-team' || p === 'redteam' || p === 'red team' || p === 'crimson') {
       return {
-        canvasBg: '#FAFAFA',
+        canvasBg: '#F8FAFC',
         cardBg: '#FFFFFF',
-        cardBorder: '#E4E4E7',
-        cardHoverBorder: '#0284C7',
-        textPrimary: '#09090B',
-        textMuted: '#52525B',
-        codeBg: '#F4F4F5',
-        codeBorder: '#E4E4E7',
-        accent: '#0284C7',
+        cardBorder: '#CBD5E1',
+        cardHoverBorder: '#B91C1C',
+        textPrimary: '#0F172A',
+        textMuted: '#475569',
+        codeBg: '#E2E8F0',
+        codeBorder: '#CBD5E1',
+        accent: '#B91C1C',
         accentGlow: 'none',
         gridColor: '#CBD5E1',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#0284C7',
+        statusRoot: '#15803D',
+        statusFoothold: '#D97706',
+        statusUnsolved: '#B91C1C',
       };
     }
     if (p === 'htb' || p === 'hackthebox' || p === 'hack-the-box' || p === 'hack the box') {
@@ -199,25 +199,6 @@ export function getCanvasThemeTokens(themePreset: string = 'obsidian', isDark: b
   }
 
   switch (p) {
-    case 'monolith':
-    case 'clean-monolith':
-    case 'clean monolith':
-      return {
-        canvasBg: '#18181B',
-        cardBg: '#27272A',
-        cardBorder: '#3F3F46',
-        cardHoverBorder: '#38BDF8',
-        textPrimary: '#F4F4F5',
-        textMuted: '#A1A1AA',
-        codeBg: '#09090B',
-        codeBorder: '#3F3F46',
-        accent: '#38BDF8',
-        accentGlow: 'none',
-        gridColor: '#3F3F46',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#38BDF8',
-      };
     case 'industrial':
       return {
         canvasBg: '#000000',
@@ -251,6 +232,30 @@ export function getCanvasThemeTokens(themePreset: string = 'obsidian', isDark: b
         statusRoot: '#10B981',
         statusFoothold: '#F59E0B',
         statusUnsolved: '#38BDF8',
+      };
+    case 'offsec':
+    case 'monolith':
+    case 'clean-monolith':
+    case 'clean monolith':
+    case 'red-team':
+    case 'redteam':
+    case 'red team':
+    case 'crimson':
+      return {
+        canvasBg: '#09090C',
+        cardBg: '#101015',
+        cardBorder: '#272730',
+        cardHoverBorder: '#FF4646',
+        textPrimary: '#F4F4F5',
+        textMuted: '#A1A1AA',
+        codeBg: '#050508',
+        codeBorder: '#272730',
+        accent: '#FF4646',
+        accentGlow: 'none',
+        gridColor: '#272730',
+        statusRoot: '#10B981',
+        statusFoothold: '#F59E0B',
+        statusUnsolved: '#FF4646',
       };
     case 'htb':
     case 'hackthebox':
@@ -428,6 +433,13 @@ export const LARGE_GRAPH_NODE_COUNT = 60;
 export const LOD_DOT_SCALE_THRESHOLD = 0.3;
 // SHOW ALL spans a much larger world, so it may zoom out further than the scoped view (0.2).
 const MIN_SCALE_SCOPED = 0.2;
+
+// Touch gestures: one finger scrolls the page, two fingers pan/zoom the graph, and a card drags only
+// after a short press. Mouse and pen keep the direct drag-to-pan path.
+const TOUCH_LONG_PRESS_MS = 350;
+const TOUCH_MOVE_SLOP = 8;
+const TOUCH_HINT_MS = 1500;
+const TOUCH_HINT_FADE_MS = 300;
 const MIN_SCALE_SHOW_ALL = 0.05;
 
 // ---------------------------------------------------------------------------
@@ -617,7 +629,13 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
     ? tokens.statusFoothold 
     : tokens.statusUnsolved;
 
-  const displayName = node.name.length > 12 ? `${node.name.slice(0, 11)}…` : node.name;
+  // Header row: [platform chip][OS icon][name][status beacon] inside the 164px inner width.
+  // The chip grows with the platform text ("VulnHub"), so the name budget shrinks with it (~8.6px per glyph at 14px).
+  const platformChipW = node.platform ? Math.max(34, Math.round(node.platform.length * 6.8 + 8)) : 0;
+  const nameOffset = node.platform ? 8 + platformChipW + 4 + 16 + 4 : 32;
+  const nameMaxChars = Math.max(6, Math.floor((160 - nameOffset) / 8.6));
+  const displayName = node.name.length > nameMaxChars ? `${node.name.slice(0, nameMaxChars - 1)}…` : node.name;
+  const displayIp = node.ip && node.ip.length > 15 ? `${node.ip.slice(0, 14)}…` : node.ip;
   const isDark = typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true;
   const diffColors = getDifficultyColors(node.difficulty, isDark);
   const ports = extractMachinePorts(node.machine);
@@ -790,12 +808,12 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       {node.platform && (
         <g className="pointer-events-none" aria-label={`Platform: ${platformFullName(node.platform)}`}>
           <title>{`Platform: ${platformFullName(node.platform)}`}</title>
-          <rect x={cardX + 8} y={cardY + 9} width="26" height="14" rx="3" fill={tokens.codeBg} stroke={tokens.codeBorder} strokeWidth="0.8" />
+          <rect x={cardX + 8} y={cardY + 7} width={platformChipW} height="18" rx="3" fill={tokens.codeBg} stroke={tokens.codeBorder} strokeWidth="0.8" />
           <text
-            x={cardX + 21}
-            y={cardY + 19}
+            x={cardX + 8 + platformChipW / 2}
+            y={cardY + 19.5}
             fill={tokens.accent}
-            fontSize="8"
+            fontSize="11"
             fontFamily="system-ui, -apple-system, sans-serif"
             fontWeight="700"
             textAnchor="middle"
@@ -805,7 +823,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
           </text>
         </g>
       )}
-      <g transform={`translate(${cardX + (node.platform ? 38 : 10)}, ${cardY + 8})`}>
+      <g transform={`translate(${cardX + (node.platform ? 8 + platformChipW + 4 : 10)}, ${cardY + 8})`}>
         {node.os?.toLowerCase() === 'linux' ? (
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#F97316">
             <path d={LINUX_TUX_PATH} />
@@ -836,10 +854,10 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
 
       {/* Target Hostname */}
       <text
-        x={cardX + (node.platform ? 60 : 32)}
+        x={cardX + nameOffset}
         y={cardY + 20}
         fill={isSelected ? tokens.accent : tokens.textPrimary}
-        fontSize="12"
+        fontSize="14"
         fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         fontWeight="600"
         letterSpacing="-0.01em"
@@ -850,7 +868,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       </text>
 
       {/* Status Beacon (Hardware-grade concentric LED beacon with subtle pulse) */}
-      <g transform={`translate(${cardX + 164}, ${cardY + 16})`} className="pointer-events-none">
+      <g transform={`translate(${cardX + 168}, ${cardY + 16})`} className="pointer-events-none">
         {isRooted && animate && (
           <circle
             cx="0"
@@ -895,7 +913,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       <rect
         x={cardX + 8}
         y={cardY + 35}
-        width="86"
+        width="100"
         height="18"
         rx="4"
         fill={tokens.codeBg}
@@ -903,24 +921,24 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         strokeWidth="0.8"
       />
       <text
-        x={cardX + 51}
-        y={cardY + 47.5}
+        x={cardX + 58}
+        y={cardY + 48.5}
         fill={tokens.accent}
-        fontSize="9.5"
+        fontSize="11"
         fontFamily="'JetBrains Mono', monospace"
         fontWeight="600"
         style={{ fontVariantNumeric: 'tabular-nums' }}
         textAnchor="middle"
         className="pointer-events-none select-none"
       >
-        {node.ip}
+        {displayIp}
       </text>
 
       {/* Difficulty Pill */}
       <rect
-        x={cardX + 100}
+        x={cardX + 112}
         y={cardY + 35}
-        width="72"
+        width="60"
         height="18"
         rx="4"
         fill={diffColors.fill}
@@ -928,13 +946,13 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         strokeWidth="0.8"
       />
       <text
-        x={cardX + 136}
-        y={cardY + 47.5}
+        x={cardX + 142}
+        y={cardY + 48.5}
         fill={diffColors.text}
-        fontSize="8"
+        fontSize="11"
         fontFamily="system-ui, -apple-system, sans-serif"
         fontWeight="700"
-        letterSpacing="0.04em"
+        letterSpacing="0.02em"
         textAnchor="middle"
         className="pointer-events-none select-none"
       >
@@ -945,26 +963,26 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       {ports.length === 0 ? (
         <text
           x={x}
-          y={cardY + 70}
+          y={cardY + 72}
           fill={tokens.textMuted}
-          fontSize="7.5"
+          fontSize="11"
           fontFamily="monospace"
           textAnchor="middle"
           opacity="0.6"
           className="pointer-events-none select-none"
         >
-          NO OPEN PORTS
+          No open ports
         </text>
       ) : (
-        <g transform={`translate(${cardX + 8}, ${cardY + 59})`}>
+        <g transform={`translate(${cardX + 8}, ${cardY + 58})`}>
           {(() => {
             // Render up to 4 port badges, or 3 + overflow badge
             const maxBadges = 4;
             const needsOverflow = ports.length > maxBadges;
             const displayPorts = needsOverflow ? ports.slice(0, 3) : ports.slice(0, 4);
-            const badgeW = 36;
-            const badgeH = 16;
-            const gap = 5;
+            const badgeW = 38;
+            const badgeH = 18;
+            const gap = 4;
 
             return (
               <>
@@ -982,16 +1000,16 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
                       />
                       <text
                         x={badgeW / 2}
-                        y="11"
+                        y="13"
                         fill={pColors.text}
-                        fontSize="7.5"
+                        fontSize="11"
                         fontFamily="'JetBrains Mono', monospace"
                         fontWeight="600"
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                         textAnchor="middle"
                         className="pointer-events-none select-none"
                       >
-                        :{p}
+                        {p > 9999 ? p : `:${p}`}
                       </text>
                     </g>
                   );
@@ -1008,9 +1026,9 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
                     />
                     <text
                       x={badgeW / 2}
-                      y="11"
+                      y="13"
                       fill={tokens.textMuted}
-                      fontSize="7.5"
+                      fontSize="11"
                       fontFamily="monospace"
                       fontWeight="bold"
                       textAnchor="middle"
@@ -1309,6 +1327,43 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     currentPos: { x: 0, y: 0 },
   });
 
+  // Active touch pointers (by pointerId). Two of them = a graph pan/zoom gesture.
+  const touchPointersRef = useRef(
+    new Map<number, { x: number; y: number; startX: number; startY: number; onBg: boolean; hinted: boolean }>()
+  );
+  // Touch card drag arms after a long press; until then one finger scrolls the page.
+  const nodeTouchArmedRef = useRef(false);
+  const nodeLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearNodeTouchPress = useCallback(() => {
+    nodeTouchArmedRef.current = false;
+    if (nodeLongPressTimerRef.current !== null) {
+      clearTimeout(nodeLongPressTimerRef.current);
+      nodeLongPressTimerRef.current = null;
+    }
+  }, []);
+  // "Use two fingers to move the graph" hint
+  const [touchHint, setTouchHint] = useState<'off' | 'on' | 'fading'>('off');
+  const touchHintTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const showTouchHint = useCallback(() => {
+    touchHintTimersRef.current.forEach(clearTimeout);
+    touchHintTimersRef.current = [];
+    setTouchHint('on');
+    const reduce =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      touchHintTimersRef.current.push(setTimeout(() => setTouchHint('off'), TOUCH_HINT_MS));
+    } else {
+      touchHintTimersRef.current.push(setTimeout(() => setTouchHint('fading'), TOUCH_HINT_MS));
+      touchHintTimersRef.current.push(setTimeout(() => setTouchHint('off'), TOUCH_HINT_MS + TOUCH_HINT_FADE_MS));
+    }
+  }, []);
+  useEffect(() => () => {
+    touchHintTimersRef.current.forEach(clearTimeout);
+    clearNodeTouchPress();
+  }, [clearNodeTouchPress]);
+
   // Touch tracking refs
   const touchStartDistRef = useRef<number>(0);
   const touchStartScaleRef = useRef<number>(1);
@@ -1329,9 +1384,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     return allMachines.length > 0 ? allMachines : filteredMachines;
   }, [allMachines, filteredMachines]);
 
-  const { clusters, defaultNodePositions, allNodes, layoutBounds } = useMemo(() => {
+  const { clusters, defaultNodePositions, allNodes, layoutBounds, realSubnetCount } = useMemo(() => {
     const sample = showAllNodes ? universeMachines : universeMachines.slice(0, 48);
-    if (sample.length === 0) return { clusters: [], defaultNodePositions: {}, allNodes: [], layoutBounds: SCOPED_BOUNDS };
+    if (sample.length === 0)
+      return { clusters: [], defaultNodePositions: {}, allNodes: [], layoutBounds: SCOPED_BOUNDS, realSubnetCount: 0 };
 
     // Subnet Templates
     const hasOnlyWeb = sample.every(m => classifyMachine(m).primary.startsWith('Web'));
@@ -1412,6 +1468,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         defaultNodePositions: layout.positions,
         allNodes: showAllNodesList,
         layoutBounds: layout.bounds,
+        realSubnetCount: layout.clusters.length,
       };
     }
 
@@ -1559,7 +1616,23 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       positions[m.id] = { x, y };
     });
 
-    return { clusters: activeClusters, defaultNodePositions: positions, allNodes: initialNodes, layoutBounds: SCOPED_BOUNDS };
+    // Real subnets: groups some machine belongs to by its own match (same first-match rule SHOW ALL
+    // uses). Groups that only exist because capacity overflow dumped machines into an empty bucket
+    // are filler and are not counted.
+    const matchedTemplateIds = new Set<string>();
+    sample.forEach(m => {
+      const t = clusterTemplates.find(c => c.matcher(m)) ?? clusterTemplates[clusterTemplates.length - 1];
+      matchedTemplateIds.add(t.id);
+    });
+    const realSubnetCount = activeTemplates.filter(ct => matchedTemplateIds.has(ct.id)).length;
+
+    return {
+      clusters: activeClusters,
+      defaultNodePositions: positions,
+      allNodes: initialNodes,
+      layoutBounds: SCOPED_BOUNDS,
+      realSubnetCount,
+    };
   }, [universeMachines, showAllNodes]);
 
   // Set of machine IDs currently matching active search/tag filters
@@ -1792,18 +1865,106 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // ---------------------------------------------------------------------------
   // 3. Canvas Background Panning Handlers
   // ---------------------------------------------------------------------------
+  const touchCentroid = () => {
+    let sx = 0;
+    let sy = 0;
+    touchPointersRef.current.forEach((p) => {
+      sx += p.x;
+      sy += p.y;
+    });
+    const n = touchPointersRef.current.size || 1;
+    return { x: sx / n, y: sy / n };
+  };
+
+  const resetNodeDrag = () => {
+    clearNodeTouchPress();
+    nodeDragRef.current = {
+      isDown: false,
+      isDragging: false,
+      nodeId: null,
+      pointerId: -1,
+      startClientX: 0,
+      startClientY: 0,
+      initialPos: { x: 0, y: 0 },
+      currentPos: { x: 0, y: 0 },
+    };
+    setTransientNodePos(null);
+  };
+
+  // Capture phase: runs even when a card or edge stops the bubbling pointerdown, so a second finger
+  // that lands on a card still counts toward the two-finger graph gesture.
+  const handleCanvasPointerDownCapture = (e: React.PointerEvent) => {
+    if (e.pointerType !== 'touch') return;
+    const target = e.target as HTMLElement | SVGElement;
+    if (target.closest('[data-testid="graph-minimap-svg"]')) return;
+    const onBg = !(
+      target.closest('[data-node-interactive]') ||
+      target.closest('[data-edge-interactive]') ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('select')
+    );
+    const pointers = touchPointersRef.current;
+    pointers.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY,
+      startX: e.clientX,
+      startY: e.clientY,
+      onBg,
+      hinted: false,
+    });
+    if (pointers.size === 2) {
+      // Second finger: this is a graph gesture, so drop any pending card press and start the pan
+      if (nodeDragRef.current.isDown) resetNodeDrag();
+      const c = touchCentroid();
+      canvasPanRef.current = {
+        isPanning: true,
+        startClientX: c.x,
+        startClientY: c.y,
+        initialPan: { x: viewRef.current.x, y: viewRef.current.y },
+      };
+      setIsCanvasDragging(true);
+    }
+  };
+
+  const panToClient = (clientX: number, clientY: number) => {
+    const screenDx = clientX - canvasPanRef.current.startClientX;
+    const screenDy = clientY - canvasPanRef.current.startClientY;
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    const w = rect && rect.width > 0 ? rect.width : 1600;
+    const h = rect && rect.height > 0 ? rect.height : 1200;
+    const aspect = Math.min(w / 1600, h / 1200) || 1;
+
+    viewRef.current = {
+      x: canvasPanRef.current.initialPan.x + screenDx / aspect,
+      y: canvasPanRef.current.initialPan.y + screenDy / aspect,
+      scale: viewRef.current.scale,
+    };
+    viewDirtyRef.current = true;
+    if (panRafRef.current === null) {
+      panRafRef.current = requestAnimationFrame(() => {
+        panRafRef.current = null;
+        applyViewToDom();
+      });
+    }
+    refreshLiveCull();
+  };
+
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement | SVGElement;
     if (
-      target.closest('[data-node-interactive]') || 
-      target.closest('[data-edge-interactive]') || 
-      target.closest('button') || 
+      target.closest('[data-node-interactive]') ||
+      target.closest('[data-edge-interactive]') ||
+      target.closest('button') ||
       target.closest('input') ||
       target.closest('select')
     ) {
       return;
     }
     if (e.button !== 0) return;
+    // Touch: one finger never pans (the page scrolls); the two-finger pan starts in the capture handler
+    if (e.pointerType === 'touch') return;
 
     canvasPanRef.current = {
       isPanning: true,
@@ -1820,33 +1981,34 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   };
 
   const handleCanvasPointerMove = (e: React.PointerEvent) => {
-    // Canvas pan motion
-    if (canvasPanRef.current.isPanning) {
-      const screenDx = e.clientX - canvasPanRef.current.startClientX;
-      const screenDy = e.clientY - canvasPanRef.current.startClientY;
-
-      const rect = containerRef.current?.getBoundingClientRect();
-      const w = rect && rect.width > 0 ? rect.width : 1600;
-      const h = rect && rect.height > 0 ? rect.height : 1200;
-      const aspect = Math.min(w / 1600, h / 1200) || 1;
-
-      viewRef.current = {
-        x: canvasPanRef.current.initialPan.x + screenDx / aspect,
-        y: canvasPanRef.current.initialPan.y + screenDy / aspect,
-        scale: viewRef.current.scale,
-      };
-      viewDirtyRef.current = true;
-      if (panRafRef.current === null) {
-        panRafRef.current = requestAnimationFrame(() => {
-          panRafRef.current = null;
-          applyViewToDom();
-        });
+    const isTouch = e.pointerType === 'touch';
+    if (isTouch) {
+      const t = touchPointersRef.current.get(e.pointerId);
+      if (t) {
+        t.x = e.clientX;
+        t.y = e.clientY;
       }
-      refreshLiveCull();
+      if (touchPointersRef.current.size >= 2) {
+        if (canvasPanRef.current.isPanning) {
+          const c = touchCentroid();
+          panToClient(c.x, c.y);
+        }
+        return;
+      }
+      // One finger on empty canvas: the page scrolls; tell the user how to move the graph
+      if (t && t.onBg && !t.hinted && Math.hypot(e.clientX - t.startX, e.clientY - t.startY) >= TOUCH_MOVE_SLOP / 2) {
+        t.hinted = true;
+        showTouchHint();
+      }
     }
 
-    // Node drag motion fallback if captured on canvas
-    if (nodeDragRef.current.isDown && nodeDragRef.current.nodeId) {
+    // Canvas pan motion (mouse / pen)
+    if (!isTouch && canvasPanRef.current.isPanning) {
+      panToClient(e.clientX, e.clientY);
+    }
+
+    // Node drag motion fallback if captured on canvas (touch only once the long press armed it)
+    if (nodeDragRef.current.isDown && nodeDragRef.current.nodeId && (!isTouch || nodeTouchArmedRef.current)) {
       const screenDx = e.clientX - nodeDragRef.current.startClientX;
       const screenDy = e.clientY - nodeDragRef.current.startClientY;
       const dist = Math.hypot(screenDx, screenDy);
@@ -1872,30 +2034,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   };
 
   // Interrupted gesture (pointercancel / lost capture): commit the live view, drop any node drag
-  const handleCanvasPointerCancel = () => {
-    if (canvasPanRef.current.isPanning) {
+  const handleCanvasPointerCancel = (e: React.PointerEvent) => {
+    const isTouch = e.pointerType === 'touch';
+    if (isTouch) {
+      const t = touchPointersRef.current.get(e.pointerId);
+      touchPointersRef.current.delete(e.pointerId);
+      // The browser took a single finger on empty canvas for page scroll: say how to move the graph
+      if (e.type === 'pointercancel' && t && t.onBg && !t.hinted && !canvasPanRef.current.isPanning) {
+        showTouchHint();
+      }
+    }
+    if (canvasPanRef.current.isPanning && (!isTouch || touchPointersRef.current.size < 2)) {
       canvasPanRef.current.isPanning = false;
       setIsCanvasDragging(false);
       if (viewDirtyRef.current) commitLiveView();
       setLiveCullView(null);
     }
-    if (nodeDragRef.current.isDown) {
-      nodeDragRef.current = {
-        isDown: false,
-        isDragging: false,
-        nodeId: null,
-        pointerId: -1,
-        startClientX: 0,
-        startClientY: 0,
-        initialPos: { x: 0, y: 0 },
-        currentPos: { x: 0, y: 0 },
-      };
-      setTransientNodePos(null);
+    if (nodeDragRef.current.isDown && (!isTouch || nodeDragRef.current.pointerId === e.pointerId)) {
+      resetNodeDrag();
     }
   };
 
   const handleCanvasPointerUp = (e: React.PointerEvent) => {
-    if (canvasPanRef.current.isPanning) {
+    const isTouch = e.pointerType === 'touch';
+    if (isTouch) touchPointersRef.current.delete(e.pointerId);
+    if (canvasPanRef.current.isPanning && (!isTouch || touchPointersRef.current.size < 2)) {
       canvasPanRef.current.isPanning = false;
       setIsCanvasDragging(false);
       if (viewDirtyRef.current) commitLiveView();
@@ -1907,22 +2070,16 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     }
 
     // Node drag release fallback
-    if (nodeDragRef.current.isDown && nodeDragRef.current.nodeId) {
+    if (
+      nodeDragRef.current.isDown &&
+      nodeDragRef.current.nodeId &&
+      (!isTouch || nodeDragRef.current.pointerId === e.pointerId)
+    ) {
       const nodeId = nodeDragRef.current.nodeId;
       if (nodeDragRef.current.isDragging) {
         commitNodePosition(nodeId, nodeDragRef.current.currentPos);
       }
-      nodeDragRef.current = {
-        isDown: false,
-        isDragging: false,
-        nodeId: null,
-        pointerId: -1,
-        startClientX: 0,
-        startClientY: 0,
-        initialPos: { x: 0, y: 0 },
-        currentPos: { x: 0, y: 0 },
-      };
-      setTransientNodePos(null);
+      resetNodeDrag();
     }
   };
 
@@ -1983,6 +2140,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const handleNodePointerDown = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (e.button !== 0) return;
     e.stopPropagation();
+    const isTouch = e.pointerType === 'touch';
+    // A second finger makes this a graph gesture (started in the capture handler), not a card press
+    if (isTouch && touchPointersRef.current.size >= 2) return;
 
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       try {
@@ -2004,7 +2164,19 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       initialPos: { x: currentX, y: currentY },
       currentPos: { x: currentX, y: currentY },
     };
-  }, []);
+
+    // Touch: a single finger scrolls the page; the card only becomes draggable after a long press
+    clearNodeTouchPress();
+    if (isTouch) {
+      const pid = e.pointerId;
+      nodeLongPressTimerRef.current = setTimeout(() => {
+        nodeLongPressTimerRef.current = null;
+        if (nodeDragRef.current.isDown && nodeDragRef.current.pointerId === pid) {
+          nodeTouchArmedRef.current = true;
+        }
+      }, TOUCH_LONG_PRESS_MS);
+    }
+  }, [clearNodeTouchPress]);
 
   const handleNodePointerMove = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (!nodeDragRef.current.isDown || nodeDragRef.current.nodeId !== node.id) return;
@@ -2012,6 +2184,24 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     const screenDx = e.clientX - nodeDragRef.current.startClientX;
     const screenDy = e.clientY - nodeDragRef.current.startClientY;
     const dist = Math.hypot(screenDx, screenDy);
+
+    if (e.pointerType === 'touch' && !nodeTouchArmedRef.current) {
+      // Moved before the long press armed: this is a page scroll, not a card drag
+      if (dist >= TOUCH_MOVE_SLOP) {
+        clearNodeTouchPress();
+        nodeDragRef.current = {
+          isDown: false,
+          isDragging: false,
+          nodeId: null,
+          pointerId: -1,
+          startClientX: 0,
+          startClientY: 0,
+          initialPos: { x: 0, y: 0 },
+          currentPos: { x: 0, y: 0 },
+        };
+      }
+      return;
+    }
 
     if (dist >= 4) {
       nodeDragRef.current.isDragging = true;
@@ -2030,7 +2220,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         y: newY,
       });
     }
-  }, [getCanvasDelta, clampNodePos]);
+  }, [getCanvasDelta, clampNodePos, clearNodeTouchPress]);
 
   const handleNodePointerUp = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (!nodeDragRef.current.isDown || nodeDragRef.current.nodeId !== node.id) return;
@@ -2049,6 +2239,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       selectRef.current(node);
     }
 
+    clearNodeTouchPress();
     nodeDragRef.current = {
       isDown: false,
       isDragging: false,
@@ -2060,7 +2251,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       currentPos: { x: 0, y: 0 },
     };
     setTransientNodePos(null);
-  }, [commitNodePosition]);
+  }, [commitNodePosition, clearNodeTouchPress]);
 
   // ---------------------------------------------------------------------------
   // 5. Wheel Zoom-To-Cursor Handler
@@ -2117,6 +2308,19 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, [applyViewToDom, commitLiveView, refreshLiveCull]);
+
+  // Two fingers (or an armed card drag) own the gesture: stop the browser from scrolling/zooming the
+  // page. React's touchmove listener is passive, so this needs a native non-passive one.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (!e.cancelable) return;
+      if (touchPointersRef.current.size >= 2 || nodeTouchArmedRef.current) e.preventDefault();
+    };
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onTouchMove);
+  }, []);
 
   // Touch Pinch Zoom Handler
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -2359,31 +2563,51 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full rounded-2xl border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none touch-none transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
+      className={`relative w-full rounded-2xl border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none touch-pan-x touch-pan-y transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen' : 'h-[720px]'
       }`}
+      onPointerDownCapture={handleCanvasPointerDownCapture}
       onPointerDown={handleCanvasPointerDown}
       onPointerMove={handleCanvasPointerMove}
       onPointerUp={handleCanvasPointerUp}
       onPointerCancel={handleCanvasPointerCancel}
       onLostPointerCapture={handleCanvasPointerCancel}
+      onContextMenu={(e) => {
+        // A long press on a card must not open the browser's context menu
+        if (touchPointersRef.current.size > 0) e.preventDefault();
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      {/* Top HUD Legend & Telemetry Capsule */}
-      <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 pointer-events-auto">
+      {touchHint !== 'off' && (
+        <div
+          role="status"
+          data-testid="graph-touch-hint"
+          className={`pointer-events-none absolute inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-center px-4 transition-opacity duration-300 motion-reduce:transition-none ${
+            touchHint === 'fading' ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <span className="rounded-xl border border-subtle bg-surface-elevated/95 px-4 py-2 text-sm font-semibold text-primary shadow-xs backdrop-blur-sm">
+            Use two fingers to move the graph
+          </span>
+        </div>
+      )}
+      {/* Top HUD: stats + legend on the left, canvas toolbar on the right. One wrapping row, so the
+          toolbar drops below the stats and legend when the canvas is too narrow for all of them. */}
+      <div className="absolute inset-x-4 top-4 z-20 flex flex-wrap items-start justify-between gap-2 pointer-events-none">
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 pointer-events-auto">
         <div className="px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs flex items-center gap-2 machined-edge">
           <Share2 className="w-3.5 h-3.5 text-accent" />
           <span className="text-xs font-semibold text-primary font-sans">
-            BLOODHOUND // CANVAS
+            Machine graph
           </span>
           <span 
             className="text-xs text-accent font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
-            title={showAllNodes ? 'Showing all catalog machines in attack topology' : 'Showing initial scoped sample targets (48 nodes)'}
+            title={showAllNodes ? 'Every machine is placed in its subnet group' : 'The first 48 machines are grouped by subnet; the rest sit in a grid'}
           >
-            {visibleNodes.length} / {universeMachines.length} NODES
+            {visibleNodes.length} of {universeMachines.length} machines
           </span>
           {universeMachines.length > 48 && (
             <button
@@ -2398,22 +2622,34 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   ? 'bg-accent text-on-accent border-accent shadow-xs'
                   : 'bg-surface-sunken text-accent border-subtle hover:border-accent/40'
               }`}
-              title={showAllNodes ? 'Switch to scoped 48 targets' : 'Render all targets in topology graph'}
-              aria-label={showAllNodes ? 'Switch to scoped 48 targets' : 'Show all targets in topology graph'}
+              title={showAllNodes ? 'Back to the compact layout: first 48 grouped by subnet, the rest in a grid' : 'Place every machine in its subnet group (larger canvas)'}
+              aria-label={showAllNodes ? 'Compact layout' : 'Group all by subnet'}
             >
-              {showAllNodes ? 'SHOW SCOPED (48)' : 'SHOW ALL'}
+              {showAllNodes ? 'Compact layout' : 'Group all by subnet'}
             </button>
           )}
-          <span className="text-xs text-callout-tip-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
-            {clusters.length} SUBNETS
+          <span
+            className="text-xs text-callout-tip-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
+            title={showAllNodes ? 'Subnet groups across every machine' : 'Subnet groups among the first 48 machines'}
+          >
+            {realSubnetCount} {realSubnetCount === 1 ? 'subnet' : 'subnets'}
           </span>
+          {!showAllNodes && universeMachines.length > 48 && (
+            <span
+              data-testid="graph-grid-overflow"
+              className="text-xs text-secondary font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
+              title="These machines are not part of a subnet group; use Group all by subnet to place them"
+            >
+              {universeMachines.length - 48} in grid
+            </span>
+          )}
           <span className="text-xs text-callout-success-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
-            {graphEdges.length} VECTORS
+            {graphEdges.length} {graphEdges.length === 1 ? 'link' : 'links'}
           </span>
         </div>
 
         {/* Legend */}
-        <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs text-xs font-sans machined-edge">
+        <div className="hidden lg:flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs text-xs font-sans machined-edge">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-callout-success-fg" />
             <span className="text-secondary">Root (Compromised)</span>
@@ -2424,15 +2660,15 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-secondary">Scoped</span>
+            <span className="text-secondary">Backlog or recon</span>
           </span>
         </div>
       </div>
 
-      {/* Floating Canvas Navigation Toolbar */}
+      {/* Canvas Navigation Toolbar */}
       <div 
         data-testid="canvas-nav-toolbar"
-        className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-surface-elevated/95 backdrop-blur-sm border border-subtle p-1.5 rounded-xl shadow-md pointer-events-auto machined-edge"
+        className="ml-auto flex items-center gap-1 bg-surface-elevated/95 backdrop-blur-sm border border-subtle p-1.5 rounded-xl shadow-md pointer-events-auto machined-edge"
       >
         <span className="text-xs font-semibold text-muted px-2 select-none font-mono tabular-nums">
           {Math.round(scale * 100)}%
@@ -2451,11 +2687,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               ? 'bg-accent text-on-accent font-semibold shadow-xs'
               : 'hover:bg-surface-hover text-accent border border-transparent hover:border-subtle'
           }`}
-          title={isConnectingMode ? 'Cancel Pivot Link Connection' : 'Add Pivot / Attack Vector Edge (Alt+C)'}
+          title={isConnectingMode ? 'Stop linking (Alt+C)' : 'Link two machines (Alt+C)'}
         >
           <Network className="w-3.5 h-3.5" />
           <span className="hidden sm:inline text-xs">
-            {isConnectingMode ? 'LINKING...' : 'PIVOT LINK'}
+            {isConnectingMode ? 'Linking...' : 'Add link'}
           </span>
         </button>
 
@@ -2464,10 +2700,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-export-canvas"
           onClick={handleExportObsidian}
           className="p-1.5 rounded-md hover:bg-surface-hover text-callout-tip-fg hover:text-callout-tip-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
-          title="Export as Native Obsidian Canvas (.canvas)"
+          title="Export as an Obsidian canvas file (.canvas)"
         >
           <Download className="w-4 h-4" />
-          <span className="text-xs font-semibold hidden xl:inline">.CANVAS</span>
+          <span className="text-xs font-semibold hidden xl:inline">Canvas file</span>
         </button>
 
         {/* Export SVG */}
@@ -2475,7 +2711,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           data-testid="graph-export-svg"
           onClick={handleExportSvg}
           className="p-1.5 rounded-md hover:bg-surface-hover text-accent hover:text-callout-info-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
-          title="Export High-Resolution Vector Image (.svg)"
+          title="Export as an SVG image (.svg)"
         >
           <Share2 className="w-4 h-4" />
           <span className="text-xs font-semibold hidden xl:inline">SVG</span>
@@ -2564,9 +2800,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           type="button"
           data-testid="graph-center-selection"
           onClick={handleCenterSelection}
-          aria-label="Center Selection"
+          aria-label="Center on selected machine"
           className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-          title="Center Selection / Rig"
+          title="Center on the selected machine, or the middle of the graph if none is selected"
         >
           <Crosshair className="w-4 h-4" />
         </button>
@@ -2574,14 +2810,15 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           type="button"
           data-testid="graph-fullscreen-toggle"
           onClick={() => setIsFullscreen(!isFullscreen)}
-          aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Attack Topology'}
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           className={`p-1.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
             isFullscreen ? 'bg-accent text-on-accent font-semibold' : 'hover:bg-surface-hover text-muted hover:text-primary'
           }`}
-          title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Attack Topology'}
+          title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
         >
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
+      </div>
       </div>
 
       {/* Interactive Vector Connection Mode Banner */}
@@ -2593,8 +2830,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           <Network className="w-3.5 h-3.5" />
           <span>
             {connectingSourceId
-              ? 'Click destination target machine to connect vector'
-              : 'Click pivot host to select origin machine'}
+              ? 'Click the machine to link to'
+              : 'Click the machine to link from'}
           </span>
           <button
             onClick={() => {
@@ -2602,7 +2839,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               setConnectingSourceId(null);
             }}
             className="p-0.5 rounded-md hover:bg-surface-inverse/20 ml-1 font-semibold active:scale-[0.98] transition-transform"
-            title="Cancel Link Connection"
+            title="Cancel linking"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -2619,13 +2856,14 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             <div className="flex items-center justify-between text-xs font-semibold text-muted px-1">
               <span className="flex items-center gap-1 text-primary">
                 <Radio className="w-3 h-3 text-accent" />
-                TACTICAL RADAR
+                Minimap
               </span>
               <button
                 data-testid="graph-minimap-toggle"
                 onClick={() => setIsMinimapOpen(false)}
                 className="p-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary active:scale-[0.97] cursor-pointer"
-                title="Collapse Minimap"
+                title="Hide minimap"
+                aria-label="Hide minimap"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -2635,7 +2873,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               <svg
                 data-testid="graph-minimap-svg"
                 viewBox={`${minimapBounds.x} ${minimapBounds.y} ${minimapBounds.w} ${minimapBounds.h}`}
-                className="w-full h-full cursor-crosshair"
+                className="w-full h-full cursor-crosshair touch-none"
                 onPointerDown={(e) => {
                   e.stopPropagation();
                   isMinimapDraggingRef.current = true;
@@ -2687,10 +2925,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             data-testid="graph-minimap-toggle"
             onClick={() => setIsMinimapOpen(true)}
             className="p-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-primary shadow-xs flex items-center gap-1.5 text-xs font-semibold font-mono active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color]"
-            title="Expand Tactical Radar Minimap"
+            title="Show minimap"
+            aria-label="Show minimap"
           >
             <Radio className="w-3.5 h-3.5 text-callout-info-fg" />
-            <span className="hidden sm:inline">MINIMAP</span>
+            <span className="hidden sm:inline">Minimap</span>
           </button>
         )}
       </div>
@@ -2808,7 +3047,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                     x={clusterX}
                     y={clusterY + 43}
                     fill={cluster.color}
-                    fontSize="10"
+                    fontSize="11"
                     fontFamily="monospace"
                     fontWeight="bold"
                     textAnchor="middle"
@@ -2916,6 +3155,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               const midY = (bestSrc.y + bestTgt.y) / 2;
               const edgeLabel = edge.label || meta.label;
               const shortLabel = edgeLabel.length > 14 ? `${edgeLabel.slice(0, 13)}…` : edgeLabel;
+              // Capsule hugs the 11px mono label (~6.7px per glyph) instead of a fixed 76px
+              const capsuleW = Math.max(76, Math.ceil(`${shortLabel} ${edge.port ? `:${edge.port}` : ''}`.length * 6.7) + 14);
 
               return (
                 <g 
@@ -2977,10 +3218,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   {/* Midpoint Protocol & Port Badge Capsule */}
                   <g className="pointer-events-none select-none">
                     <rect
-                      x={midX - 38}
-                      y={midY - 10}
-                      width="76"
-                      height="20"
+                      x={midX - capsuleW / 2}
+                      y={midY - 11}
+                      width={capsuleW}
+                      height="22"
                       rx="4"
                       fill={tokens.cardBg}
                       stroke={meta.color}
@@ -2989,9 +3230,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                     />
                     <text
                       x={midX}
-                      y={midY + 3.5}
+                      y={midY + 4}
                       fill={meta.color}
-                      fontSize="8.5"
+                      fontSize="11"
                       fontFamily="monospace"
                       fontWeight="bold"
                       textAnchor="middle"
@@ -3068,7 +3309,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 x={centerX - 85}
                 y={centerY + 36}
                 width="170"
-                height="30"
+                height="40"
                 rx="6"
                 fill={tokens.cardBg}
                 fillOpacity="0.95"
@@ -3088,9 +3329,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               </text>
               <text
                 x={centerX}
-                y={centerY + 60}
+                y={centerY + 65}
                 fill={tokens.accent}
-                fontSize="8.5"
+                fontSize="11"
                 fontFamily="monospace"
                 textAnchor="middle"
               >
@@ -3127,7 +3368,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 data-testid="flyout-close-btn"
                 onClick={() => setSelectedNode(null)}
                 className="p-1 rounded-md text-muted hover:text-primary flex-shrink-0 active:scale-[0.97] transition-transform cursor-pointer"
-                title="Dismiss Details"
+                title="Close details"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -3154,6 +3395,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
             <div className="flex items-center gap-2 pt-2 border-t border-subtle">
               <button
+                title="Make this the machine you are working on"
                 onClick={() => {
                   setActiveTarget(selectedNode.id);
                   if (soundEnabled) playCyberSound('engage');
@@ -3161,7 +3403,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 className="flex-1 py-1.5 px-3 rounded-lg bg-callout-success-bg border border-callout-success-border text-callout-success-fg hover:bg-callout-success-fg hover:text-surface-base font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <Crosshair className="w-3.5 h-3.5" />
-                <span>Engage Target</span>
+                <span>Set as active machine</span>
               </button>
 
               <button
@@ -3173,10 +3415,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   if (soundEnabled) playCyberSound('click');
                 }}
                 className="py-1.5 px-2.5 rounded-lg bg-accent/15 border border-accent/40 text-accent hover:bg-accent hover:text-on-accent text-xs font-semibold transition-colors flex items-center gap-1 active:scale-[0.97] cursor-pointer"
-                title="Create pivot / attack vector originating from this machine"
+                title="Draw a link from this machine to another one"
               >
                 <Network className="w-3.5 h-3.5" />
-                <span>Pivot</span>
+                <span>Link from here</span>
               </button>
 
               <button
@@ -3185,7 +3427,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   if (soundEnabled) playCyberSound('click');
                 }}
                 className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-primary text-xs transition-colors active:scale-[0.97] cursor-pointer"
-                title="Open Inspection Modal"
+                title="Open full machine details"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>

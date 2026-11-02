@@ -150,6 +150,22 @@ describe('Multi-Operator Identity & Profile Workspace Isolation', () => {
     expect(useAuthStore.getState().user?.name).toBe('Daniel');
   });
 
+  it('deleting the only profile signs out to guest without loading owner sample solves', () => {
+    expect(useAuthStore.getState().profiles).toHaveLength(1);
+
+    useAuthStore.getState().deleteProfile('usr_daniel');
+
+    const auth = useAuthStore.getState();
+    expect(auth.user).toBeNull();
+    expect(auth.profiles).toEqual([]);
+    expect(auth.isAuthenticated).toBe(false);
+    expect(auth.token).toBeNull();
+
+    const ctf = useCtfStore.getState();
+    expect(ctf.currentProfileId).toBe('guest');
+    expect(ctf.machines.filter((m) => m.status === 'completed' || m.userFlag || m.rootFlag)).toHaveLength(0);
+  });
+
   it('atomically updates profile properties without dual-state drift between user and profiles array', async () => {
     // 1. Create operator with custom callsign
     await useAuthStore.getState().loginAsOperator({

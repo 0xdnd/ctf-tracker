@@ -553,7 +553,7 @@ export const TrackerView: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <div role="group" aria-label="View mode" className={SEGMENT_WRAP}>
+            <div role="group" aria-label="View mode" data-tour="tracker-views" className={SEGMENT_WRAP}>
               <button
                 type="button"
                 data-testid="view-kanban-mobile"
@@ -720,7 +720,7 @@ export const TrackerView: React.FC = () => {
             />
 
             {/* View switcher */}
-            <div role="group" aria-label="View mode" className={SEGMENT_WRAP}>
+            <div role="group" aria-label="View mode" data-tour="tracker-views" className={SEGMENT_WRAP}>
               <button
                 type="button"
                 data-testid="view-kanban"
@@ -848,7 +848,7 @@ export const TrackerView: React.FC = () => {
           </button>
         </div>
       ) : (
-        <>
+        <div data-tour="tracker-board">
           {viewMode === 'kanban' && <KanbanBoard filteredMachines={filteredMachines} />}
           {viewMode === 'table' && (
             <React.Suspense fallback={<ViewSkeleton />}>
@@ -865,7 +865,7 @@ export const TrackerView: React.FC = () => {
               <GraphView filteredMachines={filteredMachines} />
             </React.Suspense>
           )}
-        </>
+        </div>
       )}
     </div>
   );

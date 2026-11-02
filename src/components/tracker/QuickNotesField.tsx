@@ -34,6 +34,18 @@ export const QuickNotesField: React.FC<QuickNotesFieldProps> = ({
 }) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
+  const handleToggleCheckbox = (lineIndex: number, newChecked: boolean) => {
+    const lines = value.split('\n');
+    if (lineIndex >= 0 && lineIndex < lines.length) {
+      const line = lines[lineIndex];
+      const updatedLine = newChecked
+        ? line.replace(/^([-*]\s+\[)[ ](\])/, '$1x$2')
+        : line.replace(/^([-*]\s+\[)[xX](\])/, '$1 $2');
+      lines[lineIndex] = updatedLine;
+      onChange(lines.join('\n'));
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div role="group" aria-label="Preview or edit notes" className="inline-flex gap-1 rounded-lg border border-subtle bg-surface-sunken p-0.5">
@@ -67,6 +79,7 @@ export const QuickNotesField: React.FC<QuickNotesFieldProps> = ({
               soundEnabled={soundEnabled}
               fontSize="sm"
               targetIp={targetIp}
+              onToggleCheckbox={handleToggleCheckbox}
             />
           ) : (
             <p className="text-xs text-muted">No notes yet. Switch to Edit to write some.</p>

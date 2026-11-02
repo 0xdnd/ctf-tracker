@@ -11,7 +11,14 @@ const DB_NAMES = ['zerobox_vault_db', 'zerobox_deep_storage_db', 'zerobox_resili
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('zerobox_onboarding_completed', 'true');
+    // The first-visit test sets this marker to opt out of the seed (also in later frames and reloads).
+    if (!sessionStorage.getItem('zerobox_e2e_fresh')) {
+      localStorage.setItem('zerobox_onboarding_completed', 'true');
+      // Keep one-time guide cards from overlapping controls in the other smoke tests.
+      localStorage.setItem('zerobox_onboarding_v1', JSON.stringify({ tipsOff: true }));
+      // A fresh backup keeps the backup reminder card out of the way.
+      localStorage.setItem('zerobox_backup_v1', JSON.stringify({ lastBackupAt: new Date().toISOString() }));
+    }
   });
 });
 
@@ -145,5 +152,30 @@ test('backup export then import restores a machine note', async ({ page }, testI
   await page.getByRole('button', { name: 'Import and apply' }).click();
 
   await expect(notes()).toHaveValue(note);
+  expect(errors).toEqual([]);
+});
+
+test('first visit: the welcome tour opens by itself, Skip dismisses it for good', async ({ page }) => {
+  const errors = watchErrors(page);
+  // Undo the suite-wide seed once (first load only) so this visit counts as the first one.
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('zerobox_e2e_fresh')) {
+      sessionStorage.setItem('zerobox_e2e_fresh', '1');
+      localStorage.removeItem('zerobox_onboarding_completed');
+      localStorage.removeItem('zerobox_onboarding_v1');
+    }
+  });
+  await page.goto('/#/tracker');
+
+  const tour = page.getByRole('dialog', { name: 'Welcome to ZeroBox' });
+  await expect(tour).toBeVisible();
+
+  await expect(tour.getByRole('button', { name: 'Start tour' })).toBeVisible();
+  await tour.getByRole('button', { name: 'Skip', exact: true }).click();
+  await expect(page.getByTestId('tour-card')).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.getByTestId('tracker-view').or(page.getByTestId('view-kanban')).first()).toBeVisible();
+  await expect(page.getByTestId('tour-card')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

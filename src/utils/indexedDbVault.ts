@@ -159,6 +159,122 @@ export async function upsertVaultNotesFromBackup(
   return incoming.length;
 }
 
+const SNAPSHOTS_KEY = 'import_snapshots';
+export const MAX_IMPORT_SNAPSHOTS = 3;
+
+export interface VaultImportSnapshot {
+  notes: CptsNoteEntry[];
+  wikilinkMap: Record<string, string>;
+  takenAt: string;
+}
+
+async function readRecordStrict<T>(key: string): Promise<T | null> {
+  if (typeof indexedDB === 'undefined') return null;
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve((req.result as T | undefined) || null);
+      req.onerror = () => reject(req.error || new Error('Failed to read from IndexedDB'));
+      tx.oncomplete = () => db.close();
+    } catch (err) {
+      db.close();
+      reject(err);
+    }
+  });
+}
+
+async function writeRecordStrict(key: string, value: unknown): Promise<void> {
+  if (isSchemaWriteGated()) throw new Error(BACKUP_GATED_MESSAGE);
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const done = (err?: unknown) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch {}
+      if (err) reject(err);
+      else resolve();
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.oncomplete = () => done();
+      tx.onerror = () => done(tx.error || new Error('Failed to write to IndexedDB'));
+      tx.onabort = () => done(tx.error || new Error('Writing to IndexedDB was aborted'));
+      tx.objectStore(STORE_NAME).put(value, key);
+    } catch (err) {
+      done(err || new Error('Failed to write to IndexedDB'));
+    }
+  });
+}
+
+/** Like saveVaultToIndexedDb, but throws (instead of silently doing nothing) while the schema write gate is engaged. */
+export async function saveVaultStrict(data: {
+  notes: CptsNoteEntry[];
+  wikilinkMap?: Record<string, string>;
+}): Promise<void> {
+  const payload: VaultPayload = {
+    notes: data.notes || [],
+    wikilinkMap: data.wikilinkMap || {},
+    importedAt: new Date().toISOString(),
+  };
+  await writeRecordStrict(VAULT_KEY, payload);
+}
+
+async function readSnapshots(): Promise<VaultImportSnapshot[]> {
+  const list = await readRecordStrict<VaultImportSnapshot[]>(SNAPSHOTS_KEY);
+  return Array.isArray(list) ? list.filter((s) => s && Array.isArray(s.notes)) : [];
+}
+
+/**
+ * Before an import replaces the vault: if the stored vault has any notes, keep a copy (newest first, at most
+ * MAX_IMPORT_SNAPSHOTS). Resolves true when a snapshot was written, false when the vault was empty. Rejects when
+ * the vault cannot be read or the snapshot cannot be written, so callers never overwrite without one.
+ */
+export async function snapshotVaultBeforeImport(): Promise<boolean> {
+  if (isSchemaWriteGated()) throw new Error(BACKUP_GATED_MESSAGE);
+  const current = await readVaultStrict();
+  const notes = Array.isArray(current?.notes) ? current.notes : [];
+  if (notes.length === 0) return false;
+  const existing = await readSnapshots();
+  const snapshot: VaultImportSnapshot = {
+    notes,
+    wikilinkMap: current?.wikilinkMap && typeof current.wikilinkMap === 'object' ? current.wikilinkMap : {},
+    takenAt: new Date().toISOString(),
+  };
+  await writeRecordStrict(SNAPSHOTS_KEY, [snapshot, ...existing].slice(0, MAX_IMPORT_SNAPSHOTS));
+  return true;
+}
+
+/** Newest import snapshot, or null when there is none (or IndexedDB is unavailable). */
+export async function loadLastImportSnapshot(): Promise<VaultImportSnapshot | null> {
+  try {
+    return (await readSnapshots())[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Applies the newest import snapshot and returns it (null when there is none). The current vault is snapshotted
+ * first (when it has notes) so the restore can be undone, and the applied snapshot is then consumed rather than
+ * left in the list, so repeated restores step back and forth between two states without piling up duplicates.
+ * Rejects without touching the vault when the safety snapshot cannot be written.
+ */
+export async function restoreLastImportSnapshot(): Promise<VaultImportSnapshot | null> {
+  if (isSchemaWriteGated()) throw new Error(BACKUP_GATED_MESSAGE);
+  const [target, ...rest] = await readSnapshots();
+  if (!target) return null;
+  const hadNotes = await snapshotVaultBeforeImport(); // list is now [current, target, ...rest]
+  // Strict save first: the list below is only rewritten (dropping `target`) once the vault really holds it.
+  await saveVaultStrict({ notes: target.notes, wikilinkMap: target.wikilinkMap });
+  const after = await readSnapshots();
+  const remaining = hadNotes ? [after[0], ...rest] : rest;
+  await writeRecordStrict(SNAPSHOTS_KEY, remaining.slice(0, MAX_IMPORT_SNAPSHOTS));
+  return target;
+}
+
 /**
  * Completely wipe the user's imported notes from browser IndexedDB
  */

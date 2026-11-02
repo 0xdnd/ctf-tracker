@@ -42,11 +42,13 @@ const iconFiles = [
   'manifest.webmanifest',
   'favicon-zerobox.png',
   'favicon-htb.png',
+  'favicon-offsec.png',
   'favicon-midnight.png',
   'favicon-oled.png',
   'logo.png',
   'logo-zerobox.webp',
   'logo-htb.webp',
+  'logo-offsec.webp',
   'logo-midnight.webp',
   'logo-oled.webp'
 ];

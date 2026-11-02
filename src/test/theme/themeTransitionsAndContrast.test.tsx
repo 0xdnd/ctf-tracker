@@ -48,6 +48,46 @@ export function hexToRgb(hex: string): [number, number, number] {
 
 // Canonical Token Dictionary matching src/index.css
 export const THEME_CSS_TOKENS = {
+  offsec: {
+    dark: {
+      surfaceBase: [9, 9, 12] as [number, number, number],
+      surfaceCard: [16, 16, 21] as [number, number, number],
+      surfaceElevated: [22, 22, 28] as [number, number, number],
+      surfaceSunken: [5, 5, 8] as [number, number, number],
+      textPrimary: [244, 244, 245] as [number, number, number],
+      textSecondary: [228, 228, 231] as [number, number, number],
+      textMuted: [161, 161, 170] as [number, number, number],
+      textTertiary: [135, 135, 143] as [number, number, number],
+      textDim: [135, 135, 143] as [number, number, number],
+      borderSubtle: [39, 39, 48] as [number, number, number],
+      borderStrong: [63, 63, 76] as [number, number, number],
+      borderAccent: [255, 70, 70] as [number, number, number],
+      cyberCyan: [255, 70, 70] as [number, number, number],
+      cyberEmerald: [16, 185, 129] as [number, number, number],
+      cyberCrimson: [244, 63, 94] as [number, number, number],
+      cyberAmber: [245, 158, 11] as [number, number, number],
+      cyberPurple: [168, 85, 247] as [number, number, number],
+    },
+    light: {
+      surfaceBase: [248, 250, 252] as [number, number, number],
+      surfaceCard: [255, 255, 255] as [number, number, number],
+      surfaceElevated: [255, 255, 255] as [number, number, number],
+      surfaceSunken: [226, 232, 240] as [number, number, number],
+      textPrimary: [15, 23, 42] as [number, number, number],
+      textSecondary: [51, 65, 85] as [number, number, number],
+      textMuted: [71, 85, 105] as [number, number, number],
+      textTertiary: [89, 103, 124] as [number, number, number],
+      textDim: [89, 103, 124] as [number, number, number],
+      borderSubtle: [203, 213, 225] as [number, number, number],
+      borderStrong: [148, 163, 184] as [number, number, number],
+      borderAccent: [185, 28, 28] as [number, number, number],
+      cyberCyan: [185, 28, 28] as [number, number, number],
+      cyberEmerald: [21, 128, 61] as [number, number, number],
+      cyberCrimson: [225, 29, 72] as [number, number, number],
+      cyberAmber: [217, 119, 6] as [number, number, number],
+      cyberPurple: [126, 34, 206] as [number, number, number],
+    },
+  },
   obsidian: {
     light: {
       surfaceBase: [244, 244, 245] as [number, number, number],
@@ -84,46 +124,6 @@ export const THEME_CSS_TOKENS = {
       cyberCyan: [14, 165, 233] as [number, number, number],
       cyberEmerald: [16, 185, 129] as [number, number, number],
       cyberCrimson: [239, 68, 68] as [number, number, number],
-      cyberAmber: [245, 158, 11] as [number, number, number],
-      cyberPurple: [168, 85, 247] as [number, number, number],
-    },
-  },
-  monolith: {
-    light: {
-      surfaceBase: [250, 250, 250] as [number, number, number],
-      surfaceCard: [255, 255, 255] as [number, number, number],
-      surfaceElevated: [255, 255, 255] as [number, number, number],
-      surfaceSunken: [244, 244, 245] as [number, number, number],
-      textPrimary: [9, 9, 11] as [number, number, number],
-      textSecondary: [51, 65, 85] as [number, number, number],
-      textMuted: [82, 82, 91] as [number, number, number],
-      textTertiary: [113, 113, 122] as [number, number, number],
-      textDim: [100, 116, 139] as [number, number, number],
-      borderSubtle: [228, 228, 231] as [number, number, number],
-      borderStrong: [212, 212, 216] as [number, number, number],
-      borderAccent: [2, 132, 199] as [number, number, number],
-      cyberCyan: [2, 132, 199] as [number, number, number],
-      cyberEmerald: [21, 128, 61] as [number, number, number],
-      cyberCrimson: [239, 68, 68] as [number, number, number],
-      cyberAmber: [180, 83, 9] as [number, number, number],
-      cyberPurple: [147, 51, 234] as [number, number, number],
-    },
-    dark: {
-      surfaceBase: [24, 24, 27] as [number, number, number],
-      surfaceCard: [39, 39, 42] as [number, number, number],
-      surfaceElevated: [50, 50, 56] as [number, number, number],
-      surfaceSunken: [9, 9, 11] as [number, number, number],
-      textPrimary: [244, 244, 245] as [number, number, number],
-      textSecondary: [228, 228, 231] as [number, number, number],
-      textMuted: [161, 161, 170] as [number, number, number],
-      textTertiary: [113, 113, 122] as [number, number, number],
-      textDim: [113, 113, 122] as [number, number, number],
-      borderSubtle: [63, 63, 70] as [number, number, number],
-      borderStrong: [82, 82, 91] as [number, number, number],
-      borderAccent: [56, 189, 248] as [number, number, number],
-      cyberCyan: [56, 189, 248] as [number, number, number],
-      cyberEmerald: [16, 185, 129] as [number, number, number],
-      cyberCrimson: [244, 63, 94] as [number, number, number],
       cyberAmber: [245, 158, 11] as [number, number, number],
       cyberPurple: [168, 85, 247] as [number, number, number],
     },
@@ -193,7 +193,7 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
   });
 
   describe('1. Programmatic WCAG 2.1 AA Contrast Assertions across 3 Themes x 2 Modes', () => {
-    const themes = ['obsidian', 'monolith', 'htb'] as const;
+    const themes = ['obsidian', 'htb', 'offsec'] as const;
 
     themes.forEach((themeName) => {
       (['light', 'dark'] as const).forEach((mode) => {
@@ -252,7 +252,7 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
 
   describe('2. GraphView Attack Canvas Tokens & Difficulty WCAG Compliance', () => {
     it('verifies all 3 core themes in both modes provide >= 4.5:1 text contrast on canvas cards', () => {
-      const themes = ['obsidian', 'monolith', 'htb'] as const;
+      const themes = ['obsidian', 'htb', 'offsec'] as const;
 
       themes.forEach((theme) => {
         [true, false].forEach((isDark) => {

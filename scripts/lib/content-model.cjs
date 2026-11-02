@@ -55,10 +55,26 @@ const MIN_WORDS = 150;
 // CTF machines = the HTB + THM rows in machinesCatalog.ts (counted from data) plus the PG and VulnHub source rows
 // (loaded at runtime by loadMachinesCatalog); the rest of machinesCatalog.ts is guided labs.
 // catalogCounts.htbThm scopes copy that names only HTB/THM; catalogCounts.ctf is the full count.
-const EXTRA_PLATFORM_COUNT = ['pg', 'vulnhub'].reduce(
-  (n, f) => n + JSON.parse(fs.readFileSync(path.join(rootDir, 'src', 'data', 'catalogSources', f + '.json'), 'utf8')).length,
-  0
-);
+// The PG and VulnHub rows are kept apart from `machines` (and from catalogCounts): only the /machines/ list reads them, as plain rows without pages.
+const EXTRA_SOURCES = ['pg', 'vulnhub'];
+const EXTRA_ROWS = EXTRA_SOURCES.map((f) => JSON.parse(fs.readFileSync(path.join(rootDir, 'src', 'data', 'catalogSources', f + '.json'), 'utf8')));
+const EXTRA_PLATFORM_COUNT = EXTRA_ROWS.reduce((n, rows) => n + rows.length, 0);
+// Words that only restate the catalog facts shown beside a summary (platform, OS, difficulty): a hint made of nothing else is a stub.
+const STUB_WORDS = new Set(['a', 'an', 'the', 'is', 'hack', 'box', 'tryhackme', 'proving', 'grounds', 'vulnhub', 'machine', 'rated', 'difficulty', 'level', 'very', 'easy', 'medium', 'hard', 'insane', 'linux', 'windows', 'freebsd', 'openbsd', 'android', 'other']);
+/**
+ * A machine's hint counts as a real summary only when it is a complete sentence (not cut off mid-sentence) and says more than
+ * the platform, OS and difficulty that the page already shows. Anything else renders as "Summary pending".
+ */
+function isRealSummary(hint) {
+  const h = String(hint || '').replace(/\s+/g, ' ').trim();
+  if (!/[.!?]["')\]]?$/.test(h) || /(\.\.\.|…)["')\]]?$/.test(h)) return false;
+  return h.toLowerCase().split(/[^a-z0-9]+/).some((w) => w && !STUB_WORDS.has(w));
+}
+
+// Starting Point rows all carry this one generic room URL: it is the track's hub page, not a page of that machine.
+const STARTING_POINT_HUB_URL = 'https://app.hackthebox.com/starting-point';
+const isStartingPointHub = (url) => url === STARTING_POINT_HUB_URL;
+
 const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
 const TRACK_TO_CERT = {
@@ -148,9 +164,13 @@ function getModel() {
     if (!langMap.has(s.language)) langMap.set(s.language, []);
     langMap.get(s.language).push(s);
   }
+  // A row is unavailable when the data says so, or when it has no usable command (blank, or just a copy of its own name).
+  const shellUnavailable = (s) => s.unavailable === true || !String(s.command || '').trim() || String(s.command).trim() === String(s.name || '').trim();
   const shellLangs = [...langMap.entries()]
-    .map(([language, items]) => ({ language, anchor: slugify(language), items }))
+    .map(([language, items]) => ({ language, anchor: slugify(language), items, availableCount: items.filter((s) => !shellUnavailable(s)).length }))
     .sort((a, b) => b.items.length - a.items.length || a.language.localeCompare(b.language));
+  // shellCount stays the full count (frozen meta description only); every visible count uses shellAvailableCount.
+  const shellAvailableCount = d.ALL_SHELL_ITEMS.filter((s) => !shellUnavailable(s)).length;
 
   // ---- Methodology notes (SEO generator input only; never part of the app bundle) ----
   const notes = require(path.join(rootDir, 'scripts', 'content', 'methodology-notes.json'))
@@ -162,7 +182,10 @@ function getModel() {
   const catalogCounts = { total: machines.length, htbThm, ctf: htbThm + EXTRA_PLATFORM_COUNT, guided: machines.length - htbThm };
   const proLabs = d.OFFICIAL_HTB_PRO_LABS || [];
 
-  cached = { machines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, notes, examTracks, catalogCounts, MIN_WORDS };
+  // Proving Grounds and VulnHub catalog rows (name, OS, difficulty, tags, room link only; no hint, flags or ids beyond the catalog's own).
+  const extraMachines = EXTRA_ROWS.flat().map((m) => ({ id: m.id, name: m.name, platform: m.platform, os: m.os, difficulty: m.difficulty, tags: m.tags || [], roomUrl: m.roomUrl || '', hasPage: false }));
+
+  cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, catalogCounts, MIN_WORDS };
   return cached;
 }
 
@@ -227,4 +250,4 @@ function getWriteups() {
   return writeupsCache;
 }
 
-module.exports = { getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify };
+module.exports = { getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };

@@ -13,10 +13,10 @@ const SURFACE_TOKENS = ['surface-base', 'surface-card', 'surface-elevated', 'sur
 const BLOCKS: Record<string, string> = {
   'obsidian-light': ':root,\n[data-theme="obsidian"]:not(.dark)',
   'obsidian-dark': '.dark,\n[data-theme="obsidian"].dark',
-  'monolith-light': '[data-theme="monolith"]:not(.dark)',
-  'monolith-dark': '[data-theme="monolith"].dark',
   'htb-light': '[data-theme="htb"]:not(.dark) {',
   'htb-dark': '[data-theme="htb"].dark {',
+  'offsec-light': '[data-theme="offsec"]:not(.dark) {',
+  'offsec-dark': '[data-theme="offsec"].dark {',
 };
 
 function parseBlock(selectorNeedle: string): Record<string, RGB> {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { BarChart3, Crosshair, Database } from 'lucide-react';
+import { Crosshair, Database } from 'lucide-react';
+import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { CyberButton } from '../common/CyberButton';
 
 interface AnalyticsEmptyStateProps {
@@ -11,10 +12,11 @@ interface AnalyticsEmptyStateProps {
 export const AnalyticsEmptyState: React.FC<AnalyticsEmptyStateProps> = ({ onOpenTracker, onLoadDemo }) => (
   <section
     aria-labelledby="analytics-empty-title"
+    data-tour="analytics-empty"
     className="flex flex-col items-center text-center gap-4 px-6 py-14 rounded-2xl border border-subtle bg-surface-card machined-edge"
   >
     <div className="p-3 rounded-xl bg-surface-sunken border border-subtle">
-      <BarChart3 className="w-6 h-6 text-muted" aria-hidden="true" />
+      <AnalyticsMonitorIcon className="w-6 h-6 text-muted" aria-hidden="true" />
     </div>
     <div className="space-y-1.5 max-w-md">
       <h2 id="analytics-empty-title" className="text-base font-semibold text-primary">No activity yet</h2>

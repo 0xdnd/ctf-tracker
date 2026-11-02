@@ -32,6 +32,8 @@ export interface CyberSelectProps<T extends string = string> {
   /** Let the selected label wrap instead of truncating (use for long labels in narrow fields). */
   wrapLabel?: boolean;
   menuClassName?: string;
+  /** Render at most this many matching rows and ask the user to keep typing for the rest (long catalogs). */
+  maxRendered?: number;
   align?: 'left' | 'right';
   position?: 'bottom' | 'top' | 'auto';
   soundEnabled?: boolean;
@@ -56,6 +58,7 @@ export function CyberSelect<T extends string = string>({
   triggerClassName = '',
   wrapLabel = false,
   menuClassName = '',
+  maxRendered,
   align = 'left',
   position = 'auto',
   soundEnabled = true,
@@ -113,6 +116,13 @@ export function CyberSelect<T extends string = string>({
         opt.value.toLowerCase().includes(query)
     );
   }, [options, searchQuery]);
+
+  // Cap the rendered rows so a very long list opens and filters without mounting every row
+  const visibleOptions = useMemo(
+    () => (maxRendered && filteredOptions.length > maxRendered ? filteredOptions.slice(0, maxRendered) : filteredOptions),
+    [filteredOptions, maxRendered]
+  );
+  const hiddenCount = filteredOptions.length - visibleOptions.length;
 
   // Close when clicking outside
   useEffect(() => {
@@ -175,16 +185,16 @@ export function CyberSelect<T extends string = string>({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setHighlightedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
+        setHighlightedIndex((prev) => (prev < visibleOptions.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : filteredOptions.length - 1));
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : visibleOptions.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
-          const opt = filteredOptions[highlightedIndex];
+        if (highlightedIndex >= 0 && highlightedIndex < visibleOptions.length) {
+          const opt = visibleOptions[highlightedIndex];
           if (!opt.disabled) {
             handleSelect(opt.value);
           }
@@ -374,7 +384,7 @@ export function CyberSelect<T extends string = string>({
                   No matching options found
                 </div>
               ) : (
-                filteredOptions.map((opt, idx) => {
+                visibleOptions.map((opt, idx) => {
                   const isSelected = opt.value === value;
                   const isHighlighted = idx === highlightedIndex;
 
@@ -430,6 +440,11 @@ export function CyberSelect<T extends string = string>({
                     </button>
                   );
                 })
+              )}
+              {hiddenCount > 0 && (
+                <div className="py-2 px-2 text-center text-tertiary text-xs">
+                  {hiddenCount} more, keep typing to narrow
+                </div>
               )}
             </div>
           </motion.div>

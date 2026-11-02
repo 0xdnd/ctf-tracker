@@ -163,19 +163,19 @@ describe('categoryUtils - 25-Category Offensive Taxonomy', () => {
     expect(domainDef?.label).toBe('Active Directory & Identity');
   });
 
-  it('maps Linux to orange categorical tone (cat-4)', () => {
-    expect(OS_CAT_INDEX.Linux).toBe(4);
+  it('maps Linux to yellow categorical tone (cat-7)', () => {
+    expect(OS_CAT_INDEX.Linux).toBe(7);
     const linuxTone = getOsTone('Linux');
-    expect(linuxTone.badge).toBe('bg-cat-4-bg text-cat-4-fg border-cat-4-border');
-    expect(linuxTone.text).toBe('text-cat-4-fg');
-    expect(linuxTone.bg).toBe('bg-cat-4-bg');
-    expect(linuxTone.border).toBe('border-cat-4-border');
+    expect(linuxTone.badge).toBe('bg-cat-7-bg text-cat-7-fg border-cat-7-border');
+    expect(linuxTone.text).toBe('text-cat-7-fg');
+    expect(linuxTone.bg).toBe('bg-cat-7-bg');
+    expect(linuxTone.border).toBe('border-cat-7-border');
   });
 
   it('supports case-insensitive and trimmed OS lookups for Linux and other systems', () => {
-    expect(getOsTone('linux').text).toBe('text-cat-4-fg');
-    expect(getOsTone('LINUX').text).toBe('text-cat-4-fg');
-    expect(getOsTone('  linux  ').text).toBe('text-cat-4-fg');
+    expect(getOsTone('linux').text).toBe('text-cat-7-fg');
+    expect(getOsTone('LINUX').text).toBe('text-cat-7-fg');
+    expect(getOsTone('  linux  ').text).toBe('text-cat-7-fg');
     expect(getOsTone('windows').text).toBe('text-cat-1-fg');
     expect(getOsTone('WINDOWS').text).toBe('text-cat-1-fg');
   });

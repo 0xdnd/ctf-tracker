@@ -99,7 +99,7 @@ describe('EvidenceVaultPage backed by the credential/loot store slice', () => {
     setup();
     fireEvent.click(screen.getAllByRole('button', { name: /Log evidence/i })[0]);
     const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getAllByRole('combobox')[1], { target: { value: 'flag' } });
+    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'flag' } });
     fireEvent.change(screen.getByPlaceholderText(/Paste password, hash/i), { target: { value: 'HTB{manual_flag}' } });
     fireEvent.click(screen.getByRole('button', { name: /Save to Vault/i }));
     await waitFor(() => expect(screen.queryByText('Log new evidence')).not.toBeInTheDocument());

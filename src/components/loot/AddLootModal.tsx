@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Database, X, Sparkles, Terminal, Check } from 'lucide-react';
 import { Machine } from '../../types';
@@ -7,6 +7,10 @@ import { MODAL_ASYMMETRIC_TRANSITION } from '../../utils/motionTokens';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { identifyHash, getCrackingCommands } from '../../utils/hashIdentifier';
 import { toast } from '../../store/useToastStore';
+import { CyberSelect } from '../common/CyberSelect';
+
+// A real catalog can list over a thousand machines; render a page of matches and ask for more typing.
+const TARGET_OPTIONS_MAX_RENDERED = 50;
 
 export interface AddLootModalProps {
   isOpen: boolean;
@@ -25,6 +29,8 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   defaultTargetId = '',
   soundEnabled = false,
 }) => {
+  const targetFieldId = useId();
+  const categoryFieldId = useId();
   const [targetId, setTargetId] = useState<string>(defaultTargetId);
   const [category, setCategory] = useState<EvidenceCategory>('password');
   const [username, setUsername] = useState<string>('');
@@ -39,6 +45,17 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   const crackingCmds = React.useMemo(() => {
     return secret.trim() ? getCrackingCommands(secret.trim(), hashCandidates[0]) : {};
   }, [secret, hashCandidates]);
+
+  const targetOptions = React.useMemo(
+    () => [
+      { value: '', label: 'Global (no target)' },
+      ...machines.map((m) => ({
+        value: m.id,
+        label: `${m.name} (${m.ip || 'No IP'}) — ${m.platform}`,
+      })),
+    ],
+    [machines]
+  );
 
   const handleCopyCmd = async (cmd: string, type: string) => {
     await safeCopyToClipboard(cmd);
@@ -62,7 +79,8 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      // An open picker handles Escape itself (closing only the list), so leave the dialog open
+      if (e.key === 'Escape' && !e.defaultPrevented) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -137,30 +155,35 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
             <form onSubmit={handleSubmit} className="space-y-4 text-sm">
               {/* Target Selector */}
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <label htmlFor={targetFieldId} className="block text-xs font-medium text-secondary mb-1">
                   Target machine
                 </label>
-                <select
+                <CyberSelect
+                  id={targetFieldId}
+                  aria-label="Target machine"
                   value={targetId}
-                  onChange={(e) => setTargetId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-base border border-subtle text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 font-sans"
-                >
-                  <option value="">Global (no target)</option>
-                  {machines.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.ip || 'No IP'}) — {m.platform}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setTargetId}
+                  options={targetOptions}
+                  searchable
+                  searchPlaceholder="Search machines..."
+                  maxRendered={TARGET_OPTIONS_MAX_RENDERED}
+                  size="md"
+                  variant="default"
+                  className="block w-full"
+                  triggerClassName="h-auto py-2 rounded-lg"
+                  menuClassName="!w-full !max-w-none"
+                  soundEnabled={soundEnabled}
+                />
               </div>
 
               {/* Category & Username Grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-secondary mb-1">
+                  <label htmlFor={categoryFieldId} className="block text-xs font-medium text-secondary mb-1">
                     Category
                   </label>
                   <select
+                    id={categoryFieldId}
                     value={category}
                     onChange={(e) => setCategory(e.target.value as EvidenceCategory)}
                     className="w-full px-3 py-2 rounded-lg bg-surface-base border border-subtle text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 font-sans"

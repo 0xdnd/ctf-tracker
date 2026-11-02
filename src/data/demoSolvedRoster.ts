@@ -1,10 +1,14 @@
 import { Machine } from '../types';
 
 /**
- * Reference/demo solved machine pack (63 targets: 45 HTB + 18 THM).
- * Contains Daniel Dayan's solved roster, flag captures, and timing metrics.
- * Available on-demand via "Load Demo Solves" in Settings or Command Palette.
+ * Reference/demo sample-solves pack, available on demand via "Load Sample Solves" (Settings, Backup, profile modal).
+ * The roster itself holds only 8 entries (placeholder flag captures and timing metrics). Loading it merges them with the
+ * 55 solved/foothold statuses the catalog ships, which gives 57 completed + 6 foothold = 63. Show SAMPLE_SOLVE_COUNT, never
+ * DEMO_SOLVED_ROSTER.length, wherever the loaded total is displayed.
  */
+/** Total solved + foothold items after loading the sample set (8 roster entries + 55 catalog statuses). */
+export const SAMPLE_SOLVE_COUNT = 63;
+
 export const DEMO_SOLVED_ROSTER: Partial<Machine>[] = [
   {
     id: "thm-rootme",

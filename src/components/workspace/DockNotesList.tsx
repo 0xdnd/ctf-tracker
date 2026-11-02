@@ -19,7 +19,7 @@ const CHEATS_KEY = 'cheats';
 const CATEGORY_NAMES = new Map(CHEATSHEET_CATEGORIES.map((c) => [c.id, c.name]));
 
 type Row =
-  | { kind: 'folder'; key: string; label: string; depth: number; count: number; expanded: boolean }
+  | { kind: 'folder'; key: string; label: string; depth: number; count: number | '…'; expanded: boolean }
   | { kind: 'leaf'; key: string; tabId: string; label: string; depth: number; icon: 'note' | 'cheat' };
 
 const noteHaystack = (n: CptsNoteEntry): string =>
@@ -78,10 +78,11 @@ interface DockNotesListProps {
  */
 export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, className = '' }) => {
   const navigate = useNavigate();
-  const { customNotes, userNotes, cheatsheets, setNotesImportModalOpen } = useCtfStore(
+  const { customNotes, userNotes, userNotesHydrated, cheatsheets, setNotesImportModalOpen } = useCtfStore(
     useShallow((s) => ({
       customNotes: s.customNotes,
       userNotes: s.userNotes,
+      userNotesHydrated: s.userNotesHydrated,
       cheatsheets: s.cheatsheets,
       setNotesImportModalOpen: s.setNotesImportModalOpen,
     }))
@@ -188,9 +189,16 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
       rows.push({ kind: 'folder', key: MY_NOTES_KEY, label: 'My notes', depth: 0, count: shownAuthored.length, expanded: open });
       if (open) flattenTree(authoredTree, 1, `${MY_NOTES_KEY}:`, expanded, filtering, rows);
     }
-    flattenTree(importedTree, 0, 'imp:', expanded, filtering, rows);
+    if (userNotesHydrated) {
+      flattenTree(importedTree, 0, 'imp:', expanded, filtering, rows);
+    } else if (!filtering) {
+      // Imported notes are still loading from IndexedDB. Show one stable placeholder folder
+      // instead of letting per-category folders (and their counts) pop in once hydration lands —
+      // that's the "count moves during loading" this row exists to avoid.
+      rows.push({ kind: 'folder', key: 'imp-pending', label: 'Imported notes', depth: 0, count: '…', expanded: false });
+    }
     return rows;
-  }, [shownAuthored, authoredTree, importedTree, expanded, filtering]);
+  }, [shownAuthored, authoredTree, importedTree, expanded, filtering, userNotesHydrated]);
 
   const cheatsOpen = filtering ? cheatTotal > 0 : expanded.has(CHEATS_KEY);
   const cheatRows = useMemo<Row[]>(() => {
@@ -287,7 +295,9 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
     }
   };
 
-  const hasAnyNotes = authored.length + imported.length > 0;
+  // While userNotes are still hydrating, don't flash the "No notes yet" empty state just because
+  // the imported pool reads empty for a moment — the pending placeholder folder covers that case.
+  const hasAnyNotes = authored.length + imported.length > 0 || !userNotesHydrated;
   const vh = viewportH || FALLBACK_VIEWPORT;
   const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
   const end = Math.min(noteRows.length, Math.ceil((scrollTop + vh) / ROW_HEIGHT) + OVERSCAN);

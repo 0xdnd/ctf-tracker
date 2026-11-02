@@ -5,7 +5,7 @@ import { useCtfStore } from '../../store/useCtfStore';
 
 export type CyberButtonVariant =
   | 'default'     // Calm tactical slate/zinc surface
-  | 'primary'     // Theme-locked accent CTA (Sky in Obsidian/Monolith, Neon Lime in HTB)
+  | 'primary'     // Theme-locked accent CTA (Sky in Obsidian, Tactical Red in OffSec, Neon Lime in HTB)
   | 'secondary'   // Muted surface-card button with subtle border
   | 'danger'      // Crimson/rose destructive action
   | 'ghost'       // Borderless transparent button

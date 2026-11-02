@@ -1,12 +1,10 @@
-import React, { useMemo, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Search, 
-  ArrowLeft, 
-  ArrowRight,
-  ChevronRight,
-  FileQuestion,
+import React, { useMemo, useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
+import {
+  Home,
+  Search,
+  ArrowLeft,
   Database,
   Layers,
   Terminal,
@@ -17,9 +15,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { playCyberSound } from '../utils/helpers';
-import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
-import { CyberBadge } from '../components/common/CyberBadge';
 
 interface QuickLink {
   path: string;
@@ -103,176 +99,182 @@ export const NotFoundPage: React.FC = () => {
     navigate(path);
   };
 
+  // The tracker reads ?q= into its search box.
+  const [term, setTerm] = useState('');
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = term.trim().slice(0, 100);
+    handleNavigate(q ? `/tracker?q=${encodeURIComponent(q)}` : '/tracker');
+  };
+
+  // Entrance: one drop with a settling tilt (transform and opacity, ease-out, no bounce). Reduced motion: a plain fade.
+  const reduceMotion = useReducedMotion();
+  const dropIn = reduceMotion
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.2, ease: 'easeOut' as const } }
+    : {
+        initial: { opacity: 0, transform: 'translateY(-16px) rotate(-3deg)' },
+        animate: { opacity: 1, transform: 'translateY(0px) rotate(0deg)' },
+        transition: { duration: 0.42, delay: 0.06, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
+      };
+
+  // A very slight tilt that follows the pointer: fine, hover-capable pointers only, never under reduced motion.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const frame = useRef(0);
+  const tiltTo = (x: number, y: number) => {
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => {
+      if (cardRef.current) cardRef.current.style.transform = `rotateX(${(-y * 4).toFixed(2)}deg) rotateY(${(x * 5).toFixed(2)}deg)`;
+    });
+  };
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const card = cardRef.current;
+    if (!card || reduceMotion || typeof window.matchMedia !== 'function') return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const r = card.getBoundingClientRect();
+    const x = Math.max(-0.5, Math.min(0.5, (e.clientX - r.left) / r.width - 0.5));
+    const y = Math.max(-0.5, Math.min(0.5, (e.clientY - r.top) / r.height - 0.5));
+    tiltTo(x, y);
+  };
+
+  // Always rendered as text; long paths are cut at 80 characters.
+  const shownPath = currentPath.length > 80 ? currentPath.slice(0, 79) + '…' : currentPath;
+
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-12 px-1 sm:px-0">
-      {/* Clean standard page header */}
-      <PageHeader
-        title="Page not found"
-        description="The requested page or target could not be found."
-        icon={<FileQuestion className="text-secondary" />}
-        primaryAction={
-          <CyberButton
-            variant="primary"
-            size="md"
-            iconLeft={<Home className="w-4 h-4" />}
-            onClick={() => handleNavigate('/tracker')}
-            className="w-full sm:w-auto justify-center"
-          >
-            Back to tracker
+    <div className="mx-auto w-full max-w-lg px-1 pb-12 pt-6 text-center sm:px-0 sm:pt-14">
+      <p aria-hidden="true" className="select-none text-7xl font-medium leading-none tracking-tighter text-muted tabular-nums sm:text-8xl">
+        404
+      </p>
+      <h1 className="mt-1 text-2xl font-semibold leading-tight tracking-tight text-primary [text-wrap:balance] sm:text-3xl">
+        This one isn&apos;t on the board
+      </h1>
+      <p className="mx-auto mt-3 max-w-[44ch] text-sm leading-relaxed text-secondary sm:text-base">
+        Nothing lives at this address. The link may be old or mistyped.
+      </p>
+
+      {/* The missing address, drawn as a tracker card */}
+      <motion.div
+        {...dropIn}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={() => tiltTo(0, 0)}
+        className="mx-auto mt-6 max-w-sm text-left [perspective:900px]"
+      >
+        <div
+          ref={cardRef}
+          role="group"
+          aria-label="The address you asked for"
+          className="surface-card-depth rounded-2xl border border-subtle bg-surface-card p-4 shadow-md transition-transform duration-200 ease-out"
+        >
+          <div className="flex items-start gap-2">
+            <span aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 rounded-full border border-strong bg-surface-hover" />
+            <code className="min-w-0 break-all font-mono text-sm font-semibold leading-6 text-primary" title={currentPath}>
+              {shownPath}
+            </code>
+          </div>
+          <dl className="mt-3 flex items-baseline gap-3 pl-4 text-xs">
+            <dt className="font-semibold text-muted">IP</dt>
+            <dd className="font-mono tabular-nums text-secondary">404.404.404.404</dd>
+          </dl>
+          <ul className="mt-3 flex flex-wrap gap-2 pl-4">
+            {['Not found', 'No foothold'].map((pill) => (
+              <li key={pill} className="rounded-md border border-subtle bg-surface-sunken px-1.5 py-0.5 text-xs font-medium text-secondary">
+                {pill}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </motion.div>
+
+      {/* Search the tracker */}
+      <form role="search" onSubmit={handleSearch} className="mx-auto mt-6 max-w-sm text-left">
+        <label htmlFor="nf-search" className="mb-1 block text-xs font-semibold text-secondary">
+          Search your machines
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="nf-search"
+            type="search"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            maxLength={100}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Name, IP or tag"
+            className="min-h-11 min-w-0 flex-1 rounded-lg border border-strong bg-surface-sunken px-3 text-base text-primary placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:text-sm"
+          />
+          <CyberButton type="submit" variant="secondary" size="md" iconLeft={<Search className="h-4 w-4" />} className="min-h-11 shrink-0">
+            Search
           </CyberButton>
-        }
-        actions={
-          <>
-            <CyberButton
-              variant="default"
-              size="md"
-              iconLeft={<Search className="w-3.5 h-3.5" />}
-              onClick={() => {
-                if (soundEnabled) playCyberSound('click');
-                setCommandPaletteOpen(true);
-              }}
-            >
-              Search (Ctrl+K)
-            </CyberButton>
-            <CyberButton
-              variant="ghost"
-              size="md"
-              iconLeft={<ArrowLeft className="w-3.5 h-3.5" />}
-              onClick={() => {
-                if (soundEnabled) playCyberSound('click');
-                navigate(-1);
-              }}
-            >
-              Back
-            </CyberButton>
-          </>
-        }
-        overflow={[
-          {
-            id: 'search',
-            label: 'Search (Ctrl+K)',
-            icon: <Search className="w-4 h-4" />,
-            onSelect: () => {
-              if (soundEnabled) playCyberSound('click');
-              setCommandPaletteOpen(true);
-            },
-          },
-          {
-            id: 'back',
-            label: 'Go back',
-            icon: <ArrowLeft className="w-4 h-4" />,
-            onSelect: () => {
-              if (soundEnabled) playCyberSound('click');
-              navigate(-1);
-            },
-          },
-        ]}
-      />
+        </div>
+      </form>
 
-      {/* Cyber Status Block */}
-      <div className="rounded-xl border border-subtle bg-surface-card p-3.5 sm:p-5 space-y-3 sm:space-y-4 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <CyberBadge variant="neutral" mono size="sm">
-              404
-            </CyberBadge>
-            <span className="text-secondary font-medium">Unresolved route</span>
-          </div>
-          <code
-            className="text-[11px] sm:text-xs font-mono text-muted bg-surface-sunken px-2 py-0.5 rounded border border-subtle truncate max-w-[200px] sm:max-w-xs md:max-w-md"
-            title={currentPath}
+      {suggestedMatch && (
+        <p className="mt-2 text-center text-sm text-secondary">
+          Did you mean{' '}
+          <Link
+            to={suggestedMatch.path}
+            onClick={() => soundEnabled && playCyberSound('click')}
+            className="inline-flex min-h-11 items-center rounded font-semibold text-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            {currentPath}
-          </code>
-        </div>
-
-        {/* Cyber terminal preview */}
-        <div className="rounded-lg bg-surface-sunken border border-subtle p-2.5 sm:p-3 font-mono text-xs space-y-1 overflow-x-auto text-muted">
-          <div className="flex items-center gap-1.5 text-primary">
-            <span className="text-accent select-none">$</span>
-            <span className="text-secondary">curl -I</span>
-            <span className="text-primary truncate">{currentPath}</span>
-          </div>
-          <div className="text-callout-danger-fg text-[11px] flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold">HTTP/2 404</span>
-            <span className="text-muted/80">&middot; target route unresolved in client manifest</span>
-          </div>
-        </div>
-
-        <p className="text-xs sm:text-sm text-secondary leading-relaxed">
-          The link you followed may be broken, or the address may have been typed incorrectly. You can return to the main tracker or navigate to any of the sections below.
+            {suggestedMatch.name}
+          </Link>
+          ?
         </p>
+      )}
 
-        {/* Suggestion Card (if recognized) */}
-        {suggestedMatch && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-lg bg-surface-elevated border border-accent/30 shadow-xs">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <span className="p-2 rounded-md bg-surface-sunken text-accent border border-subtle flex-shrink-0">
-                <suggestedMatch.icon className="w-4 h-4" />
-              </span>
-              <div className="min-w-0">
-                <div className="text-[11px] text-muted font-medium">Looking for this page?</div>
-                <div className="text-xs sm:text-sm font-semibold text-primary truncate">{suggestedMatch.name}</div>
-              </div>
-            </div>
-            <CyberButton
-              variant="secondary"
-              size="sm"
-              iconRight={<ArrowRight className="w-3.5 h-3.5" />}
-              onClick={() => handleNavigate(suggestedMatch.path)}
-              className="w-full sm:w-auto justify-center"
+      <div className="mt-5 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center">
+        <CyberButton
+          variant="primary"
+          size="md"
+          iconLeft={<Home className="h-4 w-4" />}
+          onClick={() => handleNavigate('/tracker')}
+          className="min-h-11 justify-center"
+        >
+          Back to tracker
+        </CyberButton>
+        <CyberButton
+          variant="ghost"
+          size="md"
+          iconLeft={<ArrowLeft className="h-3.5 w-3.5" />}
+          onClick={() => {
+            if (soundEnabled) playCyberSound('click');
+            navigate(-1);
+          }}
+          className="min-h-11 justify-center"
+        >
+          Go back
+        </CyberButton>
+        <CyberButton
+          variant="ghost"
+          size="md"
+          iconLeft={<Search className="h-3.5 w-3.5" />}
+          onClick={() => {
+            if (soundEnabled) playCyberSound('click');
+            setCommandPaletteOpen(true);
+          }}
+          className="min-h-11 justify-center"
+        >
+          Search (Ctrl+K)
+        </CyberButton>
+      </div>
+
+      <nav aria-label="Sections" className="mt-6 flex flex-wrap justify-center gap-2">
+        {QUICK_LINKS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              title={item.description}
+              onClick={() => soundEnabled && playCyberSound('click')}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-3 text-xs font-medium text-secondary transition-colors hover:border-strong hover:bg-surface-hover hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
             >
-              Open {suggestedMatch.name}
-            </CyberButton>
-          </div>
-        )}
-      </div>
-
-      {/* Directory Grid */}
-      <div className="space-y-2.5 sm:space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">
-            All sections
-          </h2>
-          <span className="text-[11px] text-muted font-mono sm:hidden">8 modules</span>
-        </div>
-
-        {/* Adaptive layout: sleek list on mobile (<sm), 4-column cards on desktop (sm+) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
-          {QUICK_LINKS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.path}
-                type="button"
-                onClick={() => handleNavigate(item.path)}
-                className="active:scale-[0.98] group flex items-center sm:flex-col sm:items-start justify-between text-left p-2.5 sm:p-3 rounded-lg border border-subtle bg-surface-card hover:bg-surface-hover hover:border-strong transition-interactive cursor-pointer min-h-[48px] sm:min-h-[104px]"
-              >
-                <div className="flex items-center sm:items-start gap-2.5 sm:gap-2 min-w-0 flex-1">
-                  <div className="p-1.5 sm:p-2 rounded-md bg-surface-sunken border border-subtle text-secondary group-hover:text-accent group-hover:border-accent/40 transition-colors flex-shrink-0">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1 sm:space-y-1">
-                    <div className="text-xs sm:text-sm font-semibold text-primary group-hover:text-accent transition-colors truncate">
-                      {item.name}
-                    </div>
-                    <p className="hidden sm:block text-xs text-muted line-clamp-2 leading-relaxed">
-                      {item.description}
-                    </p>
-                    <div className="sm:hidden text-[10px] font-mono text-muted/70 truncate">
-                      {item.path}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted group-hover:text-primary transition-colors flex-shrink-0 sm:hidden ml-2" />
-                <div className="hidden sm:block mt-2 text-[11px] font-mono text-muted/70">
-                  {item.path}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 };

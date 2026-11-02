@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import { appendActiveMachines } from '../../data/activeMachines';
-import { LIST_BASED_TRACK_IDS, PRACTICE_TRACKS, TRACK_BY_ID, TRACK_NAME_LISTS, trackNameSlug } from '../../data/tracksData';
+import { LIST_BASED_TRACK_IDS, PRACTICE_TRACKS, TRACK_BY_ID, TRACK_NAME_LISTS, trackNameSlug, trackOrderKey } from '../../data/tracksData';
+import { loadMachinesCatalog } from '../../data/loadMachinesCatalog';
 import oscp from '../../data/trackSources/offsec-oscp.json';
 import osep from '../../data/trackSources/offsec-osep.json';
 import oswe from '../../data/trackSources/offsec-oswe.json';
@@ -21,7 +22,7 @@ const rowsFor = (platform: 'HTB' | 'THM', name: string) =>
 
 describe('practice track sources', () => {
   it.each(Object.entries(SOURCES))('%s source file is names-only, dated and sourced', (_key, src) => {
-    expect(src.asOf).toBe('2026-10-12');
+    expect(src.asOf).toBe('2026-10-29');
     expect(src.source).toMatch(/^https:\/\//);
     expect(Object.keys(src.names)).toEqual(['HTB']);
     expect(src.names.HTB.length).toBeGreaterThan(0);
@@ -99,5 +100,32 @@ describe('practice track membership', () => {
     const counts = Object.fromEntries(PRACTICE_TRACKS.map((t) => [t.id, CATALOG.filter(t.filterFn).length]));
     console.log('[track member counts]', JSON.stringify(counts));
     for (const n of Object.values(counts)) expect(n).toBeGreaterThan(0);
+  });
+});
+
+describe('OSCP track: Proving Grounds lists', () => {
+  const oscpTrack = track('tjnull-oscp');
+
+  it('includes PG rows from TJ_Null lists, ordered after HTB and THM', async () => {
+    const full = await loadMachinesCatalog();
+    const vegeta = full.find((m) => m.platform === 'PG' && trackNameSlug(m.name) === 'vegeta1');
+    expect(vegeta).toBeDefined();
+    expect(oscpTrack.filterFn(vegeta!)).toBe(true);
+
+    const order = [...(oscpTrack.order ?? [])];
+    const lastIdx = (prefix: string) => order.map((k) => k.startsWith(prefix)).lastIndexOf(true);
+    const pgIdx = order.indexOf(trackOrderKey(vegeta!));
+    expect(pgIdx).toBeGreaterThan(order.lastIndexOf(`THM:${trackNameSlug('Brooklyn Nine Nine')}`));
+    expect(pgIdx).toBeGreaterThan(lastIdx('HTB:'));
+    expect(order.findIndex((k) => k.startsWith('PG:'))).toBeGreaterThan(lastIdx('THM:'));
+  });
+
+  it('a VulnHub row whose slug equals a PG list name is matched and ordered next to the PG key', async () => {
+    const full = await loadMachinesCatalog();
+    const dc9 = full.find((m) => m.platform === 'VulnHub' && trackNameSlug(m.name) === 'dc9');
+    expect(dc9).toBeDefined();
+    expect(oscpTrack.filterFn(dc9!)).toBe(true);
+    const order = oscpTrack.order ?? [];
+    expect(order.indexOf(trackOrderKey(dc9!))).toBe(order.indexOf('PG:dc9') + 1);
   });
 });

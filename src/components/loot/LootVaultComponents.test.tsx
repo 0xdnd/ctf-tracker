@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { AddLootModal } from './AddLootModal';
 import { ExportLootDrawer } from './ExportLootDrawer';
@@ -116,6 +116,95 @@ describe('Loot and Vault Components (Milestone 2)', () => {
         })
       );
       expect(onClose).toHaveBeenCalled();
+    });
+
+    it('labels the target and category controls', () => {
+      render(
+        <AddLootModal isOpen={true} onClose={vi.fn()} onSave={vi.fn()} machines={mockMachines} />
+      );
+
+      const target = screen.getByLabelText('Target machine');
+      expect(target).toHaveAttribute('aria-haspopup', 'listbox');
+      expect(target).toHaveTextContent('Global (no target)');
+      expect(screen.getByLabelText('Category').tagName).toBe('SELECT');
+    });
+
+    it('picks a target from the searchable list and saves it against that machine', async () => {
+      const onSave = vi.fn();
+      render(
+        <AddLootModal isOpen={true} onClose={vi.fn()} onSave={onSave} machines={mockMachines} />
+      );
+
+      fireEvent.click(screen.getByLabelText('Target machine'));
+      const search = await screen.findByPlaceholderText('Search machines...');
+      fireEvent.change(search, { target: { value: 'pwnbox' } });
+      fireEvent.click(screen.getByRole('option', { name: /PwnBox \(10\.10\.11\.20\) — HTB/ }));
+
+      fireEvent.change(screen.getByPlaceholderText(/Paste password, hash string/i), {
+        target: { value: 'Backup2026!Pwned' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Save to Vault/i }));
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ targetId: 'target-1', targetName: 'PwnBox', targetIp: '10.10.11.20' })
+      );
+    });
+
+    it('keeps the global option and saves unscoped by default', () => {
+      const onSave = vi.fn();
+      render(
+        <AddLootModal isOpen={true} onClose={vi.fn()} onSave={onSave} machines={mockMachines} />
+      );
+
+      fireEvent.change(screen.getByPlaceholderText(/Paste password, hash string/i), {
+        target: { value: 'x' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Save to Vault/i }));
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ targetId: 'global', targetName: 'Global / Unscoped' })
+      );
+    });
+
+    it('closes only the open picker on Escape, then the dialog on the next Escape', async () => {
+      const onClose = vi.fn();
+      render(
+        <AddLootModal isOpen={true} onClose={onClose} onSave={vi.fn()} machines={mockMachines} />
+      );
+
+      const trigger = screen.getByLabelText('Target machine');
+      fireEvent.click(trigger);
+      const search = await screen.findByPlaceholderText('Search machines...');
+
+      fireEvent.keyDown(search, { key: 'Escape' });
+      expect(onClose).not.toHaveBeenCalled();
+      await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      fireEvent.keyDown(trigger, { key: 'Escape' });
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('caps rendered rows for a catalog-sized list and narrows as the user types', async () => {
+      const bigList: Machine[] = Array.from({ length: 1372 }, (_, i) => ({
+        ...mockMachines[0],
+        id: `box-${i}`,
+        name: `Box${i}`,
+        ip: '',
+      }));
+      render(
+        <AddLootModal isOpen={true} onClose={vi.fn()} onSave={vi.fn()} machines={bigList} />
+      );
+
+      fireEvent.click(screen.getByLabelText('Target machine'));
+      const listbox = await screen.findByRole('listbox');
+      const rendered = within(listbox).getAllByRole('option').length;
+      expect(rendered).toBeLessThanOrEqual(50);
+      expect(within(listbox).getByText(/more, keep typing to narrow/i)).toBeInTheDocument();
+
+      fireEvent.change(screen.getByPlaceholderText('Search machines...'), { target: { value: 'Box1371' } });
+      expect(within(listbox).getAllByRole('option')).toHaveLength(1);
+      expect(within(listbox).queryByText(/keep typing to narrow/i)).not.toBeInTheDocument();
     });
   });
 

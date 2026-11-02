@@ -19,12 +19,14 @@ import {
   Copy,
   ExternalLink,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Crosshair,
 } from 'lucide-react';
 import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
+import { GuideControls } from '../../onboarding/GuideControls';
 
 interface ThemeCardInfo {
   id: ThemePreset;
@@ -51,17 +53,6 @@ const THEME_PRESETS: ThemeCardInfo[] = [
     icon: Zap,
   },
   {
-    id: 'monolith',
-    name: 'Clean Monolith',
-    tagline: 'Architectural off-white and crisp graphite',
-    badge: 'Monolith',
-    darkAccentHex: 'rgb(56 189 248)',
-    lightAccentHex: 'rgb(2 132 199)',
-    darkCardHex: 'rgb(39 39 42)',
-    lightCardHex: 'rgb(255 255 255)',
-    icon: Sun,
-  },
-  {
     id: 'htb',
     name: 'Hack The Box',
     tagline: 'OLED black and official HTB lime',
@@ -71,6 +62,17 @@ const THEME_PRESETS: ThemeCardInfo[] = [
     darkCardHex: 'rgb(11 16 21)',
     lightCardHex: 'rgb(255 255 255)',
     icon: Terminal,
+  },
+  {
+    id: 'offsec',
+    name: 'Red Team / OffSec',
+    tagline: 'Carbon charcoal and tactical crimson',
+    badge: 'Red Team',
+    darkAccentHex: 'rgb(255 70 70)',
+    lightAccentHex: 'rgb(185 28 28)',
+    darkCardHex: 'rgb(16 16 21)',
+    lightCardHex: 'rgb(255 255 255)',
+    icon: Crosshair,
   },
 ];
 
@@ -189,7 +191,7 @@ export const SettingsModal: React.FC = () => {
           <div className="p-6 flex-1 min-h-0 overflow-y-auto space-y-5 text-xs text-secondary">
             
             {/* Section 1: Themes & Presets */}
-            <div className="space-y-3">
+            <div data-tour="settings-themes" className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
                   <Palette className="w-4 h-4 text-muted" />
@@ -340,7 +342,7 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             {/* Section 2: Mode & Display Settings */}
-            <div className="pt-2 border-t border-subtle space-y-3">
+            <div data-tour="settings-display" className="pt-2 border-t border-subtle space-y-3">
               <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
                 <Sun className="w-4 h-4 text-muted" />
                 <span>Display and mode</span>
@@ -444,7 +446,7 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             {/* Section 3: Attacker Variables Default */}
-            <div className="pt-2 border-t border-subtle space-y-3">
+            <div data-tour="settings-vars" className="pt-2 border-t border-subtle space-y-3">
               <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
                 <Server className="w-4 h-4 text-muted" />
                 <span>Default attacker variables</span>
@@ -476,6 +478,14 @@ export const SettingsModal: React.FC = () => {
                   />
                 </div>
               </div>
+            </div>
+
+
+            {/* Section 4: Guide */}
+            <div className="pt-2 border-t border-subtle space-y-3">
+              <span className="text-xs font-semibold text-primary">Guide</span>
+              <p className="text-[11px] text-muted">Replay the first-visit tour, or show the one-time page tips again.</p>
+              <GuideControls onBeforeReplay={() => setSettingsModalOpen(false)} />
             </div>
 
           </div>

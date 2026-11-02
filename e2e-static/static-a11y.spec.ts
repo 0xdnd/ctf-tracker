@@ -14,6 +14,17 @@ const PAGES = [
   '/techniques/active-directory/',
   '/tj-null-list/',
   '/oscp-exam-scoring-and-time-budget/',
+  // Machine list pages with the search/filter/sort toolbar (public/table-filter.js).
+  '/machines/',
+  '/oscp-like-machines/',
+  '/active-directory-machines/',
+  '/cwee-like-machines/',
+  '/cpts-like-machines/',
+  '/ippsec-cpts-machines/',
+  '/osep-like-machines/',
+  '/oswe-like-machines/',
+  '/htb-starting-point-machines/',
+  '/crto-like-machines/',
 ];
 
 const axeSource = fs.readFileSync(path.resolve('node_modules/axe-core/axe.min.js'), 'utf8');

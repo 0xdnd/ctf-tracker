@@ -104,7 +104,7 @@ const PLATFORM_CAT_INDEX: Record<string, CatIndex> = {
 };
 
 export const OS_CAT_INDEX: Record<string, CatIndex> = {
-  Linux: 4,
+  Linux: 7,
   Windows: 1,
   macOS: 2,
   BSD: 5,

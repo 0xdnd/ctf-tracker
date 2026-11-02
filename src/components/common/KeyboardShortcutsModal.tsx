@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Keyboard, Command, Eye, Zap } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { Modal } from './Modal';
+import { GuideControls } from '../../onboarding/GuideControls';
 
 interface ShortcutEntry {
   keys: string[];
@@ -114,6 +115,10 @@ export const KeyboardShortcutsModal: React.FC = () => {
               </div>
             </div>
           ))}
+          <div className="space-y-2.5">
+            <div className="text-xs font-medium text-secondary">Guide</div>
+            <GuideControls onBeforeReplay={() => setShortcutsModalOpen(false)} />
+          </div>
         </div>
 
         {/* Footer */}

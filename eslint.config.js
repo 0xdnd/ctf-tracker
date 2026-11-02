@@ -19,6 +19,7 @@ export default tseslint.config(
       '.kilo/**',
       'docs/**',
       'scratch/**',
+      'second-brain/**',
     ],
   },
   js.configs.recommended,

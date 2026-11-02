@@ -32,6 +32,7 @@ import {
   SERVICE_BRANCHES, 
   generateApplicablePhases 
 } from '../data/methodologyFramework';
+import { hiddenItemsMessage } from '../utils/hiddenItems';
 import { ServiceBranchType } from '../types/checklist';
 import { playCyberSound } from '../utils/helpers';
 import { resolveTemplate, contextFromGlobalVars } from '../utils/variableSubstitution';
@@ -129,6 +130,11 @@ export const MethodologyPage: React.FC = () => {
     }
     return MASTER_METHODOLOGY_FRAMEWORK;
   }, [contextMachine]);
+
+  const hiddenNote = useMemo(
+    () => (contextMachine ? hiddenItemsMessage(displayPhases, contextMachine.os) : null),
+    [contextMachine, displayPhases]
+  );
 
   // Toggle Phase Expansion
   const togglePhase = (phaseId: string) => {
@@ -296,7 +302,7 @@ export const MethodologyPage: React.FC = () => {
         }
       >
         {/* View mode: reference playbook vs live target checklist vs transfers vs tty vs encoder */}
-        <div className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+        <div data-tour="methodology-tabs" className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {([
               { id: 'playbook', label: 'Playbook', icon: <BookOpen className="h-3.5 w-3.5" /> },
@@ -435,7 +441,7 @@ export const MethodologyPage: React.FC = () => {
         <>
           {/* Target context and injected variables */}
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <div data-tour="methodology-target" className="flex min-w-0 flex-wrap items-center gap-3">
               <span className="text-xs font-medium text-secondary">Target context</span>
 
               <CyberSelect
@@ -469,6 +475,7 @@ export const MethodologyPage: React.FC = () => {
                   </button>
                 </div>
               )}
+              {hiddenNote && <p className="text-xs text-muted">{hiddenNote}</p>}
             </div>
 
             <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono tabular-nums text-xs">
@@ -489,7 +496,7 @@ export const MethodologyPage: React.FC = () => {
 
           {/* Search and filters */}
           <div className="space-y-3">
-            <div className="relative">
+            <div data-tour="methodology-search" className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
               <input
                 id="methodology-search-input"

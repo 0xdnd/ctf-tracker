@@ -206,6 +206,18 @@ function initScript({ seed, credentials }) {
     /* storage unavailable: the graph shot will simply have no edges */
   }
 
+  // Guided tour finished and section tips off, so no tour overlay or hint card covers the app
+  // (same record the app writes in onboardingStorage.ts). The setup modal still appears: its
+  // flag, zerobox_onboarding_completed, is left unset so "Load Demo Baseline" works.
+  try {
+    const ONBOARDING_KEY = 'zerobox_onboarding_v1';
+    if (!localStorage.getItem(ONBOARDING_KEY)) {
+      localStorage.setItem(ONBOARDING_KEY, JSON.stringify({ tourDone: true, dismissedHints: [], tipsOff: true }));
+    }
+  } catch {
+    /* storage unavailable */
+  }
+
   // No blinking caret in any screenshot.
   document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
@@ -520,7 +532,13 @@ async function main() {
       console.log('> hero-app');
       await setView(VIEW_HERO);
       await viewBtn('Kanban').click();
-      await page.getByRole('button', { name: /Hide Empty Lanes/ }).click();
+      // "Hide empty lanes" lives in the Filters drawer (Status section, open by default).
+      await page.getByRole('button', { name: /^Filters/ }).click();
+      await settle(page, 800);
+      const emptyLanes = page.getByRole('switch', { name: /Hide empty lanes/ });
+      if ((await emptyLanes.getAttribute('aria-checked')) !== 'true') await emptyLanes.click();
+      await page.getByRole('button', { name: 'Close filter drawer' }).click();
+      await settle(page, 800);
       await page.getByRole('button', { name: 'Collapse Sidebar' }).click();
       await settle(page, 1500);
       const narrow = await page.addStyleTag({

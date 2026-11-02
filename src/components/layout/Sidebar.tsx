@@ -1,30 +1,37 @@
 import { APP_VERSION_SHORT } from "../../utils/appVersion";
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { stripTrailingSlash } from '../../utils/pathUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Crosshair, 
-  Terminal, 
-  FileText, 
-  BarChart3, 
-  Kanban, 
-  Table, 
-  LayoutGrid, 
-  ChevronLeft, 
+import {
+  Crosshair,
+  Terminal,
+  Kanban,
+  Table,
+  LayoutGrid,
+  ChevronLeft,
   ChevronRight,
   Radio,
-  Compass,
-  GraduationCap,
-  BookOpen,
-  Database
+  KeyRound,
+  Route,
+  SquareTerminal,
+  Code,
+  NotebookPen,
+  Timer,
+  NotebookText
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useExamStore } from '../../store/examStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
+import { useSnippetTotals } from '../../hooks/useSnippetTotals';
+import { useTrackerCounts } from '../../hooks/useTrackerCounts';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { countDueReviews } from '../../utils/spacedRepetition';
+
+const DUE_REFRESH_MS = 60_000;
 
 export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -32,6 +39,8 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
+  // Track ids are already short (OSCP, CPTS, CRTO...), so the badge shows the track the setup screen is on
+  const examTrack = useExamStore((s) => s.track);
   const openNotesCount = useOpenTabCount();
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
@@ -43,8 +52,6 @@ export const Sidebar: React.FC = () => {
     machines, 
     soundEnabled,
     setOperatorModalOpen,
-    userNotes = [],
-    cheatsheets = [],
   } = useCtfStore(
     useShallow((s) => ({
       activeTab: s.activeTab,
@@ -54,26 +61,29 @@ export const Sidebar: React.FC = () => {
       machines: s.machines,
       soundEnabled: s.soundEnabled,
       setOperatorModalOpen: s.setOperatorModalOpen,
-      userNotes: s.userNotes,
-      cheatsheets: s.cheatsheets,
     }))
   );
 
-  const { totalMachines, rootedMachines, footholdMachines, pwnPercentage } = useMemo(() => {
-    const total = machines.length;
-    let rooted = 0;
-    let foothold = 0;
-    for (let i = 0; i < total; i++) {
-      const s = machines[i].status;
-      if (s === 'root' || s === 'completed') rooted++;
-      else if (s === 'foothold') foothold++;
-    }
-    const pct = total > 0 ? Math.round((rooted / total) * 100) : 0;
-    return { totalMachines: total, rootedMachines: rooted, footholdMachines: foothold, pwnPercentage: pct };
-  }, [machines]);
+  const { totalMachines, rootedMachines, footholdMachines, pwnPercentage } = useTrackerCounts(machines);
 
-  // Reviews due, recomputed when the machine list changes
-  const dueReviews = useMemo(() => countDueReviews(machines, Date.now()), [machines]);
+  // Reviews due: recomputed when the machine list changes and as time passes, so a review that
+  // comes due while the app stays open (or the tab sat in the background) shows up without a reload.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const timer = setInterval(tick, DUE_REFRESH_MS);
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+  const dueReviews = useMemo(() => countDueReviews(machines, now), [machines, now]);
+
+  const { snippets: snippetCount, notes: noteCount, total: snippetTotal } = useSnippetTotals();
+  const snippetsBadgeLabel =
+    noteCount > 0 ? `${snippetCount} snippets + ${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : `${snippetCount} snippets`;
 
   const navItems = [
     {
@@ -87,41 +97,48 @@ export const Sidebar: React.FC = () => {
       id: 'vault',
       path: '/vault',
       label: 'Vault',
-      icon: Database,
+      icon: KeyRound,
       badge: `${footholdMachines + rootedMachines}`,
     },
     {
       id: 'methodology',
       path: '/methodology',
       label: 'Attack Methodology',
-      icon: Compass,
+      icon: Route,
+    },
+    {
+      id: 'revshell',
+      path: '/reverse-shell',
+      label: 'Reverse Shells',
+      icon: SquareTerminal,
     },
     {
       id: 'cheatsheet',
       path: '/cheatsheets',
-      label: 'Rev-Shells & Snippets',
-      icon: Terminal,
-      badge: `${cheatsheets.length + userNotes.length}`,
+      label: 'Snippets',
+      icon: Code,
+      badge: `${snippetTotal}`,
+      badgeLabel: snippetsBadgeLabel,
     },
     {
       id: 'writeup',
       path: '/writeup',
       label: 'Writeup Studio',
-      icon: FileText,
+      icon: NotebookPen,
     },
     {
       id: 'analytics',
       path: '/analytics',
       label: 'Skill Radar & Analytics',
-      icon: BarChart3,
+      icon: AnalyticsMonitorIcon,
       dueBadge: dueReviews,
     },
     {
       id: 'exam',
       path: '/exam',
       label: '24h Exam Simulator',
-      icon: GraduationCap,
-      badge: 'OSCP',
+      icon: Timer,
+      badge: examTrack,
     },
   ] as const;
 
@@ -156,7 +173,7 @@ export const Sidebar: React.FC = () => {
       </button>
 
       {/* Navigation */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin px-2.5 py-3 space-y-0.5">
+      <div data-tour="sidebar-nav" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin px-2.5 py-3 space-y-0.5">
         <div className={`px-2 text-[11px] font-medium text-muted mb-1.5 ${collapsed ? 'hidden' : 'block'}`}>
           Modules
         </div>
@@ -190,8 +207,18 @@ export const Sidebar: React.FC = () => {
                 <div className="flex-1 flex items-center justify-between min-w-0 text-left">
                   <span className="truncate mr-2">{item.label}</span>
                   {'badge' in item && item.badge && (
-                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
-                      {item.badge}
+                    <span
+                      title={'badgeLabel' in item ? item.badgeLabel : undefined}
+                      className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums"
+                    >
+                      {'badgeLabel' in item ? (
+                        <>
+                          <span aria-hidden="true">{item.badge}</span>
+                          <span className="sr-only">{item.badgeLabel}</span>
+                        </>
+                      ) : (
+                        item.badge
+                      )}
                     </span>
                   )}
                   {'dueBadge' in item && item.dueBadge > 0 && (
@@ -234,7 +261,7 @@ export const Sidebar: React.FC = () => {
             <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />
           )}
           <div className="flex-shrink-0 relative">
-            <BookOpen className={`w-4 h-4 ${isNotesOpen ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
+            <NotebookText className={`w-4 h-4 ${isNotesOpen ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
             {openNotesCount > 0 && collapsed && (
               <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-accent" />
             )}
@@ -256,7 +283,7 @@ export const Sidebar: React.FC = () => {
         {activeTab === 'tracker' && !collapsed && (
           <div className="mt-3 pt-2.5 border-t border-subtle">
             <div className="px-2 text-[11px] font-medium text-muted mb-1.5">Layout</div>
-            <div className="grid grid-cols-4 gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle">
+            <div data-tour="layout-switcher" className="grid grid-cols-4 gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle">
               {layoutModes.map(({ id, label, title, Icon }) => (
                 <button
                   key={id}

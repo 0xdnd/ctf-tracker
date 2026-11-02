@@ -8,7 +8,7 @@
 
 **Use it free at [ctftracker.com](https://ctftracker.com/)**
 
-**No signup. No backend. No tracking. Just open it and start hacking.**
+**No signup. No backend. No tracking in the app. Just open it and start hacking.**
 
 <br />
 
@@ -34,7 +34,7 @@
 
 ---
 
-**ZeroBox is a free, open-source CTF tracker** for [Hack The Box](https://www.hackthebox.com/) and [TryHackMe](https://tryhackme.com/). Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
+**ZeroBox is a free, source-available CTF tracker** for [Hack The Box](https://www.hackthebox.com/) and [TryHackMe](https://tryhackme.com/). Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
 
 ---
 
@@ -46,7 +46,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 |:---|:---|
 | 📋 A messy spreadsheet of boxes | **1372 HTB, THM, PG & VulnHub machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
 | 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
-| 🐚 Googling "python reverse shell" again | **130+ reverse shells** with matching listeners, one click to copy |
+| 🐚 Googling "python reverse shell" again | **129 reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
 | 😰 Wondering if you're exam-ready | A **24h exam simulator** with OSCP/CPTS/CRTO-style scoring |
 
@@ -74,7 +74,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ### 3. 🧭 Methodology & Field Manual
 - **Attack methodology:** Phase-by-phase tree with decision branches and playbooks.
 - **Dynamic cheatsheet:** Set `LHOST`, `LPORT`, `TARGET_IP` once and they are injected into every command.
-- **Reverse shell builder & modal:** 130+ Linux and Windows payloads (`RevShellModal`) with matching listeners and one-click copy.
+- **Reverse shell builder & modal:** 129 Linux and Windows payloads (`RevShellModal`) with matching listeners and one-click copy.
 - **Offensive Forge Utilities:** Multi-host scan parsing, payload encoding, and transfer server presets (`offensiveForgeUtils`, `multiHostScanParser`).
 - **Notes workspace:** Obsidian-style note viewer with multi-tab docked notes and an IndexedDB-backed private vault.
 
@@ -214,7 +214,7 @@ ZeroBox is engineered to strictly uphold the Terms of Service, Acceptable Use Po
 - **100% In-Browser IndexedDB Sandbox:** All imported field notes and obsidian vaults operate in-memory and inside the user's private client-side IndexedDB database (`zerobox_vault_db`).
 
 ### 4. ⚖️ Independent Project & Trademark Disclaimer
-ZeroBox is an independent open-source tracking and educational dashboard created by Daniel Dayan. ZeroBox is **not affiliated with, endorsed by, sponsored by, or associated with Hack The Box Ltd or TryHackMe Ltd**. "Hack The Box", "HTB", "TryHackMe", and "THM" are trademarks or registered trademarks of their respective owners. All target metadata, room links, and writeup hyperlinks are referenced solely for non-commercial educational tracking and study under fair use.
+ZeroBox is an independent source-available tracking and educational dashboard created by Daniel Dayan. ZeroBox is **not affiliated with, endorsed by, sponsored by, or associated with Hack The Box Ltd or TryHackMe Ltd**. "Hack The Box", "HTB", "TryHackMe", and "THM" are trademarks or registered trademarks of their respective owners. All target metadata, room links, and writeup hyperlinks are referenced solely for non-commercial educational tracking and study under fair use.
 
 ---
 

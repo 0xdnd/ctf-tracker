@@ -207,6 +207,24 @@ else {
   }
 }
 
+// ---- indexable pages must not link to redirect stubs (noindex + meta refresh) ----
+const stubs = new Set(pageInfo.filter((p) => p.noindex && /<meta http-equiv="refresh"/i.test(fs.readFileSync(p.file, 'utf8'))).map((p) => p.name));
+for (const p of pageInfo) {
+  if (p.noindex) continue;
+  const seen = new Set();
+  const html = fs.readFileSync(p.file, 'utf8');
+  for (const m of html.matchAll(/<a\b[^>]*?\bhref="(\/[^"#?]*)"/g)) {
+    const href = decode(m[1]);
+    if (stubs.has(href) && !seen.has(href)) { seen.add(href); offenders.push(`${p.name}  links to redirect stub ${href}`); }
+  }
+  if (p.name === '/revshells/') {
+    const stripped = html.replace(/<!--email_off-->[\s\S]*?<!--\/email_off-->/g, '');
+    if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(stripped)) {
+      offenders.push(`${p.name}  has unprotected email address outside <!--email_off--> (triggers Cloudflare /cdn-cgi/l/email-protection 404s)`);
+    }
+  }
+}
+
 // ---- 404 page ----
 const f404 = path.join(DIST, '404.html');
 if (!fs.existsSync(f404)) offenders.push('404.html missing from dist');

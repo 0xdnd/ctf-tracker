@@ -44,6 +44,7 @@ import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
 import { PipelineStatus, Difficulty, Machine } from '../../types';
 import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard, sanitizeExternalUrl, interpolateCommand } from '../../utils/helpers';
+import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roomLink';
 import { ChecklistWorkspace } from '../checklist/ChecklistWorkspace';
 import { PlatformBadge, platformFullName } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
@@ -64,7 +65,7 @@ import { DomainVhostSection } from './DomainVhostSection';
 import { PortTriageTable } from './PortTriageTable';
 import { LabFindingsPanel } from './LabFindingsPanel';
 import { LabTimelineAndIndependence } from './LabTimelineAndIndependence';
-import { communityLink, ownWriteupHref } from '../../utils/machineLinks';
+import { communityLink, ownWriteupHref, resolveHubRootWriteupHref } from '../../utils/machineLinks';
 import { isTauriTarget } from '../../utils/runtimeTarget';
 
 const HEADER_ICON_BTN =
@@ -224,7 +225,14 @@ export const MachineDetailModal: React.FC = () => {
 
   if (!machine) return null;
   const ownHref = ownWriteupHref(machine);
-  const community = communityLink(machine);
+  // A writeupUrl that is actually an external hub root (not a page for this target) resolves to
+  // our own machine page when one exists, or shows no writeup link at all — never a guessed URL.
+  const hubRootWriteup = resolveHubRootWriteupHref(machine);
+  const community = hubRootWriteup !== undefined
+    ? hubRootWriteup
+      ? { href: hubRootWriteup, label: 'Writeup' }
+      : null
+    : communityLink(machine);
 
   const handleCopy = async (text: string, type: 'user' | 'root') => {
     if (!text) return;
@@ -379,7 +387,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
                   >
-                    Official room <ExternalLink className="w-3 h-3" />
+                    {isStartingPointHubUrl(machine.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Official room'} <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
                 {ownHref && (
@@ -458,7 +466,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               iconOnly
               className={HEADER_ICON_BTN}
             />
-            <button aria-label="Open full page mission workspace"
+            <button data-tour="quick-full" aria-label="Open full page mission workspace"
               onClick={() => {
                 navigate(`/target/${machine.id}`);
                 setSelectedMachineId(null);
@@ -481,6 +489,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
         {!machine.isActive && (
           <div
             role="tablist"
+            data-tour="quick-tabs"
             aria-label="Machine detail sections"
             className="flex-shrink-0 flex items-center border-b border-subtle bg-surface-card px-2 sm:px-4 overflow-x-auto no-scrollbar"
           >
@@ -806,7 +815,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-callout-tip-fg hover:underline"
                     >
-                      <FileText className="w-3.5 h-3.5" /> View on {platformName} ↗
+                      <FileText className="w-3.5 h-3.5" /> {isStartingPointHubUrl(machine.roomUrl) ? STARTING_POINT_HUB_LABEL : `View on ${platformName}`} ↗
                     </a>
                   </div>
                 );
@@ -907,7 +916,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             <div className="text-sm font-semibold text-secondary mb-3 flex items-center gap-1.5 font-sans">
               Attack lifecycle
             </div>
-            <ol className="flex items-start" aria-label="Attack lifecycle status">
+            <ol data-tour="quick-stages" className="flex items-start" aria-label="Attack lifecycle status">
               {pipelineStages.map((stage, idx) => {
                 const isSelected = machine.status === stage.id;
                 const currentIdx = pipelineStages.findIndex((s) => s.id === machine.status);
@@ -1426,7 +1435,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 {recommendedNotes.map((note) => {
                   const isExpanded = Boolean(expandedNotes[note.id]);
-                  const targetVars = { ...globalVars, targetIp: machine.ip || globalVars.targetIp };
+                  const targetVars = { ...globalVars, targetIp: machine.ip || '' };
                   const extraCommandsCount = note.commands ? note.commands.length - 1 : 0;
 
                   return (

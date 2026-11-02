@@ -69,4 +69,23 @@ describe('PlatformBadge component', () => {
     const { container: customContainer } = render(<PlatformIcon platform="Custom" />);
     expect(customContainer.querySelector('svg')).toBeInTheDocument();
   });
+
+  it('renders single-colour official marks for PG and VulnHub, and keeps the placeholder for Custom', () => {
+    const { container: pg } = render(<PlatformIcon platform="PG" />);
+    expect(pg.querySelector('svg')).toHaveAttribute('viewBox', '0 0 24 24');
+    expect(pg.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+    expect(pg.querySelectorAll('path')).toHaveLength(1);
+
+    const { container: vh } = render(<PlatformIcon platform="VulnHub" />);
+    expect(vh.querySelector('svg')).toHaveAttribute('viewBox', '0 0 24 24');
+    expect(vh.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+    expect(vh.querySelectorAll('path').length).toBeGreaterThan(0);
+    // No gradients or hard-coded colours: tone and monochrome variants rely on currentColor.
+    for (const c of [pg, vh]) {
+      expect(c.innerHTML).not.toMatch(/gradient|#[0-9a-f]{3,6}|url\(/i);
+    }
+
+    const { container: custom } = render(<PlatformIcon platform="Custom" />);
+    expect(custom.querySelector('rect')).toBeInTheDocument();
+  });
 });
