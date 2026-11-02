@@ -7,6 +7,7 @@
  */
 
 import { isSchemaWriteGated } from './schemaWriteGate';
+import { trackPending } from './idbUtils';
 
 const DB_NAME = 'zerobox_resilient_store_v1';
 const DB_VERSION = 1;
@@ -61,10 +62,17 @@ function openResilientDb(): Promise<IDBDatabase | null> {
   });
 }
 
+/** Saves issued and not yet settled, so a delete issued later can run after them (see deleteWorkspaceFromIdb). */
+const pendingWorkspaceSaves = new Set<Promise<unknown>>();
+
 /**
  * Save workspace state to IndexedDB with automatic rolling snapshot.
  */
-export async function saveWorkspaceToIdb(key: string, data: unknown): Promise<boolean> {
+export function saveWorkspaceToIdb(key: string, data: unknown): Promise<boolean> {
+  return trackPending(pendingWorkspaceSaves, saveWorkspaceToIdbNow(key, data));
+}
+
+async function saveWorkspaceToIdbNow(key: string, data: unknown): Promise<boolean> {
   if (isSchemaWriteGated()) return false;
   const db = await openResilientDb();
   if (!db) return false;
@@ -156,6 +164,15 @@ export async function loadWorkspaceFromIdb<T = unknown>(key: string): Promise<T 
       resolve(null);
     }
   });
+}
+
+/**
+ * Removes one workspace copy. Runs after every save already issued has settled, so an earlier save cannot land
+ * after the delete and bring the copy back. Never throws: a failed delete only warns and resolves false.
+ */
+export async function deleteWorkspaceFromIdb(key: string): Promise<boolean> {
+  await Promise.allSettled([...pendingWorkspaceSaves]);
+  return deleteResilientRecord(key);
 }
 
 /**

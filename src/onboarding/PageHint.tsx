@@ -1,19 +1,22 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { GUIDE_META } from './guideMeta';
+import { guideTipAvailability } from './guideRegistry';
 import { CARD_SHADOW, CardActions, EASE_OUT, PressButton, buttonStyles, cardBody, cardSurface, cardTitle } from './guideMotion';
 import { TOUR_ICONS } from './icons';
 import { useOnboardingStore } from './useOnboardingStore';
 
 interface PageHintProps {
   guideId: string;
+  /** The page the tip is on. When given, Show me only starts a guide that can run there. */
+  pathname?: string;
 }
 
 /**
  * One-time offer of a section's guide. Non-modal: no focus trap and no focus steal. It marks itself as a trap
  * companion so an open modal's focus trap lets Tab reach its buttons.
  */
-export const PageHint: React.FC<PageHintProps> = ({ guideId }) => {
+export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
   const guide = GUIDE_META[guideId];
   const dismissHint = useOnboardingStore((s) => s.dismissHint);
   const setTipsOff = useOnboardingStore((s) => s.setTipsOff);
@@ -21,6 +24,11 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId }) => {
   const reduceMotion = useReducedMotion();
   if (!guide) return null;
   const Icon = TOUR_ICONS[guide.icon];
+  const showMe = () => {
+    // The layer already hides a tip that cannot run; this keeps a stale click from starting a guide with no anchors.
+    if (pathname !== undefined && !guideTipAvailability(guide.id, pathname).available) dismissHint(guide.id);
+    else startGuide(guide.id);
+  };
   const titleId = `page-hint-${guide.id}-title`;
 
   return (
@@ -52,7 +60,7 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId }) => {
         <PressButton onClick={() => dismissHint(guide.id)} className={`whitespace-nowrap ${buttonStyles.secondary}`}>
           Not now
         </PressButton>
-        <PressButton onClick={() => startGuide(guide.id)} className={`whitespace-nowrap ${buttonStyles.primary}`}>
+        <PressButton onClick={showMe} className={`whitespace-nowrap ${buttonStyles.primary}`}>
           Show me
         </PressButton>
       </CardActions>

@@ -1,5 +1,6 @@
 import { Machine } from '../types';
 import { isSchemaWriteGated } from './schemaWriteGate';
+import { deleteKeyAndClose, trackPending } from './idbUtils';
 
 export interface DeepWriteupEntry {
   writeupMarkdown?: string;
@@ -139,15 +140,22 @@ export function mergeDeepPayloadsIntoMachines(
   return hasModifications ? updated : machines;
 }
 
+/** Deep saves issued and not yet settled, so clearDeepProfileData can run after them. */
+const pendingDeepSaves = new Set<Promise<unknown>>();
+
 /**
  * Asynchronously saves deep profile payloads (writeups, custom notes) into IndexedDB.
  */
-export async function saveDeepProfileData(
+export function saveDeepProfileData(
   profileId: string,
-  data: {
-    writeups: Record<string, DeepWriteupEntry>;
-    customNotes?: any[];
-  }
+  data: Omit<DeepProfilePayload, 'updatedAt'>
+): Promise<void> {
+  return trackPending(pendingDeepSaves, saveDeepProfileDataNow(profileId, data));
+}
+
+async function saveDeepProfileDataNow(
+  profileId: string,
+  data: Omit<DeepProfilePayload, 'updatedAt'>
 ): Promise<void> {
   if (isSchemaWriteGated()) return;
   let db: IDBDatabase | null = null;
@@ -273,40 +281,16 @@ export async function loadDeepProfileData(profileId: string): Promise<DeepProfil
 }
 
 /**
- * Deletes deep profile data from IndexedDB.
+ * Deletes deep profile data from IndexedDB, after every deep save already issued has settled.
  */
 export async function clearDeepProfileData(profileId: string): Promise<void> {
   if (isSchemaWriteGated()) return;
-  let db: IDBDatabase | null = null;
   try {
-    const activeDb = await openDeepDatabase();
-    if (!activeDb) return;
-    db = activeDb;
-    await new Promise<void>((resolve) => {
-      let isResolved = false;
-      const safeDone = () => {
-        if (!isResolved) {
-          isResolved = true;
-          try { activeDb.close(); } catch {}
-          resolve();
-        }
-      };
-
-      try {
-        const tx = activeDb.transaction(STORE_NAME, 'readwrite');
-        tx.oncomplete = () => safeDone();
-        tx.onerror = () => safeDone();
-        tx.onabort = () => safeDone();
-
-        const store = tx.objectStore(STORE_NAME);
-        store.delete(profileId || 'guest');
-      } catch (err) {
-        safeDone();
-      }
-    });
+    await Promise.allSettled([...pendingDeepSaves]);
+    const db = await openDeepDatabase();
+    if (db) await deleteKeyAndClose(db, STORE_NAME, profileId || 'guest');
   } catch (err) {
     console.warn('[ZeroBox Deep Storage] Could not clear IndexedDB:', err);
-    try { db?.close(); } catch {}
   }
 }
 

@@ -400,7 +400,10 @@ interface CtfStoreState {
   currentProfileId: string;
   isEphemeralStorage: boolean;
   setIsEphemeralStorage: (val: boolean) => void;
-  loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => void;
+  loadProfileData: (
+    profileId: string,
+    options?: { startFresh?: boolean; cloneFromCurrent?: boolean; skipSaveOutgoing?: boolean }
+  ) => void;
   saveProfileData: (profileId?: string) => void;
   exportBackup: (options?: { redactSecrets?: boolean }) => string;
   /**
@@ -3047,10 +3050,16 @@ export const useCtfStore = create<CtfStoreState>()(
 
       mergeBackup: async (jsonStr, resolutions) => (await import('./syncActions')).mergeBackup(jsonStr, resolutions),
 
-      loadProfileData: (profileId: string, options?: { startFresh?: boolean; cloneFromCurrent?: boolean }) => {
+      loadProfileData: (
+        profileId: string,
+        options?: { startFresh?: boolean; cloneFromCurrent?: boolean; skipSaveOutgoing?: boolean }
+      ) => {
         const gen = ++profileLoadGeneration;
         const currentId = get().currentProfileId || 'guest';
-        get().saveProfileData(currentId);
+        // skipSaveOutgoing: the outgoing profile was just deleted, so saving it would write it straight back. Drop
+        // its pending debounced save too (the switch below re-arms one for the new profile).
+        if (options?.skipSaveOutgoing) cancelPendingProfileSave();
+        else get().saveProfileData(currentId);
 
         const targetKey = getProfileStorageKey(profileId);
         const raw = safeLocalStorage.getItem(targetKey);
@@ -3599,12 +3608,8 @@ function hasUnsavedProfileChanges(state: CtfStoreState) {
   );
 }
 
-/** Save point (stop, switch, reset, checkpoint): write now, but only if something is still unsaved. */
-function flushPendingProfileSave() {
-  if (hasUnsavedProfileChanges(useCtfStore.getState())) flushProfileSave();
-}
-
-export function flushProfileSave() {
+/** Drops the scheduled debounced/maxWait save without writing it. */
+function cancelPendingProfileSave() {
   if (saveDebounceTimer) {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = null;
@@ -3613,6 +3618,15 @@ export function flushProfileSave() {
     clearTimeout(maxWaitTimer);
     maxWaitTimer = null;
   }
+}
+
+/** Save point (stop, switch, reset, checkpoint): write now, but only if something is still unsaved. */
+function flushPendingProfileSave() {
+  if (hasUnsavedProfileChanges(useCtfStore.getState())) flushProfileSave();
+}
+
+export function flushProfileSave() {
+  cancelPendingProfileSave();
   // Debounced, maxWait, beforeunload, visibility and Tauri-close saves all land here. While gated (newer schema,
   // or a restore in this or another tab) nothing is written and the lastSaved markers stay put, so a released
   // restore lock can re-flush the still-unsaved state.

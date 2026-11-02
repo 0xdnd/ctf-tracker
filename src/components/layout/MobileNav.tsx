@@ -42,7 +42,10 @@ import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../.
 import { CyberLogo } from '../common/CyberLogo';
 import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { ThemeToggle } from '../common/ThemeToggle';
-import { ThemePresetDropdown } from '../common/ThemePresetDropdown';
+// Only shown inside the opened menu sheet, so it loads on first use.
+const ThemePresetDropdown = React.lazy(() =>
+  import('../common/ThemePresetDropdown').then((m) => ({ default: m.ThemePresetDropdown }))
+);
 
 export const MobileNav: React.FC = () => {
   const navigate = useNavigate();
@@ -522,7 +525,9 @@ export const MobileNav: React.FC = () => {
                       <div className="text-sm font-medium text-primary">Theme Preset</div>
                       <div className="text-[11px] text-muted">Obsidian, Red Team / OffSec, Hack The Box</div>
                     </div>
-                    <ThemePresetDropdown />
+                    <React.Suspense fallback={null}>
+                      <ThemePresetDropdown />
+                    </React.Suspense>
                   </div>
 
                   <button

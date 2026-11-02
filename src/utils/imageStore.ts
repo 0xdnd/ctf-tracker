@@ -4,6 +4,8 @@
  * references them as `zerobox-img://<imageId>`.
  */
 
+import { openStoreDb } from './idbUtils';
+
 const DB_NAME = 'zerobox_images_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'images';
@@ -17,25 +19,7 @@ interface ImageRecord {
 
 const keyOf = (profileId: string, id: string) => `${profileId}/${id}`;
 
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') {
-      reject(new Error('IndexedDB is not supported in this environment'));
-      return;
-    }
-    try {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error || new Error('Failed to open image database'));
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
+const openDatabase = () => openStoreDb(DB_NAME, DB_VERSION, STORE_NAME);
 
 /** Run one request in its own transaction; resolves after the transaction settles, closes the connection. */
 async function withStore<T>(
@@ -88,12 +72,18 @@ export async function deleteImage(profileId: string, id: string): Promise<void> 
   await withStore('readwrite', (s) => s.delete(keyOf(profileId, id)));
 }
 
+/** Every key of one profile (`<profileId>/<imageId>`). */
+const profileRange = (profileId: string) => IDBKeyRange.bound(`${profileId}/`, `${profileId}/￿`);
+
 /** Image ids stored for one profile. */
 export async function listImages(profileId: string): Promise<string[]> {
-  const prefix = `${profileId}/`;
-  const range = IDBKeyRange.bound(prefix, `${prefix}￿`);
-  const keys = await withStore<IDBValidKey[]>('readonly', (s) => s.getAllKeys(range));
-  return keys.map((k) => String(k).slice(prefix.length));
+  const keys = await withStore<IDBValidKey[]>('readonly', (s) => s.getAllKeys(profileRange(profileId)));
+  return keys.map((k) => String(k).slice(profileId.length + 1));
+}
+
+/** Removes every image stored for one profile (profile deletion). */
+export async function deleteProfileImages(profileId: string): Promise<void> {
+  await withStore('readwrite', (s) => s.delete(profileRange(profileId)));
 }
 
 const loadBitmap = async (blob: Blob): Promise<{ source: CanvasImageSource; width: number; height: number; release: () => void }> => {

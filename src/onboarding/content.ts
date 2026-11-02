@@ -420,7 +420,7 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
       icon: 'flag',
       anchor: 'backup-reset',
       title: 'Reset with care',
-      body: 'This clears the progress on every machine. Use it only when you want a fresh start.',
+      body: 'Clears your flags and notes and resets every machine to its catalog default. Use it only when you want a fresh start.',
     },
   ],
   'bulk-import': [

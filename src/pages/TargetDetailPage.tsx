@@ -46,6 +46,7 @@ import { MachineSummaryStrip } from '../components/tracker/MachineSummaryStrip';
 import { HostLootPanel } from '../components/tracker/HostLootPanel';
 import { getMachineLoot } from '../utils/machineLoot';
 import { isUserFlagDone, isRootFlagDone } from '../utils/machineGlance';
+import { findMachineByRouteId } from '../utils/machineRoute';
 
 const TargetDetailTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) => (s.activeTargetId === machineId ? s.activeTimerSeconds : 0));
@@ -109,19 +110,7 @@ export const TargetDetailPage: React.FC = () => {
     }
   }, [isCatalogLoaded, loadCatalog]);
 
-  const normalizedId = id?.toLowerCase().trim();
-  const machine = machines.find((m) => {
-    if (!normalizedId) return false;
-    const mid = m.id.toLowerCase();
-    const mname = m.name.toLowerCase();
-    return (
-      mid === normalizedId ||
-      mid === `htb-${normalizedId}` ||
-      mid === `thm-${normalizedId}` ||
-      mname === normalizedId ||
-      mname.replace(/[^a-z0-9]/g, '') === normalizedId.replace(/[^a-z0-9]/g, '')
-    );
-  });
+  const machine = findMachineByRouteId(machines, id);
 
   const machineId = machine?.id;
   const machineLoot = useMemo(

@@ -4,6 +4,7 @@ import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
 import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 import { TOUR_STEP_COUNT, guideIdForPath } from './guideMeta';
+import { guideTipAvailability } from './guideRegistry';
 import { registerGuideNavigator } from './guideLaunch';
 import { CARD_SHADOW, CLOSE_MS, DIM, cardSurface } from './guideMotion';
 import { WelcomeCard } from './WelcomeCard';
@@ -108,6 +109,10 @@ export const OnboardingLayer: React.FC = () => {
   const notesOpen = useNotesWorkspaceStore((st) => st.isOpen);
   const examStatus = useExamStore((st) => st.status);
   const stepIndex = useOnboardingStore((st) => st.stepIndex);
+  const examLive = examStatus === 'running' || examStatus === 'paused';
+  const routeGuideId = guideIdForPath(pathname, examLive);
+  // Subscribed so the route's tip appears or goes away on its own, for example when the catalog finishes loading.
+  const routeTipOk = useCtfStore(() => (routeGuideId ? guideTipAvailability(routeGuideId, pathname).available : false));
 
   // launchGuide lives in the store, which has no router of its own.
   const routerRef = useRef({ navigate, pathname });
@@ -156,10 +161,11 @@ export const OnboardingLayer: React.FC = () => {
   if (!modalOpen) {
     if (notesOpen) ordered.push('notes');
     if (viewMode === 'graph' && /^\/tracker\/?$/.test(pathname)) ordered.push('graph');
-    const routeId = guideIdForPath(pathname, examStatus === 'running' || examStatus === 'paused');
-    if (routeId) ordered.push(routeId);
+    if (routeGuideId) ordered.push(routeGuideId);
   }
-  const candidate = ordered.find((id) => !dismissed.includes(id)) ?? null;
+  // A tip never offers a guide that cannot run here (a missing machine, an exam past its setup screen).
+  const tipCanRun = (id: string) => (id === routeGuideId ? routeTipOk : guideTipAvailability(id, pathname).available);
+  const candidate = ordered.find((id) => !dismissed.includes(id) && tipCanRun(id)) ?? null;
 
   const guideSurfaceUp = guide !== null || finishedGuide !== null || centerOpen || launchPending !== null;
 
@@ -235,7 +241,7 @@ export const OnboardingLayer: React.FC = () => {
           style={{ background: DIM }}
         />
       )}
-      {showCard && candidate && <PageHint key={candidate} guideId={candidate} />}
+      {showCard && candidate && <PageHint key={candidate} guideId={candidate} pathname={pathname} />}
     </>
   );
 };

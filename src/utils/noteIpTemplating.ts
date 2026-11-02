@@ -20,7 +20,10 @@ import {
   type IpTemplatizeAnalysis,
 } from './ipTemplatizer';
 import { isSchemaWriteGated } from './schemaWriteGate';
+import { UNDO_BATCHES_KEY as BATCHES_KEY, UNDO_STORE_NAME as STORE_NAME, openUndoDatabase as openDatabase } from './undoBatchDb';
 import { useCtfStore } from '../store/useCtfStore';
+
+export { clearUndoBatchesForProfile } from './undoBatchDb';
 
 export interface NoteTemplatePlan {
   noteId: string;
@@ -133,36 +136,11 @@ export interface TemplateUndoBatch {
   entries: TemplateUndoEntry[];
 }
 
-const DB_NAME = 'zerobox_note_templating_db';
-const DB_VERSION = 1;
-const STORE_NAME = 'undo_batches';
-const BATCHES_KEY = 'batches';
-
 /** Undo history is per profile: `batches:<profileId>`. */
 function batchesKey(): string {
   return `${BATCHES_KEY}:${useCtfStore.getState().currentProfileId || 'guest'}`;
 }
 export const MAX_UNDO_BATCHES = 10;
-
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') {
-      reject(new Error('IndexedDB is not supported in this environment'));
-      return;
-    }
-    try {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
 
 async function readBatches(key: string): Promise<TemplateUndoBatch[]> {
   const db = await openDatabase();

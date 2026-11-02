@@ -2,9 +2,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, AuthState, OperatorLoginOptions } from '../types/auth';
 import { playCyberSound } from '../utils/helpers';
-import { useCtfStore } from './useCtfStore';
+import { useCtfStore, safeLocalStorage, getAttackGraphStorageKey, getCustomMachinesStorageKey } from './useCtfStore';
 import { CYBER_AVATAR_PRESETS, getAvatarPresetById } from '../data/avatarPresets';
 import { clearDeepProfileData } from '../utils/indexedDbDeepStorage';
+import { deleteWorkspaceFromIdb } from '../utils/resilientStorage';
+import { deleteProfileImages } from '../utils/imageStore';
+import { removeLootState } from './lootPersistence';
+import { syncStateKey } from '../utils/syncState';
+import { clearUndoBatchesForProfile } from '../utils/undoBatchDb';
+import { isSchemaWriteGated } from '../utils/schemaWriteGate';
+import { toast } from './useToastStore';
+import { BACKUP_GATED_MESSAGE } from './backupFile';
 
 const AUTH_STORAGE_KEY = 'rootvector_auth_session';
 const LEGACY_CLIENT_ID_STORAGE_KEY = 'rootvector_google_client_id';
@@ -39,6 +47,45 @@ try {
   if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_CLIENT_ID_STORAGE_KEY);
 } catch {
   // storage unavailable
+}
+
+/**
+ * Cross-tab signal that a profile was deleted. Sent explicitly (a one-shot storage write, which every other tab
+ * receives as a `storage` event) because a missing key on its own cannot tell a deletion from a reset or a
+ * storage clear, and acting on those would discard live work.
+ */
+export const PROFILE_DELETED_STORAGE_KEY = 'zerobox_profile_deleted';
+
+/** Removes every stored copy of a profile. Idempotent; does nothing while this tab may not write. */
+function purgeProfileStorage(profileId: string): void {
+  if (typeof window === 'undefined' || isSchemaWriteGated()) return;
+  // Multi-namespace purge. safeLocalStorage also drops a copy held in memory after a failed write.
+  const keys = [
+    `zerobox_operator_profile_${profileId}`,
+    `specter_ctf_profile_${profileId}`,
+    getCustomMachinesStorageKey(profileId),
+    getAttackGraphStorageKey(profileId),
+    syncStateKey(profileId),
+  ];
+  for (const key of keys) safeLocalStorage.removeItem(key);
+  // Credentials and loot, including a copy held in memory after a quota failure.
+  removeLootState(profileId);
+  // IndexedDB copies. Each helper waits for the saves it already has in flight, so none lands afterwards.
+  const warn = (err: unknown) => console.warn('[ZeroBox] Failed to clear IndexedDB data for profile', profileId, err);
+  clearDeepProfileData(profileId).catch(warn);
+  deleteWorkspaceFromIdb(`zb:workspace:${profileId}`).catch(warn);
+  deleteProfileImages(profileId).catch(warn);
+  clearUndoBatchesForProfile(profileId).catch(warn);
+}
+
+function announceProfileDeleted(profileId: string): void {
+  try {
+    // Set then removed at once: every send is a change from "absent", so every one raises a storage event.
+    localStorage.setItem(PROFILE_DELETED_STORAGE_KEY, JSON.stringify({ profileId }));
+    localStorage.removeItem(PROFILE_DELETED_STORAGE_KEY);
+  } catch {
+    /* storage unavailable: there are no other tabs to tell */
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -183,31 +230,16 @@ export const useAuthStore = create<AuthState>()(
 
       // Delete Profile with full multi-namespace atomic cleanup
       deleteProfile: (profileId: string) => {
-        const remaining = get().profiles.filter((p) => p.id !== profileId);
-        if (typeof window !== 'undefined') {
-          // Atomic multi-namespace purge
-          localStorage.removeItem(`zerobox_operator_profile_${profileId}`);
-          localStorage.removeItem(`specter_ctf_profile_${profileId}`);
-          localStorage.removeItem(`zerobox_custom_machines_v1_${profileId}`);
-          localStorage.removeItem(`zerobox_graph_state_${profileId}`);
-          localStorage.removeItem(`zerobox_vault_custom_loot_v1_${profileId}`);
-          localStorage.removeItem(`zerobox_loot_v2_${profileId}`);
-          clearDeepProfileData(profileId).catch((err) => {
-            console.warn('[ZeroBox] Failed to clear IndexedDB deep storage for profile', profileId, err);
-          });
+        // Every deletion step below is a write. A write-gated tab cannot do them all (the IndexedDB deletes are
+        // no-ops while gated), so it would half-delete: refuse before changing anything.
+        if (isSchemaWriteGated()) {
+          toast.error(BACKUP_GATED_MESSAGE, 'Delete blocked');
+          return;
         }
-
-        if (get().user?.id === profileId) {
-          if (remaining.length > 0) {
-            set({ user: remaining[0], profiles: remaining });
-            useCtfStore.getState().loadProfileData(remaining[0].id);
-          } else {
-            set({ user: null, profiles: [], isAuthenticated: false, token: null });
-            useCtfStore.getState().loadProfileData('guest');
-          }
-        } else {
-          set({ profiles: remaining });
-        }
+        purgeProfileStorage(profileId);
+        dropProfileFromSession(profileId);
+        // Other tabs open on this profile must switch away without saving it back.
+        announceProfileDeleted(profileId);
         playCyberSound('toggle');
       },
 
@@ -305,3 +337,46 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+/** Removes a deleted profile from this tab's session; when it was the active one, switches away from it. */
+function dropProfileFromSession(profileId: string): void {
+  const { user, profiles } = useAuthStore.getState();
+  const remaining = profiles.filter((p) => p.id !== profileId);
+  if (user?.id === profileId) {
+    if (remaining.length > 0) {
+      useAuthStore.setState({ user: remaining[0], profiles: remaining });
+      // The outgoing profile is gone: saving it on the way out would write it straight back.
+      useCtfStore.getState().loadProfileData(remaining[0].id, { skipSaveOutgoing: true });
+    } else {
+      useAuthStore.setState({ user: null, profiles: [], isAuthenticated: false, token: null });
+      useCtfStore.getState().loadProfileData('guest', { skipSaveOutgoing: true });
+    }
+  } else {
+    useAuthStore.setState({ profiles: remaining });
+  }
+}
+
+/**
+ * Another tab deleted a profile. Acts only on that explicit signal, only for a profile this tab knows, and
+ * switches away without saving it. Anything else (a reset, a cleared store, a removed key) never reaches here.
+ */
+function handleProfileDeletedElsewhere(profileId: string | undefined): void {
+  if (!profileId) return;
+  const { user, profiles } = useAuthStore.getState();
+  const wasActive = user?.id === profileId;
+  if (!wasActive && !profiles.some((p) => p.id === profileId)) return;
+  // Sweeps anything this tab wrote between the other tab's purge and this signal.
+  purgeProfileStorage(profileId);
+  dropProfileFromSession(profileId);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key !== PROFILE_DELETED_STORAGE_KEY || !event.newValue) return;
+    try {
+      handleProfileDeletedElsewhere(JSON.parse(event.newValue)?.profileId);
+    } catch {
+      /* not a deletion signal */
+    }
+  });
+}

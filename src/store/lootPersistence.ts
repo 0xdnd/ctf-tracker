@@ -475,6 +475,15 @@ export function clearLootState(profileId: string): void {
   saveLootState(profileId, emptyLootState());
 }
 
+/**
+ * Removes a profile's loot entirely (profile deletion): both keys, and any copy held in memory after a failed
+ * write, so recreating the profile cannot bring the credentials back. Does nothing while writes are gated.
+ */
+export function removeLootState(profileId: string): void {
+  lootStorage.remove(getLootStorageKey(profileId));
+  lootStorage.remove(getLegacyProfileLootKey(profileId));
+}
+
 const LEGACY_CRED_CATEGORIES: Record<string, CredentialType> = {
   password: 'password',
   hash: 'hash',

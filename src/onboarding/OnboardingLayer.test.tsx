@@ -307,6 +307,7 @@ describe('more guides', () => {
     const a = renderAt('/notes');
     expect(screen.getByRole('region', { name: 'Field manual' })).toBeInTheDocument();
     a.unmount();
+    act(() => useCtfStore.setState({ machines: [{ id: 'abc', name: 'Abc', isActive: false } as never], isCatalogLoaded: true }));
     const b = renderAt('/target/abc/focus');
     expect(screen.getByRole('region', { name: 'Focus mode' })).toBeInTheDocument();
     b.unmount();

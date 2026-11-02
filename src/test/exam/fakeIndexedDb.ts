@@ -72,6 +72,17 @@ export function installFakeIndexedDb(): FakeIndexedDb {
             });
             return req;
           },
+          getAllKeys() {
+            const req = newRequest();
+            ops.push({
+              write: false,
+              run: () => {
+                req.result = [...handle.records.keys()];
+                req.onsuccess?.();
+              },
+            });
+            return req;
+          },
           delete(key: string) {
             const req = newRequest();
             ops.push({

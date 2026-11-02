@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { loadOnboarding, saveOnboarding } from './onboardingStorage';
-import { guideAvailability, GUIDE_REGISTRY, suggestNextGuide } from './guideRegistry';
+import { guideAvailability, GUIDE_REGISTRY, restoreGuideView, suggestNextGuide } from './guideRegistry';
 import { prepareGuidePage } from './guideLaunch';
 import { isPhoneWidth } from './guideMotion';
 import type { HandsOn } from './guideMeta';
@@ -85,6 +85,17 @@ const loadState = () => {
   return { ...saved, completedGuides: saved.completedGuides ?? [] };
 };
 
+/** A chunk that stalls (flaky network) must not hold the launch shield and the blocked hotkeys up for good. */
+export const LAUNCH_LOAD_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer = 0;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error('The guide took too long to load.')), ms);
+  });
+  return Promise.race([work, timeout]).finally(() => window.clearTimeout(timer));
+}
+
 /** The newest launch wins; an older one finds it is no longer current and stops. */
 let launchToken = 0;
 
@@ -154,6 +165,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   closeGuide: () => {
     const g = get().guide;
+    restoreGuideView();
     set({ guide: null, handsOn: null, finishedGuide: null });
     if (g) get().dismissHint(g.id);
   },
@@ -161,6 +173,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   completeGuide: () => {
     const g = get().guide;
     if (!g) return;
+    restoreGuideView();
     const { completedGuides, dismissedHints } = get();
     const completed = completedGuides.includes(g.id) ? completedGuides : [...completedGuides, g.id];
     set({
@@ -182,9 +195,14 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     if (!entry || !guideAvailability(id).available) return false;
     const token = ++launchToken;
     const stillCurrent = () => token === launchToken;
+    // A view left over from an earlier graph guide goes back first, so this launch records the true previous view.
+    restoreGuideView();
     set({ guideCenterOpen: false, launchPending: id, guide: null, finishedGuide: null, handsOn: null });
     try {
-      const [{ guideSteps, resolveStep }] = await Promise.all([import('./content'), import('./TourRunner')]);
+      const [{ guideSteps, resolveStep }] = await withTimeout(
+        Promise.all([import('./content'), import('./TourRunner')]),
+        LAUNCH_LOAD_TIMEOUT_MS,
+      );
       const first = guideSteps(id)[0];
       const resolved = first ? resolveStep(first, isPhoneWidth()) : null;
       const firstAnchors = [resolved?.anchor, resolved?.altAnchor].filter((a): a is string => Boolean(a));
@@ -192,7 +210,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     } catch (error) {
       // A chunk that will not load (stale deploy, offline) must not leave hotkeys blocked.
       console.error('ZeroBox could not start a guide:', error);
-      if (stillCurrent()) set({ launchPending: null });
+      if (stillCurrent()) {
+        restoreGuideView();
+        set({ launchPending: null });
+      }
       return false;
     }
     if (!stillCurrent()) return false;
@@ -203,6 +224,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   cancelLaunch: () => {
     launchToken += 1;
+    restoreGuideView();
     set({ launchPending: null });
   },
 
