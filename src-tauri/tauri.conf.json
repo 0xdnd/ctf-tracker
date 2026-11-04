@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "ZeroBox",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "identifier": "com.zerobox.tacticaltracker",
   "build": {
     "frontendDist": "../dist",
@@ -49,7 +49,7 @@
   "plugins": {
     "updater": {
       "endpoints": ["https://github.com/0xdnd/ctf-tracker/releases/latest/download/latest.json"],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVBNUNDQjg5Q0NGMTAxMkYKUldRdkFmSE1pY3RjNnRxUWZlU0pTRDBSWWQzK01QWFBFblJPeUI3QWdHRUhZc01uT0p5VTRxTEwK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE0RUVGQUY2NUQ4RjgwNzMKUldSemdJOWQ5dnJ1RktWS29vSmhDeFB6dFErc0FKc3VWTnBJTENla2tNYmd6eTBtaGVBSytLUFkK"
     }
   }
 }
