@@ -1,23 +1,92 @@
 name: Release ZeroBox Desktop (Tauri v2)
 
+# The tag is always "v" + package.json version. On a tag push it is the pushed tag (and must match the versions);
+# on a manual run it is derived from package.json. The release stays a DRAFT until every platform has uploaded,
+# then the final job publishes it, so the updater endpoint (releases/latest/download/latest.json) never sees a
+# half-finished release.
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release Tag (e.g. v2.0.0 - leave blank to use v__VERSION__)'
-        required: false
-        default: ''
 
 permissions:
   contents: write
 
+env:
+  RELEASE_NOTES: |
+    ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard.
+
+    The portable Windows zip and the standalone exe do NOT self-update: download new versions manually from this page.
+
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.draft.outputs.release_id }}
+      tag: ${{ steps.draft.outputs.tag }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Preflight (signing key and version consistency)
+        shell: bash
+        env:
+          TAURI_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        run: |
+          if [ -z "$TAURI_KEY" ]; then
+            echo "::error::Secret TAURI_PRIVATE_KEY is empty or missing. The updater artifacts cannot be signed; add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          CONF_VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "$PKG_VERSION" != "$CONF_VERSION" ]; then
+            echo "::error::Version mismatch: package.json is $PKG_VERSION but src-tauri/tauri.conf.json is $CONF_VERSION."
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$PKG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the app version v$PKG_VERSION."
+            exit 1
+          fi
+
+      - name: Create Draft Release (idempotent)
+        id: draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG="v$PKG_VERSION"
+          # Drafts are invisible to GET releases/tags/{tag}, so look the tag up in the full release list.
+          EXISTING=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --paginate --jq '.[] | select(.tag_name == "'"$TAG"'") | "\(.id) \(.draft)"' | head -n 1)
+          RELEASE_ID="${EXISTING%% *}"
+          if [ -n "$EXISTING" ] && [ "${EXISTING##* }" != "true" ]; then
+            echo "::error::Release $TAG is already published; bump the version"
+            exit 1
+          fi
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Draft release for $TAG already exists (id $RELEASE_ID); reusing it."
+          else
+            RELEASE_ID=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" \
+              -f target_commitish="$GITHUB_SHA" \
+              -f name="ZeroBox v$PKG_VERSION" \
+              -f body="$RELEASE_NOTES" \
+              -F draft=true \
+              -F prerelease=false \
+              --jq .id)
+            echo "Created draft release for $TAG (id $RELEASE_ID)."
+          fi
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   build-and-release:
+    needs: create-release
     strategy:
       fail-fast: false
+      # tauri-action merges each platform into the shared latest.json (read, modify, upload). Running the
+      # platforms one after another avoids the two jobs overwriting each other's entry.
+      max-parallel: 1
       matrix:
         include:
           - platform: 'windows-latest'
@@ -30,6 +99,28 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
+
+      - name: Preflight (signing key and version consistency)
+        shell: bash
+        env:
+          TAURI_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        run: |
+          # Secrets cannot be used in `if:`, so the key is mapped into env and checked here.
+          # TAURI_KEY_PASSWORD is deliberately not required: empty is valid for a passwordless key.
+          if [ -z "$TAURI_KEY" ]; then
+            echo "::error::Secret TAURI_PRIVATE_KEY is empty or missing. The updater artifacts cannot be signed; add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          CONF_VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "$PKG_VERSION" != "$CONF_VERSION" ]; then
+            echo "::error::Version mismatch: package.json is $PKG_VERSION but src-tauri/tauri.conf.json is $CONF_VERSION."
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$PKG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the app version v$PKG_VERSION."
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -55,32 +146,60 @@ jobs:
       - name: Build Web Application
         run: npm run build
 
-      - name: Build & Publish Tauri Release Artifacts
+      - name: Build & Upload Tauri Release Artifacts (draft release)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.event.inputs.tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v__VERSION__' }}
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          tagName: ${{ needs.create-release.outputs.tag }}
           releaseName: 'ZeroBox v__VERSION__'
-          releaseBody: 'ZEROBOX // Tactical Cybersecurity Lab & CTF Operations Dashboard Release v__VERSION__'
-          releaseDraft: false
-          prerelease: false
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
       - name: Package Standalone Executables & Generate Release Checksums
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          TAG="${{ github.event.inputs.tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}"
-          if [ -z "$TAG" ] || [ "$TAG" = "v__VERSION__" ]; then
-            TAG="v$PKG_VERSION"
-          fi
+          TAG="${{ needs.create-release.outputs.tag }}"
 
-          echo "Target Release Tag: $TAG"
+          echo "Target Release: $TAG (id $RELEASE_ID)"
+
+          # `gh release upload <tag>` resolves the release through GET releases/tags/{tag}, which does not return
+          # drafts. Upload by release id instead, replacing any asset of the same name (the --clobber behaviour).
+          upload_assets() {
+            local file name existing asset_id
+            for file in "$@"; do
+              name=$(basename "$file")
+              existing=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?per_page=100" --paginate --jq ".[] | select(.name == \"$name\") | .id")
+              for asset_id in $existing; do
+                gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" || return 1
+              done
+              curl -sS --fail -X POST \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                -H "Content-Type: application/octet-stream" \
+                --data-binary @"$file" \
+                "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?name=$name" > /dev/null || return 1
+            done
+          }
+
+          upload_with_retries() {
+            local attempt
+            for attempt in 1 2 3 4 5; do
+              if upload_assets "$@"; then
+                return 0
+              fi
+              echo "Upload attempt $attempt failed, retrying in 5s..."
+              sleep 5
+            done
+            return 1
+          }
 
           if [ "$RUNNER_OS" = "Windows" ]; then
             echo "Locating Windows standalone executable..."
@@ -118,14 +237,8 @@ jobs:
             cat SHA256SUMS-windows.txt
 
             echo "Uploading Windows artifacts to GitHub release $TAG..."
-            for attempt in {1..5}; do
-              if gh release upload "$TAG" ./ZeroBox.exe "$ZIP_NAME" SHA256SUMS-windows.txt --clobber; then
-                echo "Successfully uploaded Windows release assets."
-                break
-              fi
-              echo "Upload attempt $attempt failed, retrying in 5s..."
-              sleep 5
-            done
+            upload_with_retries ./ZeroBox.exe "$ZIP_NAME" SHA256SUMS-windows.txt
+            echo "Successfully uploaded Windows release assets."
 
           elif [ "$RUNNER_OS" = "Linux" ]; then
             echo "Computing SHA256 checksums for Linux release artifacts..."
@@ -136,13 +249,45 @@ jobs:
             cat SHA256SUMS-linux.txt
 
             echo "Uploading Linux checksums to GitHub release $TAG..."
-            for attempt in {1..5}; do
-              if gh release upload "$TAG" SHA256SUMS-linux.txt --clobber; then
-                echo "Successfully uploaded Linux release checksums."
-                break
-              fi
-              echo "Upload attempt $attempt failed, retrying in 5s..."
-              sleep 5
-            done
+            upload_with_retries SHA256SUMS-linux.txt
+            echo "Successfully uploaded Linux release checksums."
           fi
 
+  publish:
+    needs: [create-release, build-and-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify updater manifest covers every platform
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          TAG: ${{ needs.create-release.outputs.tag }}
+        run: |
+          ASSET_ID=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?per_page=100" --paginate --jq '.[] | select(.name == "latest.json") | .id' | head -n 1)
+          if [ -z "$ASSET_ID" ]; then
+            echo "::error::latest.json is missing from the draft release; not publishing."
+            exit 1
+          fi
+          gh api -H "Accept: application/octet-stream" "repos/$GITHUB_REPOSITORY/releases/assets/$ASSET_ID" > latest.json
+          node -e '
+            const m = JSON.parse(require("fs").readFileSync("latest.json", "utf8"));
+            const keys = Object.keys(m.platforms || {});
+            const need = ["windows-x86_64", "linux-x86_64"];
+            const missing = need.filter((k) => !keys.some((p) => p === k || p.startsWith(k + "-")));
+            const bad = Object.entries(m.platforms || {}).filter(([, v]) => /\/untagged-/.test(v.url || ""));
+            if (bad.length) { console.error("latest.json has draft-only (untagged) URLs for: " + bad.map(([k]) => k).join(", ")); process.exit(1); }
+            if (m.version.replace(/^v/, "") !== process.env.TAG.replace(/^v/, "")) { console.error("latest.json version " + m.version + " != " + process.env.TAG); process.exit(1); }
+            if (missing.length) { console.error("latest.json is missing platforms: " + missing.join(", ")); process.exit(1); }
+            console.log("latest.json OK:", keys.join(", "));
+          '
+
+      - name: Publish Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+        run: |
+          # Equivalent of `gh release edit <tag> --draft=false --latest`, addressed by release id because a draft
+          # cannot be resolved by tag.
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -F prerelease=false -f make_latest=true --jq '.html_url'

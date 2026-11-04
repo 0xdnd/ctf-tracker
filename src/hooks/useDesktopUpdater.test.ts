@@ -1,9 +1,11 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useDesktopUpdater } from './useDesktopUpdater';
 import * as tauriCore from '@tauri-apps/api/core';
 import * as tauriApp from '@tauri-apps/api/app';
 import * as tauriUpdater from '@tauri-apps/plugin-updater';
+import * as tauriProcess from '@tauri-apps/plugin-process';
+import * as ctfStore from '../store/useCtfStore';
 
 vi.mock('@tauri-apps/api/core', () => ({
   isTauri: vi.fn(() => false),
@@ -15,6 +17,14 @@ vi.mock('@tauri-apps/api/app', () => ({
 
 vi.mock('@tauri-apps/plugin-updater', () => ({
   check: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/plugin-process', () => ({
+  relaunch: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../store/useCtfStore', () => ({
+  checkpointTimerAndFlush: vi.fn(),
 }));
 
 describe('useDesktopUpdater hook', () => {
@@ -144,11 +154,84 @@ describe('useDesktopUpdater hook', () => {
     expect(result.current.latestVersion).toBe('2.1.0');
     expect(result.current.progressPercent).toBe(100);
 
-    // Trigger install
+    // Trigger install (flush grace period runs on a real timer)
+    await act(async () => {
+      result.current.quitAndInstall();
+      await vi.waitFor(() => expect(tauriProcess.relaunch).toHaveBeenCalledTimes(1));
+    });
+    expect(mockInstall).toHaveBeenCalledTimes(1);
+  });
+
+  async function readyDownloadedUpdate(install: () => Promise<void>) {
+    delete (window as any).electronAPI;
+    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
+    vi.mocked(tauriUpdater.check).mockResolvedValue({
+      version: '2.1.0',
+      currentVersion: '2.0.0',
+      download: vi.fn().mockResolvedValue(undefined),
+      install,
+    } as unknown as tauriUpdater.Update);
+
+    const hook = renderHook(() => useDesktopUpdater());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await hook.result.current.checkForUpdates();
+    });
+    return hook;
+  }
+
+  it('persists state before install() and relaunches only after install completes', async () => {
+    const order: string[] = [];
+    vi.mocked(ctfStore.checkpointTimerAndFlush).mockImplementation(() => {
+      order.push('flush');
+    });
+    vi.mocked(tauriProcess.relaunch).mockImplementation(async () => {
+      order.push('relaunch');
+    });
+    const install = vi.fn().mockImplementation(async () => {
+      order.push('install');
+    });
+
+    const { result } = await readyDownloadedUpdate(install);
+
+    await act(async () => {
+      result.current.quitAndInstall();
+      await vi.waitFor(() => expect(tauriProcess.relaunch).toHaveBeenCalledTimes(1));
+    });
+
+    expect(order).toEqual(['flush', 'install', 'relaunch']);
+    expect(result.current.status).toBe('downloaded');
+  });
+
+  it('surfaces a relaunch failure as the error state', async () => {
+    vi.mocked(tauriProcess.relaunch).mockRejectedValueOnce(new Error('relaunch denied'));
+    const install = vi.fn().mockResolvedValue(undefined);
+
+    const { result } = await readyDownloadedUpdate(install);
+
     act(() => {
       result.current.quitAndInstall();
     });
-    expect(mockInstall).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    expect(result.current.errorMessage).toBe('relaunch denied');
+  });
+
+  it('does not relaunch when install() fails', async () => {
+    const install = vi.fn().mockRejectedValue(new Error('installer failed'));
+
+    const { result } = await readyDownloadedUpdate(install);
+
+    act(() => {
+      result.current.quitAndInstall();
+    });
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    expect(result.current.errorMessage).toBe('installer failed');
+    expect(tauriProcess.relaunch).not.toHaveBeenCalled();
   });
 
   it('handles HTTP 429 rate limiting with structured error and 60s retry timeout', async () => {

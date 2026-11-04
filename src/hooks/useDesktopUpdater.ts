@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { getVersion as getTauriVersion } from '@tauri-apps/api/app';
 import { check as checkTauriUpdate, type Update } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { checkpointTimerAndFlush } from '../store/useCtfStore';
 import type { ElectronUpdateInfo, ElectronProgressInfo } from '../vite-env';
 
 export type UpdateStatus = 
@@ -27,6 +29,9 @@ export interface DesktopUpdaterState {
   checkForUpdates: () => Promise<void>;
   quitAndInstall: () => void;
 }
+
+// Same grace the native close handler gives the webview (see lib.rs) so async IndexedDB writes can commit.
+const PRE_INSTALL_FLUSH_GRACE_MS = 350;
 
 function detectIsTauri(): boolean {
   if (typeof window === 'undefined') return false;
@@ -201,11 +206,22 @@ export function useDesktopUpdater(): DesktopUpdaterState {
     if (!isDesktop) return;
 
     if (isTauriApp && pendingUpdateRef.current) {
-      pendingUpdateRef.current.install().catch((err: any) => {
-        console.error('[ZeroBox Desktop] Update installation failed:', err);
-        setStatus('error');
-        setErrorMessage(err?.message || 'Installation failed');
-      });
+      const update = pendingUpdateRef.current;
+      void (async () => {
+        try {
+          // On Windows install() launches the installer and exits the process, skipping the close-requested
+          // handler, so persist the profile first (same routine the native close event triggers).
+          checkpointTimerAndFlush();
+          await new Promise((resolve) => setTimeout(resolve, PRE_INSTALL_FLUSH_GRACE_MS));
+          await update.install();
+          // Windows never reaches this line (the installer exits the app); macOS/Linux need an explicit restart.
+          await relaunch();
+        } catch (err) {
+          console.error('[ZeroBox Desktop] Update installation failed:', err);
+          setStatus('error');
+          setErrorMessage((err as Error)?.message || 'Installation failed');
+        }
+      })();
       return;
     }
 

@@ -97,15 +97,20 @@ describe('Tier 4 E2E: Air-Gapped Zero-Egress Posture & Network Isolation Invaria
       expect(content).not.toMatch(/window\.open\(["']https:\/\/accounts\.google\.com/i);
     });
 
-    it('ZERO-EGRESS-05: Desktop configuration (tauri.conf.json) has zero active remote updater endpoints', () => {
+    it('ZERO-EGRESS-05: Desktop configuration (tauri.conf.json) allows only the signed GitHub Releases updater endpoint', () => {
       const tauriConfPath = path.join(projectRoot, 'src-tauri/tauri.conf.json');
       if (fs.existsSync(tauriConfPath)) {
         const tauriContent = fs.readFileSync(tauriConfPath, 'utf-8');
         const parsed = JSON.parse(tauriContent);
         const endpoints = parsed.plugins?.updater?.endpoints || [];
-        // Endpoints must either be empty or point to empty strings / disabled in air-gapped configuration
+        // The only permitted remote endpoint is the project's own GitHub Releases manifest (the update itself is
+        // verified against the embedded pubkey); any other host is an egress regression.
         const activeRemoteEndpoints = endpoints.filter((ep: string) => ep && ep.startsWith('http'));
-        expect(activeRemoteEndpoints.length).toBe(0);
+        expect(activeRemoteEndpoints).toEqual([
+          'https://github.com/0xdnd/ctf-tracker/releases/latest/download/latest.json',
+        ]);
+        expect(typeof parsed.plugins?.updater?.pubkey).toBe('string');
+        expect(parsed.plugins.updater.pubkey.length).toBeGreaterThan(0);
       }
     });
   });

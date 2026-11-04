@@ -3763,7 +3763,7 @@ function flushTacticalBlob() {
  * Close/background save: fold the live timer into the active machine first, so the persisted store blob (which
  * wins at boot) carries the exact seconds too, not just the profile copy. Then write through the usual path.
  */
-function checkpointTimerAndFlush() {
+export function checkpointTimerAndFlush() {
   const state = useCtfStore.getState();
   const folded = foldActiveTimer(state);
   if (folded !== state.machines) useCtfStore.setState({ machines: folded });
