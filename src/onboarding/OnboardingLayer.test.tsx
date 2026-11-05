@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { OnboardingLayer } from './OnboardingLayer';
-import { SECTION_GUIDES, TOUR_STEPS, guideIdForPath } from './content';
+import { FIRST_RUN_STEP_IDS, SECTION_GUIDES, TOUR_STEPS, guideIdForPath } from './content';
 import { useOnboardingStore } from './useOnboardingStore';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
@@ -36,11 +36,16 @@ const resetStores = () => {
     shortcutsModalOpen: false,
     newMachineModalOpen: false,
     notesImportModalOpen: false,
+    // Nothing solved, so every tour keeps its import step and the indexes below hold.
+    machines: [],
   });
   useNotesWorkspaceStore.setState({ isOpen: false });
 };
 
-const Where: React.FC = () => <div data-testid="where">{useLocation().pathname}</div>;
+const Where: React.FC = () => {
+  const { pathname, search } = useLocation();
+  return <div data-testid="where">{pathname + search}</div>;
+};
 
 const renderAt = (path: string) =>
   render(
@@ -61,14 +66,30 @@ const addAnchor = (name: string, r = { top: 50, left: 20, width: 100, height: 20
   return el;
 };
 
-const startTourAt = (stepIndex: number) => {
-  act(() => useOnboardingStore.getState().startTour());
+const startTourAt = (stepIndex: number, kind: 'first-run' | 'full' = 'full') => {
+  act(() => useOnboardingStore.getState().startTour(kind));
   act(() => useOnboardingStore.setState({ stepIndex }));
+};
+
+const setPhone = (phone: boolean) => {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: phone
+      ? (query: string) => ({
+          matches: query.includes('max-width: 767px'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        })
+      : undefined,
+  });
 };
 
 afterEach(() => {
   anchors.splice(0).forEach((el) => el.remove());
   document.documentElement.style.removeProperty('--app-zoom');
+  setPhone(false);
 });
 
 describe('guideIdForPath', () => {
@@ -217,6 +238,15 @@ describe('tour', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start tour' }));
     expect(screen.getByRole('heading', { name: 'Find your way around' })).toBeInTheDocument();
     expect(screen.getByTestId('tour-progress')).toHaveAttribute('aria-valuemax', String(TOUR_STEPS.length));
+  });
+
+  it('the first run shows the short list in its progress', async () => {
+    renderAt('/tracker');
+    act(() => useOnboardingStore.getState().startTour('first-run'));
+    await screen.findByTestId('tour-card');
+    fireEvent.click(screen.getByRole('button', { name: 'Start tour' }));
+    expect(screen.getByTestId('tour-progress')).toHaveAttribute('aria-valuemax', String(FIRST_RUN_STEP_IDS.length));
+    expect(screen.getByTestId('tour-progress')).toHaveAttribute('aria-valuemax', '5');
   });
 
   it('Skip on the welcome screen ends the tour for good', async () => {
@@ -388,32 +418,89 @@ describe('hands-on steps', () => {
   });
 });
 
-describe('already rooted step', () => {
+describe('import step', () => {
   beforeEach(resetStores);
-  const rooted = TOUR_STEPS.findIndex((st) => st.id === 'rooted');
+  const fullAt = TOUR_STEPS.findIndex((st) => st.id === 'import');
+  const firstRunAt = FIRST_RUN_STEP_IDS.indexOf('import');
+  const TITLE = "Import what you've solved";
 
-  it('sits just before the final step', () => {
-    expect(rooted).toBe(TOUR_STEPS.length - 2);
+  /** A stand-in for the paste panel: the anchor, with a text box inside. */
+  const addPanel = () => {
+    const panel = addAnchor('import-panel', { top: 80, left: 20, width: 600, height: 300 });
+    const box = document.createElement('textarea');
+    box.setAttribute('aria-label', 'Box names');
+    panel.appendChild(box);
+    return box;
+  };
+
+  it('sits just before the final step in both tours', () => {
+    expect(fullAt).toBe(TOUR_STEPS.length - 2);
+    expect(firstRunAt).toBe(FIRST_RUN_STEP_IDS.length - 2);
   });
 
-  it('Import my solved machines opens the Backup modal on the bulk tab and ends the tour', async () => {
+  it('with the panel on the page it is hands-on: no buttons but Skip for now, and the text box has focus', async () => {
+    const box = addPanel();
     renderAt('/tracker');
-    startTourAt(rooted);
-    await screen.findByTestId('tour-card');
-    expect(screen.getByRole('heading', { name: 'Already rooted some machines?' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Import my solved machines' }));
-    expect(useCtfStore.getState().backupModalOpen).toBe(true);
-    expect(useOnboardingStore.getState().requestedBackupTab).toBe('bulk_pwn');
+    startTourAt(firstRunAt, 'first-run');
+    const card = await screen.findByTestId('tour-card');
+    await waitFor(() => expect(card).toHaveAttribute('role', 'region'));
+    expect(card).not.toHaveAttribute('aria-modal');
+    expect(screen.getByRole('heading', { name: TITLE })).toBeInTheDocument();
+    expect(useOnboardingStore.getState().handsOn).toBe('import');
+    expect(screen.queryByRole('button', { name: 'Open the importer' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Skip for now' })).toBeInTheDocument();
+    await waitFor(() => expect(document.activeElement).toBe(box));
+  });
+
+  it('without the panel it is a centered dialog, and Open the importer goes to the tracker importer', async () => {
+    renderAt('/vault');
+    startTourAt(fullAt);
+    const card = await screen.findByTestId('tour-card');
+    await waitFor(() => expect(card).toHaveStyle({ opacity: '1' }), { timeout: 3000 });
+    expect(card).toHaveAttribute('role', 'dialog');
+    expect(card).toHaveAttribute('aria-modal', 'true');
+    expect(screen.queryByTestId('tour-spotlight')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open the importer' }));
+    expect(screen.getByTestId('where')).toHaveTextContent('/tracker?import=1');
     expect(useOnboardingStore.getState()).toMatchObject({ tourActive: false, tourDone: true });
+    expect(useCtfStore.getState().backupModalOpen).toBe(false);
+    expect(useOnboardingStore.getState().requestedBackupTab).toBeNull();
   });
 
   it('Skip for now moves on to the final step', async () => {
+    addPanel();
     renderAt('/tracker');
-    startTourAt(rooted);
+    startTourAt(firstRunAt, 'first-run');
     await screen.findByTestId('tour-card');
     fireEvent.click(screen.getByRole('button', { name: 'Skip for now' }));
-    expect(useOnboardingStore.getState().stepIndex).toBe(rooted + 1);
-    expect(useCtfStore.getState().backupModalOpen).toBe(false);
+    expect(useOnboardingStore.getState().stepIndex).toBe(firstRunAt + 1);
+    expect(screen.getByRole('heading', { name: "You're set" })).toBeInTheDocument();
+  });
+
+  it('Esc ends the tour from the hands-on step', async () => {
+    addPanel();
+    renderAt('/tracker');
+    startTourAt(firstRunAt, 'first-run');
+    const card = await screen.findByTestId('tour-card');
+    await waitFor(() => expect(card).toHaveAttribute('role', 'region'));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(useOnboardingStore.getState().tourActive).toBe(false));
+    expect(useOnboardingStore.getState().tourDone).toBe(true);
+  });
+
+  it('on a phone it is a plain card with Open the importer, never hands-on', async () => {
+    setPhone(true);
+    addPanel();
+    renderAt('/tracker');
+    startTourAt(firstRunAt, 'first-run');
+    const card = await screen.findByTestId('tour-card');
+    await waitFor(() => expect(card).toHaveStyle({ opacity: '1' }), { timeout: 3000 });
+    expect(card).toHaveAttribute('role', 'dialog');
+    expect(screen.queryByRole('region', { name: TITLE })).not.toBeInTheDocument();
+    expect(useOnboardingStore.getState().handsOn).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open the importer' }));
+    expect(screen.getByTestId('where')).toHaveTextContent('/tracker?import=1');
+    expect(useOnboardingStore.getState().tourActive).toBe(false);
   });
 });
 

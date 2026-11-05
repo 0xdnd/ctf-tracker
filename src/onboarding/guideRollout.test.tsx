@@ -106,7 +106,6 @@ const everyStep: { where: string; step: TourStep }[] = [
 const CENTERED_BY_DESIGN = new Set([
   // Welcome and closing cards of the tour.
   'tour/welcome',
-  'tour/rooted',
   'tour/final',
   // CommandPalette.tsx holds another piece of work, so it cannot carry anchors yet.
   'palette/palette-type',

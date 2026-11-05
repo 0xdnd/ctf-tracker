@@ -96,11 +96,11 @@ export interface ExamSessionState {
   milestones: ExamMilestone[];
   isQuickDrawerOpen: boolean;
   scratchNotes: string;
-  /** Legacy OSCP bonus toggle; always equals `scoringMode === 'legacy'` (kept for older payloads and report code). */
+  /** Removed OSCP bonus toggle. Always false; kept so the persisted shape stays unchanged. Scoring ignores it. */
   includeBonusPoints: boolean;
   /** Short seed code of the current target roll (same seed + catalog + solved set = same machines). */
   seed: string;
-  /** Official (default), weighted (redistributed by difficulty) or legacy (pre-Nov 2024 OSCP bonus). */
+  /** Official (default) or weighted (redistributed by difficulty). A saved 'legacy' value loads as official. */
   scoringMode: ExamScoringMode;
   /** Report header date (YYYY-MM-DD) the operator set for this session; null = derive from startedAt. */
   reportExamDate: string | null;
@@ -151,7 +151,6 @@ export interface ExamStoreActions {
   addMilestone: (targetId: string, type: ExamMilestone['type'], notes: string) => void;
   setCandidateInfo: (info: { candidateName?: string; candidateCallsign?: string; osid?: string; reportExamDate?: string | null }) => void;
   setScratchNotes: (notes: string) => void;
-  setIncludeBonusPoints: (include: boolean, catalog?: Machine[], solvedIds?: Iterable<string>) => void;
 
   // Rabbit-hole clock
   setActiveBox: (boxId: string | null) => void;
@@ -257,7 +256,7 @@ function createInitialSession(track: ExamTrack = 'OSCP', options: InitialSession
     milestones: [],
     isQuickDrawerOpen: false,
     scratchNotes: `# CANDIDATE LOG // ZEROBOX OPERATIONAL NOTES\n\n## Target Credential Vault\n\n## Active Tunnels & Pivots\n`,
-    includeBonusPoints: scoringMode === 'legacy',
+    includeBonusPoints: false,
     seed,
     scoringMode,
     reportExamDate: null,
@@ -267,9 +266,9 @@ function createInitialSession(track: ExamTrack = 'OSCP', options: InitialSession
 }
 
 /**
- * Fills the seed and scoring mode of a persisted or backed-up exam. Older payloads have neither: they default to
- * official scoring, except that a persisted `includeBonusPoints: true` maps to legacy mode so a running exam
- * keeps its score. `includeBonusPoints` is re-derived so it always matches `scoringMode`.
+ * Fills the seed and scoring mode of a persisted or backed-up exam. Older payloads may lack both, or carry the
+ * removed 'legacy' bonus mode / `includeBonusPoints: true`: all of these load as official scoring (OSCP+ has no
+ * bonus points). `includeBonusPoints` is always reset to false; the field stays only so the persisted shape is unchanged.
  */
 export function normalizeExamModeFields<T extends Record<string, unknown>>(
   persisted: T,
@@ -281,16 +280,14 @@ export function normalizeExamModeFields<T extends Record<string, unknown>>(
   const rawMode = persisted.scoringMode;
   const requested: ExamScoringMode = EXAM_SCORING_MODES.includes(rawMode as ExamScoringMode)
     ? (rawMode as ExamScoringMode)
-    : persisted.includeBonusPoints === true
-      ? 'legacy'
-      : 'official';
+    : 'official';
   const scoringMode = resolveScoringMode(track, requested);
   const seed = typeof persisted.seed === 'string' ? normalizeExamSeed(persisted.seed) : '';
   return {
     ...persisted,
     seed: seed || generateExamSeed(),
     scoringMode,
-    includeBonusPoints: scoringMode === 'legacy',
+    includeBonusPoints: false,
   };
 }
 
@@ -366,7 +363,7 @@ export const useExamStore = create<ExamStore>()(
           id: `exam_${now}_${Math.random().toString(36).substring(2, 7)}`,
           track: selectedTrack,
           scoringMode,
-          includeBonusPoints: scoringMode === 'legacy',
+          includeBonusPoints: false,
           status: 'running',
           startedAt: now,
           examExpiresAt: expiresAt,
@@ -497,13 +494,12 @@ export const useExamStore = create<ExamStore>()(
             solvedIds,
             scoringMode: next,
           });
-          set({ scoringMode: next, includeBonusPoints: next === 'legacy', boxes: newBoxes });
+          set({ scoringMode: next, boxes: newBoxes });
           purgeRemovedProofImages(state.boxes, newBoxes);
           return;
         }
-        // Points are baked into the boxes at generation, so a started exam cannot move to or from weighted.
-        if (next === 'weighted' || state.scoringMode === 'weighted') return;
-        set({ scoringMode: next, includeBonusPoints: next === 'legacy' });
+        // Points are baked into the boxes at generation and weighted is the only other mode, so a started
+        // exam keeps its scoring mode.
       },
 
       submitFlag: (boxId, flagType, flagText) => {
@@ -515,9 +511,7 @@ export const useExamStore = create<ExamStore>()(
         const box = state.boxes.find((b) => b.id === boxId);
         if (!box) return false;
 
-        const scoreBefore = calculateExamScore(state.track, state.boxes, {
-          includeBonusPoints: state.includeBonusPoints,
-        });
+        const scoreBefore = calculateExamScore(state.track, state.boxes);
 
         const now = new Date().toISOString();
         let wasAlreadyPwned = flagType === 'user' ? box.userPwned : box.rootPwned;
@@ -577,9 +571,7 @@ export const useExamStore = create<ExamStore>()(
           }
         }
 
-        const scoreAfter = calculateExamScore(state.track, updatedBoxes, {
-          includeBonusPoints: state.includeBonusPoints,
-        });
+        const scoreAfter = calculateExamScore(state.track, updatedBoxes);
 
         // Triumphant fanfare if passing threshold just reached
         if (!scoreBefore.isPassing && scoreAfter.isPassing) {
@@ -637,12 +629,8 @@ export const useExamStore = create<ExamStore>()(
           }
         });
 
-        const scoreBefore = calculateExamScore(state.track, state.boxes, {
-          includeBonusPoints: state.includeBonusPoints,
-        });
-        const scoreAfter = calculateExamScore(state.track, updatedBoxes, {
-          includeBonusPoints: state.includeBonusPoints,
-        });
+        const scoreBefore = calculateExamScore(state.track, state.boxes);
+        const scoreAfter = calculateExamScore(state.track, updatedBoxes);
 
         if (!scoreBefore.isPassing && scoreAfter.isPassing) {
           playCyberAlert('victory_fanfare');
@@ -817,12 +805,6 @@ export const useExamStore = create<ExamStore>()(
         set({ scratchNotes });
       },
 
-      setIncludeBonusPoints: (include, catalog, solvedIds) => {
-        const { scoringMode } = get();
-        if (include) get().setScoringMode('legacy', catalog, solvedIds);
-        else if (scoringMode === 'legacy') get().setScoringMode('official', catalog, solvedIds);
-      },
-
       setQuickDrawerOpen: (isQuickDrawerOpen) => {
         set({ isQuickDrawerOpen });
       },
@@ -970,27 +952,16 @@ export const useExamStore = create<ExamStore>()(
 
       getScore: () => {
         const state = get();
-        return calculateExamScore(state.track, state.boxes, {
-          includeBonusPoints: state.includeBonusPoints,
-        });
+        return calculateExamScore(state.track, state.boxes);
       },
 
       getPassingStatus: () => {
         const state = get();
-        const scoreData = calculateExamScore(state.track, state.boxes, {
-          includeBonusPoints: state.includeBonusPoints,
-        });
+        const scoreData = calculateExamScore(state.track, state.boxes);
         const remaining = get().getRemainingSeconds();
         const isExpired = state.status === 'completed' || (state.status === 'running' && remaining <= 0);
-        const requiresAdAndMissing = state.track === 'OSCP' && !scoreData.isPassing && !scoreData.adSetCompromised;
-
-        return calculatePassingStatus(
-          scoreData.totalScore,
-          scoreData.passThreshold,
-          remaining,
-          isExpired,
-          requiresAdAndMissing
-        );
+        // OSCP AD points count per machine, so no track needs the full AD chain to pass.
+        return calculatePassingStatus(scoreData.totalScore, scoreData.passThreshold, remaining, isExpired);
       },
     }),
     {
@@ -1002,7 +973,7 @@ export const useExamStore = create<ExamStore>()(
       // `findings` is likewise additive: older payloads lack it and keep the initial `[]`.
       version: 1,
       migrate: (persistedState) => persistedState as ExamSessionState,
-      // Older payloads have no seed or scoringMode: default them (legacy flag -> legacy mode) on every hydrate.
+      // Older payloads have no seed or scoringMode, or the removed legacy bonus mode: normalize them on every hydrate.
       merge: (persistedState, currentState) => {
         if (!persistedState) return currentState;
         return {

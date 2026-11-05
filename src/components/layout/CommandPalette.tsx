@@ -24,11 +24,14 @@ import {
   Code,
   NotebookPen,
   Timer,
-  NotebookText
+  NotebookText,
+  GraduationCap,
+  Calculator
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import { useShallow } from 'zustand/react/shallow';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
@@ -436,6 +439,18 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-share-passed',
+        label: 'Share that I passed',
+        keywords: ['passed', 'exam', 'certification', 'oscp', 'cpts', 'crto', 'oswe', 'card', 'png'],
+        icon: Award,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          setFlexCardModalOpen(true, 'passed');
+        },
+      },
+      {
         id: 'action-vault-view',
         label: 'Evidence and loot vault',
         icon: KeyRound,
@@ -459,6 +474,17 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
+        id: 'action-oscp-points-calculator',
+        label: 'OSCP points calculator',
+        icon: Calculator,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          setCommandPaletteOpen(false);
+          navigate('/oscp-points-calculator');
+        },
+      },
+      {
         id: 'action-shortcuts',
         label: 'Keyboard shortcuts (?)',
         icon: Keyboard,
@@ -469,6 +495,19 @@ export const CommandPalette: React.FC = () => {
           setShortcutsModalOpen(true);
         },
       },
+      {
+        id: 'action-replay-tour',
+        label: 'Replay the tour',
+        keywords: ['tour', 'help', 'guide', 'welcome'],
+        icon: GraduationCap,
+        colorClass: 'text-muted',
+        bgHoverClass: 'hover:bg-surface-hover',
+        execute: () => {
+          // The tour waits for the palette dialog to close before it shows.
+          setCommandPaletteOpen(false);
+          useOnboardingStore.getState().replayTour('full');
+        },
+      },
     ],
     [navigate, setCommandPaletteOpen, setOperatorModalOpen, setReconAutomationModalOpen, setNewMachineModalOpen, setActiveTab, setBackupModalOpen, setThemePreset, setFlexCardModalOpen, setShortcutsModalOpen, setSettingsModalOpen, globalVars, soundEnabled, setSnippetsDrawerOpen, setRevShellModalOpen]
   );
@@ -477,7 +516,7 @@ export const CommandPalette: React.FC = () => {
   const filteredActions = useMemo(() => {
     if (!query.trim()) return quickActions;
     const q = query.toLowerCase();
-    return quickActions.filter((a) => a.label.toLowerCase().includes(q));
+    return quickActions.filter((a) => a.label.toLowerCase().includes(q) || a.keywords?.some((k) => k.includes(q)));
   }, [query, quickActions]);
 
   // Unified items list for keyboard navigation

@@ -6,7 +6,7 @@
  * Authentic markdown and zero-egress standalone HTML reports for:
  * - OffSec OSCP (PEN-200): Executive Summary, scoring breakdown (70-pt threshold),
  *   methodology, target walkthroughs with evidence screenshots (Base64 data URIs),
- *   remediation recommendations, and 10-pt bonus lab exercise accounting.
+ *   and remediation recommendations (AD set scored per machine, no bonus points).
  * - Hack The Box CPTS: Enterprise penetration testing report format (85-pt threshold,
  *   14 flag objectives across DMZ, Internal, AD, and Vault tiers).
  * - Zero-Point Security CRTO: Red team operator engagement report (75-pt threshold,
@@ -95,7 +95,6 @@ export interface ExamReportOptions {
   osid?: string;
   examDate?: string;
   template?: ExamTrack;
-  includeBonusPoints?: boolean;
   includeScreenshots?: boolean;
   includeRemediation?: boolean;
 }
@@ -256,15 +255,10 @@ export function generateExamReportMarkdown(
   const candidateName = options?.candidateName || session.candidateName || 'Candidate';
   const candidateCallsign = options?.candidateCallsign || session.candidateCallsign || 'N/A';
   const osid = options?.osid || session.osid || 'N/A';
-  const effectiveIncludeBonus = options?.includeBonusPoints !== undefined
-    ? options.includeBonusPoints
-    : Boolean(session.includeBonusPoints);
   const includeScreenshots = options?.includeScreenshots !== false;
   const includeRemediation = options?.includeRemediation !== false;
 
-  const scoreData: ExamScoreResult = calculateExamScore(effectiveTrack, session.boxes, {
-    includeBonusPoints: effectiveIncludeBonus,
-  });
+  const scoreData: ExamScoreResult = calculateExamScore(effectiveTrack, session.boxes);
 
   const examDate = options?.examDate || new Date(session.examStartedAt || Date.now()).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -324,18 +318,9 @@ export function generateExamReportMarkdown(
   session.boxes.forEach((b) => {
     const userStatus = b.userPoints === 0 ? 'N/A' : b.userPwned ? `[x] PWNED (+${b.userPoints})` : '[ ] FAILED (0)';
     const rootStatus = b.rootPoints === 0 ? 'N/A' : b.rootPwned ? `[x] PWNED (+${b.rootPoints})` : '[ ] FAILED (0)';
-    let pts = 0;
-    if (effectiveTrack === 'OSCP' && b.type.startsWith('ad-')) {
-      pts = scoreData.adSetCompromised ? (b.userPwned ? b.userPoints : 0) + (b.rootPwned ? b.rootPoints : 0) : 0;
-    } else {
-      pts = (b.userPwned ? b.userPoints : 0) + (b.rootPwned ? b.rootPoints : 0);
-    }
+    const pts = (b.userPwned ? b.userPoints : 0) + (b.rootPwned ? b.rootPoints : 0);
     report += `| **${b.name}** | ${b.label} | \`${b.ip}\` | ${userStatus} | ${rootStatus} | **${pts} PTS** |\n`;
   });
-
-  if (effectiveTrack === 'OSCP' && effectiveIncludeBonus) {
-    report += `| **OFFSEC BONUS LABS** | Official Lab Bonus | \`N/A\` | [x] COMPLETED | [x] COMPLETED | **10 PTS** |\n`;
-  }
 
   report += `
 **TOTAL POINTS EARNED:** **${scoreData.totalScore} / ${scoreData.maxScore} PTS**  

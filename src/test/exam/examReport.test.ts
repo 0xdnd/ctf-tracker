@@ -248,24 +248,24 @@ describe('Certification Exam Submission Report Generator (R5)', () => {
       expect(markdown).toContain('Mandatory User proof screenshot is not confirmed');
     });
 
-    it('REPORT-06: Incorporates the legacy 10-point bonus only when exam points were scored', () => {
+    it('REPORT-06: An old session saved with the bonus flag gets no bonus row or bonus points', () => {
       const session = createMockExamSession('OSCP', false, false);
-      // One standalone user flag (10 pts) so the exam score is above 0.
+      // One standalone user flag (10 pts).
       session.boxes = session.boxes.map((b) => (b.id === 'st-1' ? { ...b, userPwned: true } : b));
       session.includeBonusPoints = true;
       const markdown = generateExamReportMarkdown(session);
 
-      expect(markdown).toContain('| **OFFSEC BONUS LABS** | Official Lab Bonus | `N/A` | [x] COMPLETED | [x] COMPLETED | **10 PTS** |');
-      expect(markdown).toContain('20 / 100 PTS');
+      expect(markdown).not.toContain('OFFSEC BONUS LABS');
+      expect(markdown).toContain('10 / 100 PTS');
     });
 
-    it('REPORT-06b: No bonus row when the exam score is 0', () => {
-      const session = createMockExamSession('OSCP', false, false); // 0 box pts
-      session.includeBonusPoints = true;
+    it('REPORT-06b: A partly compromised AD set is credited per machine in the scoring table', () => {
+      const session = createMockExamSession('OSCP', false, false);
+      session.boxes = session.boxes.map((b) => (b.id === 'ad-1' ? { ...b, userPwned: true } : b));
       const markdown = generateExamReportMarkdown(session);
 
-      expect(markdown).not.toContain('OFFSEC BONUS LABS');
-      expect(markdown).toContain('0 / 100 PTS');
+      expect(markdown).toMatch(/\| \*\*CORP-WEB01\*\* \|.*\| \*\*10 PTS\*\* \|/);
+      expect(markdown).toContain('10 / 100 PTS');
     });
   });
 

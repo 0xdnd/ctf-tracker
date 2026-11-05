@@ -3,7 +3,8 @@ import { loadOnboarding, saveOnboarding } from './onboardingStorage';
 import { guideAvailability, GUIDE_REGISTRY, restoreGuideView, suggestNextGuide } from './guideRegistry';
 import { prepareGuidePage } from './guideLaunch';
 import { isPhoneWidth } from './guideMotion';
-import type { HandsOn } from './guideMeta';
+import { FIRST_RUN_STEP_IDS, FULL_TOUR_STEP_IDS, type HandsOn, type TourKind } from './guideMeta';
+import { useCtfStore } from '../store/useCtfStore';
 
 export type BackupTab = 'backup' | 'bulk_pwn';
 
@@ -27,6 +28,10 @@ interface OnboardingState {
   tipsOff: boolean;
   tourActive: boolean;
   stepIndex: number;
+  /** Which tour is running. In memory only. */
+  tourKind: TourKind;
+  /** Step ids of the running tour, fixed when it starts so finishing a step's task cannot shrink the list. In memory only. */
+  tourStepIds: string[];
   /** A running section mini-tour, or null. */
   guide: ActiveGuide | null;
   /** Set while the finish moment is on screen. */
@@ -44,14 +49,17 @@ interface OnboardingState {
   /** True while a section guide offer card is on screen (other cards wait). */
   hintShowing: boolean;
 
-  startTour: () => void;
-  next: (totalSteps: number) => void;
+  startTour: (kind?: TourKind) => void;
+  /** Next tour step; finishes the tour after the last one. */
+  next: () => void;
+  /** Advances only when the tour is showing `stepId`, for a step whose task was just done. */
+  advanceTourFrom: (stepId: string) => void;
   back: () => void;
   skip: () => void;
   finishTour: () => void;
   dismissHint: (id: string) => void;
   setTipsOff: (off: boolean) => void;
-  replayTour: () => void;
+  replayTour: (kind?: TourKind) => void;
   resetTips: () => void;
   hydrate: () => void;
   startGuide: (id: string) => void;
@@ -99,10 +107,32 @@ function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
 /** The newest launch wins; an older one finds it is no longer current and stops. */
 let launchToken = 0;
 
+/** The tour's step ids. The import step is left out when the visitor already has solved boxes. */
+function tourIdsFor(kind: TourKind): string[] {
+  const ids = kind === 'first-run' ? FIRST_RUN_STEP_IDS : FULL_TOUR_STEP_IDS;
+  const hasSolved = useCtfStore.getState().machines.some((m) => m.status === 'root' || m.status === 'completed');
+  return hasSolved ? ids.filter((id) => id !== 'import') : [...ids];
+}
+
+/** Starts or replays a tour. The step list is computed once here and never again while it runs. */
+function beginTour(kind: TourKind): void {
+  useOnboardingStore.setState({
+    tourActive: true,
+    stepIndex: 0,
+    tourKind: kind,
+    tourStepIds: tourIdsFor(kind),
+    guide: null,
+    finishedGuide: null,
+    guideCenterOpen: false,
+  });
+}
+
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ...loadState(),
   tourActive: false,
   stepIndex: 0,
+  tourKind: 'full',
+  tourStepIds: [],
   guide: null,
   finishedGuide: null,
   guideCenterOpen: false,
@@ -112,12 +142,17 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   backupTab: null,
   hintShowing: false,
 
-  startTour: () => set({ tourActive: true, stepIndex: 0, guide: null, finishedGuide: null, guideCenterOpen: false }),
+  startTour: (kind = 'full') => beginTour(kind),
 
-  next: (totalSteps) => {
-    const { stepIndex } = get();
-    if (stepIndex + 1 >= totalSteps) get().finishTour();
+  next: () => {
+    const { stepIndex, tourStepIds } = get();
+    if (stepIndex + 1 >= tourStepIds.length) get().finishTour();
     else set({ stepIndex: stepIndex + 1 });
+  },
+
+  advanceTourFrom: (stepId) => {
+    const { tourActive, tourStepIds, stepIndex } = get();
+    if (tourActive && tourStepIds[stepIndex] === stepId) get().next();
   },
 
   back: () => set((s) => ({ stepIndex: Math.max(0, s.stepIndex - 1) })),
@@ -125,7 +160,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   skip: () => get().finishTour(),
 
   finishTour: () => {
-    set({ tourActive: false, stepIndex: 0, tourDone: true, handsOn: null });
+    set({ tourActive: false, stepIndex: 0, tourStepIds: [], tourDone: true, handsOn: null });
     persist(get());
   },
 
@@ -140,7 +175,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     persist(get());
   },
 
-  replayTour: () => set({ tourActive: true, stepIndex: 0, guide: null, finishedGuide: null, guideCenterOpen: false }),
+  replayTour: (kind = 'full') => beginTour(kind),
 
   resetTips: () => {
     set({ dismissedHints: [], tipsOff: false, guide: null, finishedGuide: null });

@@ -68,7 +68,6 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       totalDurationSeconds: s.totalDurationSeconds,
       timerPausedRemainingSeconds: s.timerPausedRemainingSeconds,
       scratchNotes: s.scratchNotes,
-      includeBonusPoints: s.includeBonusPoints,
       findings: s.findings,
       candidateName: s.candidateName,
       candidateCallsign: s.candidateCallsign,
@@ -93,7 +92,6 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       timerPausedRemainingSeconds: store.timerPausedRemainingSeconds,
       boxes: store.boxes,
       scratchNotes: store.scratchNotes,
-      includeBonusPoints: store.includeBonusPoints,
       findings: store.findings,
     };
   }, [propSession, store]);
@@ -104,7 +102,6 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   const [osid, setOsid] = useState<string>('');
   const [examDate, setExamDate] = useState<string>('');
   const [selectedTrack, setSelectedTrack] = useState<ExamTrack>('OSCP');
-  const [includeBonusPoints, setIncludeBonusPoints] = useState<boolean>(false);
   const [includeScreenshots, setIncludeScreenshots] = useState<boolean>(true);
   const [includeRemediation, setIncludeRemediation] = useState<boolean>(true);
 
@@ -142,9 +139,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setSelectedTrack(baseSession.track || 'OSCP');
-      setIncludeBonusPoints(Boolean(baseSession.includeBonusPoints));
     }
-  }, [isOpen, baseSession.track, baseSession.includeBonusPoints]);
+  }, [isOpen, baseSession.track]);
 
   const trapRef = useFocusTrap<HTMLDivElement>({
     isActive: isOpen,
@@ -158,7 +154,6 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     osid,
     examDate,
     template: selectedTrack,
-    includeBonusPoints,
     includeScreenshots,
     includeRemediation,
   }), [
@@ -167,7 +162,6 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     osid,
     examDate,
     selectedTrack,
-    includeBonusPoints,
     includeScreenshots,
     includeRemediation,
   ]);
@@ -186,8 +180,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
     candidateName,
     candidateCallsign,
     osid,
-    includeBonusPoints,
-  }), [baseSession, reportBoxes, selectedTrack, candidateName, candidateCallsign, osid, includeBonusPoints]);
+  }), [baseSession, reportBoxes, selectedTrack, candidateName, candidateCallsign, osid]);
 
   // Generated Markdown & HTML Preview
   const generatedMarkdown = useMemo(() => {
@@ -201,10 +194,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
 
   // Score Calculation
   const scoreData = useMemo(() => {
-    return calculateExamScore(selectedTrack, effectiveSession.boxes, {
-      includeBonusPoints,
-    });
-  }, [selectedTrack, effectiveSession.boxes, includeBonusPoints]);
+    return calculateExamScore(selectedTrack, effectiveSession.boxes);
+  }, [selectedTrack, effectiveSession.boxes]);
 
   // 1-Click Clipboard Copy
   const handleCopyMarkdown = async () => {
@@ -520,19 +511,6 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
 
             {/* Report Options Toggles */}
             <div className="pt-2 border-t border-subtle flex flex-wrap items-center gap-4 text-xs text-secondary">
-              {selectedTrack === 'OSCP' && (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    data-testid="report-opt-bonus"
-                    checked={includeBonusPoints}
-                    onChange={(e) => setIncludeBonusPoints(e.target.checked)}
-                    className="rounded border-subtle bg-surface-card accent-[rgb(var(--border-accent))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-                  />
-                  <span>+10 OffSec Bonus Labs (Legacy Pre-Nov 2024)</span>
-                </label>
-              )}
-
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"

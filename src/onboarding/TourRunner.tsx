@@ -14,7 +14,7 @@ import { GraduationCap, Plus, Upload } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { playCyberSound } from '../utils/helpers';
-import { TOUR_STEPS, guideSteps, resolveStep, withStandInCopy, type TourActionId, type TourStep } from './content';
+import { guideSteps, resolveStep, tourStepsFor, withStandInCopy, type TourActionId, type TourStep } from './content';
 import { FinishPanel, StepPanel } from './GuideCard';
 import { CARD_SHADOW, CLOSE_MS, DIM, EASE_DRAWER, EASE_OUT, RIG_SPRING, PressButton, SheetHandle, buttonStyles, cardSurface, useIsPhone } from './guideMotion';
 import {
@@ -211,6 +211,10 @@ const RunnerView: React.FC<RunnerViewProps> = ({
   const step = useMemo(() => (standingIn(resolved) ? withStandInCopy(resolved) : resolved), [resolved]);
   const steps = useMemo(() => resolvedSteps.map((s) => (s === resolved ? step : s)), [resolvedSteps, resolved, step]);
   const isSheet = isMobile && !step.welcome;
+  const overlapDock = step.overlapDock ?? 'bottom';
+  // A top-docked hands-on target (the importer) grows as results list, so its scroll is planned again to keep
+  // its bottom row in view. Other steps keep their one-time plan.
+  const followGrowth = overlapDock === 'top' && Boolean(step.handsOn) && !isMobile;
   const activeAnchor = finished ? undefined : step.anchor;
   const altAnchor = finished ? undefined : step.altAnchor;
 
@@ -361,6 +365,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
     setSettled(false);
     const startedAt = performance.now();
     let planned = false;
+    let plannedHeight = 0;
     let stopScroll: (() => void) | null = null;
     let ownScroll = false;
     let frame = 0;
@@ -386,14 +391,23 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       const r = el.getBoundingClientRect();
       const cw = card?.offsetWidth ?? 0;
       const sideRoom = (r.left + r.width) / z + PAD + GAP + cw <= vw - MARGIN;
-      const marginBottom = sideRoom ? 24 : cardH + GAP + PAD + MARGIN;
-      const fits = r.height / z + 24 + marginBottom <= vh;
-      const res = planScroll(el, { marginTop: 24, marginBottom, block: fits ? 'nearest' : 'start' });
-      // A target the card cannot sit beside, even after the scroll, shows its top part, lit down to the card's edge.
+      const cardRoom = cardH + GAP + PAD + MARGIN;
+      const dockTop = overlapDock === 'top';
+      const marginTop = sideRoom || !dockTop ? 24 : cardRoom;
+      const marginBottom = sideRoom || dockTop ? 24 : cardRoom;
+      const fits = r.height / z + marginTop + marginBottom <= vh;
+      plannedHeight = r.height;
+      const res = planScroll(el, { marginTop, marginBottom, block: fits ? 'nearest' : dockTop ? 'end' : 'start' });
+      // A target the card cannot sit beside, even after the scroll, is lit up to the card's edge: its top part
+      // when the card takes the bottom edge, its bottom part (where its main button is) when the card takes the top.
       const end = toZoomedRect(res.rect, z);
       const clear =
         sideRoom || end.top + end.height + PAD + GAP + cardH <= vh - MARGIN || end.top - PAD - GAP - cardH >= MARGIN;
-      holeBounds.current = clear ? null : { top: 0, left: 0, right: vw, bottom: vh - cardH - MARGIN - GAP };
+      holeBounds.current = clear
+        ? null
+        : dockTop
+          ? { top: cardH + MARGIN + GAP, left: 0, right: vw, bottom: vh }
+          : { top: 0, left: 0, right: vw, bottom: vh - cardH - MARGIN - GAP };
       return res;
     };
 
@@ -417,6 +431,12 @@ const RunnerView: React.FC<RunnerViewProps> = ({
             ownScroll = false;
             measure();
           });
+          return;
+        }
+        if (followGrowth && Math.abs(r.height - plannedHeight) > 1) {
+          planned = false;
+          stopScroll?.();
+          measure();
           return;
         }
         const found = toZoomedRect(r, z);
@@ -463,7 +483,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       if (frame) cancelAnimationFrame(frame);
       stopScroll?.();
     };
-  }, [activeAnchor, altAnchor, step.id, isMobile, cardRef, moveHole, reduced]);
+  }, [activeAnchor, altAnchor, step.id, isMobile, cardRef, moveHole, reduced, overlapDock, followGrowth]);
 
   // Place the desktop card beside the spotlight (with a caret pointing at it), or centered, inside the viewport.
   useLayoutEffect(() => {
@@ -495,6 +515,11 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       } else if (spot.top - PAD - GAP - ch >= MARGIN) {
         top = spot.top - PAD - GAP - ch;
         caret = 'bottom';
+      } else if (overlapDock === 'top') {
+        // The target is too big for the card to sit beside it, and its controls are at the bottom: the card
+        // takes the top edge, and the spotlight starts just below it (see plan).
+        top = MARGIN;
+        caret = 'bottom';
       } else {
         // The target is too big for the card to sit beside it: the card takes the bottom edge, and the
         // spotlight stops just above it (see plan).
@@ -508,12 +533,25 @@ const RunnerView: React.FC<RunnerViewProps> = ({
         ? prev
         : { top, left, caret, caretOffset },
     );
-  }, [spot, settled, step.id, isSheet, cardRef, finished]);
+  }, [spot, settled, step.id, isSheet, cardRef, finished, overlapDock]);
 
   // Keep keyboard focus on the primary action as steps change.
   useEffect(() => {
     if (settled && !handsOnLive) nextRef.current?.focus({ preventScroll: true });
   }, [settled, step.id, handsOnLive, finished, isSheet]);
+
+  // The card renders before the page, so Tab from it would never reach the panel: put focus in the text box once.
+  const importFocused = useRef(false);
+  useEffect(() => {
+    if (!handsOnLive || step.handsOn !== 'import' || importFocused.current) return;
+    const frame = requestAnimationFrame(() => {
+      const box = document.querySelector<HTMLTextAreaElement>('[data-tour="import-panel"] textarea');
+      if (!box) return;
+      importFocused.current = true;
+      box.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [handsOnLive, step.handsOn]);
 
   // A small reward for finishing: the sound a captured flag makes, and a tap on phones that have one.
   const celebrated = useRef(false);
@@ -529,10 +567,8 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       onExit();
       if (id === 'add-machine') useCtfStore.getState().setNewMachineModalOpen(true);
       else if (id === 'import-notes') useCtfStore.getState().setNotesImportModalOpen(true);
-      else if (id === 'import-solved') {
-        useOnboardingStore.getState().requestBackupTab('bulk_pwn');
-        useCtfStore.getState().setBackupModalOpen(true);
-      } else navigate('/exam');
+      else if (id === 'import-solved') navigate('/tracker?import=1');
+      else navigate('/exam');
     },
     [onExit, navigate],
   );
@@ -660,7 +696,8 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       />
     ) : null;
 
-  const actions = step.actions ? (
+  // A live hands-on step is done on the page itself, so its buttons stay off the card.
+  const actions = step.actions && !(step.handsOn && handsOnLive) ? (
     <div className="mt-4 flex flex-col gap-2">
       {step.actions.map((a) => (
         <PressButton
@@ -802,6 +839,8 @@ interface RunnerSnapshot {
 /** Spotlight runner for the main tour and the per-section mini-tours. Lazy-loaded. */
 export const TourRunner: React.FC<TourRunnerProps> = ({ mode, closing = false, handoff = false, landed = false }) => {
   const tourIndex = useOnboardingStore((s) => s.stepIndex);
+  const tourStepIds = useOnboardingStore((s) => s.tourStepIds);
+  const tourSteps = useMemo(() => tourStepsFor(tourStepIds), [tourStepIds]);
   const next = useOnboardingStore((s) => s.next);
   const back = useOnboardingStore((s) => s.back);
   const finishTour = useOnboardingStore((s) => s.finishTour);
@@ -814,7 +853,7 @@ export const TourRunner: React.FC<TourRunnerProps> = ({ mode, closing = false, h
   const launchGuide = useOnboardingStore((s) => s.launchGuide);
 
   const guideId = guide?.id ?? finishedGuide?.id ?? null;
-  const liveSteps = mode === 'tour' ? TOUR_STEPS : guideId ? guideSteps(guideId) : [];
+  const liveSteps = mode === 'tour' ? tourSteps : guideId ? guideSteps(guideId) : [];
   const liveIndex = Math.min(
     mode === 'tour' ? tourIndex : finishedGuide ? liveSteps.length - 1 : (guide?.stepIndex ?? 0),
     liveSteps.length - 1,
@@ -849,7 +888,7 @@ export const TourRunner: React.FC<TourRunnerProps> = ({ mode, closing = false, h
       closing={closing}
       handoff={handoff}
       landed={landed}
-      onNext={mode === 'tour' ? () => next(view.steps.length) : () => nextGuideStep(view.steps.length)}
+      onNext={mode === 'tour' ? () => next() : () => nextGuideStep(view.steps.length)}
       onBack={mode === 'tour' ? back : backGuideStep}
       onExit={mode === 'tour' ? exitTour : closeGuide}
       onLast={mode === 'tour' ? exitTour : completeGuide}

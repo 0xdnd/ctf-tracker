@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
 import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
-import { TOUR_STEP_COUNT, guideIdForPath } from './guideMeta';
+import { guideIdForPath } from './guideMeta';
 import { guideTipAvailability } from './guideRegistry';
 import { registerGuideNavigator } from './guideLaunch';
 import { CARD_SHADOW, CLOSE_MS, DIM, cardSurface } from './guideMotion';
@@ -63,7 +63,7 @@ const WelcomeFallback: React.FC = () => {
           style={{ boxShadow: CARD_SHADOW }}
           className={`max-h-full w-[28rem] max-w-full overflow-y-auto p-5 md:p-7 ${cardSurface}`}
         >
-          <WelcomeCard onStart={() => next(TOUR_STEP_COUNT)} onSkip={finishTour} />
+          <WelcomeCard onStart={() => next()} onSkip={finishTour} />
         </div>
       </div>
     </div>

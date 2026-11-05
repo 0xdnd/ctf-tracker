@@ -14,6 +14,13 @@ import { playCyberSound } from '../../utils/helpers';
 import { TRACK_BY_ID } from '../../data/tracksData';
 import { getTrackProgress } from '../../utils/trackProgress';
 import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
+import type { FlexCardMode } from '../../store/useCtfStore';
+import { PassCardPanel } from './PassCardPanel';
+
+const MODES: { id: FlexCardMode; label: string }[] = [
+  { id: 'achievement', label: 'Progress card' },
+  { id: 'passed', label: 'I passed' },
+];
 
 // Resolve an "R G B" CSS custom property to a canvas-safe rgb() string.
 const cssRgb = (name: string, fallback: string): string => {
@@ -32,12 +39,14 @@ const cssRgb = (name: string, fallback: string): string => {
 export const OperatorFlexCardModal: React.FC = () => {
   const {
     flexCardModalOpen,
+    flexCardMode,
     setFlexCardModalOpen,
     machines,
     soundEnabled,
   } = useCtfStore(
     useShallow((s) => ({
       flexCardModalOpen: s.flexCardModalOpen,
+      flexCardMode: s.flexCardMode,
       setFlexCardModalOpen: s.setFlexCardModalOpen,
       machines: s.machines,
       soundEnabled: s.soundEnabled,
@@ -45,6 +54,21 @@ export const OperatorFlexCardModal: React.FC = () => {
   );
 
   const { user } = useAuthStore();
+
+  const [mode, setMode] = useState<FlexCardMode>(flexCardMode);
+  useEffect(() => setMode(flexCardMode), [flexCardMode]);
+  const tabRefs = useRef<Record<FlexCardMode, HTMLButtonElement | null>>({ achievement: null, passed: null });
+  const onTabKeyDown = (e: React.KeyboardEvent) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const idx = MODES.findIndex((m) => m.id === mode);
+    const next =
+      e.key === 'Home' ? 0
+        : e.key === 'End' ? MODES.length - 1
+          : (idx + (e.key === 'ArrowRight' ? 1 : -1) + MODES.length) % MODES.length;
+    setMode(MODES[next].id);
+    tabRefs.current[MODES[next].id]?.focus();
+  };
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
@@ -90,9 +114,9 @@ export const OperatorFlexCardModal: React.FC = () => {
     : { done: 0, total: 0, percent: 0 };
 
   useEffect(() => {
-    if (!flexCardModalOpen) return;
+    if (!flexCardModalOpen || mode !== 'achievement') return;
     renderCanvas();
-  }, [flexCardModalOpen, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
+  }, [flexCardModalOpen, mode, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -342,20 +366,64 @@ export const OperatorFlexCardModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-muted" />
             <h2 id="flex-card-title" className="font-semibold text-primary text-sm tracking-[-0.01em]">
-              Achievement card
+              {mode === 'passed' ? 'Share that I passed' : 'Achievement card'}
             </h2>
           </div>
 
           <button
             onClick={() => setFlexCardModalOpen(false)}
             className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-[transform,background-color,border-color,color] active:scale-[0.97]"
-            aria-label="Close achievement card"
+            aria-label="Close card"
             title="Close (Esc)"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        <div
+          role="tablist"
+          aria-label="Card type"
+          className="flex-shrink-0 flex gap-1 px-4 pt-3 bg-surface-card"
+        >
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              ref={(el) => { tabRefs.current[m.id] = el; }}
+              type="button"
+              role="tab"
+              id={`flex-card-tab-${m.id}`}
+              aria-selected={mode === m.id}
+              aria-controls={mode === m.id ? `flex-card-panel-${m.id}` : undefined}
+              tabIndex={mode === m.id ? 0 : -1}
+              onClick={() => setMode(m.id)}
+              onKeyDown={onTabKeyDown}
+              className={`px-3 py-1.5 max-sm:py-2.5 rounded-lg text-xs font-medium border transition-[background-color,border-color,color] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                mode === m.id
+                  ? 'bg-surface-sunken border-strong text-primary'
+                  : 'border-transparent text-muted hover:text-primary hover:bg-surface-hover'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'passed' ? (
+          <div
+            role="tabpanel"
+            id="flex-card-panel-passed"
+            aria-labelledby="flex-card-tab-passed"
+            className="flex flex-col flex-1 min-h-0"
+          >
+            <PassCardPanel />
+          </div>
+        ) : (
+        <div
+          role="tabpanel"
+          id="flex-card-panel-achievement"
+          aria-labelledby="flex-card-tab-achievement"
+          className="flex flex-col flex-1 min-h-0"
+        >
         {/* Card Canvas Preview */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col items-center space-y-3">
           <div className="relative w-full max-w-3xl rounded-xl border border-subtle overflow-hidden bg-surface-inverse">
@@ -420,6 +488,8 @@ export const OperatorFlexCardModal: React.FC = () => {
             </button>
           </div>
         </div>
+        </div>
+        )}
       </div>
     </Modal>
   );

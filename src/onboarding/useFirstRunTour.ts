@@ -17,6 +17,6 @@ export function useFirstRunTour(enabled = true): void {
       return;
     }
     const s = useOnboardingStore.getState();
-    if (!s.tourDone) s.startTour();
+    if (!s.tourDone) s.startTour('first-run');
   }, [enabled]);
 }

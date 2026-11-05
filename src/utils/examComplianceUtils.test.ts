@@ -9,7 +9,9 @@ import {
   isDomainControllerBox,
   isActiveDirectoryBox,
   ExamSessionState,
+  EXAM_TRACK_CONFIGS,
 } from './examComplianceUtils';
+import { calculateOscpPoints, emptyOscpInput, OSCP_MAX_POINTS, OSCP_PASS_MARK } from './oscpPointsCalculator';
 
 describe('examComplianceUtils', () => {
   describe('Flag Format Validator', () => {
@@ -64,33 +66,35 @@ describe('examComplianceUtils', () => {
   });
 
   describe('OSCP Scoring Matrix & Ruleset', () => {
-    it('awards 40 points for the Active Directory set ONLY when all AD machines are fully compromised (All-or-Nothing)', () => {
+    it('scores the Active Directory set per machine (10 / 10 / 20), not all-or-nothing', () => {
       const targets = generateExamTargetsForTrack('OSCP');
       const adTargets = targets.filter((t) => t.type.startsWith('ad-'));
       expect(adTargets.length).toBe(3);
 
-      // Partial AD compromise: only foothold pwned
+      // Partial AD compromise: only the foothold (machine 1) earns its 10 points
       const adFoothold = adTargets.find((t) => t.type === 'ad-foothold')!;
       adFoothold.userPwned = true;
 
       const partialScore = calculateExamScore('OSCP', targets);
-      expect(partialScore.totalScore).toBe(0);
+      expect(partialScore.totalScore).toBe(10);
+      expect(partialScore.adPoints).toBe(10);
       expect(partialScore.adSetCompromised).toBe(false);
       expect(partialScore.isPassing).toBe(false);
 
-      // Now compromise lateral
+      // Lateral machine (machine 2) adds 10 more
       const adLateral = adTargets.find((t) => t.type === 'ad-lateral')!;
       adLateral.userPwned = true;
       const partialScore2 = calculateExamScore('OSCP', targets);
-      expect(partialScore2.totalScore).toBe(0);
+      expect(partialScore2.totalScore).toBe(20);
       expect(partialScore2.adSetCompromised).toBe(false);
 
-      // Now compromise DC (full chain complete)
+      // Domain controller (machine 3) adds 20: full chain
       const adDc = adTargets.find((t) => t.type === 'ad-dc')!;
       adDc.rootPwned = true;
 
       const fullAdScore = calculateExamScore('OSCP', targets);
       expect(fullAdScore.totalScore).toBe(40);
+      expect(fullAdScore.adPoints).toBe(40);
       expect(fullAdScore.adSetCompromised).toBe(true);
       expect(fullAdScore.isPassing).toBe(false); // 40 < 70
     });
@@ -133,23 +137,72 @@ describe('examComplianceUtils', () => {
       expect(score.pointsNeeded).toBe(0);
     });
 
-    it('handles optional 10-point bonus exercises for 60-point standalone combinations', () => {
+    it('passes with 10 AD points plus three full standalones (70)', () => {
       const targets = generateExamTargetsForTrack('OSCP');
-      // Root all 3 standalones without AD (60 pts)
       targets.filter((t) => !t.type.startsWith('ad-')).forEach((b) => {
         b.userPwned = true;
         b.rootPwned = true;
       });
+      expect(calculateExamScore('OSCP', targets).totalScore).toBe(60);
+      expect(calculateExamScore('OSCP', targets).isPassing).toBe(false);
 
-      // Without bonus: 60 pts -> Fail
-      const noBonusScore = calculateExamScore('OSCP', targets, { includeBonusPoints: false });
-      expect(noBonusScore.totalScore).toBe(60);
-      expect(noBonusScore.isPassing).toBe(false);
+      targets.find((t) => t.type === 'ad-foothold')!.userPwned = true;
+      const score = calculateExamScore('OSCP', targets);
+      expect(score.totalScore).toBe(70);
+      expect(score.adPoints).toBe(10);
+      expect(score.isPassing).toBe(true);
+      expect(score.pointsNeeded).toBe(0);
+    });
 
-      // With bonus: 60 + 10 = 70 pts -> Pass
-      const bonusScore = calculateExamScore('OSCP', targets, { includeBonusPoints: true });
-      expect(bonusScore.totalScore).toBe(70);
-      expect(bonusScore.isPassing).toBe(true);
+    it('passes with the full AD set plus one and a half standalones (70)', () => {
+      const targets = generateExamTargetsForTrack('OSCP');
+      targets.filter((t) => t.type.startsWith('ad-')).forEach((b) => {
+        if (b.userPoints > 0) b.userPwned = true;
+        if (b.rootPoints > 0) b.rootPwned = true;
+      });
+      const standalones = targets.filter((t) => !t.type.startsWith('ad-'));
+      standalones[0].userPwned = true;
+      standalones[0].rootPwned = true;
+      standalones[1].userPwned = true;
+
+      const score = calculateExamScore('OSCP', targets);
+      expect(score.totalScore).toBe(70);
+      expect(score.adPoints).toBe(40);
+      expect(score.isPassing).toBe(true);
+    });
+
+    it('matches the OSCP points calculator for every AD and standalone combination', () => {
+      // 3 AD machines x 3 standalones with 4 states each (none, local, proof, both)
+      for (let adMask = 0; adMask < 8; adMask++) {
+        for (let saMask = 0; saMask < 64; saMask++) {
+          const targets = generateExamTargetsForTrack('OSCP', [], { seed: 'PARITY' });
+          const ad = ['ad-foothold', 'ad-lateral', 'ad-dc'].map((type) => targets.find((t) => t.type === type)!);
+          const standalones = targets.filter((t) => !t.type.startsWith('ad-'));
+          const input = emptyOscpInput();
+          ad.forEach((b, i) => {
+            const on = Boolean(adMask & (1 << i));
+            input.ad[i] = on;
+            if (b.userPoints > 0) b.userPwned = on;
+            if (b.rootPoints > 0) b.rootPwned = on;
+          });
+          standalones.forEach((b, i) => {
+            b.userPwned = Boolean(saMask & (1 << (i * 2)));
+            b.rootPwned = Boolean(saMask & (1 << (i * 2 + 1)));
+            input.standalones[i] = { local: b.userPwned, proof: b.rootPwned };
+          });
+          const sim = calculateExamScore('OSCP', targets);
+          const calc = calculateOscpPoints(input, 'fixed');
+          expect(sim.totalScore).toBe(calc.total);
+          expect(sim.adPoints).toBe(calc.adPoints);
+          expect(sim.isPassing).toBe(calc.passed);
+        }
+      }
+    });
+
+    it('takes the OSCP pass mark, maximum and 23h45m duration from the calculator constants', () => {
+      expect(EXAM_TRACK_CONFIGS.OSCP.passThreshold).toBe(OSCP_PASS_MARK);
+      expect(EXAM_TRACK_CONFIGS.OSCP.maxScore).toBe(OSCP_MAX_POINTS);
+      expect(EXAM_TRACK_CONFIGS.OSCP.durationSeconds).toBe(23 * 3600 + 45 * 60);
     });
   });
 

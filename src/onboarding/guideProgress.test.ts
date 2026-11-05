@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { GUIDE_META, TOUR_STEP_COUNT, WELCOME_STEP } from './guideMeta';
-import { SECTION_GUIDES, TOUR_STEPS, guideSteps } from './content';
+import { FIRST_RUN_STEP_IDS, FULL_TOUR_STEP_IDS, GUIDE_META, WELCOME_STEP } from './guideMeta';
+import { SECTION_GUIDES, TOUR_STEPS, guideSteps, tourStepsFor } from './content';
 import { GUIDE_COUNT, GUIDE_ORDER, guideAvailability, suggestNextGuide } from './guideRegistry';
 import { ONBOARDING_STORAGE_KEY, loadOnboarding, saveOnboarding } from './onboardingStorage';
 import { useOnboardingStore } from './useOnboardingStore';
@@ -138,8 +138,21 @@ describe('guide registry', () => {
   });
 
   it('keeps the eager and lazy halves of the copy in step', () => {
-    expect(TOUR_STEP_COUNT).toBe(TOUR_STEPS.length);
     expect(TOUR_STEPS[0]).toBe(WELCOME_STEP);
+    for (const ids of [FIRST_RUN_STEP_IDS, FULL_TOUR_STEP_IDS]) {
+      expect(tourStepsFor(ids).map((s) => s.id)).toEqual([...ids]);
+      expect(ids[0]).toBe('welcome');
+      expect(ids[ids.length - 1]).toBe('final');
+    }
+    expect([...FULL_TOUR_STEP_IDS]).toEqual(TOUR_STEPS.map((s) => s.id));
+    // The first run is the full tour with steps left out, in the same order.
+    let at = 0;
+    for (const id of FIRST_RUN_STEP_IDS) {
+      at = FULL_TOUR_STEP_IDS.indexOf(id, at);
+      expect(at, id).toBeGreaterThanOrEqual(0);
+      at += 1;
+    }
+    expect(() => tourStepsFor(['nope'])).toThrow(/Unknown tour step id/);
     for (const id of GUIDE_ORDER) expect(SECTION_GUIDES[id].steps, id).toBe(guideSteps(id));
   });
 

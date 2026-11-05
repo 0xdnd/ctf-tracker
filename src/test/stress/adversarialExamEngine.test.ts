@@ -14,6 +14,9 @@ import {
 } from '../../utils/examPacingUtils';
 import { generateExamTargetsForTrack, calculateExamScore, ExamBox } from '../../utils/examComplianceUtils';
 
+/** OSCP+ exam time: 23h45m. */
+const OSCP_SECONDS = 23 * 3600 + 45 * 60;
+
 describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Pacing Math', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -53,7 +56,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
 
       // Invariant: remainingSeconds must decrement accurately without drift
       const remaining = useExamStore.getState().getRemainingSeconds();
-      expect(remaining).toBe(86400 - 10000); // 76,400s
+      expect(remaining).toBe(OSCP_SECONDS - 10000); // 75,500s
     });
 
     it('EMP-SOAK-02: 5,000 ticks while exam is paused result in ZERO localStorage.setItem calls and 0 drift', () => {
@@ -74,7 +77,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
       }
 
       expect(setItemSpy).toHaveBeenCalledTimes(0);
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(86400 - 3600);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 3600);
       expect(useExamStore.getState().status).toBe('paused');
     });
 
@@ -84,7 +87,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
 
       useExamStore.getState().startExam('OSCP');
       // Fast forward to 1 second before expiry
-      currentTime += 86399 * 1000;
+      currentTime += (OSCP_SECONDS - 1) * 1000;
       useExamStore.getState().tick();
 
       expect(useExamStore.getState().status).toBe('running');
@@ -398,7 +401,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
       expect(result.pointsNeeded).toBe(70);
     });
 
-    it('EMP-PACE-04: Perfect score (100 pts) and bonus points (>100 pts) correctly mark PASSED with 0 pointsNeeded', () => {
+    it('EMP-PACE-04: Perfect score (100 pts) and out-of-range scores (>100 pts) correctly mark PASSED with 0 pointsNeeded', () => {
       const now = Date.now();
       const session = {
         examStartedAt: now - 3600 * 1000,
@@ -412,7 +415,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
       expect(result100.pointsNeeded).toBe(0);
       expect(result100.requiredPacePtsPerHour).toBe(0);
 
-      // Over 100 (e.g. 110 with bonus)
+      // Over 100 (out-of-range input)
       const result110 = computeExamPacing(session, { totalScore: 110, passThreshold: 70 }, now);
       expect(result110.pacingStatus).toBe('PASSED');
       expect(result110.pointsNeeded).toBe(0);
@@ -526,7 +529,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
    * ADVERSARIAL CHALLENGE 4: OSCP RULESET ADVERSARIAL INVARIANTS
    * ===================================================================== */
   describe('Challenge 4: OSCP Ruleset Adversarial Invariants', () => {
-    it('EMP-OSCP-01: Exhaustive verification that all 7 partial AD permutations yield exactly 0 AD points', () => {
+    it('EMP-OSCP-01: Exhaustive verification that all 7 partial AD permutations score per machine (10 / 10 / 20)', () => {
       // Test all 7 partial combinations: [foothold, lateral, dc]
       const permutations: [boolean, boolean, boolean][] = [
         [false, false, false],
@@ -549,7 +552,9 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
         adDc.rootPwned = dc;
 
         const score = calculateExamScore('OSCP', boxes);
-        expect(score.totalScore).toBe(0);
+        const expected = (fh ? 10 : 0) + (lat ? 10 : 0) + (dc ? 20 : 0);
+        expect(score.totalScore).toBe(expected);
+        expect(score.adPoints).toBe(expected);
         expect(score.adSetCompromised).toBe(false);
         expect(score.isPassing).toBe(false);
       });
@@ -564,7 +569,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
       expect(scoreFull.adSetCompromised).toBe(true);
     });
 
-    it('EMP-OSCP-02: 70 points passing threshold edge cases and bonus point integration', () => {
+    it('EMP-OSCP-02: 70 points passing threshold edge cases with partial AD credit and no bonus points', () => {
       const boxes = generateExamTargetsForTrack('OSCP');
       // Pwn all 3 standalones: 60 pts
       boxes.filter((b) => !b.type.startsWith('ad-')).forEach((b) => {
@@ -572,34 +577,36 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
         b.rootPwned = true;
       });
 
-      // Without bonus: 60 pts -> Fail
-      const score60 = calculateExamScore('OSCP', boxes, { includeBonusPoints: false });
+      // Standalones only: 60 pts -> Fail
+      const score60 = calculateExamScore('OSCP', boxes);
       expect(score60.totalScore).toBe(60);
       expect(score60.isPassing).toBe(false);
       expect(score60.pointsNeeded).toBe(10);
 
-      // With bonus: 60 + 10 = 70 pts -> Pass
-      const score70 = calculateExamScore('OSCP', boxes, { includeBonusPoints: true });
+      // Plus the first AD machine: 60 + 10 = 70 pts -> Pass
+      boxes.find((b) => b.type === 'ad-foothold')!.userPwned = true;
+      const score70 = calculateExamScore('OSCP', boxes);
       expect(score70.totalScore).toBe(70);
       expect(score70.isPassing).toBe(true);
       expect(score70.pointsNeeded).toBe(0);
     });
 
-    it('EMP-OSCP-03: useExamStore getPassingStatus behavior on 70-point standalone + bonus scenario', () => {
+    it('EMP-OSCP-03: useExamStore getPassingStatus behavior on 70-point standalone + partial AD scenario', () => {
       useExamStore.getState().startExam('OSCP');
-      useExamStore.getState().setIncludeBonusPoints(true);
 
       const standalones = useExamStore.getState().boxes.filter((b) => !b.type.startsWith('ad-'));
       standalones.forEach((st) => {
         useExamStore.getState().submitFlag(st.id, 'user', '11111111111111111111111111111111');
         useExamStore.getState().submitFlag(st.id, 'root', '22222222222222222222222222222222');
       });
+      const ad1 = useExamStore.getState().boxes.find((b) => b.adRole === 'foothold')!;
+      useExamStore.getState().submitFlag(ad1.id, 'user', '33333333333333333333333333333333');
 
       const score = useExamStore.getState().getScore();
       expect(score.totalScore).toBe(70);
       expect(score.isPassing).toBe(true);
 
-      // Invariant: Candidates reaching 70+ pts via 3 Standalone boxes (60 pts) + 10 bonus points pass
+      // Invariant: Candidates reaching 70+ pts via 3 Standalone boxes (60 pts) + the first AD machine (10 pts) pass
       const status = useExamStore.getState().getPassingStatus();
       expect(status).toBe('Passing');
     });
@@ -677,34 +684,34 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
       let currentTime = 1700000000000;
       vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
 
-      useExamStore.getState().startExam('OSCP'); // 86400s
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(86400);
+      useExamStore.getState().startExam('OSCP'); // 85,500s (23h45m)
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS);
 
       // Elapse 1,000s
       currentTime += 1000 * 1000;
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(85400);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 1000);
 
       // Pause exam
       useExamStore.getState().pauseExam();
       expect(useExamStore.getState().status).toBe('paused');
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(85400);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 1000);
 
       // Massive time warp: 10 days pass while paused (864,000 seconds)
       currentTime += 864000 * 1000;
 
       // Assert that while paused, remaining seconds did NOT decrement
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(85400);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 1000);
 
       // Resume exam
       useExamStore.getState().resumeExam();
       expect(useExamStore.getState().status).toBe('running');
 
-      // Assert remaining seconds are STILL exactly 85,400 after resume
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(85400);
+      // Assert remaining seconds are STILL exactly the paused value after resume
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 1000);
 
       // Advance 100 seconds after resume
       currentTime += 100 * 1000;
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(85300);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 1100);
     });
 
     it('EMP-TIME-02: Negative time remaining and extreme durations handled safely without crashes', () => {

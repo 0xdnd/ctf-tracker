@@ -66,6 +66,7 @@ const TargetDetailPage = lazy(() => import('./pages/TargetDetailPage').then(m =>
 const ReverseShellsPage = lazy(() => import('./pages/ReverseShellsPage').then(m => ({ default: m.ReverseShellsPage })));
 const MethodologyPage = lazy(() => import('./pages/MethodologyPage').then(m => ({ default: m.MethodologyPage })));
 const ExamSimulatorPage = lazy(() => import('./pages/ExamSimulatorPage').then(m => ({ default: m.ExamSimulatorPage })));
+const OscpPointsCalculatorPage = lazy(() => import('./pages/OscpPointsCalculatorPage').then(m => ({ default: m.OscpPointsCalculatorPage })));
 const EvidenceVaultPage = lazy(() => import('./pages/EvidenceVaultPage').then(m => ({ default: m.EvidenceVaultPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
@@ -296,7 +297,7 @@ const MainAppContent: React.FC = () => {
       setActiveTab('writeup');
     } else if (path.startsWith('/analytics')) {
       setActiveTab('analytics');
-    } else if (path.startsWith('/exam')) {
+    } else if (path.startsWith('/exam') || path.startsWith('/oscp-points-calculator')) {
       setActiveTab('exam');
     } else if (path.startsWith('/vault') || path.startsWith('/evidence') || path.startsWith('/loot')) {
       setActiveTab('vault');
@@ -525,6 +526,7 @@ const MainAppContent: React.FC = () => {
                     <Route path="/analytics" element={<AnalyticsView />} />
                     <Route path="/exam" element={<ExamSimulatorPage />} />
                     <Route path="/exam-simulator" element={<ExamSimulatorPage />} />
+                    <Route path="/oscp-points-calculator" element={<OscpPointsCalculatorPage />} />
                     <Route path="/vault" element={<EvidenceVaultPage />} />
                     <Route path="/evidence" element={<EvidenceVaultPage />} />
                     <Route path="/loot" element={<EvidenceVaultPage />} />

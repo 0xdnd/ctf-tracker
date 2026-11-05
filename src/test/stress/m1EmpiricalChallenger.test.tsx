@@ -577,7 +577,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(scansBtn.className).toContain('hidden xl:flex');
 
       // Command Palette launcher button must be hidden below xl
-      const paletteBtn = screen.getByLabelText('Open Command Palette');
+      const paletteBtn = screen.getByLabelText(/open command palette/i);
       expect(paletteBtn.className).toContain('hidden xl:flex');
     });
 
@@ -590,7 +590,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
 
       const deployBtn = screen.getByLabelText(/Deploy Box/i);
       const scansBtn = screen.getByLabelText('Scans Hub');
-      const paletteBtn = screen.getByLabelText('Open Command Palette');
+      const paletteBtn = screen.getByLabelText(/open command palette/i);
 
       // All 3 have xl:flex to become visible at 1280px
       expect(deployBtn.className).toContain('xl:flex');

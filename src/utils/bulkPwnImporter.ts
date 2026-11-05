@@ -1,7 +1,7 @@
 import { Machine, PipelineStatus, Platform } from '../types';
 import { LEGACY_CROSS_PLATFORM_NAME_SLUGS } from '../store/machineNormalization';
 
-interface BulkPwnMatch {
+export interface BulkPwnMatch {
   rawInput: string;
   machineId: string;
   machineName: string;
@@ -32,6 +32,8 @@ function normalizeTargetName(name: string): string {
     .replace(/[^a-z0-9]/g, '')
     .trim();
 }
+
+const METADATA_PART = /^(easy|medium|hard|insane|completed|foothold|root|linux|windows|htb|thm|\d+)$/i;
 
 /**
  * Parses raw user input (CSV, JSON, line-separated, or comma-separated)
@@ -78,10 +80,16 @@ export function extractCandidateNames(raw: string): string[] {
 
     // Split by comma or tab if it looks like CSV
     if (cleanLine.includes(',') || cleanLine.includes('\t') || cleanLine.includes(';')) {
-      const parts = cleanLine.split(/[,;\t]+/).map(p => p.trim().replace(/^[\"\']|[\"\']$/g, ''));
+      const parts = cleanLine.split(/[,;\t]+/).map(p => p.trim().replace(/^[\"\']|[\"\']$/g, '')).filter(Boolean);
+      // Input that is one line of plain names ("Lame, Forest, Sauna") is a list: keep every name.
+      // Multi-line input is rows of columns, so only the first column is a name.
+      if (lines.length === 1 && parts.length > 1 && !parts.some((p) => METADATA_PART.test(p))) {
+        for (const part of parts) candidates.add(part);
+        continue;
+      }
       // Pick first non-empty alphanumeric part that isn't a status or number
       for (const part of parts) {
-        if (part && !/^(easy|medium|hard|insane|completed|foothold|root|linux|windows|htb|thm|\d+)$/i.test(part)) {
+        if (!METADATA_PART.test(part)) {
           candidates.add(part);
           break;
         }
@@ -105,6 +113,11 @@ function platformHint(raw: string): Platform | undefined {
   return 'THM';
 }
 
+export interface MatchOptions {
+  /** Platform to favour for names with no platform prefix. A prefix in the name still wins. */
+  preferPlatform?: Platform;
+}
+
 /**
  * Matches candidate names against the machine catalog.
  * A name shared by several platforms resolves to the platform the candidate names in its prefix.
@@ -113,7 +126,8 @@ function platformHint(raw: string): Platform | undefined {
  */
 export function matchCandidateNamesToCatalog(
   candidates: string[],
-  catalog: Machine[]
+  catalog: Machine[],
+  options?: MatchOptions
 ): BulkPwnParseResult {
   const normMap = new Map<string, Machine[]>();
   const idMap = new Map<string, Machine>();
@@ -145,7 +159,7 @@ export function matchCandidateNamesToCatalog(
   for (const raw of candidates) {
     const norm = normalizeTargetName(raw);
     if (!norm) continue;
-    const hint = platformHint(raw);
+    const hint = platformHint(raw) ?? options?.preferPlatform;
 
     // 1. Exact catalog id (e.g. "thm-retro"), then exact normalized name match
     let match = idMap.get(raw.trim().toLowerCase()) || pick(norm, normMap.get(norm), hint);
@@ -201,4 +215,53 @@ export function matchCandidateNamesToCatalog(
     unmatched,
     totalInputTokens: candidates.length,
   };
+}
+
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      rowMin = Math.min(rowMin, cur[j]);
+    }
+    if (rowMin > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+/**
+ * "Did you mean" candidates for a name that matched nothing: close spellings, prefixes and
+ * partial names, best first. Uses the matcher's normalization. Empty for blank input.
+ */
+export function suggestCatalogMatches(
+  name: string,
+  catalog: Machine[],
+  limit = 3,
+  options?: MatchOptions
+): Machine[] {
+  const norm = normalizeTargetName(name);
+  if (norm.length < 2) return [];
+  const maxEdits = norm.length <= 4 ? 1 : norm.length <= 8 ? 2 : 3;
+  const scored: { m: Machine; score: number; order: number }[] = [];
+  catalog.forEach((m, order) => {
+    const key = normalizeTargetName(m.name);
+    if (!key) return;
+    let score = 0;
+    if (key === norm) score = 100;
+    else if (key.startsWith(norm) || (key.length >= 3 && norm.startsWith(key))) score = 80 - Math.abs(key.length - norm.length);
+    else if (norm.length >= 3 && (key.includes(norm) || (key.length >= 4 && norm.includes(key)))) score = 60 - Math.abs(key.length - norm.length);
+    else {
+      const d = editDistance(norm, key, maxEdits);
+      if (d <= maxEdits) score = 50 - d * 10;
+    }
+    if (score <= 0) return;
+    if (options?.preferPlatform && m.platform === options.preferPlatform) score += 5;
+    scored.push({ m, score, order });
+  });
+  scored.sort((a, b) => b.score - a.score || a.order - b.order);
+  return scored.slice(0, limit).map((s) => s.m);
 }

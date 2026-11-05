@@ -5,6 +5,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { CommandPalette } from '../../components/layout/CommandPalette';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
+import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import type { Machine } from '../../types';
 
@@ -105,5 +106,28 @@ describe('command palette full-text search', () => {
     type('svc_backup');
     expect(screen.getByRole('group', { name: 'Vault' })).toBeTruthy();
     expect(document.body.textContent).not.toContain(SECRET);
+  });
+});
+
+describe('command palette replay tour action', () => {
+  afterEach(() => useOnboardingStore.getState().finishTour());
+
+  it('finds Replay the tour by name and by keyword', () => {
+    mountPalette();
+    type('replay');
+    expect(screen.getByText('Replay the tour')).toBeTruthy();
+    type('guide');
+    expect(screen.getByText('Replay the tour')).toBeTruthy();
+  });
+
+  it('closes the palette and starts the full tour', () => {
+    useCtfStore.setState({ machines: [] } as never);
+    useOnboardingStore.setState({ tourActive: false, tourStepIds: [] });
+    mountPalette();
+    type('replay');
+    press('Enter');
+    expect(useCtfStore.getState().commandPaletteOpen).toBe(false);
+    expect(useOnboardingStore.getState()).toMatchObject({ tourActive: true, tourKind: 'full', stepIndex: 0 });
+    expect(useOnboardingStore.getState().tourStepIds).toHaveLength(8);
   });
 });

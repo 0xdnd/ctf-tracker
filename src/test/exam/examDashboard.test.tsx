@@ -33,7 +33,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { ExamSimulatorPage } from '../../pages/ExamSimulatorPage';
 import { ExamEvidenceDropzone, downscaleImageFile } from '../../components/exam/ExamEvidenceDropzone';
 import { ExamBioBreakModal } from '../../components/exam/ExamBioBreakModal';
-import { useExamStore } from '../../store/examStore';
+import { EXAM_STORAGE_KEY, useExamStore } from '../../store/examStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useConfirmStore } from '../../store/useConfirmStore';
 
@@ -226,7 +226,7 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
       const validHash = 'c4ca4238a0b923820dcc509a6f75849b';
 
       act(() => {
-        // Pwn all AD targets (40 pts all-or-nothing in OSCP)
+        // Pwn all AD targets (40 pts in OSCP: 10 / 10 / 20 per machine)
         const adTargets = boxes.filter((b) => b.type.startsWith('ad-'));
         adTargets.forEach((t) => {
           if (t.userPoints > 0) useExamStore.getState().submitFlag(t.id, 'user', validHash);
@@ -244,6 +244,40 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
         expect(screen.getByTestId('exam-victory-banner')).toBeInTheDocument();
       });
       expect(screen.getByText(/passing threshold surpassed/i)).toBeInTheDocument();
+    });
+
+    it('loads and renders a saved 24h session from the old legacy bonus mode without crashing', async () => {
+      const now = Date.now();
+      const saved = JSON.parse(
+        JSON.stringify({
+          ...useExamStore.getState(),
+          scoringMode: 'legacy',
+          includeBonusPoints: true,
+          status: 'running',
+          startedAt: now - 3600_000,
+          totalDurationSeconds: 86400,
+          examExpiresAt: now - 3600_000 + 86400_000,
+          lastExpiresAt: now - 3600_000 + 86400_000,
+        })
+      );
+      saved.boxes = saved.boxes.map((b: { adRole?: string }) => (b.adRole === 'foothold' ? { ...b, userPwned: true } : b));
+      localStorage.setItem(EXAM_STORAGE_KEY, JSON.stringify({ state: saved, version: 1 }));
+      await act(async () => {
+        await useExamStore.persist.rehydrate();
+      });
+      expect(useExamStore.getState()).toMatchObject({ scoringMode: 'official', includeBonusPoints: false, totalDurationSeconds: 86400 });
+
+      render(
+        <MemoryRouter>
+          <ExamSimulatorPage />
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByTestId('exam-setup-view')).not.toBeInTheDocument();
+      expect(screen.getByTestId('exam-ad-points')).toHaveTextContent('10 pts earned, scored per machine');
+      expect(screen.queryByText(/bonus/i)).not.toBeInTheDocument();
+      expect(useExamStore.getState().getScore().totalScore).toBe(10);
+      localStorage.clear();
     });
 
     it('opens bio-break modal when bio-break button is clicked in cockpit', () => {

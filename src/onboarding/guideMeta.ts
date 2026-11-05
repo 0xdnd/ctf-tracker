@@ -31,7 +31,7 @@ export type TourIconName =
   | 'shell';
 
 /** What the visitor does on a hands-on step; the tour advances when they do it. */
-export type HandsOn = 'layout' | 'machine' | 'palette';
+export type HandsOn = 'layout' | 'machine' | 'palette' | 'import';
 
 export type TourActionId = 'add-machine' | 'import-notes' | 'try-exam' | 'import-solved';
 
@@ -69,6 +69,8 @@ export interface TourStep {
   actionsPrimary?: boolean;
   /** Replaces the label of the Next button, e.g. "Skip for now". */
   nextLabel?: string;
+  /** Where the card docks when it cannot sit beside, below or above the anchor. Defaults to 'bottom'. */
+  overlapDock?: 'top' | 'bottom';
 }
 
 export const WELCOME_ROWS: { icon: TourIconName; title: string; body: string }[] = [
@@ -85,8 +87,12 @@ export const WELCOME_STEP: TourStep = {
   body: 'A free prep tracker for CTFs and hacking labs. It runs in your browser and keeps everything on this device.',
 };
 
-/** Number of tour steps, so the welcome card can advance before the steps have loaded. */
-export const TOUR_STEP_COUNT = 8;
+/** Which tour runs: the short first-visit list, or the full tour replayed from Settings and the palette. */
+export type TourKind = 'first-run' | 'full';
+
+/** Step ids of each tour, kept here so the welcome card can advance before the steps have loaded. */
+export const FIRST_RUN_STEP_IDS: readonly string[] = ['welcome', 'sidebar', 'machine', 'import', 'final'];
+export const FULL_TOUR_STEP_IDS: readonly string[] = ['welcome', 'sidebar', 'layouts', 'machine', 'palette', 'backup', 'import', 'final'];
 
 export interface GuideMeta {
   id: string;

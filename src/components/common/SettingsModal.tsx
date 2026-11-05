@@ -484,7 +484,7 @@ export const SettingsModal: React.FC = () => {
             {/* Section 4: Guide */}
             <div className="pt-2 border-t border-subtle space-y-3">
               <span className="text-xs font-semibold text-primary">Guide</span>
-              <p className="text-[11px] text-muted">Replay the first-visit tour, or show the one-time page tips again.</p>
+              <p className="text-[11px] text-muted">Replay the full tour, or show the one-time page tips again.</p>
               <GuideControls onBeforeReplay={() => setSettingsModalOpen(false)} />
             </div>
 

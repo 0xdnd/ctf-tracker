@@ -15,6 +15,7 @@ import {
   Upload
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
+import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
@@ -29,6 +30,7 @@ import { parseTrackParam } from '../../utils/trackUrl';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
+const PasteImportPanel = React.lazy(() => import('../import/PasteImportPanel').then((m) => ({ default: m.PasteImportPanel })));
 const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
@@ -98,6 +100,13 @@ export const TrackerView: React.FC = () => {
   );
 
   const location = useLocation();
+
+  // Nothing solved yet (or the welcome card asked for it): offer the paste importer above the board.
+  const storageReady = useCtfStore((s) => s.isDeepStorageLoaded);
+  const hasSolved = useCtfStore((s) => s.machines.some((m) => m.status === 'root' || m.status === 'completed'));
+  const [importDismissed, setImportDismissed] = useState(false);
+  const importRequested = new URLSearchParams(location.search).get('import') === '1';
+  const showImportPanel = storageReady && !importDismissed && (!hasSolved || importRequested);
 
   // The filter drawer chunk is fetched the first time it is opened, then kept mounted for its exit animation.
   const filterDrawerOpen = useCtfStore((s) => s.filterDrawerOpen);
@@ -824,6 +833,21 @@ export const TrackerView: React.FC = () => {
       {filterDrawerSeen && (
         <React.Suspense fallback={null}>
           <FilterDrawer />
+        </React.Suspense>
+      )}
+
+      {showImportPanel && (
+        <React.Suspense fallback={null}>
+          <PasteImportPanel
+            focusOnMount={importRequested}
+            onApplied={() => {
+              // One batched update with the store write: the tour moves to its last card before the panel goes,
+              // so it never shows the import step without its target.
+              useOnboardingStore.getState().advanceTourFrom('import');
+              setImportDismissed(true);
+            }}
+            className="mb-4"
+          />
         </React.Suspense>
       )}
 

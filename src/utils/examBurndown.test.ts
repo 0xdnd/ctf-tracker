@@ -79,7 +79,7 @@ describe('buildBurndownSeries', () => {
     expect(s.steps[s.steps.length - 1].points).toBe(calculateExamScore('OSCP', boxes).totalScore);
   });
 
-  it('AD set only scores once every AD box is complete (all-or-nothing)', () => {
+  it('AD set scores per machine as each AD box is compromised (10 / 10 / 20)', () => {
     const boxes = [
       pwned(adBox('ad1', 'foothold', 10, 0), 1, null),
       pwned(adBox('ad2', 'lateral', 10, 0), 2, null),
@@ -91,10 +91,11 @@ describe('buildBurndownSeries', () => {
       [...s.steps].reverse().find((p) => p.t <= START + h * HOUR)!.points;
 
     expect(byHour(0)).toBe(0);
-    expect(byHour(2)).toBe(0); // AD partially done: 0 pts
-    expect(byHour(3)).toBe(10); // standalone user only
-    expect(byHour(4)).toBe(20);
-    expect(byHour(5)).toBe(60); // AD completes: 40 pts land at once
+    expect(byHour(1)).toBe(10); // AD machine 1
+    expect(byHour(2)).toBe(20); // AD machine 2
+    expect(byHour(3)).toBe(30); // + standalone user
+    expect(byHour(4)).toBe(40); // + standalone root
+    expect(byHour(5)).toBe(60); // AD machine 3 (domain controller): +20
     expect(s.steps[s.steps.length - 1].points).toBe(calculateExamScore('OSCP', boxes).totalScore);
   });
 
@@ -104,11 +105,12 @@ describe('buildBurndownSeries', () => {
     expect(s.steps.map((p) => p.points)).toEqual([0, 10, 20]);
   });
 
-  it('applies includeBonusPoints exactly as calculateExamScore does', () => {
+  it('adds no bonus points: the series matches calculateExamScore step for step', () => {
     const boxes = [pwned(box('a'), 1, null)];
-    const s = buildBurndownSeries(boxes, START, END, 70, { includeBonusPoints: true });
-    expect(s.steps[0].points).toBe(calculateExamScore('OSCP', [box('a')], { includeBonusPoints: true }).totalScore);
-    expect(s.steps[s.steps.length - 1].points).toBe(calculateExamScore('OSCP', boxes, { includeBonusPoints: true }).totalScore);
+    const s = buildBurndownSeries(boxes, START, END, 70);
+    expect(s.steps[0].points).toBe(0);
+    expect(s.steps[s.steps.length - 1].points).toBe(10);
+    expect(s.steps[s.steps.length - 1].points).toBe(calculateExamScore('OSCP', boxes).totalScore);
   });
 
   it('EXCLUDES events after expiresAt', () => {

@@ -90,10 +90,10 @@ describe('Milestone 2: Persistent Global HUD & Header Capsule', () => {
       // Check track badge
       expect(screen.getByTestId('exam-capsule-track')).toHaveTextContent('OSCP');
 
-      // Check live countdown (24h = 24:00:00 or 23:59:59)
+      // Check live countdown (OSCP+ 23h45m = 23:45:00 or a second or two less)
       const countdown = screen.getByTestId('exam-capsule-countdown');
       expect(countdown).toBeInTheDocument();
-      expect(countdown.textContent).toMatch(/^(24:00:00|23:59:5[89])/);
+      expect(countdown.textContent).toMatch(/^(23:45:00|23:44:5[89])/);
 
       // Check initial points
       const scoreEl = screen.getByTestId('exam-capsule-score');

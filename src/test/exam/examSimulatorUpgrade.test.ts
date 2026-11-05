@@ -43,28 +43,13 @@ describe('scoring', () => {
     return boxes.map((b) => (b.id === 'oscp-st-1' ? { ...b, userPwned: true } : b));
   };
 
-  it('official OSCP has no bonus, even when the legacy flag is absent', () => {
+  it('OSCP has no bonus points; a full sweep caps at the max score', () => {
     const score = calculateExamScore('OSCP', standalonePwned());
     expect(score.totalScore).toBe(10);
-    expect(score.bonusPointsAwarded).toBe(0);
-  });
-
-  it('legacy bonus with 0 exam points gives 0', () => {
-    const boxes = generateExamTargetsForTrack('OSCP', [], { seed: 'S' });
-    const score = calculateExamScore('OSCP', boxes, { includeBonusPoints: true });
-    expect(score.totalScore).toBe(0);
-    expect(score.bonusPointsAwarded).toBe(0);
-  });
-
-  it('legacy bonus adds 10 once the exam score is above 0, capped at the max score', () => {
-    const score = calculateExamScore('OSCP', standalonePwned(), { includeBonusPoints: true });
-    expect(score.totalScore).toBe(20);
-    expect(score.bonusPointsAwarded).toBe(10);
+    expect(score).not.toHaveProperty('bonusPointsAwarded');
 
     const all = generateExamTargetsForTrack('OSCP', [], { seed: 'S' }).map((b) => ({ ...b, userPwned: true, rootPwned: true }));
-    const capped = calculateExamScore('OSCP', all, { includeBonusPoints: true });
-    expect(capped.totalScore).toBe(100);
-    expect(capped.bonusPointsAwarded).toBe(0);
+    expect(calculateExamScore('OSCP', all).totalScore).toBe(100);
   });
 
   it('OSWE scores 35 for the auth bypass and 15 for RCE per app', () => {
@@ -202,11 +187,8 @@ describe('exam store: scoring modes', () => {
     expect(useExamStore.getState().scoringMode).toBe('official');
   });
 
-  it('setIncludeBonusPoints maps onto legacy mode', () => {
-    useExamStore.getState().setIncludeBonusPoints(true);
-    expect(useExamStore.getState().scoringMode).toBe('legacy');
-    expect(useExamStore.getState().includeBonusPoints).toBe(true);
-    useExamStore.getState().setIncludeBonusPoints(false);
+  it('the removed legacy bonus mode cannot be selected', () => {
+    useExamStore.getState().setScoringMode('legacy' as never);
     expect(useExamStore.getState().scoringMode).toBe('official');
     expect(useExamStore.getState().includeBonusPoints).toBe(false);
   });
@@ -225,8 +207,15 @@ describe('persisted state migration', () => {
     expect(out.seed).toMatch(/^[A-Z0-9]{6}$/);
   });
 
-  it('normalizeExamModeFields: includeBonusPoints true maps to legacy; invalid values are ignored', () => {
-    expect(normalizeExamModeFields({ track: 'OSCP', includeBonusPoints: true }).scoringMode).toBe('legacy');
+  it('normalizeExamModeFields: the removed legacy mode and bonus flag load as official; invalid values are ignored', () => {
+    expect(normalizeExamModeFields({ track: 'OSCP', includeBonusPoints: true })).toMatchObject({
+      scoringMode: 'official',
+      includeBonusPoints: false,
+    });
+    expect(normalizeExamModeFields({ track: 'OSCP', scoringMode: 'legacy', includeBonusPoints: true })).toMatchObject({
+      scoringMode: 'official',
+      includeBonusPoints: false,
+    });
     expect(normalizeExamModeFields({ track: 'OSCP', scoringMode: 'bogus', seed: 'ab12' })).toMatchObject({
       scoringMode: 'official',
       seed: 'AB12',
@@ -234,7 +223,7 @@ describe('persisted state migration', () => {
     expect(normalizeExamModeFields({ track: 'CPTS', scoringMode: 'weighted' }).scoringMode).toBe('official');
   });
 
-  it('rehydrating an old persisted payload (no seed/scoringMode, includeBonusPoints true) keeps the bonus as legacy mode', async () => {
+  it('rehydrating an old persisted payload (no seed/scoringMode, includeBonusPoints true) loads as official scoring', async () => {
     const current = useExamStore.getState();
     const { seed: _seed, scoringMode: _mode, ...legacyShape } = JSON.parse(
       JSON.stringify({ ...current, includeBonusPoints: true, status: 'running', examExpiresAt: Date.now() + 3600_000 })
@@ -246,13 +235,43 @@ describe('persisted state migration', () => {
     await useExamStore.persist.rehydrate();
 
     const state = useExamStore.getState();
-    expect(state.scoringMode).toBe('legacy');
-    expect(state.includeBonusPoints).toBe(true);
+    expect(state.scoringMode).toBe('official');
+    expect(state.includeBonusPoints).toBe(false);
     expect(state.seed).toMatch(/^[A-Z0-9]{6}$/);
     expect(state.status).toBe('running');
-    // A running exam keeps its score: the bonus still applies once points are scored.
+    // No bonus points any more: only the flag itself scores.
     useExamStore.getState().togglePwn('oscp-st-1', 'user');
-    expect(useExamStore.getState().getScore().bonusPointsAwarded).toBe(10);
+    expect(useExamStore.getState().getScore().totalScore).toBe(10);
+  });
+
+  it('rehydrating a saved 24h legacy-bonus session keeps its own clock and scores AD per machine', async () => {
+    const now = Date.now();
+    const current = useExamStore.getState();
+    const saved = JSON.parse(
+      JSON.stringify({
+        ...current,
+        scoringMode: 'legacy',
+        includeBonusPoints: true,
+        status: 'running',
+        startedAt: now - 3600_000,
+        totalDurationSeconds: 86400,
+        examExpiresAt: now - 3600_000 + 86400_000,
+        lastExpiresAt: now - 3600_000 + 86400_000,
+      })
+    );
+    localStorage.setItem(EXAM_STORAGE_KEY, JSON.stringify({ state: saved, version: 1 }));
+    await useExamStore.persist.rehydrate();
+
+    const state = useExamStore.getState();
+    expect(state.scoringMode).toBe('official');
+    expect(state.includeBonusPoints).toBe(false);
+    expect(state.totalDurationSeconds).toBe(86400);
+    expect(state.examExpiresAt).toBe(saved.examExpiresAt);
+    expect(state.getRemainingSeconds()).toBeGreaterThan(23 * 3600 - 5);
+
+    const ad1 = state.boxes.find((b) => b.adRole === 'foothold')!;
+    useExamStore.getState().togglePwn(ad1.id, 'user');
+    expect(useExamStore.getState().getScore()).toMatchObject({ totalScore: 10, adPoints: 10 });
   });
 
   it('a fresh visitor with no persisted state keeps the initial seed', async () => {
@@ -284,7 +303,8 @@ describe('persisted state migration', () => {
     snapshot.includeBonusPoints = true;
     expect(restoreExamBackupSnapshot(snapshot)).toBe(true);
     const state = useExamStore.getState();
-    expect(state.scoringMode).toBe('legacy');
+    expect(state.scoringMode).toBe('official');
+    expect(state.includeBonusPoints).toBe(false);
     expect(state.seed).toMatch(/^[A-Z0-9]{6}$/);
 
     const plain = JSON.parse(JSON.stringify(useExamStore.getState()));

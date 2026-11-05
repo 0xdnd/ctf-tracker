@@ -14,6 +14,7 @@ const PAGES = [
   '/techniques/active-directory/',
   '/tj-null-list/',
   '/oscp-exam-scoring-and-time-budget/',
+  '/oscp-points-calculator/',
   // Machine list pages with the search/filter/sort toolbar (public/table-filter.js).
   '/machines/',
   '/oscp-like-machines/',

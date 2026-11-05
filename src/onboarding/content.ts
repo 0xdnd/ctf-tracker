@@ -49,11 +49,16 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'ZeroBox never sends your data to a server. If you clear your browser data it is gone, so make a backup now and then from this settings menu.',
   },
   {
-    id: 'rooted',
+    id: 'import',
     icon: 'flag',
-    title: 'Already rooted some machines?',
-    body: '"Rooted" means you got full admin access on a machine. You can mark the ones you already finished on Hack The Box, TryHackMe, Proving Grounds and VulnHub in one go by pasting a list of names.',
-    actions: [{ id: 'import-solved', label: 'Import my solved machines' }],
+    anchor: 'import-panel',
+    handsOn: 'import',
+    phoneCentered: true,
+    overlapDock: 'top',
+    title: "Import what you've solved",
+    body: 'Paste the names of boxes you already finished. You check the matches before anything changes.',
+    phoneBody: 'Open the importer and paste the names of boxes you already finished. You check the matches first.',
+    actions: [{ id: 'import-solved', label: 'Open the importer' }],
     actionsPrimary: true,
     nextLabel: 'Skip for now',
   },
@@ -61,7 +66,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'final',
     icon: 'check',
     title: "You're set",
-    body: 'Pick a place to start, or press Done and explore. You can replay this tour any time from Settings.',
+    body: 'Pick a place to start, or press Done and explore. Your data stays in this browser, so save a backup now and then from the settings menu. You can replay the full tour any time from Settings or the command palette.',
     actions: [
       { id: 'add-machine', label: 'Add your first machine' },
       { id: 'import-notes', label: 'Import your notes' },
@@ -69,6 +74,19 @@ export const TOUR_STEPS: TourStep[] = [
     ],
   },
 ];
+
+const TOUR_STEP_BY_ID = new Map(TOUR_STEPS.map((step) => [step.id, step]));
+
+/** The steps of a tour id list, in order. An unknown id is a bug: it throws in dev and is dropped in production. */
+export function tourStepsFor(ids: readonly string[]): TourStep[] {
+  const out: TourStep[] = [];
+  for (const id of ids) {
+    const step = TOUR_STEP_BY_ID.get(id);
+    if (step) out.push(step);
+    else if (import.meta.env.DEV) throw new Error(`Unknown tour step id: ${id}`);
+  }
+  return out;
+}
 
 export interface SectionGuide extends GuideMeta {
   /** Spotlight steps run after "Show me". */
@@ -641,7 +659,7 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
       icon: 'compass',
       anchor: 'guide-controls',
       title: 'Come back to the guides',
-      body: 'Show full guide lists every guide. Replay tour runs the first tour again, and Reset tips brings back the page tips.',
+      body: 'Show full guide lists every guide. Replay tour runs the full tour again, and Reset tips brings back the page tips.',
     },
   ],
   revshell: [

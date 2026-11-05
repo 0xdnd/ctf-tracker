@@ -1257,7 +1257,16 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMinimapOpen, setIsMinimapOpen] = useState(true);
+  // Touch screens start with the minimap closed: it owns one-finger drags (touch-none), so open it
+  // would trap page-scroll swipes over a large share of a phone-width graph. Mouse users keep it open.
+  const [isMinimapOpen, setIsMinimapOpen] = useState(
+    () =>
+      !(
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(pointer: coarse)').matches
+      )
+  );
   const [showAllNodes, setShowAllNodes] = useState(false);
   // SHOW ALL has its own world: it ignores the persisted (scoped) positions and keeps drags local,
   // so neither view can leak coordinates into the other. Cleared when SHOW ALL is turned off.

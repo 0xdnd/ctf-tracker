@@ -10,7 +10,8 @@ const KB = 1024;
 // Entry measured at 514.8 KB on 2026-10-18 (after v2.0 tactical HUD & offline suite); limit = +10%, rounded up.
 const MAX_ENTRY_BYTES = 560 * KB;
 // Total JS measured on 2026-10-18 (56 files). Update deliberately when the app grows.
-const BASELINE_TOTAL_BYTES = 3_005_000;
+// 2026-11-05 (import panel): measured 3,315,889 B total; baseline raised so limit = 3,316,500 B (baseline * 1.10).
+const BASELINE_TOTAL_BYTES = 3_015_000;
 const MAX_TOTAL_BYTES = Math.floor(BASELINE_TOTAL_BYTES * 1.10);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');

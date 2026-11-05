@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OnboardingLayer } from './OnboardingLayer';
 import { useOnboardingStore } from './useOnboardingStore';
@@ -10,10 +10,16 @@ vi.mock('./TourRunner', async () => {
   return { default: () => null };
 });
 
+const Where: React.FC = () => {
+  const { pathname, search } = useLocation();
+  return <div data-testid="where">{pathname + search}</div>;
+};
+
 const renderLayer = () =>
   render(
     <MemoryRouter initialEntries={['/tracker']}>
       <OnboardingLayer />
+      <Where />
     </MemoryRouter>,
   );
 
@@ -30,6 +36,21 @@ describe('welcome while the runner chunk loads', () => {
     expect(screen.getByRole('heading', { name: 'Welcome to ZeroBox' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Start tour' }));
     expect(useOnboardingStore.getState().stepIndex).toBe(1);
+  });
+
+  it('Start tour on the first run advances through the short list', () => {
+    renderLayer();
+    act(() => useOnboardingStore.getState().startTour('first-run'));
+    fireEvent.click(screen.getByRole('button', { name: 'Start tour' }));
+    expect(useOnboardingStore.getState()).toMatchObject({ tourActive: true, stepIndex: 1, tourKind: 'first-run' });
+  });
+
+  it('Import your solved boxes ends the tour and opens the importer', () => {
+    renderLayer();
+    act(() => useOnboardingStore.getState().startTour('first-run'));
+    fireEvent.click(screen.getByRole('button', { name: 'Import your solved boxes' }));
+    expect(useOnboardingStore.getState()).toMatchObject({ tourActive: false, tourDone: true });
+    expect(screen.getByTestId('where')).toHaveTextContent('/tracker?import=1');
   });
 
   it('Skip on the fallback ends the tour', () => {

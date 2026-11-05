@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import confetti from 'canvas-confetti';
 import {
+  triggerRootCelebration,
   formatSeconds,
   formatDurationHuman,
   escapeRegex,
@@ -8,6 +10,16 @@ import {
   sanitizeExternalUrl,
 } from './helpers';
 import { GlobalVariables } from '../types';
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+describe('triggerRootCelebration', () => {
+  it('draws above the tour overlay and stays still for reduced motion', async () => {
+    triggerRootCelebration();
+    await vi.waitFor(() => expect(confetti).toHaveBeenCalled());
+    expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ zIndex: 9998, disableForReducedMotion: true }));
+  });
+});
 
 describe('helpers utility functions', () => {
   describe('formatSeconds', () => {

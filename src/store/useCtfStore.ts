@@ -134,6 +134,7 @@ export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
 export type SortDirection = 'asc' | 'desc';
 export type HtbTargetStatus = 'ALL' | 'UNCOMPLETED' | 'FOOTHOLD' | 'COMPLETED';
 export type AvailabilityFilter = 'ALL' | 'ACTIVE' | 'RETIRED';
+export type FlexCardMode = 'achievement' | 'passed';
 
 export interface FilterState {
   searchQuery: string;
@@ -285,7 +286,10 @@ interface CtfStoreState {
   licenseModalOpen: boolean;
   setLicenseModalOpen: (open: boolean) => void;
   flexCardModalOpen: boolean;
-  setFlexCardModalOpen: (open: boolean) => void;
+  /** Which card the flex card modal shows. Transient: not persisted. */
+  flexCardMode: FlexCardMode;
+  /** Opening without a mode shows the achievement card. */
+  setFlexCardModalOpen: (open: boolean, mode?: FlexCardMode) => void;
   shortcutsModalOpen: boolean;
   setShortcutsModalOpen: (open: boolean) => void;
   settingsModalOpen: boolean;
@@ -1424,6 +1428,7 @@ export const useCtfStore = create<CtfStoreState>()(
       operatorModalOpen: false,
       licenseModalOpen: false,
       flexCardModalOpen: false,
+      flexCardMode: 'achievement',
       shortcutsModalOpen: false,
       settingsModalOpen: false,
       notesImportModalOpen: false,
@@ -1553,7 +1558,8 @@ export const useCtfStore = create<CtfStoreState>()(
       setReconAutomationModalOpen: (open) => set({ reconAutomationModalOpen: open }),
       setOperatorModalOpen: (open) => set({ operatorModalOpen: open }),
       setLicenseModalOpen: (open) => set({ licenseModalOpen: open }),
-      setFlexCardModalOpen: (open) => set({ flexCardModalOpen: open }),
+      setFlexCardModalOpen: (open, mode = 'achievement') =>
+        set(open ? { flexCardModalOpen: true, flexCardMode: mode } : { flexCardModalOpen: false }),
       setShortcutsModalOpen: (open) => set({ shortcutsModalOpen: open }),
       setSettingsModalOpen: (open) => set({ settingsModalOpen: open }),
       setNotesImportModalOpen: (open) => set({ notesImportModalOpen: open }),

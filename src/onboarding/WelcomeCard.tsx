@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useOnboardingStore } from './useOnboardingStore';
 import { CyberLogo } from '../components/common/CyberLogo';
 import { CardActions, PressButton, buttonStyles, cardBody, cardTitle } from './guideMotion';
 import { WELCOME_ROWS, WELCOME_STEP as welcome } from './guideMeta';
@@ -14,7 +16,14 @@ interface WelcomeCardProps {
  * The first thing a new visitor sees. Rendered eagerly (no lazy chunk) so it appears the moment
  * the tour starts, and reused inside the runner.
  */
-export const WelcomeCard: React.FC<WelcomeCardProps> = ({ onStart, onSkip, startRef }) => (
+export const WelcomeCard: React.FC<WelcomeCardProps> = ({ onStart, onSkip, startRef }) => {
+  const navigate = useNavigate();
+  const finishTour = useOnboardingStore((s) => s.finishTour);
+  const importSolved = () => {
+    finishTour();
+    navigate('/tracker?import=1');
+  };
+  return (
   <div>
     <CyberLogo size="lg" />
     <h2 id="tour-title" className={`mt-4 ${cardTitle}`}>
@@ -37,6 +46,13 @@ export const WelcomeCard: React.FC<WelcomeCardProps> = ({ onStart, onSkip, start
         );
       })}
     </ul>
+    <button
+      type="button"
+      onClick={importSolved}
+      className="mt-3 w-full rounded-lg border border-subtle px-3 py-2 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:min-h-11"
+    >
+      Import your solved boxes
+    </button>
     <CardActions
       exit={
         <PressButton onClick={onSkip} className={`-ml-3 ${buttonStyles.ghost}`}>
@@ -49,4 +65,5 @@ export const WelcomeCard: React.FC<WelcomeCardProps> = ({ onStart, onSkip, start
       </PressButton>
     </CardActions>
   </div>
-);
+  );
+};

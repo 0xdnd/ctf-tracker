@@ -79,7 +79,7 @@ describe('UnifiedHeader Responsive Density & Direct Inline Variables', () => {
     expect(screen.getByLabelText('Scans Hub')).toBeDefined();
     expect(screen.getByLabelText(/RevShell.*Reverse Shell Crafter/i)).toBeDefined();
     expect(screen.getByLabelText(/Snippets.*Tactical Snippets Drawer/i)).toBeDefined();
-    expect(screen.getByLabelText('Open Command Palette')).toBeDefined();
+    expect(screen.getByLabelText(/open command palette/i)).toBeDefined();
     expect(screen.queryByLabelText('Buy Coffee')).toBeNull();
 
     // R1: Notes workspace toggle pill button is completely removed

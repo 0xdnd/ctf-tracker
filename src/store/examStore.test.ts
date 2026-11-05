@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useExamStore } from './examStore';
 
+/** OSCP+ exam time: 23h45m. */
+const OSCP_SECONDS = 23 * 3600 + 45 * 60;
+
 describe('useExamStore Zustand 5 State & Endurance Suite', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -17,7 +20,7 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
       expect(state.track).toBe('OSCP');
       expect(state.status).toBe('idle');
       expect(state.boxes.length).toBe(6);
-      expect(state.totalDurationSeconds).toBe(86400);
+      expect(state.totalDurationSeconds).toBe(OSCP_SECONDS);
       expect(state.examExpiresAt).toBeNull();
       expect(state.activeBreak.isActive).toBe(false);
     });
@@ -31,7 +34,7 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
       const state = useExamStore.getState();
       expect(state.status).toBe('running');
       expect(state.startedAt).toBe(now);
-      expect(state.examExpiresAt).toBe(now + 86400 * 1000);
+      expect(state.examExpiresAt).toBe(now + OSCP_SECONDS * 1000);
       expect(state.timerPausedRemainingSeconds).toBeNull();
       expect(state.milestones.length).toBe(1);
       expect(state.milestones[0].notes).toContain('Exam session initiated');
@@ -47,29 +50,29 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
 
       // Advance clock by 3,600s (1 hour)
       currentTime += 3600 * 1000;
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(86400 - 3600);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 3600);
 
       // Pause exam
       useExamStore.getState().pauseExam();
       let state = useExamStore.getState();
       expect(state.status).toBe('paused');
       expect(state.examExpiresAt).toBeNull();
-      expect(state.timerPausedRemainingSeconds).toBe(86400 - 3600);
+      expect(state.timerPausedRemainingSeconds).toBe(OSCP_SECONDS - 3600);
 
       // Simulated computer sleep / pause for 5 hours while paused
       currentTime += 5 * 3600 * 1000;
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(86400 - 3600);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 3600);
 
       // Resume exam
       useExamStore.getState().resumeExam();
       state = useExamStore.getState();
       expect(state.status).toBe('running');
-      expect(state.examExpiresAt).toBe(currentTime + (86400 - 3600) * 1000);
+      expect(state.examExpiresAt).toBe(currentTime + (OSCP_SECONDS - 3600) * 1000);
       expect(state.timerPausedRemainingSeconds).toBeNull();
 
       // Advance clock another 1,800s (30m)
       currentTime += 1800 * 1000;
-      expect(useExamStore.getState().getRemainingSeconds()).toBe(86400 - 3600 - 1800);
+      expect(useExamStore.getState().getRemainingSeconds()).toBe(OSCP_SECONDS - 3600 - 1800);
 
       vi.restoreAllMocks();
     });
@@ -266,7 +269,7 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
       vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
 
       useExamStore.getState().startExam('OSCP');
-      currentTime += 86400 * 1000;
+      currentTime += OSCP_SECONDS * 1000;
       useExamStore.getState().tick();
 
       expect(useExamStore.getState().status).toBe('completed');
@@ -297,15 +300,19 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
       vi.restoreAllMocks();
     });
 
-    it('awards Passing status when candidate achieves 70 pts via standalones + bonus points without AD set', () => {
+    it('awards Passing status for 70 pts from three full standalones plus the first AD machine (partial AD credit)', () => {
       useExamStore.getState().startExam('OSCP');
-      useExamStore.getState().setIncludeBonusPoints(true);
 
       const standalones = useExamStore.getState().boxes.filter((b) => !b.type.startsWith('ad-'));
       standalones.forEach((st) => {
         useExamStore.getState().submitFlag(st.id, 'user', '11111111111111111111111111111111');
         useExamStore.getState().submitFlag(st.id, 'root', '22222222222222222222222222222222');
       });
+      expect(useExamStore.getState().getScore().totalScore).toBe(60);
+      expect(useExamStore.getState().getPassingStatus()).not.toBe('Passing');
+
+      const ad1 = useExamStore.getState().boxes.find((b) => b.adRole === 'foothold')!;
+      useExamStore.getState().submitFlag(ad1.id, 'user', '33333333333333333333333333333333');
 
       const score = useExamStore.getState().getScore();
       expect(score.totalScore).toBe(70);
@@ -346,7 +353,7 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
 
       useExamStore.getState().startExam('OSCP');
       const liveExpiresAt = useExamStore.getState().examExpiresAt;
-      expect(liveExpiresAt).toBe(currentTime + 86400 * 1000);
+      expect(liveExpiresAt).toBe(currentTime + OSCP_SECONDS * 1000);
       expect(useExamStore.getState().lastExpiresAt).toBe(liveExpiresAt);
 
       // Advance by 1 hour and pause
@@ -363,7 +370,7 @@ describe('useExamStore Zustand 5 State & Endurance Suite', () => {
       useExamStore.getState().resumeExam();
 
       expect(useExamStore.getState().status).toBe('running');
-      expect(useExamStore.getState().examExpiresAt).toBe(currentTime + (86400 - 3600) * 1000);
+      expect(useExamStore.getState().examExpiresAt).toBe(currentTime + (OSCP_SECONDS - 3600) * 1000);
       expect(useExamStore.getState().lastExpiresAt).toBe(useExamStore.getState().examExpiresAt);
 
       vi.restoreAllMocks();

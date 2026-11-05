@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Flame,
@@ -19,6 +19,7 @@ import { classifyMachine } from '../../utils/categoryUtils';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { CyberButton } from '../common/CyberButton';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
+const PasteImportPanel = lazy(() => import('../import/PasteImportPanel').then((m) => ({ default: m.PasteImportPanel })));
 import { ReadinessSection } from './ReadinessSection';
 import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore';
 import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
@@ -168,6 +169,7 @@ export const AnalyticsView: React.FC = () => {
   const machines = useCtfStore((s) => s.machines);
   const activitySessions = useCtfStore((s) => s.activitySessions);
   const restoreDanielSolves = useCtfStore((s) => s.restoreDanielSolves);
+  const setFlexCardModalOpen = useCtfStore((s) => s.setFlexCardModalOpen);
   const weeklyRootTarget = useGoalsStore((s) => s.weeklyRootTarget);
   const setWeeklyRootTarget = useGoalsStore((s) => s.setWeeklyRootTarget);
   const navigate = useNavigate();
@@ -444,14 +446,27 @@ export const AnalyticsView: React.FC = () => {
           <span className="px-3 py-1 rounded-lg bg-surface-sunken border border-subtle text-secondary font-medium">
             <span className="tabular-nums font-mono text-primary">{footholdsCount}</span> footholds
           </span>
+          <CyberButton
+            size="sm"
+            variant="secondary"
+            iconLeft={<Award className="w-3.5 h-3.5" aria-hidden="true" />}
+            onClick={() => setFlexCardModalOpen(true, 'passed')}
+          >
+            Share that I passed
+          </CyberButton>
         </div>
       </PageHeader>
 
       {!hasData ? (
-        <AnalyticsEmptyState
-          onOpenTracker={() => navigate('/tracker')}
-          onLoadDemo={() => { void restoreDanielSolves(); }}
-        />
+        <div className="space-y-4">
+          <AnalyticsEmptyState
+            onOpenTracker={() => navigate('/tracker')}
+            onLoadDemo={() => { void restoreDanielSolves(); }}
+          />
+          <Suspense fallback={null}>
+            <PasteImportPanel onApplied={() => navigate('/tracker')} />
+          </Suspense>
+        </div>
       ) : (
       <>
       {/* KPI Metrics Cards */}

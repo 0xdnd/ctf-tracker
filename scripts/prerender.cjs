@@ -85,6 +85,7 @@ const NAV_LABEL = {
   '/writeup/': 'Writeups',
   '/analytics/': 'Analytics',
   '/vault/': 'Evidence vault',
+  '/oscp-points-calculator/': 'OSCP points calculator',
 };
 
 const linkList = (items) =>
@@ -164,7 +165,7 @@ const FAQ = [
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
   ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
   ['Which platforms and machines are supported?', `ZeroBox ships with a pre-loaded catalog of ${nf.format(CTF_MACHINES)} CTF machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub${GUIDED_LABS > 0 ? `, plus ${GUIDED_LABS} guided labs` : ""}. It also has 10 Pro Lab presets, such as Dante, Zephyr and Offshore, that fill in only the public lab name, difficulty and official link when you add a Pro Lab as your own target. You can also add custom targets for any other lab or live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.`],
-  ['Which certification exams can I simulate?', `The exam simulator includes timed practice for ${EXAM_TRACKS.length} tracks: OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m), with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.`],
+  ['Which certification exams can I simulate?', `The exam simulator includes timed practice for ${EXAM_TRACKS.length} tracks: OSCP (23h45m), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m), with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.`],
   ['Does ZeroBox comply with Hack The Box rules for active machines and Pro Labs?', 'Yes. ZeroBox strictly enforces Hack The Box Acceptable Use Policy (AUP §8.2). Active seasonal machines and enterprise Pro Labs are limited to public listing metadata (name, scope/host count, difficulty, and official link). Walkthroughs, attack vectors, intel hints, flags, and writeups are strictly excluded. ZeroBox operates entirely offline in your browser and transmits no network telemetry.'],
   ['Is there a desktop app?', 'Yes. Desktop installers are published on GitHub Releases, and you can also build the Tauri app from source using the instructions in the GitHub README.'],
 ];
@@ -181,7 +182,11 @@ const CARD_DESC = {
   '/vault/': 'Credentials, flags and hashes from every target.',
 };
 
+// Tool routes listed in the landing "Browse" list instead of the fixed module card grid.
+const LANDING_CARD_SKIP = new Set(['/oscp-points-calculator/']);
+
 const cards = routes
+  .filter((r) => !LANDING_CARD_SKIP.has(r.path))
   .map(
     (r) =>
       `          <a class="mod" href="${esc(r.path)}"><h3>${esc(NAV_LABEL[r.path] || r.h1)}</h3><p>${esc(CARD_DESC[r.path] || r.description)}</p></a>`
@@ -346,6 +351,7 @@ const GUIDES = [
   ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', `${model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length} boxes`],
   ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', ''],
   ['/pentest-notes/', 'Pentest methodology notes', 'Short general notes with commands.', `${model.notes.length} notes`],
+  ['/oscp-points-calculator/', 'OSCP points calculator', 'Tick your flags and see your total against the pass mark.', ''],
 ];
 // Long-form guides from scripts/lib/guides.cjs (none when the file is absent). Short card copy per path; the
 // guide's own description is the fallback for any guide added later.

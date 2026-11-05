@@ -36,7 +36,7 @@ export const GuideControls: React.FC<GuideControlsProps> = ({ onBeforeReplay, cl
         className={btn}
         onClick={() => {
           onBeforeReplay?.();
-          replayTour();
+          replayTour('full');
         }}
       >
         Replay tour

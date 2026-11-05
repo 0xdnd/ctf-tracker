@@ -80,9 +80,9 @@
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
     "bullets": [
-      "Seven exam tracks, each with its own duration: OSCP (24h), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m)",
+      "Seven exam tracks, each with its own duration: OSCP (23h45m), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m)",
       "Countdown timer with pause, bio breaks and a burndown chart",
-      "Point scoring against the pass threshold, with optional bonus points",
+      "Point scoring against the pass threshold, with OSCP Active Directory points credited per machine",
       "Flag format validation and evidence proof uploads",
       "Pacing guidance based on time remaining",
       "Export an exam report as Markdown"
@@ -128,6 +128,21 @@
       "Loot timeline and quick add for custom entries",
       "Export drawer for reports",
       "Stored in your browser, not on a server"
+    ]
+  },
+  {
+    "path": "/oscp-points-calculator/",
+    "title": "OSCP Points Calculator: Score Your Exam Flags | ZeroBox",
+    "description": "Work out your OSCP+ exam points: tick local.txt, proof.txt and Active Directory machines to see your total, the pass mark and what is still needed.",
+    "h1": "OSCP points calculator",
+    "intro": "Tick the flags you have and see your OSCP+ total out of 100. Each of the three standalone machines is worth 20 points (10 for local.txt, 10 for proof.txt). The Active Directory set is worth 40 points, scored per machine: 10, 10 and 20. Exams that start before 1 December 2026, 08:00 GMT pass at 70 points. Exams that start on or after that time get a scaled score from 100 to 500, with 400 to pass, and OffSec does not publish the raw points needed. The OSCP+ exam has no bonus points.",
+    "bullets": [
+      "Three standalone machines: 10 points for local.txt and 10 for proof.txt each",
+      "Active Directory set: 10, 10 and 20 points, with partial credit per machine",
+      "Total out of 100 raw points, with pass or fail against the 70 point mark",
+      "The fewest remaining flags that would reach 70",
+      "Scaled score mode for exams starting on or after 1 December 2026, 08:00 GMT",
+      "Runs offline in your browser, with nothing sent anywhere"
     ]
   }
 ]

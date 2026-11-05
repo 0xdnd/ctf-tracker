@@ -3,7 +3,8 @@
  * ZeroBox Tactical Certification Exam Simulator & Mission HUD
  * 
  * Authentic Rulesets, 100-Point Scoring Matrices, Proof Verification & Report Generation:
- * - OffSec OSCP (PEN-200): 24h, 3-box chained AD set (40 pts all-or-nothing), 3 standalones (20 pts each: 10 user, 10 root), 70 pt pass threshold
+ * - OffSec OSCP (PEN-200): 23h45m, 3-box chained AD set (40 pts, scored per machine 10/10/20), 3 standalones (20 pts each: 10 user, 10 root), 70 pt pass threshold.
+ *   OSCP rules and constants come from oscpPointsCalculator.ts (sources cited there).
  * - Hack The Box CPTS: 10-day (240h), 14 flag objectives across DMZ, Internal, AD, and Vault, 85 pt pass threshold
  * - Zero-Point Security CRTO: 48h, 8 objective flags (12.5 pts each), C2 OpSec checkpoints, 75 pt pass threshold
  */
@@ -11,6 +12,14 @@
 import { OperatingSystem, Difficulty, Machine } from '../types';
 import type { Finding } from '../types/findings';
 import { createRng, generateExamSeed, selectExamMachines, shuffleWithRng, type SlotSelection } from './examTargetSelection';
+import {
+  OSCP_AD_MACHINE_POINTS,
+  OSCP_EXAM_DURATION_SECONDS,
+  OSCP_LOCAL_POINTS,
+  OSCP_MAX_POINTS,
+  OSCP_PASS_MARK,
+  OSCP_PROOF_POINTS,
+} from './oscpPointsCalculator';
 
 export type ExamTrack = 'OSCP' | 'CPTS' | 'CRTO' | 'OSEP' | 'CRTP' | 'PNPT' | 'OSWE';
 export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
@@ -18,11 +27,11 @@ export type PassingStatus = 'Passing' | 'In Progress' | 'Critical';
 /**
  * 'official': the published point split.
  * 'weighted': same max score, redistributed by slot difficulty (OSCP standalones and OSWE only).
- * 'legacy': official split plus the pre-Nov 2024 OSCP bonus (applies only when the score is above 0).
+ * Saved sessions may still carry the removed 'legacy' (pre-Nov 2024 OSCP bonus) mode; it is read as 'official'.
  */
-export type ExamScoringMode = 'official' | 'weighted' | 'legacy';
+export type ExamScoringMode = 'official' | 'weighted';
 
-export const EXAM_SCORING_MODES: readonly ExamScoringMode[] = ['official', 'weighted', 'legacy'];
+export const EXAM_SCORING_MODES: readonly ExamScoringMode[] = ['official', 'weighted'];
 
 /** Difficulty weights used by weighted mode. */
 export const EXAM_DIFFICULTY_WEIGHTS: Record<Difficulty, number> = {
@@ -116,6 +125,7 @@ export interface ExamSessionState {
   timerPausedRemainingSeconds: number | null;
   boxes: ExamBox[];
   scratchNotes: string;
+  /** Removed OSCP bonus toggle. Older saved sessions and backups may carry it; scoring ignores it. */
   includeBonusPoints?: boolean;
   scoringMode?: ExamScoringMode;
   /** Structured findings rendered as the report's Findings Summary / Detailed Findings sections. */
@@ -161,15 +171,9 @@ export function supportsWeightedScoring(track: ExamTrack): boolean {
   return track === 'OSCP' || track === 'OSWE';
 }
 
-/** The legacy (pre-Nov 2024) bonus only ever applied to OSCP. */
-export function supportsLegacyBonus(track: ExamTrack): boolean {
-  return track === 'OSCP';
-}
-
-/** Scoring mode a track can actually use (falls back to official). */
-export function resolveScoringMode(track: ExamTrack, mode: ExamScoringMode | undefined): ExamScoringMode {
+/** Scoring mode a track can actually use (falls back to official, including for the removed 'legacy' mode). */
+export function resolveScoringMode(track: ExamTrack, mode: ExamScoringMode | string | undefined): ExamScoringMode {
   if (mode === 'weighted') return supportsWeightedScoring(track) ? 'weighted' : 'official';
-  if (mode === 'legacy') return supportsLegacyBonus(track) ? 'legacy' : 'official';
   return 'official';
 }
 
@@ -181,11 +185,12 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
   OSCP: {
     id: 'OSCP',
     name: 'OffSec OSCP (PEN-200)',
-    durationSeconds: 24 * 3600, // 86,400s (24h)
-    passThreshold: 70,
-    maxScore: 100,
-    requiresAdFullChain: true,
-    description: '24-hour hands-on certification exam consisting of a 3-machine Active Directory set (40 pts all-or-nothing) and 3 independent standalone machines (20 pts each). Passing threshold: 70 pts.',
+    durationSeconds: OSCP_EXAM_DURATION_SECONDS, // 85,500s (23h45m)
+    passThreshold: OSCP_PASS_MARK,
+    maxScore: OSCP_MAX_POINTS,
+    // AD points count per machine (10 / 10 / 20), so passing never requires the full chain.
+    requiresAdFullChain: false,
+    description: '23 hour 45 minute hands-on certification exam consisting of a 3-machine Active Directory set (40 pts, scored per machine: 10, 10 and 20) and 3 independent standalone machines (20 pts each). Passing threshold: 70 pts.',
     targetSummary: '3-Box AD Set (40 pts) + 3 Standalone Targets (60 pts)',
   },
   CPTS: {
@@ -405,12 +410,12 @@ interface CatalogBoxDef {
 }
 
 const OSCP_BOX_DEFS: CatalogBoxDef[] = [
-  { key: 'oscp-ad-1', ip: '192.168.1.30', fallbackName: 'CORP-WEB01', type: 'ad-foothold', adRole: 'foothold', label: 'AD Set: Initial Web Access', userPoints: 10, rootPoints: 0 },
-  { key: 'oscp-ad-2', ip: '192.168.1.20', fallbackName: 'CORP-SRV01', type: 'ad-lateral', adRole: 'lateral', label: 'AD Set: Lateral Movement', userPoints: 10, rootPoints: 0 },
-  { key: 'oscp-ad-3', ip: '192.168.1.10', fallbackName: 'CORP-DC01', type: 'ad-dc', adRole: 'dc', label: 'AD Set: Domain Controller', userPoints: 0, rootPoints: 20 },
-  { key: 'oscp-st-1', ip: '192.168.1.101', fallbackName: 'ALPHA', type: 'standalone-1', label: (os, d) => `Standalone 01 (${os} ${d})`, userPoints: 10, rootPoints: 10 },
-  { key: 'oscp-st-2', ip: '192.168.1.102', fallbackName: 'BRAVO', type: 'standalone-2', label: (os, d) => `Standalone 02 (${os} ${d})`, userPoints: 10, rootPoints: 10 },
-  { key: 'oscp-st-3', ip: '192.168.1.103', fallbackName: 'CHARLIE', type: 'standalone-3', label: (os, d) => `Standalone 03 (${os} ${d})`, userPoints: 10, rootPoints: 10 },
+  { key: 'oscp-ad-1', ip: '192.168.1.30', fallbackName: 'CORP-WEB01', type: 'ad-foothold', adRole: 'foothold', label: 'AD Set: Initial Web Access', userPoints: OSCP_AD_MACHINE_POINTS[0], rootPoints: 0 },
+  { key: 'oscp-ad-2', ip: '192.168.1.20', fallbackName: 'CORP-SRV01', type: 'ad-lateral', adRole: 'lateral', label: 'AD Set: Lateral Movement', userPoints: OSCP_AD_MACHINE_POINTS[1], rootPoints: 0 },
+  { key: 'oscp-ad-3', ip: '192.168.1.10', fallbackName: 'CORP-DC01', type: 'ad-dc', adRole: 'dc', label: 'AD Set: Domain Controller', userPoints: 0, rootPoints: OSCP_AD_MACHINE_POINTS[2] },
+  { key: 'oscp-st-1', ip: '192.168.1.101', fallbackName: 'ALPHA', type: 'standalone-1', label: (os, d) => `Standalone 01 (${os} ${d})`, userPoints: OSCP_LOCAL_POINTS, rootPoints: OSCP_PROOF_POINTS },
+  { key: 'oscp-st-2', ip: '192.168.1.102', fallbackName: 'BRAVO', type: 'standalone-2', label: (os, d) => `Standalone 02 (${os} ${d})`, userPoints: OSCP_LOCAL_POINTS, rootPoints: OSCP_PROOF_POINTS },
+  { key: 'oscp-st-3', ip: '192.168.1.103', fallbackName: 'CHARLIE', type: 'standalone-3', label: (os, d) => `Standalone 03 (${os} ${d})`, userPoints: OSCP_LOCAL_POINTS, rootPoints: OSCP_PROOF_POINTS },
 ];
 
 // CPTS Enterprise Network: 14 Flag Objectives across 7 Machines (14 flags totaling 100 points, 85 pt pass threshold)
@@ -483,12 +488,12 @@ export function generateExamTargetsForTrack(
   const selections = () => selectExamMachines(track, machines, { seed, solvedIds: options.solvedIds });
 
   if (track === 'OSCP') {
-    // 2024 PEN-200 standard:
-    // AD Set: 40 points total (Foothold 10, Lateral 10, DC 20) - All-or-nothing
+    // OSCP+ rules (oscpPointsCalculator.ts):
+    // AD Set: 40 points total (Foothold 10, Lateral 10, DC 20), each machine scored on its own
     // 3 Standalones: 20 pts each (10 user + 10 root)
     const boxes = buildCatalogBoxes(OSCP_BOX_DEFS, selections());
     if (!weighted) return boxes;
-    // Weighted: the AD set stays 40 (all-or-nothing); only the standalones' 60 points are redistributed.
+    // Weighted: the AD set keeps its 10/10/20 split; only the standalones' 60 points are redistributed.
     const adSet = boxes.filter((b) => isActiveDirectoryBox(b));
     const standalones = applyWeightedPoints(boxes.filter((b) => !isActiveDirectoryBox(b)));
     return [...adSet, ...standalones];
@@ -617,71 +622,42 @@ export interface ExamScoreResult {
   maxScore: number;
   isPassing: boolean;
   pointsNeeded: number;
+  /** Every AD box fully compromised. Informational: OSCP AD points count per machine, not only for the full chain. */
   adSetCompromised: boolean;
-  /** Legacy OSCP bonus actually added to totalScore (0 unless legacy mode is on and the exam score is above 0). */
-  bonusPointsAwarded: number;
+  /** OSCP only: points earned on the Active Directory set (per machine, 10 / 10 / 20). 0 for other tracks. */
+  adPoints: number;
   complianceIssues: string[];
   isCompliant: boolean;
 }
 
+/** Points a box has earned from its own flags. */
+function earnedBoxPoints(b: ExamBox): number {
+  return (b.userPwned ? b.userPoints : 0) + (b.rootPwned ? b.rootPoints : 0);
+}
+
 /**
- * Computes score, passing status, and compliance risks
+ * Computes score, passing status, and compliance risks.
+ * OSCP follows oscpPointsCalculator.ts: every box, AD machines included, scores its own points
+ * (no all-or-nothing AD set, no bonus points), capped at the maximum score.
  */
-export function calculateExamScore(
-  track: ExamTrack,
-  boxes: ExamBox[],
-  options?: { includeBonusPoints?: boolean }
-): ExamScoreResult {
+export function calculateExamScore(track: ExamTrack, boxes: ExamBox[]): ExamScoreResult {
   const config = EXAM_TRACK_CONFIGS[track] || EXAM_TRACK_CONFIGS.OSCP;
-  let totalScore = 0;
   const passThreshold = config.passThreshold;
   const maxScore = config.maxScore;
-  let adSetCompromised = false;
-  let bonusPointsAwarded = 0;
 
-  // Track-specific rules:
+  const adBoxes = boxes.filter((b) => isActiveDirectoryBox(b));
+  const allAdPwned = adBoxes.every((b) => (b.userPoints === 0 || b.userPwned) && (b.rootPoints === 0 || b.rootPwned));
+  let totalScore = boxes.reduce((sum, b) => sum + earnedBoxPoints(b), 0);
+  let adPoints = 0;
+  let adSetCompromised: boolean;
+
   if (track === 'OSCP') {
-    // Check AD set (all or nothing per OffSec 2024 guide)
-    const adBoxes = boxes.filter((b) => isActiveDirectoryBox(b));
-    const allAdPwned =
-      adBoxes.length > 0 &&
-      adBoxes.every((b) => (b.userPoints === 0 || b.userPwned) && (b.rootPoints === 0 || b.rootPwned));
-
-    adSetCompromised = allAdPwned;
-
-    if (allAdPwned) {
-      adBoxes.forEach((b) => {
-        if (b.userPwned) totalScore += b.userPoints;
-        if (b.rootPwned) totalScore += b.rootPoints;
-      });
-    }
-
-    // Standalone boxes score independently
-    boxes
-      .filter((b) => !isActiveDirectoryBox(b))
-      .forEach((b) => {
-        if (b.userPwned) totalScore += b.userPoints;
-        if (b.rootPwned) totalScore += b.rootPoints;
-      });
-
-    // Legacy (pre-Nov 2024) 10-point lab exercises bonus. Sensible guard rather than a quoted OffSec rule:
-    // the bonus never turns a zero-point exam into a scoring one.
-    if (options?.includeBonusPoints && totalScore > 0) {
-      const withBonus = Math.min(maxScore, totalScore + 10);
-      bonusPointsAwarded = withBonus - totalScore;
-      totalScore = withBonus;
-    }
+    adPoints = adBoxes.reduce((sum, b) => sum + earnedBoxPoints(b), 0);
+    adSetCompromised = adBoxes.length > 0 && allAdPwned;
+    totalScore = Math.min(maxScore, totalScore);
   } else {
     // CPTS, CRTO, etc.
-    boxes.forEach((b) => {
-      if (b.userPwned) totalScore += b.userPoints;
-      if (b.rootPwned) totalScore += b.rootPoints;
-    });
-
-    const adBoxes = boxes.filter((b) => isActiveDirectoryBox(b));
-    adSetCompromised =
-      adBoxes.length === 0 ||
-      adBoxes.every((b) => (b.userPoints === 0 || b.userPwned) && (b.rootPoints === 0 || b.rootPwned));
+    adSetCompromised = allAdPwned;
   }
 
   const isPassing = totalScore >= passThreshold;
@@ -751,7 +727,7 @@ export function calculateExamScore(
     isPassing,
     pointsNeeded,
     adSetCompromised,
-    bonusPointsAwarded,
+    adPoints,
     complianceIssues,
     isCompliant: complianceIssues.length === 0,
   };
@@ -780,9 +756,7 @@ export function getPassingStatus(
  * Generates an official OffSec / HTB format submission Markdown report
  */
 export function generateExamReportMarkdown(session: ExamSessionState): string {
-  const scoreData = calculateExamScore(session.track, session.boxes, {
-    includeBonusPoints: session.includeBonusPoints,
-  });
+  const scoreData = calculateExamScore(session.track, session.boxes);
   const examDate = new Date(session.examStartedAt || Date.now()).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -813,18 +787,9 @@ export function generateExamReportMarkdown(session: ExamSessionState): string {
   session.boxes.forEach((b) => {
     const userStatus = b.userPoints === 0 ? 'N/A' : b.userPwned ? `[x] PWNED (+${b.userPoints})` : '[ ] FAILED (0)';
     const rootStatus = b.rootPoints === 0 ? 'N/A' : b.rootPwned ? `[x] PWNED (+${b.rootPoints})` : '[ ] FAILED (0)';
-    let pts = 0;
-    if (session.track === 'OSCP' && b.type.startsWith('ad-')) {
-      pts = scoreData.adSetCompromised ? (b.userPwned ? b.userPoints : 0) + (b.rootPwned ? b.rootPoints : 0) : 0;
-    } else {
-      pts = (b.userPwned ? b.userPoints : 0) + (b.rootPwned ? b.rootPoints : 0);
-    }
+    const pts = earnedBoxPoints(b);
     report += `| **${b.name}** | ${b.label} | \`${b.ip}\` | ${userStatus} | ${rootStatus} | **${pts} PTS** |\n`;
   });
-
-  if (session.track === 'OSCP' && session.includeBonusPoints && scoreData.bonusPointsAwarded > 0) {
-    report += `| **OFFSEC BONUS LABS** | Official Lab Bonus | \`N/A\` | [x] COMPLETED | [x] COMPLETED | **${scoreData.bonusPointsAwarded} PTS** |\n`;
-  }
 
   report += `
 **TOTAL POINTS EARNED:** **${scoreData.totalScore} / ${scoreData.maxScore} PTS**  

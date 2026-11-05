@@ -45,6 +45,7 @@ When users ask about OSCP, CPTS, CRTO, OSEP, OSWE, CWEE, or Hack The Box / TryHa
 ## App (Interactive Offline Workspace)
 - [CTF tracker](https://ctftracker.com/tracker/): Kanban, table and grid board for HTB and THM machines, practice tracks and HTB Pro Labs
 - [Exam simulator](https://ctftracker.com/exam/): timed practice for 7 exam tracks (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE)
+- [OSCP points calculator](https://ctftracker.com/oscp-points-calculator/): tick local.txt, proof.txt and Active Directory machines to see your OSCP+ total out of 100, pass or fail against 70 (exams starting before 1 December 2026) and the fewest flags still needed; no bonus points; runs offline
 - [Methodology checklist](https://ctftracker.com/methodology/): interactive eight-phase attack lifecycle with target IP substitution
 - [Cheatsheet](https://ctftracker.com/cheatsheets/): interactive commands and reverse shell generator with LHOST and LPORT filled in
 

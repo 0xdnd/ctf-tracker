@@ -10,7 +10,7 @@
  *   - 1-Click "Copy Markdown to Clipboard" with visual "Copied!" feedback
  *   - 1-Click "Download Markdown (.md)" client-side blob generation
  *   - 1-Click "Export Standalone HTML (.html)" zero-egress air-gapped exporter
- *   - Report options toggling (Bonus points, Base64 screenshot embeddings, Remediation)
+ *   - Report options toggling (Base64 screenshot embeddings, Remediation); no bonus points option
  *   - Live preview tabs (Formatted HTML preview vs Raw Markdown)
  *   - Strict XSS neutralization in report preview and export
  * - Page & Drawer Integration:
@@ -344,17 +344,14 @@ describe('Milestone 4: 1-Click Submission-Ready Exam Report Generator & Modal', 
   // 4. Report Options & Checkboxes
   // =========================================================================
   describe('Report Options Toggles', () => {
-    it('toggles OffSec 10-point bonus exercises in report', () => {
-      const session = createTestExamSession('OSCP', false);
+    it('offers no bonus points option, even for a session saved with the old bonus flag', () => {
+      const session = { ...createTestExamSession('OSCP', false), includeBonusPoints: true };
       render(<ExamReportModal isOpen={true} onClose={vi.fn()} session={session} />);
 
-      const bonusToggle = screen.getByTestId('report-opt-bonus');
-      fireEvent.click(bonusToggle);
-
+      expect(screen.queryByTestId('report-opt-bonus')).toBeNull();
       fireEvent.click(screen.getByTestId('report-tab-raw'));
       const rawPre = screen.getByTestId('report-raw-markdown');
-      expect(rawPre.textContent).toContain('OFFSEC BONUS LABS');
-      expect(rawPre.textContent).toContain('10 PTS');
+      expect(rawPre.textContent).not.toContain('OFFSEC BONUS LABS');
     });
 
     it('toggles inclusion of Base64 proof screenshots', () => {

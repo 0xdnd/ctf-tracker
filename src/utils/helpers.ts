@@ -165,7 +165,10 @@ export function triggerRootCelebration() {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#10B981', '#06B6D4', '#EF4444', '#8B5CF6', '#F59E0B']
+        colors: ['#10B981', '#06B6D4', '#EF4444', '#8B5CF6', '#F59E0B'],
+        // Above the tour overlay (z 300), below toasts (z 9999); the canvas ignores pointer events.
+        zIndex: 9998,
+        disableForReducedMotion: true,
       });
     })
     .catch(() => {});

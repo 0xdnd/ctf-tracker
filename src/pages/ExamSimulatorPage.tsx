@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { Link } from 'react-router-dom';
 import { confirmAction } from '../store/useConfirmStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -42,7 +43,6 @@ import {
   calculateExamScore, 
   generateExamReportMarkdown,
   isActiveDirectoryBox,
-  supportsLegacyBonus,
   supportsWeightedScoring} from '../utils/examComplianceUtils';
 import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
@@ -69,7 +69,6 @@ export const ExamSimulatorPage: React.FC = () => {
     activeBreak,
     milestones,
     scratchNotes,
-    includeBonusPoints,
     seed,
     scoringMode,
     findings,
@@ -106,7 +105,6 @@ export const ExamSimulatorPage: React.FC = () => {
       breakHistory: s.breakHistory,
       milestones: s.milestones,
       scratchNotes: s.scratchNotes,
-      includeBonusPoints: s.includeBonusPoints,
       seed: s.seed,
       scoringMode: s.scoringMode,
       findings: s.findings,
@@ -177,8 +175,6 @@ export const ExamSimulatorPage: React.FC = () => {
   useEffect(() => {
     setSeedDraft(seed);
   }, [seed]);
-  const [showLegacyOptions, setShowLegacyOptions] = useState(false);
-  const legacyVisible = supportsLegacyBonus(track) && (showLegacyOptions || scoringMode === 'legacy');
 
   const applySeedDraft = () => {
     const normalized = normalizeExamSeed(seedDraft);
@@ -209,8 +205,8 @@ export const ExamSimulatorPage: React.FC = () => {
 
   // Score & passing status
   const scoreData = useMemo(() => {
-    return calculateExamScore(track, boxes, { includeBonusPoints });
-  }, [track, boxes, includeBonusPoints]);
+    return calculateExamScore(track, boxes);
+  }, [track, boxes]);
 
   const passingStatus = getPassingStatus();
   const currentRemaining = getRemainingSeconds();
@@ -266,9 +262,8 @@ export const ExamSimulatorPage: React.FC = () => {
     if (!startedAt || !chartExpiresAt) return null;
     return buildBurndownSeries(boxes, startedAt, chartExpiresAt, scoreData.passThreshold, {
       track,
-      includeBonusPoints,
     });
-  }, [boxes, startedAt, chartExpiresAt, scoreData.passThreshold, track, includeBonusPoints]);
+  }, [boxes, startedAt, chartExpiresAt, scoreData.passThreshold, track]);
   const chartNowMs = chartWindow ? chartWindow.nowMs : 0;
 
   // Victory Celebration Trigger when passing threshold is first reached
@@ -297,7 +292,6 @@ export const ExamSimulatorPage: React.FC = () => {
       timerPausedRemainingSeconds,
       boxes,
       scratchNotes,
-      includeBonusPoints,
       findings,
     };
     const md = generateExamReportMarkdown(sessionPayload);
@@ -553,7 +547,7 @@ export const ExamSimulatorPage: React.FC = () => {
             {/* Scoring mode */}
             <div className="pt-2 space-y-2" data-testid="exam-scoring-options">
               <p className="text-[11px] text-muted">
-                Scoring: <strong className="font-medium text-secondary">{scoringMode === 'weighted' ? 'Weighted by difficulty' : scoringMode === 'legacy' ? 'Legacy (pre-Nov 2024)' : 'Official'}</strong>
+                Scoring: <strong className="font-medium text-secondary">{scoringMode === 'weighted' ? 'Weighted by difficulty' : 'Official'}</strong>
               </p>
               {supportsWeightedScoring(track) && (
                 <div>
@@ -569,41 +563,22 @@ export const ExamSimulatorPage: React.FC = () => {
                   </label>
                   <p className="mt-1 text-[11px] text-muted pl-6">
                     {track === 'OSCP'
-                      ? 'Redistributes the 60 standalone points (Easy 1, Medium 1.5, Hard 2, Insane 2.5). The 40-point AD set and the 70-point pass mark are unchanged.'
+                      ? 'Redistributes the 60 standalone points (Easy 1, Medium 1.5, Hard 2, Insane 2.5). The Active Directory set (10, 10 and 20 points per machine) and the 70-point pass mark are unchanged.'
                       : 'Redistributes the 100 points across the web apps by difficulty (Easy 1, Medium 1.5, Hard 2, Insane 2.5). The pass mark stays at 85%.'}
                   </p>
                 </div>
               )}
-              {supportsLegacyBonus(track) && !legacyVisible && (
-                <button
-                  type="button"
-                  data-testid="exam-legacy-options-btn"
-                  onClick={() => setShowLegacyOptions(true)}
-                  className="text-[11px] text-muted hover:text-primary underline underline-offset-2"
-                >
-                  Show legacy scoring options
-                </button>
-              )}
-              {legacyVisible && (
-                <div data-testid="exam-legacy-options">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-secondary">
-                    <input
-                      type="checkbox"
-                      data-testid="exam-legacy-bonus-toggle"
-                      checked={scoringMode === 'legacy'}
-                      onChange={(e) => setScoringMode(e.target.checked ? 'legacy' : 'official', pool, solvedIds)}
-                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0"
-                    />
-                    <span className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-medium text-secondary">Legacy rubric (before Nov 2024):</span>
-                      <span>include +10 OffSec bonus lab points</span>
-                    </span>
-                  </label>
-                  <p className="mt-1 text-[11px] text-muted pl-6 flex items-start gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px text-callout-warn-fg" aria-hidden="true" />
-                    <span>OffSec removed the 10-point bonus on November 1, 2024 (OSCP+). Here it is added only once you have scored above 0 on exam targets.</span>
-                  </p>
-                </div>
+              {track === 'OSCP' && (
+                <p className="text-[11px] text-muted">
+                  <Link
+                    to="/oscp-points-calculator"
+                    data-testid="exam-oscp-calculator-link"
+                    className="text-secondary underline underline-offset-2 hover:text-primary"
+                  >
+                    Open the OSCP points calculator
+                  </Link>{' '}
+                  to check a flag combination against the current rules.
+                </p>
               )}
             </div>
           </div>
@@ -925,8 +900,12 @@ export const ExamSimulatorPage: React.FC = () => {
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
                       Active Directory set (40 pts)
                     </span>
-                    <span className="text-xs text-muted">
-                      {scoreData.adSetCompromised ? '✓ Fully compromised' : 'Chained domain privilege escalation'}
+                    <span className="text-xs text-muted" data-testid="exam-ad-points">
+                      {scoreData.adSetCompromised
+                        ? '✓ Fully compromised'
+                        : track === 'OSCP'
+                          ? `${scoreData.adPoints} pts earned, scored per machine`
+                          : 'Chained domain privilege escalation'}
                     </span>
                   </div>
                 </div>

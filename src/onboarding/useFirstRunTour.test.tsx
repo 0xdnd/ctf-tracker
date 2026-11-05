@@ -13,6 +13,8 @@ describe('useFirstRunTour', () => {
   it('starts the tour and sets the key on a first visit, once under StrictMode', () => {
     renderHook(() => useFirstRunTour(), { wrapper: StrictMode });
     expect(useOnboardingStore.getState().tourActive).toBe(true);
+    expect(useOnboardingStore.getState().tourKind).toBe('first-run');
+    expect(useOnboardingStore.getState().tourStepIds).toHaveLength(5);
     expect(localStorage.getItem(FIRST_RUN_KEY)).toBe('true');
   });
 

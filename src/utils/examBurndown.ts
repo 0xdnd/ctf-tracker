@@ -5,7 +5,7 @@
  * The series is produced by REPLAYING `calculateExamScore` at every event
  * timestamp on boxes whose flags are masked to only those captured at or
  * before that timestamp. No scoring rule is re-derived here: OSCP's
- * Active Directory all-or-nothing rule, bonus points and caps all come from
+ * per-machine Active Directory points and the score cap all come from
  * calculateExamScore itself.
  *
  * Out-of-window policy:
@@ -46,7 +46,6 @@ export interface BurndownSeries {
 export interface BurndownOptions {
   /** Defaults to 'OSCP' (the default exam track) */
   track?: ExamTrack;
-  includeBonusPoints?: boolean;
 }
 
 function parseIso(value: string | undefined): number | null {
@@ -91,7 +90,6 @@ export function buildBurndownSeries(
   options: BurndownOptions = {}
 ): BurndownSeries {
   const track = options.track ?? 'OSCP';
-  const scoreOpts = { includeBonusPoints: options.includeBonusPoints };
   const inWindow = (t: number) => expiresAt === null || t <= expiresAt;
   const clamp = (t: number) => Math.max(startedAt, t);
 
@@ -127,7 +125,7 @@ export function buildBurndownSeries(
       userPwned: userAt !== null && userAt <= t,
       rootPwned: rootAt !== null && rootAt <= t,
     }));
-    const { totalScore } = calculateExamScore(track, masked, scoreOpts);
+    const { totalScore } = calculateExamScore(track, masked);
     return {
       t,
       points: totalScore,

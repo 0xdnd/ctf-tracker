@@ -659,7 +659,7 @@ export const UnifiedHeader: React.FC = () => {
           className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           title="Open Command Palette (Ctrl+K)"
           data-tour="command-palette"
-          aria-label="Open Command Palette"
+          aria-label="Search Ctrl+K, open command palette"
         >
           <Search className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="hidden 2xl:inline">Search</span>

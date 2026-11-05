@@ -110,26 +110,26 @@ describe('Certification Exam Compliance & Scoring Engine (R2 & R3)', () => {
       expect(result.pointsNeeded).toBe(30);
     });
 
-    it('OSCP-02: Partial AD compromise awards ZERO points for the AD set (All-Or-Nothing Invariant)', () => {
-      // Foothold and Lateral pwned, but DC not rooted
+    it('OSCP-02: Partial AD compromise is credited per machine (10 / 10 / 20)', () => {
+      // Foothold and Lateral pwned, but DC not rooted: 10 + 10
       const boxesWithoutDc = buildOscpBoxes([true, true, false], [[false, false], [false, false], [false, false]]);
       const resultWithoutDc = calculateExamScore('OSCP', boxesWithoutDc);
 
-      expect(resultWithoutDc.totalScore).toBe(0);
+      expect(resultWithoutDc.totalScore).toBe(20);
       expect(resultWithoutDc.isPassing).toBe(false);
-      expect(resultWithoutDc.pointsNeeded).toBe(70);
+      expect(resultWithoutDc.pointsNeeded).toBe(50);
 
-      // DC rooted but foothold missing
+      // DC rooted but foothold missing: 10 + 20
       const boxesWithoutFoothold = buildOscpBoxes([false, true, true], [[false, false], [false, false], [false, false]]);
       const resultWithoutFoothold = calculateExamScore('OSCP', boxesWithoutFoothold);
 
-      expect(resultWithoutFoothold.totalScore).toBe(0);
+      expect(resultWithoutFoothold.totalScore).toBe(30);
 
-      // DC rooted but lateral missing
+      // DC rooted but lateral missing: 10 + 20
       const boxesWithoutLateral = buildOscpBoxes([true, false, true], [[false, false], [false, false], [false, false]]);
       const resultWithoutLateral = calculateExamScore('OSCP', boxesWithoutLateral);
 
-      expect(resultWithoutLateral.totalScore).toBe(0);
+      expect(resultWithoutLateral.totalScore).toBe(30);
     });
 
     it('OSCP-03: Standalone boxes score independently (10 user, 10 root)', () => {
@@ -170,15 +170,14 @@ describe('Certification Exam Compliance & Scoring Engine (R2 & R3)', () => {
       expect(result.pointsNeeded).toBe(0);
     });
 
-    it('OSCP-06: Partial AD + all standalones gives 60 pts and FAILS (AD contributes 0)', () => {
-      // AD Foothold + Lateral (20 nominal pts) + 3 Standalones fully pwned (60 pts)
-      // Since DC is NOT rooted, AD set awards 0, total must be exactly 60!
+    it('OSCP-06: Partial AD + all standalones gives 80 pts and PASSES (AD scored per machine)', () => {
+      // AD Foothold + Lateral (10 + 10) + 3 Standalones fully pwned (60 pts) = 80
       const boxes = buildOscpBoxes([true, true, false], [[true, true], [true, true], [true, true]]);
       const result = calculateExamScore('OSCP', boxes);
 
-      expect(result.totalScore).toBe(60);
-      expect(result.isPassing).toBe(false);
-      expect(result.pointsNeeded).toBe(10);
+      expect(result.totalScore).toBe(80);
+      expect(result.isPassing).toBe(true);
+      expect(result.pointsNeeded).toBe(0);
     });
 
     it('OSCP-07: Flawless 100-point compromise marks isPassing: true with 0 pointsNeeded', () => {
