@@ -23,13 +23,13 @@ import { createMachineFilter, getActiveTrackIds } from '../../utils/machineFilte
 import { getTrackProgress, type TrackProgress } from '../../utils/trackProgress';
 import { getOrderedActiveTrack, resolveSortMode, sortMachines } from '../../utils/trackerSort';
 import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
-import { MultiRecordImportModal } from './MultiRecordImportModal';
 import { KanbanBoard } from './KanbanBoard';
 import { TrackPicker } from './TrackPicker';
 import { parseTrackParam } from '../../utils/trackUrl';
 const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
+const MultiRecordImportModal = React.lazy(() => import('./MultiRecordImportModal').then((m) => ({ default: m.MultiRecordImportModal })));
 const PasteImportPanel = React.lazy(() => import('../import/PasteImportPanel').then((m) => ({ default: m.PasteImportPanel })));
 const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
@@ -476,14 +476,18 @@ export const TrackerView: React.FC = () => {
   const hasOtherFilters = activeFilterPills.length > 0;
   return (
     <div className="space-y-3 w-full">
-      <MultiRecordImportModal
-        open={multiImportOpen}
-        onClose={() => setMultiImportOpen(false)}
-        machines={liveMachines}
-        soundEnabled={soundEnabled}
-        addCustomMachine={addCustomMachine}
-        updateMachine={updateMachine}
-      />
+      {multiImportOpen && (
+        <React.Suspense fallback={null}>
+        <MultiRecordImportModal
+          open={multiImportOpen}
+          onClose={() => setMultiImportOpen(false)}
+          machines={liveMachines}
+          soundEnabled={soundEnabled}
+          addCustomMachine={addCustomMachine}
+          updateMachine={updateMachine}
+        />
+        </React.Suspense>
+      )}
       {/* Toolbar: one calm row on desktop, search + Filters on mobile */}
       <div className="relative z-30 space-y-2">
         {/* MOBILE (< md): search + Filters, then view switcher + count */}

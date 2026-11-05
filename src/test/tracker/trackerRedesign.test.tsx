@@ -241,7 +241,7 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(screen.queryByRole('region', { name: 'Readiness summary' })).toBeNull();
     });
 
-    it('offers scan output and bulk import from one Import menu', () => {
+    it('offers scan output and bulk import from one Import menu', async () => {
       wrap(<TrackerView />);
       const trigger = screen.getByRole('button', { name: 'Import' });
       expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
@@ -254,7 +254,7 @@ describe('Wave 2 lane B - tracker redesign', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Import' }));
       fireEvent.click(screen.getByRole('menuitem', { name: 'Bulk import scan records' }));
-      expect(screen.getByRole('dialog', { name: 'Import multiple records' })).toBeInTheDocument();
+      expect(await screen.findByRole('dialog', { name: 'Import multiple records' }, { timeout: 4000 })).toBeInTheDocument();
     });
 
     it('keeps the Due for review filter chip removable', () => {

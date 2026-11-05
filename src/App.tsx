@@ -20,7 +20,7 @@ import { EphemeralStorageBanner } from './components/common/EphemeralStorageBann
 import { ensurePersistence, bindExportGuard } from './utils/resilientStorage';
 import { OnboardingLayer } from './onboarding/OnboardingLayer';
 import { BackupReminderCard } from './components/common/BackupReminderCard';
-import { useFirstRunTour } from './onboarding/useFirstRunTour';
+import { useFirstRunTour, isFirstRunTourExcludedPath } from './onboarding/useFirstRunTour';
 import { ToastContainer } from './components/common/ToastContainer';
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
 import { AlertTriangle, Database } from 'lucide-react';
@@ -133,7 +133,7 @@ const MainAppContent: React.FC = () => {
   const isHydrated = useCtfStore((s) => s.isHydrated);
 
   // First visit: open the Welcome screen / guided tour once.
-  useFirstRunTour(!isPopout);
+  useFirstRunTour(!isPopout && !isFirstRunTourExcludedPath(location.pathname));
 
   // Storage quota / error notification banner
   const [storageAlert, setStorageAlert] = React.useState<{ kind: string; message: string } | null>(null);

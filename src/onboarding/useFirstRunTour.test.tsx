@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { FIRST_RUN_KEY, useFirstRunTour } from './useFirstRunTour';
+import { FIRST_RUN_KEY, isFirstRunTourExcludedPath, useFirstRunTour } from './useFirstRunTour';
 import { useOnboardingStore } from './useOnboardingStore';
 
 describe('useFirstRunTour', () => {
@@ -35,5 +35,18 @@ describe('useFirstRunTour', () => {
     renderHook(() => useFirstRunTour(false));
     expect(useOnboardingStore.getState().tourActive).toBe(false);
     expect(localStorage.getItem(FIRST_RUN_KEY)).toBeNull();
+  });
+
+  it('excludes the points calculator route and, once enabled later, still starts the tour', () => {
+    expect(isFirstRunTourExcludedPath('/oscp-points-calculator')).toBe(true);
+    expect(isFirstRunTourExcludedPath('/oscp-points-calculator/')).toBe(true);
+    expect(isFirstRunTourExcludedPath('/tracker')).toBe(false);
+    const { rerender } = renderHook(({ path }) => useFirstRunTour(!isFirstRunTourExcludedPath(path)), {
+      initialProps: { path: '/oscp-points-calculator/' },
+    });
+    expect(useOnboardingStore.getState().tourActive).toBe(false);
+    expect(localStorage.getItem(FIRST_RUN_KEY)).toBeNull();
+    rerender({ path: '/tracker' });
+    expect(useOnboardingStore.getState().tourActive).toBe(true);
   });
 });
