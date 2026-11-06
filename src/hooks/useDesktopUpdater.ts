@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { getVersion as getTauriVersion } from '@tauri-apps/api/app';
-import { check as checkTauriUpdate, type Update } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
+import type { Update } from '@tauri-apps/plugin-updater';
 import { checkpointTimerAndFlush } from '../store/useCtfStore';
+import { useToastStore } from '../store/useToastStore';
+import { APP_VERSION } from '../utils/appVersion';
 import type { ElectronUpdateInfo, ElectronProgressInfo } from '../vite-env';
 
 export type UpdateStatus = 
@@ -60,6 +61,8 @@ export function useDesktopUpdater(): DesktopUpdaterState {
   const [retryTimeoutSeconds, setRetryTimeoutSeconds] = useState<number | null>(null);
 
   const pendingUpdateRef = useRef<Update | null>(null);
+  const inFlightRef = useRef(false);
+  const installingRef = useRef(false);
 
   // Initialize desktop version & listeners
   useEffect(() => {
@@ -68,7 +71,7 @@ export function useDesktopUpdater(): DesktopUpdaterState {
     if (isTauriApp) {
       getTauriVersion()
         .then((ver) => setVersion(ver))
-        .catch(() => setVersion('2.0.0'));
+        .catch(() => setVersion(APP_VERSION));
       return;
     }
 
@@ -128,12 +131,19 @@ export function useDesktopUpdater(): DesktopUpdaterState {
   const checkForUpdates = useCallback(async () => {
     if (!isDesktop) return;
 
+    if (isTauriApp) {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+    }
+
     setStatus('checking');
     setErrorMessage(null);
     setRetryTimeoutSeconds(null);
 
     if (isTauriApp) {
       try {
+        // Loaded on demand so the updater plugin stays out of the web bundle.
+        const { check: checkTauriUpdate } = await import('@tauri-apps/plugin-updater');
         const update = await checkTauriUpdate();
         if (update) {
           pendingUpdateRef.current = update;
@@ -184,6 +194,8 @@ export function useDesktopUpdater(): DesktopUpdaterState {
           setErrorMessage(rawErr || 'Update check failed');
           setRetryTimeoutSeconds(null);
         }
+      } finally {
+        inFlightRef.current = false;
       }
       return;
     }
@@ -206,6 +218,8 @@ export function useDesktopUpdater(): DesktopUpdaterState {
     if (!isDesktop) return;
 
     if (isTauriApp && pendingUpdateRef.current) {
+      if (installingRef.current) return;
+      installingRef.current = true;
       const update = pendingUpdateRef.current;
       void (async () => {
         try {
@@ -215,11 +229,18 @@ export function useDesktopUpdater(): DesktopUpdaterState {
           await new Promise((resolve) => setTimeout(resolve, PRE_INSTALL_FLUSH_GRACE_MS));
           await update.install();
           // Windows never reaches this line (the installer exits the app); macOS/Linux need an explicit restart.
+          const { relaunch } = await import('@tauri-apps/plugin-process');
           await relaunch();
         } catch (err) {
           console.error('[ZeroBox Desktop] Update installation failed:', err);
           setStatus('error');
           setErrorMessage((err as Error)?.message || 'Installation failed');
+          installingRef.current = false;
+          useToastStore.getState().addToast({
+            type: 'error',
+            title: 'Update failed',
+            message: 'The update could not be installed. Try again from About.',
+          });
         }
       })();
       return;

@@ -1,4 +1,4 @@
-import { APP_VERSION_SHORT } from "../../utils/appVersion";
+import { APP_VERSION } from "../../utils/appVersion";
 import React, { useState, useMemo, useEffect } from 'react';
 import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { stripTrailingSlash } from '../../utils/pathUtils';
@@ -348,7 +348,7 @@ export const Sidebar: React.FC = () => {
               <Terminal className="w-3.5 h-3.5 text-muted flex-shrink-0" />
               <div className="truncate text-left leading-tight">
                 <div className="text-xs font-medium text-primary">ZeroBox</div>
-                <div className="text-[11px] text-muted">v{APP_VERSION_SHORT}, offline suite</div>
+                <div className="text-[11px] text-muted">v{APP_VERSION}, offline suite</div>
               </div>
             </div>
             <span className="text-[11px] text-muted flex-shrink-0 group-hover:text-secondary">About</span>

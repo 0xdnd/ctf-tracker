@@ -6,6 +6,7 @@ import * as tauriApp from '@tauri-apps/api/app';
 import * as tauriUpdater from '@tauri-apps/plugin-updater';
 import * as tauriProcess from '@tauri-apps/plugin-process';
 import * as ctfStore from '../store/useCtfStore';
+import { useToastStore } from '../store/useToastStore';
 
 vi.mock('@tauri-apps/api/core', () => ({
   isTauri: vi.fn(() => false),
@@ -232,6 +233,66 @@ describe('useDesktopUpdater hook', () => {
 
     expect(result.current.errorMessage).toBe('installer failed');
     expect(tauriProcess.relaunch).not.toHaveBeenCalled();
+  });
+
+  it('ignores a concurrent checkForUpdates while one is in flight', async () => {
+    delete (window as any).electronAPI;
+    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
+    vi.mocked(tauriUpdater.check).mockResolvedValue(null as any);
+
+    const { result } = renderHook(() => useDesktopUpdater());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await Promise.all([result.current.checkForUpdates(), result.current.checkForUpdates()]);
+    });
+
+    expect(tauriUpdater.check).toHaveBeenCalledTimes(1);
+
+    // Guard is released afterwards.
+    await act(async () => {
+      await result.current.checkForUpdates();
+    });
+    expect(tauriUpdater.check).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs install only once for a double quitAndInstall', async () => {
+    const install = vi.fn().mockResolvedValue(undefined);
+    const { result } = await readyDownloadedUpdate(install);
+
+    await act(async () => {
+      result.current.quitAndInstall();
+      result.current.quitAndInstall();
+      await vi.waitFor(() => expect(tauriProcess.relaunch).toHaveBeenCalledTimes(1));
+    });
+
+    expect(install).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows an error toast when install fails and allows a retry', async () => {
+    const addToast = vi.fn();
+    const spy = vi.spyOn(useToastStore, 'getState').mockReturnValue({ addToast } as any);
+    const install = vi.fn().mockRejectedValueOnce(new Error('installer failed')).mockResolvedValue(undefined);
+
+    const { result } = await readyDownloadedUpdate(install);
+
+    act(() => {
+      result.current.quitAndInstall();
+    });
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    expect(addToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error', title: 'Update failed' }),
+    );
+
+    await act(async () => {
+      result.current.quitAndInstall();
+      await vi.waitFor(() => expect(install).toHaveBeenCalledTimes(2));
+    });
+    spy.mockRestore();
   });
 
   it('handles HTTP 429 rate limiting with structured error and 60s retry timeout', async () => {

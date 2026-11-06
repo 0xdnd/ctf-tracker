@@ -1,4 +1,4 @@
-import { APP_VERSION_SHORT } from "../../utils/appVersion";
+import { APP_VERSION } from "../../utils/appVersion";
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Settings, 
@@ -354,7 +354,7 @@ export const SettingsDropdown: React.FC = () => {
               <Terminal className={iconCls} />
               <span>About ZeroBox & Credits</span>
             </div>
-            <span className="text-[11px] text-muted font-mono tabular-nums">v{APP_VERSION_SHORT}</span>
+            <span className="text-[11px] text-muted font-mono tabular-nums">v{APP_VERSION}</span>
           </button>
 
           {/* License */}

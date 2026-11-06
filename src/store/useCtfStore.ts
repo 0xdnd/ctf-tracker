@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../utils/appVersion';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { StorageValue } from 'zustand/middleware';
@@ -176,7 +177,7 @@ export const ZEROBOX_BRAND: BrandTheme = {
   nameSuffix: 'BOX',
   suffixColor: 'cyber-box-glow',
   tagline: 'Tactical Cyber Operations Suite',
-  badge: 'v2.0',
+  badge: `v${APP_VERSION}`,
 };
 
 export const BRAND_THEMES: BrandTheme[] = [ZEROBOX_BRAND];

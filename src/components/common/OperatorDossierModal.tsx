@@ -17,6 +17,54 @@ import {
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { Modal } from './Modal';
+import { APP_VERSION } from "../../utils/appVersion";
+import { useDesktopUpdate } from "../../hooks/DesktopUpdateContext";
+
+const footerBtn =
+  "px-3 py-1.5 max-sm:py-3 rounded-lg text-xs font-medium bg-surface-card hover:bg-surface-hover text-secondary border border-subtle transition-colors flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-default";
+
+/** Desktop-only update check with plain-text states. Renders nothing on the web build. */
+export const UpdateControl: React.FC = () => {
+  const { isDesktop, status, latestVersion, progressPercent, errorMessage, checkForUpdates, quitAndInstall } =
+    useDesktopUpdate();
+  const [asked, setAsked] = React.useState(false);
+  if (!isDesktop) return null;
+
+  const ready = status === 'downloaded' || status === 'available';
+  let text = '';
+  if (status === 'checking' && asked) text = 'Checking for updates...';
+  else if (status === 'downloading') text = `Downloading version ${latestVersion ?? ''}${progressPercent ? `, ${progressPercent}%` : ''}`.trim();
+  else if (ready) text = `Version ${latestVersion} is available`;
+  else if (status === 'not-available' && asked) text = "You're on the latest version";
+  else if (status === 'error' && asked) text = errorMessage || 'Could not check for updates';
+
+  const busy = status === 'checking' || status === 'downloading';
+  return (
+    <>
+      {text && (
+        <span role="status" className="text-[11px] text-muted">
+          {text}
+        </span>
+      )}
+      {status === 'downloaded' ? (
+        <button onClick={quitAndInstall} className={footerBtn}>
+          <span>Update and restart</span>
+        </button>
+      ) : (
+        <button
+          disabled={busy}
+          onClick={() => {
+            setAsked(true);
+            void checkForUpdates();
+          }}
+          className={footerBtn}
+        >
+          <span>Check for updates</span>
+        </button>
+      )}
+    </>
+  );
+};
 
 export const OperatorDossierModal: React.FC = () => {
   const operatorModalOpen = useCtfStore((s) => s.operatorModalOpen);
@@ -385,10 +433,11 @@ export const OperatorDossierModal: React.FC = () => {
         {/* Footer Actions */}
         <div className="px-5 py-3 border-t border-subtle flex flex-wrap items-center justify-between gap-2">
           <span className="text-[11px] text-muted">
-            ZeroBox v2.0, designed and built by Daniel Dayan
+            ZeroBox v{APP_VERSION}, designed and built by Daniel Dayan
           </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <UpdateControl />
             <button
               onClick={() => {
                 setOperatorModalOpen(false);

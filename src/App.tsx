@@ -12,6 +12,7 @@ import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { ViewSkeleton } from './components/common/Skeleton';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
 import { ThemeProvider } from './hooks/useTheme';
+import { DesktopUpdateProvider } from './hooks/DesktopUpdateContext';
 import { useCtfStore, UiScale } from './store/useCtfStore';
 import { useExamStore } from './store/examStore';
 import { useNotesWorkspaceStore } from './store/useNotesWorkspaceStore';
@@ -562,7 +563,9 @@ export const App: React.FC = () => {
       <Router>
         <ScrollProvider>
           <ThemeProvider>
-            <MainAppContent />
+            <DesktopUpdateProvider>
+              <MainAppContent />
+            </DesktopUpdateProvider>
           </ThemeProvider>
         </ScrollProvider>
       </Router>

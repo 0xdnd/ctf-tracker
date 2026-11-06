@@ -820,7 +820,7 @@ export const NotesImportModal: React.FC = () => {
           {/* Footer */}
           <div className="px-6 py-3 border-t border-subtle bg-black/40 flex items-center justify-between">
             <span className="text-[11px] text-muted">
-              ZeroBox Privacy Architecture v2.0
+              ZeroBox privacy architecture
             </span>
             <button
               onClick={handleClose}
