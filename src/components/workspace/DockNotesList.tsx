@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronRight, FileText, Folder, FolderOpen, Plus, Search, Terminal, Upload } from 'lucide-react';
+import { ChevronRight, FileText, Folder, FolderOpen, Plus, Search, Terminal, Upload, X } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { cheatTabId, useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { buildCptsFileTree, type CptsNoteEntry, type CptsTreeNode } from '../../utils/obsidianManualUtils';
@@ -69,6 +69,11 @@ interface DockNotesListProps {
   /** Called after a note or snippet has been opened (the overlay variant closes itself with it). */
   onOpened?: () => void;
   className?: string;
+  /** Tag filter: only these note ids are listed (folders open, cheatsheets hidden). */
+  tagNoteIds?: ReadonlySet<string> | null;
+  /** Label of the active tag filter, shown as a removable chip. */
+  activeTag?: string | null;
+  onClearTag?: () => void;
 }
 
 /**
@@ -76,7 +81,7 @@ interface DockNotesListProps {
  * plus the cheatsheet catalog. Reads straight from the stores, so it re-renders when the vault hydrates or an
  * import lands. The tree is memoized and rows are windowed, so large vaults stay cheap.
  */
-export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, className = '' }) => {
+export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, className = '', tagNoteIds = null, activeTag = null, onClearTag }) => {
   const navigate = useNavigate();
   const { customNotes, userNotes, userNotesHydrated, cheatsheets, setNotesImportModalOpen } = useCtfStore(
     useShallow((s) => ({
@@ -101,6 +106,9 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
 
   const tokens = useMemo(() => tokenize(query), [query]);
   const filtering = tokens.length > 0;
+  const tagFiltering = tagNoteIds !== null;
+  // A query or a tag filter shows every matching folder open.
+  const forceOpen = filtering || tagFiltering;
 
   // Authored notes shadow imported notes with the same id (same rule as mergeUserNotePools).
   const { authored, imported } = useMemo(() => {
@@ -123,12 +131,18 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
 
   // With no query the lists are returned as-is, so typing and clearing never rebuilds an unchanged tree.
   const shownAuthored = useMemo(
-    () => (filtering ? authored.filter((n) => matches(hay.get(n.id) ?? '')) : authored),
-    [filtering, authored, hay, matches]
+    () =>
+      filtering || tagNoteIds
+        ? authored.filter((n) => (!tagNoteIds || tagNoteIds.has(n.id)) && (!filtering || matches(hay.get(n.id) ?? '')))
+        : authored,
+    [filtering, tagNoteIds, authored, hay, matches]
   );
   const shownImported = useMemo(
-    () => (filtering ? imported.filter((n) => matches(hay.get(n.id) ?? '')) : imported),
-    [filtering, imported, hay, matches]
+    () =>
+      filtering || tagNoteIds
+        ? imported.filter((n) => (!tagNoteIds || tagNoteIds.has(n.id)) && (!filtering || matches(hay.get(n.id) ?? '')))
+        : imported,
+    [filtering, tagNoteIds, imported, hay, matches]
   );
 
   const authoredTree = useMemo(() => buildCptsFileTree(shownAuthored), [shownAuthored]);
@@ -185,22 +199,23 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
   const noteRows = useMemo<Row[]>(() => {
     const rows: Row[] = [];
     if (shownAuthored.length > 0) {
-      const open = filtering || expanded.has(MY_NOTES_KEY);
+      const open = forceOpen || expanded.has(MY_NOTES_KEY);
       rows.push({ kind: 'folder', key: MY_NOTES_KEY, label: 'My notes', depth: 0, count: shownAuthored.length, expanded: open });
-      if (open) flattenTree(authoredTree, 1, `${MY_NOTES_KEY}:`, expanded, filtering, rows);
+      if (open) flattenTree(authoredTree, 1, `${MY_NOTES_KEY}:`, expanded, forceOpen, rows);
     }
     if (userNotesHydrated) {
-      flattenTree(importedTree, 0, 'imp:', expanded, filtering, rows);
-    } else if (!filtering) {
+      flattenTree(importedTree, 0, 'imp:', expanded, forceOpen, rows);
+    } else if (!forceOpen) {
       // Imported notes are still loading from IndexedDB. Show one stable placeholder folder
       // instead of letting per-category folders (and their counts) pop in once hydration lands —
       // that's the "count moves during loading" this row exists to avoid.
       rows.push({ kind: 'folder', key: 'imp-pending', label: 'Imported notes', depth: 0, count: '…', expanded: false });
     }
     return rows;
-  }, [shownAuthored, authoredTree, importedTree, expanded, filtering, userNotesHydrated]);
+  }, [shownAuthored, authoredTree, importedTree, expanded, forceOpen, userNotesHydrated]);
 
-  const cheatsOpen = filtering ? cheatTotal > 0 : expanded.has(CHEATS_KEY);
+  // Cheatsheets carry no note tags, so a tag filter hides them.
+  const cheatsOpen = tagFiltering ? false : filtering ? cheatTotal > 0 : expanded.has(CHEATS_KEY);
   const cheatRows = useMemo<Row[]>(() => {
     if (!cheatsOpen) return [];
     const rows: Row[] = [];
@@ -250,13 +265,13 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
     (row: Row) => {
       if (row.kind === 'folder') {
         // While filtering every folder is forced open, so toggling would do nothing visible.
-        if (!filtering) toggleFolder(row.key);
+        if (!forceOpen) toggleFolder(row.key);
         return;
       }
       openNote(row.tabId);
       onOpened?.();
     },
-    [filtering, toggleFolder, openNote, onOpened]
+    [forceOpen, toggleFolder, openNote, onOpened]
   );
 
   const moveTo = useCallback(
@@ -403,6 +418,23 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
             className="w-full min-w-0 bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none"
           />
         </div>
+        {activeTag && (
+          <div className="mt-1.5 flex items-center gap-1 text-[11px]" data-dock-list-tag>
+            <span className="text-muted">Tag</span>
+            <span className="truncate rounded-sm bg-accent-muted px-1.5 py-0.5 text-accent">#{activeTag}</span>
+            {onClearTag && (
+              <button
+                type="button"
+                onClick={onClearTag}
+                aria-label="Clear tag filter"
+                data-testid="dock-list-clear-tag"
+                className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div
@@ -440,7 +472,7 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
           )}
         </div>
 
-        {(cheatTotal > 0 || !filtering) && (
+        {!tagFiltering && (cheatTotal > 0 || !filtering) && (
           <div className="border-t border-subtle flex-shrink-0">
             <button
               type="button"

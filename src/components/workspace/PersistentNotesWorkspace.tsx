@@ -1,21 +1,20 @@
-import React, { useMemo, useCallback, useRef, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   X, 
-  Pin, 
   Maximize2, 
   Minimize2, 
   Type, 
-  Layers,
   PanelLeft,
   Wand2} from 'lucide-react';
-import { useNotesWorkspaceStore, resolvedTabId, type ResolvedTab } from '../../store/useNotesWorkspaceStore';
+import { useNotesWorkspaceStore, resolvedTabId } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { NotesWorkspaceTabStrip } from './NotesWorkspaceTabStrip';
 import { SnippetTabContent } from './SnippetTabContent';
 import { DockQuickSwitcher } from './DockQuickSwitcher';
 import { DockNotesList } from './DockNotesList';
+import { DockBody } from './DockBody';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { TemplatizeNotesModal } from '../cheatsheet/TemplatizeNotesModal';
@@ -24,9 +23,6 @@ import { NotesWorkspaceTargetBar } from './NotesWorkspaceTargetBar';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import { useToastStore } from '../../store/useToastStore';
 import { CptsNoteEntry, mergeUserNotePools } from '../../utils/obsidianManualUtils';
-
-/** Below this dock width the Notes list no longer fits beside a note, so it opens as an overlay instead. */
-const NARROW_DOCK_PX = 520;
 
 export const PersistentNotesWorkspace: React.FC = () => {
   const {
@@ -39,14 +35,11 @@ export const PersistentNotesWorkspace: React.FC = () => {
     openTabIds,
     activeTabId,
     setIsOpen,
-    togglePinned,
     toggleDockSize,
     setViewMode,
     setLanguage,
     setFontSize,
     openNote,
-    notesListCollapsed,
-    toggleNotesList,
     setSwitcherOpen,
   } = useNotesWorkspaceStore(
     useShallow((s) => ({
@@ -60,14 +53,11 @@ export const PersistentNotesWorkspace: React.FC = () => {
       activeTabId: s.activeTabId,
       toggleOpen: s.toggleOpen,
       setIsOpen: s.setIsOpen,
-      togglePinned: s.togglePinned,
       toggleDockSize: s.toggleDockSize,
       setViewMode: s.setViewMode,
       setLanguage: s.setLanguage,
       setFontSize: s.setFontSize,
       openNote: s.openNote,
-      notesListCollapsed: s.notesListCollapsed,
-      toggleNotesList: s.toggleNotesList,
       setActiveTab: s.setActiveTab,
       setSwitcherOpen: s.setSwitcherOpen,
     }))
@@ -111,46 +101,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
     pruneUnresolvedTabs();
   }, [pruneUnresolvedTabs, userNotesHydrated, openTabIds, customNotes, userNotes, cheatsheets]);
 
-  const renderTabContent = (tab: ResolvedTab, isActive: boolean) =>
-    tab.kind === 'note' ? (
-      <ObsidianTabContent
-        note={tab.note}
-        isActive={isActive}
-        globalVars={globalVars}
-        soundEnabled={soundEnabled}
-        onNavigateToNote={handleNavigateToNote}
-        onOpenNote={(targetId) => openNote(targetId)}
-        defaultLanguage={language}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        fontSize={fontSize}
-        isMaximized={dockSize === 'expanded'}
-      />
-    ) : (
-      <SnippetTabContent entry={tab.entry} />
-    );
-
-  // Desktop: the list sits beside the note unless the dock is narrow (then it is an on-demand overlay).
-  // Mobile sheet: always an on-demand overlay.
-  const dockBodyRef = useRef<HTMLDivElement>(null);
-  const [dockBodyWidth, setDockBodyWidth] = useState(0);
-  const [overlayListOpen, setOverlayListOpen] = useState(false);
+  // Mobile sheet: the notes list is an on-demand overlay.
   const [mobileListOpen, setMobileListOpen] = useState(false);
-  useLayoutEffect(() => {
-    const el = dockBodyRef.current;
-    if (!el) return;
-    const measure = () => setDockBodyWidth(el.clientWidth);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isOpen]);
-  // An unmeasured (0) width counts as wide, so the persisted preference applies until a real width is known.
-  const isNarrowDock = dockBodyWidth > 0 && dockBodyWidth < NARROW_DOCK_PX;
-  const listDocked = !isNarrowDock && !notesListCollapsed;
-  const listToggled = isNarrowDock ? overlayListOpen : !notesListCollapsed;
-  const toggleList = () => (isNarrowDock ? setOverlayListOpen((v) => !v) : toggleNotesList());
 
   const [templatizeOpen, setTemplatizeOpen] = useState(false);
   const [newNoteOpen, setNewNoteOpen] = useState(false);
@@ -260,194 +212,15 @@ export const PersistentNotesWorkspace: React.FC = () => {
             : 'w-[48vw] min-w-[420px] max-w-4xl'
         }`}
       >
-        {/* Top Control Bar */}
-        <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0 select-none">
-          {/* Left Title & Status Indicator */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleList}
-              aria-pressed={listToggled}
-              aria-label="Toggle notes list"
-              data-testid="dock-list-toggle"
-              data-tour="notes-list-toggle"
-              className={`active:scale-[0.97] p-1.5 -ml-1 rounded-md transition-interactive cursor-pointer ${
-                listToggled ? 'bg-accent-muted text-accent' : 'hover:bg-surface-hover text-muted hover:text-primary'
-              }`}
-              title={listToggled ? 'Hide notes list' : 'Show notes list'}
-            >
-              <PanelLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-accent" />
-              <span>Notes Workspace</span>
-            </span>
-            {isPinned && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-md bg-callout-success-bg text-callout-success-fg border border-callout-success-border">
-                PINNED
-              </span>
-            )}
-          </div>
-
-          {/* Right Action Tools */}
-          <div className="flex items-center gap-1">
-            {/* Tri-Mode View Switcher (Read | Split | Raw) */}
-            <div data-tour="notes-views" className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
-              <button
-                type="button"
-                onClick={() => setViewMode('reading')}
-                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
-                  viewMode === 'reading'
-                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
-                    : 'text-muted hover:text-primary'
-                }`}
-                title="Rich Reading View"
-              >
-                Read
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('split')}
-                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
-                  viewMode === 'split'
-                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
-                    : 'text-muted hover:text-primary'
-                }`}
-                title="Side-by-side Editor & Live Preview"
-              >
-                Split
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('raw')}
-                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
-                  viewMode === 'raw'
-                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
-                    : 'text-muted hover:text-primary'
-                }`}
-                title="Raw Markdown Editor"
-              >
-                Raw
-              </button>
-            </div>
-
-            {/* Language Switcher */}
-            <button
-              type="button"
-              onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="active:scale-[0.97] px-2 py-1 rounded-md text-[10px] font-semibold hover:bg-surface-hover text-secondary hover:text-primary transition-interactive cursor-pointer border border-transparent hover:border-subtle"
-              title="Toggle English / Hebrew"
-            >
-              {language === 'en' ? 'EN' : 'עב'}
-            </button>
-
-            {/* Replace hard-coded IPs with {TARGET}/{LHOST} */}
-            <button
-              type="button"
-              onClick={() => setTemplatizeOpen(true)}
-              disabled={!activeNote}
-              aria-label="Replace IPs with placeholders"
-              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer disabled:opacity-40"
-              title="Replace hard-coded IPs in this note with {TARGET} / {LHOST}"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Font Size Toggle */}
-            <button
-              type="button"
-              onClick={cycleFontSize}
-              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer"
-              title={`Cycle font size (Current: ${fontSize.toUpperCase()})`}
-            >
-              <Type className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Width Toggle (Normal 48vw vs Expanded 68vw) */}
-            <button
-              type="button"
-              onClick={toggleDockSize}
-              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer"
-              title={dockSize === 'expanded' ? 'Collapse Width (50%)' : 'Expand Width (70%)'}
-            >
-              {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-
-            {/* Pin Toggle */}
-            <button
-              type="button"
-              onClick={togglePinned}
-              className={`active:scale-[0.97] p-1.5 rounded-md transition-interactive cursor-pointer ${
-                isPinned
-                  ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                  : 'hover:bg-surface-hover text-muted'
-              }`}
-              title={isPinned ? 'Pinned: Notes stay open across all pages' : 'Unpinned: Close with page navigation'}
-            >
-              <Pin className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Close Dock Button */}
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg transition-interactive cursor-pointer ml-1"
-              title="Close Notes Workspace"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {targetBar}
-
-        {/* Multi-Tab Strip */}
-        <div data-tour="notes-tabs">
-          <NotesWorkspaceTabStrip />
-        </div>
-
-        <div ref={dockBodyRef} className="flex-1 min-h-0 flex relative">
-        {listDocked && <DockNotesList className="w-56 flex-shrink-0 border-r border-subtle" />}
-        {isNarrowDock && overlayListOpen && (
-          <DockNotesList
-            onOpened={() => setOverlayListOpen(false)}
-            className="absolute inset-y-0 left-0 w-64 max-w-[85%] z-10 border-r border-strong shadow-2xl"
-          />
-        )}
-
-        {/* Active Note Content Stage (DOM Keep-Alive) */}
-        <div className="flex-1 min-w-0 overflow-y-auto min-h-0 relative bg-surface-card">
-          {openTabs.length > 0 ? (
-            openTabs.map((tab) => {
-              const tabId = resolvedTabId(tab);
-              const isActive = tabId === activeResolvedId;
-              return (
-                <div
-                  key={tabId}
-                  data-testid={`dock-tab-content-${tabId}`}
-                  data-tab-note-id={tabId}
-                  className={isActive ? 'h-full w-full flex-1 min-h-0 overflow-y-auto' : 'hidden'}
-                  style={{ display: isActive ? undefined : 'none' }}
-                >
-                  {renderTabContent(tab, isActive)}
-                </div>
-              );
-            })
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted">
-              <div className="w-full max-w-sm space-y-3 text-left">
-                <div className="text-center space-y-1">
-                  <Layers className="w-8 h-8 text-secondary mx-auto" />
-                  <div className="text-sm font-semibold text-secondary">Nothing open</div>
-                  <div className="text-xs">Pick a note or cheatsheet to read it here beside the page you are on.</div>
-                </div>
-                <DockQuickSwitcher variant="inline" />
-              </div>
-            </div>
-          )}
-        </div>
-        </div>
+        <DockBody
+          targetBar={targetBar}
+          onNewNote={() => setNewNoteOpen(true)}
+          onTemplatize={() => setTemplatizeOpen(true)}
+          onCopyAll={handleCopyAll}
+          onNavigateToNote={handleNavigateToNote}
+          openTabs={openTabs}
+          activeResolvedId={activeResolvedId}
+        />
       </aside>
 
       {/* ========================================================

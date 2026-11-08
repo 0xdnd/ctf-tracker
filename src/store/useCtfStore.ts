@@ -62,12 +62,15 @@ import { loadMachinesCatalog, getLoadedMachinesCatalog } from '../data/loadMachi
 import type { CptsNoteEntry } from '../utils/obsidianManualUtils';
 import { extractCommands, parseFrontmatterAndBody } from '../utils/markdownFrontmatter';
 import {
-  saveVaultToIndexedDb,
   loadVaultFromIndexedDb,
   clearVaultFromIndexedDb,
   snapshotVaultBeforeImport,
   restoreLastImportSnapshot,
   saveVaultStrict,
+  mutateVault,
+  loadVaultStrict,
+  type VaultMutationBase,
+  type VaultMutationResult,
 } from '../utils/indexedDbVault';
 import { 
   extractDeepWriteups, 
@@ -375,6 +378,17 @@ interface CtfStoreState {
   // Custom Notes & Field Manual State
   customNotes: CptsNoteEntry[];
   deletedNoteIds: string[];
+  /**
+   * When customNotes/deletedNoteIds were last replaced as a whole (clear, reset, restore deleted, import). Cross-tab
+   * merges take the other tab's lists as-is only when its epoch is newer; otherwise they union per note. Null for
+   * data saved before the field existed (epoch 0).
+   */
+  notesEpoch: string | null;
+  /**
+   * When deletedNoteIds alone was last emptied on purpose (restore deleted notes). Never removes notes: a newer
+   * tombstones epoch only replaces the other tab's tombstone list. Null for older data.
+   */
+  tombstonesEpoch: string | null;
   /** Tombstones of hard-deleted machines (sync merge must not resurrect them). Pruned after 180 days. */
   deletedMachineIds: MachineTombstone[];
   userSolvesReset: boolean;
@@ -389,6 +403,8 @@ interface CtfStoreState {
     edits: { noteId: string; rawMarkdown: string }[]
   ) => Promise<{ updated: string[]; missing: string[] }>;
   deleteNote: (noteId: string) => void;
+  /** deleteNote for several notes at once: one state update and one stored-vault write. */
+  deleteNotes: (noteIds: string[]) => void;
   restoreDeletedNotes: () => void;
   resetSolvesToZero: () => void;
   restoreDanielSolves: () => void;
@@ -508,7 +524,7 @@ export const getWriteProfileStorageKey = (profileId: string) => `zerobox_operato
 export { SYNC_CHANNEL_NAME, syncChannel };
 
 export const broadcastCrossTabMessage = (
-  type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED',
+  type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED' | 'NOTES_UPDATED',
   payload?: any
 ) => {
   // A gated (outdated/restoring) tab must not push its edits into other tabs, which would persist them.
@@ -517,6 +533,53 @@ export const broadcastCrossTabMessage = (
     syncChannel?.postMessage({ type, payload, timestamp: Date.now() });
   } catch {}
 };
+
+/**
+ * Imported notes (the IndexedDB vault) are one global record shared by every profile and every tab. After any
+ * successful vault write, tell the other tabs to reload it. Receivers never re-broadcast.
+ */
+export const broadcastVaultNotesUpdated = (noteIds?: string[]) =>
+  broadcastCrossTabMessage('NOTES_UPDATED', noteIds ? { source: 'vault', noteIds } : { source: 'vault' });
+
+/**
+ * The stored vault, as this tab should show it: the stored notes, except that a note this tab holds with a strictly
+ * newer dateModified is kept (its own save is still in flight), so an overlapping earlier write never briefly
+ * reverts the open note. Notes missing from the stored vault were deleted elsewhere and are dropped.
+ */
+export function adoptStoredVaultNotes(local: CptsNoteEntry[], stored: CptsNoteEntry[]): CptsNoteEntry[] {
+  const localById = new Map((local || []).map((n) => [n.id, n] as const));
+  return stored.map((n) => {
+    const mine = localById.get(n.id);
+    return mine && vaultNoteMs(mine.dateModified) > vaultNoteMs(n.dateModified) ? mine : n;
+  });
+}
+
+const vaultNoteMs = (iso: unknown): number => {
+  const t = typeof iso === 'string' ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) ? t : 0;
+};
+
+/**
+ * Applies `edit` (one change, by note id) onto the CURRENT stored vault inside one IndexedDB transaction, so
+ * another tab's edits are never overwritten. When no vault record exists yet, `fallback` (this tab's notes with
+ * the change) is written instead. Resolves with what was written, or null while writes are gated.
+ */
+const mutateVaultNotes = (
+  edit: (current: VaultMutationBase) => VaultMutationResult,
+  fallback: () => VaultMutationResult
+) => mutateVault((current) => (current.exists ? edit(current) : fallback()));
+
+/** After a vault mutation: show what was stored (other tabs' changes included) and tell the other tabs. */
+function applyVaultWrite(written: VaultMutationResult | null, noteIds: string[]) {
+  if (!written) return; // gated: nothing was written
+  useCtfStore.setState((s) => ({
+    userNotes: adoptStoredVaultNotes(s.userNotes || [], written.notes),
+    userWikilinkMap: written.wikilinkMap,
+  }));
+  broadcastVaultNotesUpdated(noteIds);
+}
+
+const NOTE_GONE_MESSAGE = 'This note was deleted, so the edit was not saved.';
 
 const inMemoryFallbackStorage = new Map<string, string>();
 let isStorageEphemeral = false;
@@ -1402,6 +1465,8 @@ export const useCtfStore = create<CtfStoreState>()(
       currentProfileId: initialProfileId,
       customNotes: initialProfileData?.customNotes || [],
       deletedNoteIds: initialProfileData?.deletedNoteIds || [],
+      notesEpoch: typeof initialProfileData?.notesEpoch === 'string' ? initialProfileData.notesEpoch : null,
+      tombstonesEpoch: typeof initialProfileData?.tombstonesEpoch === 'string' ? initialProfileData.tombstonesEpoch : null,
       deletedMachineIds: normalizeMachineTombstones(initialProfileData?.deletedMachineIds),
       userSolvesReset: bootUserSolvesReset,
       isHydrated: true,
@@ -1508,6 +1573,7 @@ export const useCtfStore = create<CtfStoreState>()(
             userNotes: data.userNotes ? [...data.userNotes] : state.userNotes,
             userWikilinkMap: data.userWikilinkMap ? { ...data.userWikilinkMap } : state.userWikilinkMap,
             deletedNoteIds: data.deletedNoteIds ? [...data.deletedNoteIds] : state.deletedNoteIds,
+            notesEpoch: data.customNotes || data.deletedNoteIds ? new Date().toISOString() : state.notesEpoch,
             userSolvesReset: data.userSolvesReset !== undefined ? data.userSolvesReset : state.userSolvesReset,
             unexportedChangesCount: 0,
           }));
@@ -1594,13 +1660,27 @@ export const useCtfStore = create<CtfStoreState>()(
           );
         }
         await saveVaultStrict({ notes, wikilinkMap });
-        set({ userNotes: notes, userWikilinkMap: wikilinkMap });
+        set((state) => {
+          // Re-imported notes show again: their old tombstones go, under a newer tombstones epoch so other tabs
+          // take the shorter list instead of unioning the ids back in.
+          const imported = new Set(notes.map((n) => n.id));
+          const kept = state.deletedNoteIds.filter((id) => !imported.has(id));
+          if (kept.length === state.deletedNoteIds.length) return { userNotes: notes, userWikilinkMap: wikilinkMap };
+          return {
+            userNotes: notes,
+            userWikilinkMap: wikilinkMap,
+            deletedNoteIds: kept,
+            tombstonesEpoch: new Date().toISOString(),
+          };
+        });
+        broadcastVaultNotesUpdated();
       },
       restoreLastNotesSnapshot: async () => {
         try {
           const snapshot = await restoreLastImportSnapshot();
           if (!snapshot) return { success: false, count: 0, error: 'There is no previous notes snapshot to restore.' };
           set({ userNotes: snapshot.notes, userWikilinkMap: snapshot.wikilinkMap });
+          broadcastVaultNotesUpdated();
           return { success: true, count: snapshot.notes.length };
         } catch (err) {
           return { success: false, count: 0, error: (err as Error)?.message || 'Could not restore the previous notes.' };
@@ -1608,7 +1688,8 @@ export const useCtfStore = create<CtfStoreState>()(
       },
       clearUserNotes: async () => {
         await clearVaultFromIndexedDb();
-        set({ userNotes: [], userWikilinkMap: {}, deletedNoteIds: [], customNotes: [] });
+        set({ userNotes: [], userWikilinkMap: {}, deletedNoteIds: [], customNotes: [], notesEpoch: new Date().toISOString() });
+        broadcastVaultNotesUpdated();
       },
       loadUserNotesFromDb: async () => {
         try {
@@ -1620,59 +1701,7 @@ export const useCtfStore = create<CtfStoreState>()(
             });
             return;
           }
-          if (!get().userNotes.length && !get().customNotes.length) {
-            const initialNotes: CptsNoteEntry[] = [
-              {
-                id: 'note-00--pt',
-                title: '00 - Penetration Test Methodology Checklist',
-                titleEn: '00 - Penetration Test Methodology Checklist',
-                category: 'General Tactical',
-                rawCategory: 'General Tactical',
-                subCategory: 'Pre-Engagement',
-                tags: ['pentest', 'methodology', 'checklist'],
-                difficulty: 'Intermediate',
-                summary: 'Comprehensive penetration testing checklist and execution methodology.',
-                commands: ['nmap -sC -sV 10.10.11.250', 'whoami'],
-                relPath: '00 - Penetration Test Methodology Checklist.md',
-                rawMarkdown: '# 00 - Penetration Test Methodology Checklist\n\n- [ ] Pre-engagement setup\n- [x] Initial enumeration\n\n```bash\nnmap -sC -sV <TARGET_IP>\n```',
-              },
-              {
-                id: 'note-01--ad',
-                title: '01 - Active Directory Enumeration',
-                titleEn: '01 - Active Directory Enumeration',
-                category: 'Active Directory',
-                rawCategory: 'Active Directory',
-                subCategory: 'Reconnaissance',
-                tags: ['ad', 'kerberos', 'bloodhound'],
-                difficulty: 'Hard',
-                summary: 'Domain reconnaissance and Kerberoasting tactics.',
-                commands: ['bloodhound-python -u user -p pass -d domain.local -ns 10.10.11.250 -c All'],
-                relPath: '01 - Active Directory Enumeration.md',
-                rawMarkdown: '# 01 - Active Directory Enumeration\n\nDomain controller enumeration tactics.',
-              },
-              {
-                id: 'note-02--privesc',
-                title: '02 - Linux Privilege Escalation',
-                titleEn: '02 - Linux Privilege Escalation',
-                category: 'Linux Privilege Escalation',
-                rawCategory: 'Linux Privilege Escalation',
-                subCategory: 'Privilege Escalation',
-                tags: ['privilege', 'privesc', 'linux', 'suid'],
-                difficulty: 'Intermediate',
-                summary: 'Linux privilege escalation vectors and automated enumeration scripts.',
-                commands: ['sudo -l', 'find / -perm -u=s -type f 2>/dev/null'],
-                relPath: '02 - Linux Privilege Escalation.md',
-                rawMarkdown: '# 02 - Linux Privilege Escalation\n\nLinux privilege escalation techniques.\n\n```bash\nsudo -l\n```',
-              },
-            ];
-            const initialMap: Record<string, string> = {
-              'penetration test methodology checklist': 'note-00--pt',
-              'active directory enumeration': 'note-01--ad',
-              'linux privilege escalation': 'note-02--privesc',
-            };
-            set({ userNotes: initialNotes, userWikilinkMap: initialMap });
-            await saveVaultToIndexedDb({ notes: initialNotes, wikilinkMap: initialMap });
-          }
+          // An empty vault stays empty: new users start with no notes (the empty state offers Import and Restore).
         } catch (err) {
           console.warn('[ZeroBox] Could not load user notes from IndexedDB', err);
         } finally {
@@ -2694,10 +2723,14 @@ export const useCtfStore = create<CtfStoreState>()(
           relPath: note.relPath || `${note.category || 'Custom'}/${note.title}.md`,
           filename: `${note.title}.md`,
           rawMarkdown: note.rawMarkdown || note.summary || '',
+          // Cross-tab merges pick the newer copy of a note by dateModified.
+          dateModified: new Date().toISOString(),
         };
         set((state) => ({
           customNotes: [fullNote, ...state.customNotes],
         }));
+        // Written now (like updateNoteContent), so another tab never writes over a note that is only in memory here.
+        flushProfileSave();
       },
 
       updateNoteContent: async (noteId: string, rawMarkdown: string) => {
@@ -2718,16 +2751,23 @@ export const useCtfStore = create<CtfStoreState>()(
         // 2. In-place update if note exists in userNotes (imported private vault)
         const userNotes = state.userNotes || [];
         const isUserNote = userNotes.some((n) => n.id === noteId);
+        const editNote = (notes: CptsNoteEntry[]) =>
+          notes.map((n) => (n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n));
+        // Onto the stored vault; rejects when the note is gone from it (deleted in another tab), never "saved".
+        const editStored = (current: VaultMutationBase): VaultMutationResult => {
+          if (!current.notes.some((n) => n.id === noteId)) throw new Error(NOTE_GONE_MESSAGE);
+          return { notes: editNote(current.notes), wikilinkMap: current.wikilinkMap };
+        };
         if (isUserNote) {
-          const updatedUserNotes = userNotes.map((n) =>
-            n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
-          );
+          const updatedUserNotes = editNote(userNotes);
           set({ userNotes: updatedUserNotes });
+          // Only this note's change is applied onto the stored vault (another tab may have saved other notes).
           // Awaited, and a failure rejects: the editor then keeps the edit marked unsaved instead of "saved".
-          await saveVaultToIndexedDb({
-            notes: updatedUserNotes,
-            wikilinkMap: state.userWikilinkMap || {},
-          });
+          const written = await mutateVaultNotes(
+            editStored,
+            () => ({ notes: updatedUserNotes, wikilinkMap: state.userWikilinkMap || {} })
+          );
+          applyVaultWrite(written, [noteId]);
           return;
         }
 
@@ -2744,11 +2784,15 @@ export const useCtfStore = create<CtfStoreState>()(
               const base = latest.length > 0 ? latest : vaultNotes;
               const wikilinkMap =
                 latest.length > 0 ? get().userWikilinkMap || {} : vault?.wikilinkMap || {};
-              const updatedUserNotes = base.map((n) =>
-                n.id === noteId ? { ...n, rawMarkdown, dateModified: now } : n
-              );
+              const updatedUserNotes = editNote(base);
               set({ userNotes: updatedUserNotes, userWikilinkMap: wikilinkMap });
-              saveEdit = () => saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap });
+              saveEdit = async () => {
+                const written = await mutateVaultNotes(
+                  editStored,
+                  () => ({ notes: updatedUserNotes, wikilinkMap })
+                );
+                applyVaultWrite(written, [noteId]);
+              };
             }
           } catch (err) {
             console.warn('[ZeroBox] Could not read the notes vault before saving an edit', err);
@@ -2760,7 +2804,8 @@ export const useCtfStore = create<CtfStoreState>()(
           }
         }
 
-        console.warn(`[ZeroBox] Note with id "${noteId}" not found for update.`);
+        // The note is gone (deleted, here or in another tab): reject, so the editor keeps the text unsaved.
+        throw new Error(NOTE_GONE_MESSAGE);
       },
 
       applyNoteContentBatch: async (edits) => {
@@ -2788,8 +2833,18 @@ export const useCtfStore = create<CtfStoreState>()(
         if (userHit) {
           const updatedUserNotes = userNotes.map((n) => (customIds.has(n.id) ? n : rewrite(n)));
           set({ userNotes: updatedUserNotes });
-          // Awaited, and a failure rejects, exactly like updateNoteContent.
-          await saveVaultToIndexedDb({ notes: updatedUserNotes, wikilinkMap: state.userWikilinkMap || {} });
+          const vaultIds = userNotes.filter((n) => byId.has(n.id) && !customIds.has(n.id)).map((n) => n.id);
+          const inBatch = new Set(vaultIds);
+          // Each edited note is applied by id onto the stored vault. Awaited, and a failure rejects, like
+          // updateNoteContent.
+          const written = await mutateVaultNotes(
+            (current) => ({
+              notes: current.notes.map((n) => (inBatch.has(n.id) ? rewrite(n) : n)),
+              wikilinkMap: current.wikilinkMap,
+            }),
+            () => ({ notes: updatedUserNotes, wikilinkMap: state.userWikilinkMap || {} })
+          );
+          applyVaultWrite(written, vaultIds);
         }
 
         return {
@@ -2798,37 +2853,53 @@ export const useCtfStore = create<CtfStoreState>()(
         };
       },
 
-      deleteNote: (noteId) => {
+      deleteNote: (noteId) => get().deleteNotes([noteId]),
+
+      deleteNotes: (noteIds) => {
+        const ids = new Set(noteIds);
+        if (ids.size === 0) return;
         const userNotes = get().userNotes || [];
-        const isUserNote = userNotes.some((n) => n.id === noteId);
-        if (isUserNote) {
-          const updatedNotes = userNotes.filter((n) => n.id !== noteId);
-          const updatedMap = { ...(get().userWikilinkMap || {}) };
-          const target = userNotes.find((n) => n.id === noteId);
-          if (target) {
-            if (target.title) delete updatedMap[target.title.toLowerCase()];
-            if (target.titleEn) delete updatedMap[target.titleEn.toLowerCase()];
-            if (target.filename) delete updatedMap[target.filename.toLowerCase()];
-          }
-          saveVaultToIndexedDb({ notes: updatedNotes, wikilinkMap: updatedMap }).catch((err) =>
-            console.warn('[ZeroBox] Could not persist note deletion to IndexedDB', err)
-          );
+        const targets = userNotes.filter((n) => ids.has(n.id));
+        if (targets.length > 0) {
+          const dropFromMap = (map: Record<string, string>) => {
+            const next = { ...map };
+            for (const target of targets) {
+              if (target.title) delete next[target.title.toLowerCase()];
+              if (target.titleEn) delete next[target.titleEn.toLowerCase()];
+              if (target.filename) delete next[target.filename.toLowerCase()];
+            }
+            return next;
+          };
+          const updatedNotes = userNotes.filter((n) => !ids.has(n.id));
+          const updatedMap = dropFromMap(get().userWikilinkMap || {});
+          const removedIds = targets.map((n) => n.id);
+          // Removed by id from the stored vault, so another tab's edits to other notes survive.
+          mutateVaultNotes(
+            (current) => ({
+              notes: current.notes.filter((n) => !ids.has(n.id)),
+              wikilinkMap: dropFromMap(current.wikilinkMap),
+            }),
+            () => ({ notes: updatedNotes, wikilinkMap: updatedMap })
+          )
+            .then((written) => applyVaultWrite(written, removedIds))
+            .catch((err) => console.warn('[ZeroBox] Could not persist note deletion to IndexedDB', err));
           set((state) => ({
             userNotes: updatedNotes,
             userWikilinkMap: updatedMap,
-            deletedNoteIds: [...new Set([...state.deletedNoteIds, noteId])],
-            customNotes: state.customNotes.filter((n) => n.id !== noteId),
+            deletedNoteIds: [...new Set([...state.deletedNoteIds, ...ids])],
+            customNotes: state.customNotes.filter((n) => !ids.has(n.id)),
           }));
-        } else {
-          set((state) => ({
-            deletedNoteIds: [...new Set([...state.deletedNoteIds, noteId])],
-            customNotes: state.customNotes.filter((n) => n.id !== noteId),
-          }));
+          return;
         }
+        set((state) => ({
+          deletedNoteIds: [...new Set([...state.deletedNoteIds, ...ids])],
+          customNotes: state.customNotes.filter((n) => !ids.has(n.id)),
+        }));
       },
 
       restoreDeletedNotes: () => {
-        set(() => ({ deletedNoteIds: [] }));
+        // Only the tombstones change: notesEpoch stays, so other tabs keep their own (unsaved or new) notes.
+        set(() => ({ deletedNoteIds: [], tombstonesEpoch: new Date().toISOString() }));
       },
 
       resetSolvesToZero: () => {
@@ -3020,6 +3091,10 @@ export const useCtfStore = create<CtfStoreState>()(
               userNotes: Array.isArray(data.userNotes) ? data.userNotes : state.userNotes,
               userWikilinkMap: (data.userWikilinkMap && typeof data.userWikilinkMap === 'object') ? data.userWikilinkMap : state.userWikilinkMap,
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
+              notesEpoch:
+                Array.isArray(data.customNotes) || Array.isArray(data.deletedNoteIds)
+                  ? new Date().toISOString()
+                  : state.notesEpoch,
               userSolvesReset,
               ...importedGraph,
               ...importedLoot,
@@ -3092,6 +3167,8 @@ export const useCtfStore = create<CtfStoreState>()(
               activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : [],
               customNotes: Array.isArray(data.customNotes) ? data.customNotes : [],
               deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : [],
+              notesEpoch: typeof data.notesEpoch === 'string' ? data.notesEpoch : null,
+              tombstonesEpoch: typeof data.tombstonesEpoch === 'string' ? data.tombstonesEpoch : null,
               deletedMachineIds: normalizeMachineTombstones(data.deletedMachineIds),
               graphNodePositions: graphState.graphNodePositions,
               graphEdges: graphState.graphEdges,
@@ -3117,6 +3194,8 @@ export const useCtfStore = create<CtfStoreState>()(
             activitySessions: get().activitySessions,
             customNotes: get().customNotes,
             deletedNoteIds: get().deletedNoteIds,
+            notesEpoch: get().notesEpoch,
+            tombstonesEpoch: get().tombstonesEpoch,
             deletedMachineIds: get().deletedMachineIds,
             userSolvesReset: get().userSolvesReset,
           };
@@ -3146,6 +3225,8 @@ export const useCtfStore = create<CtfStoreState>()(
             activitySessions: [],
             customNotes: [],
             deletedNoteIds: [],
+            notesEpoch: null,
+            tombstonesEpoch: null,
             deletedMachineIds: [],
             userSolvesReset: false,
             graphNodePositions: graphState.graphNodePositions,
@@ -3173,6 +3254,8 @@ export const useCtfStore = create<CtfStoreState>()(
           activitySessions: [],
           customNotes: [],
           deletedNoteIds: [],
+          notesEpoch: null,
+          tombstonesEpoch: null,
           deletedMachineIds: [],
           userSolvesReset: true,
           graphNodePositions: graphState.graphNodePositions,
@@ -3205,6 +3288,8 @@ export const useCtfStore = create<CtfStoreState>()(
           activitySessions: state.activitySessions,
           customNotes: state.customNotes,
           deletedNoteIds: state.deletedNoteIds,
+          notesEpoch: state.notesEpoch,
+          tombstonesEpoch: state.tombstonesEpoch,
           deletedMachineIds: state.deletedMachineIds,
           userSolvesReset: state.userSolvesReset,
         };
@@ -3235,6 +3320,7 @@ export const useCtfStore = create<CtfStoreState>()(
           userNotes: [],
           userWikilinkMap: {},
           deletedNoteIds: [],
+          notesEpoch: new Date().toISOString(),
           userSolvesReset: true,
           isCatalogLoaded: true,
           unexportedChangesCount: 0,
@@ -3246,6 +3332,8 @@ export const useCtfStore = create<CtfStoreState>()(
         }));
         get().saveProfileData(targetId);
         broadcastCrossTabMessage('STATE_UPDATED', { profileId: targetId });
+        // The vault is global, not per profile: every tab drops its imported notes too.
+        broadcastVaultNotesUpdated();
       }
     }),
     {
@@ -3333,6 +3421,8 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
+          notesEpoch: typeof persisted.notesEpoch === 'string' ? persisted.notesEpoch : null,
+          tombstonesEpoch: typeof persisted.tombstonesEpoch === 'string' ? persisted.tombstonesEpoch : null,
           deletedMachineIds: normalizeMachineTombstones(persisted.deletedMachineIds),
           machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
         };
@@ -3367,6 +3457,8 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
+          notesEpoch: typeof persisted.notesEpoch === 'string' ? persisted.notesEpoch : null,
+          tombstonesEpoch: typeof persisted.tombstonesEpoch === 'string' ? persisted.tombstonesEpoch : null,
           // Persisted blob first; an older blob without the field falls back to the profile copy.
           deletedMachineIds: normalizeMachineTombstones(persisted.deletedMachineIds ?? currentState.deletedMachineIds),
           machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
@@ -3387,6 +3479,8 @@ export const useCtfStore = create<CtfStoreState>()(
           state.userSolvesReset,
           state.customNotes,
           state.deletedNoteIds,
+          state.notesEpoch,
+          state.tombstonesEpoch,
           state.deletedMachineIds,
           state.machines,
           state.activeTargetId,
@@ -3409,6 +3503,8 @@ export const useCtfStore = create<CtfStoreState>()(
           userSolvesReset: state.userSolvesReset,
           customNotes: state.customNotes,
           deletedNoteIds: state.deletedNoteIds,
+          notesEpoch: state.notesEpoch,
+          tombstonesEpoch: state.tombstonesEpoch,
           deletedMachineIds: state.deletedMachineIds,
           machines: toLeanMachines(state.machines),
           activeTargetId: state.activeTargetId,
@@ -3519,6 +3615,8 @@ function profileEditedSinceBoot(state: CtfStoreState): boolean {
     state.activitySessions !== b.activitySessions ||
     state.customNotes !== b.customNotes ||
     state.deletedNoteIds !== b.deletedNoteIds ||
+    state.notesEpoch !== b.notesEpoch ||
+    state.tombstonesEpoch !== b.tombstonesEpoch ||
     state.deletedMachineIds !== b.deletedMachineIds ||
     state.userSolvesReset !== b.userSolvesReset
   ) {
@@ -3555,6 +3653,8 @@ async function restoreFromResilientCopy(profileId: string, check: 'missing' | nu
     activitySessions: Array.isArray(copy.activitySessions) ? copy.activitySessions : s.activitySessions,
     customNotes: Array.isArray(copy.customNotes) ? copy.customNotes : s.customNotes,
     deletedNoteIds: Array.isArray(copy.deletedNoteIds) ? copy.deletedNoteIds : s.deletedNoteIds,
+    notesEpoch: typeof copy.notesEpoch === 'string' ? copy.notesEpoch : s.notesEpoch,
+    tombstonesEpoch: typeof copy.tombstonesEpoch === 'string' ? copy.tombstonesEpoch : s.tombstonesEpoch,
     deletedMachineIds: normalizeMachineTombstones(copy.deletedMachineIds ?? s.deletedMachineIds),
   }));
   console.warn('[ZeroBox] Restored the workspace from the IndexedDB copy (localStorage was missing or older).');
@@ -3582,6 +3682,8 @@ let lastSavedCheatsheets = useCtfStore.getState().cheatsheets;
 let lastSavedSessions = useCtfStore.getState().activitySessions;
 let lastSavedCustomNotes = useCtfStore.getState().customNotes;
 let lastSavedDeletedNoteIds = useCtfStore.getState().deletedNoteIds;
+let lastSavedNotesEpoch = useCtfStore.getState().notesEpoch;
+let lastSavedTombstonesEpoch = useCtfStore.getState().tombstonesEpoch;
 let lastSavedDeletedMachineIds = useCtfStore.getState().deletedMachineIds;
 let lastSavedUserSolvesReset = useCtfStore.getState().userSolvesReset;
 let saveDebounceTimer: any = null;
@@ -3597,6 +3699,8 @@ function markProfileSaved(state: CtfStoreState) {
   lastSavedSessions = state.activitySessions;
   lastSavedCustomNotes = state.customNotes;
   lastSavedDeletedNoteIds = state.deletedNoteIds;
+  lastSavedNotesEpoch = state.notesEpoch;
+  lastSavedTombstonesEpoch = state.tombstonesEpoch;
   lastSavedDeletedMachineIds = state.deletedMachineIds;
   lastSavedUserSolvesReset = state.userSolvesReset;
 }
@@ -3610,6 +3714,8 @@ function hasUnsavedProfileChanges(state: CtfStoreState) {
     state.activitySessions !== lastSavedSessions ||
     state.customNotes !== lastSavedCustomNotes ||
     state.deletedNoteIds !== lastSavedDeletedNoteIds ||
+    state.notesEpoch !== lastSavedNotesEpoch ||
+    state.tombstonesEpoch !== lastSavedTombstonesEpoch ||
     state.deletedMachineIds !== lastSavedDeletedMachineIds ||
     state.userSolvesReset !== lastSavedUserSolvesReset
   );
@@ -3667,6 +3773,8 @@ export function flushProfileSave() {
     activitySessions: state.activitySessions,
     customNotes: state.customNotes,
     deletedNoteIds: state.deletedNoteIds,
+    notesEpoch: state.notesEpoch,
+    tombstonesEpoch: state.tombstonesEpoch,
     deletedMachineIds: state.deletedMachineIds,
     userSolvesReset: state.userSolvesReset,
   };
@@ -3718,6 +3826,109 @@ export function mergeIncomingMachines(
   return [...localOnly, ...merged];
 }
 
+/** One tab's authored-notes lists as stored in its profile payload. */
+export interface NotesSide {
+  customNotes: CptsNoteEntry[];
+  deletedNoteIds: string[];
+  notesEpoch: string | null;
+  tombstonesEpoch?: string | null;
+}
+
+/**
+ * Cross-tab merge of another tab's authored notes (customNotes + deletedNoteIds) into ours. It never depends on
+ * what this tab last saved, so a note one tab just saved survives the other tab's stale write.
+ * - Same epoch (`notesEpoch`, the last whole-list replace): union by id, the newer dateModified wins (a tie goes to
+ *   the other tab's copy), a note only one side has is kept unless tombstoned, tombstones are unioned and
+ *   tombstoned ids are dropped.
+ * - Their epoch newer (they cleared, reset, restored deleted notes or imported): their lists as-is, plus our notes
+ *   modified after that replace. Their epoch is adopted.
+ * - Our epoch newer (their write predates our replace): our lists, plus their notes modified after our replace.
+ * `differs` is true when the result is not exactly what the other tab stored: this tab must then write it back so
+ * storage (and that tab) converge. Otherwise the incoming arrays themselves are returned.
+ */
+export function mergeIncomingNotes(local: NotesSide, incoming: NotesSide): NotesSide & { tombstonesEpoch: string | null; differs: boolean } {
+  const inEpoch = isoMs(incoming.notesEpoch);
+  const ourEpoch = isoMs(local.notesEpoch);
+  let mineCandidates = local.customNotes;
+  let theirCandidates = incoming.customNotes;
+  let deletedNoteIds: string[];
+  let notesEpoch: string | null;
+  if (inEpoch > ourEpoch) {
+    mineCandidates = local.customNotes.filter((n) => isoMs(n.dateModified) > inEpoch);
+    deletedNoteIds = incoming.deletedNoteIds;
+    notesEpoch = incoming.notesEpoch;
+  } else if (inEpoch < ourEpoch) {
+    theirCandidates = incoming.customNotes.filter((n) => isoMs(n.dateModified) > ourEpoch);
+    deletedNoteIds = local.deletedNoteIds;
+    notesEpoch = local.notesEpoch;
+  } else {
+    notesEpoch = incoming.notesEpoch ?? local.notesEpoch ?? null;
+    // Tombstones alone: a newer tombstones epoch (restore deleted notes) replaces the other list; else union.
+    const inTomb = isoMs(incoming.tombstonesEpoch);
+    const ourTomb = isoMs(local.tombstonesEpoch);
+    if (inTomb > ourTomb) {
+      deletedNoteIds = incoming.deletedNoteIds;
+    } else if (inTomb < ourTomb) {
+      deletedNoteIds = local.deletedNoteIds;
+    } else {
+      const inDead = new Set(incoming.deletedNoteIds);
+      const oursOnly = [...new Set(local.deletedNoteIds.filter((id) => !inDead.has(id)))];
+      deletedNoteIds = oursOnly.length > 0 ? [...incoming.deletedNoteIds, ...oursOnly] : incoming.deletedNoteIds;
+    }
+  }
+  const tombstonesEpoch =
+    isoMs(incoming.tombstonesEpoch) >= isoMs(local.tombstonesEpoch)
+      ? (incoming.tombstonesEpoch ?? local.tombstonesEpoch ?? null)
+      : (local.tombstonesEpoch ?? null);
+  const dead = new Set(deletedNoteIds);
+  const mineById = new Map(mineCandidates.map((n) => [n.id, n] as const));
+  const theirIds = new Set<string>();
+  const merged: CptsNoteEntry[] = [];
+  for (const theirs of theirCandidates) {
+    if (dead.has(theirs.id) || theirIds.has(theirs.id)) continue;
+    theirIds.add(theirs.id);
+    const mine = mineById.get(theirs.id);
+    merged.push(mine && isoMs(mine.dateModified) > isoMs(theirs.dateModified) ? mine : theirs);
+  }
+  const mineOnly = mineCandidates.filter((n) => !theirIds.has(n.id) && !dead.has(n.id));
+  const customNotes = [...mineOnly, ...merged];
+
+  const sameNotes =
+    customNotes.length === incoming.customNotes.length && customNotes.every((n, i) => n === incoming.customNotes[i]);
+  const inDeadSet = new Set(incoming.deletedNoteIds);
+  const sameTombstones = dead.size === inDeadSet.size && deletedNoteIds.every((id) => inDeadSet.has(id));
+  const sameEpoch =
+    (notesEpoch ?? null) === (incoming.notesEpoch ?? null) &&
+    tombstonesEpoch === (incoming.tombstonesEpoch ?? null);
+  if (sameNotes && sameTombstones && sameEpoch) {
+    return {
+      customNotes: incoming.customNotes,
+      deletedNoteIds: incoming.deletedNoteIds,
+      notesEpoch: incoming.notesEpoch ?? null,
+      tombstonesEpoch,
+      differs: false,
+    };
+  }
+  return { customNotes, deletedNoteIds, notesEpoch, tombstonesEpoch, differs: true };
+}
+
+/**
+ * Another tab wrote the vault: show what is stored now. A failed read changes nothing (it is not "empty"); a
+ * missing record means the vault was cleared. Local notes with a newer in-flight save are kept.
+ */
+async function reloadVaultFromOtherTab() {
+  try {
+    const vault = await loadVaultStrict();
+    const notes = Array.isArray(vault?.notes) ? vault.notes : [];
+    useCtfStore.setState((s) => ({
+      userNotes: adoptStoredVaultNotes(s.userNotes || [], notes),
+      userWikilinkMap: vault?.wikilinkMap && typeof vault.wikilinkMap === 'object' ? vault.wikilinkMap : {},
+    }));
+  } catch (err) {
+    console.warn('[ZeroBox] Could not reload notes changed in another tab', err);
+  }
+}
+
 /** Profile-persisted fields: a change to any of these needs a profile save. */
 const profileFieldsDiffer = (a: CtfStoreState, b: CtfStoreState) =>
   a.machines !== b.machines ||
@@ -3727,6 +3938,8 @@ const profileFieldsDiffer = (a: CtfStoreState, b: CtfStoreState) =>
   a.activitySessions !== b.activitySessions ||
   a.customNotes !== b.customNotes ||
   a.deletedNoteIds !== b.deletedNoteIds ||
+  a.notesEpoch !== b.notesEpoch ||
+  a.tombstonesEpoch !== b.tombstonesEpoch ||
   a.deletedMachineIds !== b.deletedMachineIds ||
   a.userSolvesReset !== b.userSolvesReset;
 
@@ -3845,8 +4058,25 @@ if (typeof window !== 'undefined') {
           const timer = targetChanged
             ? { isTimerRunning: false, timerLastTick: null, activeTimerSeconds: savedSeconds }
             : { activeTimerSeconds: state.isTimerRunning ? Math.max(state.activeTimerSeconds, savedSeconds) : savedSeconds };
+          // Authored notes merge per note (see mergeIncomingNotes) instead of the last writer replacing the list.
+          const notes = mergeIncomingNotes(
+            {
+              customNotes: state.customNotes,
+              deletedNoteIds: state.deletedNoteIds,
+              notesEpoch: state.notesEpoch,
+              tombstonesEpoch: state.tombstonesEpoch,
+            },
+            {
+              customNotes: Array.isArray(data.customNotes) ? data.customNotes : state.customNotes,
+              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : state.deletedNoteIds,
+              // Absent in payloads written before the field existed: epoch 0.
+              notesEpoch: typeof data.notesEpoch === 'string' ? data.notesEpoch : null,
+              tombstonesEpoch: typeof data.tombstonesEpoch === 'string' ? data.tombstonesEpoch : null,
+            }
+          );
           // Nothing of ours to add and nothing pending: what we apply is already stored, so don't write it back.
-          const echoOnly = machines === theirs && !saveDebounceTimer && !maxWaitTimer;
+          // (When the merged notes differ from what is stored they must be written back so storage converges.)
+          const echoOnly = machines === theirs && !notes.differs && !saveDebounceTimer && !maxWaitTimer;
           applyingExternalProfile = echoOnly;
           try {
             useCtfStore.setState((s) => ({
@@ -3857,8 +4087,10 @@ if (typeof window !== 'undefined') {
               globalVars: data.globalVars || s.globalVars,
               cheatsheets: data.cheatsheets || s.cheatsheets,
               activitySessions: Array.isArray(data.activitySessions) ? data.activitySessions : s.activitySessions,
-              customNotes: Array.isArray(data.customNotes) ? data.customNotes : s.customNotes,
-              deletedNoteIds: Array.isArray(data.deletedNoteIds) ? data.deletedNoteIds : s.deletedNoteIds,
+              customNotes: notes.customNotes,
+              deletedNoteIds: notes.deletedNoteIds,
+              notesEpoch: notes.notesEpoch,
+              tombstonesEpoch: notes.tombstonesEpoch,
               deletedMachineIds: Array.isArray(data.deletedMachineIds)
                 ? normalizeMachineTombstones(data.deletedMachineIds)
                 : s.deletedMachineIds,
@@ -3902,6 +4134,12 @@ if (typeof window !== 'undefined') {
     if (handleRestoreBroadcast(event.data)) return;
     const { type, payload } = event.data || {};
     const currentProfileId = useCtfStore.getState().currentProfileId || 'guest';
+    if (type === 'NOTES_UPDATED') {
+      // The vault is one global IndexedDB record (no profile in its key, and boot loads it without one), so this
+      // applies whatever profile either tab is on. Reload only: never re-broadcast, never write.
+      if (payload?.source === 'vault') void reloadVaultFromOtherTab();
+      return;
+    }
     if (type === 'WRITEUPS_UPDATED') {
       if (!payload?.profileId || payload.profileId === currentProfileId) {
         try {

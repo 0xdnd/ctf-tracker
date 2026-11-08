@@ -270,20 +270,17 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
   // 5. Defensive Edge Cases & Invariants
   // --------------------------------------------------------------------------
   describe('5. Defensive Edge Cases', () => {
-    it('gracefully handles non-existent note ID without crashing or corrupting state', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('rejects a non-existent note ID (never reported as saved) without corrupting state', async () => {
       const initialCustom = useCtfStore.getState().customNotes;
       const initialUser = useCtfStore.getState().userNotes;
 
       await expect(
         Promise.resolve(useCtfStore.getState().updateNoteContent('ghost-note-404', 'Some content'))
-      ).resolves.not.toThrow();
+      ).rejects.toThrow(/deleted/);
 
       expect(useCtfStore.getState().customNotes).toEqual(initialCustom);
       expect(useCtfStore.getState().userNotes).toEqual(initialUser);
       expect(saveVaultToIndexedDb).not.toHaveBeenCalled();
-      expect(warnSpy).toHaveBeenCalledWith('[ZeroBox] Note with id "ghost-note-404" not found for update.');
-      warnSpy.mockRestore();
     });
 
     it('supports empty string rawMarkdown and updates dateModified', () => {

@@ -41,6 +41,7 @@ const SHORTCUTS: ShortcutEntry[] = [
   { keys: ['+'], description: 'Zoom In (Make UI Larger: 110%, 122%)', category: 'system' },
   { keys: ['0'], description: 'Reset UI Display Scale to 100%', category: 'system' },
   { keys: ['Ctrl', 'K'], description: 'Open Global Command Palette', category: 'system' },
+  { keys: ['Ctrl', 'O'], description: 'Open a note by name (note switcher)', category: 'system' },
   { keys: ['?'], description: 'Open Keyboard Shortcuts cheat sheet', category: 'system' },
   { keys: ['Esc'], description: 'Close any active modal or flyout', category: 'system' },
 ];

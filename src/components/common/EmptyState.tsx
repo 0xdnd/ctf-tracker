@@ -6,6 +6,8 @@ export interface EmptyStateAction {
   label: string;
   onClick: () => void;
   icon?: LucideIcon;
+  /** Optional data-tour anchor for guides. */
+  tourAnchor?: string;
 }
 
 export interface EmptyStateProps {
@@ -54,6 +56,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               size={compact ? 'sm' : 'md'}
               iconLeft={ActionIcon ? <ActionIcon className="h-4 w-4" aria-hidden="true" /> : undefined}
               onClick={action.onClick}
+              data-tour={action.tourAnchor}
             >
               {action.label}
             </CyberButton>

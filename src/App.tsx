@@ -28,6 +28,8 @@ import { AlertTriangle, Database } from 'lucide-react';
 import { isTauriTarget } from './utils/runtimeTarget';
 import { useRouteMeta } from './hooks/useRouteMeta';
 import { LegacyNotesRedirect } from './components/common/LegacyNotesRedirect';
+import { getShellChrome, isFullscreenNotesPath } from './utils/fullscreenRoutes';
+import { rememberAppRoute } from './utils/lastAppRoute';
 
 // Code-Split Overlay Modals (Zero initial bundle overhead)
 const MachineDetailModal = lazy(() => import('./components/tracker/MachineDetailModal').then(m => ({ default: m.MachineDetailModal })));
@@ -48,6 +50,7 @@ const SettingsModal = lazy(() => import('./components/common/SettingsModal').the
 const SnippetsDrawer = lazy(() => import('./components/layout/SnippetsDrawer').then(m => ({ default: m.SnippetsDrawer })));
 const RevShellModal = lazy(() => import('./components/common/RevShellModal').then(m => ({ default: m.RevShellModal })));
 const CommandPalette = lazy(() => import('./components/layout/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const NoteSwitcherModal = lazy(() => import('./components/notes/NoteSwitcherModal'));
 const ExamQuickActionDrawer = lazy(() => import('./components/exam/ExamQuickActionDrawer').then(m => ({ default: m.ExamQuickActionDrawer })));
 const PersistentNotesWorkspace = lazy(() => import('./components/workspace/PersistentNotesWorkspace').then(m => ({ default: m.PersistentNotesWorkspace })));
 const FloatingPayloadBar = lazy(() => import('./components/common/FloatingPayloadBar').then(m => ({ default: m.FloatingPayloadBar })));
@@ -127,11 +130,17 @@ const MainAppContent: React.FC = () => {
   const mountRevShell = useEverTrue(revShellModalOpen);
   const mountExamDrawer = useEverTrue(examDrawerOpen);
   const mountNotesWorkspace = useEverTrue(notesWorkspaceOpen);
+  const noteSwitcherOpen = useNotesWorkspaceStore((s) => s.isNoteSwitcherOpen);
+  const mountNoteSwitcher = useEverTrue(noteSwitcherOpen);
   const operatorProfileModalOpen = useAuthStore((s) => s.operatorProfileModalOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
   const uiScale = useCtfStore((s) => s.uiScale || 'auto');
   const isHydrated = useCtfStore((s) => s.isHydrated);
+  const chrome = useMemo(
+    () => getShellChrome({ pathname: location.pathname, isPopout, focusMode }),
+    [location.pathname, isPopout, focusMode],
+  );
 
   // First visit: open the Welcome screen / guided tour once.
   useFirstRunTour(!isPopout && !isFirstRunTourExcludedPath(location.pathname));
@@ -167,6 +176,7 @@ const MainAppContent: React.FC = () => {
 
   // Escape key handler to easily exit Zen Focus Mode
   useEffect(() => {
+    if (!chrome.zenEscape) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && focusMode) {
         const isAnyModalOpen = Boolean(
@@ -192,6 +202,7 @@ const MainAppContent: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    chrome.zenEscape,
     focusMode,
     setFocusMode,
     selectedMachineId,
@@ -286,6 +297,9 @@ const MainAppContent: React.FC = () => {
   // Sync store activeTab with route
   useEffect(() => {
     const path = location.pathname;
+    if (!isPopout && !isFullscreenNotesPath(path)) {
+      rememberAppRoute(path + location.search + location.hash);
+    }
     if (path.startsWith('/methodology')) {
       setActiveTab('methodology');
     } else if (path.startsWith('/reverse-shell')) {
@@ -307,7 +321,7 @@ const MainAppContent: React.FC = () => {
     } else {
       setActiveTab('tracker');
     }
-  }, [location.pathname, setActiveTab]);
+  }, [location.pathname, location.search, location.hash, isPopout, setActiveTab]);
 
   // Close slide-over drawers when navigating between routes
   const prevPathRef = useRef(location.pathname);
@@ -339,7 +353,7 @@ const MainAppContent: React.FC = () => {
 
       {/* Zen Focus Mode Recovery Banner */}
       <AnimatePresence>
-        {focusMode && (
+        {chrome.zenBanner && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -365,6 +379,7 @@ const MainAppContent: React.FC = () => {
 
       {/* Global Quick Command Palette (Ctrl+K) */}
       {mountCommandPalette && <Suspense fallback={null}><CommandPalette /></Suspense>}
+      {mountNoteSwitcher && <Suspense fallback={null}><NoteSwitcherModal /></Suspense>}
 
       {/* Heavy Tactical Modals (Deferred Lazy Loading - Fetched strictly when triggered) */}
       <RouteErrorBoundary>
@@ -434,8 +449,8 @@ const MainAppContent: React.FC = () => {
       <EphemeralStorageBanner />
 
       {/* First-visit tour and one-time page hints */}
-      {!isPopout && <OnboardingLayer />}
-      {!isPopout && <BackupReminderCard />}
+      {chrome.onboarding && <OnboardingLayer />}
+      {chrome.backupReminder && <BackupReminderCard placement={chrome.backupPlacement} />}
 
       {/* Storage Quota Alert Banner with 1-Click Export Action */}
       <AnimatePresence>
@@ -478,20 +493,22 @@ const MainAppContent: React.FC = () => {
       </AnimatePresence>
 
       {/* Tactical Top Header (Unified Single Bar Cockpit) */}
-      {!focusMode && !isPopout && <UnifiedHeader />}
+      {chrome.header && <UnifiedHeader />}
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Responsive Collapsible Sidebar - Hidden in Focus Mode and Popout Mode */}
-        {!focusMode && !isPopout && <Sidebar />}
+        {chrome.sidebar && <Sidebar />}
 
         {/* Main Stage View */}
         <main
           ref={setScrollElement}
-          className={`flex-1 overflow-y-auto min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
-            isPopout ? 'p-0 pb-0' : 'p-3 pb-24 sm:p-4 md:p-6 md:pb-12'
+          className={`flex-1 min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
+            chrome.mainLayout === 'fullscreen' ? 'overflow-hidden' : 'overflow-y-auto'
           } ${
-            focusMode ? 'max-w-7xl mx-auto w-full' : ''
+            chrome.mainLayout === 'default' ? 'p-3 pb-24 sm:p-4 md:p-6 md:pb-12' : chrome.mainLayout === 'bare' ? 'p-0 pb-0' : 'p-0'
+          } ${
+            focusMode && chrome.mainLayout !== 'fullscreen' ? 'max-w-7xl mx-auto w-full' : ''
           }`}
         >
           <AnimatePresence mode="wait">
@@ -501,7 +518,7 @@ const MainAppContent: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              className="relative z-10"
+              className={`relative z-10 ${chrome.mainLayout === 'fullscreen' ? 'h-full' : ''}`}
             >
               <RouteErrorBoundary resetKey={location.pathname}>
                 <Suspense fallback={<CyberRouteLoader />}>
@@ -539,14 +556,14 @@ const MainAppContent: React.FC = () => {
           </AnimatePresence>
         </main>
         {/* Global Persistent Multi-Tab Notes Workspace Sidecar (Non-blocking) */}
-        {!isPopout && mountNotesWorkspace && <Suspense fallback={null}><PersistentNotesWorkspace /></Suspense>}
+        {chrome.notesDock && mountNotesWorkspace && <Suspense fallback={null}><PersistentNotesWorkspace /></Suspense>}
       </div>
 
       {/* Global Floating LHOST/LPORT Payload Bar - Hidden in Popout Mode */}
-      {!isPopout && <Suspense fallback={null}><FloatingPayloadBar /></Suspense>}
+      {chrome.payloadBar && <Suspense fallback={null}><FloatingPayloadBar /></Suspense>}
 
       {/* Tactical Mobile Bottom Navigation Bar (md:hidden) */}
-      {!focusMode && !isPopout && <MobileNav />}
+      {chrome.mobileNav && <MobileNav />}
 
       {/* Global Non-Blocking In-App Toast Container */}
       <ToastContainer />

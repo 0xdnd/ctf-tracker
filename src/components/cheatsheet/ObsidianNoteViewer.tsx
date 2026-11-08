@@ -1,48 +1,41 @@
-import { isTauriTarget } from '../../utils/runtimeTarget';
 import { motion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
-import { confirmAction } from '../../store/useConfirmStore';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { 
-  X, 
-  Copy, 
-  Check, 
-  Terminal, 
-  BookOpen, 
-  Plus, 
-  Search, 
-  Layers, 
-  ExternalLink, 
-  PanelRight, 
+import {
+  X,
+  BookOpen,
+  Plus,
+  Search,
+  Layers,
+  PanelRight,
   PanelLeft,
-  Maximize2,
-  Minimize2,
-  Columns,
-  Rows,
   Pin,
-  Trash2,
-  MoveRight,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  Target
 } from 'lucide-react';
-import { 
-  CptsNoteEntry, 
+import {
+  CptsNoteEntry,
   getAllCptsNotes,
-  getNoteById 
+  getNoteById
 } from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import { NARROW_QUERY, useMediaQuery } from '../../hooks/useMediaQuery';
 import { GlobalVariables } from '../../types';
 import { SplitOrientation } from '../../types/workspace';
-import { ShareLinkButton } from '../common/ShareLinkButton';
 import { ObsidianTabContent } from './ObsidianTabContent';
+import { NoteMoreMenu, NoteMoreMenuEntry } from '../notes/NoteMoreMenu';
 import { handleWorkspaceLinkClick, scrollToHeadingAnchor } from '../../utils/workspaceLinkInterceptor';
 import { useNotesWorkspaceStore, ObsidianViewMode } from '../../store/useNotesWorkspaceStore';
+import { useToastStore } from '../../store/useToastStore';
+import { buildNoteMenuEntries } from '../../utils/noteMenuEntries';
 
 export type { ObsidianViewMode };
 export type ObsidianNoteLanguage = 'en' | 'he';
-export type ObsidianDisplayMode = 'modal' | 'docked' | 'popout';
+/** 'page' is the full-screen workspace; 'popout' is a detached window. */
+export type ObsidianDisplayMode = 'page' | 'popout';
 
 export interface ObsidianNoteViewerProps {
   note: CptsNoteEntry;
@@ -59,10 +52,9 @@ export interface ObsidianNoteViewerProps {
   onCloseAllTabs?: () => void;
   allAvailableNotes?: CptsNoteEntry[];
   displayMode?: ObsidianDisplayMode;
-  onToggleDisplayMode?: () => void;
   onPopoutWindow?: () => void;
-  isMaximized?: boolean;
-  onToggleMaximize?: () => void;
+  /** Fired by the menu's language row, so the parent can switch tree and search titles too. */
+  onLanguageChange?: (l: ObsidianNoteLanguage) => void;
   // Multi-Pane Split Workspace Props
   isSplitView?: boolean;
   splitOrientation?: SplitOrientation;
@@ -74,6 +66,15 @@ export interface ObsidianNoteViewerProps {
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
   onSwitchToCards?: () => void;
+  onTagClick?: (tag: string) => void;
+  /** Search text to highlight in the active note once it renders. */
+  highlightQuery?: string;
+  /** 'shell' inside the full-screen workspace (popout always renders 'dock'). */
+  variant?: 'dock' | 'shell';
+  /** Scroll to this heading in the active tab. Acted on once per larger nonce. */
+  headingRequest?: { slug: string; nonce: number };
+  isRightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
 }
 
 export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
@@ -90,23 +91,28 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   onNewTab,
   onCloseAllTabs,
   allAvailableNotes,
-  displayMode = 'modal',
-  onToggleDisplayMode,
+  displayMode = 'page',
   onPopoutWindow,
-  isMaximized = false,
-  onToggleMaximize,
+  onLanguageChange,
   isSplitView = false,
   splitOrientation = 'horizontal',
   onToggleSplit,
   onMoveTabToOtherPane,
+  paneId,
   isPaneActive = true,
   onFocusPane,
   isSidebarOpen = true,
   onToggleSidebar,
+  onTagClick,
+  highlightQuery,
+  variant = 'dock',
+  headingRequest,
+  isRightPanelOpen = true,
+  onToggleRightPanel,
 }) => {
   const [viewMode, setViewMode] = useState<ObsidianViewMode>('reading');
+  const tabVariant = variant;
   const [langMode, setLangMode] = useState<ObsidianNoteLanguage>(defaultLanguage);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Reader Font Size scaling ('sm' | 'base' | 'lg' | 'xl')
   const storeFontSize = useNotesWorkspaceStore((state) => state.fontSize);
@@ -133,19 +139,6 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     setFontSize(next);
     setStoreFontSize(next);
   }, [fontSize, setStoreFontSize]);
-
-  // Maximize / Focus Mode state fallback if not managed by parent
-  const [internalMaximized, setInternalMaximized] = useState(false);
-  const effectiveMaximized = onToggleMaximize ? isMaximized : internalMaximized;
-
-  const handleToggleMaximize = useCallback(() => {
-    if (onToggleMaximize) {
-      onToggleMaximize();
-    } else {
-      setInternalMaximized((prev) => !prev);
-    }
-    if (soundEnabled) playCyberSound('click');
-  }, [onToggleMaximize, soundEnabled]);
 
   // Tab Strip horizontal scrolling buttons
   const handleScrollTabsLeft = useCallback(() => {
@@ -197,6 +190,34 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
 
   // Root container ref for link interception & heading anchor scrolling
   const workspaceContainerRef = useRef<HTMLDivElement>(null);
+
+  // Outline clicks: a request is acted on once, and only when its nonce is newer than the last one
+  // handled. A request that predates this mount is treated as handled, so remounting never re-scrolls.
+  const lastHandledNonce = useRef(headingRequest?.nonce ?? 0);
+  const [pendingHeading, setPendingHeading] = useState<{ slug: string; nonce: number } | null>(null);
+  const requestNonce = headingRequest?.nonce;
+  const requestSlug = headingRequest?.slug;
+  useEffect(() => {
+    if (requestNonce === undefined || requestSlug === undefined) return;
+    if (requestNonce <= lastHandledNonce.current) return;
+    lastHandledNonce.current = requestNonce;
+    if (viewMode !== 'reading') setViewMode('reading');
+    setPendingHeading({ slug: requestSlug, nonce: requestNonce });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestNonce, requestSlug]);
+  // Runs once the rendered body exists (never in raw mode). Keep-alive tabs hold hidden copies of the
+  // same heading ids, so the lookup is scoped to the active tab.
+  useEffect(() => {
+    if (!pendingHeading || viewMode === 'raw') return;
+    const frame = requestAnimationFrame(() => {
+      const tab = Array.from(
+        workspaceContainerRef.current?.querySelectorAll<HTMLElement>('[data-tab-note-id]') ?? [],
+      ).find((el) => el.dataset.tabNoteId === note.id);
+      if (tab) scrollToHeadingAnchor(tab, pendingHeading.slug);
+      setPendingHeading(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pendingHeading, viewMode, note.id]);
 
   // Safe open notes array (strictly honoring authoritative openNotes)
   const safeOpenNotes = useMemo(() => {
@@ -323,8 +344,9 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
       const target = e.target as HTMLElement | null;
       const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
 
-      // 1. Close modal or picker or drawer on Escape key
+      // 1. Close the picker or drawer on Escape (or the popout window itself)
       if (e.key === 'Escape') {
+        if (e.defaultPrevented) return;
         if (isPickerOpen) {
           e.preventDefault();
           e.stopPropagation();
@@ -337,33 +359,15 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           setIsTabsDrawerOpen(false);
           return;
         }
-        e.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (isInput) return;
-
-      // 2. Toggle dock / modal viewing mode: Alt+M
-      if (e.altKey && e.key.toLowerCase() === 'm') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (onToggleDisplayMode) {
-          if (soundEnabled) playCyberSound('click');
-          onToggleDisplayMode();
+        // Page mode never closes tabs on Escape; only a popout window closes itself.
+        if (displayMode === 'popout') {
+          e.preventDefault();
+          onClose();
         }
         return;
       }
 
-      // 2b. Toggle Maximize / Zen focus mode: Alt+F
-      if (e.altKey && e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        e.stopPropagation();
-        handleToggleMaximize();
-        return;
-      }
-
-
+      if (isInput) return;
 
       // 3. Close active tab: Alt+W or Ctrl+Shift+W (or Ctrl+W / Cmd+W)
       if (
@@ -427,19 +431,11 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         setIsPickerOpen((prev) => !prev);
         return;
       }
-
-      // 6. Toggle Maximize / Full-Width Focus Mode: Alt+F
-      if (e.altKey && e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        e.stopPropagation();
-        handleToggleMaximize();
-        return;
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [note.id, safeOpenNotes, onSelectNote, onClose, isPickerOpen, isTabsDrawerOpen, handleCloseSpecificTab, handleToggleMaximize, onToggleSidebar]);
+  }, [note.id, safeOpenNotes, onSelectNote, onClose, isPickerOpen, isTabsDrawerOpen, handleCloseSpecificTab, displayMode]);
 
   // Universal Link Interception Capture Handler
   const handleContainerLinkClick = useCallback((e: React.MouseEvent) => {
@@ -494,53 +490,81 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     if (!note.commands || note.commands.length === 0) return;
     const all = note.commands.map((cmd) => interpolateCommand(cmd, effectiveVars)).join('\n\n');
     safeCopyToClipboard(all);
-    setCopiedId('all-cmds-' + note.id);
     if (soundEnabled) playCyberSound('copy');
-    setTimeout(() => setCopiedId(null), 2000);
-  }, [note.commands, note.id, effectiveVars, soundEnabled]);
+    useToastStore.getState().addToast({ type: 'success', message: 'Copied all commands' });
+  }, [note.commands, effectiveVars, soundEnabled]);
 
-  const handleCopyRawMarkdown = useCallback(() => {
-    const raw = note.rawMarkdown || (note as any).content || '';
-    safeCopyToClipboard(raw);
-    setCopiedId('raw-md-' + note.id);
-    if (soundEnabled) playCyberSound('copy');
-    setTimeout(() => setCopiedId(null), 2000);
-  }, [note.rawMarkdown, (note as any).content, note.id, soundEnabled]);
+  const isNarrow = useMediaQuery(NARROW_QUERY);
+  const isPopout = displayMode === 'popout';
+  // One right-panel toggle in a split view: the active pane's header owns it.
+  const showRightPanelToggle = Boolean(onToggleRightPanel) && !isPopout && (!isSplitView || isPaneActive);
+
+  const iconBtn =
+    'inline-flex h-7 w-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1';
+  const segBtn =
+    'cursor-pointer rounded-sm px-2.5 py-1 transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ';
+  const segOn = 'bg-accent font-semibold text-on-accent';
+  const segOff = 'text-secondary hover:text-primary';
+
+  const handleLanguageChange = useCallback(
+    (l: ObsidianNoteLanguage) => {
+      setLangMode(l);
+      onLanguageChange?.(l);
+    },
+    [onLanguageChange],
+  );
+
+  // Copy, Export and Report read the live pool, so edits saved in another pane are included.
+  const currentMarkdown = () =>
+    getNoteById(note.id, allAvailableNotes)?.rawMarkdown ?? note.rawMarkdown ?? (note as any).content ?? '';
+
+  const menuEntries: NoteMoreMenuEntry[] = buildNoteMenuEntries({
+    note,
+    soundEnabled,
+    getMarkdown: currentMarkdown,
+    onCopyCommands: handleCopyAllCommands,
+    split: onToggleSplit
+      ? {
+          isSplitView,
+          orientation: splitOrientation,
+          onToggle: onToggleSplit,
+        }
+      : undefined,
+    onMoveTab:
+      isSplitView && onMoveTabToOtherPane && safeOpenNotes.length > 1 ? () => onMoveTabToOtherPane(note.id) : undefined,
+    popout: isPopout ? undefined : { onOpen: onPopoutWindow },
+    pin: isPopout
+      ? undefined
+      : {
+          onSelect: () => {
+            useNotesWorkspaceStore.getState().openNote(note.id);
+            useNotesWorkspaceStore.getState().setIsOpen(true);
+            useNotesWorkspaceStore.getState().setIsPinned(true);
+            if (soundEnabled) playCyberSound('click');
+            // The dock is hidden on this route, so the toast is the only feedback.
+            useToastStore.getState().addToast({ type: 'success', message: 'Pinned. It stays open on other pages.' });
+          },
+        },
+    onDeleteNote,
+  });
 
   const innerCardContent = (
     <div
       onClick={onFocusPane}
-      className={`h-full w-full flex flex-col bg-cyber-card border rounded-2xl overflow-hidden shadow-2xl transition-[box-shadow,background-color,border-color,color] ${
-        isPaneActive ? 'border-accent ring-1 ring-accent' : 'border-subtle opacity-95'
+      className={`h-full w-full flex flex-col bg-surface-base overflow-hidden transition-opacity duration-150 motion-reduce:transition-none ${
+        isSplitView && !isPaneActive ? 'opacity-80' : ''
       }`}
     >
       {/* Multi-Tab Workspace Strip (Obsidian / VS Code style) */}
       <div 
         dir="ltr"
-        className="flex items-center justify-between px-3 h-10 min-h-[40px] bg-surface-elevated border-b border-subtle select-none flex-shrink-0 overflow-hidden"
+        className="flex items-center justify-between px-3 h-9 min-h-[36px] bg-surface-sunken border-b border-subtle select-none flex-shrink-0 overflow-hidden"
       >
-        {/* Toggle Sidebar Button (Obsidian style) */}
-        {onToggleSidebar && (
-          <button
-            type="button"
-            data-testid="toggle-sidebar-button"
-            onClick={() => {
-              if (soundEnabled) playCyberSound('click');
-              onToggleSidebar();
-            }}
-            className="active:scale-[0.97] p-1 mr-1.5 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-interactive flex-shrink-0 cursor-pointer"
-            title={isSidebarOpen ? "Collapse sidebar (Ctrl+B)" : "Expand sidebar (Ctrl+B)"}
-            aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            <PanelLeft className={`w-4 h-4 ${isSidebarOpen ? 'text-accent' : 'text-muted'}`} />
-          </button>
-        )}
-
         {/* Left scroll chevron */}
         <button
           type="button"
           onClick={handleScrollTabsLeft}
-          className="active:scale-[0.97] p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-interactive flex-shrink-0"
+          className="flex-shrink-0 cursor-pointer rounded-sm p-1 text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
           title="Scroll tabs left"
           aria-label="Scroll tabs left"
         >
@@ -551,7 +575,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           ref={tabStripScrollRef}
           data-testid="tab-strip-scroll-container"
           dir="ltr"
-          className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar py-1 h-full"
+          className="flex items-end gap-0.5 flex-1 min-w-0 overflow-x-auto no-scrollbar h-full"
           onWheel={(e) => {
             if (e.deltaY !== 0) {
               e.currentTarget.scrollLeft += e.deltaY;
@@ -585,10 +609,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   e.preventDefault();
                   togglePinTab(tab.id);
                 }}
-                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 h-8 rounded-lg text-xs border cursor-pointer transition-colors max-w-[200px] sm:max-w-[240px] flex-shrink-0 ${
+                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 rounded-t-md text-xs border border-b-0 cursor-pointer transition-colors duration-150 motion-reduce:transition-none max-w-[140px] md:max-w-[240px] flex-shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
                   isActive
-                    ? 'bg-accent-muted border-accent text-primary font-semibold ring-1 ring-accent'
-                    : 'bg-surface-sunken border-subtle text-muted hover:text-secondary hover:bg-accent-muted hover:border-subtle'
+                    ? 'h-[31px] bg-surface-base border-subtle text-primary font-semibold'
+                    : 'h-[30px] border-transparent text-muted hover:text-secondary hover:bg-surface-hover'
                 }`}
                 title={`${tab.titleEn || tab.title} (${tab.category})${isPinned ? ' [Pinned]' : ''}`}
               >
@@ -598,7 +622,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                     animate={{ opacity: 1 }}
                     transition={TACTICAL_SPRING}
                     aria-hidden="true"
-                    className="pointer-events-none absolute top-0 left-2 right-2 h-[2px] bg-accent rounded-full"
+                    data-testid="active-tab-line" className={`pointer-events-none absolute -top-px left-0 right-0 h-0 border-t-2 ${isSplitView && !isPaneActive ? 'border-strong' : 'border-accent'}`}
                   />
                 )}
                 {/* Pin indicator */}
@@ -609,14 +633,14 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       e.stopPropagation();
                       togglePinTab(tab.id);
                     }}
-                    className="active:scale-[0.97] text-accent hover:text-callout-danger-fg transition-interactive flex-shrink-0 p-0.5"
+                    className="flex-shrink-0 cursor-pointer rounded-sm p-0.5 text-accent hover:text-callout-danger-fg transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                     title="Unpin tab"
                   >
                     <Pin className="w-3.5 h-3.5 fill-accent rotate-45" />
                   </button>
                 ) : (
-                  <span className="flex-shrink-0 text-accent text-xs">
-                    {tab.stage ? '🎯' : '📝'}
+                  <span className="flex-shrink-0 text-accent" aria-hidden="true">
+                    {tab.stage ? <Target size={14} /> : <FileText size={14} />}
                   </span>
                 )}
 
@@ -634,7 +658,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       if (soundEnabled) playCyberSound('click');
                       handleCloseSpecificTab(tab.id);
                     }}
-                    className="active:scale-[0.97] p-0.5 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg text-muted transition-[opacity,background-color,border-color,color] cursor-pointer flex-shrink-0"
+                    className="flex-shrink-0 cursor-pointer rounded-sm p-0.5 text-muted opacity-60 transition-[opacity,background-color,color] duration-150 motion-reduce:transition-none group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                     title="Close tab (Alt+W)"
                     aria-label={`Close tab ${tab.titleEn || tab.title}`}
                   >
@@ -650,7 +674,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsRight}
-          className="active:scale-[0.97] p-1 rounded hover:bg-accent-muted text-muted hover:text-primary transition-interactive flex-shrink-0"
+          className="flex-shrink-0 cursor-pointer rounded-sm p-1 text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
           title="Scroll tabs right"
           aria-label="Scroll tabs right"
         >
@@ -663,7 +687,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             type="button"
             data-testid="new-tab-button"
             onClick={() => setIsPickerOpen((prev) => !prev)}
-            className="active:scale-[0.97] h-8 px-2.5 rounded-lg bg-accent-muted hover:bg-accent-muted border border-accent text-accent hover:text-primary transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 text-xs cursor-pointer flex-shrink-0"
+            className="flex h-7 flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-subtle px-2.5 text-xs text-secondary hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
             title="Open new tab (Ctrl+T / Alt+T)"
             aria-label="Open note in new tab"
           >
@@ -676,12 +700,12 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             <div
               ref={pickerRef}
               data-testid="quick-note-picker"
-              className="absolute right-0 sm:left-0 top-full mt-1.5 w-72 sm:w-96 max-h-80 bg-cyber-card border border-accent rounded-xl shadow-2xl z-[100] overflow-hidden flex flex-col p-2 space-y-2 backdrop-blur-xl animate-fadeIn"
+              className="absolute right-0 sm:left-0 top-full mt-1.5 w-72 sm:w-96 max-h-80 bg-surface-elevated border border-strong rounded-md shadow-xl z-[100] overflow-hidden flex flex-col p-2 space-y-2 animate-fadeIn motion-reduce:animate-none"
             >
               <div className="flex items-center justify-between px-2 pt-1 border-b border-subtle pb-1.5">
-                <span className="text-[11px] font-semibold text-accent flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-secondary flex items-center gap-1.5">
                   <BookOpen className="w-3 h-3 text-accent" />
-                  FIELD MANUAL QUICK PICKER
+                  Field manual quick picker
                 </span>
                 <span className="text-[10px] text-muted">
                   Esc to close
@@ -711,7 +735,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                     }
                   }}
                   placeholder="Search manual notes (e.g. nmap, privesc, ad)..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle focus:border-accent focus:outline-none text-xs text-secondary placeholder:text-muted/60"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-md bg-surface-sunken border border-subtle focus:border-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 text-xs text-secondary placeholder:text-muted/60"
                 />
               </div>
 
@@ -738,7 +762,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                           }
                           setIsPickerOpen(false);
                         }}
-                        className="active:scale-[0.97] w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs hover:bg-accent-muted hover:text-primary transition-interactive border border-transparent hover:border-accent cursor-pointer"
+                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-sm text-left text-xs hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                       >
                         <div className="truncate flex-1">
                           <div className="font-semibold text-secondary truncate">
@@ -775,28 +799,28 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="toggle-tabs-drawer"
               onClick={() => setIsTabsDrawerOpen((prev) => !prev)}
-              className={`active:scale-[0.97] h-7 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-interactive cursor-pointer ${
+              className={`h-7 px-2.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
                 isTabsDrawerOpen
-                  ? 'bg-accent-muted border-accent text-primary'
-                  : 'bg-accent-muted hover:bg-accent-muted border-subtle hover:border-accent text-accent hover:text-primary'
+                  ? 'bg-surface-hover border-strong text-primary'
+                  : 'border-subtle text-secondary hover:bg-surface-hover hover:text-primary'
               }`}
               title="View and navigate all open tabs vertically"
               aria-label={`Open tabs list (${safeOpenNotes.length})`}
             >
               <Layers className="w-3 h-3 text-accent" />
-              <span>{safeOpenNotes.length} {safeOpenNotes.length === 1 ? 'TAB' : 'TABS'}</span>
+              <span>{safeOpenNotes.length} {safeOpenNotes.length === 1 ? 'tab' : 'tabs'}</span>
             </button>
 
             {/* Vertical Quick-Tabs Popover */}
             {isTabsDrawerOpen && (
               <div
                 data-testid="tabs-drawer-popover"
-                className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 max-h-80 bg-cyber-card border border-accent rounded-xl shadow-2xl z-[110] overflow-hidden flex flex-col p-2 space-y-2 backdrop-blur-xl animate-fadeIn"
+                className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 max-h-80 bg-surface-elevated border border-strong rounded-md shadow-xl z-[110] overflow-hidden flex flex-col p-2 space-y-2 animate-fadeIn motion-reduce:animate-none"
               >
                 <div className="flex items-center justify-between px-2 pt-1 border-b border-subtle pb-1.5">
-                  <span className="text-[11px] font-semibold text-accent flex items-center gap-1.5">
+                  <span className="text-[11px] font-semibold text-secondary flex items-center gap-1.5">
                     <Layers className="w-3 h-3 text-accent" />
-                    ACTIVE NOTE TABS ({safeOpenNotes.length})
+                    Active note tabs ({safeOpenNotes.length})
                   </span>
                   {safeOpenNotes.length > 1 && onCloseAllTabs && (
                     <button
@@ -805,7 +829,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                         onCloseAllTabs();
                         setIsTabsDrawerOpen(false);
                       }}
-                      className="active:scale-[0.97] text-[10px] text-callout-danger-fg hover:text-callout-danger-fg transition-interactive cursor-pointer"
+                      className="cursor-pointer rounded-sm px-1 text-[10px] text-callout-danger-fg hover:underline transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                     >
                       Close All
                     </button>
@@ -818,10 +842,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                     return (
                       <div
                         key={tab.id}
-                        className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border transition-colors ${
+                        className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-sm border transition-colors duration-150 motion-reduce:transition-none ${
                           isActive
-                            ? 'bg-accent-muted border-accent text-primary font-semibold'
-                            : 'bg-surface-sunken border-subtle text-muted hover:text-secondary hover:bg-accent-muted'
+                            ? 'bg-surface-hover border-subtle text-primary font-semibold'
+                            : 'border-transparent text-muted hover:text-secondary hover:bg-surface-hover'
                         }`}
                       >
                         <button
@@ -831,10 +855,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                             onSelectNote?.(tab.id);
                             setIsTabsDrawerOpen(false);
                           }}
-                          className="transition-transform active:scale-[0.97] flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
+                          className="flex items-center gap-2 min-w-0 flex-1 rounded-sm text-left cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                         >
-                          <span className="text-accent text-xs flex-shrink-0">
-                            {tab.stage ? '🎯' : '📝'}
+                          <span className="text-accent flex-shrink-0" aria-hidden="true">
+                            {tab.stage ? <Target size={14} /> : <FileText size={14} />}
                           </span>
                           <span className="truncate text-xs">
                             {tab.titleEn || tab.title}
@@ -844,7 +868,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                           <button
                             type="button"
                             onClick={() => togglePinTab(tab.id)}
-                            className={`transition-transform active:scale-[0.97] p-1 rounded hover:bg-surface-card ${
+                            className={`cursor-pointer p-1 rounded-sm hover:bg-surface-hover transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
                               isPinned ? 'text-accent' : 'text-muted'
                             }`}
                             title={isPinned ? 'Unpin tab' : 'Pin tab'}
@@ -862,7 +886,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                                   handleCloseSpecificTab(tab.id);
                                 }
                               }}
-                              className="transition-transform active:scale-[0.97] p-1 rounded text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg"
+                              className="cursor-pointer p-1 rounded-sm text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                               title="Close tab"
                             >
                               <X className="w-3 h-3" />
@@ -885,7 +909,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               type="button"
               data-testid="close-all-tabs-button"
               onClick={onCloseAllTabs}
-              className="active:scale-[0.97] hidden sm:inline px-1.5 py-0.5 rounded hover:bg-callout-danger-bg hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-interactive cursor-pointer"
+              className="hidden sm:inline px-1.5 py-0.5 rounded-sm hover:bg-callout-danger-bg hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
               title="Close all tabs"
             >
               Close All
@@ -894,358 +918,92 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         </div>
       </div>
 
-      {/* Top Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-cyber-bg/95 border-b border-subtle flex-shrink-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 text-xs truncate max-w-sm sm:max-w-md lg:max-w-xl min-w-0">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-accent-muted border border-accent text-accent font-semibold flex-shrink-0">
-            <BookOpen className="w-3.5 h-3.5 text-accent" />
-            <span className="hidden sm:inline">Field manual</span>
-            <span className="sm:hidden">Manual</span>
-          </div>
-          <span className="text-muted flex-shrink-0">/</span>
-          <span className="text-muted truncate">{note.category}</span>
-          {note.subCategory && (
-            <>
-              <span className="text-muted flex-shrink-0">/</span>
-              <span className="text-accent truncate hidden md:inline">{note.subCategory}</span>
-            </>
+      {/* Note header: breadcrumb, Reading/Edit, the more menu, right-panel toggle */}
+      <div
+        dir="ltr"
+        data-testid="note-header"
+        className="flex h-9 min-h-[36px] flex-shrink-0 items-center justify-between gap-2 border-b border-subtle bg-surface-card px-3"
+      >
+        <div className="flex min-w-0 items-center gap-1.5">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              data-testid="toggle-sidebar-button"
+              onClick={() => {
+                if (soundEnabled) playCyberSound('click');
+                onToggleSidebar();
+              }}
+              className={iconBtn}
+              title={isSidebarOpen ? "Collapse sidebar (Ctrl+B)" : "Expand sidebar (Ctrl+B)"}
+              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <PanelLeft className={`h-[18px] w-[18px] ${isSidebarOpen ? 'text-accent' : ''}`} />
+            </button>
           )}
-          <span className="text-muted flex-shrink-0">/</span>
-          <span className="text-primary font-semibold truncate">{note.titleEn || note.title}</span>
+          <nav
+            aria-label="Breadcrumb"
+            data-testid="note-breadcrumb"
+            className="flex min-w-0 items-center gap-1.5 text-[13px] text-tertiary"
+          >
+            <span className="truncate">{note.category}</span>
+            {note.subCategory && (
+              <>
+                <span aria-hidden="true" className="hidden flex-shrink-0 md:inline">/</span>
+                <span className="hidden truncate md:inline">{note.subCategory}</span>
+              </>
+            )}
+            <span aria-hidden="true" className="flex-shrink-0">/</span>
+            <span className="truncate font-medium text-muted">{note.titleEn || note.title}</span>
+          </nav>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-          {/* Reading / Split / Raw Toggle */}
-          <div className="hidden sm:flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <div className="flex items-center rounded-sm bg-surface-sunken p-0.5 text-[11px]">
             <button
               type="button"
               onClick={() => setViewMode('reading')}
-              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
-                viewMode === 'reading'
-                  ? 'bg-accent text-on-accent font-semibold'
-                  : 'text-secondary hover:text-primary'
-              )}
+              aria-pressed={viewMode === 'reading'}
+              className={segBtn + (viewMode === 'reading' ? segOn : segOff)}
               title="Obsidian rich formatted reading mode"
             >
               Reading
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('split')}
-              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
-                viewMode === 'split'
-                  ? 'bg-accent text-on-accent font-semibold'
-                  : 'text-secondary hover:text-primary'
-              )}
-              title="Split side-by-side editor and live preview"
+              onClick={() => setViewMode(isNarrow ? 'raw' : 'split')}
+              aria-pressed={viewMode !== 'reading'}
+              className={segBtn + (viewMode !== 'reading' ? segOn : segOff)}
+              title="Switch to Edit View"
             >
-              Split
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('raw')}
-              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
-                viewMode === 'raw'
-                  ? 'bg-accent text-on-accent font-semibold'
-                  : 'text-secondary hover:text-primary'
-              )}
-              title="View raw Obsidian markdown"
-            >
-              Raw MD
+              Edit
             </button>
           </div>
 
-          {/* Language Toggle */}
-          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
-            <button
-              type="button"
-              data-testid="modal-lang-en"
-              onClick={() => setLangMode('en')}
-              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
-                langMode === 'en'
-                  ? 'bg-accent text-on-accent font-semibold'
-                  : 'text-secondary hover:text-primary'
-              )}
-              title="English technical playbook only"
-            >
-              🇬🇧 EN
-            </button>
-            <button
-              type="button"
-              data-testid="modal-lang-he"
-              onClick={() => setLangMode('he')}
-              className={'active:scale-[0.97] px-2.5 py-1 rounded transition-interactive cursor-pointer ' + (
-                langMode === 'he'
-                  ? 'bg-accent text-on-accent font-semibold'
-                  : 'text-secondary hover:text-primary'
-              )}
-              title="רשימות אישיות בעברית בלבד"
-            >
-              🇮🇱 עב
-            </button>
-          </div>
-
-          {/* Reader Font Size Scaling (A- / A+) */}
-          <div className="flex items-center p-0.5 rounded-lg bg-surface-sunken border border-subtle text-[11px]">
-            <button
-              type="button"
-              data-testid="decrease-font-size-button"
-              onClick={handleDecreaseFontSize}
-              disabled={fontSize === 'sm'}
-              className="active:scale-[0.97] px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-interactive cursor-pointer"
-              title="Decrease note font size"
-              aria-label="Decrease note font size"
-            >
-              A-
-            </button>
-            <span 
-              data-testid="font-size-indicator"
-              className="px-1.5 py-0.5 text-[10px] font-semibold text-accent "
-            >
-              {fontSize}
-            </span>
-            <button
-              type="button"
-              data-testid="increase-font-size-button"
-              onClick={handleIncreaseFontSize}
-              disabled={fontSize === 'xl'}
-              className="active:scale-[0.97] px-2 py-1 rounded text-secondary hover:text-primary disabled:opacity-40 disabled:hover:text-muted transition-interactive cursor-pointer"
-              title="Increase note font size"
-              aria-label="Increase note font size"
-            >
-              A+
-            </button>
-          </div>
-
-          {/* Copy Commands */}
-          {note.commands && note.commands.length > 0 && (
-            <button
-              type="button"
-              onClick={handleCopyAllCommands}
-              className="active:scale-[0.97] hidden md:flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-interactive cursor-pointer"
-              title="Copy all commands in note"
-            >
-              {copiedId === 'all-cmds-' + note.id ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-callout-success-fg" />
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>Cmds ({note.commands.length})</span>
-                </>
-              )}
-            </button>
-          )}
-
-          <ShareLinkButton
-            path={`/cheatsheets?note=${note.id}`}
-            title={note.titleEn || note.title}
-            label="Share"
-            className="px-2.5 py-1"
+          <NoteMoreMenu
+            entries={menuEntries}
+            language={langMode}
+            onLanguageChange={handleLanguageChange}
+            fontSize={fontSize}
+            onFontSmaller={handleDecreaseFontSize}
+            onFontLarger={handleIncreaseFontSize}
           />
 
-          <button
-            type="button"
-            onClick={handleCopyRawMarkdown}
-            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-primary hover:border-accent text-xs font-semibold transition-interactive cursor-pointer"
-            title="Copy raw markdown to paste into your Obsidian vault"
-          >
-            {copiedId === 'raw-md-' + note.id ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-callout-success-fg" />
-                <span>MD Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Copy MD</span>
-              </>
-            )}
-          </button>
-
-          {/* Multi-Pane Split View Actions */}
-          {onToggleSplit && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                data-testid="toggle-split-horizontal"
-                onClick={() => {
-                  if (soundEnabled) playCyberSound('click');
-                  onToggleSplit('horizontal');
-                }}
-                className={`active:scale-[0.97] flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-interactive cursor-pointer ${
-                  isSplitView && splitOrientation === 'horizontal'
-                    ? 'bg-accent-muted border-accent text-accent'
-                    : 'bg-surface-sunken border-cyber-border text-muted hover:text-accent hover:border-accent'
-                }`}
-                title={isSplitView ? "Close Split View" : "Split Workspace Horizontally"}
-                aria-label="Split Workspace Horizontally"
-              >
-                <Columns className="w-3.5 h-3.5 text-accent" />
-                <span className="hidden 2xl:inline">{isSplitView && splitOrientation === 'horizontal' ? 'Close Split' : 'Split H'}</span>
-              </button>
-
-              <button
-                type="button"
-                data-testid="toggle-split-vertical"
-                onClick={() => {
-                  if (soundEnabled) playCyberSound('click');
-                  onToggleSplit('vertical');
-                }}
-                className={`active:scale-[0.97] flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold transition-interactive cursor-pointer ${
-                  isSplitView && splitOrientation === 'vertical'
-                    ? 'bg-accent-muted border-accent text-accent'
-                    : 'bg-surface-sunken border-cyber-border text-muted hover:text-accent hover:border-accent'
-                }`}
-                title={isSplitView ? "Close Split View" : "Split Workspace Vertically"}
-                aria-label="Split Workspace Vertically"
-              >
-                <Rows className="w-3.5 h-3.5 text-accent" />
-                <span className="hidden 2xl:inline">{isSplitView && splitOrientation === 'vertical' ? 'Close Split' : 'Split V'}</span>
-              </button>
-            </div>
-          )}
-
-          {/* Move tab to other pane if split view is active */}
-          {isSplitView && onMoveTabToOtherPane && safeOpenNotes.length > 1 && (
+          {showRightPanelToggle && (
             <button
               type="button"
-              data-testid="move-tab-other-pane"
+              data-testid="toggle-right-panel"
+              aria-label="Toggle right sidebar"
+              aria-expanded={isRightPanelOpen}
+              title="Toggle right sidebar"
               onClick={() => {
                 if (soundEnabled) playCyberSound('click');
-                onMoveTabToOtherPane(note.id);
+                onToggleRightPanel?.();
               }}
-              className="active:scale-[0.97] flex items-center gap-1 px-2 py-1 rounded bg-surface-sunken border border-accent text-accent hover:text-primary hover:border-accent text-xs font-semibold transition-interactive cursor-pointer"
-              title="Move active tab to other pane"
-              aria-label="Move tab to other pane"
+              className={iconBtn}
             >
-              <MoveRight className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden 2xl:inline">Move Pane</span>
+              <PanelRight className={`h-[18px] w-[18px] ${isRightPanelOpen ? 'text-accent' : ''}`} />
             </button>
           )}
-
-          {/* Global Workspace Dock (Pin across all pages) */}
-          <button
-            type="button"
-            data-testid="pin-to-global-workspace"
-            onClick={() => {
-              useNotesWorkspaceStore.getState().openNote(note.id);
-              useNotesWorkspaceStore.getState().setIsOpen(true);
-              useNotesWorkspaceStore.getState().setIsPinned(true);
-              if (soundEnabled) playCyberSound('click');
-              onClose();
-            }}
-            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
-            title="Dock to all pages (Stays open while navigating between pages)"
-            aria-label="Dock to all pages"
-          >
-            <Pin className="w-3.5 h-3.5 text-accent" />
-            <span className="hidden xl:inline">Pin to All Pages</span>
-          </button>
-
-          {/* Display Mode Toggle: Dock to Side / Floating Modal */}
-          {onToggleDisplayMode && (
-            <button
-              type="button"
-              data-testid="toggle-dock-mode"
-              onClick={() => {
-                if (soundEnabled) playCyberSound('click');
-                onToggleDisplayMode();
-              }}
-              className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
-              title={displayMode === 'docked' ? "Float in Modal (Alt+M)" : "Dock Side-by-Side in Page (Alt+M)"}
-              aria-label={displayMode === 'docked' ? "Float in Modal" : "Dock Side-by-Side in Page"}
-            >
-              {displayMode === 'docked' ? (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5 text-accent" />
-                  <span className="hidden xl:inline">Modal</span>
-                </>
-              ) : (
-                <>
-                  <PanelRight className="w-3.5 h-3.5 text-accent" />
-                  <span className="hidden xl:inline">Dock</span>
-                </>
-              )}
-            </button>
-          )}
-
-          {/* Maximize / Restore Focus Mode (Alt+F) */}
-          <button
-            type="button"
-            data-testid="toggle-maximize-button"
-            onClick={handleToggleMaximize}
-            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-accent-muted border border-accent text-accent hover:text-accent hover:bg-accent-muted text-xs font-semibold transition-[box-shadow,background-color,border-color,color] cursor-pointer"
-            title={effectiveMaximized ? "Restore view (Alt+F)" : "Maximize full-width workspace (Alt+F)"}
-            aria-label={effectiveMaximized ? "Restore view" : "Maximize workspace"}
-          >
-            {effectiveMaximized ? (
-              <>
-                <Minimize2 className="w-3.5 h-3.5 text-accent" />
-                <span className="hidden xl:inline">Restore</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-3.5 h-3.5 text-accent" />
-                <span className="hidden xl:inline">Maximize</span>
-              </>
-            )}
-          </button>
-
-          {/* Standalone Pop-Out Window Button */}
-          <button
-            type="button"
-            data-testid="popout-window-button"
-            onClick={() => {
-              if (soundEnabled) playCyberSound('click');
-              if (onPopoutWindow) {
-                onPopoutWindow();
-              } else {
-                const popoutUrl = (isTauriTarget() ? `${window.location.origin}${window.location.pathname}#/field-manual?note=${note.id}&popout=true` : `${window.location.origin}/field-manual?note=${note.id}&popout=true`);
-                window.open(popoutUrl, `ZeroBoxFieldManual_${note.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
-              }
-            }}
-            className="active:scale-[0.97] flex items-center gap-1 px-2.5 py-1 rounded bg-surface-sunken border border-cyber-border text-muted hover:text-accent hover:border-accent text-xs font-semibold transition-interactive cursor-pointer"
-            title="Pop out note into standalone window"
-            aria-label="Open in standalone window"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-accent" />
-            <span className="hidden xl:inline">Pop Out</span>
-          </button>
-
-          {onDeleteNote && (
-            <button
-              type="button"
-              onClick={async () => {
-                const title = note.titleEn || note.title;
-                const ok = await confirmAction({
-                  title: `Delete custom note "${title}"?`,
-                  body: 'You can restore deleted notes at any time using the restore button in the sidebar.',
-                  confirmLabel: 'Delete',
-                  tone: 'danger',
-                });
-                if (ok) {
-                  onDeleteNote(note.id, title);
-                }
-              }}
-              className="active:scale-[0.97] p-1.5 rounded hover:bg-callout-danger-bg text-muted hover:text-callout-danger-fg border border-transparent hover:border-callout-danger-border transition-interactive cursor-pointer"
-              title="Delete custom note"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="active:scale-[0.97] p-1 rounded-lg hover:bg-accent-muted text-muted hover:text-primary transition-interactive cursor-pointer"
-            title="Close viewer (Escape)"
-            aria-label="Close viewer"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
       </div>
 
@@ -1303,9 +1061,10 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 }}
                 defaultLanguage={langMode}
                 viewMode={viewMode}
-                onViewModeChange={setViewMode}
                 fontSize={fontSize}
-                isMaximized={effectiveMaximized}
+                onTagClick={onTagClick}
+                highlightQuery={isActive ? highlightQuery : undefined}
+                variant={tabVariant}
                 onOpenNotePicker={(query) => {
                   if (query) setPickerSearch(query);
                   setIsPickerOpen(true);
@@ -1318,45 +1077,17 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     </div>
   );
 
-  // In docked or popout mode, render directly in container without overlay backdrop
-  if (displayMode === 'docked' || displayMode === 'popout') {
-    return (
-      <div 
-        ref={modalRef}
-        tabIndex={-1}
-        role="region"
-        aria-label="Field manual note viewer workspace"
-        data-testid="obsidian-note-viewer-docked"
-        className="w-full h-full flex flex-col outline-none select-none"
-      >
-        {innerCardContent}
-      </div>
-    );
-  }
-
-  // Modal mode: render via React Portal into document.body as focused overlay
-  return createPortal(
+  return (
     <div
       ref={modalRef}
       tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      data-testid="obsidian-note-viewer-modal"
-      aria-label={`Field Manual: ${note.titleEn || note.title}`}
-      className={`fixed inset-0 z-50 flex items-center justify-center ${
-        effectiveMaximized ? 'p-0 bg-surface-sunken' : 'p-2 sm:p-4 bg-surface-sunken'
-      } backdrop-blur-md animate-fadeIn outline-none`}
+      role="region"
+      aria-label="Field manual note viewer workspace"
+      data-testid="obsidian-note-viewer-docked"
+      data-pane-id={paneId}
+      className="w-full h-full flex flex-col outline-none select-none"
     >
-      <div 
-        className={`w-full ${
-          effectiveMaximized
-            ? 'max-w-none max-h-none h-full rounded-none'
-            : 'w-[96vw] max-w-[1440px] max-h-[95vh] h-[95vh]'
-        } flex flex-col outline-none transition-colors duration-200`}
-      >
-        {innerCardContent}
-      </div>
-    </div>,
-    document.body
+      {innerCardContent}
+    </div>
   );
 };

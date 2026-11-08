@@ -9,6 +9,8 @@ export type DockSize = 'normal' | 'expanded';
 export type ObsidianViewMode = 'reading' | 'split' | 'raw';
 export type ObsidianNoteLanguage = 'en' | 'he';
 export type NoteFontSize = 'sm' | 'base' | 'lg' | 'xl';
+/** Left sidebar views of the notes ribbon (full-screen field manual and the dock). */
+export type NotesPanelView = 'files' | 'search' | 'tags';
 
 export interface OpenNoteOptions {
   background?: boolean;
@@ -58,8 +60,10 @@ export interface NotesWorkspaceState {
   isOpen: boolean;
   isPinned: boolean; // When true, stays open as user navigates across routes
   dockSize: DockSize;
-  /** Left "Notes" list inside the dock. Persisted; the list is also hidden automatically in a narrow dock. */
-  notesListCollapsed: boolean;
+  /** Dock left sidebar view, or null when it is closed. Persisted (replaces the old notesListCollapsed key). */
+  dockLeftView: NotesPanelView | null;
+  /** Dock right sidebar (outline and backlinks). Persisted. */
+  dockRightOpen: boolean;
 
   // Display Options
   viewMode: ObsidianViewMode;
@@ -73,12 +77,23 @@ export interface NotesWorkspaceState {
   // "Open anything" quick switcher (transient, not persisted)
   isSwitcherOpen: boolean;
 
+  /** Most recently opened note ids, newest first (capped, persisted). */
+  recentNoteIds: string[];
+  /** Note quick-switcher visibility (transient; separate from the dock's isSwitcherOpen). */
+  isNoteSwitcherOpen: boolean;
+
   // Actions
+  recordRecentNote: (noteId: string) => void;
+  openNoteSwitcher: () => void;
+  closeNoteSwitcher: () => void;
   openNote: (noteId: string, options?: OpenNoteOptions) => void;
   openCheat: (entryId: string, options?: OpenNoteOptions) => void;
   setSwitcherOpen: (open: boolean) => void;
-  setNotesListCollapsed: (collapsed: boolean) => void;
-  toggleNotesList: () => void;
+  setDockLeftView: (view: NotesPanelView | null) => void;
+  /** Opens `view`, or closes the sidebar when `view` is already showing. */
+  toggleDockLeftView: (view: NotesPanelView) => void;
+  setDockRightOpen: (open: boolean) => void;
+  toggleDockRight: () => void;
   pruneUnresolvedTabs: () => void;
   closeTab: (noteId: string) => void;
   closeAllTabs: () => void;
@@ -106,6 +121,9 @@ export interface NotesWorkspaceState {
   getOpenNotes: () => CptsNoteEntry[];
 }
 
+const RECENT_NOTES_CAP = 10;
+const VALID_PANEL_VIEWS: NotesPanelView[] = ['files', 'search', 'tags'];
+
 export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
   persist(
     (set, get) => ({
@@ -114,21 +132,38 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       isOpen: false,
       isPinned: true,
       dockSize: 'normal',
-      notesListCollapsed: false,
+      dockLeftView: 'files',
+      dockRightOpen: false,
       viewMode: 'reading',
       language: 'en',
       fontSize: 'base',
       searchQuery: '',
       isSearchOpen: false,
       isSwitcherOpen: false,
+      recentNoteIds: [],
+      isNoteSwitcherOpen: false,
+
+      recordRecentNote: (noteId: string) => {
+        if (!noteId || noteId.startsWith('cheat:')) return;
+        set((state) => ({
+          recentNoteIds: [noteId, ...state.recentNoteIds.filter((id) => id !== noteId)].slice(0, RECENT_NOTES_CAP),
+        }));
+      },
+      openNoteSwitcher: () => set({ isNoteSwitcherOpen: true }),
+      closeNoteSwitcher: () => set({ isNoteSwitcherOpen: false }),
 
       resolveTab: resolveTabById,
 
       setSwitcherOpen: (isSwitcherOpen: boolean) => set({ isSwitcherOpen }),
 
-      setNotesListCollapsed: (notesListCollapsed: boolean) => set({ notesListCollapsed }),
+      setDockLeftView: (dockLeftView: NotesPanelView | null) => set({ dockLeftView }),
 
-      toggleNotesList: () => set((state) => ({ notesListCollapsed: !state.notesListCollapsed })),
+      toggleDockLeftView: (view: NotesPanelView) =>
+        set((state) => ({ dockLeftView: state.dockLeftView === view ? null : view })),
+
+      setDockRightOpen: (dockRightOpen: boolean) => set({ dockRightOpen }),
+
+      toggleDockRight: () => set((state) => ({ dockRightOpen: !state.dockRightOpen })),
 
       openCheat: (entryId: string, options?: OpenNoteOptions) => {
         if (!entryId) return;
@@ -154,6 +189,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
 
       openNote: (noteId: string, options?: OpenNoteOptions) => {
         if (!noteId) return;
+        get().recordRecentNote(noteId);
         set((state) => {
           const alreadyOpen = state.openTabIds.includes(noteId);
           const nextTabs = alreadyOpen ? state.openTabIds : [...state.openTabIds, noteId];
@@ -199,6 +235,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       },
 
       setActiveTab: (noteId: string) => {
+        get().recordRecentNote(noteId);
         set((state) => {
           if (!state.openTabIds.includes(noteId)) {
             return {
@@ -329,7 +366,18 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           merged.viewMode = 'reading';
         }
         if (!Array.isArray(merged.openTabIds)) merged.openTabIds = [];
-        if (typeof merged.notesListCollapsed !== 'boolean') merged.notesListCollapsed = false;
+        // dockLeftView replaced notesListCollapsed. Only a missing value is derived from the old key: a
+        // persisted null means the user closed the sidebar. The old key is otherwise left unread.
+        const persistedLeft = (persistedState as { dockLeftView?: unknown } | undefined)?.dockLeftView;
+        if (persistedLeft === undefined) {
+          const oldCollapsed = (persistedState as { notesListCollapsed?: unknown } | undefined)?.notesListCollapsed;
+          merged.dockLeftView = oldCollapsed === true ? null : 'files';
+        } else if (persistedLeft !== null && !VALID_PANEL_VIEWS.includes(persistedLeft as NotesPanelView)) {
+          merged.dockLeftView = 'files';
+        }
+        if (typeof merged.dockRightOpen !== 'boolean') merged.dockRightOpen = false;
+        delete (merged as { notesListCollapsed?: unknown }).notesListCollapsed;
+        if (!Array.isArray(merged.recentNoteIds)) merged.recentNoteIds = [];
 
         // Persisted tabs are kept as-is. Imported notes hydrate from IndexedDB after this
         // runs, so pruning here would drop valid tabs; readers skip ids with no note.
@@ -340,10 +388,12 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
         activeTabId: state.activeTabId,
         isPinned: state.isPinned,
         dockSize: state.dockSize,
-        notesListCollapsed: state.notesListCollapsed,
+        dockLeftView: state.dockLeftView,
+        dockRightOpen: state.dockRightOpen,
         viewMode: state.viewMode,
         language: state.language,
         fontSize: state.fontSize,
+        recentNoteIds: state.recentNoteIds,
       }),
     }
   )

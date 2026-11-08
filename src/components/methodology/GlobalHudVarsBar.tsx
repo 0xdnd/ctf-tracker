@@ -10,6 +10,24 @@ export interface GlobalHudVarsBarProps {
   className?: string;
 }
 
+const VARS_EXPANDED_STORAGE_KEY = 'zb.methodology.varsExpanded';
+
+const readStoredExpanded = (): boolean => {
+  try {
+    return localStorage.getItem(VARS_EXPANDED_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const writeStoredExpanded = (value: boolean): void => {
+  try {
+    localStorage.setItem(VARS_EXPANDED_STORAGE_KEY, value ? '1' : '0');
+  } catch {
+    // Storage may be unavailable (private mode, test env); collapse state just won't persist.
+  }
+};
+
 export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = '' }) => {
   const { globalVars, setGlobalVars, soundEnabled } = useCtfStore(
     useShallow((s) => ({
@@ -19,7 +37,25 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
     }))
   );
 
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState<boolean>(readStoredExpanded);
+
+  const toggleExpanded = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      writeStoredExpanded(next);
+      return next;
+    });
+    if (soundEnabled) playCyberSound('toggle');
+  };
+
+  const summaryFields: Array<{ key: 'lhost' | 'lport' | 'targetIp'; label: string }> = [
+    { key: 'lhost', label: 'LHOST' },
+    { key: 'lport', label: 'LPORT' },
+    { key: 'targetIp', label: 'TARGET_IP' },
+  ];
+  const summaryText = summaryFields
+    .map((f) => `${f.label} ${globalVars[f.key] || '—'}`)
+    .join(' · ');
 
   const handleUpdate = (field: keyof typeof globalVars, value: string) => {
     setGlobalVars({ [field]: value.trim() ? value : undefined });
@@ -42,10 +78,10 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
   return (
     <div className={`rounded-xl border border-subtle bg-surface-card p-3 shadow-xs space-y-3 ${className}`}>
       {/* Top summary row: Always visible */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <Terminal className="w-4 h-4 text-accent" />
-          <span className="text-xs font-semibold text-primary">Offensive HUD Variables</span>
+          <span className="text-xs font-semibold text-primary whitespace-nowrap">Offensive HUD Variables</span>
           {credIsHash && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border text-[10px] font-mono">
               <ShieldAlert className="w-3 h-3" />
@@ -58,25 +94,26 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
               {globalVars.domain ? `${globalVars.domain}\\` : ''}{globalVars.user}
             </span>
           )}
+          {!expanded && (
+            <span className="hidden sm:block min-w-0 flex-1 font-mono text-[11px] text-muted truncate">{summaryText}</span>
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
             type="button"
-            onClick={() => {
-              setExpanded(!expanded);
-              if (soundEnabled) playCyberSound('toggle');
-            }}
+            onClick={toggleExpanded}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-secondary hover:text-primary hover:bg-surface-hover cursor-pointer"
             aria-expanded={expanded}
           >
-            <span>{expanded ? 'Collapse HUD' : 'Configure HUD'}</span>
+            <span>{expanded ? 'Hide variables' : 'Edit variables'}</span>
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
-      {/* Core variables quick-pills */}
+      {/* Core variables quick-pills (collapsed by default; toggled via "Edit variables") */}
+      {expanded && (
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 text-xs">
         <div className="space-y-1">
           <label className="text-[10px] font-mono uppercase text-muted block">LHOST</label>
@@ -164,6 +201,7 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
       </div>
+      )}
 
       {/* Expanded details & tips */}
       {expanded && (

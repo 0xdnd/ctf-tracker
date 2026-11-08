@@ -49,7 +49,8 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
     vi.clearAllMocks();
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     useCtfStore.setState({
-      customNotes: [],
+      // The edited note exists: saving a note the store does not hold is rejected (it was deleted).
+      customNotes: [sampleNote],
       activeTargetId: null,
     });
   });
@@ -400,7 +401,8 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
   });
 
   describe('R4: Full Integration in ObsidianNoteViewer Tri-Mode Switcher', () => {
-    it('switches between Reading, Split, and Raw modes seamlessly', async () => {
+    it('switches between Reading and Edit', async () => {
+      Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true, writable: true });
       render(
         <ObsidianNoteViewer
           note={sampleNote}
@@ -414,21 +416,11 @@ describe('MarkdownEditor & Multi-Mode In-App Editing Suite', () => {
       // Initially in Reading mode
       expect(screen.queryByTestId('markdown-editor-textarea')).not.toBeInTheDocument();
 
-      // Click Split button in header
-      const splitBtn = screen.getByTitle('Split side-by-side editor and live preview');
-      fireEvent.click(splitBtn);
-
-      // Now in Split view: editor and live preview present
+      // Edit opens the side-by-side editor and live preview (Split and Raw were merged into Edit;
+      // raw stays covered by R3 and the narrow-screen case)
+      fireEvent.click(screen.getByTitle('Switch to Edit View'));
       expect(screen.getByTestId('markdown-editor-textarea')).toBeInTheDocument();
       expect(screen.getByText('LIVE PREVIEW')).toBeInTheDocument();
-
-      // Click Raw MD button in header
-      const rawBtn = screen.getByTitle('View raw Obsidian markdown');
-      fireEvent.click(rawBtn);
-
-      // In Raw view: editor present, live preview right column not present
-      expect(screen.getByTestId('markdown-editor-textarea')).toBeInTheDocument();
-      expect(screen.queryByText('LIVE PREVIEW')).not.toBeInTheDocument();
 
       // Click Reading button in header
       const readingBtn = screen.getByTitle('Obsidian rich formatted reading mode');

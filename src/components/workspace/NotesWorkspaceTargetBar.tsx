@@ -192,7 +192,7 @@ ${row}
 | :--- | :--- | :--- | :--- |
 ${row}
 `;
-        Promise.resolve(updateNoteContent(activeNoteId, nextMd));
+        Promise.resolve(updateNoteContent(activeNoteId, nextMd)).catch((e) => console.warn('[ZeroBox] Could not save note', e));
       }
     }
 

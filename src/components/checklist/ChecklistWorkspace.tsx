@@ -33,14 +33,25 @@ import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
 import { interpolateCommand, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import { phaseSectionId } from '../methodology/PhaseNav';
+import { NextUpCard } from '../methodology/NextUpCard';
+import { splitBranchTitle } from '../../utils/methodologyDisplay';
 
 interface ChecklistWorkspaceProps {
   machine: Machine;
   onOpenInWriteup?: () => void;
+  /** 'methodology' swaps the "Current objective" breadcrumb for the Next up focus card. */
+  variant?: 'default' | 'methodology';
+  /** Controlled accordion state, set by an external PhaseNav (methodology variant only). */
+  expandedPhaseId?: string;
+  onPhaseExpand?: (phaseId: string) => void;
 }
 
 export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   machine,
+  variant = 'default',
+  expandedPhaseId: externalExpandedPhaseId,
+  onPhaseExpand,
 }) => {
   const {
     setMachineOpenPorts,
@@ -63,7 +74,12 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
   // Engaged target's IP wins over the global RHOST (shared precedence helper).
   const effectiveVars = useEffectiveGlobalVars(globalVars);
 
-  const [expandedPhaseId, setExpandedPhaseId] = useState<string>('phase-01-surface-mapping');
+  const [internalExpandedPhaseId, setInternalExpandedPhaseId] = useState<string>('phase-01-surface-mapping');
+  const expandedPhaseId = externalExpandedPhaseId !== undefined ? externalExpandedPhaseId : internalExpandedPhaseId;
+  const setExpandedPhaseId = (id: string) => {
+    if (onPhaseExpand) onPhaseExpand(id);
+    else setInternalExpandedPhaseId(id);
+  };
   const [nmapModalOpen, setNmapModalOpen] = useState(false);
   const [nmapInputText, setNmapInputText] = useState('');
   const [customPortInput, setCustomPortInput] = useState('');
@@ -111,6 +127,38 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
     }
     return null;
   }, [activeItemId, applicablePhases]);
+
+  // "Next up" focus item for the methodology checklist variant: the active item if it's still
+  // actionable, otherwise the first not-done/not-n/a item in phase order. `null` means the card
+  // doesn't apply here (wrong variant, or an active-target machine where edits are no-ops).
+  // `{ phase: null, item: null }` means every applicable item is done or n/a.
+  const nextUpInfo = useMemo(() => {
+    if (variant !== 'methodology' || machine.isActive) return null;
+
+    const isActionable = (itemId: string) => {
+      const status = itemsState[itemId]?.status || 'todo';
+      return status !== 'done' && status !== 'na';
+    };
+
+    if (activeItemId && isActionable(activeItemId)) {
+      for (const phase of applicablePhases) {
+        for (const subcat of phase.subcategories) {
+          const item = subcat.items.find((i) => i.id === activeItemId);
+          if (item) return { phase, item };
+        }
+      }
+    }
+
+    for (const phase of applicablePhases) {
+      for (const subcat of phase.subcategories) {
+        for (const item of subcat.items) {
+          if (isActionable(item.id)) return { phase, item };
+        }
+      }
+    }
+
+    return { phase: null, item: null };
+  }, [variant, machine.isActive, activeItemId, applicablePhases, itemsState]);
 
   // Port management handlers
   const handleTogglePort = (port: number) => {
@@ -211,25 +259,32 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
         
         {/* Breadcrumb Pill */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-2.5">
-          <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-muted" />
-            <span className="text-[10px] text-muted font-semibold ">
-              Current objective:
-            </span>
-            {currentBreadcrumb ? (
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <span className="text-secondary ">{currentBreadcrumb.phaseTitle}</span>
-                <span className="text-muted">➔</span>
-                <span className="text-callout-warn-fg">{currentBreadcrumb.subcatTitle}</span>
-                <span className="text-muted">➔</span>
-                <span className="text-primary font-semibold">{currentBreadcrumb.itemTitle}</span>
-              </div>
-            ) : (
-              <span className="text-xs text-muted italic">
-                Standby. Select a micro-task to set active engagement focus.
+          {variant === 'methodology' && !machine.isActive ? (
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-muted" />
+              <span className="text-[10px] text-muted font-semibold">Live checklist</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-muted" />
+              <span className="text-[10px] text-muted font-semibold ">
+                Current objective:
               </span>
-            )}
-          </div>
+              {currentBreadcrumb ? (
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
+                  <span className="text-secondary ">{currentBreadcrumb.phaseTitle}</span>
+                  <span className="text-muted">➔</span>
+                  <span className="text-callout-warn-fg">{currentBreadcrumb.subcatTitle}</span>
+                  <span className="text-muted">➔</span>
+                  <span className="text-primary font-semibold">{currentBreadcrumb.itemTitle}</span>
+                </div>
+              ) : (
+                <span className="text-xs text-muted italic">
+                  Standby. Select a micro-task to set active engagement focus.
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Quick Export / Reset Actions */}
           <div className="flex items-center gap-2">
@@ -310,6 +365,24 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
         </div>
 
       </div>
+
+      {/* SECTION 1.5: NEXT UP FOCUS CARD (methodology variant only; hidden for active-target machines) */}
+      {nextUpInfo && (
+        <NextUpCard
+          phaseNumber={nextUpInfo.phase?.phaseNumber ?? null}
+          phaseTitle={nextUpInfo.phase?.title ?? null}
+          item={nextUpInfo.item}
+          interpolatedCommand={
+            nextUpInfo.item?.commandSnippet
+              ? interpolateCommand(nextUpInfo.item.commandSnippet, effectiveVars)
+              : undefined
+          }
+          isCopied={Boolean(nextUpInfo.item) && copiedItemId === nextUpInfo.item?.id}
+          onCopy={handleCopySnippet}
+          onMarkDone={(itemId) => handleStatusClick(itemId, 'done')}
+          onStart={(itemId) => handleStatusClick(itemId, 'in_progress')}
+        />
+      )}
 
       {/* SECTION 2: HEURISTIC RABBIT-HOLE WARNING & DEAD-END FALLBACK BANNER */}
       {rabbitHoleEval.isRabbitHole && (
@@ -476,6 +549,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
           return (
             <div
               key={phase.id}
+              id={phaseSectionId(phase.id)}
               className="rounded-2xl border border-subtle bg-surface-card overflow-hidden transition-[box-shadow,background-color,border-color,color]"
             >
               {/* Phase Header Accordion Trigger */}
@@ -534,11 +608,18 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                     transition={TACTICAL_SPRING}
                     className="overflow-hidden p-3.5 space-y-4 bg-surface-sunken/40"
                   >
-                    {phase.subcategories.map((subcat) => (
+                    {phase.subcategories.map((subcat) => {
+                      const { letter: subcatLetter, label: subcatLabel } = splitBranchTitle(subcat.title);
+                      return (
                       <div key={subcat.id} className="space-y-2">
                         {/* Subcategory Header */}
                         <div className="flex items-center justify-between border-b border-subtle/70 pb-1 text-[11px] font-semibold text-secondary">
-                          <span>{subcat.title}</span>
+                          <span className="inline-flex items-center gap-1.5">
+                            {subcatLetter && (
+                              <span className="font-mono text-[9px] text-muted" aria-hidden="true">{subcatLetter}</span>
+                            )}
+                            <span>{subcatLabel}</span>
+                          </span>
                           {subcat.serviceBranch && subcat.serviceBranch !== 'universal' && (
                             <span className="text-[9px] px-1.5 py-0.2 rounded bg-accent-muted border border-subtle text-secondary">
                               {subcat.serviceBranch}
@@ -732,7 +813,8 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                           })}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,5 +1,6 @@
 import { isTauriTarget } from '../../utils/runtimeTarget';
-import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
+import { clearLegacyViewerPrefs } from '../../utils/notesViewerPrefs';
+import React, { useState, useMemo, useEffect, useDeferredValue, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -21,9 +22,8 @@ import {
   Upload,
   Hash,
   ArrowUpDown,
-  RotateCcw,
   PanelLeft,
-  Maximize2} from 'lucide-react';
+} from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -44,11 +44,22 @@ import {
   sortNotesByNumber,
   formatNoteNumberBadge,
   getAllCptsNotes,
+  getBacklinksForNote,
   mergeUserNotePools,
 } from '../../utils/obsidianManualUtils';
 import { ObsidianNoteViewer } from './ObsidianNoteViewer';
+import { FieldManualShell } from '../notes/FieldManualShell';
+import { NARROW_QUERY, useMediaQuery } from '../../hooks/useMediaQuery';
+import { NotesRibbon, type NotesRibbonPanel } from '../notes/NotesRibbon';
+import { NotesLeftPanel } from '../notes/NotesLeftPanel';
+import { NotesRightPanel } from '../notes/NotesRightPanel';
+import { NotesStatusBar } from '../notes/NotesStatusBar';
+import { countWords, getNoteOutline } from '../../utils/noteMeta';
+import { isFullscreenNotesPath } from '../../utils/fullscreenRoutes';
+import { getLastAppRoute } from '../../utils/lastAppRoute';
+import { useNoteIndex } from '../../hooks/useNoteIndex';
+import { NoteMatchSnippets } from './NoteMatchSnippets';
 import { SplitOrientation } from '../../types/workspace';
-import { CptsTreeItem } from './CptsTreeItem';
 import { NewCptsNoteModal } from './NewCptsNoteModal';
 import { YourDetailsCard } from './YourDetailsCard';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
@@ -58,6 +69,8 @@ import { CyberButton } from '../common/CyberButton';
 import { EmptyState } from '../common/EmptyState';
 import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
+import { useToastStore } from '../../store/useToastStore';
+import { hasUnsavedNoteEdits } from '../../utils/unsavedNoteEdits';
 
 const SNIPPET_CATEGORIES: CyberSelectOption[] = [
   { value: 'network', label: '01. Network Discovery & Port Scanning' },
@@ -91,7 +104,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     deleteNote,
     restoreDeletedNotes,
     userNotes = [],
-    clearUserNotes,
+    deleteNotes,
     setNotesImportModalOpen,
   } = useCtfStore(
     useShallow((s) => ({
@@ -107,7 +120,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       deleteNote: s.deleteNote,
       restoreDeletedNotes: s.restoreDeletedNotes,
       userNotes: s.userNotes,
-      clearUserNotes: s.clearUserNotes,
+      deleteNotes: s.deleteNotes,
       setNotesImportModalOpen: s.setNotesImportModalOpen,
     }))
   );
@@ -116,14 +129,21 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const effectiveVars = useEffectiveGlobalVars(globalVars);
 
   const navigate = useNavigate();
+  // A full-screen path is always the field manual, whatever the stored view mode says.
+  const isFullscreen = isFullscreenNotesPath(location.pathname);
   const isManualRoute = defaultMode === 'cpts-manual' || 
     location.pathname.includes('note') || 
     location.pathname.includes('manual') || 
     location.search.includes('manual') || 
     location.search.includes('cpts');
 
-  const [viewMode, setViewMode] = useState<'tactical' | 'cpts-manual'>(isManualRoute ? 'cpts-manual' : 'tactical');
+  const [viewModeState, setViewMode] = useState<'tactical' | 'cpts-manual'>(isManualRoute ? 'cpts-manual' : 'tactical');
+  const viewMode: 'tactical' | 'cpts-manual' = isFullscreen ? 'cpts-manual' : viewModeState;
   const [cptsLangMode, setCptsLangMode] = useState<CptsLanguageMode>('en');
+  // The modal and maximize viewer modes are gone: drop their stored values once.
+  useEffect(() => {
+    clearLegacyViewerPrefs();
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCptsCategory, setSelectedCptsCategory] = useState('ALL');
   const [selectedCptsSubCategory, setSelectedCptsSubCategory] = useState<string>('ALL');
@@ -132,7 +152,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     try {
       const saved = localStorage.getItem('zerobox_obsidian_expanded_folders');
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { /* best effort */ }
     return {
       'folder-00 _Methodology': true,
       'folder-01 Information Gathering': true,
@@ -184,7 +204,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         const notes = ids.map((id) => getNoteById(id)).filter((n): n is CptsNoteEntry => Boolean(n));
         if (notes.length > 0) return notes;
       }
-    } catch {}
+    } catch { /* best effort */ }
     const all = getAllCptsNotes();
     if (all.length > 0 && isManualRoute) return [all[0]];
     return [];
@@ -203,7 +223,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       }
       const saved = localStorage.getItem('zerobox_obsidian_active_tab');
       if (saved) return saved;
-    } catch {}
+    } catch { /* best effort */ }
     const all = getAllCptsNotes();
     return isManualRoute && all.length > 0 ? all[0].id : null;
   });
@@ -212,26 +232,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const isPopout = useMemo(() => {
     return new URLSearchParams(location.search).get('popout') === 'true';
   }, [location.search]);
-
-  // Dual-mode viewing state: 'docked' (in-page side-by-side split) vs 'modal' (floating centered dialog)
-  const [noteViewerMode, setNoteViewerMode] = useState<'docked' | 'modal'>(() => {
-    try {
-      const saved = localStorage.getItem('zerobox_note_viewer_mode');
-      return saved === 'modal' ? 'modal' : 'docked';
-    } catch {
-      return 'docked';
-    }
-  });
-
-  const handleToggleViewerMode = useCallback(() => {
-    setNoteViewerMode((prev) => {
-      const next = prev === 'docked' ? 'modal' : 'docked';
-      try {
-        localStorage.setItem('zerobox_note_viewer_mode', next);
-      } catch {}
-      return next;
-    });
-  }, []);
 
   // Obsidian Field Manual Workspace Sidebar & Navigation State
   const [isObsidianSidebarOpen, setIsObsidianSidebarOpen] = useState<boolean>(() => {
@@ -243,16 +243,67 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   });
 
+  // Right sidebar (backlinks and outline): open state persists like the left one.
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('zerobox_notes_right_panel_open') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const setRightPanelOpenPersisted = useCallback((open: boolean) => {
+    setIsRightPanelOpen(open);
+    try {
+      localStorage.setItem('zerobox_notes_right_panel_open', String(open));
+    } catch { /* best effort */ }
+  }, []);
+  // Under 768 px both sidebars are drawers: transient state, never persisted.
+  const isNarrow = useMediaQuery(NARROW_QUERY);
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  useEffect(() => {
+    if (!isNarrow) {
+      setLeftDrawerOpen(false);
+      setRightDrawerOpen(false);
+    }
+  }, [isNarrow]);
+  const closeDrawers = useCallback(() => {
+    setLeftDrawerOpen(false);
+    setRightDrawerOpen(false);
+  }, []);
+  const handleToggleRightPanel = useCallback(() => {
+    if (isNarrow) {
+      setRightDrawerOpen((prev) => !prev);
+      setLeftDrawerOpen(false);
+      return;
+    }
+    setIsRightPanelOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('zerobox_notes_right_panel_open', String(next));
+      } catch { /* best effort */ }
+      return next;
+    });
+  }, [isNarrow]);
+  // Outline click: addressed to the active pane's viewer, which acts once per larger nonce.
+  const [headingRequest, setHeadingRequest] = useState<{ paneId: string; slug: string; nonce: number } | null>(null);
+
   const handleToggleObsidianSidebar = useCallback(() => {
+    if (isNarrow) {
+      setLeftDrawerOpen((prev) => !prev);
+      setRightDrawerOpen(false);
+      if (soundEnabled) playCyberSound('click');
+      return;
+    }
     setIsObsidianSidebarOpen((prev) => {
       const next = !prev;
       try {
         localStorage.setItem('zerobox_obsidian_sidebar_open', String(next));
-      } catch {}
+      } catch { /* best effort */ }
       return next;
     });
     if (soundEnabled) playCyberSound('click');
-  }, [soundEnabled]);
+  }, [soundEnabled, isNarrow]);
 
   useEffect(() => {
     if (viewMode !== 'cpts-manual') return;
@@ -273,57 +324,53 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   }, [viewMode, handleToggleObsidianSidebar]);
 
   const [obsidianNavView, setObsidianNavView] = useState<'files' | 'cards' | 'index'>('files');
-  const [treeSearchQuery, setTreeSearchQuery] = useState('');
+  const [leftView, setLeftView] = useState<NotesRibbonPanel>('files');
 
-  // Docked Note Viewer Maximize state
-  const [isDockedMaximized, setIsDockedMaximized] = useState<boolean>(() => {
+  // Ribbon wiring: the ribbon picks the left panel view; the center view is separate.
+  const [searchFocusTick, setSearchFocusTick] = useState(0);
+  const setObsidianSidebarOpenPersisted = useCallback((open: boolean) => {
+    setIsObsidianSidebarOpen(open);
     try {
-      return localStorage.getItem('zerobox_docked_maximized') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const handleToggleDockedMaximize = useCallback(() => {
-    setIsDockedMaximized((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('zerobox_docked_maximized', String(next));
-      } catch {}
-      if (next) {
-        setIsObsidianSidebarOpen(false);
-      } else {
-        setIsObsidianSidebarOpen(true);
+      localStorage.setItem('zerobox_obsidian_sidebar_open', String(open));
+    } catch { /* best effort */ }
+  }, []);
+  const leftOpenNow = isNarrow ? leftDrawerOpen : isObsidianSidebarOpen;
+  const ribbonActivePanel: NotesRibbonPanel | null = leftOpenNow ? leftView : null;
+  const handleRibbonSelectPanel = useCallback(
+    (p: NotesRibbonPanel) => {
+      if (p === ribbonActivePanel) {
+        if (isNarrow) setLeftDrawerOpen(false);
+        else setObsidianSidebarOpenPersisted(false);
+        return;
       }
-      return next;
-    });
-    if (soundEnabled) playCyberSound('click');
-  }, [soundEnabled]);
-
-  // Modal Note Viewer Maximize state
-  const [isModalMaximized, setIsModalMaximized] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('zerobox_modal_maximized') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const handleToggleModalMaximize = useCallback(() => {
-    setIsModalMaximized((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('zerobox_modal_maximized', String(next));
-      } catch {}
-      return next;
-    });
-    if (soundEnabled) playCyberSound('click');
-  }, [soundEnabled]);
+      setLeftView(p);
+      // Never leave the user stuck on Cards or Table after picking a panel.
+      setObsidianNavView('files');
+      if (isNarrow) {
+        setLeftDrawerOpen(true);
+        setRightDrawerOpen(false);
+      } else {
+        setObsidianSidebarOpenPersisted(true);
+      }
+      if (p === 'search') setSearchFocusTick((n) => n + 1);
+    },
+    [ribbonActivePanel, isNarrow, setObsidianSidebarOpenPersisted],
+  );
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const noteIndex = useNoteIndex();
+  const [treeSearchQuery, setTreeSearchQuery] = useState('');
+  const deferredTreeQuery = useDeferredValue(treeSearchQuery);
 
   // Active Notes Pool: only the user's own notes (authored + imported), minus deleted ones
   const allActiveNotes = useMemo(() => {
     const deletedSet = new Set(deletedNoteIds);
     return mergeUserNotePools(customNotes, userNotes).filter((n) => !deletedSet.has(n.id));
+  }, [deletedNoteIds, customNotes, userNotes]);
+  // Restore only clears tombstones, so it can bring back only deleted notes this tab still holds.
+  const restorableCount = useMemo(() => {
+    if (deletedNoteIds.length === 0) return 0;
+    const held = new Set([...customNotes, ...userNotes].map((n) => n.id));
+    return deletedNoteIds.filter((id) => held.has(id)).length;
   }, [deletedNoteIds, customNotes, userNotes]);
   const totals = useSnippetTotals();
 
@@ -369,6 +416,21 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     setActiveObsidianNoteId(null);
   }, []);
 
+  // Search text at the moment a result row was opened, per note id. Clearing the
+  // search box later leaves an existing highlight alone.
+  const [highlightByNote, setHighlightByNote] = useState<Record<string, string>>({});
+
+  const openFromResults = useCallback((note: CptsNoteEntry, query: string = deferredSearchQuery) => {
+    const q = query.trim();
+    setHighlightByNote((prev) => {
+      if (q) return prev[note.id] === q ? prev : { ...prev, [note.id]: q };
+      if (!(note.id in prev)) return prev;
+      const { [note.id]: _dropped, ...rest } = prev;
+      return rest;
+    });
+    handleOpenObsidianNote(note);
+  }, [deferredSearchQuery, handleOpenObsidianNote]);
+
   // Backward compatibility alias: sets active note or opens as tab
   const setActiveObsidianNote = useCallback((note: CptsNoteEntry | null) => {
     if (note) {
@@ -387,7 +449,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       } else {
         localStorage.removeItem('zerobox_obsidian_active_tab');
       }
-    } catch {}
+    } catch { /* best effort */ }
   }, [openObsidianNotes, activeObsidianNoteId]);
 
   // Synchronize active cheatsheet note to the persistent sidecar Notes workspace (staying closed unless already open)
@@ -399,13 +461,21 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
   // Sync viewMode and activeObsidianNote when route or search query changes
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
     const isManualParam = location.pathname.includes('note') || 
       location.pathname.includes('manual') || 
       location.search.includes('manual') || 
       location.search.includes('cpts') ||
       (typeof window !== 'undefined' && (window.location.hash.includes('manual') || window.location.hash.includes('cpts')));
 
-    if (isManualParam) {
+    // Legacy routes that reach the field manual under full chrome move to the full-screen route.
+    // The query (including ?note=) is kept; the remounted view opens the note and strips the param.
+    if (!isFullscreen && /^\/cheatsheets?\/?$/i.test(location.pathname) && (params.has('note') || isManualParam)) {
+      navigate({ pathname: '/field-manual', search: location.search, hash: location.hash }, { replace: true });
+      return;
+    }
+
+    if (isFullscreen || isManualParam) {
       setViewMode('cpts-manual');
     } else if (defaultMode) {
       setViewMode(defaultMode);
@@ -414,11 +484,12 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
 
     // Check for direct note opening via query parameter, e.g. ?note=cpts-... (supporting both search & hash)
-    const params = new URLSearchParams(location.search);
     let noteParam = params.get('note');
+    let noteFromHash = false;
     if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
       const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
       noteParam = hashParams.get('note');
+      noteFromHash = Boolean(noteParam);
     }
     if (noteParam) {
       const found = getNoteById(noteParam, allActiveNotes.length > 0 ? allActiveNotes : undefined) || getNoteById(noteParam);
@@ -426,6 +497,18 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         setActiveObsidianNote(found);
         setViewMode('cpts-manual');
         setObsidianNavView('files');
+        // One-shot: drop `note` so later edits don't re-open it and the same link can be used again.
+        if (noteFromHash) {
+          const [hashPath, hashQuery = ''] = window.location.hash.split('?');
+          const hashParams = new URLSearchParams(hashQuery);
+          hashParams.delete('note');
+          const restHash = hashParams.toString();
+          window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}${hashPath}${restHash ? `?${restHash}` : ''}`);
+        } else {
+          params.delete('note');
+          const rest = params.toString();
+          navigate({ pathname: location.pathname, search: rest ? `?${rest}` : '', hash: location.hash }, { replace: true });
+        }
       }
     }
 
@@ -435,11 +518,11 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       navigate('/reverse-shell', { replace: true });
       return;
     }
-    if (catParam) {
+    if (catParam && !isFullscreen) {
       setSelectedCategory(catParam);
       setViewMode('tactical');
     }
-  }, [defaultMode, location.pathname, location.search, allActiveNotes, setActiveObsidianNote, navigate]);
+  }, [defaultMode, isFullscreen, location.pathname, location.search, allActiveNotes, setActiveObsidianNote, navigate]);
 
   // /notes?new=1 (from the dock's empty state) opens the new-note modal once, then drops the param.
   useEffect(() => {
@@ -515,9 +598,22 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   }, [cheatsheets, selectedCategory, deferredSearchQuery]);
 
   // Hierarchical Directory Tree & Categories computed from active notes
-  const filteredTreeNotes = useMemo(() => {
-    if (!treeSearchQuery.trim()) return allActiveNotes;
-    const q = treeSearchQuery.toLowerCase().trim();
+  const tagFilteredNotes = useMemo(() => {
+    if (!activeTag) return allActiveNotes;
+    // A tag matches its own notes plus those of any nested child (a includes a/b).
+    const ids = new Set<string>();
+    for (const [key, noteIds] of noteIndex.tags) {
+      if (key === activeTag || key.startsWith(`${activeTag}/`)) noteIds.forEach((id) => ids.add(id));
+    }
+    return allActiveNotes.filter((n) => ids.has(n.id));
+  }, [allActiveNotes, activeTag, noteIndex]);
+
+  // The Search panel looks at every note, ignoring the tag filter.
+  const searchResults = useMemo(() => {
+    if (!deferredTreeQuery.trim()) return [];
+    const q = deferredTreeQuery.toLowerCase().trim();
+    // Body text is only searched from 2 characters up; titles and tags match from 1.
+    const searchBody = q.length >= 2;
     return allActiveNotes.filter((n) => {
       return (
         n.title.toLowerCase().includes(q) ||
@@ -525,36 +621,28 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         (n.titleHe && n.titleHe.toLowerCase().includes(q)) ||
         n.category.toLowerCase().includes(q) ||
         (n.subCategory && n.subCategory.toLowerCase().includes(q)) ||
-        (n.tags && n.tags.some((t) => t.toLowerCase().includes(q)))
+        (n.tags && n.tags.some((t) => t.toLowerCase().includes(q))) ||
+        (searchBody && n.rawMarkdown && n.rawMarkdown.toLowerCase().includes(q))
       );
     });
-  }, [allActiveNotes, treeSearchQuery]);
+  }, [allActiveNotes, deferredTreeQuery]);
 
-  const cptsFileTree = useMemo(() => buildCptsFileTree(filteredTreeNotes), [filteredTreeNotes]);
+  const handleSelectTag = useCallback((tag: string | null) => {
+    setActiveTag(tag);
+    if (tag) {
+      setObsidianNavView('files');
+      setLeftView('files');
+    }
+  }, []);
+
+  const cptsFileTree = useMemo(() => buildCptsFileTree(tagFilteredNotes), [tagFilteredNotes]);
 
   // Persist expanded tree folders
   useEffect(() => {
     try {
       localStorage.setItem('zerobox_obsidian_expanded_folders', JSON.stringify(expandedTreeFolders));
-    } catch {}
+    } catch { /* best effort */ }
   }, [expandedTreeFolders]);
-
-  // Auto-expand tree folders when a filter query is typed so matching files are immediately visible
-  useEffect(() => {
-    if (treeSearchQuery.trim()) {
-      const all: Record<string, boolean> = {};
-      const traverse = (nodes: CptsTreeNode[]) => {
-        for (const n of nodes) {
-          if (n.isFolder) {
-            all[n.id] = true;
-            traverse(n.children);
-          }
-        }
-      };
-      traverse(cptsFileTree);
-      setExpandedTreeFolders((prev) => ({ ...prev, ...all }));
-    }
-  }, [treeSearchQuery, cptsFileTree]);
 
   // List of all existing folder paths for new note modal
   const existingDirectories = useMemo(() => {
@@ -594,7 +682,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         const resolved = ids.map((id) => getNoteById(id)).filter(Boolean) as CptsNoteEntry[];
         if (resolved.length > 0) return resolved;
       }
-    } catch {}
+    } catch { /* best effort */ }
     return [];
   });
 
@@ -618,13 +706,28 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       } else {
         localStorage.removeItem('zerobox_workspace_secondary_active_v1');
       }
-    } catch {}
+    } catch { /* best effort */ }
   }, [isSplitView, splitOrientation, secondaryOpenNotes, secondaryActiveNoteId]);
 
   const secondaryActiveNote = useMemo(() => {
     if (!secondaryActiveNoteId) return secondaryOpenNotes[0] || null;
     return secondaryOpenNotes.find((n) => n.id === secondaryActiveNoteId) || secondaryOpenNotes[0] || null;
   }, [secondaryOpenNotes, secondaryActiveNoteId]);
+
+  // The right panel and status bar follow the active pane. Tab entries are snapshots taken at open
+  // time, so the live copy comes from the shared index.
+  const activePanelPaneId: 'pane-primary' | 'pane-secondary' =
+    isSplitView && activePaneId === 'pane-secondary' && secondaryActiveNote ? 'pane-secondary' : 'pane-primary';
+  const activePanelSnapshot = activePanelPaneId === 'pane-secondary' ? secondaryActiveNote : activeObsidianNote;
+  const liveActiveNote = activePanelSnapshot ? (noteIndex.byId.get(activePanelSnapshot.id) ?? activePanelSnapshot) : null;
+  const panelBacklinks = useMemo(
+    () => (liveActiveNote ? getBacklinksForNote(liveActiveNote.id, noteIndex) : []),
+    [liveActiveNote, noteIndex],
+  );
+  const panelOutline = useMemo(
+    () => (liveActiveNote ? getNoteOutline(liveActiveNote.rawMarkdown ?? '', liveActiveNote) : []),
+    [liveActiveNote],
+  );
 
   const handleSelectSecondaryTab = useCallback((noteId: string) => {
     setSecondaryActiveNoteId(noteId);
@@ -656,6 +759,32 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       return nextNotes;
     });
   }, []);
+
+  // A deleted note's tab closes, wherever it was deleted (this tab, bulk delete, or another tab via the storage
+  // sync). A tab whose editor still holds unsaved edits stays open, with a one-time warning, so they are not lost.
+  const warnedDeletedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const dead = new Set(deletedNoteIds);
+    for (const id of warnedDeletedRef.current) if (!dead.has(id)) warnedDeletedRef.current.delete(id);
+    if (dead.size === 0) return;
+    const closeDead = (notes: CptsNoteEntry[], close: (id: string) => void) => {
+      for (const n of notes) {
+        if (!dead.has(n.id)) continue;
+        if (!hasUnsavedNoteEdits(n.id)) {
+          close(n.id);
+        } else if (!warnedDeletedRef.current.has(n.id)) {
+          warnedDeletedRef.current.add(n.id);
+          useToastStore.getState().addToast({
+            type: 'warning',
+            title: 'Open note was deleted',
+            message: 'Its tab stays open with your unsaved edits; copy them before closing it, they cannot be saved.',
+          });
+        }
+      }
+    };
+    closeDead(openObsidianNotes, handleCloseObsidianTab);
+    closeDead(secondaryOpenNotes, handleCloseSecondaryTab);
+  }, [deletedNoteIds, openObsidianNotes, secondaryOpenNotes, handleCloseObsidianTab, handleCloseSecondaryTab]);
 
   const handleCloseSecondaryPane = useCallback(() => {
     setOpenObsidianNotes((prev) => {
@@ -730,8 +859,10 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   }, [openObsidianNotes, secondaryOpenNotes, handleCloseObsidianTab, handleOpenSecondaryNote, handleCloseSecondaryTab, handleOpenObsidianNote]);
 
-  const renderWorkspacePanes = (mode: 'docked' | 'modal' | 'popout') => {
+  const renderWorkspacePanes = (mode: 'page' | 'popout') => {
     if (!activeObsidianNote) return null;
+    // A popout closes its own window; clearing tabs there would also wipe the persisted tab list.
+    const handleViewerClose = mode === 'popout' ? () => window.close() : handleCloseAllObsidianTabs;
 
     if (!isSplitView || !secondaryActiveNote) {
       return (
@@ -745,7 +876,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           allAvailableNotes={allActiveNotes}
           globalVars={effectiveVars}
           soundEnabled={soundEnabled}
-          onClose={handleCloseAllObsidianTabs}
+          onClose={handleViewerClose}
           onNavigateToNote={(noteId) => {
             const found = getNoteById(noteId, allActiveNotes);
             if (found) handleOpenObsidianNote(found);
@@ -757,9 +888,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           }}
           defaultLanguage={cptsLangMode}
           displayMode={mode}
-          onToggleDisplayMode={handleToggleViewerMode}
-          isMaximized={mode === 'docked' ? isDockedMaximized : isModalMaximized}
-          onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : handleToggleModalMaximize}
+          onLanguageChange={setCptsLangMode}
           onPopoutWindow={() => {
             const popoutUrl = (isTauriTarget() ? `${window.location.origin}${window.location.pathname}#/field-manual?note=${activeObsidianNote.id}&popout=true` : `${window.location.origin}/field-manual?note=${activeObsidianNote.id}&popout=true`);
             window.open(popoutUrl, `ZeroBoxFieldManual_${activeObsidianNote.id}`, 'width=1100,height=850,menubar=no,status=no,toolbar=no');
@@ -771,9 +900,15 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           paneId="pane-primary"
           isPaneActive={activePaneId === 'pane-primary'}
           onFocusPane={() => setActivePaneId('pane-primary')}
-          isSidebarOpen={isObsidianSidebarOpen}
-          onToggleSidebar={handleToggleObsidianSidebar}
+          isSidebarOpen={leftOpenNow}
+          onToggleSidebar={mode === 'page' ? handleToggleObsidianSidebar : undefined}
           onSwitchToCards={() => setObsidianNavView('cards')}
+          onTagClick={handleSelectTag}
+          highlightQuery={highlightByNote[activeObsidianNote.id]}
+          variant="shell"
+          headingRequest={headingRequest?.paneId === 'pane-primary' ? headingRequest : undefined}
+          isRightPanelOpen={isRightPanelOpen}
+          onToggleRightPanel={handleToggleRightPanel}
         />
       );
     }
@@ -794,16 +929,14 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             allAvailableNotes={allActiveNotes}
             globalVars={effectiveVars}
             soundEnabled={soundEnabled}
-            onClose={handleCloseAllObsidianTabs}
+            onClose={handleViewerClose}
             onNavigateToNote={(noteId) => {
               const found = getNoteById(noteId, allActiveNotes);
               if (found) handleOpenObsidianNote(found);
             }}
             defaultLanguage={cptsLangMode}
-            displayMode="docked"
-            onToggleDisplayMode={handleToggleViewerMode}
-            isMaximized={mode === 'docked' ? isDockedMaximized : false}
-            onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : undefined}
+            displayMode={mode}
+            onLanguageChange={setCptsLangMode}
             isSplitView={true}
             splitOrientation={splitOrientation}
             onToggleSplit={handleToggleSplit}
@@ -811,9 +944,15 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             paneId="pane-primary"
             isPaneActive={activePaneId === 'pane-primary'}
             onFocusPane={() => setActivePaneId('pane-primary')}
-            isSidebarOpen={isObsidianSidebarOpen}
-            onToggleSidebar={handleToggleObsidianSidebar}
+            isSidebarOpen={leftOpenNow}
+            onToggleSidebar={mode === 'page' ? handleToggleObsidianSidebar : undefined}
             onSwitchToCards={() => setObsidianNavView('cards')}
+            onTagClick={handleSelectTag}
+            highlightQuery={highlightByNote[activeObsidianNote.id]}
+            variant="shell"
+            headingRequest={headingRequest?.paneId === 'pane-primary' ? headingRequest : undefined}
+            isRightPanelOpen={isRightPanelOpen}
+            onToggleRightPanel={handleToggleRightPanel}
           />
         </div>
         <div className={`${splitOrientation === 'horizontal' ? 'w-full md:w-1/2' : 'w-full h-1/2'} min-h-0 flex flex-col`}>
@@ -833,10 +972,8 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               if (found) handleOpenSecondaryNote(found);
             }}
             defaultLanguage={cptsLangMode}
-            displayMode="docked"
-            onToggleDisplayMode={handleToggleViewerMode}
-            isMaximized={mode === 'docked' ? isDockedMaximized : false}
-            onToggleMaximize={mode === 'docked' ? handleToggleDockedMaximize : undefined}
+            displayMode={mode}
+            onLanguageChange={setCptsLangMode}
             isSplitView={true}
             splitOrientation={splitOrientation}
             onToggleSplit={handleToggleSplit}
@@ -844,25 +981,16 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             paneId="pane-secondary"
             isPaneActive={activePaneId === 'pane-secondary'}
             onFocusPane={() => setActivePaneId('pane-secondary')}
+            onTagClick={handleSelectTag}
+            highlightQuery={highlightByNote[secondaryActiveNote.id]}
+            variant="shell"
+            headingRequest={headingRequest?.paneId === 'pane-secondary' ? headingRequest : undefined}
+            isRightPanelOpen={isRightPanelOpen}
+            onToggleRightPanel={handleToggleRightPanel}
           />
         </div>
       </div>
     );
-
-    if (mode === 'modal') {
-      return (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Field Manual Split View Workspace"
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn outline-none"
-        >
-          <div className="w-full max-w-[98vw] 2xl:max-w-7xl max-h-[94vh] h-[94vh] flex flex-col outline-none">
-            {splitContent}
-          </div>
-        </div>
-      );
-    }
 
     return splitContent;
   };
@@ -948,7 +1076,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
   const handleDeleteNoteWithConfirm = async (noteId: string, noteTitle?: string) => {
     const title = noteTitle || 'this field note';
-    if (await confirmAction({ title: `Delete field note "${title}"?`, body: 'You can restore deleted notes at any time using the restore button in the sidebar.', tone: 'danger' })) {
+    if (await confirmAction({ title: `Delete field note "${title}"?`, body: 'This is permanent and cannot be undone.', tone: 'danger' })) {
       deleteNote(noteId);
       if (soundEnabled) playCyberSound('root');
     }
@@ -963,20 +1091,22 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   }, [confirmWipeVault]);
 
-  const handleWipeVaultConfirm = async () => {
+  const handleWipeVaultConfirm = () => {
     if (!confirmWipeVault) {
       setConfirmWipeVault(true);
       return;
     }
 
-    await clearUserNotes();
+    // Same as the per-note delete, for every note the button counts: tombstoned, not a whole-vault wipe.
+    deleteNotes(allActiveNotes.map((n) => n.id));
     if (soundEnabled) playCyberSound('root');
     setConfirmWipeVault(false);
-    setViewMode('tactical');
+    // Full-screen: stay in the shell and show its empty state.
+    if (!isFullscreen) setViewMode('tactical');
   };
 
   const handleRestoreDeletedNotes = async () => {
-    if (await confirmAction({ title: `Restore all ${deletedNoteIds.length} deleted field notes?`, body: 'They will be moved back into your active manual.', tone: 'default' })) {
+    if (await confirmAction({ title: `Restore all ${restorableCount} deleted field notes?`, body: 'They will be moved back into your active manual.', tone: 'default' })) {
       restoreDeletedNotes();
       if (soundEnabled) playCyberSound('flag');
     }
@@ -1001,328 +1131,89 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   }
 
   // Obsidian Field Manual Master Workspace Renderer
-  const renderObsidianWorkspace = () => {
+  const hasNotes = allActiveNotes.length > 0;
+  const renderNotesLeft = () => (
+    <NotesLeftPanel
+      view={leftView}
+      onCollapse={handleToggleObsidianSidebar}
+      focusSignal={searchFocusTick}
+      tree={cptsFileTree}
+      expandedFolders={expandedTreeFolders}
+      onToggleFolder={handleToggleTreeFolder}
+      selectedPath={selectedTreePath}
+      onSelectFolder={handleSelectTreeFolder}
+      onSelectNote={(note) => {
+        if (soundEnabled) playCyberSound('click');
+        openFromResults(note, '');
+        setObsidianNavView('files');
+        if (isNarrow) closeDrawers();
+      }}
+      onDeleteNote={handleDeleteNoteWithConfirm}
+      onAddNoteToFolder={(folderPath) => {
+        setNewNoteInitialDir(folderPath);
+        setIsNewCptsModalOpen(true);
+        if (soundEnabled) playCyberSound('click');
+      }}
+      langMode={cptsLangMode}
+      activeNoteId={activeObsidianNote?.id}
+      onExpandAll={handleExpandAllTreeFolders}
+      onCollapseAll={handleCollapseAllTreeFolders}
+      onNewNote={() => {
+        setNewNoteInitialDir(undefined);
+        setIsNewCptsModalOpen(true);
+        if (soundEnabled) playCyberSound('click');
+      }}
+      onImport={() => {
+        if (soundEnabled) playCyberSound('click');
+        setNotesImportModalOpen(true);
+      }}
+      activeTag={activeTag}
+      onClearTag={() => setActiveTag(null)}
+      query={treeSearchQuery}
+      onQueryChange={setTreeSearchQuery}
+      results={searchResults}
+      resultsPending={deferredTreeQuery !== treeSearchQuery}
+      onOpenResult={(note) => {
+        if (soundEnabled) playCyberSound('click');
+        openFromResults(note, treeSearchQuery);
+        setObsidianNavView('files');
+        if (isNarrow) closeDrawers();
+      }}
+      tags={noteIndex.tags}
+      onSelectTag={handleSelectTag}
+      deletedCount={restorableCount}
+      onRestoreDeleted={handleRestoreDeletedNotes}
+      wipeArmed={confirmWipeVault}
+      wipeCount={allActiveNotes.length}
+      onWipeVault={handleWipeVaultConfirm}
+      onShowCards={() => {
+        setObsidianNavView('cards');
+        setCptsDisplayLayout('cards');
+      }}
+      onShowTable={() => {
+        setObsidianNavView('index');
+        setCptsDisplayLayout('quick-index');
+      }}
+      onBackToSnippets={() => {
+        setViewMode('tactical');
+        setSearchQuery('');
+        navigate('/cheatsheets');
+      }}
+    />
+  );
+
+  const renderNotesMain = () => {
     return (
-      <div className="w-full flex flex-col lg:flex-row items-stretch gap-3 min-h-[calc(100vh-10rem)] lg:h-[calc(100vh-10rem)]">
-        {/* Left Obsidian File Explorer Sidebar */}
-        <div 
-          className={`transition-[width,opacity] duration-200 flex-shrink-0 flex flex-col rounded-2xl border border-subtle bg-surface-card overflow-hidden shadow-sm lg:h-full ${
-            isObsidianSidebarOpen ? 'w-full lg:w-80 2xl:w-88' : 'hidden'
-          }`}
-        >
-          {/* Obsidian Vault Header */}
-          <div className="p-3 border-b border-subtle flex items-center justify-between gap-1.5 bg-surface-sunken/60">
-            <div className="flex items-center gap-2 min-w-0">
-              <BookOpen className="w-4 h-4 text-accent flex-shrink-0" />
-              <span className="font-semibold text-xs text-primary truncate">FIELD MANUAL</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent-muted text-accent font-semibold">
-                {allActiveNotes.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setNewNoteInitialDir(undefined);
-                  setIsNewCptsModalOpen(true);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="p-1 rounded hover:bg-surface-hover text-muted hover:text-accent transition-colors cursor-pointer"
-                title="Create new field note"
-                aria-label="Create new field note"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (soundEnabled) playCyberSound('click');
-                  setNotesImportModalOpen(true);
-                }}
-                className="p-1 rounded hover:bg-surface-hover text-muted hover:text-accent transition-colors cursor-pointer"
-                title="Import notes directory"
-                aria-label="Import notes directory"
-              >
-                <Upload className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={handleExpandAllTreeFolders}
-                className="px-1 py-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary text-[10.5px] font-mono transition-colors cursor-pointer"
-                title="Expand all folders"
-              >
-                +All
-              </button>
-              <button
-                type="button"
-                onClick={handleCollapseAllTreeFolders}
-                className="px-1 py-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary text-[10.5px] font-mono transition-colors cursor-pointer"
-                title="Collapse all folders"
-              >
-                -All
-              </button>
-              <button
-                type="button"
-                onClick={handleToggleObsidianSidebar}
-                className="p-1 rounded hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
-                title="Collapse explorer (Ctrl+B)"
-                aria-label="Collapse explorer sidebar"
-              >
-                <PanelLeft className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Real-Time Tree Filter */}
-          <div className="p-2 border-b border-subtle bg-surface-card">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={treeSearchQuery}
-                onChange={(e) => setTreeSearchQuery(e.target.value)}
-                placeholder="Search files & folders..."
-                className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent"
-              />
-              {treeSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setTreeSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-primary text-xs"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Views & Language Pill Switcher */}
-          <div className="px-2 py-1.5 border-b border-subtle flex items-center justify-between text-xs bg-surface-card">
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setObsidianNavView('files')}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
-                  obsidianNavView === 'files'
-                    ? 'bg-accent text-on-accent'
-                    : 'text-muted hover:text-primary hover:bg-surface-hover'
-                }`}
-                title="Obsidian Note Reader"
-              >
-                Notes
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setObsidianNavView('cards');
-                  setCptsDisplayLayout('cards');
-                }}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
-                  obsidianNavView === 'cards' || (obsidianNavView !== 'files' && cptsDisplayLayout === 'cards')
-                    ? 'bg-accent text-on-accent'
-                    : 'text-muted hover:text-primary hover:bg-surface-hover'
-                }`}
-                title="Cards Gallery"
-              >
-                Cards
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setObsidianNavView('index');
-                  setCptsDisplayLayout('quick-index');
-                }}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
-                  obsidianNavView === 'index' || (obsidianNavView !== 'files' && cptsDisplayLayout === 'quick-index')
-                    ? 'bg-accent text-on-accent'
-                    : 'text-muted hover:text-primary hover:bg-surface-hover'
-                }`}
-                title="Quick Index Table"
-              >
-                Table
-              </button>
-            </div>
-
-            <div className="flex items-center gap-0.5 bg-surface-sunken p-0.5 rounded-md border border-subtle">
-              <button
-                type="button"
-                onClick={() => {
-                  if (soundEnabled) playCyberSound('click');
-                  setCptsLangMode('en');
-                }}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                  cptsLangMode === 'en' ? 'bg-accent text-on-accent' : 'text-muted hover:text-primary'
-                }`}
-                title="English Playbooks"
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (soundEnabled) playCyberSound('click');
-                  setCptsLangMode('he');
-                }}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                  cptsLangMode === 'he' ? 'bg-accent text-on-accent' : 'text-muted hover:text-primary'
-                }`}
-                title="עברית"
-              >
-                עב
-              </button>
-            </div>
-          </div>
-
-          {/* Tree Body */}
-          <div className="flex-1 min-h-[480px] overflow-y-auto p-2 space-y-0.5 scrollbar-thin">
-            {/* All Field Notes Root Item */}
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                setSelectedTreePath(null);
-                setSelectedCptsCategory('ALL');
-                setSelectedCptsSubCategory('ALL');
-                setCptsLimit(30);
-              }}
-              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                selectedTreePath === null && selectedCptsCategory === 'ALL'
-                  ? 'bg-accent-muted text-accent border border-accent/40 font-semibold'
-                  : 'text-secondary hover:text-accent hover:bg-surface-hover border border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-3.5 h-3.5 text-accent" />
-                <span className="font-medium">All Field Notes</span>
-              </div>
-              <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle">
-                {allActiveNotes.length}
-              </span>
-            </motion.button>
-
-            {/* Tree Items */}
-            {cptsFileTree.length === 0 ? (
-              <div className="p-4 rounded-lg bg-accent-muted border border-accent/40 text-center space-y-2.5 my-2">
-                <FolderOpen className="w-8 h-8 text-accent mx-auto" />
-                <div className="text-xs font-semibold text-primary">No notes here</div>
-                <p className="text-[10px] text-secondary">
-                  Import your notes directory from disk or create a custom note.
-                </p>
-                <div className="flex flex-col gap-1.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (soundEnabled) playCyberSound('click');
-                      setNotesImportModalOpen(true);
-                    }}
-                    className="w-full py-1.5 px-2.5 rounded bg-accent hover:bg-accent-hover text-on-accent font-semibold text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <FolderOpen className="w-3 h-3" />
-                    <span>Import Notes Directory</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewNoteInitialDir(undefined);
-                      setIsNewCptsModalOpen(true);
-                      if (soundEnabled) playCyberSound('click');
-                    }}
-                    className="w-full py-1.5 px-2.5 rounded bg-surface-card hover:bg-surface-hover text-accent border border-accent/40 text-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Create Custom Note</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              cptsFileTree.map((rootNode) => (
-                <CptsTreeItem
-                  key={rootNode.id}
-                  node={rootNode}
-                  depth={0}
-                  expandedFolders={expandedTreeFolders}
-                  onToggleFolder={handleToggleTreeFolder}
-                  selectedPath={selectedTreePath}
-                  onSelectFolder={handleSelectTreeFolder}
-                  onSelectNote={(note) => {
-                    if (soundEnabled) playCyberSound('click');
-                    setActiveObsidianNote(note);
-                    setObsidianNavView('files');
-                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                      setIsObsidianSidebarOpen(false);
-                    }
-                  }}
-                  onDeleteNote={handleDeleteNoteWithConfirm}
-                  onAddNoteToFolder={(folderPath) => {
-                    setNewNoteInitialDir(folderPath);
-                    setIsNewCptsModalOpen(true);
-                    if (soundEnabled) playCyberSound('click');
-                  }}
-                  cptsLangMode={cptsLangMode}
-                  activeNoteId={activeObsidianNote?.id}
-                />
-              ))
-            )}
-          </div>
-
-          {/* Sidebar Footer */}
-          <div className="p-2 border-t border-subtle bg-surface-sunken/40 flex flex-col gap-1.5">
-            {deletedNoteIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleRestoreDeletedNotes}
-                className="w-full p-1.5 px-2 rounded-lg bg-callout-danger-bg border border-callout-danger-border/40 hover:bg-callout-danger-bg text-callout-danger-fg text-[10px] font-semibold flex items-center justify-between transition-colors cursor-pointer"
-                title="Click to restore all deleted field notes"
-              >
-                <span>↺ {deletedNoteIds.length} Deleted Notes</span>
-                <span className="underline">Restore</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setViewMode('tactical');
-                setSearchQuery('');
-                navigate('/cheatsheets');
-              }}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-subtle text-muted hover:text-primary hover:bg-surface-card text-xs flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <Terminal className="w-3.5 h-3.5 text-muted" />
-              <span>← Back to snippets</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Main Workspace Area (Obsidian Centerpiece) */}
-        <div className="flex-1 min-w-0 flex flex-col rounded-2xl border border-subtle bg-surface-card overflow-hidden shadow-sm lg:h-full">
+        /* Main Workspace Area (Obsidian Centerpiece) */
+        <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-surface-card">
           {obsidianNavView === 'files' ? (
-            activeObsidianNote && noteViewerMode === 'docked' ? (
+            activeObsidianNote ? (
               /* ACTIVE NOTE IN OBSIDIAN WORKSPACE (FULL WIDTH) */
               <div 
                 data-testid="docked-note-viewer-pane"
                 className="w-full h-full min-h-[600px] flex-1 flex flex-col min-w-0 overflow-hidden"
               >
-                {renderWorkspacePanes('docked')}
-              </div>
-            ) : activeObsidianNote && noteViewerMode === 'modal' ? (
-              <div 
-                className="w-full h-full min-h-[600px] flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 bg-surface-card"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent-muted border border-accent/40 flex items-center justify-center text-accent shadow-glow-sm">
-                  <Maximize2 className="w-8 h-8" />
-                </div>
-                <div className="space-y-1 max-w-md">
-                  <h3 className="text-base font-semibold text-primary">Note Floating in Modal</h3>
-                  <p className="text-xs text-muted">
-                    This note is open in a floating dialog. Press <kbd className="px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle font-mono text-[11px]">Alt+M</kbd> or click Dock in the dialog header to restore to workspace.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleViewerMode()}
-                  className="px-4 py-2 rounded-xl bg-accent text-on-accent text-xs font-semibold hover:bg-accent-hover transition-colors cursor-pointer"
-                >
-                  Dock Note to Workspace
-                </button>
+                {renderWorkspacePanes('page')}
               </div>
             ) : (
               /* EMPTY OBSIDIAN WORKSPACE (NO ACTIVE NOTE) */
@@ -1366,7 +1257,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <LayoutList className="w-3.5 h-3.5 text-muted" />
                     <span>Browse Cards Gallery</span>
                   </button>
-                  {!isObsidianSidebarOpen && (
+                  {!leftOpenNow && (
                     <button
                       type="button"
                       onClick={handleToggleObsidianSidebar}
@@ -1391,10 +1282,10 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       data-testid="hud-toggle-sidebar-button"
                       onClick={handleToggleObsidianSidebar}
                       className="p-1 mr-1 rounded-lg hover:bg-surface-hover text-muted hover:text-accent transition-colors flex-shrink-0 cursor-pointer"
-                      title={isObsidianSidebarOpen ? "Collapse explorer (Ctrl+B)" : "Expand explorer (Ctrl+B)"}
-                      aria-label={isObsidianSidebarOpen ? "Collapse explorer" : "Expand explorer"}
+                      title={leftOpenNow ? "Collapse explorer (Ctrl+B)" : "Expand explorer (Ctrl+B)"}
+                      aria-label={leftOpenNow ? "Collapse explorer" : "Expand explorer"}
                     >
-                      <PanelLeft className={`w-4 h-4 ${isObsidianSidebarOpen ? 'text-accent' : 'text-muted'}`} />
+                      <PanelLeft className={`w-4 h-4 ${leftOpenNow ? 'text-accent' : 'text-muted'}`} />
                     </button>
                     <BookOpen className="w-4 h-4 text-accent" />
                     <span className="text-primary font-semibold">
@@ -1693,11 +1584,9 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               key={note.id}
                               id={`cpts-note-${note.id}`}
                               onClick={() => {
-                                setActiveObsidianNote(note);
+                                openFromResults(note);
                                 setObsidianNavView('files');
-                                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                                  setIsObsidianSidebarOpen(false);
-                                }
+                                if (isNarrow) closeDrawers();
                               }}
                               className="hover:bg-accent-muted/40 transition-colors cursor-pointer group"
                             >
@@ -1709,6 +1598,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               </td>
                               <td className="py-2 px-3 font-medium text-primary group-hover:text-accent">
                                 {note.titleEn || note.title}
+                                <NoteMatchSnippets markdown={note.rawMarkdown} query={deferredSearchQuery} />
                               </td>
                               <td className="py-2 px-3 text-center">
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted">
@@ -1723,11 +1613,9 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setActiveObsidianNote(note);
+                                    openFromResults(note);
                                     setObsidianNavView('files');
-                                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                                      setIsObsidianSidebarOpen(false);
-                                    }
+                                    if (isNarrow) closeDrawers();
                                   }}
                                   className="px-2.5 py-1 rounded bg-accent text-on-accent text-[11px] font-semibold hover:bg-accent-hover transition-colors"
                                 >
@@ -1749,11 +1637,9 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       key={note.id}
                       id={`cpts-note-${note.id}`}
                       onClick={() => {
-                        setActiveObsidianNote(note);
+                        openFromResults(note);
                         setObsidianNavView('files');
-                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                          setIsObsidianSidebarOpen(false);
-                        }
+                        if (isNarrow) closeDrawers();
                       }}
                       className="p-4 rounded-xl border border-subtle bg-surface-card hover:border-accent transition-colors cursor-pointer group flex flex-col justify-between space-y-3"
                     >
@@ -1771,6 +1657,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                         <p className="text-xs text-muted line-clamp-2">
                           {note.summary || 'Playbook documentation and operational commands.'}
                         </p>
+                        <NoteMatchSnippets markdown={note.rawMarkdown} query={deferredSearchQuery} />
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-subtle/50 text-[11px]">
@@ -1816,7 +1703,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             </div>
           )}
         </div>
-      </div>
     );
   };
 
@@ -1828,199 +1714,158 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const catOff = 'border-subtle text-secondary hover:bg-surface-hover hover:text-primary lg:border-transparent';
 
   return (
-    <div className={`w-full ${viewMode === 'cpts-manual' ? 'space-y-3 pb-2' : 'space-y-6 pb-12'} text-sm`}>
-      <PageHeader
-        title={viewMode === 'cpts-manual' ? 'Field manual' : 'Snippets & payloads'}
-        icon={viewMode === 'cpts-manual' ? <BookOpen /> : <Terminal />}
-        description={
-          viewMode === 'tactical'
-            ? 'Ready-made commands for common hacking jobs, with your own details filled in.'
-            : undefined
-        }
-        className={viewMode === 'cpts-manual' ? 'mb-1' : ''}
-        primaryAction={
-          viewMode === 'tactical' ? (
-            <CyberButton
-              variant="primary"
-              size="md"
-              iconLeft={<Plus className="h-3.5 w-3.5" />}
-              onClick={() => setIsNewModalOpen(true)}
-              data-tour="snippets-add"
-              className="[@media(pointer:coarse)]:h-11"
-            >
-              Add snippet
-            </CyberButton>
-          ) : (
-            <CyberButton
-              variant="primary"
-              size="md"
-              iconLeft={<Upload className="h-3.5 w-3.5" />}
-              title="Import or manage your own notes (stored only in this browser)"
-              data-tour="notes-page-import"
-              onClick={() => {
-                if (soundEnabled) playCyberSound('click');
-                setNotesImportModalOpen(true);
-              }}
-              className="[@media(pointer:coarse)]:h-11"
-            >
-              {userNotes.length > 0 ? `Vault (${userNotes.length})` : 'Import notes'}
-            </CyberButton>
-          )
-        }
-        overflow={
-          viewMode === 'tactical'
-            ? [
-                {
-                  id: 'import-vault',
-                  label: 'Import vault',
-                  icon: <Upload className="h-4 w-4" />,
-                  onSelect: () => {
-                    if (soundEnabled) playCyberSound('click');
-                    setNotesImportModalOpen(true);
-                  },
-                },
-              ]
-            : [
-                {
-                  id: 'new-note',
-                  label: 'New note',
-                  icon: <Plus className="h-4 w-4" />,
-                  onSelect: () => {
-                    setNewNoteInitialDir(undefined);
-                    setIsNewCptsModalOpen(true);
-                  },
-                },
-                {
-                  id: 'add-snippet',
-                  label: 'Add snippet',
-                  icon: <Terminal className="h-4 w-4" />,
-                  onSelect: () => setIsNewModalOpen(true),
-                },
-              ]
-        }
-      >
-        <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
-          <div className="flex min-w-max items-center gap-3 sm:min-w-0 sm:flex-wrap">
-            <div
-              role="group"
-              data-tour="snippets-library"
-              aria-label="Library"
-              className="inline-flex items-center gap-0.5 rounded-lg border border-subtle bg-surface-sunken p-0.5"
-            >
-              <button
-                type="button"
-                aria-pressed={viewMode === 'tactical'}
-                onClick={() => {
-                  if (viewMode === 'tactical') return;
-                  setViewMode('tactical');
-                  setSearchQuery('');
-                  navigate('/cheatsheets');
-                }}
-                className={`${switchBase} ${
-                  viewMode === 'tactical'
-                    ? 'bg-surface-card text-primary'
-                    : 'text-muted hover:text-primary'
-                }`}
-              >
-                <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Snippets</span>
-                <span className="tabular-nums text-muted">{cheatsheets.length}</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={viewMode === 'cpts-manual'}
-                onClick={() => {
-                  if (viewMode === 'cpts-manual') return;
-                  setViewMode('cpts-manual');
-                  navigate('/field-manual');
-                }}
-                title="Switch to Obsidian Field Manual"
-                className={`${switchBase} ${
-                  viewMode === 'cpts-manual'
-                    ? 'bg-surface-card text-primary'
-                    : 'text-muted hover:text-primary'
-                }`}
-              >
-                <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Field manual</span>
-                {viewMode === 'cpts-manual' && (
-                  <span className="tabular-nums text-muted">{allActiveNotes.length}</span>
-                )}
-              </button>
-            </div>
-
-            {viewMode === 'cpts-manual' && (userNotes.length > 0 || allActiveNotes.length > 0) && (
-              <button
-                type="button"
-                data-testid="header-delete-notes-btn"
-                onClick={handleWipeVaultConfirm}
-                className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
-                  confirmWipeVault
-                    ? 'border border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg'
-                    : 'text-muted hover:bg-callout-danger-bg hover:text-callout-danger-fg'
-                }`}
-                title={
-                  confirmWipeVault
-                    ? 'Click again to permanently wipe and delete all notes from local vault'
-                    : 'Delete / Wipe all notes from vault'
-                }
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>
-                  {confirmWipeVault
-                    ? `Confirm Delete (${allActiveNotes.length || userNotes.length})?`
-                    : `Delete (${allActiveNotes.length || userNotes.length})`}
-                </span>
-              </button>
-            )}
-
-            {viewMode === 'cpts-manual' && deletedNoteIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleRestoreDeletedNotes}
-                className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-xs font-medium text-callout-warn-fg transition-[transform,background-color] hover:bg-callout-warn-bg active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
-                title="Restore deleted notes back to vault"
-              >
-                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Restore ({deletedNoteIds.length})</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </PageHeader>
-
+    <div className={`w-full ${viewMode === 'cpts-manual' ? 'h-full' : 'space-y-6 pb-12'} text-sm`}>
       {viewMode === 'cpts-manual' ? (
-        allActiveNotes.length === 0 ? (
-          <div
-            data-testid="notes-empty-state"
-            className="rounded-2xl border border-subtle bg-surface-card"
-          >
-            <EmptyState
-              icon={BookOpen}
-              title="Your field manual is empty"
-              description="It shows your own Markdown notes, for example an Obsidian vault. You need to import them first."
-              action={{
-                label: 'Import your notes',
-                icon: Upload,
-                onClick: () => {
+        <FieldManualShell
+          ribbon={
+            <NotesRibbon
+              activePanel={hasNotes ? ribbonActivePanel : null}
+              onSelectPanel={handleRibbonSelectPanel}
+              onOpenSwitcher={() => useNotesWorkspaceStore.getState().openNoteSwitcher()}
+              onBack={() => navigate(getLastAppRoute() ?? '/tracker')}
+            />
+          }
+          left={hasNotes ? renderNotesLeft() : null}
+          right={
+            hasNotes ? (
+              <NotesRightPanel
+                note={liveActiveNote}
+                backlinks={panelBacklinks}
+                outline={panelOutline}
+                onOpenNote={(id) => {
+                  const found = noteIndex.byId.get(id);
+                  if (!found) return;
+                  if (activePanelPaneId === 'pane-secondary') handleOpenSecondaryNote(found);
+                  else handleOpenObsidianNote(found);
+                  if (isNarrow) closeDrawers();
+                }}
+                onSelectHeading={(slug) => {
+                  setHeadingRequest((prev) => ({ paneId: activePanelPaneId, slug, nonce: Math.max(Date.now(), (prev?.nonce ?? 0) + 1) }));
+                  if (isNarrow) closeDrawers();
+                }}
+                onCollapse={() => (isNarrow ? setRightDrawerOpen(false) : setRightPanelOpenPersisted(false))}
+              />
+            ) : null
+          }
+          statusBar={
+            hasNotes && liveActiveNote ? (
+              <NotesStatusBar
+                wordCount={countWords(liveActiveNote.rawMarkdown ?? '')}
+                backlinkCount={panelBacklinks.length}
+              />
+            ) : null
+          }
+          isLeftOpen={hasNotes && leftOpenNow}
+          isRightOpen={hasNotes && (isNarrow ? rightDrawerOpen : isRightPanelOpen)}
+          isNarrow={isNarrow}
+          onCloseDrawers={closeDrawers}
+        >
+          {hasNotes ? (
+            renderNotesMain()
+          ) : (
+            <div data-testid="notes-empty-state" className="flex h-full items-center justify-center overflow-y-auto p-6">
+              <div className="w-full max-w-xl rounded-md border border-subtle bg-surface-card">
+                <EmptyState
+                  icon={BookOpen}
+                  title="Your field manual is empty"
+                  description="It shows your own Markdown notes, for example an Obsidian vault. You need to import them first."
+                  action={{
+                    label: 'Import your notes',
+                    icon: Upload,
+                    tourAnchor: 'notes-page-import',
+                    onClick: () => {
+                      if (soundEnabled) playCyberSound('click');
+                      setNotesImportModalOpen(true);
+                    },
+                  }}
+                  secondaryAction={{
+                    label: 'New note',
+                    onClick: () => {
+                      setNewNoteInitialDir(undefined);
+                      setIsNewCptsModalOpen(true);
+                    },
+                  }}
+                />
+                {restorableCount > 0 && (
+                  <div className="flex justify-center pb-6">
+                    <button
+                      type="button"
+                      onClick={handleRestoreDeletedNotes}
+                      className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-callout-warn-fg hover:bg-callout-warn-bg"
+                    >
+                      Restore {restorableCount} deleted {restorableCount === 1 ? 'note' : 'notes'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </FieldManualShell>
+      ) : (
+        <>
+          <PageHeader
+            title="Snippets & payloads"
+            icon={<Terminal />}
+            description="Ready-made commands for common hacking jobs, with your own details filled in."
+            primaryAction={
+              <CyberButton
+                variant="primary"
+                size="md"
+                iconLeft={<Plus className="h-3.5 w-3.5" />}
+                onClick={() => setIsNewModalOpen(true)}
+                data-tour="snippets-add"
+                className="[@media(pointer:coarse)]:h-11"
+              >
+                Add snippet
+              </CyberButton>
+            }
+            overflow={[
+              {
+                id: 'import-vault',
+                label: 'Import vault',
+                icon: <Upload className="h-4 w-4" />,
+                onSelect: () => {
                   if (soundEnabled) playCyberSound('click');
                   setNotesImportModalOpen(true);
                 },
-              }}
-              secondaryAction={{
-                label: 'New note',
-                onClick: () => {
-                  setNewNoteInitialDir(undefined);
-                  setIsNewCptsModalOpen(true);
-                },
-              }}
-            />
-          </div>
-        ) : (
-          renderObsidianWorkspace()
-        )
-      ) : (
-        <>
+              },
+            ]}
+          >
+            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+              <div className="flex min-w-max items-center gap-3 sm:min-w-0 sm:flex-wrap">
+                <div
+                  role="group"
+                  data-tour="snippets-library"
+                  aria-label="Library"
+                  className="inline-flex items-center gap-0.5 rounded-lg border border-subtle bg-surface-sunken p-0.5"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={true}
+                    className={`${switchBase} bg-surface-card text-primary`}
+                  >
+                    <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Snippets</span>
+                    <span className="tabular-nums text-muted">{cheatsheets.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={false}
+                    onClick={() => {
+                      setViewMode('cpts-manual');
+                      navigate('/field-manual');
+                    }}
+                    title="Switch to Obsidian Field Manual"
+                    className={`${switchBase} text-muted hover:text-primary`}
+                  >
+                    <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Field manual</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </PageHeader>
+
           {/* LHOST / LPORT / target, shared with the Reverse shells page */}
           <YourDetailsCard tourAnchor="snippets-params" />
 
@@ -2347,9 +2192,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
           </motion.div>
         </div>
       )}
-
-      {/* Authentic Obsidian Personal Note Viewer Modal (Modal Mode) */}
-      {activeObsidianNote && noteViewerMode === 'modal' && renderWorkspacePanes('modal')}
 
       {/* New note modal */}
       <NewCptsNoteModal

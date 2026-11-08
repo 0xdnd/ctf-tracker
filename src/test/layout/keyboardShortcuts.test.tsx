@@ -75,6 +75,7 @@ const HOTKEY_MAP: Record<string, Binding> = {
   '+': { init: { key: '+' } },
   '0': { init: { key: '0' }, check: () => ctf().uiScale === 'normal' },
   'Ctrl+K': { init: { key: 'k', ctrlKey: true }, check: () => ctf().commandPaletteOpen },
+  'Ctrl+O': { init: { key: 'o', ctrlKey: true }, check: () => useNotesWorkspaceStore.getState().isNoteSwitcherOpen },
   '?': { init: { key: '?', shiftKey: true }, check: () => ctf().shortcutsModalOpen },
   Esc: { init: { key: 'Escape' } },
 };
@@ -94,6 +95,7 @@ const listedBindings = (): string[] => {
 };
 
 const resetSlices = () => {
+  useNotesWorkspaceStore.setState({ isNoteSwitcherOpen: false });
   useCtfStore.setState({
     soundEnabled: false,
     shortcutsModalOpen: false,

@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useId, Suspense, lazy } from 'react';
+import { INLINE_TAG_RE } from '../../utils/noteIndex';
 import {
   Check,
   Copy,
@@ -23,7 +24,10 @@ import { sanitizeSvg } from '../../utils/securityUtils';
 import { GlobalVariables } from '../../types';
 import { OpenNoteOptions } from '../../types/workspace';
 import { slugifyHeading } from '../../utils/workspaceLinkInterceptor';
+import { getHeadingLineMatching } from '../../utils/noteMeta';
 import { renderPlaceholderChips } from '../common/PlaceholderChip';
+
+const MermaidDiagram = lazy(() => import('./MermaidDiagram'));
 
 export type ObsidianFontSize = 'sm' | 'base' | 'lg' | 'xl';
 
@@ -92,6 +96,14 @@ export interface ObsidianMarkdownBodyProps {
    */
   targetIp?: string;
   onToggleCheckbox?: (lineIndex: number, newChecked: boolean) => void;
+  /** When set, inline `#tag` text in paragraphs, lists and tables renders as a button. */
+  onTagClick?: (tag: string) => void;
+  /**
+   * Titles of the note. The first `# ` line outside fences whose text matches one of them is not
+   * rendered (the page already shows the title). Line indices are unchanged, so checkbox toggles
+   * still address the right source line.
+   */
+  hideTitleHeading?: readonly string[];
 }
 
 /**
@@ -109,10 +121,34 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
   onOpenNotePicker,
   targetIp,
   onToggleCheckbox,
+  onTagClick,
+  hideTitleHeading,
 }) => {
   const [openCallouts, setOpenCallouts] = useState<Record<number, boolean>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Text selected inside one of this body's code blocks; the block's Copy button copies it instead.
+  const [codeSelection, setCodeSelection] = useState<{ block: string; text: string } | null>(null);
+  const blockPrefix = useId();
+
+  useEffect(() => {
+    const blockOf = (node: Node | null) =>
+      (node && (node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement))
+        ?.closest('[data-code-block]')
+        ?.getAttribute('data-code-block');
+    const onSelectionChange = () => {
+      const sel = window.getSelection();
+      let next: { block: string; text: string } | null = null;
+      if (sel && !sel.isCollapsed) {
+        const block = blockOf(sel.anchorNode);
+        const text = sel.toString();
+        if (block?.startsWith(blockPrefix) && block === blockOf(sel.focusNode) && text.trim()) next = { block, text };
+      }
+      setCodeSelection((prev) => (prev?.block === next?.block && prev?.text === next?.text ? prev : next));
+    };
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, [blockPrefix]);
 
   // Engaged target's IP wins over the global RHOST (shared precedence helper).
   const engagedVars = useEffectiveGlobalVars(globalVars);
@@ -151,8 +187,8 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
   // Inline `code` spans render as <code> with placeholder chips; the rest
   // of the line goes through the wikilink renderer.
-  const renderWithWikilinks = (text: string): React.ReactNode => {
-    if (!text.includes('`')) return renderWikilinks(text);
+  const renderWithWikilinks = (text: string, tags = true): React.ReactNode => {
+    if (!text.includes('`')) return renderWikilinks(text, tags);
     const chunks = text.split('`');
     // An unmatched trailing backtick stays literal text.
     if (chunks.length % 2 === 0) chunks[chunks.length - 2] += '`' + chunks.pop();
@@ -165,13 +201,42 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
           {renderPlaceholderChips(chunk, effectiveVars)}
         </code>
       ) : (
-        <React.Fragment key={`txt-${idx}`}>{renderWikilinks(idx % 2 === 1 ? '``' : chunk)}</React.Fragment>
+        <React.Fragment key={`txt-${idx}`}>{renderWikilinks(idx % 2 === 1 ? '``' : chunk, tags, idx === 0)}</React.Fragment>
       )
     );
   };
 
   // Inline wikilink renderer with zero-popup navigation
-  const renderWikilinks = (text: string) => {
+  // Plain text between wikilinks: `#tag` becomes a button when onTagClick is set.
+  const renderTextWithTags = (text: string, tags: boolean, keyBase: number, atStart: boolean): React.ReactNode => {
+    if (!tags || !onTagClick || !text.includes('#')) return text;
+    const out: React.ReactNode[] = [];
+    let last = 0;
+    // Fresh regex: the shared INLINE_TAG_RE is global and carries lastIndex state.
+    for (const m of text.matchAll(new RegExp(INLINE_TAG_RE.source, INLINE_TAG_RE.flags))) {
+      // `^` only counts at the real start of the text chunk, never right after a wikilink or code span.
+      if (m[0].startsWith('#') && !(atStart && m.index === 0)) continue;
+      const tagStart = (m.index ?? 0) + m[0].length - m[1].length - 1;
+      if (tagStart > last) out.push(text.slice(last, tagStart));
+      const written = m[1];
+      out.push(
+        <button
+          key={`tag-${keyBase}-${tagStart}`}
+          type="button"
+          onClick={() => onTagClick(written.toLowerCase())}
+          className="text-[0.85em] px-1.5 py-px rounded bg-accent-muted border border-accent/40 text-accent cursor-pointer hover:bg-accent/20 transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+        >
+          #{written}
+        </button>
+      );
+      last = tagStart + 1 + written.length;
+    }
+    if (out.length === 0) return text;
+    if (last < text.length) out.push(text.slice(last));
+    return out;
+  };
+
+  const renderWikilinks = (text: string, tags = true, chunkStart = true) => {
     const parts: React.ReactNode[] = [];
     const wikiRegex = /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g;
     let lastIndex = 0;
@@ -179,7 +244,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
     while ((match = wikiRegex.exec(text)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index));
+        parts.push(renderTextWithTags(text.slice(lastIndex, match.index), tags, lastIndex, chunkStart && lastIndex === 0));
       }
 
       const targetRaw = match[1].trim();
@@ -241,7 +306,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
     }
 
     if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
+      parts.push(renderTextWithTags(text.slice(lastIndex), tags, lastIndex, chunkStart && lastIndex === 0));
     }
 
     return parts.length > 0 ? parts : text;
@@ -349,6 +414,11 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
     if (!raw) return null;
     const lines = raw.split('\n');
     const elements: React.ReactNode[] = [];
+    // Only the top-level body hides the title; callout content is rendered through this same function.
+    const hiddenTitleLine =
+      hideTitleHeading && hideTitleHeading.length > 0 && raw === content
+        ? getHeadingLineMatching(raw, hideTitleHeading)
+        : -1;
 
     let inCodeBlock = false;
     let codeLanguage = '';
@@ -362,6 +432,17 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       const rawCode = codeBuffer.join('\n');
       const interpCode = interpolateCommand(rawCode, effectiveVars);
       const isCopied = copiedId === `code-${idx}`;
+      const isMermaid = codeLanguage.toLowerCase() === 'mermaid';
+      const blockKey = `${blockPrefix}code-${idx}`;
+      const selectedText = codeSelection?.block === blockKey ? codeSelection.text : null;
+      const codeBody = (
+        <pre
+          data-code-block={blockKey}
+          className={`p-3.5 ${sizeClasses.code} font-mono tabular-nums text-on-inverse overflow-x-auto select-text selection:bg-accent-muted selection:text-primary leading-relaxed`}
+        >
+          {renderPlaceholderChips(rawCode, effectiveVars, 'inverse')}
+        </pre>
+      );
 
       elements.push(
         <div
@@ -375,9 +456,11 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             </span>
             <button
               type="button"
-              onClick={() => handleCopyText(`code-${idx}`, interpCode)}
+              // Keep the code selection alive: a mousedown would collapse it before the click lands.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => handleCopyText(`code-${idx}`, selectedText ?? (isMermaid ? rawCode : interpCode))}
               className="active:scale-[0.97] flex items-center gap-1 px-2 py-0.5 rounded text-on-inverse-muted hover:bg-surface-inverse hover:text-on-inverse transition-interactive cursor-pointer text-[11px]"
-              title="Copy interpolated code"
+              title={selectedText ? 'Copy the selected text' : 'Copy interpolated code'}
             >
               {isCopied ? (
                 <>
@@ -387,14 +470,18 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
               ) : (
                 <>
                   <Copy className="w-3 h-3" />
-                  <span>Copy</span>
+                  <span>{selectedText ? 'Copy selection' : 'Copy'}</span>
                 </>
               )}
             </button>
           </div>
-          <pre className={`p-3.5 ${sizeClasses.code} font-mono tabular-nums text-on-inverse overflow-x-auto select-all selection:bg-accent-muted selection:text-primary leading-relaxed`}>
-            {renderPlaceholderChips(rawCode, effectiveVars, 'inverse')}
-          </pre>
+          {isMermaid ? (
+            <Suspense fallback={<div className="h-40" />}>
+              <MermaidDiagram source={rawCode} fallback={codeBody} />
+            </Suspense>
+          ) : (
+            codeBody
+          )}
         </div>
       );
       codeBuffer = [];
@@ -416,7 +503,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             <thead className="bg-accent-muted text-accent border-b border-accent/50">
               <tr>
                 {headers.map((h, hIdx) => (
-                  <th key={hIdx} className={`px-4 py-2.5 font-semibold ${hIdx === 0 ? 'whitespace-nowrap w-12' : ''}`}>{renderWithWikilinks(h)}</th>
+                  <th key={hIdx} className={`px-4 py-2.5 font-semibold ${hIdx === 0 ? 'whitespace-nowrap w-12' : ''}`}>{renderWithWikilinks(h, false)}</th>
                 ))}
               </tr>
             </thead>
@@ -472,6 +559,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
       // Headings with slugified ID anchors
       if (line.startsWith('# ')) {
+        if (i === hiddenTitleLine) continue;
         const titleText = line.replace('# ', '').trim();
         const headingSlug = slugifyHeading(titleText);
         elements.push(
@@ -480,7 +568,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             id={`section-${headingSlug}`}
             className={`${sizeClasses.h1} font-semibold text-primary tracking-tight mt-6 mb-2 pb-1 border-b border-accent/30 scroll-mt-6`}
           >
-            {renderWithWikilinks(titleText)}
+            {renderWithWikilinks(titleText, false)}
           </h1>
         );
         continue;
@@ -496,7 +584,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             className={`${sizeClasses.h2} font-semibold text-accent tracking-tight mt-5 mb-2 scroll-mt-6 flex items-center gap-1.5`}
           >
             <span className="text-accent">#</span>
-            <span>{renderWithWikilinks(titleText)}</span>
+            <span>{renderWithWikilinks(titleText, false)}</span>
           </h2>
         );
         continue;
@@ -511,7 +599,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             id={`section-${headingSlug}`}
             className={`${sizeClasses.h3} font-semibold text-accent mt-4 mb-1 scroll-mt-6`}
           >
-            {renderWithWikilinks(titleText)}
+            {renderWithWikilinks(titleText, false)}
           </h3>
         );
         continue;

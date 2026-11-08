@@ -225,6 +225,7 @@ export const UnifiedHeader: React.FC = () => {
 
   return (
     <header
+      data-testid="app-header"
       data-tauri-drag-region="true"
       className="h-[52px] px-3 sm:px-4 bg-surface-base border-b border-subtle flex items-center justify-between font-sans select-none z-40 transition-colors flex-shrink-0 whitespace-nowrap overflow-hidden"
     >

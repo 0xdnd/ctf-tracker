@@ -51,7 +51,7 @@ export async function saveVaultToIndexedDb(data: {
     const done = (err?: unknown) => {
       if (settled) return;
       settled = true;
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* already closed */ }
       if (err) reject(err);
       else resolve();
     };
@@ -99,6 +99,87 @@ export async function loadVaultFromIndexedDb(): Promise<VaultPayload | null> {
     console.warn('[ZeroBox Vault] Could not access IndexedDB:', err);
     return null;
   }
+}
+
+/** What a vault mutation starts from: the stored notes, and whether a vault record exists at all. */
+export interface VaultMutationBase {
+  notes: CptsNoteEntry[];
+  wikilinkMap: Record<string, string>;
+  /** False when nothing has been stored yet (fresh install, or the vault was cleared). */
+  exists: boolean;
+}
+
+export interface VaultMutationResult {
+  notes: CptsNoteEntry[];
+  wikilinkMap: Record<string, string>;
+}
+
+/**
+ * Read, apply and write in ONE readwrite transaction. IndexedDB runs readwrite transactions on the same store one
+ * at a time, across tabs too, so `fn` always sees the latest stored vault and never overwrites a change another
+ * tab committed in between (unlike saveVaultToIndexedDb, which writes the caller's whole in-memory array).
+ * `fn` must be synchronous: awaiting inside it would let the transaction commit early. Resolves with what was
+ * written, or null when the schema write gate is engaged (nothing is written, like saveVaultToIndexedDb). Rejects
+ * when the read, `fn` or the write fails; the vault is then left as it was.
+ */
+export async function mutateVault(
+  fn: (current: VaultMutationBase) => VaultMutationResult
+): Promise<VaultMutationResult | null> {
+  if (isSchemaWriteGated()) return null;
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let result: VaultMutationResult | null = null;
+    const done = (err?: unknown, value: VaultMutationResult | null = null) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch { /* already closed */ }
+      if (err) reject(err);
+      else resolve(value);
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      let gatedAbort = false;
+      let fnError: unknown = null;
+      tx.oncomplete = () => done(undefined, result);
+      tx.onerror = () => done(fnError || tx.error || new Error('Failed to update the vault in IndexedDB'));
+      tx.onabort = () => {
+        if (gatedAbort) done(undefined, null);
+        else done(fnError || tx.error || new Error('Updating the vault in IndexedDB was aborted'));
+      };
+      const req = store.get(VAULT_KEY);
+      req.onsuccess = () => {
+        // Engaged while the read was in flight (e.g. another tab started a restore): write nothing.
+        if (isSchemaWriteGated()) {
+          gatedAbort = true;
+          tx.abort();
+          return;
+        }
+        const raw = req.result as VaultPayload | undefined;
+        try {
+          const next = fn({
+            notes: Array.isArray(raw?.notes) ? raw.notes : [],
+            wikilinkMap: raw?.wikilinkMap && typeof raw.wikilinkMap === 'object' ? raw.wikilinkMap : {},
+            exists: Boolean(raw),
+          });
+          result = { notes: next.notes || [], wikilinkMap: next.wikilinkMap || {} };
+          const payload: VaultPayload = { ...result, importedAt: new Date().toISOString() };
+          store.put(payload, VAULT_KEY);
+        } catch (err) {
+          fnError = err || new Error('The vault update failed');
+          tx.abort();
+        }
+      };
+    } catch (err) {
+      done(err || new Error('Failed to update the vault in IndexedDB'));
+    }
+  });
+}
+
+/** Reads the vault (null when there is none); a read error rejects, so callers never mistake it for "empty". */
+export async function loadVaultStrict(): Promise<VaultPayload | null> {
+  return readVaultStrict();
 }
 
 /** Reads the vault record; unlike loadVaultFromIndexedDb a read error rejects (only "no IndexedDB" reads as empty). */
@@ -193,7 +274,7 @@ async function writeRecordStrict(key: string, value: unknown): Promise<void> {
     const done = (err?: unknown) => {
       if (settled) return;
       settled = true;
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* already closed */ }
       if (err) reject(err);
       else resolve();
     };

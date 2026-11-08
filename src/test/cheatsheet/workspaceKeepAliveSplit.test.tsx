@@ -390,16 +390,16 @@ describe('Master In-Window Multi-Tab & Split-View Workspace Engine', () => {
         />
       );
 
-      const splitHBtn = screen.getByTestId('toggle-split-horizontal');
-      const splitVBtn = screen.getByTestId('toggle-split-vertical');
+      const openMenu = () => fireEvent.click(screen.getByTestId('note-more-menu-button'));
 
-      expect(splitHBtn).toBeInTheDocument();
-      expect(splitVBtn).toBeInTheDocument();
-
-      fireEvent.click(splitHBtn);
+      openMenu();
+      expect(screen.getByTestId('toggle-split-horizontal')).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('toggle-split-horizontal'));
       expect(handleToggleSplit).toHaveBeenCalledWith('horizontal');
 
-      fireEvent.click(splitVBtn);
+      openMenu();
+      expect(screen.getByTestId('toggle-split-vertical')).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('toggle-split-vertical'));
       expect(handleToggleSplit).toHaveBeenCalledWith('vertical');
     });
 
@@ -420,6 +420,7 @@ describe('Master In-Window Multi-Tab & Split-View Workspace Engine', () => {
         />
       );
 
+      fireEvent.click(screen.getByTestId('note-more-menu-button'));
       const moveBtn = screen.getByTestId('move-tab-other-pane');
       expect(moveBtn).toBeInTheDocument();
 

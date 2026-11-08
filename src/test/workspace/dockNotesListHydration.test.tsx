@@ -32,7 +32,7 @@ beforeEach(() => {
       isOpen: true,
       isPinned: true,
       isSwitcherOpen: false,
-      notesListCollapsed: false,
+      dockLeftView: 'files',
     });
   });
 });

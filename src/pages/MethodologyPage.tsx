@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -47,9 +47,12 @@ import { GlobalHudVarsBar } from '../components/methodology/GlobalHudVarsBar';
 import { FileTransferCheatsheet } from '../components/methodology/FileTransferCheatsheet';
 import { TtyStabilizationCheatsheet } from '../components/methodology/TtyStabilizationCheatsheet';
 import { PowerShellEncoderTool } from '../components/methodology/PowerShellEncoderTool';
+import { PhaseNav, phaseSectionId } from '../components/methodology/PhaseNav';
 import { useShallow } from 'zustand/react/shallow';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
 import { SyntaxHighlightedCommand } from '../components/common/SyntaxHighlightedCommand';
+import { splitBranchTitle, shortenBranchLabel } from '../utils/methodologyDisplay';
+import { computeChecklistProgress } from '../utils/checklistProgress';
 
 export const MethodologyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -115,13 +118,38 @@ export const MethodologyPage: React.FC = () => {
     return machines.find(m => m.id === targetContextId) || null;
   }, [targetContextId, machines]);
 
-  // Active target resolution for live checklist execution
+  // Active target resolution for live checklist execution.
+  // No silent default: with nothing explicitly chosen, the checklist renders an empty state.
   const activeTargetMachine = useMemo(() => {
     if (contextMachine) return contextMachine;
     if (activeTargetId) return machines.find(m => m.id === activeTargetId) || null;
-    if (machines.length > 0) return machines[0];
     return null;
   }, [contextMachine, activeTargetId, machines]);
+
+  // Phase navigator state for the checklist view (mirrors ChecklistWorkspace's own accordion
+  // when lifted into a controlled PhaseNav).
+  const [checklistExpandedPhaseId, setChecklistExpandedPhaseId] = useState<string>('phase-01-surface-mapping');
+  const [, setChecklistSelectedPhase] = useState<number | 'all'>('all');
+
+  useEffect(() => {
+    setChecklistExpandedPhaseId('phase-01-surface-mapping');
+    setChecklistSelectedPhase('all');
+  }, [activeTargetMachine?.id]);
+
+  const checklistApplicablePhases = useMemo(() => {
+    if (!activeTargetMachine) return [];
+    return generateApplicablePhases(activeTargetMachine, activeTargetMachine.openPorts || []);
+  }, [activeTargetMachine]);
+
+  const checklistProgressByPhaseId = useMemo(() => {
+    const itemsState = activeTargetMachine?.checklist?.itemsState;
+    const map: Record<string, { done: number; total: number }> = {};
+    checklistApplicablePhases.forEach((phase) => {
+      const { completed, activeTotal } = computeChecklistProgress([phase], itemsState);
+      map[phase.id] = { done: completed, total: activeTotal };
+    });
+    return map;
+  }, [checklistApplicablePhases, activeTargetMachine]);
 
   // Compute phases based on context machine (or full universal framework)
   const displayPhases = useMemo(() => {
@@ -349,91 +377,127 @@ export const MethodologyPage: React.FC = () => {
         <PowerShellEncoderTool />
       ) : viewMode === 'checklist' ? (
         activeTargetMachine ? (
-          <div className="space-y-4">
-            {/* Checklist target selector */}
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-medium text-secondary">Checklist target</span>
+          <div className="lg:flex lg:gap-6 lg:items-start">
+            <PhaseNav
+              phases={checklistApplicablePhases.map((p) => ({ id: p.id, phaseNumber: p.phaseNumber, title: p.subtitle }))}
+              mode="checklist"
+              selected="all"
+              onSelectPhase={setChecklistSelectedPhase}
+              onExpandPhase={setChecklistExpandedPhaseId}
+              progress={checklistProgressByPhaseId}
+              getSectionId={phaseSectionId}
+              className="mb-3 lg:mb-0 lg:w-56 lg:flex-shrink-0"
+            />
+            <div className="min-w-0 flex-1 space-y-4">
+              {/* Checklist target selector */}
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-medium text-secondary">Checklist target</span>
 
-                <CyberSelect
-                  value={activeTargetMachine.id}
-                  onChange={(val) => {
-                    setTargetContextId(val);
-                  }}
-                  options={machines.map((m) => ({
-                    value: m.id,
-                    label: `${m.name} (${m.platform})`,
-                    icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
-                    description: `${m.os} · ${m.difficulty}`,
-                  }))}
-                  searchable
-                  searchPlaceholder="Switch target..."
-                  variant="card"
-                  size="sm"
-                  soundEnabled={soundEnabled}
-                />
+                  <CyberSelect
+                    value={activeTargetMachine.id}
+                    onChange={(val) => {
+                      setTargetContextId(val);
+                    }}
+                    options={machines.map((m) => ({
+                      value: m.id,
+                      label: `${m.name} (${m.platform})`,
+                      icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
+                      description: `${m.os} · ${m.difficulty}`,
+                    }))}
+                    searchable
+                    searchPlaceholder="Switch target..."
+                    variant="card"
+                    size="sm"
+                    soundEnabled={soundEnabled}
+                  />
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-muted">{activeTargetMachine.os}</span>
-                  {activeTargetId !== activeTargetMachine.id ? (
-                    <CyberButton
-                      variant="secondary"
-                      size="sm"
-                      iconLeft={<Sparkles className="h-3 w-3" />}
-                      onClick={() => {
-                        setActiveTarget(activeTargetMachine.id);
-                        startTimer();
-                        if (soundEnabled) playCyberSound('engage');
-                      }}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted">{activeTargetMachine.os}</span>
+                    {activeTargetId !== activeTargetMachine.id ? (
+                      <CyberButton
+                        variant="secondary"
+                        size="sm"
+                        iconLeft={<Sparkles className="h-3 w-3" />}
+                        onClick={() => {
+                          setActiveTarget(activeTargetMachine.id);
+                          startTimer();
+                          if (soundEnabled) playCyberSound('engage');
+                        }}
+                      >
+                        Engage as Active
+                      </CyberButton>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary">
+                        <span className="h-1.5 w-1.5 rounded-full bg-callout-success-fg" aria-hidden="true" />
+                        Active target
+                      </span>
+                    )}
+                    <button
+                      onClick={() => navigate(`/target/${activeTargetMachine.id}`)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline cursor-pointer"
                     >
-                      Engage as Active
-                    </CyberButton>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary">
-                      <span className="h-1.5 w-1.5 rounded-full bg-callout-success-fg" aria-hidden="true" />
-                      Active target
-                    </span>
-                  )}
-                  <button
-                    onClick={() => navigate(`/target/${activeTargetMachine.id}`)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline cursor-pointer"
-                  >
-                    <span>Target Dossier</span>
-                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                  </button>
+                      <span>Target Dossier</span>
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
+
+                <CyberButton
+                  variant="ghost"
+                  size="sm"
+                  iconLeft={<Plus className="h-3.5 w-3.5" />}
+                  onClick={() => setNewMachineModalOpen(true)}
+                >
+                  New Target Box
+                </CyberButton>
               </div>
 
-              <CyberButton
-                variant="ghost"
-                size="sm"
-                iconLeft={<Plus className="h-3.5 w-3.5" />}
-                onClick={() => setNewMachineModalOpen(true)}
-              >
-                New Target Box
-              </CyberButton>
+              {/* Live interactive checklist workspace */}
+              <ChecklistWorkspace
+                machine={activeTargetMachine}
+                variant="methodology"
+                expandedPhaseId={checklistExpandedPhaseId}
+                onPhaseExpand={setChecklistExpandedPhaseId}
+                onOpenInWriteup={() => navigate(`/writeup/${activeTargetMachine.id}`)}
+              />
             </div>
-
-            {/* Live interactive checklist workspace */}
-            <ChecklistWorkspace
-              machine={activeTargetMachine}
-              onOpenInWriteup={() => navigate(`/writeup/${activeTargetMachine.id}`)}
-            />
           </div>
         ) : (
           <div className="mx-auto max-w-md space-y-3 py-12 text-center">
             <ListChecks className="mx-auto h-10 w-10 text-muted" aria-hidden="true" />
             <h3 className="text-lg font-semibold tracking-[-0.015em] text-primary">No target selected</h3>
             <p className="text-sm text-muted">
-              Select or create a target to track micro-tasks and methodology progress.
+              The checklist tracks one target at a time. {machines.length > 0 ? 'Pick a target below, or create a new one.' : 'Create a target to get started.'}
             </p>
+            {machines.length > 0 && (
+              <div className="flex justify-center pt-1">
+                <CyberSelect
+                  value={targetContextId !== 'universal' ? targetContextId : ''}
+                  onChange={(val) => setTargetContextId(val)}
+                  options={machines.map((m) => ({
+                    value: m.id,
+                    label: `${m.name} (${m.platform})`,
+                    icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
+                    description: `${m.os} · ${m.difficulty}`,
+                  }))}
+                  placeholder="Select a target..."
+                  searchable
+                  searchPlaceholder="Search target box..."
+                  variant="card"
+                  size="sm"
+                  soundEnabled={soundEnabled}
+                  aria-label="Select checklist target"
+                />
+              </div>
+            )}
             <CyberButton
-              variant="primary"
+              variant={machines.length > 0 ? 'ghost' : 'primary'}
               size="md"
               iconLeft={<Plus className="h-4 w-4" />}
               onClick={() => setNewMachineModalOpen(true)}
             >
-              Deploy Target Machine
+              {machines.length > 0 ? 'New Target Box' : 'Deploy Target Machine'}
             </CyberButton>
           </div>
         )
@@ -519,32 +583,6 @@ export const MethodologyPage: React.FC = () => {
               )}
             </div>
 
-            {/* Phase chips: single line, scrollable */}
-            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
-              <div className="flex min-w-max items-center gap-1.5 py-0.5">
-                <button
-                  onClick={() => setSelectedPhaseNumber('all')}
-                  className={`${chipBase} ${selectedPhaseNumber === 'all' ? chipOn : chipOff}`}
-                >
-                  All 8 Phases
-                </button>
-
-                {MASTER_METHODOLOGY_FRAMEWORK.map((phase) => {
-                  const isSelected = selectedPhaseNumber === phase.phaseNumber;
-                  return (
-                    <button
-                      key={phase.id}
-                      onClick={() => setSelectedPhaseNumber(phase.phaseNumber)}
-                      className={`${chipBase} ${isSelected ? chipOn : chipOff}`}
-                    >
-                      <span className="font-mono text-[11px] tabular-nums text-muted">0{phase.phaseNumber}</span>
-                      <span>{phase.subtitle}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Service branch chips */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
@@ -559,14 +597,20 @@ export const MethodologyPage: React.FC = () => {
 
                   {SERVICE_BRANCHES.map((b) => {
                     const isSelected = selectedBranch === b.type;
+                    const { letter, label } = splitBranchTitle(b.name);
+                    const shortLabel = shortenBranchLabel(label);
                     return (
                       <button
                         key={b.type}
                         onClick={() => setSelectedBranch(b.type)}
+                        title={b.name}
                         className={`${chipBase} ${isSelected ? chipOn : chipOff}`}
                       >
                         {getBranchIcon(b.type)}
-                        <span>{b.name.split(':')[0]}</span>
+                        {letter && (
+                          <span className="font-mono text-[10px] text-muted" aria-hidden="true">{letter}</span>
+                        )}
+                        <span>{shortLabel}</span>
                       </button>
                     );
                   })}
@@ -591,8 +635,17 @@ export const MethodologyPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Phases: plain sections, not cards */}
-          <div>
+          {/* Phase navigator + phases: sticky left column at desktop widths */}
+          <div className="lg:flex lg:gap-6 lg:items-start">
+            <PhaseNav
+              phases={MASTER_METHODOLOGY_FRAMEWORK.map((p) => ({ id: p.id, phaseNumber: p.phaseNumber, title: p.subtitle }))}
+              mode="playbook"
+              selected={selectedPhaseNumber}
+              onSelectPhase={setSelectedPhaseNumber}
+              getSectionId={phaseSectionId}
+              className="mb-3 lg:mb-0 lg:w-56 lg:flex-shrink-0"
+            />
+            <div className="min-w-0 flex-1">
             {filteredPhases.length === 0 ? (
               <div className="mx-auto max-w-sm space-y-2 py-12 text-center">
                 <Compass className="mx-auto h-8 w-8 text-muted" aria-hidden="true" />
@@ -609,6 +662,7 @@ export const MethodologyPage: React.FC = () => {
                 return (
                   <motion.section
                     key={phase.id}
+                    id={phaseSectionId(phase.id)}
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.08 }}
@@ -749,6 +803,7 @@ export const MethodologyPage: React.FC = () => {
                 );
               })
             )}
+            </div>
           </div>
         </>
       )}

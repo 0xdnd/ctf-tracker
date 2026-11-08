@@ -1,5 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useState } from 'react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const confirmMock = vi.fn();
 vi.mock('../../store/useConfirmStore', () => ({
@@ -8,6 +9,8 @@ vi.mock('../../store/useConfirmStore', () => ({
 
 import { ChecklistWorkspace } from '../../components/checklist/ChecklistWorkspace';
 import { useCtfStore } from '../../store/useCtfStore';
+import { generateApplicablePhases } from '../../data/methodologyFramework';
+import type { Machine } from '../../types';
 
 const machine = {
   id: 'm-test',
@@ -74,5 +77,87 @@ describe('ChecklistWorkspace', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     fireEvent.keyDown(window, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
+
+describe('ChecklistWorkspace Next up card (methodology variant)', () => {
+  const originalSetChecklistItemStatus = useCtfStore.getState().setChecklistItemStatus;
+
+  afterEach(() => {
+    useCtfStore.setState({ setChecklistItemStatus: originalSetChecklistItemStatus } as any);
+  });
+
+  it('does not render the Next up card, or remove the Current objective line, for the default variant', () => {
+    render(<ChecklistWorkspace machine={machine} />);
+    expect(screen.getByText(/Current objective:/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mark done/i })).not.toBeInTheDocument();
+  });
+
+  it('picks the first applicable not-done item as Next up', () => {
+    render(<ChecklistWorkspace machine={machine} variant="methodology" />);
+    expect(screen.queryByText(/Current objective:/i)).not.toBeInTheDocument();
+    const card = within(screen.getByTestId('next-up-card'));
+    expect(card.getByText('Fast SYN Scan (Top 1000 TCP Ports)')).toBeInTheDocument();
+    expect(card.getByText(/Phase 01/i)).toBeInTheDocument();
+  });
+
+  it('prefers the active item over the first not-done item', () => {
+    const activeMachine = {
+      ...machine,
+      checklist: {
+        openPorts: machine.openPorts,
+        activeItemId: 'p02-banner-grab',
+        itemsState: { 'p02-banner-grab': { status: 'in_progress' } },
+      },
+    };
+    render(<ChecklistWorkspace machine={activeMachine} variant="methodology" />);
+    expect(within(screen.getByTestId('next-up-card')).getByText('Banner Grabbing & Service Response Check')).toBeInTheDocument();
+  });
+
+  it('is hidden for active-target machines, where checklist edits are no-ops', () => {
+    render(<ChecklistWorkspace machine={{ ...machine, isActive: true }} variant="methodology" />);
+    expect(screen.queryByRole('button', { name: /Mark done/i })).not.toBeInTheDocument();
+  });
+
+  it('shows a completion message once every applicable item is done or n/a', () => {
+    const phases = generateApplicablePhases(machine as Machine, machine.openPorts || []);
+    const itemsState: Record<string, { status: 'done' }> = {};
+    phases.forEach((phase) =>
+      phase.subcategories.forEach((subcat) =>
+        subcat.items.forEach((item) => {
+          itemsState[item.id] = { status: 'done' };
+        })
+      )
+    );
+    const doneMachine = { ...machine, checklist: { openPorts: machine.openPorts, activeItemId: null, itemsState } };
+    render(<ChecklistWorkspace machine={doneMachine} variant="methodology" />);
+    expect(screen.getByText(/done or marked N\/A/i)).toBeInTheDocument();
+  });
+
+  it('Mark done advances the Next up card to the next applicable item', () => {
+    function Harness() {
+      const [m, setM] = useState<Machine>(machine as Machine);
+      useCtfStore.setState({
+        setChecklistItemStatus: ((_machineId: string, itemId: string, status: string) => {
+          setM((prev) => {
+            const existing = prev.checklist || { openPorts: prev.openPorts || [], activeItemId: null, itemsState: {} };
+            return {
+              ...prev,
+              checklist: {
+                ...existing,
+                activeItemId: status === 'in_progress' ? itemId : existing.activeItemId,
+                itemsState: { ...existing.itemsState, [itemId]: { status } },
+              },
+            } as Machine;
+          });
+        }) as any,
+      } as any);
+      return <ChecklistWorkspace machine={m} variant="methodology" />;
+    }
+
+    render(<Harness />);
+    expect(within(screen.getByTestId('next-up-card')).getByText('Fast SYN Scan (Top 1000 TCP Ports)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Mark done/i }));
+    expect(within(screen.getByTestId('next-up-card')).getByText('Full 65,535 TCP Exhaustive Port Sweep')).toBeInTheDocument();
   });
 });

@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, normalize, resolve } from 'node:path';
 import type { Plugin } from 'vite';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = fileURLToPath(new URL('.', import.meta.url));
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version: string };
 
@@ -33,10 +36,57 @@ function pagesFallbackPreview(): Plugin {
   };
 }
 
+// Packages reachable only through mermaid (its dependency closure minus everything the app's
+// other dependencies pull in). Used to name mermaid-only lazy chunks so the bundle budget can
+// track them separately from the app.
+function dependencyClosure(roots: string[]): Set<string> {
+  const seen = new Set<string>();
+  const stack = [...roots];
+  while (stack.length > 0) {
+    const name = stack.pop()!;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const file = join(ROOT, 'node_modules', name, 'package.json');
+    if (!existsSync(file)) continue;
+    const deps = (JSON.parse(readFileSync(file, 'utf-8')) as { dependencies?: Record<string, string> }).dependencies;
+    stack.push(...Object.keys(deps ?? {}));
+  }
+  return seen;
+}
+
+function mermaidOnlyPackages(): Set<string> {
+  const deps = Object.keys((JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')) as { dependencies: Record<string, string> }).dependencies);
+  const shared = dependencyClosure(deps.filter((d) => d !== 'mermaid'));
+  return new Set([...dependencyClosure(['mermaid'])].filter((d) => !shared.has(d)));
+}
+
+const MERMAID_GLUE = /[\\/]src[\\/](components[\\/]cheatsheet[\\/]MermaidDiagram\.tsx|utils[\\/]mermaidRenderer\.ts)$/;
+
+function packageOf(id: string): string | null {
+  const parts = id.split(/[\\/]node_modules[\\/]/);
+  if (parts.length < 2) return null;
+  const segs = parts[parts.length - 1].split(/[\\/]/);
+  return segs[0].startsWith('@') ? `${segs[0]}/${segs[1]}` : segs[0];
+}
+
+/** True when every real module in the chunk is mermaid, a mermaid-only dependency, or the mermaid glue. */
+function isMermaidChunk(moduleIds: readonly string[], mermaidPkgs: Set<string>): boolean {
+  const real = moduleIds.filter((id) => !id.startsWith('\0'));
+  return (
+    real.length > 0 &&
+    real.every((id) => {
+      if (MERMAID_GLUE.test(id.split('?')[0])) return true;
+      const pkg = packageOf(id);
+      return pkg !== null && mermaidPkgs.has(pkg);
+    })
+  );
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Tauri desktop builds (`--mode tauri`) use hash routing + relative assets; web uses clean URLs at '/'.
   const isTauri = mode === 'tauri';
+  const mermaidPkgs = mermaidOnlyPackages();
   return {
   plugins: [react(), ...(isTauri ? [] : [pagesFallbackPreview()])],
   base: isTauri ? './' : '/',
@@ -69,10 +119,19 @@ export default defineConfig(({ mode }) => {
     // Entry is ~734 kB; machinesCatalog (612 kB) is a lazy chunk loaded via loadMachinesCatalog().
     // Raise only as high as needed (default 500); lower again as the entry shrinks.
     chunkSizeWarningLimit: 750,
+    // App code importing the lazy mermaid glue is already running, so the app chunks it depends on
+    // are loaded; skip their preload list there. Imports inside mermaid keep normal preloading.
+    modulePreload: {
+      resolveDependencies: (filename, deps, { hostId }) =>
+        /(^|\/)vendor-mermaid-/.test(filename) && !/(^|\/)vendor-mermaid-/.test(hostId) ? [] : deps,
+    },
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: (chunk) =>
+          isMermaidChunk(chunk.moduleIds, mermaidPkgs)
+            ? 'assets/vendor-mermaid-[name]-[hash].js'
+            : 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks(id) {
           if (id.includes('machinesCatalog.ts')) {

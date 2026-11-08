@@ -10,6 +10,7 @@ import { encodeUtf16LeBase64 } from '../../utils/shellEncoders';
 describe('Methodology Enhancements & Offensive Helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.removeItem('zb.methodology.varsExpanded');
     useCtfStore.setState({
       globalVars: {
         lhost: '10.10.14.55',
@@ -27,8 +28,14 @@ describe('Methodology Enhancements & Offensive Helpers', () => {
   });
 
   describe('GlobalHudVarsBar', () => {
-    it('renders all HUD inputs with active store values', () => {
+    it('starts collapsed with a summary line, and expands to show all HUD inputs', () => {
       render(<GlobalHudVarsBar />);
+
+      // Collapsed by default: no inputs yet, but the compact summary is visible.
+      expect(screen.queryByDisplayValue('10.10.14.55')).not.toBeInTheDocument();
+      expect(screen.getByText(/LHOST 10\.10\.14\.55/)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /Edit variables/i }));
 
       expect(screen.getByDisplayValue('10.10.14.55')).toBeInTheDocument();
       expect(screen.getByDisplayValue('9001')).toBeInTheDocument();
@@ -53,10 +60,23 @@ describe('Methodology Enhancements & Offensive Helpers', () => {
 
     it('updates globalVars in store when typing into inputs', () => {
       render(<GlobalHudVarsBar />);
+      fireEvent.click(screen.getByRole('button', { name: /Edit variables/i }));
       const userInput = screen.getByDisplayValue('svc_backup');
       fireEvent.change(userInput, { target: { value: 'administrator' } });
 
       expect(useCtfStore.getState().globalVars.user).toBe('administrator');
+    });
+
+    it('remembers the expanded state in localStorage across renders', () => {
+      localStorage.removeItem('zb.methodology.varsExpanded');
+      const { unmount } = render(<GlobalHudVarsBar />);
+      fireEvent.click(screen.getByRole('button', { name: /Edit variables/i }));
+      expect(localStorage.getItem('zb.methodology.varsExpanded')).toBe('1');
+      unmount();
+
+      render(<GlobalHudVarsBar />);
+      expect(screen.getByDisplayValue('10.10.14.55')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Hide variables/i })).toBeInTheDocument();
     });
   });
 

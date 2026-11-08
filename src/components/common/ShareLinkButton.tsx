@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Share2, Check } from 'lucide-react';
 import { playCyberSound } from '../../utils/helpers';
-import { isTauriTarget } from '../../utils/runtimeTarget';
+import { copyShareLink } from '../../utils/shareLink';
 
 interface ShareLinkButtonProps {
   path: string;
@@ -24,34 +24,11 @@ export const ShareLinkButton: React.FC<ShareLinkButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    if (typeof window === 'undefined') return;
-
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    // Web build uses clean URLs; the desktop (hash-routed) build keeps '#/path'
-    const fullUrl = isTauriTarget()
-      ? `${window.location.origin}${window.location.pathname}#${cleanPath}`
-      : `${window.location.origin}${cleanPath}`;
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(fullUrl);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = fullUrl;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-
-      setCopied(true);
-      playCyberSound('copy');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy share link:', err);
-    }
+    const ok = await copyShareLink(path);
+    if (!ok) return;
+    setCopied(true);
+    playCyberSound('copy');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (

@@ -14,7 +14,7 @@ import {
 } from '../../utils/backupReminder';
 
 /** Calm, non-modal reminder to export a backup. Waits for tours, guides, modals and exams. */
-export const BackupReminderCard: React.FC = () => {
+export const BackupReminderCard: React.FC<{ placement?: 'default' | 'notes' }> = ({ placement = 'default' }) => {
   const reduceMotion = useReducedMotion();
   const lastBackupAt = useBackupReminderStore((s) => s.lastBackupAt);
   const snoozeUntil = useBackupReminderStore((s) => s.snoozeUntil);
@@ -66,7 +66,11 @@ export const BackupReminderCard: React.FC = () => {
       initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-20 left-3 right-3 z-popover rounded-xl border border-subtle bg-surface-card p-5 font-sans shadow-xl md:bottom-4 md:left-auto md:right-4 md:w-[26rem]"
+      className={`fixed z-popover rounded-xl border border-subtle bg-surface-card p-5 font-sans shadow-xl ${
+        placement === 'notes'
+          ? 'bottom-8 left-3 right-3 md:left-auto md:right-4 md:w-[26rem]'
+          : 'bottom-20 left-3 right-3 md:bottom-4 md:left-auto md:right-4 md:w-[26rem]'
+      }`}
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-subtle bg-surface-sunken text-accent">

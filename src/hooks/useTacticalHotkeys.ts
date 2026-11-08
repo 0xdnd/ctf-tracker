@@ -196,6 +196,15 @@ export function useTacticalHotkeys() {
         return;
       }
 
+      // Ctrl/Cmd+O: note switcher. Works while typing in a field; yields to the command palette.
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'o') {
+        if (useCtfStore.getState().commandPaletteOpen) return;
+        e.preventDefault();
+        e.stopPropagation();
+        useNotesWorkspaceStore.getState().openNoteSwitcher();
+        return;
+      }
+
       // Alt+K: "Open anything" switcher in the notes dock. Only while the dock is open, so it never
       // swallows the chord elsewhere. (Ctrl/Cmd+P is print, Alt+O is the operator switcher.)
       // On macOS Option+K types a dead-key character ("˚"), so there the physical-key match is skipped

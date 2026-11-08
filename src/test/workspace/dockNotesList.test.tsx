@@ -55,7 +55,7 @@ beforeEach(() => {
       isOpen: true,
       isPinned: true,
       isSwitcherOpen: false,
-      notesListCollapsed: false,
+      dockLeftView: 'files',
     });
   });
 });
@@ -183,10 +183,11 @@ describe('dock notes list', () => {
     renderDock();
     expect(list()).not.toBeNull();
     fireEvent.click(screen.getByTestId('dock-list-toggle'));
-    expect(useNotesWorkspaceStore.getState().notesListCollapsed).toBe(true);
+    expect(useNotesWorkspaceStore.getState().dockLeftView).toBeNull();
     expect(document.querySelector('[data-dock-notes-list]')).toBeNull();
     const saved = JSON.parse(localStorage.getItem('zerobox_notes_workspace') || '{}');
-    expect(saved.state.notesListCollapsed).toBe(true);
+    expect(saved.state.dockLeftView).toBeNull();
+    expect(saved.state.notesListCollapsed).toBeUndefined();
     fireEvent.click(screen.getByTestId('dock-list-toggle'));
     expect(document.querySelector('[data-dock-notes-list]')).not.toBeNull();
   });

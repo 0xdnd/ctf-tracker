@@ -58,20 +58,16 @@ describe('Obsidian Workspace Architecture in CheatsheetView', () => {
       </MemoryRouter>
     );
 
-    // Vault header in sidebar
-    expect(screen.getByText('FIELD MANUAL')).toBeInTheDocument();
+    // Left panel in the shell
+    expect(screen.getByTestId('notes-left-panel')).toBeInTheDocument();
 
-    // View switcher pills: Notes, Cards, Table
-    expect(screen.getByTitle('Obsidian Note Reader')).toBeInTheDocument();
+    // Footer view buttons: Cards, Table
     expect(screen.getByTitle('Cards Gallery')).toBeInTheDocument();
     expect(screen.getByTitle('Quick Index Table')).toBeInTheDocument();
 
-    // Language switcher pills: EN, עב
-    expect(screen.getByTitle('English Playbooks')).toBeInTheDocument();
-    expect(screen.getByTitle('עברית')).toBeInTheDocument();
-
-    // Filter input is available
-    expect(screen.getByPlaceholderText(/files & folders/i)).toBeInTheDocument();
+    // Filter input lives in the Search panel
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(screen.getByPlaceholderText('Search notes…')).toBeInTheDocument();
   });
 
   it('toggles Obsidian Vault Explorer sidebar open and closed via PanelLeft button and Ctrl+B', async () => {
@@ -145,7 +141,8 @@ describe('Obsidian Workspace Architecture in CheatsheetView', () => {
       </MemoryRouter>
     );
 
-    const filterInput = screen.getByPlaceholderText(/files & folders/i);
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    const filterInput = screen.getByPlaceholderText('Search notes…');
     act(() => {
       fireEvent.change(filterInput, { target: { value: 'Methodology' } });
     });

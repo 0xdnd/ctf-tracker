@@ -99,7 +99,7 @@ describe('Notes area ships no bundled notes', () => {
       screen.getByText('It shows your own Markdown notes, for example an Obsidian vault. You need to import them first.')
     ).toBeInTheDocument();
     // The workspace explorer is not rendered without notes
-    expect(screen.queryByText('FIELD MANUAL')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Expand all folders' })).toBeNull();
     // No bundled-catalog wording anywhere in the view
     expect(document.body.textContent || '').not.toMatch(/cpts/i);
 
@@ -123,7 +123,7 @@ describe('Notes area ships no bundled notes', () => {
     renderNotesView('/notes?note=02-web-directory-fuzzing');
 
     expect(screen.queryByTestId('notes-empty-state')).not.toBeInTheDocument();
-    expect(screen.getByText('FIELD MANUAL')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Expand all folders' })).toBeInTheDocument();
     expect(screen.getAllByText(/Web Content Discovery/).length).toBeGreaterThan(0);
   });
 

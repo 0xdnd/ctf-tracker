@@ -24,7 +24,16 @@ interface FakeRequest {
   onerror: (() => void) | null;
 }
 
-export function installFakeIndexedDb(): FakeIndexedDb {
+export interface FakeIndexedDbOptions {
+  /**
+   * Run requests queued from another request's onsuccess inside the same transaction, as real IndexedDB does
+   * (needed for read-then-write transactions). Off by default: every store shares one record map here, so e.g.
+   * resilientStorage's snapshot pruning (getAllKeys, then delete) would delete other stores' records.
+   */
+  drainQueuedRequests?: boolean;
+}
+
+export function installFakeIndexedDb(options: FakeIndexedDbOptions = {}): FakeIndexedDb {
   const handle: FakeIndexedDb = {
     records: new Map(),
     failWrites: false,
@@ -42,11 +51,18 @@ export function installFakeIndexedDb(): FakeIndexedDb {
     close: () => {},
     transaction: () => {
       const ops: Array<{ write: boolean; run: () => void }> = [];
+      let aborted = false;
       const tx = {
         error: null as unknown,
         oncomplete: null as (() => void) | null,
         onerror: null as (() => void) | null,
         onabort: null as (() => void) | null,
+        abort() {
+          if (aborted) return;
+          aborted = true;
+          ops.length = 0;
+          setTimeout(() => tx.onabort?.(), 0);
+        },
         objectStore: () => ({
           put(value: unknown, key: string) {
             const req = newRequest();
@@ -104,7 +120,23 @@ export function installFakeIndexedDb(): FakeIndexedDb {
           tx.onabort?.();
           return;
         }
-        ops.forEach((op) => op.run());
+        if (!options.drainQueuedRequests) {
+          ops.slice().forEach((op) => op.run());
+          tx.oncomplete?.();
+          return;
+        }
+        // Drain, like a real transaction: requests queued from a request's onsuccess run in the same transaction.
+        while (ops.length) {
+          const op = ops.shift()!;
+          if (aborted) return;
+          if (handle.failWrites && op.write) {
+            tx.error = new Error('QuotaExceededError');
+            tx.onabort?.();
+            return;
+          }
+          op.run();
+        }
+        if (aborted) return;
         tx.oncomplete?.();
       }, 0);
 

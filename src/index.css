@@ -902,3 +902,9 @@ html:not(.dark) .border-gray-900 {
   --syntax-variable: 249 168 212;
   --syntax-comment: 150 150 162;
 }
+
+/* Search-hit highlight in field manual notes (CSS Custom Highlight API; no DOM mutation). */
+::highlight(search-hit) {
+  background-color: rgb(var(--border-accent) / 0.15);
+  color: rgb(var(--text-primary));
+}

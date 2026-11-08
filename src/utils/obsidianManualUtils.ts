@@ -1,6 +1,7 @@
 import { Machine } from '../types';
 import { classifyMachine } from './categoryUtils';
 import { useCtfStore } from '../store/useCtfStore';
+import type { NoteIndex } from './noteIndex';
 
 export interface ObsidianCallout {
   type: 'abstract' | 'tip' | 'warning' | 'danger' | 'example' | 'note' | 'important' | 'cite' | 'success' | 'info' | 'question';
@@ -214,7 +215,12 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
 /**
  * Retrieves all notes that reference the given note ID (backlinks)
  */
-export function getBacklinksForNote(noteId: string): CptsNoteEntry[] {
+export function getBacklinksForNote(noteId: string, index?: NoteIndex): CptsNoteEntry[] {
+  if (index) {
+    return (index.backlinks.get(noteId) ?? [])
+      .map((id) => index.byId.get(id))
+      .filter((n): n is CptsNoteEntry => Boolean(n));
+  }
   const current = getNoteById(noteId);
   if (current && current.backlinks && current.backlinks.length > 0) {
     return current.backlinks

@@ -19,7 +19,8 @@ import {
   Code,
   NotebookPen,
   Timer,
-  NotebookText
+  NotebookText,
+  ExternalLink
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
@@ -30,12 +31,15 @@ import { useTrackerCounts } from '../../hooks/useTrackerCounts';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { countDueReviews } from '../../utils/spacedRepetition';
+import { isTauriTarget } from '../../utils/runtimeTarget';
+import { openInNewTab } from '../../utils/openInNewTab';
 
 const DUE_REFRESH_MS = 60_000;
 
 export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const notesHref = isTauriTarget() ? '#/field-manual' : '/field-manual';
   const location = useLocation();
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
@@ -158,6 +162,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
+      data-testid="app-sidebar"
       className={`hidden md:flex relative flex-col border-r border-subtle bg-surface-card text-primary font-sans transition-[width,background-color,border-color] duration-300 z-30 h-full max-h-full ${
         collapsed ? 'w-16' : 'w-72'
       }`}
@@ -242,42 +247,67 @@ export const Sidebar: React.FC = () => {
           );
         })}
 
-        {/* Field Notes Workspace Sidecar Toggle Button */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => {
-            toggleNotesWorkspace();
-            if (soundEnabled) playCyberSound('click');
-          }}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-            isNotesOpen
-              ? 'bg-surface-hover text-primary font-medium'
-              : 'text-secondary hover:text-primary hover:bg-surface-hover/70'
-          }`}
-          title={isNotesOpen ? 'Close Notes Workspace (Alt+N)' : 'Open Notes Workspace (Alt+N)'}
-          aria-label="Notes Workspace"
-        >
-          {isNotesOpen && (
-            <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />
-          )}
-          <div className="flex-shrink-0 relative">
-            <NotebookText className={`w-4 h-4 ${isNotesOpen ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
-            {openNotesCount > 0 && collapsed && (
-              <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-accent" />
+        {/* Field Notes Workspace Sidecar Toggle: a real link so Ctrl/Cmd+click and middle-click open the field manual in a new tab */}
+        <div className="relative">
+          <motion.a
+            whileTap={{ scale: 0.97 }}
+            href={notesHref}
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+              if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) {
+                // Desktop uses hash routing in one webview, so open a new app window instead of navigating this one.
+                if (isTauriTarget()) {
+                  e.preventDefault();
+                  openInNewTab('/field-manual');
+                }
+                return;
+              }
+              e.preventDefault();
+              toggleNotesWorkspace();
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              collapsed ? '' : 'pr-9'
+            } ${
+              isNotesOpen
+                ? 'bg-surface-hover text-primary font-medium'
+                : 'text-secondary hover:text-primary hover:bg-surface-hover/70'
+            }`}
+            title={isNotesOpen ? 'Close Notes Workspace (Alt+N)' : 'Open Notes Workspace (Alt+N)'}
+            aria-label="Notes Workspace"
+          >
+            {isNotesOpen && (
+              <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />
             )}
-          </div>
-
-          {!collapsed && (
-            <div className="flex-1 flex items-center justify-between min-w-0 text-left">
-              <span className="truncate mr-2">Notes</span>
-              {openNotesCount > 0 && (
-                <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
-                  {openNotesCount} open
-                </span>
+            <div className="flex-shrink-0 relative">
+              <NotebookText className={`w-4 h-4 ${isNotesOpen ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
+              {openNotesCount > 0 && collapsed && (
+                <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-accent" />
               )}
             </div>
+
+            {!collapsed && (
+              <div className="flex-1 flex items-center justify-between min-w-0 text-left">
+                <span className="truncate mr-2">Notes</span>
+                {openNotesCount > 0 && (
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
+                    {openNotesCount} open
+                  </span>
+                )}
+              </div>
+            )}
+          </motion.a>
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => openInNewTab('/field-manual')}
+              title="Open notes in new tab"
+              aria-label="Open notes in new tab"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-muted hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden={true} />
+            </button>
           )}
-        </motion.button>
+        </div>
 
         {/* View switcher when in Tracker view */}
         {activeTab === 'tracker' && !collapsed && (

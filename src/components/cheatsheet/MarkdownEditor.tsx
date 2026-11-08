@@ -36,10 +36,16 @@ import { sanitizeHtml } from '../../utils/securityUtils';
 import { parseMarkdownToHtml } from '../../utils/writeupHtmlExporter';
 import { NOTE_TEMPLATES } from '../../data/noteTemplates';
 import { useToastStore } from '../../store/useToastStore';
+import { registerUnsavedNoteEdits } from '../../utils/unsavedNoteEdits';
 
 export interface MarkdownEditorProps {
   noteId: string;
   initialContent: string;
+  /**
+   * The store's current text for this note. When it changes to something this editor did not save (another tab
+   * saved the note), the editor adopts it if it has no unsaved edits, and otherwise keeps the local text and warns.
+   */
+  storeContent?: string;
   onContentChange: (newContent: string) => void;
   onSave?: () => void;
   globalVars?: GlobalVariables;
@@ -52,6 +58,7 @@ export interface MarkdownEditorProps {
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   noteId,
   initialContent,
+  storeContent,
   onContentChange,
   onSave,
   globalVars,
@@ -143,8 +150,25 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     return () => root.removeEventListener('click', onClick);
   }, [showPreview]);
 
+  // Last text this editor knows the store holds for the note: what it last saved, or remote text it took over.
+  // "Unsaved edits" means the editor content differs from it (saveStatus is not reliable for that: the sync
+  // below resets it on every keystroke echo).
+  const baselineRef = useRef<string>(initialContent);
+  const contentRef = useRef<string>(content);
+  contentRef.current = content;
+  const saveFailedRef = useRef(false);
+  const syncedNoteIdRef = useRef(noteId);
+
   // Sync initial content if noteId changes externally
   useEffect(() => {
+    if (syncedNoteIdRef.current !== noteId) {
+      syncedNoteIdRef.current = noteId;
+      baselineRef.current = initialContent;
+      saveFailedRef.current = false;
+    } else if (initialContent !== contentRef.current) {
+      // Text pushed in by the parent rather than typed here (e.g. a checkbox toggled in the preview, saved at once).
+      baselineRef.current = initialContent;
+    }
     setContent(initialContent);
     setIsDirty(false);
     setSaveStatus('saved');
@@ -153,16 +177,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   // Execute debounced save to store
   const executeSave = useCallback((rawText: string) => {
     setSaveStatus('saving');
+    // The store takes this text synchronously, so its echo must not look like a change from another tab.
+    baselineRef.current = rawText;
     // updateNoteContent is async (promoting a catalog note lazy-loads its chunk): only report "saved"
     // once it resolves, and keep the edit marked dirty if it rejects.
     Promise.resolve(updateNoteContent(noteId, rawText))
       .then(() => {
+        saveFailedRef.current = false;
         if (onSave) onSave();
         setIsDirty(false);
         setSaveStatus('saved');
       })
       .catch((err) => {
         console.warn('[ZeroBox] Could not save note', err);
+        saveFailedRef.current = true;
         setIsDirty(true);
         setSaveStatus('dirty');
       });
@@ -170,6 +198,16 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   // The save the pending debounce timer would run (bound to the note it was typed into).
   const pendingSaveRef = useRef<(() => void) | null>(null);
+
+  // Lets the field manual keep this note's tab open (instead of closing it) if the note is deleted while edits are unsaved.
+  useEffect(
+    () =>
+      registerUnsavedNoteEdits(
+        noteId,
+        () => contentRef.current !== baselineRef.current || pendingSaveRef.current !== null || saveFailedRef.current,
+      ),
+    [noteId],
+  );
 
   const scheduleSave = useCallback((nextVal: string) => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -201,6 +239,27 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       flushPending();
     };
   }, []);
+
+  // The note was saved in another tab (the store's text changed to something this editor did not write).
+  useEffect(() => {
+    if (storeContent === undefined || storeContent === baselineRef.current) return;
+    const hasUnsavedEdits =
+      contentRef.current !== baselineRef.current || pendingSaveRef.current !== null || saveFailedRef.current;
+    baselineRef.current = storeContent;
+    if (!hasUnsavedEdits) {
+      setContent(storeContent);
+      onContentChange(storeContent);
+      return;
+    }
+    if (storeContent === contentRef.current) return; // both tabs ended up with the same text
+    // Keep the local text: the next save overwrites the other tab's version (last save wins).
+    useToastStore.getState().addToast({
+      type: 'warning',
+      title: 'Note changed in another tab',
+      message: "Your unsaved edits are kept; saving will overwrite the other tab's version.",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeContent]);
 
   // Handle text changes with debounce
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight, Folder, FolderOpen, FileText, Trash2, Plus } from 'lucide-react';
 import { CptsTreeNode, CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { NoteMatchSnippets } from './NoteMatchSnippets';
 
 export interface CptsTreeItemProps {
   node: CptsTreeNode;
@@ -14,6 +15,8 @@ export interface CptsTreeItemProps {
   onAddNoteToFolder?: (folderPath: string) => void;
   cptsLangMode?: 'en' | 'he';
   activeNoteId?: string | null;
+  /** When set, notes whose body contains it show matching lines under the row. */
+  snippetQuery?: string;
 }
 
 export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
@@ -28,6 +31,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
   onAddNoteToFolder,
   cptsLangMode = 'en',
   activeNoteId,
+  snippetQuery,
 }) => {
   const isExpanded = Boolean(expandedFolders[node.id]);
   const isFolder = node.isFolder;
@@ -113,6 +117,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                 onAddNoteToFolder={onAddNoteToFolder}
                 cptsLangMode={cptsLangMode}
                 activeNoteId={activeNoteId}
+                snippetQuery={snippetQuery}
               />
             ))}
           </div>
@@ -129,6 +134,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
   const isActive = activeNoteId === note.id;
 
   return (
+    <>
     <div
       id={`cpts-note-${note.id}`}
       data-tree-type="note"
@@ -174,5 +180,11 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
         )}
       </div>
     </div>
+    {snippetQuery?.trim() && (
+      <div className="pl-8 pr-2 pb-1 cursor-pointer" onClick={() => onSelectNote(note)}>
+        <NoteMatchSnippets markdown={note.rawMarkdown} query={snippetQuery} />
+      </div>
+    )}
+    </>
   );
 };

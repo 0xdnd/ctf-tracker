@@ -13,6 +13,7 @@ import {
   saveCustomMachinesToStorage,
   timerSecondsFor,
   withTimeSpent,
+  broadcastVaultNotesUpdated,
   type MergeBackupResult,
 } from './useCtfStore';
 import { saveLootState } from './lootPersistence';
@@ -158,7 +159,10 @@ export async function mergeBackup(jsonStr: string, resolutions?: Record<string, 
       await attempt('Credentials and loot', () => saveLootState(profileId, m));
       await attempt('Attack graph', () => saveAttackGraphState(get().graphNodePositions, m.graphEdges, profileId));
       if (m.userNotes.length !== (state.userNotes || []).length) {
-        await attempt('Vault notes', () => saveVaultToIndexedDb({ notes: m.userNotes, wikilinkMap: m.userWikilinkMap }));
+        await attempt('Vault notes', async () => {
+          await saveVaultToIndexedDb({ notes: m.userNotes, wikilinkMap: m.userWikilinkMap });
+          broadcastVaultNotesUpdated(); // other open tabs reload the vault
+        });
       }
       await attempt('Sync baseline', () => recordMergedPeer(profileId, remote.deviceId, remote.syncedAt, result.machineBase));
       return { summary: result.summary, snapshot, legacy: result.baseline === null, warnings };

@@ -363,12 +363,12 @@ describe('Multi-Tab Note Workspace in ObsidianNoteViewer', () => {
     expect(tabStrip.scrollLeft).toBe(120);
   });
 
-  it('TAB-13: supports docked displayMode without portal overlay and renders in-page with region role', () => {
+  it('TAB-13: supports page displayMode without portal overlay and renders in-page with region role', () => {
     render(
       <ObsidianNoteViewer
         note={mockNote1}
         openNotes={[mockNote1, mockNote2]}
-        displayMode="docked"
+        displayMode="page"
         globalVars={mockGlobalVars}
         soundEnabled={false}
         onClose={vi.fn()}
@@ -382,31 +382,8 @@ describe('Multi-Tab Note Workspace in ObsidianNoteViewer', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('TAB-14: triggers onToggleDisplayMode when clicking dock/modal toggle button or pressing Alt+M', () => {
-    const handleToggleDisplayMode = vi.fn();
-
-    render(
-      <ObsidianNoteViewer
-        note={mockNote1}
-        openNotes={[mockNote1, mockNote2]}
-        displayMode="modal"
-        onToggleDisplayMode={handleToggleDisplayMode}
-        globalVars={mockGlobalVars}
-        soundEnabled={false}
-        onClose={vi.fn()}
-        onNavigateToNote={vi.fn()}
-      />
-    );
-
-    const toggleBtn = screen.getByTestId('toggle-dock-mode');
-    expect(toggleBtn).toBeInTheDocument();
-    fireEvent.click(toggleBtn);
-    expect(handleToggleDisplayMode).toHaveBeenCalledTimes(1);
-
-    // Alt+M hotkey trigger
-    fireEvent.keyDown(window, { key: 'm', altKey: true });
-    expect(handleToggleDisplayMode).toHaveBeenCalledTimes(2);
-  });
+  // TAB-14 (dock/modal toggle, Alt+M) was deleted: dock and modal display modes were removed by
+  // spec Phase 1.5 (Full-screen workspace).
 
   it('TAB-15: renders popout window trigger and invokes onPopoutWindow or window.open', () => {
     const handlePopoutWindow = vi.fn();
@@ -423,6 +400,7 @@ describe('Multi-Tab Note Workspace in ObsidianNoteViewer', () => {
       />
     );
 
+    fireEvent.click(screen.getByTestId('note-more-menu-button'));
     const popoutBtn = screen.getByTestId('popout-window-button');
     expect(popoutBtn).toBeInTheDocument();
     fireEvent.click(popoutBtn);
@@ -482,6 +460,7 @@ describe('Multi-Tab Note Workspace in ObsidianNoteViewer', () => {
       />
     );
 
+    fireEvent.click(screen.getByTestId('note-more-menu-button'));
     const decreaseBtn = screen.getByTestId('decrease-font-size-button');
     const increaseBtn = screen.getByTestId('increase-font-size-button');
     const indicator = screen.getByTestId('font-size-indicator');
@@ -503,47 +482,8 @@ describe('Multi-Tab Note Workspace in ObsidianNoteViewer', () => {
     expect(indicator).toHaveTextContent(/lg/i);
   });
 
-  it('TAB-18: toggles maximize / restore mode via button click and Alt+F shortcut', () => {
-    const handleToggleMaximize = vi.fn();
-
-    const { rerender } = render(
-      <ObsidianNoteViewer
-        note={mockNote1}
-        openNotes={[mockNote1]}
-        isMaximized={false}
-        onToggleMaximize={handleToggleMaximize}
-        globalVars={mockGlobalVars}
-        soundEnabled={false}
-        onClose={vi.fn()}
-        onNavigateToNote={vi.fn()}
-      />
-    );
-
-    const maxBtn = screen.getByTestId('toggle-maximize-button');
-    expect(maxBtn).toBeInTheDocument();
-
-    fireEvent.click(maxBtn);
-    expect(handleToggleMaximize).toHaveBeenCalledTimes(1);
-
-    // Press Alt+F
-    fireEvent.keyDown(window, { key: 'f', altKey: true });
-    expect(handleToggleMaximize).toHaveBeenCalledTimes(2);
-
-    // When maximized, displays Restore state
-    rerender(
-      <ObsidianNoteViewer
-        note={mockNote1}
-        openNotes={[mockNote1]}
-        isMaximized={true}
-        onToggleMaximize={handleToggleMaximize}
-        globalVars={mockGlobalVars}
-        soundEnabled={false}
-        onClose={vi.fn()}
-        onNavigateToNote={vi.fn()}
-      />
-    );
-    expect(screen.getByLabelText(/Restore view/i)).toBeInTheDocument();
-  });
+  // TAB-18 (maximize toggle, Alt+F) was deleted: the page is always full-screen (spec Phase 1.5,
+  // Full-screen workspace).
 
   it('TAB-19: tab scroll chevrons trigger horizontal scrolling on tabStripScrollRef', () => {
     render(

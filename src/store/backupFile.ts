@@ -5,7 +5,7 @@
  * a registered provider, and the SHA-256 checksum (WebCrypto). The checksum is computed on the plaintext; the UI
  * encrypts afterwards. Import verifies the checksum before anything is applied.
  */
-import { useCtfStore } from './useCtfStore';
+import { useCtfStore, broadcastVaultNotesUpdated } from './useCtfStore';
 import { dumpVaultForBackup, upsertVaultNotesFromBackup } from '../utils/indexedDbVault';
 import { validateWorkspacePayload } from '../utils/workspaceStorage';
 import { isSchemaWriteGated } from '../utils/schemaWriteGate';
@@ -148,6 +148,7 @@ export async function importBackupFile(text: string): Promise<BackupImportResult
   if (idb) {
     try {
       await upsertVaultNotesFromBackup(idb.notes, idb.wikilinkMap);
+      broadcastVaultNotesUpdated(); // other open tabs reload the vault
     } catch (err) {
       console.warn('[ZeroBox] Backup restore: vault notes could not be written to IndexedDB.', err);
       warnings.push('Notes from the backup could not be written to IndexedDB.');

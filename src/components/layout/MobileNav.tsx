@@ -169,7 +169,7 @@ export const MobileNav: React.FC = () => {
   return (
     <>
       {/* Fixed mobile bottom navigation (screens < 768px) */}
-      <nav data-tour="sidebar-nav" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-card border-t border-subtle px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] font-sans">
+      <nav data-testid="app-mobile-nav" data-tour="sidebar-nav" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-card border-t border-subtle px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] font-sans">
         <div className="flex items-center justify-around">
           {/* Targets */}
           <button

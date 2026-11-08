@@ -115,7 +115,7 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
       icon: 'edit',
       anchor: 'notes-views',
       title: 'Choose a view',
-      body: 'Read shows the finished page. Split puts your text beside a live preview, and Raw shows the plain text.',
+      body: 'Reading shows the finished page. Edit opens the text, beside a live preview when the panel is wide.',
       phoneBody: 'Read shows the finished page, and Raw shows the plain text you can edit.',
     },
   ],
@@ -252,9 +252,9 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
     {
       id: 'manual-library',
       icon: 'layout',
-      anchor: 'snippets-library',
-      title: 'Switch libraries',
-      body: 'Field manual shows your own notes. Snippets holds ready-made commands.',
+      anchor: 'notes-ribbon',
+      title: 'Find your way around',
+      body: 'Use these buttons to open your files, search or browse tags. The arrow at the bottom takes you back to ZeroBox.',
     },
   ],
   writeup: [
