@@ -27,6 +27,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
 import { GuideControls } from '../../onboarding/GuideControls';
+import { DesktopNotificationsToggle } from './DesktopNotificationsToggle';
 
 interface ThemeCardInfo {
   id: ThemePreset;
@@ -411,6 +412,8 @@ export const SettingsModal: React.FC = () => {
                     <span>{soundEnabled ? 'Enabled' : 'Muted'}</span>
                   </button>
                 </div>
+
+                <DesktopNotificationsToggle />
               </div>
 
               {/* UI Scaling */}

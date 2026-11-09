@@ -1,3 +1,4 @@
+import { useDesktopNotifications } from './hooks/useDesktopNotifications';
 import React, { useRef, useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
@@ -81,6 +82,7 @@ const TimerController: React.FC = () => {
   const tickTimer = useCtfStore((s) => s.tickTimer);
   const isExamActive = useExamStore((s) => s.status === 'running' || s.activeBreak.isActive);
   const tickExam = useExamStore((s) => s.tick);
+  useDesktopNotifications();
 
   useEffect(() => {
     if (!isTimerRunning) return;
