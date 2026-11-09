@@ -21,6 +21,7 @@ dist
 dist-ssr
 docs/*
 !docs/CATALOG_STATS.md
+!docs/screenshots/
 release/
 src-tauri/target/
 dist-electron/

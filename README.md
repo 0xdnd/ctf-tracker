@@ -32,6 +32,17 @@
 
 </div>
 
+## Screenshots
+
+Captured from the built-in demo data.
+
+| Tracker board | Machine detail |
+| --- | --- |
+| ![Kanban tracker board](docs/screenshots/tracker.webp) | ![Machine detail with checklist](docs/screenshots/machine-detail.webp) |
+| **Exam simulator** | **Notes** |
+| ![Exam simulator ruleset picker](docs/screenshots/exam-simulator.webp) | ![Notes view with a recon checklist](docs/screenshots/notes.webp) |
+
+
 ---
 
 **ZeroBox is a free, source-available CTF tracker** for [Hack The Box](https://www.hackthebox.com/) and [TryHackMe](https://tryhackme.com/). Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
