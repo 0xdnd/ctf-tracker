@@ -37,6 +37,7 @@
   "scripts": {
     "dev": "vite",
     "dev:tauri": "vite --mode tauri",
+    "sync:htb": "node scripts/sync-htb-active.mjs",
     "writeups:check": "node scripts/check-writeups.cjs",
     "writeups:manifest": "node scripts/gen-own-writeups.cjs",
     "writeups:redact": "node scripts/redact-notes.cjs",

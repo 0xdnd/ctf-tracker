@@ -9,6 +9,7 @@ import {
   Eye, 
   EyeOff, 
   FileText, 
+  ClipboardCheck,
   ExternalLink,
   ListChecks,
   Maximize2,
@@ -157,7 +158,7 @@ const GridCard = React.memo<GridCardProps>(({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`group cyber-card-contain relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border bg-surface-card p-4 transition-interactive duration-150 surface-card-depth machined-edge hover:bg-surface-hover active:scale-[0.97] ${
+      className={`group cyber-card-contain relative flex cursor-pointer flex-col h-full justify-between overflow-hidden rounded-2xl border bg-surface-card p-4 transition-interactive duration-150 surface-card-depth machined-edge hover:bg-surface-hover active:scale-[0.97] ${
         isActiveTarget
           ? 'border-accent ring-1 ring-accent/40'
           : 'border-subtle hover:border-strong'
@@ -379,7 +380,7 @@ const GridCard = React.memo<GridCardProps>(({
                   title="Open Executive Pentest Pre-Report"
                   aria-label={`Open executive pentest pre-report for ${m.name}`}
                 >
-                  <FileText className="h-3.5 w-3.5" />
+                  <ClipboardCheck className="h-3.5 w-3.5" />
                 </button>
 
                 <button
@@ -496,11 +497,11 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr">
         {visibleMachines.map((m, idx) => (
           <div
             key={m.id}
-            className="card-enter"
+            className="card-enter h-full"
             style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
           >
             <GridCard

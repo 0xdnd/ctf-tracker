@@ -15,6 +15,9 @@ import { RABBIT_HOLE_THRESHOLDS } from './rabbitHoleConfig';
 export type PacingTrackConfig = Pick<ExamTrackConfig, 'maxScore' | 'durationSeconds'> &
   Partial<Pick<ExamTrackConfig, 'scoringModel' | 'reportWindowSeconds' | 'debriefMinutes'>>;
 
+/** Below this much elapsed time a pts/hr rate is noise, so none is reported. */
+export const PACE_WARMUP_SECONDS = 10 * 60;
+
 const DEFAULT_PACING_TRACK: PacingTrackConfig = { maxScore: 100, durationSeconds: 86400 };
 
 export interface PacingAnalysis {
@@ -24,7 +27,10 @@ export interface PacingAnalysis {
   passThreshold: number;
   pointsNeeded: number;
   requiredPacePtsPerHour: number;
+  /** 0 while paceWarmingUp (no meaningful rate yet). */
   currentPacePtsPerHour: number;
+  /** True before PACE_WARMUP_SECONDS have elapsed; the rate and projection are withheld. */
+  paceWarmingUp: boolean;
   projectedFinalScore: number;
   pacingStatus: 'PASSED' | 'ON_TRACK' | 'BEHIND_SCHEDULE' | 'CRITICAL';
   recommendation: string;
@@ -89,11 +95,11 @@ export function computeExamPacing(
   const elapsedHours = Math.max(0.01, elapsedSeconds / 3600);
 
   const requiredPacePtsPerHour = Number((pointsNeeded / remainingHours).toFixed(2));
-  const currentPacePtsPerHour = Number((currentScore / elapsedHours).toFixed(2));
-  const projectedFinalScore = Math.min(
-    maxScore,
-    Math.round(currentScore + currentPacePtsPerHour * remainingHours)
-  );
+  const paceWarmingUp = elapsedSeconds < PACE_WARMUP_SECONDS;
+  const currentPacePtsPerHour = paceWarmingUp ? 0 : Number((currentScore / elapsedHours).toFixed(2));
+  const projectedFinalScore = paceWarmingUp
+    ? Math.min(maxScore, currentScore)
+    : Math.min(maxScore, Math.round(currentScore + currentPacePtsPerHour * remainingHours));
 
   // Unrooted boxes calculation
   const unrootedBoxes = session.boxes.filter(
@@ -147,6 +153,7 @@ export function computeExamPacing(
     pointsNeeded,
     requiredPacePtsPerHour,
     currentPacePtsPerHour,
+    paceWarmingUp,
     projectedFinalScore,
     pacingStatus,
     recommendation,

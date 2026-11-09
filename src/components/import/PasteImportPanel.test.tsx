@@ -142,3 +142,17 @@ describe('PasteImportPanel', () => {
     expect(results.violations).toEqual([]);
   });
 });
+
+describe('PasteImportPanel skip', () => {
+  it('has no skip button without onSkip', () => {
+    render(<PasteImportPanel />);
+    expect(screen.queryByRole('button', { name: /Skip, I'm starting fresh/ })).not.toBeInTheDocument();
+  });
+
+  it('shows a skip button that calls onSkip', () => {
+    const onSkip = vi.fn();
+    render(<PasteImportPanel onSkip={onSkip} />);
+    fireEvent.click(screen.getByRole('button', { name: /Skip, I'm starting fresh/ }));
+    expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+});

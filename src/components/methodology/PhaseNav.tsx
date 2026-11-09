@@ -29,7 +29,7 @@ export interface PhaseNavProps {
 export const phaseSectionId = (phaseId: string): string => `phase-section-${phaseId}`;
 
 const entryBase =
-  'inline-flex min-h-11 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-[13px] font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] sm:min-h-8 cursor-pointer lg:flex lg:w-full lg:justify-between lg:whitespace-normal lg:text-left';
+  'inline-flex min-h-11 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-[13px] font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] sm:min-h-8 cursor-pointer lg:flex lg:w-full lg:items-start lg:justify-between lg:whitespace-normal lg:text-left';
 const entryOn = 'border-accent bg-accent-muted text-primary';
 const entryOff = 'border-subtle bg-surface-card text-secondary hover:border-strong hover:text-primary';
 
@@ -101,16 +101,16 @@ export const PhaseNav: React.FC<PhaseNavProps> = ({
         aria-current={active ? 'true' : undefined}
         className={`${entryBase} ${active ? entryOn : entryOff}`}
       >
-        <span className="inline-flex items-center gap-1.5 min-w-0">
+        <span className="inline-flex items-center gap-1.5 min-w-0 lg:items-start">
           {entry !== 'all' && (
-            <span className="font-mono text-[11px] tabular-nums text-muted flex-shrink-0">
+            <span className="font-mono text-[11px] tabular-nums text-muted flex-shrink-0 lg:leading-snug">
               0{entry.phaseNumber}
             </span>
           )}
-          <span className="truncate">{entry === 'all' ? 'All phases' : entry.title}</span>
+          <span title={entry === 'all' ? undefined : entry.title} className="max-lg:truncate lg:line-clamp-2 lg:break-words lg:leading-snug">{entry === 'all' ? 'All phases' : entry.title}</span>
         </span>
         {mode === 'checklist' && stats && (
-          <span className="inline-flex flex-shrink-0 items-center gap-1 text-[11px] font-mono tabular-nums text-muted">
+          <span className="inline-flex flex-shrink-0 items-center gap-1 lg:leading-snug text-[11px] font-mono tabular-nums text-muted">
             {isComplete && <Check className="h-3 w-3 text-callout-success-fg" aria-hidden="true" />}
             <span>{stats.done}/{stats.total}</span>
           </span>

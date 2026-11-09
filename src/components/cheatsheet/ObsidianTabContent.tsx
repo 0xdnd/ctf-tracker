@@ -13,6 +13,13 @@ import { useNoteIndex } from '../../hooks/useNoteIndex';
 import { MarkdownEditor } from './MarkdownEditor';
 import { ObsidianMarkdownBody, getObsidianSizeClasses } from './ObsidianMarkdownBody';
 
+/** Locale date for a note's dateModified; the raw string stays available as a tooltip. Unparseable values pass through. */
+export function formatNoteDate(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export interface ObsidianTabContentProps {
   note: CptsNoteEntry;
   isActive: boolean;
@@ -339,7 +346,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
             {note.dateModified && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {note.dateModified}
+                <time dateTime={note.dateModified} title={note.dateModified}>{formatNoteDate(note.dateModified)}</time>
               </span>
             )}
             {note.tools?.map((tool) => (
@@ -381,7 +388,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               {note.dateModified && (
                 <span className="px-2 py-0.5 rounded text-muted bg-surface-sunken border border-subtle flex items-center gap-1">
                   <Clock className="w-2.5 h-2.5" />
-                  {note.dateModified}
+                  <time dateTime={note.dateModified} title={note.dateModified}>{formatNoteDate(note.dateModified)}</time>
                 </span>
               )}
               <button

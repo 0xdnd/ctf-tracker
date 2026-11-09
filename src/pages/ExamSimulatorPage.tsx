@@ -44,7 +44,7 @@ import {
   generateExamReportMarkdown,
   isActiveDirectoryBox,
   supportsWeightedScoring} from '../utils/examComplianceUtils';
-import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
+import { computeExamPacing, formatSecondsToHms, formatSecondsToHoursMinutes } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
 import { buildBurndownSeries, resolveChartWindow, readPersistedChartExpiry } from '../utils/examBurndown';
@@ -479,7 +479,7 @@ export const ExamSimulatorPage: React.FC = () => {
 
                     <div className="pt-2 border-t border-subtle text-[11px] text-muted flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                       <span className="font-mono tabular-nums">
-                        Duration: {Math.round(conf.durationSeconds / 3600)}h
+                        Duration: {formatSecondsToHoursMinutes(conf.durationSeconds).replace(/ 0m$/, '')}
                         {conf.reportWindowSeconds ? ` + ${Math.round(conf.reportWindowSeconds / 3600)}h report` : ''}
                       </span>
                       <span>{conf.targetSummary}</span>
@@ -822,9 +822,11 @@ export const ExamSimulatorPage: React.FC = () => {
                 </span>
                 <div className="flex items-baseline gap-2 mt-0.5">
                   <span className="text-xl font-semibold font-mono text-primary tabular-nums">
-                    {pacing.currentPacePtsPerHour}
+                    {pacing.paceWarmingUp ? '--' : pacing.currentPacePtsPerHour}
                   </span>
-                  <span className="text-[11px] text-muted">pts / hr current</span>
+                  <span className="text-[11px] text-muted" data-testid="exam-pace-hint">
+                    {pacing.paceWarmingUp ? 'warming up (needs 10 min)' : 'pts / hr current'}
+                  </span>
                 </div>
                 <div className="text-[11px] text-muted mt-1">
                   Required: <span className="font-mono tabular-nums">{pacing.requiredPacePtsPerHour}</span> pts/hr
@@ -1092,7 +1094,10 @@ export const ExamSimulatorPage: React.FC = () => {
             <button aria-label={isExpanded ? 'Collapse evidence drawer' : 'Expand evidence drawer'}
               type="button"
               onClick={() => {
-                if (!isExpanded) setActiveBox(box.id);
+                if (!isExpanded) {
+                  setActiveBox(box.id);
+                  setActiveProofTab('user');
+                }
                 setExpandedBoxId(isExpanded ? null : box.id);
               }}
               className="p-1 max-sm:p-3 rounded-lg bg-surface-sunken hover:bg-surface-hover text-muted hover:text-primary transition-interactive border border-subtle active:scale-[0.97]"

@@ -143,7 +143,8 @@ describe('OSWE in the track picker', () => {
     );
     const card = screen.getByTestId('exam-track-select-oswe');
     expect(card).toHaveTextContent('Pass: 85 pts');
-    expect(card).toHaveTextContent('Duration: 48h + 24h report');
+    expect(card).toHaveTextContent('Duration: 47h 45m + 24h report');
+    expect(screen.getByTestId('exam-track-select-oscp')).toHaveTextContent('Duration: 23h 45m');
     fireEvent.click(card);
     const state = useExamStore.getState();
     expect(state.track).toBe('OSWE');

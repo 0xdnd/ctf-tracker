@@ -550,19 +550,22 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(header?.className).toContain('h-[52px]');
     });
 
-    it('asserts 1024px (lg) density budget: Operator Root badge is hidden (hidden xl:flex) and variables capsule is visible (hidden lg:flex)', () => {
+    it('asserts 1024px (lg) density budget: operator profile is a compact avatar (no ROOT badge) and variables capsule is visible (hidden lg:flex)', () => {
       const { container } = render(
         <MemoryRouter>
           <UnifiedHeader />
         </MemoryRouter>
       );
 
-      // Root count badge must have "hidden xl:flex" to prevent overflow at 1024px
+      // Operator profile is a compact fixed-size avatar button (no name pill, no ROOT badge, no chevron),
+      // so it cannot overflow at 1024px. The rooted count lives in its aria-label instead.
       const operatorPill = container.querySelector('button[title*="Active Operator"]');
       expect(operatorPill).not.toBeNull();
-      const rootBadge = operatorPill?.querySelector('.hidden.xl\\:flex');
-      expect(rootBadge, 'Operator Root badge must be hidden below xl (1280px)').not.toBeNull();
-      expect(rootBadge?.textContent).toContain('ROOT');
+      expect(operatorPill?.className).toContain('h-8');
+      expect(operatorPill?.className).toContain('w-8');
+      expect(operatorPill?.querySelector('.hidden.xl\:flex'), 'ROOT badge was removed from the operator button').toBeNull();
+      expect(operatorPill?.textContent).not.toContain('ROOT');
+      expect(operatorPill?.getAttribute('aria-label')).toMatch(/\d+ rooted/);
 
       // Variables capsule must be visible at lg (1024px) via "hidden lg:flex"
       const varsCapsule = container.querySelector('div[aria-label="Tactical Variables (LHOST / RHOST / LPORT)"]');

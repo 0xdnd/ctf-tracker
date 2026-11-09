@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
+import { useTargetIpField } from '../../hooks/useTargetIpField';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -20,7 +21,8 @@ import {
   Search,
   Copy,
   Check,
-  BookOpen
+  BookOpen,
+  User
 } from 'lucide-react';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
@@ -28,8 +30,10 @@ import { EditableIpBadge } from '../common/EditableIpBadge';
 import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
 import { SettingsDropdown } from './SettingsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { UpdateReadyButton } from './UpdateReadyButton';
 import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
 import { useAuthStore } from '../../store/useAuthStore';
+import { getAvatarSvgDataUri } from '../../data/avatarPresets';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useTrackerCounts } from '../../hooks/useTrackerCounts';
@@ -99,6 +103,9 @@ export const UnifiedHeader: React.FC = () => {
   const [targetDropdownOpen, setTargetDropdownOpen] = useState(false);
   const [targetSearch, setTargetSearch] = useState('');
   const [copiedVar, setCopiedVar] = useState<'lhost' | 'lport' | 'target' | null>(null);
+  const { displayIp: displayTargetIp, commit: commitTargetIp } = useTargetIpField();
+  // Draft while typing in R; committed on blur or Enter (updateMachine bumps the unexported-change counter).
+  const [targetIpDraft, setTargetIpDraft] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -522,24 +529,29 @@ export const UnifiedHeader: React.FC = () => {
               name="targetIp"
               aria-label="Target IP (RHOST)"
               type="text"
-              value={globalVars.targetIp || ''}
+              value={targetIpDraft ?? displayTargetIp}
               onChange={(e) => {
-                setGlobalVars({ targetIp: e.target.value });
+                setTargetIpDraft(e.target.value);
                 if (copiedVar === 'target') {
                   if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
                   setCopiedVar(null);
                 }
               }}
+              onBlur={() => {
+                if (targetIpDraft === null) return;
+                commitTargetIp(targetIpDraft);
+                setTargetIpDraft(null);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') e.currentTarget.blur();
               }}
               placeholder="10.10.10.X"
-              title={globalVars.targetIp || '10.10.10.X'}
+              title={displayTargetIp || '10.10.10.X'}
               className={`w-16 xl:w-20 ${segmentInputCls}`}
             />
             <button
               type="button"
-              onClick={() => handleCopyVar(globalVars.targetIp, 'target')}
+              onClick={() => handleCopyVar(displayTargetIp, 'target')}
               className={copyReveal}
               title={copiedVar === 'target' ? 'Copied Target IP to clipboard!' : 'Copy Target IP (RHOST)'}
               aria-label="Copy Target IP"
@@ -669,6 +681,8 @@ export const UnifiedHeader: React.FC = () => {
           </kbd>
         </button>
 
+        <UpdateReadyButton />
+
         {/* Light / Dark toggle */}
         <ThemeToggle size="sm" soundEnabled={soundEnabled} className="flex-shrink-0" />
 
@@ -679,25 +693,20 @@ export const UnifiedHeader: React.FC = () => {
             setOperatorProfileModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="h-8 px-2 rounded-lg bg-transparent hover:bg-surface-hover border border-subtle hover:border-strong text-primary text-xs font-medium flex items-center gap-1.5 transition-interactive active:scale-[0.97] group flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11"
+          className="h-8 w-8 p-0 overflow-hidden rounded-lg bg-transparent hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium flex items-center justify-center transition-interactive active:scale-[0.97] group flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
           title={`Active Operator: ${user?.callsign || user?.name || 'Local Operator'} (${user?.role || 'Offline Mode'}). Click to switch or log in (Alt+O)`}
+          aria-label={`Operator: ${user?.callsign || user?.name || 'Local Operator'} · ${operatorRootedCount} rooted. Open profile (Alt+O)`}
         >
-          {/* Avatar */}
-          <div className="w-5 h-5 rounded bg-surface-hover border border-subtle flex items-center justify-center text-[10px] font-semibold text-primary flex-shrink-0">
-            {(user?.callsign || user?.name || 'OP').charAt(0).toUpperCase()}
-          </div>
-
-          <span className="hidden sm:inline-block font-medium text-xs max-w-[80px] xl:max-w-[120px] truncate text-primary">
-            {user?.callsign || user?.name || 'Local Operator'}
-          </span>
-
-          {/* Rooted count: hidden below xl to save width */}
-          <div className="hidden xl:flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary text-[10px] font-medium leading-none tabular-nums flex-shrink-0">
-            <span className="font-mono tabular-nums">{operatorRootedCount}</span>
-            <span>ROOT</span>
-          </div>
-
-          <ChevronDown className="w-3 h-3 text-muted group-hover:text-secondary transition-transform duration-200 flex-shrink-0" />
+          {user?.avatarId ? (
+            <img
+              src={getAvatarSvgDataUri(user.avatarId)}
+              alt=""
+              aria-hidden="true"
+              className="w-full h-full rounded-[7px] bg-surface-inverse object-contain p-0.5"
+            />
+          ) : (
+            <User className="w-4 h-4" aria-hidden="true" />
+          )}
         </button>
 
         {/* Settings & workspace menu */}

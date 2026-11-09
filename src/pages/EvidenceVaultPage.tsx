@@ -9,6 +9,7 @@ import { CyberButton } from '../components/common/CyberButton';
 import { EmptyState } from '../components/common/EmptyState';
 import { CyberBadge } from '../components/common/CyberBadge';
 import { EditableIpBadge } from '../components/common/EditableIpBadge';
+import { CyberSelect } from '../components/common/CyberSelect';
 import { playCyberSound, safeCopyToClipboard } from '../utils/helpers';
 import { Platform, Machine, Credential, CredentialType, LootItem } from '../types';
 import { LootTimeline } from '../components/loot/LootTimeline';
@@ -443,7 +444,30 @@ export const EvidenceVaultPage: React.FC = () => {
     service: 'Services',
   };
 
-  const activeFilterCount = selectedCategory !== 'all' ? 1 : 0;
+  const activeFilterCount =
+    (selectedCategory !== 'all' ? 1 : 0) + (selectedPlatform !== 'all' ? 1 : 0) + (selectedTargetId !== 'all' ? 1 : 0);
+
+  const clearFilters = () => {
+    setSelectedCategory('all');
+    setSearchQuery('');
+    setSelectedPlatform('all');
+    setSelectedTargetId('all');
+  };
+
+  const targetOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All targets' },
+      ...[...machines]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((m) => ({ value: m.id, label: m.name, description: m.platform })),
+    ],
+    [machines]
+  );
+
+  const platformOptions = [
+    { value: 'all', label: 'All platforms' },
+    ...(['HTB', 'THM', 'PG', 'VulnHub', 'Custom'] as Platform[]).map((p) => ({ value: p, label: p })),
+  ];
 
   const statTiles: { label: string; value: number; category: EvidenceCategory }[] = [
     { label: 'Total artifacts', value: metrics.total, category: 'all' },
@@ -660,6 +684,42 @@ export const EvidenceVaultPage: React.FC = () => {
               <span className="font-mono tabular-nums text-xs text-accent">{activeFilterCount}</span>
             )}
           </button>
+        </div>
+
+        {/* Target and platform filters (also set by the /vault?target= deep link) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CyberSelect
+            value={selectedTargetId}
+            onChange={setSelectedTargetId}
+            options={targetOptions}
+            searchable
+            searchPlaceholder="Find a target..."
+            aria-label="Filter by target"
+            variant="card"
+            size="sm"
+            className="w-full sm:w-52"
+            soundEnabled={soundEnabled}
+          />
+          <CyberSelect
+            value={selectedPlatform}
+            onChange={setSelectedPlatform}
+            options={platformOptions}
+            aria-label="Filter by platform"
+            variant="card"
+            size="sm"
+            className="w-full sm:w-40"
+            soundEnabled={soundEnabled}
+          />
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 px-2 h-8 max-sm:h-11 rounded-md text-xs font-medium text-muted hover:text-primary hover:bg-surface-hover cursor-pointer active:scale-[0.97]"
+            >
+              <X className="w-3.5 h-3.5" />
+              Clear filters
+            </button>
+          )}
         </div>
 
         {/* Mobile filter panel (category + view) */}
@@ -900,11 +960,12 @@ export const EvidenceVaultPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteCustomLoot(item.id)}
-                              className="p-1.5 tap-target rounded-md border border-subtle bg-surface-sunken text-muted hover:text-callout-danger-fg hover:border-callout-danger-border transition-colors cursor-pointer active:scale-[0.97]"
+                              className="p-1.5 tap-target inline-flex items-center gap-1 rounded-md border border-subtle bg-surface-sunken text-muted hover:text-callout-danger-fg hover:border-callout-danger-border transition-colors cursor-pointer active:scale-[0.97]"
                               title="Delete custom loot entry"
                               aria-label="Delete custom loot entry"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline text-[11px] font-medium">Delete</span>
                             </button>
                           )}
                         </div>
@@ -930,12 +991,7 @@ export const EvidenceVaultPage: React.FC = () => {
                           description="Try a different search or loosen the filters to see more of your vault."
                           action={{
                             label: 'Clear filters',
-                            onClick: () => {
-                              setSelectedCategory('all');
-                              setSearchQuery('');
-                              setSelectedPlatform('all');
-                              setSelectedTargetId('all');
-                            },
+                            onClick: clearFilters,
                           }}
                           secondaryAction={{ label: 'Log new evidence', onClick: () => setIsAddModalOpen(true) }}
                         />

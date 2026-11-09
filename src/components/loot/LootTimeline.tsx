@@ -414,11 +414,12 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
             <button
               type="button"
               onClick={onDelete}
-              className="p-1.5 tap-target rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
+              className="p-1.5 tap-target inline-flex items-center gap-1 rounded-lg text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
               title="Delete custom loot"
               aria-label="Delete custom loot"
             >
               <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline text-[11px] font-medium">Delete</span>
             </button>
           )}
         </div>

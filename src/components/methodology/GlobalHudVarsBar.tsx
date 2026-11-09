@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { isNtHash } from '../../utils/shellEncoders';
 import { playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
+import { useTargetIpField } from '../../hooks/useTargetIpField';
 
 export interface GlobalHudVarsBarProps {
   className?: string;
@@ -38,6 +39,9 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
   );
 
   const [expanded, setExpanded] = useState<boolean>(readStoredExpanded);
+  const { displayIp: displayTargetIp, commit: commitTargetIp } = useTargetIpField();
+  // Draft while typing; committed on blur or Enter so each keystroke does not write the engaged machine.
+  const [targetIpDraft, setTargetIpDraft] = useState<string | null>(null);
 
   const toggleExpanded = () => {
     setExpanded((prev) => {
@@ -54,7 +58,7 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
     { key: 'targetIp', label: 'TARGET_IP' },
   ];
   const summaryText = summaryFields
-    .map((f) => `${f.label} ${globalVars[f.key] || '—'}`)
+    .map((f) => `${f.label} ${(f.key === 'targetIp' ? displayTargetIp : globalVars[f.key]) || '—'}`)
     .join(' · ');
 
   const handleUpdate = (field: keyof typeof globalVars, value: string) => {
@@ -139,8 +143,16 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           <label className="text-[10px] font-mono uppercase text-muted block">TARGET_IP</label>
           <input
             type="text"
-            value={globalVars.targetIp || ''}
-            onChange={(e) => handleUpdate('targetIp', e.target.value)}
+            value={targetIpDraft ?? displayTargetIp}
+            onChange={(e) => setTargetIpDraft(e.target.value)}
+            onBlur={() => {
+              if (targetIpDraft === null) return;
+              commitTargetIp(targetIpDraft);
+              setTargetIpDraft(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
             placeholder="10.10.10.X"
             className="w-full px-2 py-1 h-7 rounded bg-surface-sunken border border-subtle text-primary font-mono text-xs focus:border-accent focus:outline-none"
           />

@@ -58,6 +58,8 @@ export interface DockBodyProps {
   /** Copies the active note's commands (the dock's own rules: empty lines skipped, variables filled in). */
   onCopyAll: () => void;
   onNavigateToNote: (noteId: string) => void;
+  /** Adds "Delete note" to the more menu; the menu entry asks for confirmation before calling it. */
+  onDeleteNote?: (noteId: string, noteTitle?: string) => void;
   openTabs: ResolvedTab[];
   activeResolvedId: string | null;
 }
@@ -69,6 +71,7 @@ export const DockBody: React.FC<DockBodyProps> = ({
   onTemplatize,
   onCopyAll,
   onNavigateToNote,
+  onDeleteNote,
   openTabs,
   activeResolvedId,
 }) => {
@@ -276,6 +279,7 @@ export const DockBody: React.FC<DockBodyProps> = ({
         ],
         popout: {},
         pin: { label: isPinned ? 'Unpin from all pages' : 'Pin to all pages', onSelect: togglePinned },
+        onDeleteNote,
       })
     : [];
 

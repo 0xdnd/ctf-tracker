@@ -1,6 +1,6 @@
 # ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)
 
-> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks 1,372 machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub (1,027 of them Hack The Box and TryHackMe, the rest listed without pages), 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
+> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks 1,376 machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub (1,031 of them Hack The Box and TryHackMe, the rest listed without pages), 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
 
 ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.
 
@@ -14,7 +14,7 @@ ZeroBox is an independent project and is not affiliated with Hack The Box, TryHa
 
 ### Summary of Certification & Track Lists
 - **[OSCP](https://ctftracker.com/oscp-like-machines/)**: 110 machines (61 Windows, 49 Linux), 71 with IppSec video walkthroughs
-- **[HTB Active Directory](https://ctftracker.com/active-directory-machines/)**: 88 machines (88 Windows), 58 with IppSec video walkthroughs
+- **[HTB Active Directory](https://ctftracker.com/active-directory-machines/)**: 90 machines (90 Windows), 58 with IppSec video walkthroughs
 - **[CWEE](https://ctftracker.com/cwee-like-machines/)**: 83 machines (71 Linux, 10 Windows, 2 BSD), 70 with IppSec video walkthroughs
 - **[CPTS](https://ctftracker.com/cpts-like-machines/)**: 51 machines (38 Linux, 13 Windows), 44 with IppSec video walkthroughs
 - **[Unofficial IppSec CPTS](https://ctftracker.com/ippsec-cpts-machines/)**: 44 machines (33 Linux, 11 Windows), 44 with IppSec video walkthroughs
@@ -36,7 +36,7 @@ OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetr
 | RootMe | THM | Linux | Easy | No | File Upload, SUID-Python | https://ctftracker.com/machines/thm-rootme/ |
 | Simple CTF | THM | Linux | Easy | No | CMS-Made-Simple, CVE-2019-9053, SQLi, Vim-Sudo | https://ctftracker.com/machines/thm-simple-ctf/ |
 | Access | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/access |
-| Active (2018 Retired) | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/active |
+| Active | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/active |
 | Agent Sudo | THM | Linux | Easy | No | User-Agent-Spoofing, Steganography, Brute-Force, CVE-2019-14287 | https://tryhackme.com/room/agentsudo |
 | Alfred | THM | Windows | Easy | No | Jenkins, PowerShell, Token Impersonation, SeImpersonatePrivilege, PrintSpoofer | https://tryhackme.com/room/alfred |
 | Anthem | THM | Windows | Easy | No | Umbraco-CMS, RDP, OSINT | https://tryhackme.com/room/anthem |
@@ -145,7 +145,7 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 
 | Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
 |---|---|---|---|---|---|---|
-| Active (2018 Retired) | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/active |
+| Active | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/active |
 | Baby | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Baby |
 | Cicada | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Cicada |
 | Eighteen | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Eighteen |
@@ -165,6 +165,7 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Breach | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Breach |
 | Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, LDAP, SQLite | https://app.hackthebox.com/machines/Cascade |
 | Certified | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Certified |
+| Checkpoint | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/checkpoint |
 | Delegate | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Delegate |
 | Eden | THM | Windows | Medium | No | Active Directory, Kerberos, Pass-the-Ticket, BloodHound, Rubeus | https://tryhackme.com/room/eden |
 | Escape | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/escape |
@@ -196,6 +197,7 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Flight | HTB | Windows | Hard | No | Active Directory, Pivoting, Responder, AD CS, BloodHound | https://app.hackthebox.com/machines/flight |
 | Freelancer | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Freelancer |
 | Fries | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Fries |
+| Garfield | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/garfield |
 | Ghostlink | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Ghostlink |
 | Haze | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Haze |
 | Holo | THM | Windows | Hard | No | Active Directory, Kerberos, BloodHound, Pass-the-Hash | https://tryhackme.com/room/holo |
@@ -346,7 +348,7 @@ CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a pract
 | Sightless | HTB | Linux | Easy | Yes | SQLPad, Chrome DevTools, Pivoting | https://app.hackthebox.com/machines/sightless |
 | Soccer | HTB | Linux | Easy | Yes | Blind SQLi, WebSockets, Dstat, Doas | https://app.hackthebox.com/machines/soccer |
 | Stocker | HTB | Linux | Easy | Yes | NoSQL-Injection, Server-Side XSS, NodeJS, SSRF | https://app.hackthebox.com/machines/stocker |
-| Underpass | HTB | Linux | Easy | Yes | SNMP, Daloradius, FreeRADIUS, Password-Cracking, Mktemp-Privesc | https://app.hackthebox.com/machines/underpass |
+| UnderPass | HTB | Linux | Easy | Yes | SNMP, Daloradius, FreeRADIUS, Password-Cracking, Mktemp-Privesc | https://app.hackthebox.com/machines/underpass |
 | Usage | HTB | Linux | Easy | Yes | Blind SQLi, 7-Zip Symlink | https://app.hackthebox.com/machines/usage |
 | Administrator | HTB | Windows | Medium | Yes | Active Directory, AD CS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
 | Agile | HTB | Linux | Medium | Yes | LFI, Werkzeug PIN, Chrome Debugging, Pytest | https://app.hackthebox.com/machines/agile |
@@ -401,7 +403,7 @@ The Unofficial IppSec CPTS Preparation Track is the community-famous list of Hac
 | Sightless | HTB | Linux | Easy | Yes | SQLPad, Chrome DevTools, Pivoting | https://app.hackthebox.com/machines/sightless |
 | Soccer | HTB | Linux | Easy | Yes | Blind SQLi, WebSockets, Dstat, Doas | https://app.hackthebox.com/machines/soccer |
 | Stocker | HTB | Linux | Easy | Yes | NoSQL-Injection, Server-Side XSS, NodeJS, SSRF | https://app.hackthebox.com/machines/stocker |
-| Underpass | HTB | Linux | Easy | Yes | SNMP, Daloradius, FreeRADIUS, Password-Cracking, Mktemp-Privesc | https://app.hackthebox.com/machines/underpass |
+| UnderPass | HTB | Linux | Easy | Yes | SNMP, Daloradius, FreeRADIUS, Password-Cracking, Mktemp-Privesc | https://app.hackthebox.com/machines/underpass |
 | Usage | HTB | Linux | Easy | Yes | Blind SQLi, 7-Zip Symlink | https://app.hackthebox.com/machines/usage |
 | Administrator | HTB | Windows | Medium | Yes | Active Directory, AD CS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
 | Agile | HTB | Linux | Medium | Yes | LFI, Werkzeug PIN, Chrome Debugging, Pytest | https://app.hackthebox.com/machines/agile |
@@ -566,7 +568,7 @@ CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team t
 - **[OSCP Report Template (Markdown) with CVSS Findings](https://ctftracker.com/oscp-report-template/)**: Copyable Markdown OSCP report skeleton, a finding template, a CVSS 3.1 worked example (9.8 Critical), proof screenshot rules and packaging steps.
 - **[HTB & TryHackMe Progress Tracker (Free, Offline)](https://ctftracker.com/htb-progress-tracker/)**: What HTB and TryHackMe profiles do not track, how a spreadsheet compares with ZeroBox, plus a workflow with nmap imports. Free and offline.
 - **[HTB CPTS Exam Guide: Flags, Passing Score, Pacing](https://ctftracker.com/cpts-exam-guide/)**: HTB CPTS exam format, the 10 day window, flags and passing requirement, the report, and a day-by-day pacing plan, with sources cited.
-- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalogue data: 576 HTB and 451 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
+- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalogue data: 580 HTB and 451 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
 - **[HTB Pro Labs Guide: Dante, Zephyr, Offshore Compared](https://ctftracker.com/htb-pro-labs-guide/)**: Compare all 10 Hack The Box Pro Labs (Genesis, Dante, Zephyr, Offshore, RastaLabs, Cybernetics) by hosts, flags, difficulty and CPTS, OSCP or CRTO fit.
 
 ### Eight-Phase Pentest Methodology (https://ctftracker.com/methodology-guide/)

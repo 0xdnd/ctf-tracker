@@ -95,6 +95,24 @@ describe('Certification Exam Pacing Engine & Bio-Break Manager (R4)', () => {
       expect(analysis.projectedFinalScore).toBe(100);
     });
 
+    it('PACE-WARMUP: withholds rate and projection below 10 minutes elapsed, reports them at 10', () => {
+      const mk = (elapsedSec: number) => ({
+        examStartedAt: BASE_TIME - elapsedSec * 1000,
+        examExpiresAt: BASE_TIME + (24 * ONE_HOUR - elapsedSec) * 1000,
+        timerPausedRemainingSeconds: null,
+        boxes: [],
+      });
+      const early = computeExamPacing(mk(599), { totalScore: 20, passThreshold: 70 }, BASE_TIME);
+      expect(early.paceWarmingUp).toBe(true);
+      expect(early.currentPacePtsPerHour).toBe(0);
+      expect(early.projectedFinalScore).toBe(20);
+      expect(early.pacingStatus).toBe('ON_TRACK');
+
+      const ready = computeExamPacing(mk(600), { totalScore: 20, passThreshold: 70 }, BASE_TIME);
+      expect(ready.paceWarmingUp).toBe(false);
+      expect(ready.currentPacePtsPerHour).toBe(120);
+    });
+
     it('PACE-03: Zero division protection on edge conditions (0 seconds elapsed or 0 remaining)', () => {
       // Exact start moment (0 ms elapsed)
       const sessionStart = {

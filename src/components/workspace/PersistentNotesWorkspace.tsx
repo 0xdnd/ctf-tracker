@@ -63,7 +63,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
     }))
   );
 
-  const { globalVars, soundEnabled, customNotes, userNotes, cheatsheets, userNotesHydrated, addCustomNote } = useCtfStore(
+  const { globalVars, soundEnabled, customNotes, userNotes, cheatsheets, userNotesHydrated, addCustomNote, deleteNote } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
       soundEnabled: s.soundEnabled,
@@ -72,6 +72,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
       cheatsheets: s.cheatsheets,
       userNotesHydrated: s.userNotesHydrated,
       addCustomNote: s.addCustomNote,
+      deleteNote: s.deleteNote,
     }))
   );
   const effectiveVars = useEffectiveGlobalVars(globalVars);
@@ -118,6 +119,16 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
   // Search reuses the dock's "Open anything" switcher (Alt+K is bound globally in useTacticalHotkeys).
   const openSearch = useCallback(() => setSwitcherOpen(true), [setSwitcherOpen]);
+
+  // The menu entry already asks for confirmation before calling this.
+  const handleDeleteNote = useCallback(
+    (noteId: string) => {
+      deleteNote(noteId);
+      useNotesWorkspaceStore.getState().closeTab(noteId);
+      if (soundEnabled) playCyberSound('root');
+    },
+    [deleteNote, soundEnabled]
+  );
 
   const handleSaveNewNote = useCallback(
     (note: Partial<CptsNoteEntry> & { title: string }) => {
@@ -218,6 +229,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
           onTemplatize={() => setTemplatizeOpen(true)}
           onCopyAll={handleCopyAll}
           onNavigateToNote={handleNavigateToNote}
+          onDeleteNote={handleDeleteNote}
           openTabs={openTabs}
           activeResolvedId={activeResolvedId}
         />

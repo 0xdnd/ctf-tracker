@@ -163,11 +163,42 @@ describe('ReverseShellGenerator UI: interpreter control and encoding family', ()
     expect(within(encodingWrap()).queryByRole('button', { name: 'BASH B64' })).not.toBeInTheDocument();
   });
 
-  it('shows a clear Unavailable state for an unavailable row: no code body, no copy', () => {
-    render(<ReverseShellGenerator />);
-    fireEvent.change(screen.getByLabelText('Filter reverse shell payloads'), { target: { value: 'PowerShell #3 (Base64)' } });
-    fireEvent.click(screen.getByRole('button', { name: /PowerShell #3 \(Base64\)/ }));
+  it('shows a clear Unavailable state for an unavailable row: no code body, no copy', async () => {
+    vi.resetModules();
+    vi.doMock('../../data/revshellsData', async () => {
+      const actual = await vi.importActual<typeof import('../../data/revshellsData')>('../../data/revshellsData');
+      const syntheticUnavailable = {
+        id: 'rev-test-synthetic-unavailable',
+        name: 'Synthetic Unavailable Shell',
+        category: 'Reverse',
+        language: 'PowerShell',
+        platform: 'Both',
+        command: '',
+        listener: 'nc -lvnp {port}',
+        notes: '',
+        extension: '.ps1',
+        isFullScript: false,
+        unavailable: true,
+      };
+      const ALL_SHELL_ITEMS = [...actual.ALL_SHELL_ITEMS, syntheticUnavailable];
+      return {
+        ...actual,
+        ALL_SHELL_ITEMS,
+        availableShellItems: ALL_SHELL_ITEMS.filter((s) => !s.unavailable),
+      };
+    });
+
+    const { ReverseShellGenerator: MockedReverseShellGenerator } = await import(
+      '../../components/cheatsheet/ReverseShellGenerator'
+    );
+
+    render(<MockedReverseShellGenerator />);
+    fireEvent.change(screen.getByLabelText('Filter reverse shell payloads'), { target: { value: 'Synthetic Unavailable Shell' } });
+    fireEvent.click(screen.getByRole('button', { name: /Synthetic Unavailable Shell/ }));
     expect(screen.getByTestId('revshell-unavailable')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Copy payload/ })).toBeDisabled();
+
+    vi.doUnmock('../../data/revshellsData');
+    vi.resetModules();
   });
 });

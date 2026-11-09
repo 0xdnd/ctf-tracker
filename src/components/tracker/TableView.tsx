@@ -13,6 +13,7 @@ import {
   Flag,
   Crosshair,
   FileText,
+  ClipboardCheck,
   ExternalLink,
   ListChecks,
   Maximize2,
@@ -152,7 +153,7 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
             title="Open Executive Pentest Pre-Report"
             aria-label={`Open executive pentest pre-report for ${m.name}`}
           >
-            <FileText className="w-3.5 h-3.5" />
+            <ClipboardCheck className="w-3.5 h-3.5" />
           </button>
 
           <button

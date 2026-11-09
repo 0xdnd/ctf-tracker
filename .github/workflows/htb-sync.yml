@@ -1,0 +1,62 @@
+# Requirements:
+#  - Repo setting "Allow GitHub Actions to create and approve pull requests"
+#    (Settings > Actions > General > Workflow permissions) must be ON.
+#  - Secret HTB_TOKEN must exist (HTB labs API token).
+# Bot PRs created with GITHUB_TOKEN do not trigger CI, so tests run here before pushing.
+name: HTB active machines sync
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Sync active machines
+        env:
+          HTB_TOKEN: ${{ secrets.HTB_TOKEN }}
+        run: |
+          set -o pipefail
+          node scripts/sync-htb-active.mjs | tee /tmp/sync-summary.txt
+      - name: Install and test
+        run: |
+          if git diff --quiet -- src/data/activeMachines.json; then
+            echo "No changes; skipping."
+            exit 0
+          fi
+          npm ci
+          npm test
+      - name: Open PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- src/data/activeMachines.json; then
+            echo "No changes."
+            exit 0
+          fi
+          BRANCH="chore/htb-active-sync"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add src/data/activeMachines.json
+          git commit -m "chore(data): sync active HTB machines"
+          git push --force origin "$BRANCH"
+          {
+            echo "Automated weekly sync of the active HTB machine list (metadata only). Tests passed in the sync workflow."
+            echo
+            echo '~~~~'
+            tr -d '`' < /tmp/sync-summary.txt
+            echo '~~~~'
+          } > /tmp/pr-body.md
+          gh pr create --base main --head "$BRANCH" --title "chore(data): sync active HTB machines $(date -u +%F)" --body-file /tmp/pr-body.md \
+            || gh pr edit "$BRANCH" --body-file /tmp/pr-body.md

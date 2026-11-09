@@ -306,9 +306,11 @@ describe('Attack graph large-graph performance modes', () => {
     const machines = makeVariedMachines(60);
     const { container } = renderGraph(machines);
     const centers = cardCenters(container);
-    expect(centers.size).toBe(60);
+    // Overflow machines (snap-48+) are no longer drawn in the scoped view; the clusters are unchanged
+    expect(centers.size).toBe(48);
     for (const [id, pos] of Object.entries(SCOPED_SNAPSHOT)) {
-      expect(centers.get(id)).toEqual(pos);
+      if (Number(id.slice(5)) >= 48) expect(centers.has(id)).toBe(false);
+      else expect(centers.get(id)).toEqual(pos);
     }
   });
 

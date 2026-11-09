@@ -11,8 +11,8 @@ beforeAll(async () => {
 });
 
 describe('catalog with PG and VulnHub', () => {
-  it('appends both sources to the 1027 base rows', () => {
-    expect(catalog.length).toBe(1027 + (pg as unknown[]).length + (vulnhub as unknown[]).length);
+  it('appends both sources to the 1031 base rows', () => {
+    expect(catalog.length).toBe(1031 + (pg as unknown[]).length + (vulnhub as unknown[]).length);
     expect(catalog.filter((m) => m.platform === 'PG')).toHaveLength((pg as unknown[]).length);
     expect(catalog.filter((m) => m.platform === 'VulnHub')).toHaveLength((vulnhub as unknown[]).length);
   });

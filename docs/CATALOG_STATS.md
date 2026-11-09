@@ -1,34 +1,34 @@
 # סטטיסטיקות קטלוג המכונות של ZeroBox
 
-> נכון לתאריך **2026-10-12**. הקובץ נוצר אוטומטית על ידי `npm run stats:catalog` (scripts/catalog-stats.mjs) מתוך הנתונים שב-`src/data`; אין לערוך אותו ידנית.
+> נכון לתאריך **2026-11-09**. הקובץ נוצר אוטומטית על ידי `npm run stats:catalog` (scripts/catalog-stats.mjs) מתוך הנתונים שב-`src/data`; אין לערוך אותו ידנית.
 
 ## תקציר
 
 | מדד | מספר |
 | --- | --- |
-| סה"כ מכונות ויעדים בודדים בקטלוג | **1372** |
-| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **1372** (576 HTB + 451 THM + 223 PG + 122 VulnHub) |
+| סה"כ מכונות ויעדים בודדים בקטלוג | **1376** |
+| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **1376** (580 HTB + 451 THM + 223 PG + 122 VulnHub) |
 | מתוכן מעבדות מודרכות ושותפים (Guided Labs) | 0 (הוסרו כליל מהקטלוג) |
-| Hack The Box (HTB) | 576 |
-| מתוכן מפורשות (Retired) | 556 |
+| Hack The Box (HTB) | 580 |
+| מתוכן מפורשות (Retired) | 560 |
 | מתוכן פעילות (Active), מטא-דאטה בלבד | 20 |
 | TryHackMe (THM) | 451 |
 | Proving Grounds (PG) | 223 |
 | VulnHub | 122 |
 | מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs) | **10** מעבדות (170 שרתים, 280 דגלים) |
 
-הקטלוג המובנה כולל 1,372 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
+הקטלוג המובנה כולל 1,376 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
 
 ## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה
 
 | קבוצה | מספר | הסבר |
 | --- | --- | --- |
-| מפורשות עם רשומה מלאה | 415 | תגיות, רמז, תקציר רשמי וקישור ל-writeup, כפי שמותר לתוכן מפורש (HTB AUP §8.3) |
+| מפורשות עם רשומה מלאה | 419 | תגיות, רמז, תקציר רשמי וקישור ל-writeup, כפי שמותר לתוכן מפורש (HTB AUP §8.3) |
 | מפורשות, מטא-דאטה בלבד | 141 | שם, מערכת הפעלה, רמת קושי וקישור לדף המכונה בלבד |
 | פעילות | 20 | שם, מערכת הפעלה, רמת קושי, תאריך שחרור וקישור בלבד (HTB AUP §8.2) |
-| **סה"כ HTB** | **576** |  |
+| **סה"כ HTB** | **580** |  |
 
-מתוך 415 הרשומות המלאות, 22 הן מעבדות Starting Point (מעבדות ההיכרות של HTB).
+מתוך 419 הרשומות המלאות, 22 הן מעבדות Starting Point (מעבדות ההיכרות של HTB).
 
 שורות המטא-דאטה של מכונות מפורשות נוספו כדי שהקטלוג יכלול את כל המכונות שפרשו עד היום. תאריך הפרישה אינו נשמר בקטלוג, ולכן אין כאן פילוח לפי שנת פרישה.
 
@@ -38,22 +38,22 @@
 | --- | --- | --- | --- | --- |
 | Very Easy | 22 | 0 | 1 | 23 |
 | Easy | 163 | 6 | 145 | 314 |
-| Medium | 190 | 6 | 216 | 412 |
-| Hard | 117 | 4 | 83 | 204 |
-| Insane | 64 | 4 | 6 | 74 |
-| **סה"כ** | **556** | **20** | **451** | **1027** |
+| Medium | 191 | 6 | 216 | 413 |
+| Hard | 119 | 4 | 83 | 206 |
+| Insane | 65 | 4 | 6 | 75 |
+| **סה"כ** | **560** | **20** | **451** | **1031** |
 
 ## פילוח לפי מערכת הפעלה
 
 | מערכת הפעלה | HTB מפורשות (Retired) | HTB פעילות (Active) | THM | סה"כ |
 | --- | --- | --- | --- | --- |
-| Linux | 382 | 11 | 414 | 807 |
-| Windows | 162 | 9 | 35 | 206 |
+| Linux | 383 | 12 | 414 | 809 |
+| Windows | 165 | 8 | 35 | 208 |
 | BSD | 10 | 0 | 0 | 10 |
 | Other | 1 | 0 | 1 | 2 |
 | Android | 1 | 0 | 0 | 1 |
 | macOS | 0 | 0 | 1 | 1 |
-| **סה"כ** | **556** | **20** | **451** | **1027** |
+| **סה"כ** | **560** | **20** | **451** | **1031** |
 
 ## המכונות הפעילות ב-HTB (20)
 
@@ -61,6 +61,10 @@
 
 | מכונה | רמת קושי | מערכת הפעלה | תאריך שחרור |
 | --- | --- | --- | --- |
+| Unclaimed | Medium | Windows | 2026-11-07 |
+| Takeoff | Hard | Linux | 2026-10-31 |
+| DutyBound | Medium | Linux | 2026-10-24 |
+| Autopilot | Insane | Windows | 2026-10-17 |
 | Stream | Medium | Linux | 2026-10-10 |
 | Touch | Easy | Windows | 2026-10-03 |
 | Layover | Medium | Linux | 2026-09-26 |
@@ -73,14 +77,10 @@
 | DarkZeroReturns | Hard | Windows | 2026-07-25 |
 | Bedside | Medium | Linux | 2026-07-18 |
 | Paperwork | Easy | Linux | 2026-07-11 |
-| MakeSense | Medium | Linux | 2026-07-04 |
 | Enigma | Easy | Linux | 2026-06-27 |
 | Nimbus | Hard | Linux | 2026-06-20 |
-| Checkpoint | Medium | Windows | 2026-06-13 |
 | Connected | Easy | Linux | 2026-06-06 |
 | PingPong | Insane | Windows | 2026-04-25 |
-| Garfield | Hard | Windows | 2026-04-04 |
-| Eloquia | Insane | Windows | 2025-12-13 |
 
 ## מסלולי תרגול
 
@@ -96,22 +96,22 @@
 | `cwee-web` | HTB CWEE & CWES Advanced Web Exploitation | certification | 76 | 7 | **83** |
 | `popular-classics` | Community Classics & Hall of Fame | curated | 40 | 13 | **53** |
 | `ippsec-vault` | IppSec Video Walkthrough Masterclass | curated | 449 | 0 | **449** |
-| `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 77 | 11 | **88** |
+| `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 79 | 11 | **90** |
 | `web-master` | Web Exploitation Master Pathway | technique | 56 | 33 | **89** |
 | `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 31 | **39** |
-| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 173 | 62 | **235** |
+| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 175 | 62 | **237** |
 | `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 146 | **337** |
-| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 189 | 89 | **278** |
+| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 192 | 89 | **281** |
 
 רשימות השמות של המסלולים נשמרות ב-`src/data/trackSources/` (שמות בלבד, עם תאריך ומקור):
 
 | קובץ | תוכן | שמות | נכון ל | מקור |
 | --- | --- | --- | --- | --- |
-| `offsec-oscp.json` | רשימת OSCP+ (PEN-200 2023+) של 0xdf | 70 | 2026-10-12 | https://0xdf.gitlab.io/cheatsheets/offsec |
-| `offsec-osep.json` | רשימת OSEP של 0xdf | 27 | 2026-10-12 | https://0xdf.gitlab.io/cheatsheets/offsec |
-| `offsec-oswe.json` | רשימת OSWE של 0xdf | 23 | 2026-10-12 | https://0xdf.gitlab.io/cheatsheets/offsec |
-| `htb-active-directory.json` | מכונות Active Directory ב-HTB | 84 | 2026-10-12 | https://github.com/seriotonctf/HackTheBox-AD-Machines |
-| `ippsec-videos.json` | מכונות HTB עם סרטון של IppSec | 449 | 2026-10-12 | https://github.com/IppSec/ippsec.github.io (dataset.json) |
+| `offsec-oscp.json` | רשימת OSCP+ (PEN-200 2023+) של 0xdf | 70 | 2026-10-29 | https://0xdf.gitlab.io/cheatsheets/offsec |
+| `offsec-osep.json` | רשימת OSEP של 0xdf | 27 | 2026-10-29 | https://0xdf.gitlab.io/cheatsheets/offsec |
+| `offsec-oswe.json` | רשימת OSWE של 0xdf | 23 | 2026-10-29 | https://0xdf.gitlab.io/cheatsheets/offsec |
+| `htb-active-directory.json` | מכונות Active Directory ב-HTB | 84 | 2026-10-29 | https://github.com/seriotonctf/HackTheBox-AD-Machines |
+| `ippsec-videos.json` | מכונות HTB עם סרטון של IppSec | 449 | 2026-10-29 | https://github.com/IppSec/ippsec.github.io (dataset.json) |
 
 ## מעבדות ארגוניות (HTB Pro Labs Presets)
 
@@ -136,7 +136,7 @@
 - **IppSec** (https://github.com/IppSec/ippsec.github.io, הקובץ dataset.json): המכונות שיש להן סרטון הדרכה.
 - **seriotonctf/HackTheBox-AD-Machines** (https://github.com/seriotonctf/HackTheBox-AD-Machines): מכונות Active Directory.
 - **מפת האתר של TryHackMe** (https://tryhackme.com/sitemaps/rooms.xml): חדרי THM.
-- **צילומי מסך של לשונית Active ב-HTB** שסיפק המשתמש (2026-10-12): רשימת המכונות הפעילות.
+- **צילומי מסך של לשונית Active ב-HTB** שסיפק המשתמש (2026-11-09): רשימת המכונות הפעילות.
 - **Hack The Box Pro Labs Directory** (https://app.hackthebox.com/pro-labs): שמות מעבדות, מספר שרתים, דגלים וקישורים רשמיים.
 
 ## הערת תנאי שימוש

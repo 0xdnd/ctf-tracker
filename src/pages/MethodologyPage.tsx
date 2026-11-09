@@ -26,7 +26,7 @@ import {
   Code
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
-import { useActiveTargetIp } from '../hooks/useActiveTargetIp';
+import { useActiveTargetIp, withActiveTargetIp } from '../hooks/useActiveTargetIp';
 import { 
   MASTER_METHODOLOGY_FRAMEWORK, 
   SERVICE_BRANCHES, 
@@ -85,6 +85,8 @@ export const MethodologyPage: React.FC = () => {
     () => contextFromGlobalVars(globalVars, { activeTargetIp }),
     [globalVars, activeTargetIp]
   );
+
+  const effectiveGlobalVars = useMemo(() => withActiveTargetIp(globalVars, activeTargetIp), [globalVars, activeTargetIp]);
 
   const isNtHashCred = Boolean(globalVars.cred && isNtHash(globalVars.cred));
 
@@ -253,7 +255,7 @@ export const MethodologyPage: React.FC = () => {
   const handleExportFullMarkdown = () => {
     let md = `# ZEROBOX // UNIVERSAL 8-PHASE PENETRATION TESTING PLAYBOOK\n\n`;
     md += `*Standardized Offensive Methodology & Service Branch Execution Framework*\n\n`;
-    md += `**Target IP:** \`${globalVars.targetIp || '10.10.10.X'}\` | **Attacker Host:** \`${globalVars.lhost || '10.10.14.X'}\` | **LPORT:** \`${globalVars.lport || '4444'}\`\n\n`;
+    md += `**Target IP:** \`${effectiveGlobalVars.targetIp || '10.10.10.X'}\` | **Attacker Host:** \`${effectiveGlobalVars.lhost || '10.10.14.X'}\` | **LPORT:** \`${effectiveGlobalVars.lport || '4444'}\`\n\n`;
     md += `---\n\n`;
 
     MASTER_METHODOLOGY_FRAMEWORK.forEach(phase => {
@@ -386,7 +388,7 @@ export const MethodologyPage: React.FC = () => {
               onExpandPhase={setChecklistExpandedPhaseId}
               progress={checklistProgressByPhaseId}
               getSectionId={phaseSectionId}
-              className="mb-3 lg:mb-0 lg:w-56 lg:flex-shrink-0"
+              className="mb-3 lg:mb-0 lg:w-64 lg:flex-shrink-0"
             />
             <div className="min-w-0 flex-1 space-y-4">
               {/* Checklist target selector */}
@@ -541,21 +543,6 @@ export const MethodologyPage: React.FC = () => {
               )}
               {hiddenNote && <p className="text-xs text-muted">{hiddenNote}</p>}
             </div>
-
-            <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono tabular-nums text-xs">
-              <div className="flex items-center gap-1.5">
-                <dt className="text-muted">TARGET</dt>
-                <dd className="text-primary">{globalVars.targetIp || '10.10.10.X'}</dd>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <dt className="text-muted">LHOST</dt>
-                <dd className="text-primary">{globalVars.lhost || '10.10.14.X'}</dd>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <dt className="text-muted">LPORT</dt>
-                <dd className="text-primary">{globalVars.lport || '4444'}</dd>
-              </div>
-            </dl>
           </div>
 
           {/* Search and filters */}
@@ -585,8 +572,8 @@ export const MethodologyPage: React.FC = () => {
 
             {/* Service branch chips */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div className="-mx-4 min-w-0 flex-1 overflow-x-auto no-scrollbar px-4 max-sm:basis-full sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
-                <div className="flex min-w-max items-center gap-1.5 py-0.5">
+              <div className="min-w-0 flex-1 basis-full sm:basis-0">
+                <div className="flex flex-wrap items-center gap-1.5 py-0.5">
                   <span className="mr-1 flex-shrink-0 text-xs text-muted">Branches</span>
                   <button
                     onClick={() => setSelectedBranch('all')}
@@ -617,7 +604,7 @@ export const MethodologyPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-shrink-0 items-center gap-2 text-xs">
+              <div className="ml-auto flex flex-shrink-0 items-center justify-end gap-2 text-xs">
                 <button
                   onClick={expandAll}
                   className="inline-flex min-h-8 items-center text-muted underline-offset-2 hover:text-primary hover:underline cursor-pointer [@media(pointer:coarse)]:min-h-11"
@@ -643,7 +630,7 @@ export const MethodologyPage: React.FC = () => {
               selected={selectedPhaseNumber}
               onSelectPhase={setSelectedPhaseNumber}
               getSectionId={phaseSectionId}
-              className="mb-3 lg:mb-0 lg:w-56 lg:flex-shrink-0"
+              className="mb-3 lg:mb-0 lg:w-64 lg:flex-shrink-0"
             />
             <div className="min-w-0 flex-1">
             {filteredPhases.length === 0 ? (
@@ -656,7 +643,7 @@ export const MethodologyPage: React.FC = () => {
               </div>
             ) : (
               filteredPhases.map((phase) => {
-                const isExpanded = Boolean(expandedPhases[phase.id]);
+                const isExpanded = Boolean(searchQuery.trim()) || Boolean(expandedPhases[phase.id]);
                 const taskCount = phase.subcategories.reduce((acc, s) => acc + s.items.length, 0);
 
                 return (

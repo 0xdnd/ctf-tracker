@@ -109,6 +109,7 @@ describe('UnifiedHeader Responsive Density & Direct Inline Variables', () => {
     const targetInput = screen.getByLabelText('Target IP (RHOST)') as HTMLInputElement;
     expect(targetInput.value).toBe('10.10.10.218');
     fireEvent.change(targetInput, { target: { value: '10.10.10.220' } });
+    fireEvent.blur(targetInput); // R commits on blur / Enter, not per keystroke
     expect(useCtfStore.getState().globalVars.targetIp).toBe('10.10.10.220');
 
     // LPORT (P)
@@ -165,6 +166,7 @@ describe('UnifiedHeader Responsive Density & Direct Inline Variables', () => {
     const longDomain = 'subdomain.'.repeat(25) + 'target-infrastructure.internal.corp';
     const targetInput = screen.getByLabelText('Target IP (RHOST)') as HTMLInputElement;
     fireEvent.change(targetInput, { target: { value: longDomain } });
+    fireEvent.blur(targetInput);
 
     expect(useCtfStore.getState().globalVars.targetIp).toBe(longDomain);
     expect(targetInput.value).toBe(longDomain);

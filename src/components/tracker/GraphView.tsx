@@ -30,6 +30,12 @@ import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
 import { computeAutoLayout } from '../../utils/graphAutoLayout';
 import { useGraphHistory } from '../../hooks/useGraphHistory';
+import {
+  SCOPED_CLUSTER_CAP,
+  splitScopedOverflow,
+  decideScopedVisibility,
+  formatShowMoreLabel,
+} from './graphScopedVisibility';
 
 export interface GraphViewProps {
   filteredMachines: Machine[];
@@ -1393,10 +1399,24 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     return allMachines.length > 0 ? allMachines : filteredMachines;
   }, [allMachines, filteredMachines]);
 
-  const { clusters, defaultNodePositions, allNodes, layoutBounds, realSubnetCount } = useMemo(() => {
-    const sample = showAllNodes ? universeMachines : universeMachines.slice(0, 48);
+  // Scoped view: the active search/filter picks which machines fill the cluster slots, so matches
+  // are always drawn first. Without a filter this is the whole universe (stable layout).
+  const filterActive = filteredMachines.length < universeMachines.length;
+  // When every match already sits in the first cap machines the universe layout is kept, so
+  // coordinates stay put while typing; the layout only repacks when a match would be left out.
+  const { scopedPool, matchCount } = useMemo(() => {
+    if (!filterActive) return { scopedPool: universeMachines, matchCount: universeMachines.length };
+    const ids = new Set(filteredMachines.map((m) => m.id));
+    const matches = universeMachines.filter((m) => ids.has(m.id));
+    const allInFirstCap = universeMachines.slice(0, SCOPED_CLUSTER_CAP).length >= matches.length
+      && matches.every((m) => universeMachines.indexOf(m) < SCOPED_CLUSTER_CAP);
+    return { scopedPool: allInFirstCap ? universeMachines : matches, matchCount: matches.length };
+  }, [filterActive, universeMachines, filteredMachines]);
+
+  const { clusters, defaultNodePositions, clusteredNodes, overflowNodes, layoutBounds, realSubnetCount } = useMemo(() => {
+    const sample = showAllNodes ? universeMachines : scopedPool.slice(0, SCOPED_CLUSTER_CAP);
     if (sample.length === 0)
-      return { clusters: [], defaultNodePositions: {}, allNodes: [], layoutBounds: SCOPED_BOUNDS, realSubnetCount: 0 };
+      return { clusters: [], defaultNodePositions: {}, clusteredNodes: [] as GraphNode[], overflowNodes: [] as GraphNode[], layoutBounds: SCOPED_BOUNDS, realSubnetCount: 0 };
 
     // Subnet Templates
     const hasOnlyWeb = sample.every(m => classifyMachine(m).primary.startsWith('Web'));
@@ -1475,7 +1495,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       return {
         clusters: layout.clusters,
         defaultNodePositions: layout.positions,
-        allNodes: showAllNodesList,
+        clusteredNodes: showAllNodesList,
+        overflowNodes: [] as GraphNode[],
         layoutBounds: layout.bounds,
         realSubnetCount: layout.clusters.length,
       };
@@ -1601,14 +1622,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       });
     });
 
-    // Handle any extra machines beyond 48 sample in deterministic non-overlapping grid slots
-    const unplaced = universeMachines.filter(m => !positions[m.id]);
-    unplaced.forEach((m, idx) => {
-      const col = idx % 6;
-      const row = Math.floor(idx / 6);
-      const x = 120 + col * 240;
-      const y = 140 + row * 110;
-      const nodeObj: GraphNode = {
+    // Machines beyond the cluster cap are not drawn in the scoped view (see graphScopedVisibility).
+    // They are kept as overflow nodes so ones the user already placed (saved position) still show.
+    // Their grid coordinates sit below the scoped world, never on top of the cluster ring.
+    const overflowNodes: GraphNode[] = universeMachines
+      .filter(m => !positions[m.id])
+      .map((m, idx) => ({
         id: m.id,
         name: m.name,
         ip: m.ip,
@@ -1617,13 +1636,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         difficulty: m.difficulty,
         status: m.status,
         cluster: activeClusters[0]?.id || 'default',
-        x,
-        y,
+        x: 120 + (idx % 6) * 240,
+        y: SCOPED_BOUNDS.maxY + 140 + Math.floor(idx / 6) * 110,
         machine: m,
-      };
-      initialNodes.push(nodeObj);
-      positions[m.id] = { x, y };
-    });
+      }));
 
     // Real subnets: groups some machine belongs to by its own match (same first-match rule SHOW ALL
     // uses). Groups that only exist because capacity overflow dumped machines into an empty bucket
@@ -1638,16 +1654,33 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     return {
       clusters: activeClusters,
       defaultNodePositions: positions,
-      allNodes: initialNodes,
+      clusteredNodes: initialNodes,
+      overflowNodes,
       layoutBounds: SCOPED_BOUNDS,
       realSubnetCount,
     };
-  }, [universeMachines, showAllNodes]);
+  }, [universeMachines, scopedPool, showAllNodes]);
 
+  // Drawn nodes: the clustered ones, plus overflow machines the user already placed (saved position).
+  // Saved positions are never touched; overflow without one stays out of the scoped view.
+  const { allNodes, hiddenOverflowNodes } = useMemo(() => {
+    if (showAllNodes || overflowNodes.length === 0) {
+      return { allNodes: clusteredNodes, hiddenOverflowNodes: [] as GraphNode[] };
+    }
+    const { shown, hidden } = splitScopedOverflow(overflowNodes, storedNodePositions);
+    return { allNodes: shown.length > 0 ? [...clusteredNodes, ...shown] : clusteredNodes, hiddenOverflowNodes: hidden };
+  }, [showAllNodes, clusteredNodes, overflowNodes, storedNodePositions]);
+  const hiddenOverflowIds = useMemo(() => new Set(hiddenOverflowNodes.map((n) => n.id)), [hiddenOverflowNodes]);
   // Set of machine IDs currently matching active search/tag filters
   const visibleMachineIds = useMemo(() => {
     return new Set((filteredMachines || []).map((m) => m.id));
   }, [filteredMachines]);
+
+  // Count only matching machines that were left out (pinned overflow that matches stays drawn)
+  const pinnedMatchingOverflow = showAllNodes
+    ? 0
+    : overflowNodes.filter((n) => !hiddenOverflowIds.has(n.id) && (!filterActive || visibleMachineIds.has(n.id))).length;
+  const scopedVisibility = decideScopedVisibility(showAllNodes ? 0 : matchCount, pinnedMatchingOverflow);
 
   // Filtered active nodes to render on the canvas
   const visibleNodes = useMemo(() => {
@@ -2467,6 +2500,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     }
   }, [showAllNodes]);
 
+  const showAllMachines = () => {
+    if (showAllNodes) return;
+    scopedViewRef.current = { ...getBaseView() };
+    setShowAllNodes(true);
+    if (soundEnabled) playCyberSound('toggle');
+  };
+
   const handleCenterSelection = () => {
     let targetX = 800;
     let targetY = 600;
@@ -2505,7 +2545,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
   // M4: 1-Click Topology Exporters
   const handleExportObsidian = useCallback(() => {
-    const nodesForExport: ExportGraphNode[] = allNodes.map((n) => {
+    const nodesForExport: ExportGraphNode[] = [...allNodes, ...hiddenOverflowNodes].map((n) => {
       const curX = graphNodePositions[n.id]?.x ?? defaultNodePositions[n.id]?.x ?? n.x;
       const curY = graphNodePositions[n.id]?.y ?? defaultNodePositions[n.id]?.y ?? n.y;
       return {
@@ -2522,7 +2562,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     });
     exportToObsidianCanvas(nodesForExport, graphEdges);
     if (soundEnabled) playCyberSound('flag');
-  }, [allNodes, graphNodePositions, defaultNodePositions, graphEdges, soundEnabled]);
+  }, [allNodes, hiddenOverflowNodes, graphNodePositions, defaultNodePositions, graphEdges, soundEnabled]);
 
   const handleExportSvg = useCallback(() => {
     exportToSvg('zerobox-attack-graph-svg');
@@ -2603,9 +2643,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           </span>
         </div>
       )}
-      {/* Top HUD: stats + legend on the left, canvas toolbar on the right. One wrapping row, so the
-          toolbar drops below the stats and legend when the canvas is too narrow for all of them. */}
-      <div className="absolute inset-x-4 top-4 z-20 flex flex-wrap items-start justify-between gap-2 pointer-events-none">
+      {/* Top HUD: a column. Stats pill on the left, canvas toolbar as a vertical rail on the right
+          edge directly below it, so it never wraps into the middle of the graph. */}
+      <div className="absolute inset-x-4 top-4 z-20 flex flex-col items-start gap-2 pointer-events-none">
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 pointer-events-auto">
         <div className="px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs flex items-center gap-2 machined-edge">
           <Share2 className="w-3.5 h-3.5 text-accent" />
@@ -2614,11 +2654,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           </span>
           <span 
             className="text-xs text-accent font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
-            title={showAllNodes ? 'Every machine is placed in its subnet group' : 'The first 48 machines are grouped by subnet; the rest sit in a grid'}
+            title={showAllNodes ? 'Every machine is placed in its subnet group' : `The first ${SCOPED_CLUSTER_CAP} machines are grouped by subnet; use Show all to see the rest`}
           >
             {visibleNodes.length} of {universeMachines.length} machines
           </span>
-          {universeMachines.length > 48 && (
+          {universeMachines.length > SCOPED_CLUSTER_CAP && (
             <button
               type="button"
               onClick={() => {
@@ -2631,7 +2671,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   ? 'bg-accent text-on-accent border-accent shadow-xs'
                   : 'bg-surface-sunken text-accent border-subtle hover:border-accent/40'
               }`}
-              title={showAllNodes ? 'Back to the compact layout: first 48 grouped by subnet, the rest in a grid' : 'Place every machine in its subnet group (larger canvas)'}
+              title={showAllNodes ? `Back to the compact layout: first ${SCOPED_CLUSTER_CAP} grouped by subnet, the rest hidden` : 'Place every machine in its subnet group (larger canvas)'}
               aria-label={showAllNodes ? 'Compact layout' : 'Group all by subnet'}
             >
               {showAllNodes ? 'Compact layout' : 'Group all by subnet'}
@@ -2639,37 +2679,23 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           )}
           <span
             className="text-xs text-callout-tip-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
-            title={showAllNodes ? 'Subnet groups across every machine' : 'Subnet groups among the first 48 machines'}
+            title={showAllNodes ? 'Subnet groups across every machine' : `Subnet groups among the first ${SCOPED_CLUSTER_CAP} machines`}
           >
             {realSubnetCount} {realSubnetCount === 1 ? 'subnet' : 'subnets'}
           </span>
-          {!showAllNodes && universeMachines.length > 48 && (
-            <span
+          {!showAllNodes && scopedVisibility.showMoreControl && (
+            <button
+              type="button"
               data-testid="graph-grid-overflow"
-              className="text-xs text-secondary font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
-              title="These machines are not part of a subnet group; use Group all by subnet to place them"
+              onClick={showAllMachines}
+              className="text-xs font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md border border-subtle bg-surface-sunken text-accent hover:border-accent/40 transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
+              title="Only the first machines are drawn here. Show all places every machine in its subnet group."
             >
-              {universeMachines.length - 48} in grid
-            </span>
+              {formatShowMoreLabel(scopedVisibility.hiddenCount, filterActive)}
+            </button>
           )}
           <span className="text-xs text-callout-success-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
             {graphEdges.length} {graphEdges.length === 1 ? 'link' : 'links'}
-          </span>
-        </div>
-
-        {/* Legend */}
-        <div className="hidden lg:flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs text-xs font-sans machined-edge">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-callout-success-fg" />
-            <span className="text-secondary">Root (Compromised)</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-callout-warn-fg" />
-            <span className="text-secondary">Foothold (User)</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-secondary">Backlog or recon</span>
           </span>
         </div>
       </div>
@@ -2677,9 +2703,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       {/* Canvas Navigation Toolbar */}
       <div 
         data-testid="canvas-nav-toolbar"
-        className="ml-auto flex items-center gap-1 bg-surface-elevated/95 backdrop-blur-sm border border-subtle p-1.5 rounded-xl shadow-md pointer-events-auto machined-edge"
+        className="self-end flex flex-col items-center gap-1 bg-surface-elevated/95 backdrop-blur-sm border border-subtle p-1.5 rounded-xl shadow-md pointer-events-auto machined-edge"
       >
-        <span className="text-xs font-semibold text-muted px-2 select-none font-mono tabular-nums">
+        <span className="text-xs font-semibold text-muted select-none font-mono tabular-nums">
           {Math.round(scale * 100)}%
         </span>
 
@@ -2697,9 +2723,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               : 'hover:bg-surface-hover text-accent border border-transparent hover:border-subtle'
           }`}
           title={isConnectingMode ? 'Stop linking (Alt+C)' : 'Link two machines (Alt+C)'}
+          aria-label={isConnectingMode ? 'Stop linking' : 'Add link'}
         >
           <Network className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline text-xs">
+          <span className="hidden text-xs">
             {isConnectingMode ? 'Linking...' : 'Add link'}
           </span>
         </button>
@@ -2710,9 +2737,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           onClick={handleExportObsidian}
           className="p-1.5 rounded-md hover:bg-surface-hover text-callout-tip-fg hover:text-callout-tip-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
           title="Export as an Obsidian canvas file (.canvas)"
+          aria-label="Export canvas file"
         >
           <Download className="w-4 h-4" />
-          <span className="text-xs font-semibold hidden xl:inline">Canvas file</span>
+          <span className="text-xs font-semibold hidden">Canvas file</span>
         </button>
 
         {/* Export SVG */}
@@ -2721,12 +2749,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           onClick={handleExportSvg}
           className="p-1.5 rounded-md hover:bg-surface-hover text-accent hover:text-callout-info-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
           title="Export as an SVG image (.svg)"
+          aria-label="Export SVG"
         >
           <Share2 className="w-4 h-4" />
-          <span className="text-xs font-semibold hidden xl:inline">SVG</span>
+          <span className="text-xs font-semibold hidden">SVG</span>
         </button>
 
-        <div className="w-px h-4 bg-border-subtle mx-0.5" />
+        <div className="h-px w-4 bg-border-subtle my-0.5" />
 
         <button
           type="button"
@@ -2763,7 +2792,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           <Workflow className="w-4 h-4" />
         </button>
 
-        <div className="w-px h-4 bg-border-subtle mx-0.5" />
+        <div className="h-px w-4 bg-border-subtle my-0.5" />
 
         <button
           type="button"
@@ -2856,7 +2885,22 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       )}
 
       {/* Tactical Minimap HUD in Canvas Corner */}
-      <div className="absolute bottom-4 left-4 z-20 pointer-events-auto select-none">
+      <div className="absolute bottom-4 left-4 z-20 flex flex-col items-start gap-2 pointer-events-auto select-none">
+          {/* Legend */}
+          <div className="hidden lg:flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs text-xs font-sans machined-edge">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-callout-success-fg" />
+              <span className="text-secondary">Root (Compromised)</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-callout-warn-fg" />
+              <span className="text-secondary">Foothold (User)</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-accent" />
+              <span className="text-secondary">Backlog or recon</span>
+            </span>
+          </div>
         {isMinimapOpen ? (
           <div 
             data-testid="graph-minimap-container"
@@ -3114,6 +3158,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
             {/* Custom Attack Vectors & Pivot Tunnel Edges (Milestone 3) */}
             {graphEdges.map((edge) => {
+              // Links to machines that are not drawn in the scoped view stay stored but are not drawn
+              if (hiddenOverflowIds.has(edge.sourceId) || hiddenOverflowIds.has(edge.targetId)) return null;
               const meta = ATTACK_EDGE_META[edge.type] || ATTACK_EDGE_META['pivot-ssh'];
               const isSelectedEdge = selectedEdgeId === edge.id;
 

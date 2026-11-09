@@ -70,7 +70,7 @@ export const ExamHeaderCapsule: React.FC = () => {
           toggleQuickDrawer();
         }
       }}
-      className={`group cursor-pointer select-none flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-lg border font-sans text-xs transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.97] machined-edge-subtle shadow-xs ${containerStyle}`}
+      className={`group cursor-pointer select-none flex max-w-full min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-lg border font-sans text-xs transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.97] machined-edge-subtle shadow-xs ${containerStyle}`}
       title="ZeroBox Persistent Exam HUD - Click to toggle Quick Actions (Alt+E)"
       aria-label={`${track} ${formatSecondsToHms(remainingTime)} ${score.totalScore}/${score.maxScore || 100} PTS - Exam Mission HUD Capsule`}
       aria-expanded={isQuickDrawerOpen}

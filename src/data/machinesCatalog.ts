@@ -4322,7 +4322,7 @@ export const INITIAL_MACHINES: Machine[] = [
   },
   {
     "id": "htb-underpass",
-    "name": "Underpass",
+    "name": "UnderPass",
     "ip": "10.10.11.48",
     "os": "Linux",
     "platform": "HTB",
@@ -8008,7 +8008,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.10.x",
     "os": "Linux",
     "platform": "HTB",
-    "difficulty": "Medium",
+    "difficulty": "Hard",
     "status": "backlog",
     "tags": [
       "HTB"
@@ -8526,7 +8526,7 @@ export const INITIAL_MACHINES: Machine[] = [
   },
   {
     "id": "htb-dynstr",
-    "name": "dynstr",
+    "name": "Dynstr",
     "ip": "10.10.10.x",
     "os": "Linux",
     "platform": "HTB",
@@ -12211,7 +12211,7 @@ export const INITIAL_MACHINES: Machine[] = [
   },
   {
     "id": "htb-active",
-    "name": "Active (2018 Retired)",
+    "name": "Active",
     "ip": "10.10.10.x",
     "os": "Windows",
     "platform": "HTB",
@@ -22987,6 +22987,78 @@ export const INITIAL_MACHINES: Machine[] = [
     "rootFlag": "HTB{root_pwn_verified}",
     "timeToUserSeconds": 1500,
     "timeToRootSeconds": 3600
+  },
+  {
+    "id": "htb-eloquia",
+    "name": "Eloquia",
+    "ip": "10.10.10.x",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Insane",
+    "status": "backlog",
+    "tags": [
+      "HTB"
+    ],
+    "certifications": [],
+    "roomUrl": "https://app.hackthebox.com/machines/eloquia",
+    "hint": "Hack The Box Windows machine. Rated Insane difficulty.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2025-12-13T09:00:00.000000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-checkpoint",
+    "name": "Checkpoint",
+    "ip": "10.10.10.x",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "HTB"
+    ],
+    "certifications": [],
+    "roomUrl": "https://app.hackthebox.com/machines/checkpoint",
+    "hint": "Hack The Box Windows machine. Rated Medium difficulty.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-06-13T09:00:00.000000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-makesense",
+    "name": "MakeSense",
+    "ip": "10.10.10.x",
+    "os": "Linux",
+    "platform": "HTB",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "HTB"
+    ],
+    "certifications": [],
+    "roomUrl": "https://app.hackthebox.com/machines/makesense",
+    "hint": "Hack The Box Linux machine. Rated Medium difficulty.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-07-04T09:00:00.000000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "htb-garfield",
+    "name": "Garfield",
+    "ip": "10.10.10.x",
+    "os": "Windows",
+    "platform": "HTB",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "HTB"
+    ],
+    "certifications": [],
+    "roomUrl": "https://app.hackthebox.com/machines/garfield",
+    "hint": "Hack The Box Windows machine. Rated Hard difficulty.",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-04-04T09:00:00.000000Z",
+    "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
     "id": "htb-tactics",

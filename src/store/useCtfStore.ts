@@ -1038,6 +1038,27 @@ function foldActiveTimer(state: TimerSlice, seconds: number = state.activeTimerS
   return state.machines.map((m) => (m === active ? withTimeSpent(m, seconds) : m));
 }
 
+/**
+ * Session fields to reset when a machine is deleted (here or in another tab). Only the active machine
+ * stops the timer; the shared target IP is cleared only when it was that machine's.
+ */
+function deletedMachineSessionReset(
+  state: Pick<CtfStoreState, 'machines' | 'activeTargetId' | 'selectedMachineId' | 'globalVars'>,
+  id: string
+): Partial<CtfStoreState> {
+  const out: Partial<CtfStoreState> = {};
+  if (state.activeTargetId === id) {
+    out.activeTargetId = null;
+    out.isTimerRunning = false;
+    out.activeTimerSeconds = 0;
+    out.timerLastTick = null;
+  }
+  if (state.selectedMachineId === id) out.selectedMachineId = null;
+  const ip = state.machines.find((m) => m.id === id)?.ip;
+  if (ip && state.globalVars?.targetIp === ip) out.globalVars = { ...state.globalVars, targetIp: DEFAULT_GLOBAL_VARS.targetIp };
+  return out;
+}
+
 /** Write-time overlay of the live timer (no updatedAt stamp, never lowers), for saves and exports. */
 function overlayActiveTimer(state: TimerSlice): Machine[] {
   const seconds = state.activeTimerSeconds;
@@ -1931,8 +1952,7 @@ export const useCtfStore = create<CtfStoreState>()(
           machines: state.machines.filter((m) => m.id !== id),
           // Tombstone: a later sync merge must not bring the machine back from an older copy.
           deletedMachineIds: addMachineTombstone(state.deletedMachineIds, id, Date.parse(deletedAt)),
-          activeTargetId: state.activeTargetId === id ? null : state.activeTargetId,
-          selectedMachineId: state.selectedMachineId === id ? null : state.selectedMachineId,
+          ...deletedMachineSessionReset(state, id),
           unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
         }));
         get().saveProfileData(profileId);
@@ -2347,6 +2367,7 @@ export const useCtfStore = create<CtfStoreState>()(
               activeTargetId: null,
               isTimerRunning: false,
               activeTimerSeconds: 0,
+              unexportedChangesCount: (state.unexportedChangesCount || 0) + (updatedMachines !== state.machines ? 1 : 0),
             };
           }
 
@@ -2361,7 +2382,8 @@ export const useCtfStore = create<CtfStoreState>()(
               ...state.globalVars,
               targetIp: m?.ip && !m.isActive && !m.ip.toLowerCase().includes('x') && m.ip !== '10.10.10.X' ? m.ip : state.globalVars.targetIp,
             },
-            unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+            // Counts only a real data change (the timer fold), not a bare target switch.
+            unexportedChangesCount: (state.unexportedChangesCount || 0) + (updatedMachines !== state.machines ? 1 : 0),
           };
         });
         flushPendingProfileSave();
@@ -2450,7 +2472,7 @@ export const useCtfStore = create<CtfStoreState>()(
           let updatedMachines = state.machines;
           if (vars.targetIp && state.activeTargetId) {
             updatedMachines = state.machines.map((m) =>
-              m.id === state.activeTargetId
+              m.id === state.activeTargetId && !m.isActive
                 ? { ...m, ip: vars.targetIp!, updatedAt: new Date().toISOString() }
                 : m
             );
@@ -4171,6 +4193,7 @@ if (typeof window !== 'undefined') {
             payload.id,
             Number.isFinite(deletedAt) ? deletedAt : Date.now()
           ),
+          ...deletedMachineSessionReset(s, payload.id),
         }));
       }
     } else if (type === 'STATE_UPDATED') {

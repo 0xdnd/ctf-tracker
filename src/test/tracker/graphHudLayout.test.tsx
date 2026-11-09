@@ -52,21 +52,31 @@ describe('graph HUD: legend, toolbar and subnet count', () => {
     expect(screen.queryByText('Scoped')).toBeNull();
   });
 
-  it('puts the toolbar and the stats/legend in one wrapping row so they cannot overlap', () => {
+  it('stacks the toolbar as a vertical rail below the stats group', () => {
     renderGraph();
     const toolbar = screen.getByTestId('canvas-nav-toolbar');
-    const row = toolbar.parentElement as HTMLElement;
-    expect(row.className).toMatch(/\bflex-wrap\b/);
-    expect(toolbar.className).not.toMatch(/\babsolute\b/);
-    expect(row.firstElementChild).not.toBe(toolbar);
-    expect(row.firstElementChild?.className).not.toMatch(/\babsolute\b/);
+    const hud = toolbar.parentElement as HTMLElement;
+    expect(hud.className).toMatch(/(^| )flex-col( |$)/);
+    expect(toolbar.className).not.toMatch(/(^| )absolute( |$)/);
+    expect(toolbar.className).toMatch(/(^| )flex-col( |$)/);
+    expect(hud.firstElementChild).not.toBe(toolbar);
+    expect(hud.firstElementChild?.className).not.toMatch(/(^| )absolute( |$)/);
+  });
+
+  it('keeps the legend out of the top row and the toolbar buttons reachable by name', () => {
+    renderGraph();
+    const row = screen.getByTestId('canvas-nav-toolbar').parentElement as HTMLElement;
+    expect(row.contains(screen.getByText('Backlog or recon'))).toBe(false);
+    expect(screen.getByRole('button', { name: 'Add link' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export canvas file' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export SVG' })).toBeInTheDocument();
   });
 
   it('counts only real subnets in the compact layout and labels the grid separately', () => {
     renderGraph();
     // Without the fix the 48 sampled boxes were spread over all six templates (6 subnets).
     expect(screen.getByText(/^\d+ subnets?$/)).toHaveTextContent('1 subnet');
-    expect(screen.getByTestId('graph-grid-overflow')).toHaveTextContent('72 in grid');
+    expect(screen.getByTestId('graph-grid-overflow')).toHaveTextContent('+72 more · Show all');
 
     fireEvent.click(screen.getByRole('button', { name: 'Group all by subnet' }));
     expect(screen.queryByTestId('graph-grid-overflow')).toBeNull();

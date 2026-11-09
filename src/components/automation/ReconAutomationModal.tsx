@@ -199,6 +199,14 @@ export const ReconAutomationModal: React.FC = () => {
     return availableMachines.find((m) => m.ip === parsedResults.detectedIp && m.id !== targetMachineId) || null;
   }, [parsedResults?.detectedIp, availableMachines, targetMachineId]);
 
+  // Non-blocking heads-up when the scan's OS family (Windows vs Linux/Unix) disagrees with the target's saved OS
+  const osMismatch = useMemo(() => {
+    const family = (s?: string) => (/windows/i.test(s || '') ? 'windows' : /linux|unix|ubuntu|debian|bsd/i.test(s || '') ? 'unix' : '');
+    const detected = family(parsedResults?.detectedOs);
+    const saved = family(targetMachine?.os);
+    return detected && saved && detected !== saved;
+  }, [parsedResults?.detectedOs, targetMachine?.os]);
+
   // File Drop Handler
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -242,7 +250,7 @@ export const ReconAutomationModal: React.FC = () => {
 
     const reconNotes = `\n\n### ⚡ Automated Scan Intake [${parsedResults.format.toUpperCase()}] (${timestamp})\n` +
       `- **Target Host**: ${parsedResults.detectedHost || targetMachine.ip}\n` +
-      `- **Detected OS**: ${parsedResults.detectedOs || targetMachine.os}\n` +
+      `- **${parsedResults.detectedOs ? 'Detected OS' : 'Machine OS'}**: ${parsedResults.detectedOs || targetMachine.os}\n` +
       `#### Open Services (${parsedResults.ports.length}):\n${portSummary}\n`;
 
     const existingNotes = targetMachine.quickNotes || '';
@@ -606,6 +614,17 @@ export const ReconAutomationModal: React.FC = () => {
                       To apply this scan, please select an in-progress or backlog target from the dropdown above.
                     </p>
                   </div>
+                </div>
+              )}
+
+              {osMismatch && !isTargetFrozen && parsedResults && (
+                <div role="status" data-testid="recon-os-mismatch" className="p-3 rounded-xl bg-callout-warn-bg border border-callout-warn-border flex items-start gap-3 text-xs">
+                  <AlertTriangle className="w-4 h-4 text-callout-warn-fg flex-shrink-0 mt-0.5" />
+                  <p className="text-callout-warn-fg leading-relaxed text-[11px]">
+                    This scan detected <strong className="font-semibold">{parsedResults.detectedOs}</strong>, but{' '}
+                    <strong className="font-semibold">{targetMachine?.name}</strong> is saved as{' '}
+                    <strong className="font-semibold">{targetMachine?.os}</strong>. Check that you picked the right target before applying.
+                  </p>
                 </div>
               )}
 

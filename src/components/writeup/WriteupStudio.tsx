@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
+import { computeWriteupReadiness } from '../../utils/writeupReadiness';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
@@ -798,29 +799,21 @@ cat /root/root.txt
     if (isDeepStorageLoaded && !selectedMachine.writeupMarkdown) {
       flushDebouncedSave();
       const tmpl = generateTemplate(selectedMachine);
+      // Show the template without saving it: opening a machine must not count as an unexported change.
+      // The first edit or insert saves the full editor content (template included).
+      editorContentRef.current = tmpl;
       setEditorContent(tmpl);
-      updateMachine(selectedMachine.id, { writeupMarkdown: tmpl });
     }
   }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, selectedMachine?.isActive, isDeepStorageLoaded]);
 
   const telemetry = useMemo(() => computeWriteupTelemetry(editorContent), [editorContent]);
 
   // Writeup Completeness & Quality Readiness Meter
-  const readiness = useMemo(() => {
-    const lower = editorContent.toLowerCase();
-    const checks = [
-      { id: 'recon', label: 'Recon & Ports', ok: lower.includes('nmap') || lower.includes('port') },
-      { id: 'foothold', label: 'Foothold', ok: lower.includes('foothold') || lower.includes('exploit') || lower.includes('user.txt') },
-      { id: 'privesc', label: 'PrivEsc', ok: lower.includes('privilege') || lower.includes('root.txt') || lower.includes('sudo') },
-      { id: 'code', label: 'PoC Commands', ok: (editorContent.match(/```/g)?.length ?? 0) >= 4 },
-      { id: 'depth', label: '250+ Words', ok: telemetry.words >= 250 },
-    ];
-    const passed = checks.filter((c) => c.ok).length;
-    return {
-      checks,
-      score: Math.round((passed / checks.length) * 100),
-    };
-  }, [editorContent, telemetry.words]);
+  const readiness = useMemo(
+    () => computeWriteupReadiness(editorContent, selectedMachine ? generateTemplate(selectedMachine) : ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [editorContent, selectedMachine],
+  );
 
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -907,12 +900,11 @@ cat /root/root.txt
   // Insert Captured Credentials from Vault
   const handleInsertVaultLoot = () => {
     if (!selectedMachine) return;
-    const machineCreds = credentials.filter((c) => c.sourceMachineId === selectedMachine.id);
-    const pool = machineCreds.length > 0 ? machineCreds : credentials.slice(0, 10);
+    const pool = credentials.filter((c) => c.sourceMachineId === selectedMachine.id);
     if (pool.length === 0) {
       useToastStore.getState().addToast({
         type: 'info',
-        message: 'No credentials in Vault yet. Use "+ Loot" to capture credentials first.',
+        message: `No credentials captured for ${selectedMachine.name} yet. Use "+ Loot" to capture credentials first.`,
       });
       return;
     }

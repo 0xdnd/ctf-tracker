@@ -126,7 +126,7 @@ describe('Graph controls use plain labels', () => {
   it('names the heading, counts and toolbar buttons by what they do', () => {
     renderGraph();
     expect(screen.getByText('Machine graph')).toBeInTheDocument();
-    expect(screen.getByText('60 of 60 machines')).toBeInTheDocument();
+    expect(screen.getByText('48 of 60 machines')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Group all by subnet' })).toHaveAttribute('title', expect.stringContaining('subnet group'));
     expect(screen.getByRole('button', { name: 'Center on selected machine' })).toHaveAttribute(
       'title',

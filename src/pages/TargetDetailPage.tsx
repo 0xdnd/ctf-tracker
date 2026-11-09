@@ -626,8 +626,8 @@ export const TargetDetailPage: React.FC = () => {
           {/* Domain & Virtual Hosts */}
           <DomainVhostSection machine={machine} />
 
-          {/* Port Triage (rendered when full recon services are not populated) */}
-          {(!machine.services || machine.services.length === 0) && <PortTriageTable machine={machine} />}
+          {/* Port Triage (shown when no recon services exist, or when manual triage entries do) */}
+          {(!machine.services || machine.services.length === 0 || Object.keys(machine.portTriage ?? {}).length > 0) && <PortTriageTable machine={machine} />}
 
           {/* Security Findings */}
           <LabFindingsPanel machine={machine} />

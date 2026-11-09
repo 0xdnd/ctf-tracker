@@ -20,7 +20,7 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 /**
  * A "main text" is empty, whitespace-only, a placeholder, or literally just the entry's own name
  * (the symptom of a row whose real command was never captured and got stamped with its own name
- * instead — see rev-powershell-3-base64 / rev-powershell-5-stderr-support-base64).
+ * instead).
  */
 const PLACEHOLDER_RE = /^(todo|tbd|n\/?a|placeholder|coming soon|tba|xxx|\.\.\.)$/i;
 

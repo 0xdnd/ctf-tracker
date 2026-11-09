@@ -24,11 +24,13 @@ interface PasteImportPanelProps {
   onApplied?: (count: number) => void;
   /** Focus the text box on mount. */
   focusOnMount?: boolean;
+  /** When given, shows a "Skip" button that lets a first-time visitor close the card without importing. */
+  onSkip?: () => void;
   className?: string;
 }
 
 /** Paste a list of solved boxes, review what matched, then apply. Nothing changes until Apply is pressed. */
-export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, focusOnMount, className = '' }) => {
+export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, focusOnMount, onSkip, className = '' }) => {
   const uid = useId();
   const { machines, batchUpdateMachineStatus, loadCatalog, soundEnabled } = useCtfStore(
     useShallow((s) => ({
@@ -263,6 +265,16 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
               ? newRows.length === 0 ? 'No new boxes to mark yet.' : 'Nothing changes until you press Apply.'
               : 'Nothing to import yet.'}
         </p>
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full max-sm:flex-col-reverse">
+        {onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="text-xs text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
+          >
+            Skip, I&apos;m starting fresh
+          </button>
+        )}
         <button
           type="button"
           onClick={apply}
@@ -272,6 +284,7 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
           <Check className="w-4 h-4" aria-hidden="true" />
           <span>{preview ? 'Preview only: nothing is saved' : text.trim() ? `Apply: ${countsLabel}` : 'Apply import'}</span>
         </button>
+        </div>
       </div>
     </section>
   );

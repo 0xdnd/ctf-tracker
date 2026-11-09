@@ -19,10 +19,10 @@ const METADATA_ONLY_RETIRED = INITIAL_MACHINES.filter(
   (m) => m.platform === 'HTB' && m.isActive === false && m.tags.length === 0 && !m.hint && !m.writeupUrl
 ).length;
 
-// INITIAL_MACHINES + activeMachines.json hold only the 1,027 HTB and THM rows; PG and VulnHub rows
+// INITIAL_MACHINES + activeMachines.json hold only the 1,031 HTB and THM rows; PG and VulnHub rows
 // come from src/data/catalogSources and join at runtime (loadMachinesCatalog). The copy counts all of them.
-const HTB_THM_TOTAL = 1027;
-const PURE_CTF_TOTAL = 1372;
+const HTB_THM_TOTAL = 1031;
+const PURE_CTF_TOTAL = 1376;
 
 const UI_FILES = [
   'src/components/auth/OperatorProfileModal.tsx',
@@ -67,7 +67,7 @@ describe('hard-coded catalog counts', () => {
     expect(read('scripts/gen-content-pages.cjs')).toContain('catalogCounts.htbThm');
     // A scope-naming phrase may only sit next to the HTB+THM count.
     for (const file of ['README.md', 'public/llms.txt', ...UI_FILES]) {
-      expect(read(file), file).not.toMatch(/1,?372 (?:HTB and THM|HTB & THM|Hack The Box and TryHackMe)/);
+      expect(read(file), file).not.toMatch(/1,?37[26] (?:HTB and THM|HTB & THM|Hack The Box and TryHackMe)/);
     }
   });
 

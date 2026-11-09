@@ -6,7 +6,7 @@ const CORRECTED: Array<{ id: string; name: string; os?: string; difficulty?: str
   { id: 'htb-escapetwo', name: 'EscapeTwo', difficulty: 'Easy' },
   { id: 'htb-bastion', name: 'Bastion', difficulty: 'Easy' },
   { id: 'htb-flight', name: 'Flight', difficulty: 'Hard' },
-  { id: 'htb-jarmis', name: 'Jarmis', difficulty: 'Medium' },
+  { id: 'htb-jarmis', name: 'Jarmis', difficulty: 'Hard' },
   { id: 'htb-luke', name: 'Luke', os: 'BSD' },
   { id: 'htb-sunday', name: 'Sunday', os: 'Other' },
   { id: 'htb-codeparttwo', name: 'CodePartTwo', os: 'Linux', difficulty: 'Easy' },

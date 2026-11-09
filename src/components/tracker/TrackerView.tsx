@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   RotateCcw, 
@@ -12,7 +12,8 @@ import {
   SlidersHorizontal,
   Share2,
   X,
-  Upload
+  Upload,
+  ClipboardPaste
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
@@ -66,6 +67,8 @@ const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
   { value: 'COMPLETED', label: 'Pwned' },
 ];
 
+export const IMPORT_PANEL_HINT_ID = 'tracker-import-panel';
+
 export const TrackerView: React.FC = () => {
   const {
     machines: liveMachines,
@@ -100,13 +103,17 @@ export const TrackerView: React.FC = () => {
   );
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Nothing solved yet (or the welcome card asked for it): offer the paste importer above the board.
   const storageReady = useCtfStore((s) => s.isDeepStorageLoaded);
   const hasSolved = useCtfStore((s) => s.machines.some((m) => m.status === 'root' || m.status === 'completed'));
   const [importDismissed, setImportDismissed] = useState(false);
   const importRequested = new URLSearchParams(location.search).get('import') === '1';
-  const showImportPanel = storageReady && !importDismissed && (!hasSolved || importRequested);
+  const importSkipped = useOnboardingStore((s) => s.dismissedHints.includes(IMPORT_PANEL_HINT_ID));
+  // Bumped by the Import menu so an already-open card remounts and takes focus again.
+  const [importNonce, setImportNonce] = useState(0);
+  const showImportPanel = storageReady && !importDismissed && (importRequested || (!hasSolved && !importSkipped));
 
   // The filter drawer chunk is fetched the first time it is opened, then kept mounted for its exit animation.
   const filterDrawerOpen = useCtfStore((s) => s.filterDrawerOpen);
@@ -455,6 +462,16 @@ export const TrackerView: React.FC = () => {
   );
 
   const importItems: OverflowItem[] = [
+    {
+      id: 'solved',
+      label: 'Import solved boxes',
+      icon: <ClipboardPaste className="w-3.5 h-3.5" />,
+      onSelect: () => {
+        setImportDismissed(false);
+        setImportNonce((n) => n + 1);
+        navigate('/tracker?import=1');
+      },
+    },
     {
       id: 'scan',
       label: 'Import scan output',
@@ -843,11 +860,17 @@ export const TrackerView: React.FC = () => {
       {showImportPanel && (
         <React.Suspense fallback={null}>
           <PasteImportPanel
-            focusOnMount={importRequested}
+            key={importNonce}
+            focusOnMount={importRequested || importNonce > 0}
             onApplied={() => {
               // One batched update with the store write: the tour moves to its last card before the panel goes,
               // so it never shows the import step without its target.
               useOnboardingStore.getState().advanceTourFrom('import');
+              setImportDismissed(true);
+            }}
+            onSkip={() => {
+              useOnboardingStore.getState().advanceTourFrom('import');
+              useOnboardingStore.getState().dismissHint(IMPORT_PANEL_HINT_ID);
               setImportDismissed(true);
             }}
             className="mb-4"

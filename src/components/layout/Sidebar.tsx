@@ -31,6 +31,7 @@ import { useTrackerCounts } from '../../hooks/useTrackerCounts';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { countDueReviews } from '../../utils/spacedRepetition';
+import { countVaultItems } from '../../utils/vaultCount';
 import { isTauriTarget } from '../../utils/runtimeTarget';
 import { openInNewTab } from '../../utils/openInNewTab';
 
@@ -56,6 +57,8 @@ export const Sidebar: React.FC = () => {
     machines, 
     soundEnabled,
     setOperatorModalOpen,
+    credentials,
+    lootItems,
   } = useCtfStore(
     useShallow((s) => ({
       activeTab: s.activeTab,
@@ -65,10 +68,13 @@ export const Sidebar: React.FC = () => {
       machines: s.machines,
       soundEnabled: s.soundEnabled,
       setOperatorModalOpen: s.setOperatorModalOpen,
+      credentials: s.credentials,
+      lootItems: s.lootItems,
     }))
   );
 
   const { totalMachines, rootedMachines, footholdMachines, pwnPercentage } = useTrackerCounts(machines);
+  const vaultCount = useMemo(() => countVaultItems(machines, credentials, lootItems), [machines, credentials, lootItems]);
 
   // Reviews due: recomputed when the machine list changes and as time passes, so a review that
   // comes due while the app stays open (or the tab sat in the background) shows up without a reload.
@@ -102,7 +108,7 @@ export const Sidebar: React.FC = () => {
       path: '/vault',
       label: 'Vault',
       icon: KeyRound,
-      badge: `${footholdMachines + rootedMachines}`,
+      badge: `${vaultCount}`,
     },
     {
       id: 'methodology',

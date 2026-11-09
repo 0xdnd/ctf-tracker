@@ -160,7 +160,12 @@ export const SettingsDropdown: React.FC = () => {
           <div className="px-2 py-1 text-[11px] font-medium text-muted flex items-center justify-between border-b border-subtle pb-1.5">
             <span>Preferences and tools</span>
             {unexportedChangesCount > 0 && (
-              <span className="text-callout-warn-fg font-normal tabular-nums">{unexportedChangesCount} unsaved</span>
+              <span
+                title="Changes since your last export. Your data is saved in this browser; the count resets when you export a backup."
+                className="text-callout-warn-fg font-normal tabular-nums"
+              >
+                {unexportedChangesCount} not backed up
+              </span>
             )}
           </div>
 

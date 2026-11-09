@@ -247,7 +247,7 @@ describe('Wave 2 lane B - tracker redesign', () => {
       expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
       fireEvent.click(trigger);
       const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
-      expect(items).toEqual(['Import scan output', 'Bulk import scan records']);
+      expect(items).toEqual(['Import solved boxes', 'Import scan output', 'Bulk import scan records']);
 
       fireEvent.click(screen.getByRole('menuitem', { name: 'Import scan output' }));
       expect(useCtfStore.getState().reconAutomationModalOpen).toBe(true);

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Pencil, Check, X, Copy, CheckCheck } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { playCyberSound } from '../../utils/helpers';
+import { sanitizeIpInput } from '../../utils/ipInput';
 
 export interface EditableIpBadgeProps {
   machineId: string;
@@ -68,11 +69,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
   const handleSave = (e?: React.MouseEvent | React.FormEvent) => {
     if (e) e.stopPropagation();
     // Sanitize input: strip accidental http://, https://, or trailing slashes/ports
-    const cleanIp = ipValue
-      .trim()
-      .replace(/^https?:\/\//i, '')
-      .replace(/\/.*$/, '')
-      .trim();
+    const cleanIp = sanitizeIpInput(ipValue);
     // An empty value clears the IP on purpose (Escape / the X button cancel instead).
     editDoneRef.current = true;
     setIsEditing(false);

@@ -81,7 +81,8 @@ describe('Sidebar component', () => {
 
       act(() => useCtfStore.getState().updateMachineStatus('a', 'root'));
       expect(badgeOf('Lab & Target Tracker').getByText('1/2')).toBeInTheDocument();
-      expect(badgeOf('Vault').getByText('1')).toBeInTheDocument();
+      // The Vault badge counts what the Vault page lists: user flag plus root flag now
+      expect(badgeOf('Vault').getByText('2')).toBeInTheDocument();
       expect(screen.getByText('50%')).toBeInTheDocument();
 
       act(() => useCtfStore.getState().updateMachine('b', { nextReviewAt: Date.now() - 1000 }));

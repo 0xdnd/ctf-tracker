@@ -302,7 +302,8 @@ describe('single title in the shell variant', () => {
     const meta = screen.getByTestId('note-meta');
     fireEvent.click(within(meta).getByRole('button', { name: '#Recon' }));
     expect(onTagClick).toHaveBeenCalledWith('recon');
-    expect(meta).toHaveTextContent('2026-01-02');
+    expect(meta).toHaveTextContent('2026');
+    expect(meta.querySelector('time')).toHaveAttribute('title', '2026-01-02');
     expect(meta).toHaveTextContent('toolx');
   });
 

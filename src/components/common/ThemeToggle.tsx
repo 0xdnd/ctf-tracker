@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
@@ -19,45 +19,14 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   className = '',
   soundEnabled = true,
   onToggle,
-  ariaLabel = 'Toggle dark and light mode',
+  ariaLabel,
 }) => {
   const { isDark, toggleTheme, prefersReducedMotion } = useTheme();
 
-  // Concentric radii & dimensional metrics: R_outer = R_inner + padding
   const dimensions = {
-    sm: {
-      width: 58,
-      height: 32,
-      padding: 3,
-      outerRadius: 6, // rounded-[6px]
-      innerRadius: 3, // rounded-[3px] (6 - 3 = 3)
-      knobWidth: 24,
-      knobHeight: 24,
-      travel: 26,
-      iconSize: 'w-3.5 h-3.5',
-    },
-    md: {
-      width: 68,
-      height: 36,
-      padding: 3,
-      outerRadius: 8, // rounded-lg (8px)
-      innerRadius: 5, // rounded-[5px] (8 - 3 = 5)
-      knobWidth: 28,
-      knobHeight: 28,
-      travel: 32,
-      iconSize: 'w-4 h-4',
-    },
-    lg: {
-      width: 80,
-      height: 40,
-      padding: 4,
-      outerRadius: 8, // rounded-lg (8px)
-      innerRadius: 4, // rounded-[4px] (8 - 4 = 4)
-      knobWidth: 32,
-      knobHeight: 32,
-      travel: 38,
-      iconSize: 'w-4.5 h-4.5',
-    },
+    sm: { box: 32, iconSize: 'w-4 h-4' },
+    md: { box: 36, iconSize: 'w-4 h-4' },
+    lg: { box: 40, iconSize: 'w-5 h-5' },
   }[size];
 
   const handleToggle = (e: React.MouseEvent | React.KeyboardEvent) => {
@@ -72,13 +41,9 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      handleToggle(e);
-    }
-  };
+  const label = ariaLabel ?? (isDark ? 'Switch to light mode' : 'Switch to dark mode');
 
-  const springTransition = prefersReducedMotion
+  const iconTransition = prefersReducedMotion
     ? { duration: 0.05 }
     : {
         type: 'spring' as const,
@@ -87,58 +52,43 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         mass: 0.4,
       };
 
+  const iconInitial = prefersReducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, rotate: -90, scale: 0.6 };
+  const iconAnimate = prefersReducedMotion
+    ? { opacity: 1 }
+    : { opacity: 1, rotate: 0, scale: 1 };
+  const iconExit = prefersReducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, rotate: 90, scale: 0.6 };
+
   return (
     <div className={`inline-flex shrink-0 items-center gap-2 select-none ${className}`}>
       <motion.button
         type="button"
-        role="switch"
-        aria-checked={!isDark}
-        aria-label={ariaLabel}
-        tabIndex={0}
+        aria-label={label}
+        title={label}
         onClick={handleToggle}
-        onKeyDown={handleKeyDown}
-        className="relative flex shrink-0 items-center cursor-pointer overflow-hidden bg-surface-sunken border border-subtle hover:border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors [@media(pointer:coarse)]:min-h-11"
-        style={{
-          width: dimensions.width,
-          height: dimensions.height,
-          borderRadius: dimensions.outerRadius,
-        }}
-        whileTap={prefersReducedMotion ? {} : { scale: 0.97 }}
+        className="bg-surface-sunken border border-subtle hover:border-strong text-secondary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11 inline-flex items-center justify-center cursor-pointer relative overflow-hidden rounded-lg"
+        style={{ width: dimensions.box, height: dimensions.box }}
+        whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
       >
-        {/* Track icons */}
-        <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
-          <Sun
-            className={`${dimensions.iconSize} text-muted transition-opacity duration-200 ${
-              !isDark ? 'opacity-0' : 'opacity-70'
-            }`}
-          />
-          <Moon
-            className={`${dimensions.iconSize} text-muted transition-opacity duration-200 ${
-              isDark ? 'opacity-0' : 'opacity-70'
-            }`}
-          />
-        </div>
-
-        {/* Sliding knob */}
-        <motion.div
-          className="absolute z-10 flex items-center justify-center border border-strong bg-surface-elevated shadow-xs"
-          style={{
-            width: dimensions.knobWidth,
-            height: dimensions.knobHeight,
-            top: '50%',
-            marginTop: -dimensions.knobHeight / 2,
-            left: dimensions.padding,
-            borderRadius: dimensions.innerRadius,
-          }}
-          animate={{ x: isDark ? dimensions.travel : 0 }}
-          transition={springTransition}
-        >
-          {isDark ? (
-            <Moon className={`${dimensions.iconSize} text-primary`} />
-          ) : (
-            <Sun className={`${dimensions.iconSize} text-primary`} />
-          )}
-        </motion.div>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={isDark ? 'moon' : 'sun'}
+            className="inline-flex items-center justify-center"
+            initial={iconInitial}
+            animate={iconAnimate}
+            exit={iconExit}
+            transition={iconTransition}
+          >
+            {isDark ? (
+              <Moon className={dimensions.iconSize} />
+            ) : (
+              <Sun className={dimensions.iconSize} />
+            )}
+          </motion.span>
+        </AnimatePresence>
       </motion.button>
 
       {/* Optional mode label */}

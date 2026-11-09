@@ -1,8 +1,12 @@
 {
-  "asOf": "2026-10-12",
+  "asOf": "2026-11-09",
   "source": "app.hackthebox.com Active tab, user-provided",
   "note": "Hack The Box active seasonal pool (20 active machines). Maintained in strict name-only compliance with HTB AUP §8.2 (zero spoilers, zero flags, zero walkthroughs).",
   "machines": [
+    { "name": "Unclaimed", "os": "Windows", "difficulty": "Medium", "releasedAt": "2026-11-07", "season": "AERO" },
+    { "name": "Takeoff", "os": "Linux", "difficulty": "Hard", "releasedAt": "2026-10-31", "season": "AERO" },
+    { "name": "DutyBound", "os": "Linux", "difficulty": "Medium", "releasedAt": "2026-10-24", "season": "AERO" },
+    { "name": "Autopilot", "os": "Windows", "difficulty": "Insane", "releasedAt": "2026-10-17", "season": "AERO" },
     { "name": "Stream", "os": "Linux", "difficulty": "Medium", "releasedAt": "2026-10-10", "season": "AERO" },
     { "name": "Touch", "os": "Windows", "difficulty": "Easy", "releasedAt": "2026-10-03", "season": "AERO" },
     { "name": "Layover", "os": "Linux", "difficulty": "Medium", "releasedAt": "2026-09-26", "season": "AERO" },
@@ -15,13 +19,9 @@
     { "name": "DarkZeroReturns", "os": "Windows", "difficulty": "Hard", "releasedAt": "2026-07-25" },
     { "name": "Bedside", "os": "Linux", "difficulty": "Medium", "releasedAt": "2026-07-18" },
     { "name": "Paperwork", "os": "Linux", "difficulty": "Easy", "releasedAt": "2026-07-11" },
-    { "name": "MakeSense", "os": "Linux", "difficulty": "Medium", "releasedAt": "2026-07-04" },
     { "name": "Enigma", "os": "Linux", "difficulty": "Easy", "releasedAt": "2026-06-27" },
     { "name": "Nimbus", "os": "Linux", "difficulty": "Hard", "releasedAt": "2026-06-20" },
-    { "name": "Checkpoint", "os": "Windows", "difficulty": "Medium", "releasedAt": "2026-06-13" },
     { "name": "Connected", "os": "Linux", "difficulty": "Easy", "releasedAt": "2026-06-06" },
-    { "name": "PingPong", "os": "Windows", "difficulty": "Insane", "releasedAt": "2026-04-25" },
-    { "name": "Garfield", "os": "Windows", "difficulty": "Hard", "releasedAt": "2026-04-04" },
-    { "name": "Eloquia", "os": "Windows", "difficulty": "Insane", "releasedAt": "2025-12-13" }
+    { "name": "PingPong", "os": "Windows", "difficulty": "Insane", "releasedAt": "2026-04-25" }
   ]
 }
