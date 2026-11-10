@@ -4,6 +4,7 @@ import App from './App';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import './index.css';
 import { isTauriTarget } from './utils/runtimeTarget';
+import { installExternalLinkHandler } from './utils/externalLinks';
 import { initServiceWorkerUpdates } from './utils/swUpdate';
 import { flushProfileSave } from './store/useCtfStore';
 import { useToastStore } from './store/useToastStore';
@@ -11,6 +12,7 @@ import { registerBackupImageProvider } from './store/backupFile';
 import { imageBackupProvider } from './utils/backupImageProvider';
 
 registerBackupImageProvider(imageBackupProvider);
+installExternalLinkHandler();
 
 // One-time cleanup of keys left behind by a removed feature.
 for (const key of ['zerobox_anthropic_api_key', 'zerobox_anthropic_remember_key', 'zerobox_anthropic_model', 'zerobox_ai_consent_redacted']) {
