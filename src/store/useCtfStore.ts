@@ -53,6 +53,7 @@ import {
   mergeImportedLoot,
   redactLootState
 } from './lootPersistence';
+import { isPlaceholderIp } from '../utils/ipInput';
 import { STARTER_MACHINES } from '../data/starterMachines';
 import { hasUserProgress, isGenuineCustom, LEGACY_CROSS_PLATFORM_NAME_SLUGS, normalizeMachineSlug } from './machineNormalization';
 import { ACTIVE_MACHINES } from '../data/activeMachines';
@@ -134,7 +135,7 @@ export type MergeBackupResult =
   | { status: 'failed'; error: string };
 
 export type BoxVectorCategory = 'ALL' | 'Web' | 'Linux PrivEsc' | 'Windows PrivEsc' | 'Active Directory' | 'Binary / Pwn' | 'Network / SMB';
-export type SortOption = 'default' | 'difficulty' | 'name' | 'ip' | 'recent';
+export type SortOption = 'default' | 'recommended' | 'difficulty' | 'name' | 'ip' | 'recent';
 export type SortDirection = 'asc' | 'desc';
 export type HtbTargetStatus = 'ALL' | 'UNCOMPLETED' | 'FOOTHOLD' | 'COMPLETED';
 export type AvailabilityFilter = 'ALL' | 'ACTIVE' | 'RETIRED';
@@ -501,9 +502,15 @@ const DEFAULT_FILTERS: FilterState = {
   selectedAreaOfInterest: 'ALL',
   selectedTechnique: 'ALL',
   selectedTags: [],
-  sortBy: 'default',
+  sortBy: 'recommended',
   sortDirection: 'asc',
   hideEmptyLanes: false,
+};
+
+/** True until the user has set a local address, a remote address or a port of their own (derived, nothing persisted). */
+export const selectTacticalVarsUnset = (s: { globalVars: GlobalVariables }): boolean => {
+  const g = s.globalVars;
+  return isPlaceholderIp(g.lhost) && isPlaceholderIp(g.targetIp) && (!g.lport || g.lport === DEFAULT_GLOBAL_VARS.lport);
 };
 
 export const getProfileStorageKey = (profileId: string) => {

@@ -174,15 +174,6 @@ export const OperatorDossierModal: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto flex-shrink-0">
               <a
-                href={links.coffee}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-3.5 py-1.5 max-sm:py-3 rounded-lg font-medium text-xs bg-surface-card hover:bg-surface-hover border border-subtle text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5 flex-shrink-0"
-              >
-                <Coffee className="w-3.5 h-3.5" />
-                <span>Buy me a coffee</span>
-              </a>
-              <a
                 href={links.portfolio}
                 target="_blank"
                 rel="noopener noreferrer"

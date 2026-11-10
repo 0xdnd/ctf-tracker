@@ -147,7 +147,6 @@ export default defineConfig(({ mode }) => {
             if (/[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|@remix-run[\\/]router|zustand|use-sync-external-store)[\\/]/.test(id)) return 'vendor-framework';
             if (id.includes('framer-motion')) return 'vendor-motion';
             if (id.includes('lucide-react')) return 'vendor-icons';
-            if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui-utils';
             if (id.includes('canvas-confetti')) return 'vendor-confetti';
             if (id.includes('jszip')) return 'vendor-zip';
           }

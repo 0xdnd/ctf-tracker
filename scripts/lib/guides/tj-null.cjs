@@ -95,9 +95,8 @@ ${nameList(SOURCE.names.pgPractice)}
   return {
     path: PATH,
     crumb: 'TJ Null list',
-    title: 'TJ Null List (2026): OSCP-Like HTB & THM Machines',
-    description:
-      'The full TJ Null OSCP list of practice machines, kept up to date, plus a free checklist to track your progress as you work through each box.',
+    title: 'TJ Null OSCP List (2026): HTB & Proving Grounds Boxes',
+    description: `TJ Null OSCP list checked ${SOURCE.asOf}: ${V3_HTB.length} Hack The Box and ${SOURCE.names.pgPlay.length + SOURCE.names.pgPractice.length} Proving Grounds machines, a suggested order, and a free offline tracker.`,
     h1: 'TJ Null OSCP list: the boxes you can track',
     lead: "The TJ Null list is a community-maintained spreadsheet of OSCP-like practice machines, mostly Hack The Box, Proving Grounds and Vulnhub. This page credits the original, shows which of its Hack The Box machines are in the ZeroBox catalogue, and gives a suggested order.",
     body,

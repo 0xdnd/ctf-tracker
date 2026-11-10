@@ -408,6 +408,19 @@ function writeupSection(m, w) {
 </section>`;
 }
 
+// Snippet wording for two writeup pages (search query wording). Facts only: platform, OS, difficulty and the catalog hint's own topic.
+const SNIPPET_OVERRIDES = {
+  'thm-recruit': {
+    title: 'TryHackMe Recruit Writeup (Linux, Medium) | ZeroBox',
+    description: 'TryHackMe Recruit writeup and attack path (Linux, Medium): web component and credential analysis for the foothold, then service permissions to escalate.',
+    h1: 'TryHackMe Recruit writeup and attack path',
+  },
+  'thm-neighbour': {
+    title: 'TryHackMe Neighbour Writeup (Linux, Easy) | ZeroBox',
+    description: 'TryHackMe Neighbour writeup and attack path (Linux, Easy): inspect the user parameter in login requests to find an IDOR, then track the room offline.',
+    h1: 'TryHackMe Neighbour writeup and attack path',
+  },
+};
 for (const m of withPage) {
   const w = m.hasSiteWriteup ? m.siteWriteup : null;
   const srcs = w ? [...MACHINE_SRC, w.relPath] : MACHINE_SRC;
@@ -475,9 +488,9 @@ for (const m of withPage) {
     mUrl(m),
     renderPage({
       path: mUrl(m),
-      title,
-      description: machineDesc(m, m.hint || template, tagList),
-      h1: hasWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`,
+      title: (SNIPPET_OVERRIDES[m.slug] || {}).title || title,
+      description: (SNIPPET_OVERRIDES[m.slug] || {}).description || machineDesc(m, m.hint || template, tagList),
+      h1: (SNIPPET_OVERRIDES[m.slug] || {}).h1 || (hasWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`),
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [m.name, mUrl(m)]],
       ld: [
@@ -574,9 +587,9 @@ for (const m of withPage) {
   parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
   const html = renderPage({
     path: '/machines/',
-    title: fitTitle(`Hack The Box Machines List: ${model.catalogCounts.htbThm.toLocaleString('en-US')} HTB & THM Boxes`, `Hack The Box Machines List: ${model.catalogCounts.htbThm.toLocaleString('en-US')} Boxes`),
-    description: `Browse ${model.catalogCounts.htbThm.toLocaleString('en-US')} Hack The Box and TryHackMe machines by platform, OS and difficulty, with attack paths for solved boxes and a free tracker.`,
-    h1: 'Hack The Box and TryHackMe machines list and tracker',
+    title: fitTitle(`Hack The Box Machines List: ${nf(model.catalogCounts.htbThm + extraTotal)} HTB, THM, PG, VulnHub`, `HTB, THM, PG & VulnHub Machines List: ${nf(model.catalogCounts.htbThm + extraTotal)} Boxes`, `Machines List: ${nf(model.catalogCounts.htbThm + extraTotal)} Boxes`),
+    description: `Free filterable list of ${nf(model.catalogCounts.htbThm + extraTotal)} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines by OS and difficulty. Track them offline, no signup.`,
+    h1: 'Hack The Box, TryHackMe, Proving Grounds and VulnHub machines list',
     body: parts.join('\n'),
     crumbs: [['Home', '/'], ['Machines', '/machines/']],
     ogType: 'website',
@@ -717,9 +730,9 @@ emit(
     '/revshells/',
     renderPage({
       path: '/revshells/',
-      title: 'Reverse Shell Cheat Sheet: PHP, Python, Bash, Netcat',
-      description: `Reverse shell cheat sheet with ${model.shellCount} copy-paste one-liners: PHP, Python, Bash, Netcat, PowerShell, Java and more, plus bind shells and TTY upgrades.`,
-      h1: 'Reverse shell one-liners by language',
+      title: `Reverse Shell Cheat Sheet: ${model.shellAvailableCount} Copy-Paste One-Liners`,
+      description: `Free reverse shell cheat sheet: ${model.shellAvailableCount} copy-paste one-liners for Bash, Python, PHP, Netcat, PowerShell and Java, plus bind shells and TTY upgrades.`,
+      h1: 'Reverse shell cheat sheet: one-liners by language',
       body,
       crumbs: [['Home', '/'], ['Reverse shells', '/revshells/']],
       ld: [{ '@context': 'https://schema.org', '@type': 'TechArticle', headline: 'Reverse shell cheat sheet', url: ORIGIN + '/revshells/', inLanguage: 'en' }],
@@ -1028,14 +1041,14 @@ for (const hub of certHubs) {
   ].join('\n');
   hubWords.cert.push([cert, wc(body)]);
   hub.url = p;
-  hub.title = fitTitle(...(cert === 'OSCP' ? [`${label} (2026): ${machines.length} ${plats.replace('Hack The Box', 'HTB').replace('TryHackMe', 'THM')} Boxes, Easy to Hard`] : []), `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
+  hub.title = fitTitle(...(cert === 'OSCP' ? [`${label}: Free List of ${machines.length} ${plats.replace('Hack The Box', 'HTB').replace('TryHackMe', 'THM')} Boxes (2026)`] : []), `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
   emit(
     'cert-hub',
     p,
     renderPage({
       path: p,
       title: hub.title,
-      description: `${machines.length} ${plats} machines ${isTrack ? `on the ${name} track` : `for ${name} preparation`}, ${ordered[0].difficulty === ordered[ordered.length - 1].difficulty ? `all ${ordered[0].difficulty}` : `grouped from ${ordered[0].difficulty} to ${ordered[ordered.length - 1].difficulty}`} with OS, platform and technique tags. Free list with links.`,
+      description: cert === 'OSCP' ? `Free list of ${machines.length} OSCP-like ${plats.replace('Hack The Box', 'HTB').replace('TryHackMe', 'THM')} machines, sorted ${ordered[0].difficulty} to ${ordered[ordered.length - 1].difficulty} with OS, platform and technique tags. Filter it, then track progress offline.` : `${machines.length} ${plats} machines ${isTrack ? `on the ${name} track` : `for ${name} preparation`}, ${ordered[0].difficulty === ordered[ordered.length - 1].difficulty ? `all ${ordered[0].difficulty}` : `grouped from ${ordered[0].difficulty} to ${ordered[ordered.length - 1].difficulty}`} with OS, platform and technique tags. Free list with links.`,
       h1: `${label}: ${machines.length} boxes by difficulty`,
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [label, p]],

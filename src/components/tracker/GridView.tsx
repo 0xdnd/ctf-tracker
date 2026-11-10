@@ -27,7 +27,7 @@ import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeEx
 import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roomLink';
 import { OsBadge } from '../common/OsBadge';
 import { PlatformBadge } from '../common/PlatformBadge';
-import { EditableIpBadge } from '../common/EditableIpBadge';
+import { CardIpBadge } from './CardIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
@@ -229,7 +229,7 @@ const GridCard = React.memo<GridCardProps>(({
         ) : (
           <>
             <div className="mt-1 flex items-center justify-between gap-2 pl-4">
-              <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+              <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
               <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
                 <Clock className="h-3 w-3 shrink-0" />
                 <span>{formatDurationHuman(m.timeSpentSeconds)}</span>

@@ -30,6 +30,8 @@ export const resolveSortMode = (
   filters: Pick<MachineFilters, 'selectedTrack' | 'selectedTracks'> & { sortBy?: SortOption },
 ): EffectiveSort => {
   const sortBy = filters.sortBy || 'default';
+  // 'recommended' (the new-user default): track order when one ordered track is active, else easiest first.
+  if (sortBy === 'recommended') return getOrderedActiveTrack(filters) ? 'track' : 'difficulty';
   return sortBy === 'default' && getOrderedActiveTrack(filters) ? 'track' : sortBy;
 };
 

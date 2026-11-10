@@ -22,7 +22,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { OsBadge } from '../common/OsBadge';
 import { PlatformBadge } from '../common/PlatformBadge';
-import { EditableIpBadge } from '../common/EditableIpBadge';
+import { CardIpBadge } from './CardIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
@@ -252,7 +252,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       ) : (
         <>
           <div className="mt-1 flex items-center justify-between gap-2 pl-4">
-            <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+            <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
             <div className={`flex items-center gap-1 font-mono text-xs tabular-nums text-muted ${REVEAL}`}>
               <Clock className="h-3 w-3" />
               <span>{formatDurationHuman(m.timeSpentSeconds)}</span>

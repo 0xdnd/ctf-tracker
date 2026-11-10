@@ -11,7 +11,7 @@ import {
   Crosshair, 
   X
 } from 'lucide-react';
-import { useCtfStore } from '../../store/useCtfStore';
+import { useCtfStore, selectTacticalVarsUnset } from '../../store/useCtfStore';
 import { useActiveTargetIp } from '../../hooks/useActiveTargetIp';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
@@ -96,6 +96,8 @@ export const FloatingPayloadBar: React.FC = () => {
   );
 
   const activeTargetIp = useActiveTargetIp();
+  // Nothing set yet: the header bar (lg+) is the one place that asks for addresses, so the chip stays out of the cards' way there.
+  const tacticalUnset = useCtfStore(selectTacticalVarsUnset);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showShellDrawer, setShowShellDrawer] = useState(false);
@@ -168,7 +170,7 @@ export const FloatingPayloadBar: React.FC = () => {
   return (
     <aside
       aria-label="Tactical Payload Bar"
-      className="hidden md:block fixed bottom-3 right-3 z-40 font-sans select-none"
+      className={`hidden md:block ${tacticalUnset ? 'lg:hidden' : ''} fixed bottom-3 right-3 z-40 font-sans select-none`}
       onKeyDown={(e) => {
         if (e.key === 'Escape' && isExpanded) setIsExpanded(false);
       }}

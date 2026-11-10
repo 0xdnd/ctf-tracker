@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { useTargetIpField } from '../../hooks/useTargetIpField';
-import { useCtfStore } from '../../store/useCtfStore';
+import { useCtfStore, selectTacticalVarsUnset } from '../../store/useCtfStore';
+import { isPlaceholderIp } from '../../utils/ipInput';
 import { useShallow } from 'zustand/react/shallow';
 import { 
   Play, 
@@ -104,6 +105,10 @@ export const UnifiedHeader: React.FC = () => {
   const [targetSearch, setTargetSearch] = useState('');
   const [copiedVar, setCopiedVar] = useState<'lhost' | 'lport' | 'target' | null>(null);
   const { displayIp: displayTargetIp, commit: commitTargetIp } = useTargetIpField();
+  // Placeholder values read as empty fields with a "set" prompt, not as fake addresses.
+  const tacticalUnset = useCtfStore(selectTacticalVarsUnset);
+  const lhostShown = isPlaceholderIp(globalVars.lhost) ? '' : globalVars.lhost;
+  const targetShown = isPlaceholderIp(displayTargetIp) ? '' : displayTargetIp;
   // Draft while typing in R; committed on blur or Enter (updateMachine bumps the unexported-change counter).
   const [targetIpDraft, setTargetIpDraft] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -479,7 +484,7 @@ export const UnifiedHeader: React.FC = () => {
         <div
           aria-label="Tactical Variables (LHOST / RHOST / LPORT)"
           data-tauri-drag-region="false"
-          className="hidden lg:flex items-center gap-0.5 h-8 px-1 rounded-lg bg-surface-sunken border border-subtle text-[11px] hover:border-strong transition-colors flex-shrink-0"
+          className={`hidden lg:flex items-center gap-0.5 h-8 px-1 rounded-lg bg-surface-sunken border ${tacticalUnset ? 'border-dashed border-callout-warn-border/60' : 'border-subtle'} text-[11px] hover:border-strong transition-colors flex-shrink-0`}
         >
           {/* L: attacker IP */}
           <div className={segmentCls} title="Attacker IP (Tun0 LHOST)">
@@ -491,7 +496,7 @@ export const UnifiedHeader: React.FC = () => {
               name="lhost"
               aria-label="Attacker IP (LHOST)"
               type="text"
-              value={globalVars.lhost || ''}
+              value={lhostShown || ''}
               onChange={(e) => {
                 setGlobalVars({ lhost: e.target.value });
                 if (copiedVar === 'lhost') {
@@ -502,8 +507,8 @@ export const UnifiedHeader: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') e.currentTarget.blur();
               }}
-              placeholder="10.10.14.X"
-              title={globalVars.lhost || '10.10.14.X'}
+              placeholder="Set IP"
+              title={lhostShown || 'Set your attacker IP (LHOST)'}
               className={`w-16 xl:w-20 ${segmentInputCls}`}
             />
             <button
@@ -529,7 +534,7 @@ export const UnifiedHeader: React.FC = () => {
               name="targetIp"
               aria-label="Target IP (RHOST)"
               type="text"
-              value={targetIpDraft ?? displayTargetIp}
+              value={targetIpDraft ?? targetShown}
               onChange={(e) => {
                 setTargetIpDraft(e.target.value);
                 if (copiedVar === 'target') {
@@ -545,13 +550,13 @@ export const UnifiedHeader: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') e.currentTarget.blur();
               }}
-              placeholder="10.10.10.X"
-              title={displayTargetIp || '10.10.10.X'}
+              placeholder="Target IP"
+              title={targetShown || 'Set the target IP (RHOST)'}
               className={`w-16 xl:w-20 ${segmentInputCls}`}
             />
             <button
               type="button"
-              onClick={() => handleCopyVar(displayTargetIp, 'target')}
+              onClick={() => handleCopyVar(targetShown, 'target')}
               className={copyReveal}
               title={copiedVar === 'target' ? 'Copied Target IP to clipboard!' : 'Copy Target IP (RHOST)'}
               aria-label="Copy Target IP"

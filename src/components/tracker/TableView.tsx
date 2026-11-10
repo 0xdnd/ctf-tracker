@@ -27,7 +27,7 @@ import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roo
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
-import { EditableIpBadge } from '../common/EditableIpBadge';
+import { CardIpBadge } from './CardIpBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
@@ -278,7 +278,7 @@ const TableRow = React.memo<TableRowProps>(({
             {m.isActive ? (
               <div className="mt-0.5 text-[11px] font-mono text-muted">HTB ToS Protected</div>
             ) : (
-              <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5 tabular-nums font-mono text-xs" />
+              <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5 tabular-nums font-mono text-xs" />
             )}
           </div>
         </div>
@@ -409,7 +409,7 @@ const StackedCard = React.memo<TableRowProps>(({
           <span>HTB ToS Protected</span>
         </span>
       ) : (
-        <EditableIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
+        <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
       )}
     </div>
     <div className="mt-2.5 flex items-center justify-between gap-2 pl-4">

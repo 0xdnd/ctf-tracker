@@ -45,6 +45,7 @@ import {
 } from '../../utils/categoryUtils';
 
 const SORT_OPTIONS: CyberSelectOption[] = [
+  { value: 'recommended', label: 'Recommended' },
   { value: 'default', label: 'Randomized' },
   { value: 'difficulty', label: 'Difficulty (Easy → Hard)' },
   { value: 'name', label: 'Target Name (A-Z)' },
@@ -59,6 +60,12 @@ const VIEW_BTN =
   'inline-flex items-center justify-center rounded-md transition-colors cursor-pointer active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 const VIEW_BTN_ON = 'bg-surface-card text-accent shadow-xs';
 const VIEW_BTN_OFF = 'text-tertiary hover:text-primary';
+
+const MOBILE_VIEWS = [
+  { mode: 'kanban', label: 'Kanban', Icon: Kanban },
+  { mode: 'table', label: 'Table', Icon: Table },
+  { mode: 'grid', label: 'Grid', Icon: LayoutGrid },
+] as const;
 
 const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
   { value: 'ALL', label: 'All' },
@@ -287,8 +294,11 @@ export const TrackerView: React.FC = () => {
   // The default entry is labelled for what it does right now: following the track, or shuffling.
   const followsTrack = resolveSortMode(filters) === 'track';
   const sortOptions = React.useMemo(
-    () => SORT_OPTIONS.map((o) => (o.value === 'default' && followsTrack ? { ...o, label: 'Track order' } : o)),
-    [followsTrack],
+    () =>
+      SORT_OPTIONS.filter((o) => !(followsTrack && o.value === 'default' && (filters.sortBy || 'default') !== 'default')).map((o) =>
+        (o.value === 'default' || o.value === 'recommended') && followsTrack ? { ...o, label: 'Track order' } : o,
+      ),
+    [followsTrack, filters.sortBy],
   );
 
   // Filter and sort machines based on active filter state
@@ -556,18 +566,6 @@ export const TrackerView: React.FC = () => {
                 <span className="font-mono text-xs tabular-nums">{activeFilterCount}</span>
               )}
             </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <TrackPicker
-              tracks={PRACTICE_TRACKS}
-              progress={trackProgress}
-              selectedTrackIds={activeTrackIds}
-              onSelect={selectTrack}
-              onOpenMulti={openTrackDrawer}
-              buttonClassName={`${TOOLBAR_BTN} h-11 px-3 flex-1 justify-start`}
-              className="flex-1"
-            />
             <button
               type="button"
               onClick={() => {
@@ -582,44 +580,38 @@ export const TrackerView: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <TrackPicker
+              tracks={PRACTICE_TRACKS}
+              progress={trackProgress}
+              selectedTrackIds={activeTrackIds}
+              onSelect={selectTrack}
+              onOpenMulti={openTrackDrawer}
+              buttonClassName={`${TOOLBAR_BTN} h-11 px-3 w-full justify-start`}
+              className="flex-1 min-w-0"
+            />
             <div role="group" aria-label="View mode" data-tour="tracker-views" className={SEGMENT_WRAP}>
-              <button
-                type="button"
-                data-testid="view-kanban-mobile"
-                aria-label="Kanban View"
-                aria-pressed={viewMode === 'kanban'}
-                onClick={() => setViewMode('kanban')}
-                className={`${VIEW_BTN} w-11 h-11 ${viewMode === 'kanban' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Kanban View"
-              >
-                <Kanban className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-table-mobile"
-                aria-label="Table View"
-                aria-pressed={viewMode === 'table'}
-                onClick={() => setViewMode('table')}
-                className={`${VIEW_BTN} w-11 h-11 ${viewMode === 'table' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Table View"
-              >
-                <Table className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-grid-mobile"
-                aria-label="Grid View"
-                aria-pressed={viewMode === 'grid'}
-                onClick={() => setViewMode('grid')}
-                className={`${VIEW_BTN} w-11 h-11 ${viewMode === 'grid' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
+              {MOBILE_VIEWS.map(({ mode, label, Icon }) => {
+                const on = viewMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    data-testid={`view-${mode}-mobile`}
+                    aria-label={`${label} View`}
+                    aria-pressed={on}
+                    onClick={() => setViewMode(mode)}
+                    className={`${VIEW_BTN} h-11 gap-1.5 text-xs font-medium ${on ? 'px-2.5' : 'w-11'} ${on ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
+                    title={`${label} View`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {on && <span>{label}</span>}
+                  </button>
+                );
+              })}
             </div>
-            {countLabel}
           </div>
+          {hiddenByFilters && countLabel}
         </div>
 
         {/* DESKTOP (>= md): search, status, then filters / sort / count / view */}
