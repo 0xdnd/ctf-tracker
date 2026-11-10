@@ -154,7 +154,7 @@ for (const route of routes) {
 
 // ---- Landing page ----
 // One description for <meta name="description">, og:description and twitter:description (kept at 155 chars or fewer).
-const META_DESC = 'Free offline CTF tracker for Hack The Box and TryHackMe, with an OSCP exam simulator, cheatsheets and a report template. No account needed.';
+const META_DESC = 'Free offline CTF tracker for Hack The Box, TryHackMe, Proving Grounds and VulnHub, with an OSCP exam simulator, cheatsheets and a report template.';
 if (META_DESC.length > 155) throw new Error(`prerender: landing description is ${META_DESC.length} chars (max 155)`);
 const nf = new Intl.NumberFormat('en-US');
 const { ctf: CTF_MACHINES, guided: GUIDED_LABS } = model.catalogCounts;
@@ -221,7 +221,7 @@ const webAppLd = {
       sameAs: [REPO_URL],
       browserRequirements: 'Requires JavaScript and modern browser',
       description:
-        'Free offline CTF tracker for Hack The Box, TryHackMe and OSCP/CPTS prep with a Kanban board, reverse shell cheatsheet and 24h OSCP exam simulator.',
+        'Free offline CTF tracker for Hack The Box, TryHackMe, Proving Grounds, VulnHub and OSCP/CPTS prep with a Kanban board, reverse shell cheatsheet and 24h OSCP exam simulator.',
       keywords: 'CTF tracker, HTB tracker, Hack The Box tracker, TryHackMe tracker, OSCP tracker, OSCP exam simulator, CTF progress tracker, pentest notes, CPTS',
       featureList: [
         'Kanban, table and grid CTF tracker for Hack The Box and TryHackMe machines',

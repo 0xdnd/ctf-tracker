@@ -1041,7 +1041,7 @@ for (const hub of certHubs) {
   ].join('\n');
   hubWords.cert.push([cert, wc(body)]);
   hub.url = p;
-  hub.title = fitTitle(...(cert === 'OSCP' ? [`${label}: Free List of ${machines.length} ${plats.replace('Hack The Box', 'HTB').replace('TryHackMe', 'THM')} Boxes (2026)`] : []), `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
+  hub.title = fitTitle(...(cert === 'OSCP' ? [`${label}: Free List of ${machines.length} ${plats.replace('Hack The Box', 'HTB').replace('TryHackMe', 'THM')} Boxes (${new Date().getFullYear()})`] : []), `${label} List: ${machines.length} ${plats} Boxes by Difficulty | ZeroBox`, `${label}: ${machines.length} ${plats} Boxes | ZeroBox`, `${label}: ${machines.length} Boxes | ZeroBox`);
   emit(
     'cert-hub',
     p,
