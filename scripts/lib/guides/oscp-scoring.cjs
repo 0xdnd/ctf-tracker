@@ -80,6 +80,14 @@ function build({ esc }) {
 <p>Per ${externalLink('https://help.offsec.com/hc/en-us/articles/360046787731-OSCP-Reporting-Requirements', "OffSec's reporting requirements")}, the report is due 24 hours after the exam ends, delivered as a PDF inside a .7z archive. Confirm the file naming and size rules on the live page. Do not plan to write from scratch: keep a running log during the exam and finish the report skeleton in the buffer hours. See the ${'<a href="/oscp-report-template/">OSCP report template</a>'} for a structure you can paste.</p>
 <h2>Practise the pacing in ZeroBox</h2>
 <p>The ZeroBox exam simulator runs a timed OSCP session with the same four-part layout. It shows live pacing against the 23 hour 45 minute exam clock, a burndown chart of points remaining against time, break countdowns, and a rabbit-hole warning when one box has had 90 minutes without a flag. Rehearse on boxes from the <a href="/tj-null-list/">TJ Null list</a> or the <a href="/oscp-like-machines/">OSCP-like machine catalogue</a>, then read what the burndown chart says about where your time went.</p>
+<h2>Next steps</h2>
+<ul>
+<li><a href="/oscp-points-calculator/">OSCP points calculator</a>: tick your flags and see your total.</li>
+<li><a href="/exam/">Exam simulator</a>: rehearse the 24 hour clock with pacing and a burndown chart.</li>
+<li><a href="/tj-null-list/">TJ Null list</a>: the community list of practice machines.</li>
+<li><a href="/oscp-like-machines/">OSCP-like machines</a>: practice boxes grouped by difficulty.</li>
+<li><a href="/cpts-exam-guide/">HTB CPTS exam guide</a>: the 10 day alternative, with its own flag and report requirements.</li>
+</ul>
 ${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' })}`;
 
   function externalLink(href, label) {

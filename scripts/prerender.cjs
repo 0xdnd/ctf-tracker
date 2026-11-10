@@ -142,6 +142,25 @@ for (const route of routes) {
   // Route-specific structured data: WebPage (part of the WebSite) + BreadcrumbList. The shell's own block stays untouched.
   const routeLd = webPageGraphLd({ path: route.path, name: route.title, description: route.description, crumbs: [['Home', '/'], [NAV_LABEL[route.path] || route.h1, route.path]] });
   html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(routeLd)}</script>\n</head>`, '</head>');
+  // The calculator is a standalone tool: describe it as a free WebApplication next to its WebPage graph.
+  if (route.path === '/oscp-points-calculator/') {
+    const calcLd = {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      '@id': url + '#webapp',
+      name: 'OSCP points calculator',
+      url,
+      description: route.description,
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Any',
+      browserRequirements: 'Requires JavaScript and modern browser',
+      inLanguage: 'en',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      isPartOf: { '@id': ORIGIN + '/#website' },
+    };
+    html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(calcLd)}</script>\n</head>`, '</head>');
+  }
 
   // App surfaces (user data UIs, and the thin /exam/ and /cheatsheets/ shells) stay out of the index; the content hubs are indexable.
   if (NOINDEX_ROUTES.has(route.path)) html = html.replace('</head>', '    <meta name="robots" content="noindex">\n  </head>');

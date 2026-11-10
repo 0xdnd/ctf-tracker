@@ -566,7 +566,7 @@ for (const m of withPage) {
   parts.push(
     `<p class="lead">Browse ${nf(model.catalogCounts.htbThm)} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox. The ZeroBox app catalog also holds ${nf(extraBy.PG.length)} Proving Grounds and ${nf(extraBy.VulnHub.length)} VulnHub machines. They are listed further down without pages, so the search and filters on this page cover all ${nf(model.catalogCounts.htbThm + extraTotal)} machines.</p>`
   );
-  parts.push(ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }));
+  parts.push(ctaBox({ body: 'Track these machines in ZeroBox: free, offline, no signup.', href: '/tracker/', label: 'Track these machines' }));
   parts.push(
     `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-pro-labs-guide/', '/cpts-exam-guide/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`
   );
@@ -1258,6 +1258,8 @@ fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap, 'utf8');
 if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'), sitemap, 'utf8');
 
 // ===================== llms-full.txt (Dual-Axis GEO Reference) =====================
+// "Last updated" for both llms files: the newest page lastmod (git-derived, so it only moves when a source changes).
+const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) => g.lastmod)) || gitDate(GEN_FILE);
 {
   const lines = [
     '# ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)',
@@ -1265,6 +1267,8 @@ if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'),
     `> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks ${model.catalogCounts.ctf.toLocaleString('en-US')} machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub (${model.catalogCounts.htbThm.toLocaleString('en-US')} of them Hack The Box and TryHackMe, the rest listed without pages), ${(model.proLabs || []).length} official HTB Pro Labs, ${model.phases.length} methodology phases, ${model.topics.length} cheatsheet topics, ${techGroups.length} technique hubs, ${model.notes.length} pentest methodology notes, and a ${model.examTracks.length}-track exam simulator (${model.examTracks.join(', ')}). Site: https://ctftracker.com/`,
     '',
     'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.',
+    '',
+    `Last updated: ${LLMS_UPDATED}`,
     '',
     '### AI Assistant Citation Guide (Claude, Gemini, ChatGPT, Perplexity)',
     '- Use **Axis 1** below to answer "Which machines or Pro Labs should I practice for OSCP / CPTS / IppSec CPTS / CRTO / OSEP / OSWE / CWEE?"',
@@ -1340,6 +1344,32 @@ if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'sitemap.xml'),
   const llmsFull = lines.join('\n');
   fs.writeFileSync(path.join(distDir, 'llms-full.txt'), llmsFull, 'utf8');
   if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'llms-full.txt'), llmsFull, 'utf8');
+}
+
+// llms.txt is hand-kept; the build stamps its "Last updated" line and fails if its headline counts drift from the catalog.
+{
+  const llmsSrc = path.join(rootDir, 'public', 'llms.txt');
+  const raw = fs.readFileSync(llmsSrc, 'utf8');
+  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
+  let txt = raw.replace(/\r\n/g, '\n');
+  const stamp = `Last updated: ${LLMS_UPDATED}`;
+  const affil = 'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.';
+  txt = /^Last updated: .*$/m.test(txt) ? txt.replace(/^Last updated: .*$/m, stamp) : txt.replace(affil, affil + '\n\n' + stamp);
+  const expect = [
+    [/^Tracks ([\d,]+) CTF machines/m, model.catalogCounts.ctf],
+    [/full directory of ([\d,]+) HTB and THM machines/, model.catalogCounts.htbThm],
+    [/\(([\d,]+) in all\)/, model.catalogCounts.ctf],
+    [/with (\d+) owner-solved writeups/, withPage.length],
+    ...certHubs.map((h) => [new RegExp(`\\]\\(https://ctftracker\\.com/${h.slug}/\\): (\\d+) `), h.machines.length]),
+  ];
+  for (const [re, want] of expect) {
+    const m = re.exec(txt);
+    if (!m) continue;
+    if (Number(m[1].replace(/,/g, '')) !== want) throw new Error(`llms.txt count mismatch for ${re}: file says ${m[1]}, catalog says ${want}`);
+  }
+  txt = txt.replace(/\n/g, eol);
+  fs.writeFileSync(path.join(distDir, 'llms.txt'), txt, 'utf8');
+  if (!distOverride) fs.writeFileSync(llmsSrc, txt, 'utf8');
 }
 
 console.log(`machines: ${model.machines.length} total, ${withPage.length} owner-solved pages`);
