@@ -86,6 +86,7 @@ function build({ esc }) {
 <li><a href="/exam/">Exam simulator</a>: rehearse the 24 hour clock with pacing and a burndown chart.</li>
 <li><a href="/tj-null-list/">TJ Null list</a>: the community list of practice machines.</li>
 <li><a href="/oscp-like-machines/">OSCP-like machines</a>: practice boxes grouped by difficulty.</li>
+<li><a href="/techniques/active-directory/">Active Directory techniques</a>: practice machines and key commands for the AD set.</li>
 <li><a href="/cpts-exam-guide/">HTB CPTS exam guide</a>: the 10 day alternative, with its own flag and report requirements.</li>
 </ul>
 ${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' })}`;

@@ -90,7 +90,7 @@ ${nameList(SOURCE.names.pgPractice)}
 <li>Medium Windows and domain boxes to build Active Directory habits: ${esc(names(medWin, 5))}.</li>
 <li>Hard boxes last, once the first three feel routine: ${esc(names(hard, 3))}.</li>
 </ol>
-<p>Then run a timed rehearsal in the <a href="/exam/">exam simulator</a> and check your pacing against the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget</a> guide.</p>`;
+<p>Then run a timed rehearsal in the <a href="/exam/">exam simulator</a> and check your pacing against the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget</a> guide. Keep notes in the shape of the <a href="/oscp-report-template/">OSCP report template</a> from the first box, so the write-up is already structured when the exam ends. To drill one skill at a time, the <a href="/techniques/active-directory/">Active Directory</a> hub groups the domain boxes.</p>`;
 
   return {
     path: PATH,

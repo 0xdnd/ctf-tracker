@@ -193,10 +193,37 @@ function related(m) {
     if (!list) continue;
     for (const o of list) if (o !== m) score.set(o, (score.get(o) || 0) + 1 + (o.platform === m.platform ? 0.1 : 0) + (o.os === m.os ? 0.1 : 0));
   }
-  return [...score.entries()]
+  const picked = [...score.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
     .slice(0, 6)
     .map((e) => e[0]);
+  // Few tag matches: top up to RELATED_MIN with other solved machines on the same practice list or technique hub (catalog facts only).
+  if (picked.length < RELATED_MIN) {
+    const myHubs = new Set(machineTech(m).map((e) => e.g.slug));
+    const fill = new Map();
+    for (const o of withPage) {
+      if (o === m || picked.includes(o)) continue;
+      const lists = (o.certifications || []).filter((c) => (m.certifications || []).includes(c)).length;
+      const hubs = machineTech(o).filter((e) => myHubs.has(e.g.slug)).length;
+      if (!lists && !hubs) continue;
+      fill.set(o, lists * 2 + hubs + (o.platform === m.platform ? 0.3 : 0) + (o.os === m.os ? 0.2 : 0) + (o.difficulty === m.difficulty ? 0.2 : 0));
+    }
+    picked.push(...[...fill.entries()].sort((a, b) => b[1] - a[1] || (fillUsed.get(a[0]) || 0) - (fillUsed.get(b[0]) || 0) || spread(m, a[0]) - spread(m, b[0]) || a[0].name.localeCompare(b[0].name)).slice(0, RELATED_MIN - picked.length).map((e) => e[0]));
+    for (const o of picked) fillUsed.set(o, (fillUsed.get(o) || 0) + 1);
+  }
+  return picked;
+}
+const RELATED_MIN = 4;
+const fillUsed = new Map(); // how often a machine was chosen as a fallback so far, to spread links evenly
+// Stable pseudo-random tie-break so equally good fallback machines are spread across pages instead of the same few collecting every link.
+const spread = (m, o) => { let x = 7; for (const c of m.slug + ":" + o.slug) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; };
+// Why a fallback machine is listed when it shares no displayed tag: a practice list or a technique hub both machines have.
+function relatedWhy(m, r) {
+  const list = (r.certifications || []).find((c) => (m.certifications || []).includes(c));
+  if (list) return `both are on the ${CERT_NAME[list] || list} list`;
+  const myHubs = new Set(machineTech(m).map((e) => e.g.slug));
+  const hub = machineTech(r).find((e) => myHubs.has(e.g.slug));
+  return hub ? `both map to ${hub.g.name}` : '';
 }
 
 const wordCounts = [];
@@ -470,11 +497,12 @@ for (const m of withPage) {
     techniqueExplained(m),
     machinePlace(m, plat),
     rel.length
-      ? `<h2>Related solved machines</h2><p class="note">Other machines I solved that share techniques with ${esc(m.name)}.</p><ul>${rel
+      ? `<h2>Related solved machines</h2><p class="note">Other machines I solved that share tags, a technique hub or a practice list with ${esc(m.name)}.</p><ul>${rel
           .map((r) => {
             const mine = new Set(shown.map((e) => tagKey(e.label)));
             const shared = shownTags(r).map((e) => e.label).filter((l) => mine.has(tagKey(l)));
-            return `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})${shared.length ? `, shares ${esc(joinList(shared))}` : ''}</li>`;
+            const why = shared.length ? `shares ${esc(joinList(shared))}` : esc(relatedWhy(m, r));
+            return `<li><a href="${mUrl(r)}">${esc(r.name)}</a> (${esc(r.platform)} ${esc(r.os)} ${esc(r.difficulty)})${why ? `, ${why}` : ''}</li>`;
           })
           .join('')}</ul>`
       : '',
@@ -610,6 +638,7 @@ for (const t of model.topics) {
         `<h2 id="${esc(i.id)}">${esc(i.title)}</h2><p>${esc(i.description)}</p>${code(i.commandTemplate)}${(i.tags || []).length ? `<p>${i.tags.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</p>` : ''}`
     ),
     ctaBox({ title: 'Use these commands with your values filled in.', body: 'ZeroBox interpolates target IP, domain and credentials into every command.', href: '/cheatsheets/', label: 'Open the cheatsheet' }),
+    (() => { const hs = techGroups.filter((g) => (g.cheatsheetTopics || []).includes(t.slug)); return hs.length ? `<h2>Practise by technique</h2><div class="chips">${hs.map((g) => `<a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length})</a>`).join('')}</div>` : ''; })(),
     `<h2>More cheatsheets</h2><div class="chips">${model.topics.filter((o) => o !== t).map((o) => `<a href="/cheatsheets/${o.slug}/">${esc(o.name)}</a>`).join('')}<a href="/revshells/">Reverse shells</a></div>`,
   ].join('\n');
   emit(
@@ -660,6 +689,7 @@ for (const ph of model.phases) {
           )
           .join('')
     ),
+    (() => { const hs = techGroups.filter((g) => g.methodologyPhase === ph.slug); return hs.length ? `<h2>Practise this phase</h2><p class="note">Technique hubs that belong to this phase, each with key commands and matching machines.</p><div class="chips">${hs.map((g) => `<a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length})</a>`).join('')}</div>` : ''; })(),
     `<h2>All phases</h2><ol>${model.phases.map((o) => `<li>${o === ph ? `<strong>${esc(o.shortTitle)}</strong>` : `<a href="/methodology/${o.slug}/">${esc(o.shortTitle)}</a>`}</li>`).join('')}</ol>`,
     ctaBox({ title: 'Tick items off per machine.', body: 'ZeroBox tracks checklist progress for every target.', href: '/methodology/', label: 'Open the checklist' }),
   ].join('\n');
@@ -1008,6 +1038,27 @@ function guideNote(cert) {
   const list = links.length > 1 ? `${links.slice(0, -1).join(', ')} and ${links[links.length - 1]}` : links[0];
   return `<p>Read next: ${list}.</p>`;
 }
+// Technique hubs the machines on a certification list map to, with how many of the list's machines each covers.
+function certTechniques(hub) {
+  const rows = techGroups
+    .map((g) => [g, hub.machines.filter((m) => TECH.matchesMachine(g, m)).length])
+    .filter((e) => e[1] > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name));
+  if (!rows.length) return '';
+  return `<h2>Techniques on the ${esc(hub.name)} list</h2><p class="note">How many of the ${hub.machines.length} machines on this list match each technique hub, by their catalog tags. A machine can match several.</p><div class="chips">${rows.map(([g, n]) => `<a href="/techniques/${g.slug}/">${esc(g.name)} (${n})</a>`).join('')}</div>`;
+}
+// The CPTS list and the IppSec track overlap heavily: say how, and list the machines only the CPTS list has.
+function certOverlap(hub) {
+  const cpts = certHubs.find((h) => h.cert === 'CPTS');
+  const ipp = certHubs.find((h) => h.cert === 'IppSec-CPTS');
+  if (!cpts || !ipp || (hub !== cpts && hub !== ipp)) return '';
+  const both = cpts.machines.filter((m) => ipp.machines.includes(m));
+  if (hub === ipp) {
+    return `<h2>How this differs from the CPTS list</h2><p>${both.length} of the ${ipp.machines.length} machines here are also tagged CPTS in the catalog. The <a href="/cpts-like-machines/">CPTS-like machines</a> list holds ${cpts.machines.length}, so it adds ${cpts.machines.length - both.length} that are not on the IppSec track. This page keeps only the Hack The Box boxes that have an IppSec video walkthrough.</p>`;
+  }
+  const extra = orderMachines(cpts.machines.filter((m) => !ipp.machines.includes(m)));
+  return `<h2>On the CPTS list but not on the IppSec track</h2><p>${both.length} of these ${cpts.machines.length} machines also appear on the <a href="/ippsec-cpts-machines/">Unofficial IppSec CPTS track</a>. The other ${extra.length} are listed here only.</p><ul>${extra.map((m) => `<li>${nameCell(m)} (${esc(m.platform)} ${esc(m.os)} ${esc(m.difficulty)})</li>`).join('')}</ul>`;
+}
 for (const hub of certHubs) {
   const { cert, name, machines } = hub;
   const p = `/${hub.slug}/`;
@@ -1024,7 +1075,7 @@ for (const hub of certHubs) {
   const intro = [
     `<p class="lead">${esc(info.what)}</p>`,
     `<p>The ${machines.length} machines on this page are tagged ${esc(name)} in the ZeroBox catalog and come from ${esc(plats)}${ippsecCount ? ` (${ippsecCount} with IppSec video walkthroughs)` : ''}. By operating system that is ${esc(osLine(machines))}. ${esc(info.why)}</p>`,
-    `<p>To use the list, start at the easiest group and work upward, spending real time on enumeration before looking at any help. After each box, write down the foothold, the escalation and what you would do faster next time. ${solved ? `${solved} of these are targets I solved myself, so they link to an attack path summary on this site; the others link to the official room. ` : 'Each machine links to its official room. '}Once you are comfortable, rehearse under pressure in the <a href="/exam/">exam simulator</a>, and follow the phase-by-phase <a href="/methodology-guide/">pentest methodology checklist</a> so you do not skip steps. You can also browse the <a href="/techniques/">technique hubs</a> to drill one skill at a time.</p>`,
+    `<p>To use the list, start at the easiest group and work upward, spending real time on enumeration before looking at any help. After each box, write down the foothold, the escalation and what you would do faster next time. ${solved ? `${solved} of these ${solved === 1 ? 'is a target' : 'are targets'} I solved myself, so ${solved === 1 ? 'it links' : 'they link'} to an attack path summary on this site; the others link to the official room. ` : 'Each machine links to its official room. '}Once you are comfortable, rehearse under pressure in the <a href="/exam/">exam simulator</a>, and follow the phase-by-phase <a href="/methodology-guide/">pentest methodology checklist</a> so you do not skip steps. You can also browse the <a href="/techniques/">technique hubs</a> to drill one skill at a time.</p>`,
   ].join('\n');
   const introWords = wc(intro);
   if (introWords < 150 || introWords > 250) console.warn(`cert intro ${cert}: ${introWords} words (target 150-250)`);
@@ -1035,6 +1086,8 @@ for (const hub of certHubs) {
     `<h2>Jump to difficulty</h2>${jump}`,
     `<h2>${esc(name)} machine list by difficulty</h2>`,
     tables,
+    certTechniques(hub),
+    certOverlap(hub),
     ctaBox({ title: 'Track your progress.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' }),
     `<h2>Related guides</h2><div class="chips">${guideChips(CERT_GUIDES[cert] || [])}<a href="/exam/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
     `<p class="note">Machines belong to ${esc(plats)}. ZeroBox is not affiliated with the platforms or certification bodies named here.</p>`,
@@ -1092,6 +1145,30 @@ function matchBasis(g, hasEditorRows) {
   const extra = [...(words.length ? [`contains the word ${orList([...new Set(words)])}`] : []), ...(text.length ? [`contains the text ${orList([...new Set(text)])}`] : [])];
   return `Listed when a machine has a catalog tag that is one of: ${exact.join(', ')}${extra.length ? `; or a tag that ${extra.join(' or ')}` : ''}. Capital letters, hyphens and underscores are ignored, and the tags that matched come first in each row.${hasEditorRows ? ' "Editor-mapped" marks machines assigned to this topic by hand because none of their tags match.' : ''}`;
 }
+// Per-hub facts from the catalog: platform split, practice lists it appears on, tags that travel with it, and the solved machines with pages.
+function techGlance(g) {
+  const items = [];
+  const plat = {};
+  for (const m of g.machines) plat[m.platform] = (plat[m.platform] || 0) + 1;
+  items.push(`<li>By platform: ${Object.entries(plat).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${esc(PLATFORM_NAME[k] || k)}`).join(', ')}.</li>`);
+  const lists = certHubs.map((h) => [h, h.machines.filter((m) => g.machines.includes(m)).length]).filter((e) => e[1] > 0).sort((a, b) => b[1] - a[1]);
+  if (lists.length) items.push(`<li>On these practice lists: ${lists.slice(0, 6).map(([h, n]) => `<a href="/${h.slug}/">${esc(h.name)}</a> (${n})`).join(', ')}.</li>`);
+  const counts = new Map();
+  for (const m of g.machines) {
+    const seen = new Set();
+    for (const e of shownTags(m)) {
+      const k = tagKey(e.label);
+      if (seen.has(k) || e.raws.some((t) => TECH.matchesTag(g, t))) continue;
+      seen.add(k);
+      counts.set(k, { e, n: (counts.get(k) ? counts.get(k).n : 0) + 1 });
+    }
+  }
+  const top = [...counts.values()].filter((c) => c.n >= 2).sort((a, b) => b.n - a.n || a.e.label.localeCompare(b.e.label)).slice(0, 6);
+  if (top.length) items.push(`<li>Tags that most often appear alongside it: ${top.map((c) => `${tagLink(c.e)} (${c.n})`).join(', ')}.</li>`);
+  const solvedList = orderMachines(g.machines.filter((m) => m.hasPage)).slice(0, 8);
+  if (solvedList.length) items.push(`<li>Solved by me, with a page here: ${solvedList.map((m) => `<a href="${mUrl(m)}">${esc(m.name)}</a> (${esc(m.os)} ${esc(m.difficulty)})`).join(', ')}.</li>`);
+  return `<h2>${esc(g.name)} at a glance</h2><ul>${items.join('')}</ul>`;
+}
 for (const g of techGroups) {
   const p = `/techniques/${g.slug}/`;
   const { jump, tables, ordered } = machineSections(g.machines, g);
@@ -1121,6 +1198,7 @@ for (const g of techGroups) {
     `<h2>${esc(g.name)} machines (${g.machines.length})</h2>`,
     `<p class="note">${solved.length ? `${solved.length} of these are machines I solved myself and are listed first within each difficulty. ` : ''}${esc(osLine(g.machines))}.</p>`,
     `<p class="note">${esc(matchBasis(g, g.machines.some((m) => isEditorOnly(g, m))))}</p>`,
+    techGlance(g),
     jump,
     tables,
     related.length ? `<h2>Related techniques</h2><div class="chips">${related.map((o) => `<a href="/techniques/${o.slug}/">${esc(o.name)} (${o.machines.length})</a>`).join('')}<a href="/techniques/">All techniques</a></div>` : '',
