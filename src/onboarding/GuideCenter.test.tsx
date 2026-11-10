@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GuideControls } from './GuideControls';
 import { OnboardingLayer } from './OnboardingLayer';
 import { useOnboardingStore } from './useOnboardingStore';
@@ -103,6 +103,12 @@ class TestPointerEvent extends MouseEvent {
     this.pointerId = init.pointerId ?? 1;
   }
 }
+
+// OnboardingLayer lazy-loads GuideCenter and TourRunner. The first test to open one pays for the module load, and under
+// a loaded full run that can outlast findBy's 1s default. Load both once up front so every lazy() resolves from cache.
+beforeAll(async () => {
+  await Promise.all([import('./GuideCenter'), import('./TourRunner')]);
+}, 60_000);
 
 beforeEach(reset);
 afterEach(() => {
