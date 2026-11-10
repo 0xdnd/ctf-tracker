@@ -4,7 +4,7 @@
 // Old URLs that moved get small noindex redirect stubs (meta refresh + canonical); they stay out of the sitemap.
 const fs = require('fs');
 const path = require('path');
-const { getModel, getGuides, getWriteups, slugify, isRealSummary, isStartingPointHub } = require('./lib/content-model.cjs');
+const { getModel, getGuides, getWriteups, hasOwnerWriteup, isNoindexMachine, slugify, isRealSummary, isStartingPointHub } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
 const { normTag, tagKey, HEAD_GENERIC_TAGS, createTagCleaner } = require('./lib/tags.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
@@ -516,6 +516,7 @@ for (const m of withPage) {
     mUrl(m),
     renderPage({
       path: mUrl(m),
+      noindex: isNoindexMachine(m),
       title: (SNIPPET_OVERRIDES[m.slug] || {}).title || title,
       description: (SNIPPET_OVERRIDES[m.slug] || {}).description || machineDesc(m, m.hint || template, tagList),
       h1: (SNIPPET_OVERRIDES[m.slug] || {}).h1 || (hasWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`),
@@ -1300,7 +1301,8 @@ const staticUrls = [
   ...routes.map((r) => ({ loc: r.path, lastmod: gitDate('src/seo/routeMeta.json') })),
 ];
 const { SITEMAP_EXCLUDE } = require('./lib/sitemap-policy.cjs');
-const seen = new Set(SITEMAP_EXCLUDE);
+// Machine pages parked as noindex (no owner writeup yet, see isNoindexMachine) stay live but are not listed.
+const seen = new Set([...SITEMAP_EXCLUDE, ...withPage.filter(isNoindexMachine).map(mUrl)]);
 const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, lastmod: p.lastmod || gitDate(GEN_FILE) }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
 // Real indexable paths for the 404 page's "Did you mean" (public/404.js fetches it; small, fixed).
 fs.writeFileSync(path.join(distDir, '404-paths.json'), JSON.stringify(all.map((u) => u.loc).filter((l) => l !== '/')), 'utf8');
@@ -1373,7 +1375,7 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
     lines.push('| Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |');
     lines.push('|---|---|---|---|---|---|---|');
     for (const m of ordered) {
-      const u = m.hasPage ? ORIGIN + mUrl(m) : (m.roomUrl || ORIGIN + '/machines/');
+      const u = m.hasPage && !isNoindexMachine(m) ? ORIGIN + mUrl(m) : (m.roomUrl || ORIGIN + '/machines/');
       const tags = shownTags(m).slice(0, 5).map((e) => e.label).join(', ');
       lines.push(`| ${m.name} | ${m.platform} | ${m.os} | ${m.difficulty} | ${m.hasIppsec ? 'Yes' : 'No'} | ${tags} | ${u} |`);
     }
@@ -1437,13 +1439,22 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
     [/^Tracks ([\d,]+) CTF machines/m, model.catalogCounts.ctf],
     [/full directory of ([\d,]+) HTB and THM machines/, model.catalogCounts.htbThm],
     [/\(([\d,]+) in all\)/, model.catalogCounts.ctf],
-    [/with (\d+) owner-solved writeups/, withPage.length],
+    [/with (\d+) owner-solved writeups/, withPage.filter(hasOwnerWriteup).length],
     ...certHubs.map((h) => [new RegExp(`\\]\\(https://ctftracker\\.com/${h.slug}/\\): (\\d+) `), h.machines.length]),
   ];
+  // Counts move with the weekly HTB sync, so a stale number is rewritten (with a warning) instead of failing the deploy build.
   for (const [re, want] of expect) {
     const m = re.exec(txt);
-    if (!m) continue;
-    if (Number(m[1].replace(/,/g, '')) !== want) throw new Error(`llms.txt count mismatch for ${re}: file says ${m[1]}, catalog says ${want}`);
+    if (!m) {
+      console.warn(`gen-content-pages: llms.txt has no match for ${re}; count not checked (update the pattern or the text)`);
+      continue;
+    }
+    const have = Number(m[1].replace(/,/g, ''));
+    if (have === want) continue;
+    const fresh = m[1].includes(',') ? want.toLocaleString('en-US') : String(want);
+    console.warn(`gen-content-pages: llms.txt count for ${re} was ${m[1]}, rewritten to ${fresh}`);
+    // The count is the last digit run in each pattern's match (a slug in the prefix may contain digits), so splice at lastIndexOf.
+    txt = txt.replace(re, (whole) => { const i = whole.lastIndexOf(m[1]); return whole.slice(0, i) + fresh + whole.slice(i + m[1].length); });
   }
   txt = txt.replace(/\n/g, eol);
   fs.writeFileSync(path.join(distDir, 'llms.txt'), txt, 'utf8');

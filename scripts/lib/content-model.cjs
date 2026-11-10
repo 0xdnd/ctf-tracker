@@ -250,4 +250,15 @@ function getWriteups() {
   return writeupsCache;
 }
 
-module.exports = { getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };
+/**
+ * Machine pages that stay live but are noindex,follow and out of sitemap.xml / llms until the owner adds a real writeup.
+ * Only slugs listed here are affected (GSC: "crawled - not indexed", no writeup). Add a slug to park another thin page.
+ * A listed page becomes indexable automatically once hasOwnerWriteup(m) is true (site writeup, gitbook writeup, or notes >= 250 words).
+ */
+const NOINDEX_UNTIL_WRITEUP = ['htb-granny', 'htb-redeemer'];
+const OWNER_NOTES_MIN_WORDS = 250;
+const hasOwnerWriteup = (m) =>
+  Boolean(m.hasSiteWriteup || m.ownWriteup || String(m.myNotes || '').split(/\s+/).filter(Boolean).length >= OWNER_NOTES_MIN_WORDS);
+const isNoindexMachine = (m) => NOINDEX_UNTIL_WRITEUP.includes(m.slug) && !hasOwnerWriteup(m);
+
+module.exports = { hasOwnerWriteup, isNoindexMachine, NOINDEX_UNTIL_WRITEUP, getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };

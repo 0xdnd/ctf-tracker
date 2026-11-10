@@ -511,7 +511,7 @@ HTB Starting Point is the guided beginner track on Hack The Box, organised into 
 | Ignition | HTB | Linux | Very Easy | No | HTTP | https://ctftracker.com/machines/htb-ignition/ |
 | Meow | HTB | Linux | Very Easy | No | Telnet, Default Credentials | https://ctftracker.com/machines/htb-meow/ |
 | Pennyworth | HTB | Linux | Very Easy | No | Jenkins, Groovy, RCE, Default Credentials | https://ctftracker.com/machines/htb-pennyworth/ |
-| Redeemer | HTB | Linux | Very Easy | No | Redis | https://ctftracker.com/machines/htb-redeemer/ |
+| Redeemer | HTB | Linux | Very Easy | No | Redis | https://app.hackthebox.com/starting-point |
 | Sequel | HTB | Linux | Very Easy | No | MySQL, MariaDB, Default Credentials | https://ctftracker.com/machines/htb-sequel/ |
 | Tactics | HTB | Windows | Very Easy | No | SMB | https://ctftracker.com/machines/htb-tactics/ |
 | Vaccine | HTB | Linux | Very Easy | No | FTP, SQLi, Sudo, Tar Wildcard | https://ctftracker.com/machines/htb-vaccine/ |

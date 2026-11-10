@@ -14013,8 +14013,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "status": "completed",
     "tags": [
       "CVE-2017-7269",
-      "HTB",
-      "techniques"
+      "HTB"
     ],
     "certifications": [],
     "roomUrl": "https://app.hackthebox.com/machines/granny",
@@ -14033,8 +14032,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "skillsLearned": [
       "Identifying known vulnerabilities",
       "Identifying stable processes",
-      "Basic Windows privilege escalation",
-      "techniques"
+      "Basic Windows privilege escalation"
     ],
     "officialPdf": "14-Granny_HTB_Official_writeup_Tamarisk.pdf"
   },

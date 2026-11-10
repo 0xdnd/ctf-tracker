@@ -362,7 +362,8 @@ function renderPage(opts) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>${esc(opts.title)}</title>
   <meta name="description" content="${desc}" />  <meta name="theme-color" content="#09090b" />
-  <link rel="canonical" href="${url}" />
+  <link rel="canonical" href="${url}" />${opts.noindex ? `
+  <meta name="robots" content="noindex,follow" />` : ''}
 ${ICON_LINKS}
   <link rel="manifest" href="/manifest.webmanifest" />
   ${THEME_SCRIPT}
