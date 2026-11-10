@@ -7,7 +7,7 @@ import {
   Type, 
   PanelLeft,
   Wand2} from 'lucide-react';
-import { useNotesWorkspaceStore, resolvedTabId } from '../../store/useNotesWorkspaceStore';
+import { useNotesWorkspaceStore, resolvedTabId, clampDockWidth } from '../../store/useNotesWorkspaceStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { NotesWorkspaceTabStrip } from './NotesWorkspaceTabStrip';
@@ -15,6 +15,7 @@ import { SnippetTabContent } from './SnippetTabContent';
 import { DockQuickSwitcher } from './DockQuickSwitcher';
 import { DockNotesList } from './DockNotesList';
 import { DockBody } from './DockBody';
+import { DockResizeHandle } from './DockResizeHandle';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { TemplatizeNotesModal } from '../cheatsheet/TemplatizeNotesModal';
@@ -29,6 +30,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
     isOpen,
     isPinned,
     dockSize,
+    dockWidthPx,
     viewMode,
     language,
     fontSize,
@@ -46,6 +48,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
       isOpen: s.isOpen,
       isPinned: s.isPinned,
       dockSize: s.dockSize,
+      dockWidthPx: s.dockWidthPx,
       viewMode: s.viewMode,
       language: s.language,
       fontSize: s.fontSize,
@@ -209,6 +212,10 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
   if (!isOpen) return null;
 
+  // The aside is a flex sibling of <main>, so its width alone reflows the page.
+  const customWidth =
+    dockWidthPx === null ? null : clampDockWidth(dockWidthPx, typeof window !== 'undefined' ? window.innerWidth : 1280);
+
   return (
     <>
       {/* ========================================================
@@ -217,12 +224,16 @@ export const PersistentNotesWorkspace: React.FC = () => {
          ======================================================== */}
       <aside
         aria-label="Field Notes Workspace Dock"
-        className={`hidden md:flex flex-col border-l border-subtle bg-surface-card z-20 flex-shrink-0 transition-[box-shadow,background-color,border-color,color] duration-200 overflow-hidden shadow-xl ${
-          dockSize === 'expanded'
-            ? 'w-[68vw] min-w-[540px] max-w-6xl'
-            : 'w-[48vw] min-w-[420px] max-w-4xl'
-        }`}
+        style={customWidth === null ? undefined : { width: customWidth, minWidth: 0, maxWidth: 'none' }}
+        className={`relative hidden md:flex flex-col border-l border-subtle bg-surface-card z-20 flex-shrink-0 transition-[box-shadow,background-color,border-color,color] duration-200 overflow-hidden shadow-xl ${
+          customWidth !== null
+            ? ''
+            : dockSize === 'expanded'
+              ? 'w-[68vw] min-w-[540px] max-w-6xl'
+              : 'w-[48vw] min-w-[420px] max-w-4xl'
+        } [&[data-dock-dragging=true]_iframe]:pointer-events-none`}
       >
+        <DockResizeHandle />
         <DockBody
           targetBar={targetBar}
           onNewNote={() => setNewNoteOpen(true)}

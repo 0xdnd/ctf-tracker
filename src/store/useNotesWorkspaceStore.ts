@@ -6,6 +6,24 @@ import { INITIAL_CHEATSHEET } from '../data/cheatsheetsData';
 import type { CheatsheetCommand } from '../types';
 
 export type DockSize = 'normal' | 'expanded';
+
+/** Narrowest the desktop dock can be dragged. */
+export const DOCK_MIN_PX = 320;
+/** Space always left for the main page beside the dock. */
+export const DOCK_MAIN_MIN_PX = 480;
+
+export const dockMaxPx = (viewportWidth: number): number => Math.max(DOCK_MIN_PX, viewportWidth - DOCK_MAIN_MIN_PX);
+
+export const clampDockWidth = (px: number, viewportWidth: number): number =>
+  Math.round(Math.min(dockMaxPx(viewportWidth), Math.max(DOCK_MIN_PX, px)));
+
+/** Pixel width of a preset (mirrors the 48vw/420-896 and 68vw/540-1152 classes the dock used before). */
+export const dockPresetWidth = (size: DockSize, viewportWidth: number): number =>
+  size === 'expanded'
+    ? Math.min(1152, Math.max(540, viewportWidth * 0.68))
+    : Math.min(896, Math.max(420, viewportWidth * 0.48));
+
+const currentViewportWidth = (): number => (typeof window !== 'undefined' && window.innerWidth) || 1280;
 export type ObsidianViewMode = 'reading' | 'split' | 'raw';
 export type ObsidianNoteLanguage = 'en' | 'he';
 export type NoteFontSize = 'sm' | 'base' | 'lg' | 'xl';
@@ -60,6 +78,8 @@ export interface NotesWorkspaceState {
   isOpen: boolean;
   isPinned: boolean; // When true, stays open as user navigates across routes
   dockSize: DockSize;
+  /** Custom desktop dock width from dragging the divider; null = use the dockSize preset. */
+  dockWidthPx: number | null;
   /** Dock left sidebar view, or null when it is closed. Persisted (replaces the old notesListCollapsed key). */
   dockLeftView: NotesPanelView | null;
   /** Dock right sidebar (outline and backlinks). Persisted. */
@@ -104,6 +124,10 @@ export interface NotesWorkspaceState {
   setIsPinned: (isPinned: boolean) => void;
   setDockSize: (size: DockSize) => void;
   toggleDockSize: () => void;
+  /** Sets a custom dock width (clamped to the viewport), or null to fall back to the preset. */
+  setDockWidth: (px: number | null) => void;
+  /** Clears the custom width and returns to the default ('normal') preset. */
+  resetDockWidth: () => void;
   setViewMode: (mode: ObsidianViewMode) => void;
   setLanguage: (lang: ObsidianNoteLanguage) => void;
   setFontSize: (size: NoteFontSize) => void;
@@ -132,6 +156,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
       isOpen: false,
       isPinned: true,
       dockSize: 'normal',
+      dockWidthPx: null,
       dockLeftView: 'files',
       dockRightOpen: false,
       viewMode: 'reading',
@@ -291,12 +316,19 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
 
       setIsPinned: (isPinned: boolean) => set({ isPinned }),
 
-      setDockSize: (dockSize: DockSize) => set({ dockSize }),
+      // Choosing a preset drops any custom dragged width.
+      setDockSize: (dockSize: DockSize) => set({ dockSize, dockWidthPx: null }),
 
       toggleDockSize: () =>
         set((state) => ({
           dockSize: state.dockSize === 'normal' ? 'expanded' : 'normal',
+          dockWidthPx: null,
         })),
+
+      setDockWidth: (px: number | null) =>
+        set({ dockWidthPx: px === null || !Number.isFinite(px) ? null : clampDockWidth(px, currentViewportWidth()) }),
+
+      resetDockWidth: () => set({ dockSize: 'normal', dockWidthPx: null }),
 
       setViewMode: (viewMode: ObsidianViewMode) => set({ viewMode }),
 
@@ -375,6 +407,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
         } else if (persistedLeft !== null && !VALID_PANEL_VIEWS.includes(persistedLeft as NotesPanelView)) {
           merged.dockLeftView = 'files';
         }
+        if (typeof merged.dockWidthPx !== 'number' || !Number.isFinite(merged.dockWidthPx)) merged.dockWidthPx = null;
         if (typeof merged.dockRightOpen !== 'boolean') merged.dockRightOpen = false;
         delete (merged as { notesListCollapsed?: unknown }).notesListCollapsed;
         if (!Array.isArray(merged.recentNoteIds)) merged.recentNoteIds = [];
@@ -388,6 +421,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
         activeTabId: state.activeTabId,
         isPinned: state.isPinned,
         dockSize: state.dockSize,
+        dockWidthPx: state.dockWidthPx,
         dockLeftView: state.dockLeftView,
         dockRightOpen: state.dockRightOpen,
         viewMode: state.viewMode,
