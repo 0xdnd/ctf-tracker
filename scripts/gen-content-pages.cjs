@@ -1426,7 +1426,7 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
   if (!distOverride) fs.writeFileSync(path.join(rootDir, 'public', 'llms-full.txt'), llmsFull, 'utf8');
 }
 
-// llms.txt is hand-kept; the build stamps its "Last updated" line and fails if its headline counts drift from the catalog.
+// llms.txt is hand-kept; the build stamps its "Last updated" line and rewrites (with a warning) any headline count that drifts from the catalog.
 {
   const llmsSrc = path.join(rootDir, 'public', 'llms.txt');
   const raw = fs.readFileSync(llmsSrc, 'utf8');
@@ -1439,7 +1439,7 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
     [/^Tracks ([\d,]+) CTF machines/m, model.catalogCounts.ctf],
     [/full directory of ([\d,]+) HTB and THM machines/, model.catalogCounts.htbThm],
     [/\(([\d,]+) in all\)/, model.catalogCounts.ctf],
-    [/with (\d+) owner-solved writeups/, withPage.filter(hasOwnerWriteup).length],
+    [/with ([\d,]+) owner-solved writeups/, withPage.filter(hasOwnerWriteup).length],
     ...certHubs.map((h) => [new RegExp(`\\]\\(https://ctftracker\\.com/${h.slug}/\\): (\\d+) `), h.machines.length]),
   ];
   // Counts move with the weekly HTB sync, so a stale number is rewritten (with a warning) instead of failing the deploy build.
@@ -1451,7 +1451,7 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
     }
     const have = Number(m[1].replace(/,/g, ''));
     if (have === want) continue;
-    const fresh = m[1].includes(',') ? want.toLocaleString('en-US') : String(want);
+    const fresh = want >= 1000 ? want.toLocaleString('en-US') : String(want);
     console.warn(`gen-content-pages: llms.txt count for ${re} was ${m[1]}, rewritten to ${fresh}`);
     // The count is the last digit run in each pattern's match (a slug in the prefix may contain digits), so splice at lastIndexOf.
     txt = txt.replace(re, (whole) => { const i = whole.lastIndexOf(m[1]); return whole.slice(0, i) + fresh + whole.slice(i + m[1].length); });
