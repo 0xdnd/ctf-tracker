@@ -71,9 +71,15 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(400);
 
-      // Verify header presence and title
+      // Verify header presence and title. The field manual is an intentional full-screen workspace with no
+      // global app header (see getShellChrome / fullscreenNotesChrome.test.tsx), so there it must be absent instead.
       const header = page.locator('header').first();
-      await expect(header).toBeVisible();
+      if (route === '/#/field-manual') {
+        await expect(page.getByText('Field manual', { exact: true }).first()).toBeVisible();
+        await expect(header).toHaveCount(0);
+      } else {
+        await expect(header).toBeVisible();
+      }
 
       // Check main content container rendered
       const main = page.locator('main').first();
@@ -182,8 +188,8 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
     await page.goto('/#/target/thm-rootme', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
 
-    const bodyText = await page.locator('body').innerText();
-    expect(bodyText.includes('RootMe') || bodyText.includes('THM') || bodyText.includes('10.10')).toBe(true);
+    // Poll instead of reading once: on a cold dev server the lazy dossier chunk can take longer than the fixed wait.
+    await expect(page.locator('body')).toContainText(/RootMe|THM|10\.10/, { timeout: 30_000 });
 
     // Switch tabs: Recon, Flags Vault, Checklist
     const reconTab = page.locator("[data-testid='tab-recon'], button:has-text('RECON')").first();
@@ -206,8 +212,36 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   // TEST 5: Field Manual & Notes Workspace
   // --------------------------------------------------------------------------
   test('TC-05: Field manual notes search and multi-tab viewer', async ({ page }) => {
+    // A fresh profile starts with an empty field manual by design (it only shows the user's own notes), so seed a
+    // small vault straight into the app's IndexedDB store, then reload so the app hydrates it.
     await page.goto('/#/field-manual', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(800);
+    await expect(page.getByText('Your field manual is empty').first()).toBeVisible({ timeout: 30_000 });
+    await page.evaluate(async () => {
+      const mk = (id: string, title: string, category: string, md: string) => ({
+        id, title, titleEn: title, category, rawCategory: category, subCategory: 'General', tags: ['privilege'],
+        difficulty: 'Intermediate', summary: title, commands: [], relPath: `${title}.md`, rawMarkdown: md,
+      });
+      const payload = {
+        notes: [
+          mk('note-00--pt', '00 - Methodology Checklist', 'General', '# 00 - Methodology Checklist\n\n- [ ] Enumerate'),
+          mk('note-02--privesc', '02 - Linux Privilege Escalation', 'Linux', '# 02 - Linux Privilege Escalation\n\nsudo -l'),
+        ],
+        wikilinkMap: {},
+        importedAt: new Date().toISOString(),
+      };
+      await new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('zerobox_vault_db', 1);
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const tx = open.result.transaction('cpts_notes', 'readwrite');
+          tx.objectStore('cpts_notes').put(payload, 'vault_data');
+          tx.oncomplete = () => { open.result.close(); resolve(); };
+          tx.onerror = () => reject(tx.error);
+        };
+      });
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator("[id^='cpts-note-']").first()).toBeVisible({ timeout: 30_000 });
 
     // Verify search filter input
     const searchInput = page.locator("input[placeholder*='Search']").first();
