@@ -58,6 +58,15 @@ describe('tracker import card skip', () => {
     expect(await screen.findByTestId('paste-import-panel')).toBeInTheDocument();
   });
 
+  it('?import=1&csv=1 opens the CSV importer under the paste card, and the Import menu has an entry for it', async () => {
+    render(view('/tracker?import=1&csv=1'));
+    expect(await screen.findByTestId('csv-import-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('paste-import-panel')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(/^CSV file/)).toHaveFocus());
+    fireEvent.click(screen.getAllByRole('button', { name: 'Import' })[0]);
+    expect(screen.getByRole('menuitem', { name: 'Import machines from CSV' })).toBeInTheDocument();
+  });
+
   it('the Import menu entry brings the card back after a skip', async () => {
     render(view('/tracker'));
     fireEvent.click(await screen.findByRole('button', { name: /Skip, I'm starting fresh/ }));

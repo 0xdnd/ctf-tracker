@@ -23,7 +23,7 @@ export interface BulkPwnParseResult {
  * Normalizes a machine name for high-accuracy fuzzy matching.
  * e.g. "HTB - Pickle Rick (Retired)" -> "picklerick"
  */
-function normalizeTargetName(name: string): string {
+export function normalizeTargetName(name: string): string {
   return name
     .toLowerCase()
     .replace(/^(\[?(htb|thm|hackthebox|tryhackme)\]?[\s\-_:]*)/i, '')

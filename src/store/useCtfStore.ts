@@ -328,6 +328,7 @@ interface CtfStoreState {
   batchUpdateMachineStatus: (updates: { machineId: string; status: PipelineStatus }[]) => void;
   updateMachine: (id: string, updates: Partial<Machine>) => void;
   addCustomMachine: (machine: Omit<Machine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addCustomMachines: (machines: Omit<Machine, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
   deleteMachine: (id: string) => void;
   toggleUserFlag: (id: string, flagValue?: string) => void;
   toggleRootFlag: (id: string, flagValue?: string) => void;
@@ -1924,30 +1925,40 @@ export const useCtfStore = create<CtfStoreState>()(
         saveCustomMachinesToStorage(get().machines, profileId);
       },
 
-      addCustomMachine: (data) => {
-        const id = 'custom-' + Date.now() + '-' + data.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-        const now = new Date().toISOString();
-        // Customs are never flagged by name alone; only an explicit isActive makes them name-only.
-        const isActive = Boolean(data.isActive);
+      addCustomMachine: (data) => get().addCustomMachines([data]),
 
-        const baseMachine: Machine = {
-          ...data,
-          id,
-          isCustom: true,
-          isActive,
-          timeSpentSeconds: 0,
-          createdAt: now,
-          updatedAt: now,
-        };
-        const newMachine: Machine = isActive ? sanitizeActiveMachine(baseMachine) : baseMachine;
+      // One state write and one save for the whole list (a CSV import must not re-save the profile per row).
+      addCustomMachines: (drafts) => {
+        if (drafts.length === 0) return;
+        const stamp = Date.now();
+        const now = new Date().toISOString();
+        const usedIds = new Set(get().machines.map((m) => m.id));
+        const added = drafts.map((data) => {
+          const base = 'custom-' + stamp + '-' + data.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          let id = base;
+          for (let n = 2; usedIds.has(id); n++) id = `${base}-${n}`;
+          usedIds.add(id);
+          // Customs are never flagged by name alone; only an explicit isActive makes them name-only.
+          const isActive = Boolean(data.isActive);
+          const baseMachine: Machine = {
+            ...data,
+            id,
+            isCustom: true,
+            isActive,
+            timeSpentSeconds: 0,
+            createdAt: now,
+            updatedAt: now,
+          };
+          return isActive ? sanitizeActiveMachine(baseMachine) : baseMachine;
+        });
         set((state) => ({
-          machines: [newMachine, ...state.machines],
-          unexportedChangesCount: (state.unexportedChangesCount || 0) + 1,
+          machines: [...added, ...state.machines],
+          unexportedChangesCount: (state.unexportedChangesCount || 0) + added.length,
         }));
         const profileId = get().currentProfileId || 'guest';
         get().saveProfileData(profileId);
         saveCustomMachinesToStorage(get().machines, profileId);
-        broadcastCrossTabMessage('MACHINE_ADDED', { machine: newMachine, profileId });
+        for (const machine of added) broadcastCrossTabMessage('MACHINE_ADDED', { machine, profileId });
       },
 
       deleteMachine: (id) => {

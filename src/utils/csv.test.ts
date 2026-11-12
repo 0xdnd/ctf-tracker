@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { escapeCsvCell, toCsv } from './csv';
+import fc from 'fast-check';
+import { escapeCsvCell, parseCsv, toCsv } from './csv';
 
 describe('escapeCsvCell', () => {
   it('quotes cells with a comma', () => {
@@ -46,5 +47,61 @@ describe('toCsv', () => {
 
   it('can omit the BOM', () => {
     expect(toCsv(['a'], [], { bom: false })).toBe('a');
+  });
+});
+
+describe('parseCsv', () => {
+  it('reads plain rows with CRLF, LF and CR line ends', () => {
+    const want = [['a', 'b'], ['1', '2']];
+    expect(parseCsv('a,b\r\n1,2')).toEqual(want);
+    expect(parseCsv('a,b\n1,2')).toEqual(want);
+    expect(parseCsv('a,b\r1,2')).toEqual(want);
+  });
+
+  it('strips a UTF-8 BOM', () => {
+    expect(parseCsv('﻿Name,OS\r\nLame,Linux')).toEqual([['Name', 'OS'], ['Lame', 'Linux']]);
+  });
+
+  it('does not add a row for a trailing line break', () => {
+    expect(parseCsv('a,b\r\n1,2\r\n')).toEqual([['a', 'b'], ['1', '2']]);
+    expect(parseCsv('a\n\n')).toEqual([['a'], ['']]);
+    expect(parseCsv('')).toEqual([]);
+  });
+
+  it('reads quoted cells with commas, doubled quotes and embedded newlines', () => {
+    expect(parseCsv('"a,b","say ""hi""","l1\r\nl2"\nx,y,z')).toEqual([
+      ['a,b', 'say "hi"', 'l1\r\nl2'],
+      ['x', 'y', 'z'],
+    ]);
+  });
+
+  it('keeps empty cells, including a trailing one', () => {
+    expect(parseCsv('a,,c\n,b,')).toEqual([['a', '', 'c'], ['', 'b', '']]);
+    expect(parseCsv('a,""\n')).toEqual([['a', '']]);
+  });
+
+  it('supports another delimiter', () => {
+    expect(parseCsv('a;b\n"1;2";3', ';')).toEqual([['a', 'b'], ['1;2', '3']]);
+  });
+
+  it('round-trips toCsv output', () => {
+    const headers = ['Name', 'Note'];
+    const rows = [['Lame', 'say "hi", ok'], ['Two\nLines', ''], ['', 'x']];
+    expect(parseCsv(toCsv(headers, rows))).toEqual([headers, ...rows]);
+  });
+
+  it('round-trips arbitrary cells (formula-looking cells excluded: the writer guards those)', () => {
+    const cell = fc
+      .string({ maxLength: 12, unit: fc.constantFrom(...'ab ,"\n\r\'=-é1'.split('')) })
+      .filter((s) => !/^[=+\-@\t\r]/.test(s));
+    const row = fc.array(cell, { minLength: 2, maxLength: 4 });
+    fc.assert(
+      fc.property(fc.array(row, { minLength: 1, maxLength: 5 }), (rows) => {
+        const width = rows[0].length;
+        const even = rows.map((r) => r.slice(0, width).concat(Array(Math.max(0, width - r.length)).fill('')));
+        expect(parseCsv(toCsv(even[0], even.slice(1)))).toEqual(even);
+      }),
+      { numRuns: 200 }
+    );
   });
 });

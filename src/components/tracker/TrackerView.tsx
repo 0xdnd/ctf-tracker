@@ -31,7 +31,7 @@ const TableView = React.lazy(() => import('./TableView').then((m) => ({ default:
 const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
 const MultiRecordImportModal = React.lazy(() => import('./MultiRecordImportModal').then((m) => ({ default: m.MultiRecordImportModal })));
-const PasteImportPanel = React.lazy(() => import('../import/PasteImportPanel').then((m) => ({ default: m.PasteImportPanel })));
+const ImportPanels = React.lazy(() => import('../import/ImportPanels').then((m) => ({ default: m.ImportPanels })));
 const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
@@ -116,7 +116,9 @@ export const TrackerView: React.FC = () => {
   const storageReady = useCtfStore((s) => s.isDeepStorageLoaded);
   const hasSolved = useCtfStore((s) => s.machines.some((m) => m.status === 'root' || m.status === 'completed'));
   const [importDismissed, setImportDismissed] = useState(false);
-  const importRequested = new URLSearchParams(location.search).get('import') === '1';
+  const importParams = new URLSearchParams(location.search);
+  const importRequested = importParams.get('import') === '1';
+  const csvRequested = importRequested && importParams.get('csv') === '1';
   const importSkipped = useOnboardingStore((s) => s.dismissedHints.includes(IMPORT_PANEL_HINT_ID));
   // Bumped by the Import menu so an already-open card remounts and takes focus again.
   const [importNonce, setImportNonce] = useState(0);
@@ -480,6 +482,16 @@ export const TrackerView: React.FC = () => {
         setImportDismissed(false);
         setImportNonce((n) => n + 1);
         navigate('/tracker?import=1');
+      },
+    },
+    {
+      id: 'csv',
+      label: 'Import machines from CSV',
+      icon: <Upload className="w-3.5 h-3.5" />,
+      onSelect: () => {
+        setImportDismissed(false);
+        setImportNonce((n) => n + 1);
+        navigate('/tracker?import=1&csv=1');
       },
     },
     {
@@ -851,8 +863,9 @@ export const TrackerView: React.FC = () => {
 
       {showImportPanel && (
         <React.Suspense fallback={null}>
-          <PasteImportPanel
+          <ImportPanels
             key={importNonce}
+            csvRequested={csvRequested}
             focusOnMount={importRequested || importNonce > 0}
             onApplied={() => {
               // One batched update with the store write: the tour moves to its last card before the panel goes,
