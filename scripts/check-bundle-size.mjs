@@ -17,7 +17,8 @@ const MAX_ENTRY_BYTES = 560 * KB;
 // 2026-11-08 (notes Mermaid diagrams): measured 3,384,229 B total (145 B over: ~400 B lazy-import glue in
 // ObsidianMarkdownBody plus ~20 B from an unrelated GridView edit); baseline +1 KB so limit = 3,385,210 B.
 // user-approved 2026-11-08: +50 KB for notes dock upgrade (baseline +50 KB; entry limit unchanged).
-const BASELINE_TOTAL_BYTES = 3_015_000 + 111 * 1024;
+// user-approved 2026-11-12: +25 KB for CSV machine import (lazy) and OSCP vs CPTS guide; measured 3,366.5 KB total vs 3,360.9 KB limit (entry limit unchanged).
+const BASELINE_TOTAL_BYTES = 3_015_000 + 136 * 1024;
 const MAX_TOTAL_BYTES = Math.floor(BASELINE_TOTAL_BYTES * 1.10);
 // Mermaid (notes diagrams) loads only when a note with a mermaid block is read, so its chunks
 // are budgeted on their own. Measured 3,421,491 B (57 files) on 2026-11-08; limit = +10%.
