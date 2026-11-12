@@ -1,4 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  SidebarResizeHandle,
+  clampSidebarWidth,
+  readStoredSidebarWidth,
+  writeStoredSidebarWidth,
+} from './SidebarResizeHandle';
 
 export interface FieldManualShellProps {
   ribbon: React.ReactNode;
@@ -15,6 +21,8 @@ export interface FieldManualShellProps {
   narrowRight?: boolean;
   /** Width of each aside in px (default 260). */
   sidebarWidth?: number;
+  /** localStorage key; when set, the left aside gets a drag handle and remembers its width. */
+  resizeStorageKey?: string;
   /** Escape and a scrim click call this; it should close the drawers that are open as overlays. */
   onCloseDrawers: () => void;
 }
@@ -41,8 +49,30 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
   narrowLeft = isNarrow,
   narrowRight = isNarrow,
   sidebarWidth = DEFAULT_SIDEBAR_WIDTH,
+  resizeStorageKey,
   onCloseDrawers,
 }) => {
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [leftCustom, setLeftCustom] = useState<number | null>(() =>
+    resizeStorageKey ? readStoredSidebarWidth(resizeStorageKey) : null,
+  );
+  const [dragging, setDragging] = useState(false);
+  const canResize = !!resizeStorageKey && isLeftOpen && !narrowLeft;
+  const shellWidth = () => shellRef.current?.getBoundingClientRect().width ?? 0;
+  const leftWidth = resizeStorageKey && leftCustom !== null ? clampSidebarWidth(leftCustom, shellWidth()) : sidebarWidth;
+
+  const handleResize = useCallback(
+    (w: number, commit: boolean) => {
+      setLeftCustom(w);
+      if (commit && resizeStorageKey) writeStoredSidebarWidth(resizeStorageKey, w);
+    },
+    [resizeStorageKey],
+  );
+  const handleReset = useCallback(() => {
+    setLeftCustom(null);
+    if (resizeStorageKey) writeStoredSidebarWidth(resizeStorageKey, null);
+  }, [resizeStorageKey]);
+  const getShell = useCallback(() => shellRef.current, []);
   const anyDrawerOpen = (narrowLeft && isLeftOpen) || (narrowRight && isRightOpen);
   useEffect(() => {
     if (!anyDrawerOpen) return;
@@ -55,12 +85,12 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [anyDrawerOpen, onCloseDrawers]);
 
-  const asideBase = (narrow: boolean) =>
+  const asideBase = (narrow: boolean, noTransition = false) =>
     narrow
       ? 'absolute top-0 bottom-0 z-20 overflow-hidden bg-surface-card shadow-2xl transition-transform duration-150 motion-reduce:transition-none'
-      : 'flex-shrink-0 overflow-hidden bg-surface-card transition-[width] duration-150 motion-reduce:transition-none';
-  const widthFor = (narrow: boolean, open: boolean) =>
-    narrow ? { width: sidebarWidth } : { width: open ? sidebarWidth : 0 };
+      : `flex-shrink-0 overflow-hidden bg-surface-card ${noTransition ? '' : 'transition-[width] duration-150 motion-reduce:transition-none'}`;
+  const widthFor = (narrow: boolean, open: boolean, w: number = sidebarWidth) =>
+    narrow ? { width: w } : { width: open ? w : 0 };
   const leftClass = narrowLeft
     ? `left-[44px] border-r border-subtle ${isLeftOpen ? 'translate-x-0' : '-translate-x-[120%]'}`
     : isLeftOpen
@@ -74,6 +104,7 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
 
   return (
     <div
+      ref={shellRef}
       data-testid="field-manual-shell"
       className="relative isolate flex h-full w-full overflow-hidden bg-surface-base"
     >
@@ -92,10 +123,19 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
         data-state={isLeftOpen ? 'open' : 'closed'}
         aria-hidden={isLeftOpen ? undefined : true}
         {...inertProps(isLeftOpen)}
-        style={widthFor(narrowLeft, isLeftOpen)}
-        className={`${asideBase(narrowLeft)} ${leftClass}`}
+        style={widthFor(narrowLeft, isLeftOpen, leftWidth)}
+        className={`${asideBase(narrowLeft, dragging)} ${leftClass}${canResize ? ' relative' : ''}`}
       >
         {left}
+        {canResize && (
+          <SidebarResizeHandle
+            width={leftWidth}
+            getShell={getShell}
+            onResize={handleResize}
+            onReset={handleReset}
+            onDraggingChange={setDragging}
+          />
+        )}
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>

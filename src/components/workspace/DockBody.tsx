@@ -539,6 +539,7 @@ export const DockBody: React.FC<DockBodyProps> = ({
           narrowLeft={leftOverlay}
           narrowRight={rightOverlay}
           sidebarWidth={DOCK_SIDEBAR_PX}
+          resizeStorageKey="zerobox.notes.leftWidth.dock"
           onCloseDrawers={closeOverlays}
         >
           <div data-tour="notes-tabs">

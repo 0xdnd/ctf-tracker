@@ -1717,6 +1717,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     <div className={`w-full ${viewMode === 'cpts-manual' ? 'h-full' : 'space-y-6 pb-12'} text-sm`}>
       {viewMode === 'cpts-manual' ? (
         <FieldManualShell
+          resizeStorageKey="zerobox.notes.leftWidth.page"
           ribbon={
             <NotesRibbon
               activePanel={hasNotes ? ribbonActivePanel : null}
