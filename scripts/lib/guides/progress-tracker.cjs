@@ -57,7 +57,7 @@ function build({ model, esc }) {
 <p>Save scan output with <code>-oN</code> (or <code>-oA</code>) and drop the file onto a machine card, or paste raw output into the scan box. ZeroBox accepts <code>.nmap</code>, <code>.gnmap</code>, XML and plain text, and fills in the open ports so you do not retype them. Always keep the original scan files too; the import is a convenience, not a replacement for your evidence folder. The <a href="/methodology-guide/">methodology checklist</a> shows where the scan fits in the wider process.</p>
 <h2>Privacy</h2>
 <p>The tracker runs entirely in your browser. Machine records, notes, IPs and flags are stored in LocalStorage and IndexedDB on your device, and the app needs no account. Any optional feature that would contact an outside service asks first. That matters when your notes hold lab credentials or client style data, and it is the main reason to prefer a local tool for exam preparation. The trade-off is that you own the backup: export the JSON file before you clear your browser or switch devices.</p>
-<p>Once the board is set up, practise under pressure in the <a href="/exam/">exam simulator</a>, and pull ideas for your next box from the <a href="/machines/">machine directory</a>.</p>`;
+<p>Once the board is set up, practise under pressure in the <a href="/exam/">exam simulator</a>, and pull ideas for your next box from the <a href="/machines/">machine directory</a>. The <a href="/oscp-like-machines/">OSCP-like machines</a> list and the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> are good places to start.</p>`;
 
   return {
     path: PATH,

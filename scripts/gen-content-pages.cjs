@@ -597,6 +597,7 @@ for (const m of withPage) {
     `<p class="lead">Browse ${nf(model.catalogCounts.htbThm)} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox. The ZeroBox app catalog also holds ${nf(extraBy.PG.length)} Proving Grounds and ${nf(extraBy.VulnHub.length)} VulnHub machines. They are listed further down without pages, so the search and filters on this page cover all ${nf(model.catalogCounts.htbThm + extraTotal)} machines.</p>`
   );
   parts.push(ctaBox({ body: 'Track these machines in ZeroBox: free, offline, no signup.', href: '/tracker/', label: 'Track these machines' }));
+  parts.push(`<p>Preparing for an exam? Start with the <a href="/oscp-like-machines/">OSCP-like machines</a> list, or read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> before you pick boxes.</p>`);
   parts.push(
     `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-pro-labs-guide/', '/cpts-exam-guide/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`
   );
@@ -1049,6 +1050,13 @@ function certTechniques(hub) {
   if (!rows.length) return '';
   return `<h2>Techniques on the ${esc(hub.name)} list</h2><p class="note">How many of the ${hub.machines.length} machines on this list match each technique hub, by their catalog tags. A machine can match several.</p><div class="chips">${rows.map(([g, n]) => `<a href="/techniques/${g.slug}/">${esc(g.name)} (${n})</a>`).join('')}</div>`;
 }
+// One contextual sentence that links the exam hubs a certification list naturally leads to (empty when none applies).
+function certNext(cert) {
+  if (cert === 'HTB-Starting-Point') return '<p>When the tiers feel easy, move on to the <a href="/oscp-like-machines/">OSCP-like machines</a> list, or read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> to see what that exam asks for.</p>';
+  if (cert === 'OSCP') return '<p>Also weighing the Hack The Box exam? The <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> covers its format and pacing.</p>';
+  if (cert === 'CPTS') return '<p>Practising for both exams? The <a href="/oscp-like-machines/">OSCP-like machines</a> list sits alongside this one.</p>';
+  return '';
+}
 // The CPTS list and the IppSec track overlap heavily: say how, and list the machines only the CPTS list has.
 function certOverlap(hub) {
   const cpts = certHubs.find((h) => h.cert === 'CPTS');
@@ -1087,6 +1095,7 @@ for (const hub of certHubs) {
     trackId ? `<p><a href="/tracker/?track=${trackId}">Open this list in the tracker</a></p>` : '',
     intro,
     guideNote(cert),
+    certNext(cert),
     `<h2>Jump to difficulty</h2>${jump}`,
     `<h2>${esc(name)} machine list by difficulty</h2>`,
     tables,

@@ -77,7 +77,7 @@ ${table}
 <h2>Which to use for Active Directory</h2>
 <p>Both platforms have domain content. The catalogue has ${H(ad)} HTB and ${T(ad)} THM machines with Active Directory or Kerberos tags, out of ${H(win)} HTB and ${T(win)} THM Windows machines. See the <a href="/techniques/active-directory/">Active Directory</a> technique hub for the list with key commands, and <a href="/crto-like-machines/">CRTO-like machines</a> for the ones tagged for that certification.</p>
 <h2>Use both</h2>
-<p>You do not have to choose. A simple pattern is to learn a technique in a guided room, then practise it on a standalone machine, and log both in one tracker. Certification-specific lists are on the <a href="/oscp-like-machines/">OSCP</a>, <a href="/crto-like-machines/">CRTO</a> and <a href="/cpts-like-machines/">CPTS</a> pages.</p>`;
+<p>You do not have to choose. A simple pattern is to learn a technique in a guided room, then practise it on a standalone machine, and log both in one tracker. Certification-specific lists are on the <a href="/oscp-like-machines/">OSCP</a>, <a href="/crto-like-machines/">CRTO</a> and <a href="/cpts-like-machines/">CPTS</a> pages, and the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> covers that exam's format.</p>`;
 
   return {
     path: PATH,
