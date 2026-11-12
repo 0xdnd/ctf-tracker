@@ -22,6 +22,10 @@ export const OscpPointsCalculatorPage: React.FC = () => (
       <a href="/oscp-exam-scoring-and-time-budget/" className="text-accent underline underline-offset-2 hover:text-primary">
         OSCP scoring and time budget guide
       </a>
+      . You can also{' '}
+      <a href="/tracker/" className="text-accent underline underline-offset-2 hover:text-primary">
+        track your practice machines in ZeroBox
+      </a>
       .
     </p>
   </div>

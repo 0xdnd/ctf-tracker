@@ -71,7 +71,7 @@ function build({ esc }) {
       label: 'Start a mock exam',
     },
     faq,
-    related: ['/pentest-notes/', '/cpts-like-machines/', '/methodology-guide/', '/exam/', '/tracker/'],
+    related: ['/oscp-vs-cpts/', '/cpts-like-machines/', '/methodology-guide/', '/exam/', '/tracker/'],
     sources: [
       [HELP, 'Hack The Box Help Center: Academy Certifications'],
       [BLOG, 'Hack The Box: Launching HTB CPTS', 'published 2022-09-15'],

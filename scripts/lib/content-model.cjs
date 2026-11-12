@@ -261,4 +261,4 @@ const hasOwnerWriteup = (m) =>
   Boolean(m.hasSiteWriteup || m.ownWriteup || String(m.myNotes || '').split(/\s+/).filter(Boolean).length >= OWNER_NOTES_MIN_WORDS);
 const isNoindexMachine = (m) => NOINDEX_UNTIL_WRITEUP.includes(m.slug) && !hasOwnerWriteup(m);
 
-module.exports = { hasOwnerWriteup, isNoindexMachine, NOINDEX_UNTIL_WRITEUP, getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };
+module.exports = { TRACK_TO_CERT, hasOwnerWriteup, isNoindexMachine, NOINDEX_UNTIL_WRITEUP, getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };

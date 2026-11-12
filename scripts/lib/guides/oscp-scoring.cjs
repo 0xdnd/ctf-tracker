@@ -67,6 +67,14 @@ function build({ esc }) {
 <h2>The 2026 scoring change</h2>
 <p>On 21 October 2026 OffSec published its ${externalLink('https://www.offsec.com/blog/oscp-grading-update/', 'OSCP+ scoring update')}. Exams starting before 1 December 2026 at 08:00 GMT keep the fixed rule: 70 out of 100 raw points to pass. For exams starting on or after that time, OffSec uses equated scaled scoring: per its ${externalLink('https://help.offsec.com/hc/en-us/articles/54589877508884-OSCP-Equated-Scaled-Scoring-FAQ', 'scaled scoring FAQ')}, results are reported on a scale from 100 to 500 and you need 400 to pass. The raw points that equal 400 depend on your exam set and are not published.</p>
 <p>OffSec says the change affects how the final result is calculated, not the exam content, format, duration, grading requirements or proctoring, and that you do not need to change how you prepare. It also says not to treat 70 or any other raw total as a passing target, so attempt every objective, submit every flag and finish the report whatever your running count says. The ${'<a href="/oscp-points-calculator/">OSCP points calculator</a>'} applies the same rules to a flag combination.</p>
+<h2>OSCP+ expiry and renewal</h2>
+<p>OSCP+ expires three years after you earn it. Most OffSec certifications, including OSCP without the plus, do not expire. OffSec calls maintaining OSCP+ "purely optional", so renewing is your choice. There are three ways to keep the plus:</p>
+<ul>
+<li>Pass the OffSec Recertification Exam. You can buy it up to 6 months before expiry. It is one attempt, valid for 120 days from purchase, and it also lets someone whose OSCP+ has lapsed regain it.</li>
+<li>Pass another qualifying OffSec exam before expiry: OSEP, OSWA, OSED or OSEE.</li>
+<li>Use the CPE program: 120 CPE credits over the three-year cycle, plus yearly coverage through either the Annual Membership Program (AMP, $299 a year) or the Annual Maintenance Fee (AMF).</li>
+</ul>
+<p>Source: ${externalLink('https://help.offsec.com/hc/en-us/articles/35366391096596-OffSec-CPE-Program-and-Annual-Maintenance-Handbook', 'OffSec CPE Program and Annual Maintenance Handbook')} and ${externalLink('https://help.offsec.com/hc/en-us/articles/31628469995412-OffSec-Recertification-Exam-FAQ', 'OffSec Recertification Exam FAQ')} (checked 12 November 2026).</p>
 <h2>Which combinations reach 70 (old fixed rule)</h2>
 <p>This table uses the fixed 70 point line for exams starting before 1 December 2026 at 08:00 GMT. For later exams treat it as an effort guide only, since the raw points that equal a scaled 400 depend on your set.</p>
 <table><thead><tr><th>Combination</th><th>Points</th><th>Reaches 70?</th></tr></thead><tbody>${rows}</tbody></table>
@@ -88,6 +96,7 @@ function build({ esc }) {
 <li><a href="/oscp-like-machines/">OSCP-like machines</a>: practice boxes grouped by difficulty.</li>
 <li><a href="/techniques/active-directory/">Active Directory techniques</a>: practice machines and key commands for the AD set.</li>
 <li><a href="/cpts-exam-guide/">HTB CPTS exam guide</a>: the 10 day alternative, with its own flag and report requirements.</li>
+<li><a href="/oscp-vs-cpts/">OSCP vs CPTS</a>: the two exams compared side by side.</li>
 </ul>
 ${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' })}`;
 
@@ -100,7 +109,7 @@ ${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban boa
     crumb: 'OSCP scoring and time budget',
     title: 'OSCP Exam Scoring & 24h Time Budget (2026 Changes)',
     description:
-      'OSCP point structure, which combinations reach 70, an hour-by-hour 24h plan with a 90 minute rabbit-hole cap, and the December 2026 scaled scoring change.',
+      'OSCP+ scoring update: the points needed to pass, a 24h exam plan with a 90 minute rabbit-hole cap, and OSCP+ expiry and renewal.',
     h1: 'OSCP exam scoring and a 24 hour time budget',
     lead: 'The OSCP exam is 100 points across one Active Directory set and three standalone machines, and for exams starting before 1 December 2026 at 08:00 GMT you need 70 to pass. Later exams use scaled scoring (100 to 500, 400 to pass), and the raw points that equal a pass depend on your exam set; this page covers both, plus an hour-by-hour plan you can rehearse.',
     directAnswer: `<h2>How many points do you need to pass the OSCP?</h2>

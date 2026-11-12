@@ -14,6 +14,7 @@ const BUILDERS = [
   require('./guides/cpts-exam.cjs'),
   require('./guides/htb-vs-tryhackme.cjs'),
   require('./guides/htb-pro-labs.cjs'),
+  require('./guides/oscp-vs-cpts.cjs'),
 ];
 
 // Internal link targets guides may use in Related lists (label shown on the page).
@@ -40,7 +41,8 @@ const LINKS = {
   '/cpts-exam-guide/': 'HTB CPTS exam guide',
   '/htb-vs-tryhackme/': 'HTB vs TryHackMe comparison',
   '/htb-pro-labs-guide/': 'Hack The Box Pro Labs comparison guide',
-  '/crto-like-machines/': 'CRTO-like machines by difficulty',
+  '/oscp-vs-cpts/': 'OSCP vs CPTS comparison',
+  '/crto-like-machines/':'CRTO-like machines by difficulty',
 };
 
 const externalLink = (href, label) => `<a href="${esc(href)}" rel="noopener">${esc(label)}</a>`;

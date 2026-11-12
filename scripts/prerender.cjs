@@ -102,6 +102,7 @@ function exploreBlock(route) {
   let extra = '';
   if (route.path === '/methodology/') extra = `<p style="color:#a1a1aa">Want to read the phases without the app? See the <a href="/methodology-guide/" style="color:#0ea5e9">pentest methodology guide</a>.</p><h2 style="font-size:20px">Methodology phases</h2>${linkList(model.phases.map((p) => [`/methodology/${p.slug}/`, p.title]))}`;
   if (route.path === '/cheatsheets/') extra = `<h2 style="font-size:20px">Cheatsheet topics</h2>${linkList(model.topics.map((t) => [`/cheatsheets/${t.slug}/`, `${t.name} cheatsheet`]))}`;
+  if (route.path === '/oscp-points-calculator/') extra = `<p style="color:#a1a1aa">You can also <a href="/tracker/" style="color:#0ea5e9">track your practice machines in ZeroBox</a>.</p>`;
   return `<h2 style="font-size:20px;margin-top:28px">Guides and references</h2>${linkList(hubs)}${extra}`;
 }
 

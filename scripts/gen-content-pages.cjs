@@ -4,7 +4,7 @@
 // Old URLs that moved get small noindex redirect stubs (meta refresh + canonical); they stay out of the sitemap.
 const fs = require('fs');
 const path = require('path');
-const { getModel, getGuides, getWriteups, hasOwnerWriteup, isNoindexMachine, slugify, isRealSummary, isStartingPointHub } = require('./lib/content-model.cjs');
+const { TRACK_TO_CERT, getModel, getGuides, getWriteups, hasOwnerWriteup, isNoindexMachine, slugify, isRealSummary, isStartingPointHub } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
 const { normTag, tagKey, HEAD_GENERIC_TAGS, createTagCleaner } = require('./lib/tags.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
@@ -269,12 +269,13 @@ const GUIDE_LABEL = {
   '/cpts-exam-guide/': 'HTB CPTS exam guide',
   '/htb-vs-tryhackme/': 'HTB vs TryHackMe',
   '/htb-pro-labs-guide/': 'HTB Pro Labs guide',
+  '/oscp-vs-cpts/': 'OSCP vs CPTS',
 };
 const guideChips = (paths) => paths.filter((p) => guideByPath.has(p)).map((p) => `<a href="${p}">${esc(GUIDE_LABEL[p] || guideByPath.get(p).title)}</a>`).join('');
 // Guides that belong on a certification hub.
 const CERT_GUIDES = {
-  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-vs-tryhackme/', '/htb-pro-labs-guide/'],
-  CPTS: ['/cpts-exam-guide/', '/htb-pro-labs-guide/', '/htb-vs-tryhackme/'],
+  OSCP: ['/tj-null-list/', '/oscp-exam-scoring-and-time-budget/', '/oscp-vs-cpts/', '/oscp-report-template/', '/htb-vs-tryhackme/', '/htb-pro-labs-guide/'],
+  CPTS: ['/cpts-exam-guide/', '/oscp-vs-cpts/', '/htb-pro-labs-guide/', '/htb-vs-tryhackme/'],
   'IppSec-CPTS': ['/cpts-exam-guide/', '/htb-pro-labs-guide/'],
   CRTO: ['/htb-pro-labs-guide/'],
   'Active-Directory': ['/htb-pro-labs-guide/', '/cpts-exam-guide/'],
@@ -1067,6 +1068,7 @@ for (const hub of certHubs) {
     what: `${name} is a certification path covered by the machines listed on this page.`,
     why: 'Working through varied boxes builds the enumeration and exploitation habits that practical exams reward.',
   };
+  const trackId = Object.keys(TRACK_TO_CERT).find((t) => TRACK_TO_CERT[t] === cert);
   const isTrack = cert === 'HTB-Starting-Point' || cert === 'IppSec-CPTS' || cert === 'Active-Directory';
   const label = isTrack ? `${name} Machines` : `${name}-Like Machines`;
   const plats = platLabel(machines);
@@ -1082,6 +1084,7 @@ for (const hub of certHubs) {
   if (introWords < 150 || introWords > 250) console.warn(`cert intro ${cert}: ${introWords} words (target 150-250)`);
   const body = [
     ctaBox({ body: 'Track this list in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' }),
+    trackId ? `<p><a href="/tracker/?track=${trackId}">Open this list in the tracker</a></p>` : '',
     intro,
     guideNote(cert),
     `<h2>Jump to difficulty</h2>${jump}`,
@@ -1270,6 +1273,7 @@ const GUIDE_SRC = {
   '/cpts-exam-guide/': ['scripts/lib/guides/cpts-exam.cjs'],
   '/htb-vs-tryhackme/': ['scripts/lib/guides/htb-vs-tryhackme.cjs', SRC.machines],
   '/htb-pro-labs-guide/': ['scripts/lib/guides/htb-pro-labs.cjs', 'src/data/proLabsData.ts'],
+  '/oscp-vs-cpts/': ['scripts/lib/guides/oscp-vs-cpts.cjs'],
 };
 for (const g of guides) {
   const srcs = GUIDE_SRC[g.path] || ['scripts/lib/guides.cjs'];
