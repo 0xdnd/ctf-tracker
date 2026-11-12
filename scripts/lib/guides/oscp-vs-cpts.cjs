@@ -22,7 +22,7 @@ function build({ esc }) {
 
   const body = `<h2>OSCP vs CPTS at a glance</h2>
 <p>Both are hands-on exams that end in a written report, but they are built differently. The OSCP is a single day-long sprint, while the CPTS is a ten day engagement. The table uses only what OffSec and Hack The Box state on the pages linked at the bottom; confirm the current rules before you book either exam.</p>
-<table><thead><tr><th>Point</th><th>OSCP (OffSec)</th><th>CPTS (Hack The Box)</th></tr></thead><tbody>${rows}</tbody></table>
+<table><thead><tr><th scope="col">Point</th><th scope="col">OSCP (OffSec)</th><th scope="col">CPTS (Hack The Box)</th></tr></thead><tbody>${rows}</tbody></table>
 <h2>Exam length and pacing</h2>
 <p>The OSCP gives you 23 hours 45 minutes, so the plan is an hour-by-hour block schedule with a hard cap on time spent stuck. The <a href="/oscp-exam-scoring-and-time-budget/">OSCP exam scoring and time budget guide</a> sets out a 24 hour plan with a 90 minute rabbit-hole limit. The CPTS lab is open for 10 days and the clock does not stop for sleep, so pacing is a day-by-day question, and the report shares the same clock. The <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> has a day-by-day split.</p>
 <h2>What counts as a pass</h2>
