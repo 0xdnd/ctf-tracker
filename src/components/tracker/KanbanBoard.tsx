@@ -144,7 +144,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.35 : undefined,
+    opacity: isDragging ? 0.5 : undefined,
     zIndex: isDragging ? 999 : undefined,
   };
 
@@ -179,8 +179,10 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       data-testid="kanban-card"
       role="presentation"
       onClick={() => onSelect(m.id)}
-      className={`group cyber-kanban-contain relative cursor-pointer rounded-lg border p-3 transition-interactive duration-150 surface-card-depth machined-edge active:scale-[0.97] ${
-        isActiveTarget
+      className={`group cyber-kanban-contain relative cursor-pointer rounded-lg border p-3 transition-interactive duration-150 surface-card-depth machined-edge active:scale-[0.97] active:cursor-grabbing ${
+        isDragging
+          ? 'border-dashed border-accent/60 bg-surface-sunken'
+          : isActiveTarget
           ? 'border-accent bg-accent-muted ring-1 ring-accent/40'
           : 'border-subtle bg-surface-card hover:border-strong hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:transform-none'
       }`}
@@ -354,14 +356,14 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
       ref={setNodeRef}
       className={`rounded-xl border transition-colors duration-150 machined-edge overflow-hidden surface-card-depth ${
         isOver 
-          ? 'border-accent bg-accent/[0.04] ring-1 ring-accent/40' 
+          ? 'border-accent bg-accent/[0.10] ring-2 ring-accent/50' 
           : 'border-subtle bg-surface-card/60'
       } backdrop-blur-sm ${
         isMobileActive ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'
       } lg:h-[var(--kanban-h,calc(100vh-270px))] lg:min-h-[480px]`}
     >
       {/* Lane header: sentence-case title, mono count */}
-      <div className="border-b border-subtle px-3 py-2.5 bg-surface-card/90 flex-shrink-0 flex items-center justify-between gap-3 font-sans">
+      <div className={`border-b px-3 py-2.5 flex-shrink-0 flex items-center justify-between gap-3 font-sans transition-colors duration-150 ${isOver ? 'border-accent/60 bg-accent/15' : 'border-subtle bg-surface-card/90'}`}>
         <div className="flex items-center gap-2 min-w-0">
           <LaneIcon className="w-3.5 h-3.5 shrink-0 text-muted" />
           <div className="min-w-0">

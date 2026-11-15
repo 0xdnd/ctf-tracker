@@ -33,6 +33,12 @@ const TF_SRC = '/table-filter.js?v=' + crypto.createHash('sha1').update(TF_JS).d
 // Copy buttons for code blocks (public/copy-code.js), loaded only on pages whose body has a <pre> block (or where renderPage gets copyCode: true).
 const CC_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'copy-code.js'), 'utf8');
 const CC_SRC = '/copy-code.js?v=' + crypto.createHash('sha1').update(CC_JS).digest('hex').slice(0, 8);
+// Back-to-top button for the long list tables (public/back-to-top.js), loaded where renderPage gets tableFilter or backToTop: true.
+const BT_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'back-to-top.js'), 'utf8');
+const BT_SRC = '/back-to-top.js?v=' + crypto.createHash('sha1').update(BT_JS).digest('hex').slice(0, 8);
+// Language filter and search for /revshells/ (public/revshells-filter.js), loaded only where renderPage gets shellFilter: true.
+const RF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'revshells-filter.js'), 'utf8');
+const RF_SRC = '/revshells-filter.js?v=' + crypto.createHash('sha1').update(RF_JS).digest('hex').slice(0, 8);
 // Old /machines/?tag= and ?q= links go to /machines/all/ (public/machines-redirect.js), loaded only where renderPage gets redirectListQuery: true.
 const MR_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'machines-redirect.js'), 'utf8');
 const MR_SRC = '/machines-redirect.js?v=' + crypto.createHash('sha1').update(MR_JS).digest('hex').slice(0, 8);
@@ -334,7 +340,7 @@ function stampUpdated(html, modified) {
   return addByline(html, modified);
 }
 
-/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean, tableFilter?: boolean } */
+/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean, tableFilter?: boolean, backToTop?: boolean, shellFilter?: boolean } */
 /** Make every <pre> keyboard-focusable (scrollable-region-focusable) and a labelled region, named after the nearest preceding heading. */
 function a11yPres(html) {
   let last = '';
@@ -385,8 +391,10 @@ ${ICON_LINKS}
   ${THEME_SCRIPT}${opts.redirectListQuery ? `
   <script src="${MR_SRC}"></script>` : ''}
   <link rel="stylesheet" href="${CSS_HREF}" />${opts.tableFilter ? `
-  <script src="${TF_SRC}" defer></script>` : ''}${opts.copyCode || /<pre[\s>]/.test(opts.body || '') ? `
-  <script src="${CC_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
+  <script src="${TF_SRC}" defer></script>` : ''}${opts.tableFilter || opts.backToTop ? `
+  <script src="${BT_SRC}" defer></script>` : ''}${opts.copyCode || /<pre[\s>]/.test(opts.body || '') ? `
+  <script src="${CC_SRC}" defer></script>` : ''}${opts.shellFilter ? `
+  <script src="${RF_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
   <meta property="og:site_name" content="ZeroBox" />
@@ -440,6 +448,7 @@ function render404Page() {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Page not found | ZeroBox</title>
+  <meta name="description" content="This ZeroBox page does not exist. Go back to the home page or search the machine list." />
   <meta name="robots" content="noindex" />
   <meta name="theme-color" content="#09090b" />
 ${ICON_LINKS}

@@ -78,7 +78,7 @@ export const ExamHeaderCapsule: React.FC = () => {
       {/* Track Badge */}
       <span
         data-testid="exam-capsule-track"
-        className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken text-secondary border border-subtle flex-shrink-0"
+        className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken text-secondary border border-subtle flex-shrink-0"
       >
         {track}
       </span>
@@ -89,11 +89,11 @@ export const ExamHeaderCapsule: React.FC = () => {
         className="flex items-center gap-1 font-mono font-semibold text-primary flex-shrink-0"
       >
         {status === 'paused' ? (
-          <Pause className="w-3 h-3 text-callout-warn-fg flex-shrink-0" />
+          <Pause className="w-3.5 h-3.5 text-callout-warn-fg flex-shrink-0" />
         ) : (
-          <Clock className="w-3 h-3 text-accent flex-shrink-0" />
+          <Clock className="w-3.5 h-3.5 text-accent flex-shrink-0" />
         )}
-        <span className="font-mono tabular-nums">{formatSecondsToHms(remainingTime)}</span>
+        <span className="font-mono text-sm tabular-nums sm:text-base">{formatSecondsToHms(remainingTime)}</span>
         {status === 'paused' && (
           <span className="text-[11px] text-callout-warn-fg font-semibold hidden md:inline">
             [PAUSED]
@@ -120,7 +120,7 @@ export const ExamHeaderCapsule: React.FC = () => {
           {score.totalScore}
         </span>
         <span className="text-[11px] text-muted font-mono tabular-nums">
-          / {score.maxScore || 100} PTS
+          / {score.maxScore || 100}<span className="hidden sm:inline"> PTS</span>
         </span>
       </div>
 

@@ -123,7 +123,17 @@ export const TrackerView: React.FC = () => {
   const importSkipped = useOnboardingStore((s) => s.dismissedHints.includes(IMPORT_PANEL_HINT_ID));
   // Bumped by the Import menu so an already-open card remounts and takes focus again.
   const [importNonce, setImportNonce] = useState(0);
-  const wantsImportPanel = !importDismissed && (importRequested || (!hasSolved && !importSkipped));
+  // Skip folds the card away (a short height transition) before it unmounts, so the board does not jump up.
+  const [importClosing, setImportClosing] = useState(false);
+  useEffect(() => {
+    if (!importClosing) return;
+    const t = setTimeout(() => {
+      setImportDismissed(true);
+      setImportClosing(false);
+    }, 220);
+    return () => clearTimeout(t);
+  }, [importClosing]);
+  const wantsImportPanel = importClosing || (!importDismissed && (importRequested || (!hasSolved && !importSkipped)));
   const showImportPanel = storageReady && wantsImportPanel;
   // Storage can stay unavailable (private browsing): give the placeholder a bounded wait, then drop it.
   const [slotExpired, setSlotExpired] = useState(false);
@@ -510,6 +520,7 @@ export const TrackerView: React.FC = () => {
   const hasOtherFilters = activeFilterPills.length > 0;
   return (
     <div className="space-y-3 w-full">
+      <h1 className="sr-only">CTF tracker</h1>
       {multiImportOpen && (
         <React.Suspense fallback={null}>
         <MultiRecordImportModal
@@ -860,25 +871,31 @@ export const TrackerView: React.FC = () => {
       {/* The card's space is held from the first render (storage not ready, chunk still loading), so the board below stays put. */}
       {wantsImportPanel && !showImportPanel && !slotExpired && <div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}
       {showImportPanel && (
-        <React.Suspense fallback={<div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}>
-          <ImportPanels
-            key={importNonce}
-            csvRequested={csvRequested}
-            focusOnMount={importRequested || importNonce > 0}
-            onApplied={() => {
-              // One batched update with the store write: the tour moves to its last card before the panel goes,
-              // so it never shows the import step without its target.
-              useOnboardingStore.getState().advanceTourFrom('import');
-              setImportDismissed(true);
-            }}
-            onSkip={() => {
-              useOnboardingStore.getState().advanceTourFrom('import');
-              useOnboardingStore.getState().dismissHint(IMPORT_PANEL_HINT_ID);
-              setImportDismissed(true);
-            }}
-            className="mb-4"
-          />
-        </React.Suspense>
+        <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${importClosing ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}>
+          <div className={`min-h-0 ${importClosing ? 'overflow-hidden' : ''}`}>
+            <React.Suspense fallback={<div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}>
+              <ImportPanels
+                key={importNonce}
+                csvRequested={csvRequested}
+                focusOnMount={importRequested || importNonce > 0}
+                onApplied={() => {
+                  // One batched update with the store write: the tour moves to its last card before the panel goes,
+                  // so it never shows the import step without its target.
+                  useOnboardingStore.getState().advanceTourFrom('import');
+                  setImportDismissed(true);
+                }}
+                onSkip={() => {
+                  useOnboardingStore.getState().advanceTourFrom('import');
+                  useOnboardingStore.getState().dismissHint(IMPORT_PANEL_HINT_ID);
+                  setImportClosing(true);
+                  // A ?import=1 link must not bring the card back on reload.
+                  if (importRequested) navigate(location.pathname, { replace: true });
+                }}
+                className="mb-4"
+              />
+            </React.Suspense>
+          </div>
+        </div>
       )}
 
       {/* Main View Renderer */}

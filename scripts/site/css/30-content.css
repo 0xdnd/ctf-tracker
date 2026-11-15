@@ -41,6 +41,8 @@ a.tag{color:var(--text-2)}
 table{width:100%;margin:var(--s4) 0 var(--s6);border-collapse:collapse;font-size:.9375rem;font-variant-numeric:tabular-nums}
 th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 thead th{color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-bottom-color:var(--line-strong);white-space:nowrap}
+/* Long machine lists: the column header stays under the site header while the rows scroll. A collapsed-border header loses its line when stuck, so the line is an inset shadow. */
+table.list thead th{position:sticky;top:var(--header-h);z-index:2;background:var(--bg);box-shadow:inset 0 -1px 0 var(--line-strong)}
 .facts{max-width:var(--prose)}
 .facts th{width:11rem;color:var(--muted);font-size:.8125rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .tbl-scroll{margin:var(--s4) 0 var(--s6);max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -48,11 +50,16 @@ thead th{color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06e
 .tbl-scroll td{min-width:8rem}
 @media(max-width:639px){
 table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.list{display:table;overflow:visible}
+table.list td:first-child{overflow-wrap:anywhere}
 .hide-sm{display:none}
 .facts th{width:auto;white-space:nowrap}
 th,td{padding:10px}
 .cta-box{padding:var(--s4)}
 }
+/* Narrow phones: tighter list cells so the table fits without its own scroller; a long machine name may break mid-word rather than push the page wider. */
+@media(max-width:479px){table.list th,table.list td{padding:10px 6px;font-size:.875rem}table.list thead th{font-size:.6875rem}}
+@media(max-width:359px){table.list th,table.list td{padding:10px 4px}table.list thead th{letter-spacing:0}}
 @media(max-width:479px){.cta-actions{flex-direction:column;align-items:stretch;width:100%;gap:var(--s2)}.cta-actions .btn{width:100%}.cta-actions .link-arrow{justify-content:center}}
 /* Hub cards (cheatsheet and methodology hubs): one link per card, muted one-line item titles, equal heights per row. */
 .hub-grid,.hub-path{display:grid;gap:var(--s4);max-width:none;margin:var(--s5) 0 var(--s6);padding:0;list-style:none;font-size:var(--fs-body);line-height:1.5}
@@ -90,6 +97,7 @@ th,td{padding:10px}
 .card:hover{border-color:var(--line-strong);background:var(--elev);transform:translateY(-2px);box-shadow:var(--shadow-lift)}
 tbody tr{transition:background-color .12s}
 tbody tr:hover{background:var(--row-hover,var(--hover))}
+tbody tr:hover>:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 }
 @media(prefers-reduced-motion:reduce){.chips a,.card{transition:none}.card:hover{transform:none}}
 /* 404: the missing address shown as a tracker card. Tokens only, so every theme works. */
@@ -160,3 +168,7 @@ main:focus{outline:none}
 .tf-count{margin:var(--s3) 0 0;color:var(--text-2);font-size:var(--fs-small)}
 .tf-empty{margin-top:var(--s3);padding:var(--s4);border:1px dashed var(--line-strong);border-radius:var(--r-md)}
 .tf-empty p{margin:0 0 var(--s3);color:var(--text)}
+.tf:focus{outline:none}
+/* Back to top (public/table-filter.js adds it after the first screen of scrolling). Fixed, so it never moves the layout. */
+.tf-top[hidden]{display:none}
+.tf-top{position:fixed;right:var(--s4);bottom:var(--s4);z-index:40;box-shadow:var(--shadow-lift)}

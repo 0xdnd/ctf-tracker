@@ -44,10 +44,34 @@ fs.writeFileSync(
   'utf8'
 );
 
+// /field-manual is an SPA-only route (public/404.js rewrites it into the app). Give it a real 200 file that is the same noindex shell,
+// so a direct GET works. It is deliberately not in routeMeta.json, the sitemap or 404-paths.json.
+fs.mkdirSync(path.join(distDir, 'field-manual'), { recursive: true });
+fs.copyFileSync(path.join(distDir, 'app-shell.html'), path.join(distDir, 'field-manual', 'index.html'));
+
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
 const { ogImageFor } = require('./og/pages.cjs');
 const { CSS_HREF, THEME_SCRIPT, webPageGraphLd, personLd, PERSON_ID } = require('./lib/layout.cjs');
+// Date a source file last changed (its last git commit, YYYY-MM-DD); '' when git or history is unavailable. Never the build date.
+const gitDateOf = (...rels) => {
+  const ds = rels.map((rel) => {
+    try {
+      const v = require('child_process').execFileSync('git', ['log', '-1', '--format=%cs', '--', rel], { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+    } catch {
+      return '';
+    }
+  });
+  return ds.filter(Boolean).sort().pop() || '';
+};
+// Indexable app routes that get a JSON-LD dateModified (no visible byline: the static block is replaced when React mounts).
+// Each date is the last commit of the page's own source, not the shared routeMeta.json date. /exam/ is noindex and is skipped.
+const ROUTE_DATE_SRC = {
+  '/tracker/': ['src/components/tracker/TrackerView.tsx'],
+  '/methodology/': ['src/pages/MethodologyPage.tsx'],
+  '/oscp-points-calculator/': ['src/pages/OscpPointsCalculatorPage.tsx'],
+};
 // The two hero images (window + pacing card) are part of the first paint, so every width of them is precached too.
 let heroShots = [];
 try {
@@ -166,6 +190,8 @@ for (const route of routes) {
 
   // Route-specific structured data: WebPage (part of the WebSite) + BreadcrumbList. The shell's own block stays untouched.
   const routeLd = webPageGraphLd({ path: route.path, name: route.title, description: route.description, crumbs: [['Home', '/'], [NAV_LABEL[route.path] || route.h1, route.path]] });
+  const routeModified = ROUTE_DATE_SRC[route.path] ? gitDateOf(...ROUTE_DATE_SRC[route.path]) : '';
+  if (routeModified) routeLd['@graph'].find((n) => n['@type'] === 'WebPage').dateModified = routeModified;
   html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(routeLd)}</script>\n</head>`, '</head>');
   // The calculator is a standalone tool: describe it as a free WebApplication next to its WebPage graph.
   if (route.path === '/oscp-points-calculator/') {
@@ -456,6 +482,7 @@ const subs = {
   '{{FAQ_JSONLD}}': jsonLd(faqLd),
   '{{WEBAPP_JSONLD}}': jsonLd(webAppLd),
   '{{ANALYTICS_NOTE}}': analyticsNote(),
+  '{{UPDATED_DATE}}': gitDateOf('scripts/templates/landing.html', 'scripts/prerender.cjs'),
   '{{SHOT_W}}': String(shotW),
   '{{SHOT_H}}': String(shotH),
 };

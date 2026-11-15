@@ -68,3 +68,14 @@ test('the importer fits a 375px phone without sideways scrolling', async ({ page
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('Skip folds the importer away, and a ?import=1 link does not bring it back', async ({ page }) => {
+  await page.goto('/#/tracker?import=1');
+  const panel = page.getByTestId('paste-import-panel');
+  await expect(panel).toBeVisible({ timeout: 30_000 });
+
+  await panel.getByRole('button', { name: /Skip, I'm starting fresh/ }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(page).not.toHaveURL(/import=1/);
+  await expect(page.getByTestId('view-table')).toBeVisible();
+});

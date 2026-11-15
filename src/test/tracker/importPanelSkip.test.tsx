@@ -45,7 +45,8 @@ describe('tracker import card skip', () => {
     expect(await screen.findByTestId('paste-import-panel')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Skip, I'm starting fresh/ }));
-    expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument();
+    // The card folds away first (about 220 ms), then unmounts.
+    await waitFor(() => expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument());
     expect(useOnboardingStore.getState().dismissedHints).toContain(IMPORT_PANEL_HINT_ID);
 
     first.unmount();
@@ -70,7 +71,7 @@ describe('tracker import card skip', () => {
   it('the Import menu entry brings the card back after a skip', async () => {
     render(view('/tracker'));
     fireEvent.click(await screen.findByRole('button', { name: /Skip, I'm starting fresh/ }));
-    expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: 'Import' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Import solved boxes' }));

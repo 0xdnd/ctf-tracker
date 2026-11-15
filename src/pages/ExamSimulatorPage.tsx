@@ -754,6 +754,9 @@ export const ExamSimulatorPage: React.FC = () => {
                     </span>
                     <span className="text-muted text-xs font-mono tabular-nums">/ {scoreData.maxScore} pts</span>
                   </div>
+                  <span data-testid="exam-scoring-mode" className="mt-1 block text-[11px] text-muted">
+                    Scoring: <span className="font-medium text-secondary">{scoringMode === 'weighted' ? 'Scaled by difficulty' : 'Official, fixed points'}</span>
+                  </span>
                 </div>
                 <div className="text-right">
                   {scoreData.isPassing ? (
@@ -777,7 +780,7 @@ export const ExamSimulatorPage: React.FC = () => {
                   </span>
                   <div
                     data-testid="exam-countdown-timer"
-                    className="text-xl sm:text-2xl font-semibold font-mono text-primary mt-0.5 tabular-nums flex-shrink-0"
+                    className="text-2xl sm:text-3xl font-semibold font-mono text-primary mt-0.5 tabular-nums flex-shrink-0"
                   >
                     {formatSecondsToHms(currentRemaining)}
                   </div>

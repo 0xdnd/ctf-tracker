@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { GUIDE_META } from './guideMeta';
 import { guideTipAvailability } from './guideRegistry';
@@ -22,6 +22,13 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
   const setTipsOff = useOnboardingStore((s) => s.setTipsOff);
   const startGuide = useOnboardingStore((s) => s.startGuide);
   const reduceMotion = useReducedMotion();
+  const shown = Boolean(guide);
+  // While the tip is up, phone layouts keep room under the page (index.css: html[data-page-hint]) so it never hides the last content.
+  useEffect(() => {
+    if (!shown) return;
+    document.documentElement.setAttribute('data-page-hint', '');
+    return () => document.documentElement.removeAttribute('data-page-hint');
+  }, [shown]);
   if (!guide) return null;
   const Icon = TOUR_ICONS[guide.icon];
   const showMe = () => {

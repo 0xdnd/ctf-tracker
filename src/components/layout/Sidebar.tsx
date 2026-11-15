@@ -348,22 +348,31 @@ export const Sidebar: React.FC = () => {
         <div className="flex-shrink-0 border-t border-subtle p-3 text-xs overflow-hidden space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1.5 px-0.5">
-              <span className="text-[11px] font-medium text-muted">Pwn progress</span>
-              <span className="text-xs font-medium text-primary font-mono tabular-nums">
+              <span className="text-xs font-medium text-secondary">Pwn progress</span>
+              <span className="text-sm font-semibold text-primary font-mono tabular-nums">
                 {pwnPercentage}%
               </span>
             </div>
 
-            <div className="w-full bg-surface-sunken rounded-full h-1 overflow-hidden mb-1.5">
+            {/* Solved out of the whole catalog: with a catalog this size one box is under 0.1%, so any rooted box keeps a small visible sliver. */}
+            <div
+              role="progressbar"
+              aria-label="Machines rooted out of the catalog"
+              aria-valuemin={0}
+              aria-valuemax={totalMachines}
+              aria-valuenow={rootedMachines}
+              aria-valuetext={`${rootedMachines} of ${totalMachines} rooted`}
+              className="w-full bg-surface-sunken rounded-full h-2 overflow-hidden mb-1.5 border border-strong"
+            >
               <div
-                className="h-full w-full origin-left bg-accent transition-transform duration-300"
-                style={{ transform: `scaleX(${Math.min(100, Math.max(0, pwnPercentage)) / 100})` }}
+                className="h-full w-full origin-left bg-accent transition-transform duration-300 motion-reduce:transition-none"
+                style={{ transform: `scaleX(${Math.max(rootedMachines > 0 ? 0.03 : 0, Math.min(100, Math.max(0, pwnPercentage)) / 100)})` }}
               />
             </div>
 
             <div className="flex items-center justify-between px-0.5 text-[11px] text-muted">
               <span>
-                Rooted <span className="text-secondary font-mono tabular-nums">{rootedMachines}</span>
+                Rooted <span className="text-secondary font-mono tabular-nums">{rootedMachines} of {totalMachines}</span>
               </span>
               <span>
                 Footholds <span className="text-secondary font-mono tabular-nums">{footholdMachines}</span>

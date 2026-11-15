@@ -908,3 +908,10 @@ html:not(.dark) .border-gray-900 {
   background-color: rgb(var(--border-accent) / 0.15);
   color: rgb(var(--text-primary));
 }
+
+/* A page tip (src/onboarding/PageHint.tsx) is fixed above the bottom bar on phones: keep room under the page while it is up so it never hides the last content. */
+@media (max-width: 767px) {
+  html[data-page-hint] #main {
+    padding-bottom: 14rem;
+  }
+}

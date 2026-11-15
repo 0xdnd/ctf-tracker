@@ -56,7 +56,7 @@
 .ticks li::before{content:"";position:absolute;left:5px;top:.4em;width:6px;height:11px;border:solid var(--accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
 /* Modules: a spec list, no boxes. */
 .mods{display:grid;grid-template-columns:1fr;gap:var(--s6)}
-.mod{display:block;padding-top:var(--s4);border-top:1px solid var(--line);color:var(--text);text-decoration:none}
+.mod{display:block;padding-top:var(--s4);border-top:1px solid var(--line);color:var(--text);text-decoration:none;transition:transform .15s ease-out,box-shadow .15s ease-out}
 .mod h3{margin:0 0 var(--s2);font-size:1rem;font-weight:600;transition:color .15s}
 .mod p{margin:0;color:var(--muted);font-size:.875rem;line-height:1.55}
 /* Privacy */
@@ -127,7 +127,8 @@
 .hero-grid{grid-template-columns:minmax(0,1fr) 480px;gap:var(--s8)}
 .pace{left:-44px;bottom:-40px;width:280px}
 }
-@media(hover:hover) and (pointer:fine){.mod:hover h3,.guides a:hover .g-t{color:var(--accent-hover)}}
+@media(hover:hover) and (pointer:fine){.mod:hover h3,.guides a:hover .g-t{color:var(--accent-hover)}.mod:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift)}}
+@media(prefers-reduced-motion:reduce){.mod{transition:none}.mod:hover{transform:none}}
 .hero-social{display:flex;flex-wrap:wrap;gap:0 var(--s5);margin:var(--s3) 0 0}
 .social-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--muted);font-size:.875rem;font-weight:500;text-decoration:none;transition:color .15s,transform var(--press) var(--ease)}
 .social-link svg{width:18px;height:18px}

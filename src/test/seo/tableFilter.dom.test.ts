@@ -86,6 +86,19 @@ describe('table filter in the DOM', () => {
     expect(order()).toEqual(['Lame', 'Blue', 'Bashed', 'Zipping']);
   });
 
+  it('reads OS and Difficulty from the cells when a row leaves out data-os and data-difficulty', () => {
+    document.body.innerHTML = `<main id="main"><h1>All</h1><table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th><th>Tags</th></tr></thead><tbody>
+<tr data-name="Lame" data-platform="HTB" data-tags="Samba"><td>Lame</td><td>Linux</td><td>Easy</td><td>Samba</td></tr>
+<tr data-name="Blue" data-platform="THM" data-tags="SMB"><td>Blue</td><td>Windows</td><td>Easy</td><td>SMB</td></tr>
+<tr data-name="Zipping" data-platform="HTB" data-tags=""><td>Zipping</td><td>Linux</td><td>Hard</td><td></td></tr></tbody></table></main>`;
+    run();
+    choose(document.getElementById('tf-os') as HTMLSelectElement, 'Linux');
+    expect(visibleNames()).toEqual(['Lame', 'Zipping']);
+    choose(document.getElementById('tf-difficulty') as HTMLSelectElement, 'Hard');
+    expect(visibleNames()).toEqual(['Zipping']);
+    expect([...(document.getElementById('tf-os') as HTMLSelectElement).options].map((o) => o.value)).toEqual(['', 'Linux', 'Windows']);
+  });
+
   it('does nothing and does not throw on a page without list tables', () => {
     document.body.innerHTML = '<main id="main"><h1>Other</h1><table><tbody><tr><td>x</td></tr></tbody></table></main>';
     expect(run).not.toThrow();

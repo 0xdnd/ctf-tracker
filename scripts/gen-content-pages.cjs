@@ -4,7 +4,7 @@
 // Old URLs that moved get small noindex redirect stubs (meta refresh + canonical); they stay out of the sitemap.
 const fs = require('fs');
 const path = require('path');
-const { TRACK_TO_CERT, getModel, getGuides, getWriteups, hasOwnerWriteup, isNoindexMachine, slugify, isRealSummary, isStartingPointHub } = require('./lib/content-model.cjs');
+const { TRACK_TO_CERT, getModel, getGuides, getWriteups, isNoindexMachine, slugify, isRealSummary, isStartingPointHub } = require('./lib/content-model.cjs');
 const TECH = require('./lib/techniques.cjs');
 const { normTag, tagKey, HEAD_GENERIC_TAGS, createTagCleaner } = require('./lib/tags.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
@@ -80,7 +80,7 @@ const seenMeta = { title: new Map(), description: new Map() };
 // priority stays in the signature for the callers but is no longer written anywhere (Google ignores it).
 // srcs: the page's source files, for datePublished (defaults to the type's source). lastmod is the page's dateModified and sitemap lastmod.
 // List and hub pages without a TechArticle still show when their data last changed (the same date as their sitemap lastmod).
-const DATED_HUB_TYPES = new Set(['machines-hub', 'cert-hub', 'technique', 'technique-hub', 'cheatsheet', 'cheatsheet-hub', 'methodology-hub', 'pentest-hub']);
+const DATED_HUB_TYPES = new Set(['about', 'machines-hub', 'cert-hub', 'technique', 'technique-hub', 'cheatsheet', 'cheatsheet-hub', 'methodology-hub', 'pentest-hub']);
 function emit(type, urlPath, html, priority, lastmodOverride, srcs) {
   const lastmod = lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]);
   html = stampArticle(html, { modified: lastmod, published: minFirstDate(...(srcs || [SRC[TYPE_SRC[type]]]).filter(Boolean)) });
@@ -185,7 +185,8 @@ for (const m of withPage) {
 
 // Tags cell for the list tables: first `max` cleaned tags as links (hub tables put the matching tags first); a row with no tag renders an empty cell.
 // data-* on a list row for public/table-filter.js (search, filter, sort): name, OS, difficulty, platform and the cleaned tags joined by "|".
-const rowData = (m) => ` data-name="${esc(m.name)}" data-os="${esc(m.os)}" data-difficulty="${esc(m.difficulty)}" data-platform="${esc(m.platform)}" data-tags="${esc(shownTags(m).map((e) => e.label).join('|'))}"`;
+// lean: the OS and Difficulty columns are in the row anyway, so the script reads them from the cells (public/table-filter.js) and the page ships them once (/machines/all/, the largest list).
+const rowData = (m, lean = false) => ` data-name="${esc(m.name)}"${lean ? '' : ` data-os="${esc(m.os)}" data-difficulty="${esc(m.difficulty)}"`} data-platform="${esc(m.platform)}" data-tags="${esc(shownTags(m).map((e) => e.label).join('|'))}"`;
 // An empty cell reads as "No tags" to screen readers (the dash itself is hidden from them).
 const NO_TAGS = '<span aria-hidden="true">—</span><span class="sr-only">No tags</span>';
 const tagsCell = (entries, max = 4) => (entries.length ? entries.slice(0, max).map(tagLink).join(', ') : NO_TAGS);
@@ -611,7 +612,7 @@ for (const m of withPage) {
       sec.p === 'PG' ? ' The names are not links because every Proving Grounds machine shares one portal page.' : ' Where the VulnHub search for a name lists that machine, the name is followed by a link to that search.'
     }</p>`;
   // Renders a run of items: a platform h2 where the platform changes, an h3 + table where the OS/difficulty group changes.
-  const renderItems = (run) => {
+  const renderItems = (run, lean = false) => {
     const out = [];
     let sec = null;
     let g = null;
@@ -620,7 +621,7 @@ for (const m of withPage) {
       if (!rows.length) return;
       out.push(
         `<table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th><th class="hide-sm">Tags</th></tr></thead><tbody>` +
-          rows.map(({ m, sec: s }) => `<tr${rowData(m)}><td>${s.nameCell(m)}${tagChipsSm(shownTags(m))}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td class="hide-sm">${tagsCell(shownTags(m))}</td></tr>`).join('') +
+          rows.map(({ m, sec: s }) => `<tr${rowData(m, lean)}><td>${s.nameCell(m)}${tagChipsSm(shownTags(m))}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td class="hide-sm">${tagsCell(shownTags(m))}</td></tr>`).join('') +
           `</tbody></table>`
       );
       rows = [];
@@ -653,7 +654,7 @@ for (const m of withPage) {
     return `<nav class="pager" aria-label="Machine list pages${where === 'end' ? ', end of list' : ''}">${n > 1 ? `<a href="${pageUrl(n - 1)}" rel="prev">Previous</a>` : ''}${nums.join('')}${n < pageCount ? `<a href="${pageUrl(n + 1)}" rel="next">Next</a>` : ''}</nav>`;
   };
   const searchForm = () =>
-    `<form class="tf mx-search" action="/machines/all/" method="get" role="search"><div class="tf-field tf-search"><label for="mx-q">Search all ${nf(total)} machines</label><input id="mx-q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Name, tag or technique" /></div><div class="mx-search-actions"><button class="btn" type="submit">Search</button><a href="/machines/all/">Browse all with filters</a></div></form>`;
+    `<form class="tf mx-search" action="/machines/all/" method="get" role="search"><div class="tf-field tf-search"><label for="mx-q">Search all ${nf(total)} machines</label><input id="mx-q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Name, tag or technique" /></div><div class="mx-search-actions"><button class="btn" type="submit">Search</button><a href="/machines/all/">Browse all with filters</a><span class="note"> (one large page)</span></div></form>`;
   // Where each platform starts, for the jump chips.
   const platformStart = (p) => {
     const idx = items.findIndex((x) => x.sec.p === p);
@@ -707,6 +708,7 @@ for (const m of withPage) {
       crumbs: n === 1 ? [['Home', '/'], ['Machines', '/machines/']] : [['Home', '/'], ['Machines', '/machines/'], [`Page ${n}`, pageUrl(n)]],
       ogType: 'website',
       redirectListQuery: n === 1,
+      backToTop: true,
       ld: n === 1 ? [itemListLd('Solved Hack The Box and TryHackMe machines', '/machines/', solved)] : [],
     });
     if (n === 1) console.log(`machines hub size: ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB (page 1 of ${pageCount})`);
@@ -718,7 +720,7 @@ for (const m of withPage) {
     const parts = [
       `<p class="lead">All ${nf(total)} machines on one page, with search, filters and sort. For a lighter page, browse the <a href="/machines/">machines list</a> ${MX_PER_PAGE} at a time.</p>`,
       platformChips((p) => `#${p.toLowerCase()}`),
-      ...renderItems(items),
+      ...renderItems(items, true),
       closing,
     ];
     const html = renderPage({
@@ -850,17 +852,19 @@ emit(
     ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell.', href: '/cheatsheets/', label: 'Generate a shell' }),
     `<div class="chips">${model.shellLangs.map((l) => `<a href="#${esc(l.anchor)}">${esc(l.language)} (${l.availableCount})</a>`).join('')}</div>`,
     `<!--email_off-->`,
+    // Each language is a <section class="rs-lang"> and each shell a <div class="rs-item">: public/revshells-filter.js hides them while filtering. Without JS they change nothing.
     ...model.shellLangs.map(
       (l) =>
-        `<h2 id="${esc(l.anchor)}">${esc(l.language)} reverse shells</h2>` +
+        `<section class="rs-lang" data-lang="${esc(l.anchor)}"><h2 id="${esc(l.anchor)}">${esc(l.language)} reverse shells</h2>` +
         l.items
           .map(
             (s) =>
               model.shellUnavailable(s)
-                ? `<h3>${esc(s.name)}</h3><p class="note">${esc(s.category)} shell for ${esc(s.platform)}${s.notes ? '. ' + esc(s.notes) : ''}</p><p class="note shell-unavailable"><strong>Unavailable.</strong> No command is listed for this entry.</p>`
-                : `<h3>${esc(s.name)}</h3><p class="note">${esc(s.category)} shell for ${esc(s.platform)}${s.notes ? '. ' + esc(s.notes) : ''}</p>${code(fill(s.command))}${s.listener ? `<p class="note">Listener:</p>${code(fill(s.listener))}` : ''}`
+                ? `<div class="rs-item" data-off=""><h3>${esc(s.name)}</h3><p class="note">${esc(s.category)} shell for ${esc(s.platform)}${s.notes ? '. ' + esc(s.notes) : ''}</p><p class="note shell-unavailable"><strong>Unavailable.</strong> No command is listed for this entry.</p></div>`
+                : `<div class="rs-item"><h3>${esc(s.name)}</h3><p class="note">${esc(s.category)} shell for ${esc(s.platform)}${s.notes ? '. ' + esc(s.notes) : ''}</p>${code(fill(s.command))}${s.listener ? `<p class="note">Listener:</p>${code(fill(s.listener))}` : ''}</div>`
           )
-          .join('')
+          .join('') +
+        `</section>`
     ),
     `<!--/email_off-->`,
   ].join('\n');
@@ -875,6 +879,7 @@ emit(
       body,
       crumbs: [['Home', '/'], ['Reverse shells', '/revshells/']],
       ld: [{ '@context': 'https://schema.org', '@type': 'TechArticle', headline: 'Reverse shell cheat sheet', url: ORIGIN + '/revshells/', inLanguage: 'en' }],
+      shellFilter: true,
     }),
     0.9
   );
@@ -1560,7 +1565,7 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
     [/^Tracks ([\d,]+) CTF machines/m, model.catalogCounts.ctf],
     [/full directory of ([\d,]+) HTB and THM machines/, model.catalogCounts.htbThm],
     [/\(([\d,]+) in all\)/, model.catalogCounts.ctf],
-    [/with ([\d,]+) owner-solved writeups/, withPage.filter(hasOwnerWriteup).length],
+    [/with ([\d,]+) owner-solved attack path pages/, withPage.length],
     ...certHubs.map((h) => [new RegExp(`\\]\\(https://ctftracker\\.com/${h.slug}/\\): (\\d+) `), h.machines.length]),
   ];
   // Counts move with the weekly HTB sync, so a stale number is rewritten (with a warning) instead of failing the deploy build.

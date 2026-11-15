@@ -1,6 +1,6 @@
 /* Search, filter and sort for the static machine list tables (/machines/ and the certification list pages).
    Progressive enhancement: the pages ship complete tables; this script only adds a toolbar and toggles `hidden` on rows,
-   headings and jump chips. Rows carry data-name, data-os, data-difficulty, data-platform and data-tags (cleaned tags joined by "|").
+   headings and jump chips. Rows carry data-name, data-os, data-difficulty, data-platform and data-tags (cleaned tags joined by "|"); data-os and data-difficulty may be left out when the table has OS and Difficulty columns.
    Two URL parameters are read on load, never written: ?tag=<tag> preselects the Tag filter (the tag links on the site point there) and
    ?q=<text> fills the search box (the 404 page's search points there); without them nothing changes. No network, no storage. The pure helpers at the top are also exported for tests (module.exports). */
 (function () {
@@ -142,10 +142,22 @@
       var group = { table: tables[i], body: body, heading: null, rows: [] };
       var prev = tables[i].previousElementSibling;
       if (prev && /^H[23]$/.test(prev.tagName)) group.heading = prev;
+      // A row without data-os / data-difficulty (the big /machines/all/ page) is read from the cell under the OS / Difficulty column header.
+      var colOs = -1;
+      var colDiff = -1;
+      var ths = tables[i].tHead ? tables[i].tHead.querySelectorAll('th') : [];
+      for (var h = 0; h < ths.length; h++) {
+        var headText = ths[h].textContent.trim().toLowerCase();
+        if (headText === 'os') colOs = h;
+        else if (headText === 'difficulty') colDiff = h;
+      }
       for (var j = 0; j < body.rows.length; j++) {
         var tr = body.rows[j];
         if (tr.getAttribute('data-name') == null) continue;
-        var row = makeRow({ name: tr.getAttribute('data-name'), os: tr.getAttribute('data-os'), difficulty: tr.getAttribute('data-difficulty'), platform: tr.getAttribute('data-platform'), tags: tr.getAttribute('data-tags') }, idx++);
+        var cellText = function (at) { return at >= 0 && tr.cells[at] ? tr.cells[at].textContent.trim() : ''; };
+        var osAttr = tr.getAttribute('data-os');
+        var diffAttr = tr.getAttribute('data-difficulty');
+        var row = makeRow({ name: tr.getAttribute('data-name'), os: osAttr == null ? cellText(colOs) : osAttr, difficulty: diffAttr == null ? cellText(colDiff) : diffAttr, platform: tr.getAttribute('data-platform'), tags: tr.getAttribute('data-tags') }, idx++);
         row.el = tr;
         group.rows.push(row);
         all.push(row);
