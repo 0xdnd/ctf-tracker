@@ -50,7 +50,7 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     }));
   }
-  (globalThis as any).IntersectionObserver = class {
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -70,14 +70,14 @@ beforeEach(() => {
     soundEnabled: false,
     cheatsheets: CHEATSHEET,
     snippetsDrawerOpen: false,
-  } as any);
+  } as never);
 });
 
 afterEach(() => cleanup());
 
 describe('legacy vs non-legacy {ip} resolution', () => {
   it('SnippetsDrawer copies `{ip}` as the TARGET (not LHOST)', async () => {
-    useCtfStore.setState({ snippetsDrawerOpen: true } as any);
+    useCtfStore.setState({ snippetsDrawerOpen: true } as never);
     render(
       <MemoryRouter>
         <SnippetsDrawer />
@@ -94,7 +94,7 @@ describe('legacy vs non-legacy {ip} resolution', () => {
     useCtfStore.setState({
       snippetsDrawerOpen: true,
       globalVars: { ...GLOBAL_VARS, lhost: '' },
-    } as any);
+    } as never);
     render(
       <MemoryRouter>
         <SnippetsDrawer />
@@ -152,7 +152,7 @@ describe('legacy vs non-legacy {ip} resolution', () => {
   });
 
   it('revshell templates (non-legacy) still resolve `{ip}` to LHOST', () => {
-    const ctx = contextFromGlobalVars(GLOBAL_VARS as any);
+    const ctx = contextFromGlobalVars(GLOBAL_VARS as never);
     expect(resolveTemplate('/dev/tcp/{ip}/{port}', ctx).text).toBe(`/dev/tcp/${LHOST}/9001`);
     // ...while the legacy mode on the same context targets the box.
     expect(resolveTemplate('nmap {ip}', ctx, { legacyAliases: true }).text).toBe(`nmap ${TARGET}`);

@@ -24,14 +24,14 @@ describe('ZEROBOX Audit & Polish Verification Suite', () => {
           userFlag: 'user_flag_hash',
           certifications: ['OSCP'],
           timeSpentSeconds: 1200,
-        } as any,
+        } as never,
       ],
       cheatsheets: Array(85).fill(null).map((_, i) => ({
         id: `cs-${i}`,
         title: `Snippet ${i}`,
         command: `echo ${i}`,
         category: 'web',
-      })) as any,
+      })) as never,
       userNotes: Array(12).fill(null).map((_, i) => ({
         id: `note-${i}`,
         title: `Note ${i}`,
@@ -39,7 +39,7 @@ describe('ZEROBOX Audit & Polish Verification Suite', () => {
         content: '# note',
         createdAt: '2026-09-01T12:00:00Z',
         updatedAt: '2026-09-01T12:00:00Z',
-      })) as any,
+      })) as never,
     });
   });
 

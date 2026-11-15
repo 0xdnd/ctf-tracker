@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import { ACTIVE_MACHINES, appendActiveMachines } from '../../data/activeMachines';
+import { CATALOG_TOTAL, countOwnerSolved } from '../../data/catalogStats';
+import { OWN_WRITEUPS } from '../../data/ownWriteups';
 import pg from '../../data/catalogSources/pg.json';
 import vulnhub from '../../data/catalogSources/vulnhub.json';
 
@@ -41,13 +43,27 @@ describe('hard-coded catalog counts', () => {
     console.log('[catalog counts]', JSON.stringify({ TOTAL, RETIRED_HTB, ACTIVE, THM, METADATA_ONLY_RETIRED }));
   });
 
-  it.each(UI_FILES)('every headline machine literal in %s equals the CTF count (never the total)', (file) => {
-    const totals = all(
-      read(file),
-      /\b(\d{3,5})\+?(?:-target|-machine| targets| labs| CTF machines| HTB & THM machines| Hack The Box & TryHackMe machines| HTB, THM, PG & VulnHub machines| Hack The Box, TryHackMe, Proving Grounds & VulnHub machines)\b/g
-    );
-    expect(totals.length, file).toBeGreaterThan(0);
-    for (const n of totals) expect(n, file).toBe(PURE_CTF_TOTAL);
+  it('CATALOG_TOTAL equals the HTB+THM rows plus the PG and VulnHub source files', () => {
+    expect(CATALOG_TOTAL).toBe(HTB_THM_TOTAL + pg.length + vulnhub.length);
+    expect(CATALOG_TOTAL).toBe(PURE_CTF_TOTAL);
+  });
+
+  it.each(UI_FILES)('%s uses CATALOG_TOTAL and has no raw catalog count', (file) => {
+    const src = read(file);
+    expect(src, file).toContain('CATALOG_TOTAL');
+    expect(src, file).toMatch(/import \{[^}]*CATALOG_TOTAL[^}]*\} from '[^']*catalogStats'/);
+    expect(src, file).not.toContain('1376');
+  });
+
+  it('owner solved roster counts match the seeded catalog', () => {
+    expect(countOwnerSolved(INITIAL_MACHINES)).toEqual({ total: 55, htb: 37, thm: 18 });
+  });
+
+  it('llms.txt states the owner-solved attack path count from the catalog', () => {
+    const n = all(read('public/llms.txt'), /with (\d+) owner-solved attack path pages/g);
+    expect(n).toEqual([countOwnerSolved(INITIAL_MACHINES).total]);
+    const w = all(read('public/llms.txt'), /(\d+) of them with a full writeup on the page/g);
+    expect(w).toEqual([Object.keys(OWN_WRITEUPS).length]);
   });
 
   it('every pure CTF challenge literal in README.md equals the full catalog total', () => {

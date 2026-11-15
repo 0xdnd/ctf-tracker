@@ -122,20 +122,20 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
     try {
       const saved = localStorage.getItem('zerobox_note_font_size');
       if (saved === 'sm' || saved === 'base' || saved === 'lg' || saved === 'xl') return saved;
-    } catch {}
+    } catch { /* storage unavailable */ }
     return storeFontSize || 'base';
   });
 
   const handleIncreaseFontSize = useCallback(() => {
     const next = fontSize === 'sm' ? 'base' : fontSize === 'base' ? 'lg' : 'xl';
-    try { localStorage.setItem('zerobox_note_font_size', next); } catch {}
+    try { localStorage.setItem('zerobox_note_font_size', next); } catch { /* storage unavailable */ }
     setFontSize(next);
     setStoreFontSize(next);
   }, [fontSize, setStoreFontSize]);
 
   const handleDecreaseFontSize = useCallback(() => {
     const next = fontSize === 'xl' ? 'lg' : fontSize === 'lg' ? 'base' : 'sm';
-    try { localStorage.setItem('zerobox_note_font_size', next); } catch {}
+    try { localStorage.setItem('zerobox_note_font_size', next); } catch { /* storage unavailable */ }
     setFontSize(next);
     setStoreFontSize(next);
   }, [fontSize, setStoreFontSize]);
@@ -168,7 +168,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
       const next = prev.includes(tabId) ? prev.filter((id) => id !== tabId) : [...prev, tabId];
       try {
         localStorage.setItem('zerobox_pinned_tabs_v1', JSON.stringify(next));
-      } catch {}
+      } catch { /* storage unavailable */ }
       return next;
     });
     if (soundEnabled) playCyberSound('click');
@@ -516,7 +516,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
 
   // Copy, Export and Report read the live pool, so edits saved in another pane are included.
   const currentMarkdown = () =>
-    getNoteById(note.id, allAvailableNotes)?.rawMarkdown ?? note.rawMarkdown ?? (note as any).content ?? '';
+    getNoteById(note.id, allAvailableNotes)?.rawMarkdown ?? note.rawMarkdown ?? (note as unknown as { content?: string }).content ?? '';
 
   const menuEntries: NoteMoreMenuEntry[] = buildNoteMenuEntries({
     note,
@@ -550,6 +550,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
 
   const innerCardContent = (
     <div
+      role="presentation"
       onClick={onFocusPane}
       className={`h-full w-full flex flex-col bg-surface-base overflow-hidden transition-opacity duration-150 motion-reduce:transition-none ${
         isSplitView && !isPaneActive ? 'opacity-80' : ''
@@ -592,6 +593,13 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                 ref={isActive ? activeTabElementRef : undefined}
                 role="tab"
                 aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                onKeyDown={(e) => {
+                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    if (!isActive) onSelectNote?.(tab.id);
+                  }
+                }}
                 data-testid={`note-tab-${tab.id}`}
                 dir="ltr"
                 onClick={() => {

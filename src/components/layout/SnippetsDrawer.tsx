@@ -94,10 +94,11 @@ export const SnippetsDrawer: React.FC = () => {
 
   if (!snippetsDrawerOpen) return null;
 
-﻿  return (
+  return (
     <div className="fixed inset-0 z-50 overflow-hidden font-sans">
       {/* Backdrop */}
       <div
+        role="presentation"
         className="absolute inset-0 bg-surface-inverse/60 transition-opacity animate-in fade-in duration-200"
         onClick={() => setSnippetsDrawerOpen(false)}
       />

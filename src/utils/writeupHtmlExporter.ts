@@ -25,7 +25,8 @@ export function parseInlineMarkdown(text: string): string {
 
   // Images: ![alt](url) -> sanitized img tag (Air-gapped zero-egress: disallows remote http/https; only allows relative paths or safe data URIs)
   if (escaped.includes('![')) {
-    escaped = escaped.replace(/!\[([^\[\]\n]*)\]\(([^)\n]+)\)/g, (_match, alt, src) => {
+    escaped = escaped.replace(/!\[([^[\]\n]*)\]\(([^)\n]+)\)/g, (_match, alt, src) => {
+      // eslint-disable-next-line no-control-regex -- intentionally strips ASCII control characters from the URL
       const cleanSrc = src.trim().replace(/[\0\x00-\x1f]/g, '');
       if (/^(\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,)/i.test(cleanSrc)) {
         return `<img src="${cleanSrc}" alt="${alt}" class="writeup-img" loading="lazy" />`;
@@ -36,7 +37,8 @@ export function parseInlineMarkdown(text: string): string {
 
   // Links: [title](url) -> sanitized anchor tag (hardened against ReDoS & scheme injection)
   if (escaped.includes('](')) {
-    escaped = escaped.replace(/\[([^\[\]\n]+)\]\(([^)\n]+)\)/g, (_match, title, href) => {
+    escaped = escaped.replace(/\[([^[\]\n]+)\]\(([^)\n]+)\)/g, (_match, title, href) => {
+      // eslint-disable-next-line no-control-regex -- intentionally strips ASCII control characters from the URL
       const cleanHref = href.trim().replace(/[\0\x00-\x1f]/g, '');
       if (/^(https?:\/\/|mailto:|#|\/|\.\/)/i.test(cleanHref)) {
         return `<a href="${cleanHref}" target="_blank" rel="noopener noreferrer" class="writeup-link">${title}</a>`;
@@ -252,7 +254,7 @@ export function parseMarkdownToHtml(markdown: string): string {
         inList = 'ul';
         output.push('<ul>');
       }
-      let content = ulMatch[1];
+      const content = ulMatch[1];
       // Checkbox list item: - [ ] or - [x]
       if (content.startsWith('[ ] ')) {
         output.push(`<li class="task-list-item"><input type="checkbox" disabled /> ${parseInlineMarkdown(content.slice(4))}</li>`);

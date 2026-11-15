@@ -118,7 +118,7 @@ export function captureRawStorage(include: (key: string) => boolean = isBackedUp
         if (v !== null) entries[k] = v;
       }
     }
-  } catch {}
+  } catch { /* storage unavailable; return whatever entries were read */ }
   return entries;
 }
 
@@ -334,7 +334,7 @@ export const isRestoreFollower = (): boolean => following;
 const postRestoreMessage = (type: RestoreBroadcastType, token: string, kind?: 'sync') => {
   try {
     syncChannel?.postMessage({ type, token, timestamp: Date.now(), ...(kind ? { kind } : {}) });
-  } catch {}
+  } catch { /* channel closed or unavailable; cross-tab notification is best-effort */ }
 };
 
 const readRawLock = (): string | null => {
@@ -348,7 +348,7 @@ const readRawLock = (): string | null => {
 const clearLock = () => {
   try {
     localStorage.removeItem(RESTORE_IN_PROGRESS_KEY);
-  } catch {}
+  } catch { /* storage unavailable; nothing to clear */ }
 };
 
 const STALE_LOCK_WARNING = '[ZeroBox] Cleared a stale restore lock (older than 60 s) left by a tab that closed mid-restore.';
@@ -425,7 +425,7 @@ function releaseFollower() {
   releaseListeners.forEach((cb) => {
     try {
       cb();
-    } catch {}
+    } catch { /* a throwing release listener must not block the remaining listeners */ }
   });
 }
 
@@ -568,11 +568,11 @@ async function runRestore(key: string, options: { reload?: () => void; settleMs?
       try {
         if (k in rollback) localStorage.setItem(k, rollback[k]);
         else localStorage.removeItem(k);
-      } catch {}
+      } catch { /* best-effort rollback of a single key; keep restoring the rest */ }
     }
     try {
       localStorage.setItem(RESTORE_IN_PROGRESS_KEY, JSON.stringify({ ts: Date.now(), token, aborted: true }));
-    } catch {}
+    } catch { /* best-effort abort marker; other tabs also learn of the abort via the broadcast below */ }
     postRestoreMessage('RESTORE_ABORTED', token);
     clearLock();
     releaseRestoreWriteGate();
@@ -639,7 +639,7 @@ export async function runExclusiveSyncWrite<T>(
     } catch (err) {
       try {
         localStorage.setItem(RESTORE_IN_PROGRESS_KEY, JSON.stringify({ ts: Date.now(), token, aborted: true, kind: 'sync' }));
-      } catch {}
+      } catch { /* best-effort abort marker; other tabs also learn of the abort via the broadcast below */ }
       postRestoreMessage('RESTORE_ABORTED', token, 'sync');
       clearLock();
       throw err;

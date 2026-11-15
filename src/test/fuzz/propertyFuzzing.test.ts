@@ -27,7 +27,7 @@ describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () 
 
           // Invariant 1: Function MUST NEVER throw an unhandled exception or stack overflow
           const beforePrototypeKeys = Object.getOwnPropertyNames(Object.prototype);
-          let result: any = null;
+          let result = null as unknown as ReturnType<typeof validateWorkspacePayload>;
           expect(() => {
             result = validateWorkspacePayload(arbitraryPayload);
           }).not.toThrow();
@@ -41,8 +41,8 @@ describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () 
             expect(result.data).toBeDefined();
             expect(typeof result.data).toBe('object');
             // If machines were accepted, they must be an array
-            if (result.data.machines) {
-              expect(Array.isArray(result.data.machines)).toBe(true);
+            if (result.data?.machines) {
+              expect(Array.isArray(result.data?.machines)).toBe(true);
             }
           } else {
             expect(typeof result.error).toBe('string');
@@ -61,7 +61,7 @@ describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () 
 
   it('FC-2: sanitizeObjectKeys handles extreme recursion, circular references, and null prototypes safely', () => {
     // 1. Circular Reference
-    const circularObj: any = { a: 1 };
+    const circularObj: Record<string, unknown> = { a: 1 };
     circularObj.self = circularObj;
     expect(() => sanitizeObjectKeys(circularObj)).not.toThrow();
 
@@ -72,17 +72,17 @@ describe('Layer 4: Property-Based Invariant Testing & High-Entropy Fuzzing', () 
     const sanitizedNullProto = sanitizeObjectKeys(nullProtoObj);
     expect(sanitizedNullProto).toBeDefined();
     expect(Object.prototype.hasOwnProperty.call(sanitizedNullProto, '__proto__')).toBe(false);
-    expect((sanitizedNullProto as any).__proto__).not.toBe('malicious');
-    expect((sanitizedNullProto as any).key).toBe('safe value');
+    expect((sanitizedNullProto as unknown as Record<string, unknown>).__proto__).not.toBe('malicious');
+    expect((sanitizedNullProto as unknown as Record<string, unknown>).key).toBe('safe value');
 
     // 3. Poisoned prototype attempts
     const poison = JSON.parse('{"__proto__": {"polluted": "yes"}, "constructor": {"prototype": {"admin": true}}}');
     sanitizeObjectKeys(poison);
-    expect((Object.prototype as any).polluted).toBeUndefined();
-    expect((Object.prototype as any).admin).toBeUndefined();
+    expect((Object.prototype as unknown as Record<string, unknown>).polluted).toBeUndefined();
+    expect((Object.prototype as unknown as Record<string, unknown>).admin).toBeUndefined();
 
     // 4. Extreme Nesting Depth (call stack limit defense)
-    let deep: any = { val: 'leaf' };
+    let deep: Record<string, unknown> = { val: 'leaf' };
     for (let i = 0; i < 100; i++) {
       deep = { next: deep };
     }

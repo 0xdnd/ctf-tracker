@@ -44,6 +44,7 @@ export function isSafeRelativePath(relativePath: string): boolean {
   if (!trimmed || trimmed.length > 1024) return false;
 
   // Layer 2: Raw control character and null byte check
+  // eslint-disable-next-line no-control-regex -- intentionally rejects control characters in archive paths
   if (/[\0\x00-\x1f\x7f-\x9f]/.test(trimmed)) return false;
 
   // Layer 2.5: Reject paths containing percent-encoded dots (%2e), slashes (%2f, %5c), or double-encoding (%25)
@@ -60,6 +61,7 @@ export function isSafeRelativePath(relativePath: string): boolean {
       prev = decoded;
       decoded = decodeURIComponent(decoded);
       // Check for null bytes or control characters exposed after each decode pass
+      // eslint-disable-next-line no-control-regex -- intentionally rejects control characters in archive paths
       if (/[\0\x00-\x1f\x7f-\x9f]/.test(decoded)) {
         return false;
       }
@@ -83,6 +85,7 @@ export function isSafeRelativePath(relativePath: string): boolean {
 
   // Layer 6: Unicode NFKC Normalization (neutralizes fullwidth/compatibility dots and slashes)
   const normalizedUnicode = decoded.normalize('NFKC');
+  // eslint-disable-next-line no-control-regex -- intentionally rejects control characters in archive paths
   if (/[\0\x00-\x1f\x7f-\x9f]/.test(normalizedUnicode)) {
     return false;
   }

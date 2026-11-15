@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, ListChecks, Route, X } from 'lucide-react';
 import type { PracticeTrack } from '../../data/tracksData';
-import type { TrackProgress } from '../../utils/trackProgress';
+import type { TrackProgressLookup } from '../../utils/trackProgress';
 
 interface TrackPickerProps {
   tracks: readonly PracticeTrack[];
-  progress: ReadonlyMap<string, TrackProgress>;
+  progress: TrackProgressLookup;
   /** Ids of every selected track (empty, one, or several). */
   selectedTrackIds: readonly string[];
   /** Called with the single track to select, or null to clear the selection. */
@@ -196,6 +196,7 @@ export const TrackPicker: React.FC<TrackPickerProps> = ({
           ref={menuRef}
           id={menuId}
           role="menu"
+          tabIndex={-1}
           aria-label="Practice tracks"
           onKeyDown={handleMenuKeyDown}
           style={{ transform: shiftX ? `translateX(${shiftX}px)` : undefined }}

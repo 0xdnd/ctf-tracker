@@ -3,6 +3,7 @@
 // (lead, CTA, FAQ + FAQPage JSON-LD from the same array, Related, last-reviewed note, TechArticle JSON-LD).
 // Public interface: buildGuidePages({ model, renderPage, site }) -> [{ path, title, description, html, lastmod }]
 const { ORIGIN, esc, ctaBox } = require('./layout.cjs');
+const { ogImageFor } = require('../og/pages.cjs');
 
 const LAST_REVIEWED = '2026-10-08';
 
@@ -97,7 +98,7 @@ function buildGuidePages({ model, renderPage, site } = {}) {
         mainEntityOfPage: url,
         inLanguage: 'en',
         publisher,
-        image: ORIGIN + '/og.png',
+        image: ORIGIN + (ogImageFor(g.path) || { file: '/og.png?v=2' }).file,
       },
       ...(g.faq && g.faq.length ? [{
         '@context': 'https://schema.org',

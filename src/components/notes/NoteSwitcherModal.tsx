@@ -82,7 +82,10 @@ const SwitcherDialog: React.FC = () => {
   const dialog = (
     <div
       className="fixed inset-0 z-popover flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
-      onClick={closeNoteSwitcher}
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) closeNoteSwitcher();
+      }}
     >
       <div
         ref={trapRef}
@@ -90,7 +93,6 @@ const SwitcherDialog: React.FC = () => {
         aria-modal="true"
         aria-label="Open note"
         className="w-full max-w-xl rounded-md border border-strong bg-surface-elevated shadow-xl overflow-hidden machined-edge"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card">
           <Search className="w-5 h-5 text-muted flex-shrink-0" />
@@ -107,6 +109,7 @@ const SwitcherDialog: React.FC = () => {
             onKeyDown={onKeyDown}
             placeholder="Find a note…"
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- search field of a modal opened on demand
             autoFocus
           />
           <kbd className="px-2 py-0.5 rounded text-[10px] bg-surface-sunken text-muted border border-subtle font-mono">
@@ -120,8 +123,10 @@ const SwitcherDialog: React.FC = () => {
             </div>
           ) : (
             results.map((n, i) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- keyboard handled by the combobox input (aria-activedescendant)
               <div
                 key={n.id}
+                tabIndex={-1}
                 id={`${listId}-opt-${i}`}
                 role="option"
                 aria-selected={i === selected}

@@ -27,7 +27,7 @@ let isMutedState = false;
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
 
-  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextClass) return null;
 
   try {
@@ -102,9 +102,9 @@ export function playCyberAlert(type: AudioAlertType): void {
             try {
               osc.disconnect();
               gain.disconnect();
-            } catch {}
+            } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
           };
-        } catch {}
+        } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
       });
       break;
     }
@@ -131,9 +131,9 @@ export function playCyberAlert(type: AudioAlertType): void {
           try {
             osc.disconnect();
             gain.disconnect();
-          } catch {}
+          } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
         };
-      } catch {}
+      } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
       break;
     }
 
@@ -166,9 +166,9 @@ export function playCyberAlert(type: AudioAlertType): void {
             try {
               osc.disconnect();
               gain.disconnect();
-            } catch {}
+            } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
           };
-        } catch {}
+        } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
       });
       break;
     }
@@ -207,9 +207,9 @@ export function playCyberAlert(type: AudioAlertType): void {
             try {
               osc.disconnect();
               gain.disconnect();
-            } catch {}
+            } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
           };
-        } catch {}
+        } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
       });
       break;
     }
@@ -232,7 +232,7 @@ export function _resetAudioContextForTesting(): void {
   if (audioContextInstance) {
     try {
       audioContextInstance.close().catch(() => {});
-    } catch {}
+    } catch { /* audio nodes may already be disconnected or the context closed; alerts are best-effort */ }
     audioContextInstance = null;
   }
   isMutedState = false;

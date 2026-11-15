@@ -116,6 +116,7 @@ export const OperatorFlexCardModal: React.FC = () => {
   useEffect(() => {
     if (!flexCardModalOpen || mode !== 'achievement') return;
     renderCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- renderCanvas is redefined each render; redraw only when these inputs change
   }, [flexCardModalOpen, mode, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
 
   const renderCanvas = () => {

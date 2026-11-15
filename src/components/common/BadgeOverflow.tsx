@@ -131,6 +131,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
       {rest.length > 0 && (
         <span
           ref={rootRef}
+          role="presentation"
           className="relative inline-flex"
           onMouseEnter={openOnHover}
           onMouseLeave={closeNow}

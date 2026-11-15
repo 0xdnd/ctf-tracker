@@ -39,7 +39,7 @@ describe('audioAlerts Web Audio API Synthesizer', () => {
   it('does not attempt audio playback when muted', () => {
     setAudioMuted(true);
     const mockContext = vi.fn();
-    (window as any).AudioContext = mockContext;
+    (window as unknown as Record<string, unknown>).AudioContext = mockContext;
 
     playCyberAlert('alarm');
     expect(mockContext).not.toHaveBeenCalled();
@@ -55,7 +55,7 @@ describe('audioAlerts Web Audio API Synthesizer', () => {
       start: vi.fn(),
       stop: vi.fn(),
       disconnect: vi.fn(),
-      onended: null as any,
+      onended: null as never,
     };
 
     const mockGain = {
@@ -86,7 +86,7 @@ describe('audioAlerts Web Audio API Synthesizer', () => {
     }
 
     const originalAudioContext = window.AudioContext;
-    (window as any).AudioContext = MockAudioContext;
+    (window as unknown as Record<string, unknown>).AudioContext = MockAudioContext;
 
     try {
       playCyberAlert('alarm');
@@ -96,7 +96,7 @@ describe('audioAlerts Web Audio API Synthesizer', () => {
 
       expect(contextCreationCount).toBe(1); // Singleton verified!
     } finally {
-      (window as any).AudioContext = originalAudioContext;
+      (window as unknown as Record<string, unknown>).AudioContext = originalAudioContext;
     }
   });
 

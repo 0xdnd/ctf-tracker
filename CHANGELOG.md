@@ -4,11 +4,59 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [2.5.5] - 2026-11-10
+
 ### Added
+- Cleaner first visit with a polished welcome and clearer search snippets.
+- Internal links from top pages, a machines call to action, and OSCP points calculator structured data.
+- Proving Grounds and VulnHub named on the home and tracker pages.
+
+### Changed
+- Page titles derive their year automatically.
+- Machine pages without an owner writeup are no longer indexed.
+- Unused components and a dependency were removed.
+
+### Fixed
+- Desktop: external links open in the system browser.
+
+## [2.5.4] - 2026-11-08
+
+### Added
+- Obsidian-style field manual with notes tabs, Mermaid diagrams, and a full side panel.
+- Opt-in desktop alerts for the exam timer and due reviews.
+- Screenshots section in the README.
+
+### Changed
+- Clearer Methodology page.
+
+## [2.5.3] - 2026-11-06
+
+### Added
+- Desktop: in-app update check and full version display.
+
+## [2.5.2] - 2026-11-05
+
+### Added
+- First-run tour, OSCP points calculator, and pass card.
+
+### Fixed
+- Exam scoring correction.
+- The tour no longer starts automatically on the OSCP calculator page.
+
+## [2.5.1] - 2026-11-04
+
+### Changed
+- Desktop: refreshed updater signing key. Earlier installs need one manual update.
+
+## [2.5.0] - 2026-11-04
+
+### Added
+- Desktop: automatic updates through GitHub Releases.
 - Fresh first-visit experience, guide center, OffSec theme, and redesigned hub.
 - Proving Grounds and VulnHub catalog entries.
 - Machine summary strip and host loot panel.
 - IP templating in notes.
+- Security policy, code of conduct, and pull request template.
 
 ### Fixed
 - Deleting a profile now removes all of its data.

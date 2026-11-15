@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useId, useState } from 'react';
 import { FileSpreadsheet } from 'lucide-react';
 import { PasteImportPanel } from './PasteImportPanel';
+import { Skeleton, SkeletonRegion } from '../common/Skeleton';
 
 // The CSV importer and its parser load only when the visitor opens it.
 const CsvImportPanel = lazy(() => import('./CsvImportPanel'));
@@ -36,7 +37,7 @@ export const ImportPanels: React.FC<ImportPanelsProps> = ({ csvRequested, focusO
         </button>
         <div id={csvId}>
           {csvOpen && (
-            <Suspense fallback={null}>
+            <Suspense fallback={<SkeletonRegion label="Loading CSV import…" className="mt-2"><Skeleton height={120} className="w-full" /></SkeletonRegion>}>
               <CsvImportPanel focusOnMount className="mt-2" />
             </Suspense>
           )}

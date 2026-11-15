@@ -6,7 +6,6 @@ import {
   ShieldCheck, 
   Award, 
   Terminal, 
-  BookOpen, 
   Cpu, 
   Zap,
   Scale,
@@ -15,6 +14,8 @@ import {
   Coffee
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
+import { countOwnerSolved } from '../../data/catalogStats';
+import { getLoadedMachinesCatalog, loadMachinesCatalog } from '../../data/loadMachinesCatalog';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { Modal } from './Modal';
 import { APP_VERSION } from "../../utils/appVersion";
@@ -68,6 +69,14 @@ export const UpdateControl: React.FC = () => {
 
 export const OperatorDossierModal: React.FC = () => {
   const operatorModalOpen = useCtfStore((s) => s.operatorModalOpen);
+  const [catalog, setCatalog] = React.useState(getLoadedMachinesCatalog);
+  useEffect(() => {
+    if (!operatorModalOpen || catalog) return;
+    let live = true;
+    loadMachinesCatalog().then((c) => { if (live) setCatalog(c); }, () => {});
+    return () => { live = false; };
+  }, [operatorModalOpen, catalog]);
+  const solved = catalog ? countOwnerSolved(catalog) : null;
   const setOperatorModalOpen = useCtfStore((s) => s.setOperatorModalOpen);
   const setLicenseModalOpen = useCtfStore((s) => s.setLicenseModalOpen);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
@@ -279,35 +288,6 @@ export const OperatorDossierModal: React.FC = () => {
                 </button>
               </div>
 
-              {/* CTF Writeups */}
-              <div className="p-3 rounded-xl bg-surface-card border border-subtle hover:border-strong transition-colors group flex items-center justify-between">
-                <a
-                  href={links.writeups}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 min-w-0 flex-1 mr-2"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-center text-secondary">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <div className="truncate">
-                    <div className="font-semibold text-primary flex items-center gap-1.5">
-                      <span>CTF writeups</span>
-                      <ExternalLink className="w-3 h-3 text-muted opacity-60" />
-                    </div>
-                    <div className="text-[11px] text-muted truncate">0xdnd.gitbook.io</div>
-                  </div>
-                </a>
-                <button
-                  onClick={(e) => handleCopyLink(e, links.writeups, 'writeups')}
-                  className="p-1.5 max-sm:p-3 rounded-lg bg-surface-card hover:bg-surface-hover text-muted hover:text-primary border border-subtle transition-colors flex-shrink-0"
-                  aria-label="Copy GitBook writeups URL"
-                  title="Copy GitBook writeups URL"
-                >
-                  {copiedField === 'writeups' ? <Check className="w-3.5 h-3.5 text-callout-success-fg" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-
               {/* Sponsor card */}
               <div className="sm:col-span-2 p-3.5 rounded-xl bg-surface-card border border-subtle hover:border-strong transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <a
@@ -358,8 +338,8 @@ export const OperatorDossierModal: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-0.5">
-                <div className="text-primary font-semibold text-base font-mono tabular-nums">63 pwns</div>
-                <div className="text-primary font-medium text-xs">45 HTB + 18 THM solves</div>
+                <div className="text-primary font-semibold text-base font-mono tabular-nums">{solved ? solved.total : '-'} pwns</div>
+                <div className="text-primary font-medium text-xs">{solved ? `${solved.htb} HTB + ${solved.thm} THM` : '-'} solves</div>
                 <div className="text-[11px] text-muted">Verified pwned targets in active tracker roster.</div>
               </div>
 

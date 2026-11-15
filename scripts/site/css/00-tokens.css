@@ -8,7 +8,7 @@ color-scheme:dark;
 --band:#0e0e11;--accent-hover:#38bdf8;
 --btn2-bg:#202026;--btn2-border:#3f3f46;--btn2-hover-bg:#2a2a31;--btn2-hover-border:#52525b;
 --focus:#38bdf8;--link:var(--accent);
---r-pill:999px;
+--r-pill:999px;--shadow-lift:0 8px 20px -8px rgb(0 0 0/.55);
 --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:64px;--s9:96px;
 --section-y:64px;--gutter:16px;--wrap:1120px;--prose:68ch;--header-h:64px;
 --font-sans:"Inter Variable","Inter Fallback",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;

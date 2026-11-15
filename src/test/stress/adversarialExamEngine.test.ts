@@ -164,7 +164,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
       let gainsCreated = 0;
       let disconnectedCount = 0;
 
-      const activeOscillators: any[] = [];
+      const activeOscillators: { onended: (() => void) | null }[] = [];
 
       class MockAudioContext {
         state = 'running';
@@ -182,7 +182,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
             disconnect: vi.fn(() => {
               disconnectedCount++;
             }),
-            onended: null as any,
+            onended: null as never,
           };
           activeOscillators.push(osc);
           return osc;
@@ -208,7 +208,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
         }
       }
 
-      (window as any).AudioContext = MockAudioContext;
+      (window as unknown as Record<string, unknown>).AudioContext = MockAudioContext;
 
       const soundTypes: ('alarm' | 'tick' | 'flag_captured' | 'victory_fanfare')[] = [
         'alarm',
@@ -264,7 +264,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
         close = vi.fn().mockResolvedValue(undefined);
       }
 
-      (window as any).AudioContext = SuspendedAudioContext;
+      (window as unknown as Record<string, unknown>).AudioContext = SuspendedAudioContext;
       _resetAudioContextForTesting();
 
       playCyberAlert('tick');
@@ -286,7 +286,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
         close = vi.fn().mockResolvedValue(undefined);
       }
 
-      (window as any).AudioContext = CrashingAudioContext;
+      (window as unknown as Record<string, unknown>).AudioContext = CrashingAudioContext;
 
       // None of the alert types should throw uncaught exceptions
       expect(() => playCyberAlert('alarm')).not.toThrow();
@@ -319,7 +319,7 @@ describe('EMPIRICAL ADVERSARIAL STRESS SUITE — Exam State, Audio Engine & Paci
         resume = vi.fn().mockResolvedValue(undefined);
       }
 
-      (window as any).AudioContext = MonitoredAudioContext;
+      (window as unknown as Record<string, unknown>).AudioContext = MonitoredAudioContext;
       _resetAudioContextForTesting();
 
       setAudioMuted(true);

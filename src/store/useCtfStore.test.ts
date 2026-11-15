@@ -122,7 +122,7 @@ describe('useCtfStore Zustand store', () => {
     expect(machine).toBeDefined();
 
     // Pass invalid ports: negative numbers, 0, >65535, floats, duplicates, strings
-    useCtfStore.getState().setMachineOpenPorts(machine.id, [443, -1, 0, 70000, 80, 443, 22.5 as any, '8080' as any]);
+    useCtfStore.getState().setMachineOpenPorts(machine.id, [443, -1, 0, 70000, 80, 443, 22.5 as never, '8080' as never]);
     const updated = useCtfStore.getState().machines.find((m) => m.id === machine.id)!;
     expect(updated.openPorts).toEqual([80, 443, 8080]);
     expect(updated.checklist?.openPorts).toEqual([80, 443, 8080]);

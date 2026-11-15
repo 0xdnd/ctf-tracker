@@ -56,7 +56,7 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     }));
   }
-  (globalThis as any).IntersectionObserver = class {
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -74,7 +74,7 @@ beforeEach(() => {
     customNotes: [NOTE],
     userNotes: [],
     soundEnabled: false,
-  } as any);
+  } as never);
 });
 
 afterEach(() => cleanup());
@@ -107,7 +107,7 @@ describe('per-machine views never borrow the engaged machine IP', () => {
   });
 
   it('MachineDetailModal: machine A (no IP) does not resolve {TARGET_IP} to engaged B', () => {
-    useCtfStore.setState({ selectedMachineId: MACHINE_A.id } as any);
+    useCtfStore.setState({ selectedMachineId: MACHINE_A.id } as never);
     render(
       <MemoryRouter>
         <MachineDetailModal />

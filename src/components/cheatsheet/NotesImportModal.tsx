@@ -258,9 +258,9 @@ export const NotesImportModal: React.FC = () => {
           (count) => `Successfully imported and cached ${count} field manual notes into local browser IndexedDB!`
         );
       }
-    } catch (err: any) {
+    } catch (err) {
       if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: err?.message || 'Error processing notes archive.' });
+      setFeedback({ type: 'error', message: (err as Error)?.message || 'Error processing notes archive.' });
     } finally {
       setIsProcessing(false);
       setZipProgress(null);
@@ -288,9 +288,9 @@ export const NotesImportModal: React.FC = () => {
         `Successfully imported ${result.summary.totalNotes} notes (${result.summary.totalCommands.toLocaleString()} commands across ${result.summary.categories.length} directories) directly from folder into local IndexedDB!`,
         'vault'
       );
-    } catch (err: any) {
+    } catch (err) {
       if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: err?.message || 'Error processing notes folder.' });
+      setFeedback({ type: 'error', message: (err as Error)?.message || 'Error processing notes folder.' });
     } finally {
       setIsProcessing(false);
       setZipProgress(null);
@@ -348,9 +348,9 @@ export const NotesImportModal: React.FC = () => {
       } else {
         throw new Error('No markdown (.md or .markdown) notes were found in the dropped items.');
       }
-    } catch (err: any) {
+    } catch (err) {
       if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: err?.message || 'Error importing dropped items.' });
+      setFeedback({ type: 'error', message: (err as Error)?.message || 'Error importing dropped items.' });
     } finally {
       setIsProcessing(false);
       setZipProgress(null);
@@ -372,9 +372,9 @@ export const NotesImportModal: React.FC = () => {
         (count) => `Successfully imported and cached ${count} field manual notes into local browser IndexedDB!`
       );
       setPastedJson('');
-    } catch (err: any) {
+    } catch (err) {
       if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: err?.message || 'Invalid JSON syntax.' });
+      setFeedback({ type: 'error', message: (err as Error)?.message || 'Invalid JSON syntax.' });
     } finally {
       setIsProcessing(false);
     }
@@ -404,7 +404,7 @@ export const NotesImportModal: React.FC = () => {
 
       if (soundEnabled) playCyberSound('export');
       setFeedback({ type: 'success', message: 'Vault export generated and downloaded successfully.' });
-    } catch (err: any) {
+    } catch {
       setFeedback({ type: 'error', message: 'Failed to generate vault export.' });
     }
   };
@@ -739,7 +739,7 @@ export const NotesImportModal: React.FC = () => {
                     aria-label="Upload Obsidian vault folder directly"
                     ref={folderInputRef}
                     type="file" 
-                    {...({ webkitdirectory: '', directory: '' } as any)}
+                    {...({ webkitdirectory: '', directory: '' } as unknown as Record<string, string>)}
                     multiple
                     onChange={handleFolderChange}
                     disabled={isProcessing}
@@ -764,7 +764,7 @@ export const NotesImportModal: React.FC = () => {
 
             {activeTab === 'paste' && (
               <div className="space-y-3">
-                <label className="block text-xs text-muted">
+                <label htmlFor="notes-import-pasted-json" className="block text-xs text-muted">
                   Paste Raw JSON Payload:
                 </label>
                 <textarea

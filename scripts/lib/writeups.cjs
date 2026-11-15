@@ -25,7 +25,7 @@ const words = (s) => String(s).split(/\s+/).filter(Boolean).length;
 const slugOf = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 function splitFrontmatter(raw) {
-  const m = /^﻿?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n([\s\S]*))?$/.exec(raw);
+  const m = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n([\s\S]*))?$/.exec(raw);
   return m ? { front: m[1], body: m[2] || '' } : null;
 }
 

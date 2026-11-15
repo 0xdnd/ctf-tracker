@@ -149,7 +149,7 @@ describe('variable substitution engine adoption across UIs', () => {
   });
 
   it('resolves the same template identically for ReverseShellGenerator-style and FloatingPayloadBar-style tokens given the same globalVars', () => {
-    const ctx = contextFromGlobalVars(baseState().globalVars as any);
+    const ctx = contextFromGlobalVars(baseState().globalVars as never);
     const viaLowercase = resolveTemplate('{ip}:{port}', ctx);
     const viaUppercase = resolveTemplate('{LHOST}:{LPORT}', ctx);
     expect(viaLowercase.text).toBe(viaUppercase.text);

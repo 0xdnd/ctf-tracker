@@ -41,7 +41,7 @@ function openResilientDb(): Promise<IDBDatabase | null> {
       request.onsuccess = () => {
         const db = request.result;
         db.onversionchange = () => {
-          try { db.close(); } catch {}
+          try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         };
         resolve(db);
       };
@@ -103,24 +103,24 @@ async function saveWorkspaceToIdbNow(key: string, data: unknown): Promise<boolea
       };
 
       tx.oncomplete = () => {
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         resolve(true);
       };
 
       tx.onerror = () => {
         console.warn('[ZeroBox ResilientStore] Transaction error:', tx.error);
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         resolve(false);
       };
 
       tx.onabort = () => {
         console.warn('[ZeroBox ResilientStore] Transaction aborted (e.g., QuotaExceededError)');
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         resolve(false);
       };
     } catch (err) {
       console.warn('[ZeroBox ResilientStore] Synchronous write error:', err);
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
       resolve(false);
     }
   });
@@ -140,7 +140,7 @@ export async function loadWorkspaceFromIdb<T = unknown>(key: string): Promise<T 
       const req = store.get(key);
 
       req.onsuccess = () => {
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         if (!req.result) {
           resolve(null);
           return;
@@ -155,12 +155,12 @@ export async function loadWorkspaceFromIdb<T = unknown>(key: string): Promise<T 
 
       req.onerror = () => {
         console.warn('[ZeroBox ResilientStore] Read error:', req.error);
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         resolve(null);
       };
     } catch (err) {
       console.warn('[ZeroBox ResilientStore] Synchronous read error:', err);
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
       resolve(null);
     }
   });
@@ -189,17 +189,17 @@ export async function listSnapshots(): Promise<string[]> {
       const req = store.getAllKeys();
 
       req.onsuccess = () => {
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         const keys = (req.result as string[]).sort().reverse();
         resolve(keys);
       };
 
       req.onerror = () => {
-        try { db.close(); } catch {}
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         resolve([]);
       };
     } catch {
-      try { db?.close(); } catch {}
+      try { db?.close(); } catch { /* best-effort close; the connection may already be closed */ }
       resolve([]);
     }
   });
@@ -293,22 +293,22 @@ function runRawRequest<T>(
           const tx = db.transaction(STORE_NAME, mode);
           const req = op(tx.objectStore(STORE_NAME));
           tx.oncomplete = () => {
-            try { db.close(); } catch {}
+            try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
             resolve(pick(req));
           };
           tx.onerror = () => {
             console.warn('[ZeroBox ResilientStore] Raw record transaction error:', tx.error);
-            try { db.close(); } catch {}
+            try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
             resolve(fallback);
           };
           tx.onabort = () => {
             console.warn('[ZeroBox ResilientStore] Raw record transaction aborted:', tx.error);
-            try { db.close(); } catch {}
+            try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
             resolve(fallback);
           };
         } catch (err) {
           console.warn('[ZeroBox ResilientStore] Raw record error:', err);
-          try { db.close(); } catch {}
+          try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
           resolve(fallback);
         }
       })

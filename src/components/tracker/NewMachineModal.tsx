@@ -278,9 +278,9 @@ export const NewMachineModal: React.FC = () => {
 
                 {!isPersonal && (
                 <div>
-                  <label className="block text-muted mb-1 font-semibold">
+                  <div className="block text-muted mb-1 font-semibold">
                     Platform
-                  </label>
+                  </div>
                   <CyberSelect<Platform>
                     value={platform}
                     onChange={setPlatform}
@@ -298,10 +298,10 @@ export const NewMachineModal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="flex items-center justify-between text-muted mb-1 font-semibold">
+                  <div className="flex items-center justify-between text-muted mb-1 font-semibold">
                     <span>Operating System</span>
                     <OsBadge os={os} size="xs" />
-                  </label>
+                  </div>
                   <CyberSelect<OperatingSystem>
                     value={os}
                     onChange={setOs}
@@ -315,9 +315,9 @@ export const NewMachineModal: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-muted mb-1 font-semibold">
+                  <div className="block text-muted mb-1 font-semibold">
                     Difficulty Tier
-                  </label>
+                  </div>
                   <CyberSelect<Difficulty>
                     value={difficulty}
                     onChange={setDifficulty}

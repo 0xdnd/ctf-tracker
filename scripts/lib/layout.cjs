@@ -3,18 +3,19 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { beaconTag, analyticsNote } = require('./site.cjs');
+const { ogImageFor } = require('../og/pages.cjs');
 const ORIGIN = 'https://ctftracker.com';
 // Describes public/og.png (kept identical to the alt text in index.html and scripts/templates/landing.html).
 // Same icon set as index.html and scripts/templates/landing.html.
 const ICON_LINKS = [
   '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />',
-  '<link rel="icon" type="image/x-icon" href="/favicon.ico?v=12" />',
-  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=12" />',
-  '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=12" />',
-  '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=12" />',
-  '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=12" />',
+  '<link rel="icon" type="image/x-icon" href="/favicon.ico?v=13" />',
+  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=13" />',
+  '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=13" />',
+  '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=13" />',
+  '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=13" />',
 ].map((l) => '  ' + l).join('\n');
-const OG_IMAGE_ALT ='ZeroBox logo, a glowing blue open box, above the tagline Free offline CTF tracker and OSCP exam simulator on a dark background.';
+const OG_IMAGE_ALT ='ZeroBox logo and the tagline Free offline CTF tracker and OSCP exam simulator, next to a screenshot of the tracker Kanban board on a dark background.';
 
 // Stylesheet sources, concatenated in this exact order (later files override earlier ones).
 const CSS_DIR = path.join(__dirname, '..', 'site', 'css');
@@ -29,6 +30,12 @@ const CSS_HREF = '/static.css?v=' + crypto.createHash('sha1').update(STATIC_CSS)
 // Search/filter/sort script for the machine list pages (public/table-filter.js), loaded only where renderPage gets tableFilter: true.
 const TF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'table-filter.js'), 'utf8');
 const TF_SRC = '/table-filter.js?v=' + crypto.createHash('sha1').update(TF_JS).digest('hex').slice(0, 8);
+// Copy buttons for code blocks (public/copy-code.js), loaded only on pages whose body has a <pre> block (or where renderPage gets copyCode: true).
+const CC_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'copy-code.js'), 'utf8');
+const CC_SRC = '/copy-code.js?v=' + crypto.createHash('sha1').update(CC_JS).digest('hex').slice(0, 8);
+// Old /machines/?tag= and ?q= links go to /machines/all/ (public/machines-redirect.js), loaded only where renderPage gets redirectListQuery: true.
+const MR_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'machines-redirect.js'), 'utf8');
+const MR_SRC = '/machines-redirect.js?v=' + crypto.createHash('sha1').update(MR_JS).digest('hex').slice(0, 8);
 // Theme bootstrap (public/theme.js) inlined into <head>: no blocking request, and it still runs before first paint (no theme flash).
 // apply-csp.cjs hashes inline scripts at build, so the pages' script-src stays hash-based. public/theme.js is still deployed for pages cached before this change.
 const THEME_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'theme.js'), 'utf8').replace(/\r\n?/g, '\n').trim();
@@ -305,7 +312,7 @@ function stampArticle(html, { modified, published }) {
     let o;
     try {
       o = JSON.parse(json);
-    } catch (e) {
+    } catch {
       return m;
     }
     if (!o || o['@type'] !== 'TechArticle') return m;
@@ -317,8 +324,14 @@ function stampArticle(html, { modified, published }) {
     return `<script type="application/ld+json">${jsonLd(next)}</script>`;
   });
   if (!stamped) return html;
-  const byline = `<p class="note">By <a href="${ABOUT_PATH}">${esc(personLd().name)}</a> · Updated <time datetime="${modified}">${modified}</time></p>`;
-  return out.replace('</h1>', () => `</h1>\n      ${byline}`);
+  return addByline(out, modified);
+}
+const bylineHtml = (modified) => `<p class="note">By <a href="${ABOUT_PATH}">${esc(personLd().name)}</a> · Updated <time datetime="${modified}">${modified}</time></p>`;
+const addByline = (html, modified) => html.replace('</h1>', () => `</h1>\n      ${bylineHtml(modified)}`);
+/** Visible "By <name> · Updated <date>" line for list and hub pages (no TechArticle); the date is the page's sitemap lastmod. No-op when the page already has one. */
+function stampUpdated(html, modified) {
+  if (!modified || /Updated <time /.test(html)) return html;
+  return addByline(html, modified);
 }
 
 /** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean, tableFilter?: boolean } */
@@ -355,6 +368,9 @@ function renderPage(opts) {
     .map(([n, p], i) => (i === crumbs.length - 1 ? `<span aria-current="page">${esc(n)}</span>` : `<a href="${p}">${esc(n)}</a>`))
     .join(' <span class="sep">/</span> ');
   const desc = esc(truncate(opts.description, MAX_DESC));
+  const og = ogImageFor(opts.path, { platform: opts.ogPlatform }); // per-page share image; /og.png when none
+  const ogSrc = ORIGIN + (og ? og.file : '/og.png?v=2');
+  const ogAlt = esc(og ? og.alt : OG_IMAGE_ALT);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -366,9 +382,11 @@ function renderPage(opts) {
   <meta name="robots" content="noindex,follow" />` : ''}
 ${ICON_LINKS}
   <link rel="manifest" href="/manifest.webmanifest" />
-  ${THEME_SCRIPT}
+  ${THEME_SCRIPT}${opts.redirectListQuery ? `
+  <script src="${MR_SRC}"></script>` : ''}
   <link rel="stylesheet" href="${CSS_HREF}" />${opts.tableFilter ? `
-  <script src="${TF_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
+  <script src="${TF_SRC}" defer></script>` : ''}${opts.copyCode || /<pre[\s>]/.test(opts.body || '') ? `
+  <script src="${CC_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
   <meta property="og:site_name" content="ZeroBox" />
@@ -376,16 +394,16 @@ ${fontPreloadTags()}` : ''}
   <meta property="og:url" content="${url}" />
   <meta property="og:title" content="${esc(opts.title)}" />
   <meta property="og:description" content="${desc}" />
-  <meta property="og:image" content="${ORIGIN}/og.png" />
+  <meta property="og:image" content="${ogSrc}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="${OG_IMAGE_ALT}" />
+  <meta property="og:image:alt" content="${ogAlt}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="${url}" />
   <meta name="twitter:title" content="${esc(opts.title)}" />
   <meta name="twitter:description" content="${desc}" />
-  <meta name="twitter:image" content="${ORIGIN}/og.png" />
-  <meta name="twitter:image:alt" content="${OG_IMAGE_ALT}" />
+  <meta name="twitter:image" content="${ogSrc}" />
+  <meta name="twitter:image:alt" content="${ogAlt}" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; manifest-src 'self'; style-src 'self'; script-src 'self' https://static.cloudflareinsights.com; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com;" />
 ${ld}
 </head>
@@ -393,7 +411,7 @@ ${ld}
 ${siteHeader({ current: opts.path })}
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb">${crumbHtml}</nav>
-    <main id="main">
+    <main id="main" tabindex="-1">
       <h1>${esc(opts.h1)}</h1>
 ${a11yPres(opts.body)}
     </main>
@@ -434,7 +452,7 @@ ${ICON_LINKS}
 <body>
 ${siteHeader({ current: '' })}
   <div class="wrap">
-    <main id="main" class="nf">
+    <main id="main" class="nf" tabindex="-1">
       <p class="nf-num" aria-hidden="true">404</p>
       <h1>This one isn't on the board</h1>
       <p class="lead">Nothing lives at this address. The link may be old or mistyped.</p>
@@ -445,7 +463,7 @@ ${siteHeader({ current: '' })}
           <ul class="nf-pills"><li>Not found</li><li>No foothold</li></ul>
         </div>
       </div>
-      <form class="nf-search" action="/machines/" method="get" role="search">
+      <form class="nf-search" action="/machines/all/" method="get" role="search">
         <label for="nf-q">Search the machine list</label>
         <div class="nf-search-row"><input id="nf-q" type="search" name="q" placeholder="Name or tag" autocomplete="off" spellcheck="false" maxlength="100" /><button class="btn" type="submit">Search</button></div>
       </form>
@@ -460,4 +478,4 @@ ${siteFooter({ analyticsNote: '' })}
 `;
 }
 
-module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
+module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, stampUpdated, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };

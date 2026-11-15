@@ -1,5 +1,4 @@
 /* One-shot: converts catalog-candidates/*.md into src/data/catalogSources/{pg,vulnhub}.json. */
-/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 

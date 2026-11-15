@@ -29,6 +29,7 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   defaultTargetId = '',
   soundEnabled = false,
 }) => {
+  const uid = useId();
   const targetFieldId = useId();
   const categoryFieldId = useId();
   const [targetId, setTargetId] = useState<string>(defaultTargetId);
@@ -198,10 +199,10 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-secondary mb-1">
+                  <label htmlFor={`${uid}-201`} className="block text-xs font-medium text-secondary mb-1">
                     Username or identity
                   </label>
-                  <input
+                  <input id={`${uid}-201`}
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -213,10 +214,10 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
 
               {/* Secret Textarea */}
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <label htmlFor={`${uid}-216`} className="block text-xs font-medium text-secondary mb-1">
                   Secret value or key <span className="text-callout-danger-fg">*</span>
                 </label>
-                <textarea
+                <textarea id={`${uid}-216`}
                   required
                   rows={3}
                   value={secret}
@@ -267,10 +268,10 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
 
               {/* Tactical Notes */}
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <label htmlFor={`${uid}-270`} className="block text-xs font-medium text-secondary mb-1">
                   Notes and context
                 </label>
-                <input
+                <input id={`${uid}-270`}
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

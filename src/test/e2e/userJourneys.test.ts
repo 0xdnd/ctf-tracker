@@ -208,7 +208,7 @@ Reading \`/root/root.txt\` yielded the final proof flag.
     const backupJson = useCtfStore.getState().exportBackup();
     expect(typeof backupJson).toBe('string');
     const parsedBackup = JSON.parse(backupJson);
-    expect(parsedBackup.machines.some((m: any) => m.name === 'Vault-Alpha')).toBe(true);
+    expect(parsedBackup.machines.some((m: { name: string }) => m.name === 'Vault-Alpha')).toBe(true);
     expect(parsedBackup.userNotes.length).toBe(2);
     expect(parsedBackup.userWikilinkMap['kerberoasting']).toBe('note-02');
 

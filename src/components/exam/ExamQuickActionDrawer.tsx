@@ -190,6 +190,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
       {/* Backdrop with click-to-dismiss */}
       <div
         data-testid="exam-drawer-backdrop"
+        role="presentation"
         className="absolute inset-0 bg-surface-inverse/60 backdrop-blur-sm"
         onClick={() => setQuickDrawerOpen(false)}
       />
@@ -300,10 +301,11 @@ export const ExamQuickActionDrawer: React.FC = () => {
               <form onSubmit={handleFlagSubmit} className="space-y-3">
                 {/* Target Box Selector */}
                 <div>
-                  <label className="block text-[11px] text-muted mb-1">
+                  <label htmlFor="exam-drawer-box-select" className="block text-[11px] text-muted mb-1">
                     Select target box
                   </label>
                   <select
+                    id="exam-drawer-box-select"
                     data-testid="exam-drawer-box-select"
                     value={selectedBoxId}
                     onChange={(e) => setSelectedBoxId(e.target.value)}
@@ -353,7 +355,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
                 {/* Flag Input & Format Indicator */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] text-muted">
+                    <label htmlFor="exam-drawer-flag-input" className="text-[11px] text-muted">
                       Flag Hash / String
                     </label>
                     {flagInput.trim().length > 0 && (
@@ -371,6 +373,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
                   </div>
                   <input
                     ref={flagInputRef}
+                    id="exam-drawer-flag-input"
                     data-testid="exam-drawer-flag-input"
                     type="text"
                     value={flagInput}

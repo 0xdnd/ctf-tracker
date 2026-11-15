@@ -41,6 +41,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
     return (
       <div className="select-none text-xs" data-tree-type="folder" data-tree-path={node.fullPath}>
         <div
+          role="presentation"
           onClick={() => {
             // Clicking anywhere on folder row toggles expansion AND selects folder filter
             onToggleFolder(node.id);
@@ -139,6 +140,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
       id={`cpts-note-${note.id}`}
       data-tree-type="note"
       data-note-id={note.id}
+      role="presentation"
       onClick={() => onSelectNote(note)}
       className={`flex items-center justify-between py-1.5 px-2 rounded-lg text-xs sm:text-[13px] transition-colors group border cursor-pointer ${
         isActive
@@ -181,7 +183,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
       </div>
     </div>
     {snippetQuery?.trim() && (
-      <div className="pl-8 pr-2 pb-1 cursor-pointer" onClick={() => onSelectNote(note)}>
+      <div role="presentation" className="pl-8 pr-2 pb-1 cursor-pointer" onClick={() => onSelectNote(note)}>
         <NoteMatchSnippets markdown={note.rawMarkdown} query={snippetQuery} />
       </div>
     )}

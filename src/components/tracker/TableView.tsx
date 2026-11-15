@@ -387,6 +387,7 @@ const StackedCard = React.memo<TableRowProps>(({
   onOpenWriteup,
 }) => (
   <div
+    role="presentation"
     onClick={() => onSelect(m.id)}
     className={`group cursor-pointer rounded-2xl border bg-surface-card p-3.5 transition-colors active:scale-[0.97] ${
       isActiveTarget ? 'border-accent ring-1 ring-accent/40' : 'border-subtle'
@@ -434,7 +435,7 @@ const StackedCard = React.memo<TableRowProps>(({
         />
       )}
     </div>
-    <div className="mt-3 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+    <div className="mt-3 flex items-center justify-between gap-2" role="presentation" onClick={(e) => e.stopPropagation()}>
       <FlagButtons machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />
       <CyberSelect<PipelineStatus>
         value={m.status}
@@ -445,7 +446,7 @@ const StackedCard = React.memo<TableRowProps>(({
         soundEnabled={soundEnabled}
       />
     </div>
-    <div className="mt-2 border-t border-subtle pt-2" onClick={(e) => e.stopPropagation()}>
+    <div className="mt-2 border-t border-subtle pt-2" role="presentation" onClick={(e) => e.stopPropagation()}>
       <RowActions
         machine={m}
         isActiveTarget={isActiveTarget}

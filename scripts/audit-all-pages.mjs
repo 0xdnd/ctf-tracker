@@ -28,10 +28,10 @@ function getAllFiles(dir, ext = '.html') {
 const htmlFiles = getAllFiles(distDir, '.html');
 console.log(`[1] Found ${htmlFiles.length} HTML files across dist/\n`);
 
-let errors = [];
-let warnings = [];
-let checkedAssets = new Set();
-let missingAssets = new Set();
+const errors = [];
+const warnings = [];
+const checkedAssets = new Set();
+const missingAssets = new Set();
 
 for (const file of htmlFiles) {
   const rel = path.relative(distDir, file);
@@ -91,11 +91,11 @@ if (missingAssets.size > 0) {
 console.log('\n[1.5] Auditing dynamic code-split chunks in dist/assets/...');
 const assetsDir = path.join(distDir, 'assets');
 let dynamicChunksChecked = 0;
-let missingDynamicChunks = [];
+const missingDynamicChunks = [];
 
 if (fs.existsSync(assetsDir)) {
   const jsFiles = fs.readdirSync(assetsDir).filter((f) => f.endsWith('.js'));
-  const chunkRegex = /assets\/[a-zA-Z0-9_\-\.]+\.js/g;
+  const chunkRegex = /assets\/[a-zA-Z0-9_.-]+\.js/g;
   const foundChunkRefs = new Set();
 
   for (const jsFile of jsFiles) {
@@ -106,7 +106,7 @@ if (fs.existsSync(assetsDir)) {
       while ((m = chunkRegex.exec(code)) !== null) {
         foundChunkRefs.add(m[0]);
       }
-    } catch {}
+    } catch { /* unreadable chunk: ignore */ }
   }
 
   for (const chunkRef of foundChunkRefs) {
@@ -142,7 +142,7 @@ if (!urls.includes('/')) urls.unshift('/');
 console.log(`Found ${urls.length} routes in sitemap to verify live over HTTP.`);
 
 let serverOk = 0;
-let serverFail = [];
+const serverFail = [];
 
 for (const u of urls) {
   try {

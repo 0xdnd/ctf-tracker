@@ -1532,7 +1532,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       }
     });
 
-    let activeTemplates = clusterTemplates.filter(ct => (bucketMap[ct.id] || []).length > 0);
+    const activeTemplates = clusterTemplates.filter(ct => (bucketMap[ct.id] || []).length > 0);
     const activeCount = Math.max(1, activeTemplates.length);
 
     const activeClusters: ClusterDef[] = activeTemplates.map((ct, idx) => {
@@ -1789,7 +1789,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             dx: dxSvg / viewRef.current.scale,
             dy: dySvg / viewRef.current.scale,
           };
-        } catch {}
+        } catch { /* best effort; fall through */ }
       }
     }
     const rect = containerRef.current?.getBoundingClientRect();
@@ -2018,7 +2018,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (typeof containerRef.current?.setPointerCapture === 'function') {
       try {
         containerRef.current.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch { /* pointer capture unsupported */ }
     }
   };
 
@@ -2107,7 +2107,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       if (typeof containerRef.current?.releasePointerCapture === 'function') {
         try {
           containerRef.current.releasePointerCapture(e.pointerId);
-        } catch {}
+        } catch { /* pointer already released */ }
       }
     }
 
@@ -2189,7 +2189,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (typeof e.currentTarget.setPointerCapture === 'function') {
       try {
         e.currentTarget.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch { /* pointer capture unsupported */ }
     }
 
     const { graphNodePositions: storedPositions, defaultNodePositions: basePositions } = positionsRef.current;
@@ -2271,7 +2271,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (typeof e.currentTarget.releasePointerCapture === 'function') {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch { /* pointer already released */ }
     }
 
     if (nodeDragRef.current.isDragging) {
@@ -2320,7 +2320,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             const inv = ctm.inverse();
             cursorX = e.clientX * inv.a + e.clientY * inv.c + inv.e;
             cursorY = e.clientX * inv.b + e.clientY * inv.d + inv.f;
-          } catch {}
+          } catch { /* non-invertible matrix; keep previous cursor */ }
         }
       } else if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();

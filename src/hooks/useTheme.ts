@@ -58,16 +58,16 @@ export function extractCoordinates(
   }
 
   // KeyboardEvent or element target - fall back to element center
-  if ('currentTarget' in event && event.currentTarget && typeof (event.currentTarget as any).getBoundingClientRect === 'function') {
-    const rect = (event.currentTarget as any).getBoundingClientRect();
+  if ('currentTarget' in event && event.currentTarget && typeof (event.currentTarget as Element).getBoundingClientRect === 'function') {
+    const rect = (event.currentTarget as Element).getBoundingClientRect();
     return {
       x: Math.round(rect.left + rect.width / 2),
       y: Math.round(rect.top + rect.height / 2),
     };
   }
 
-  if ('target' in event && event.target && typeof (event.target as any).getBoundingClientRect === 'function') {
-    const rect = (event.target as any).getBoundingClientRect();
+  if ('target' in event && event.target && typeof (event.target as Element).getBoundingClientRect === 'function') {
+    const rect = (event.target as Element).getBoundingClientRect();
     return {
       x: Math.round(rect.left + rect.width / 2),
       y: Math.round(rect.top + rect.height / 2),
@@ -87,7 +87,7 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   const root = document.documentElement;
 
   if (themeTransitionTimeout) {
-    clearTimeout(themeTransitionTimeout as any);
+    clearTimeout(themeTransitionTimeout);
     themeTransitionTimeout = null;
   }
 
@@ -141,6 +141,8 @@ export function useThemeEngine(active = true): ThemeContextValue {
   useEffect(() => {
     if (!active) return;
     applyThemeToDOM(effectiveTheme, false);
+    // Mount-only on purpose: re-running on theme change would re-apply the theme without the animated transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Listen for system theme preference changes
@@ -157,7 +159,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  }, [active, theme]);
 
   // Listen for reduced motion preference changes
   useEffect(() => {
@@ -169,7 +171,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  }, [active]);
 
   const currentEffectiveThemeRef = useRef<'light' | 'dark'>(effectiveTheme);
   useEffect(() => {
@@ -184,7 +186,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
     
     if (eff === currentEff) {
         setThemeState(mode);
-        try { localStorage.setItem(STORAGE_KEY, mode); } catch {}
+        try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* storage unavailable (private mode or quota); theme stays in memory */ }
         return;
     }
 
@@ -192,14 +194,14 @@ export function useThemeEngine(active = true): ThemeContextValue {
       applyThemeToDOM(eff, animate);
       currentEffectiveThemeRef.current = eff;
       setThemeState(mode);
-      try { localStorage.setItem(STORAGE_KEY, mode); } catch {}
+      try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* storage unavailable (private mode or quota); theme stays in memory */ }
     };
 
     if (!getPrefersReducedMotion() && 'startViewTransition' in document) {
       const coords = extractCoordinates(eventOrCoords);
       document.documentElement.classList.remove('theme-transition');
 
-      const transition = (document as any).startViewTransition(() => {
+      const transition = document.startViewTransition(() => {
         updateDOMAndState(false);
       });
 
@@ -232,7 +234,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
     } else {
       updateDOMAndState(!getPrefersReducedMotion());
     }
-  }, [theme, systemTheme]);
+  }, []);
 
   const toggleTheme = useCallback(
     (event?: React.MouseEvent | React.KeyboardEvent | RippleCoordinates) => {
@@ -248,7 +250,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
         setThemeState(nextMode);
         try {
           localStorage.setItem(STORAGE_KEY, nextMode);
-        } catch {}
+        } catch { /* storage unavailable (private mode or quota); theme stays in memory */ }
       };
 
       // Use native View Transitions API if available
@@ -258,7 +260,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
         // Ensure any existing transition classes are removed first
         document.documentElement.classList.remove('theme-transition');
 
-        const transition = (document as any).startViewTransition(() => {
+        const transition = document.startViewTransition(() => {
           updateDOMAndState(false);
         });
 
@@ -293,7 +295,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
         updateDOMAndState(!prefersReducedMotion);
       }
     },
-    [isDark, prefersReducedMotion]
+    [prefersReducedMotion]
   );
 
   return {

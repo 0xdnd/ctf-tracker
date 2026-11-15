@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Machine } from '../types';
 import type { PracticeTrack } from '../data/tracksData';
-import { buildTrackOrderIndex, getTrackProgress } from './trackProgress';
+import { buildTrackOrderIndex, createTrackProgressLookup, getTrackProgress } from './trackProgress';
 
 const mk = (id: string, name: string, status: Machine['status'] = 'backlog', platform: Machine['platform'] = 'HTB'): Machine =>
   ({ id, name, platform, status, tags: [], certifications: [], difficulty: 'Easy', os: 'Linux', ip: '', timeSpentSeconds: 0 }) as unknown as Machine;
@@ -62,5 +62,29 @@ describe('buildTrackOrderIndex', () => {
     const t = { id: 'idx-memo', order: ['HTB:alpha'] };
     expect(buildTrackOrderIndex(t, machines)).toBe(buildTrackOrderIndex(t, machines));
     expect(buildTrackOrderIndex(t, [...machines])).not.toBe(buildTrackOrderIndex(t, machines));
+  });
+});
+
+describe('createTrackProgressLookup', () => {
+  it('works a track out only when it is first read, then reuses it', () => {
+    const machines = [mk('a', 'Alpha', 'root'), mk('b', 'Bravo')];
+    let calls = 0;
+    const counted = (id: string, names: string[]): Pick<PracticeTrack, 'id' | 'order' | 'filterFn'> => {
+      const t = track(id, names);
+      return { ...t, filterFn: (m) => (calls++, t.filterFn(m)) };
+    };
+    const lookup = createTrackProgressLookup([counted('lk-1', ['Alpha', 'Bravo']), counted('lk-2', ['Bravo'])], machines);
+    expect(calls).toBe(0);
+    const first = lookup.get('lk-1');
+    expect(first).toMatchObject({ done: 1, total: 2, percent: 50 });
+    const afterFirst = calls;
+    expect(afterFirst).toBe(machines.length);
+    expect(lookup.get('lk-1')).toBe(first);
+    expect(calls).toBe(afterFirst);
+    expect(lookup.get('lk-2')).toMatchObject({ done: 0, total: 1 });
+  });
+
+  it('answers undefined for a track it was not given', () => {
+    expect(createTrackProgressLookup([], [mk('a', 'Alpha')]).get('nope')).toBeUndefined();
   });
 });

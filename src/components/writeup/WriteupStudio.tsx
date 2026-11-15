@@ -302,6 +302,7 @@ const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
                 <span>Copy</span>
               </button>
             </div>
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable code block must be keyboard-focusable */}
             <pre tabIndex={0} aria-label={codeBlockLang ? `${codeBlockLang} code block` : 'Code block'} className="p-3 text-xs text-on-inverse font-mono overflow-x-auto whitespace-pre-wrap">
               {rawCmdText}
             </pre>
@@ -519,6 +520,7 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
         </div>
       </div>
 
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable */}
       <div tabIndex={0} role="region" aria-label="Rendered markdown preview" className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-surface-card">
         {renderedPreview}
       </div>
@@ -760,7 +762,7 @@ cat /root/root.txt
   };
 
   // Debounce refs for fluid, 120 FPS typing in the editor
-  const debounceTimerRef = useRef<any>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingMachineIdRef = useRef<string | null>(null);
   const pendingContentRef = useRef<string>('');
 
@@ -779,6 +781,7 @@ cat /root/root.txt
     return () => {
       flushDebouncedSave();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount-only flush; flushDebouncedSave reads refs
   }, []);
 
   useEffect(() => {
@@ -804,6 +807,7 @@ cat /root/root.txt
       editorContentRef.current = tmpl;
       setEditorContent(tmpl);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on machine identity/content; flushDebouncedSave reads refs
   }, [selectedMachine?.id, selectedMachine?.writeupMarkdown, selectedMachine?.isActive, isDeepStorageLoaded]);
 
   const telemetry = useMemo(() => computeWriteupTelemetry(editorContent), [editorContent]);
@@ -811,7 +815,6 @@ cat /root/root.txt
   // Writeup Completeness & Quality Readiness Meter
   const readiness = useMemo(
     () => computeWriteupReadiness(editorContent, selectedMachine ? generateTemplate(selectedMachine) : ''),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [editorContent, selectedMachine],
   );
 
@@ -985,7 +988,7 @@ cat /root/root.txt
   const backlinkDocs = useMemo(() => buildBacklinkDocs(userNotePool, machines), [userNotePool, machines]);
   const backlinks = useMemo(
     () => (selectedMachine && !selectedMachine.isActive ? getBacklinks(backlinkDocs, selectedMachine.name) : []),
-    [backlinkDocs, selectedMachine?.name, selectedMachine?.isActive]
+    [backlinkDocs, selectedMachine]
   );
 
   const handleResetToTemplate = async () => {
@@ -1353,6 +1356,7 @@ cat /root/root.txt
             />
           </div>
 
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable */}
           <div tabIndex={0} role="region" aria-label="Matching notes" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
             {matchingNotes.length === 0 ? (
               <div className="col-span-full p-4 text-center text-xs text-muted">
@@ -1468,6 +1472,7 @@ cat /root/root.txt
                   <input
                     ref={fileInputRef}
                     type="file"
+                    aria-label="Choose image file to insert"
                     accept="image/*"
                     onChange={handleImageFileUpload}
                     className="hidden"
@@ -1579,6 +1584,7 @@ cat /root/root.txt
                           value={snippetQuery}
                           onChange={(e) => setSnippetQuery(e.target.value)}
                           placeholder="Search 85+ commands..."
+                          // eslint-disable-next-line jsx-a11y/no-autofocus -- snippet search opened on demand
                           autoFocus
                           className="w-full h-7 px-2 rounded border border-subtle bg-surface-sunken text-[11px] text-primary"
                         />

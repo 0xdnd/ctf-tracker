@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { confirmAction } from '../../store/useConfirmStore';
 import { 
@@ -47,6 +47,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
   onUpdateEdge,
   onDeleteEdge,
 }) => {
+  const uid = useId();
   const globalVars = useCtfStore((s) => s.globalVars);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -302,10 +303,10 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
         {/* Vector Configuration Controls */}
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-secondary mb-1">
+            <label htmlFor={`${uid}-305`} className="block text-xs font-semibold text-secondary mb-1">
               Pivot / Vector Protocol
             </label>
-            <select
+            <select id={`${uid}-305`}
               value={edge.type}
               onChange={(e) => handleTypeChange(e.target.value as AttackEdgeType)}
               className="w-full px-2.5 py-1.5 rounded-lg bg-surface-card border border-strong text-primary text-xs font-semibold focus:outline-none focus:border-accent"
@@ -320,10 +321,10 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-secondary mb-1">
+              <label htmlFor={`${uid}-323`} className="block text-xs font-semibold text-secondary mb-1">
                 Port / Listener Hop
               </label>
-              <input
+              <input id={`${uid}-323`}
                 type="text"
                 value={customPort}
                 onChange={(e) => setCustomPort(e.target.value)}
@@ -334,9 +335,9 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-secondary mb-1">
+              <div className="block text-xs font-semibold text-secondary mb-1">
                 Link Status
-              </label>
+              </div>
               <button
                 type="button"
                 onClick={handleStatusToggle}
@@ -468,10 +469,10 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
 
         {/* Operator Notes */}
         <div>
-          <label className="block text-xs font-semibold text-secondary mb-1 font-sans">
+          <label htmlFor={`${uid}-471`} className="block text-xs font-semibold text-secondary mb-1 font-sans">
             Pivot Notes & Credentials
           </label>
-          <textarea
+          <textarea id={`${uid}-471`}
             rows={2}
             value={edgeNotes}
             onChange={(e) => handleNotesChange(e.target.value)}

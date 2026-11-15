@@ -1,7 +1,7 @@
 (function () {
   var KEY = 'zb-site-theme';
   var root = document.documentElement;
-  function stored() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function stored() { try { return localStorage.getItem(KEY); } catch { return null; } }
   function apply(light) {
     if (light) root.setAttribute('data-theme', 'light'); else root.removeAttribute('data-theme');
     var m = document.querySelector('meta[name="theme-color"]');
@@ -23,7 +23,7 @@
           var rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
           if (!rm && !document.startViewTransition) { root.classList.add('theme-anim'); setTimeout(function () { root.classList.remove('theme-anim'); }, 300); }
           if (!rm && document.startViewTransition) document.startViewTransition(function () { apply(light); }); else apply(light);
-          try { localStorage.setItem(KEY, light ? 'light' : 'dark'); } catch (e) {}
+          try { localStorage.setItem(KEY, light ? 'light' : 'dark'); } catch { /* storage unavailable */ }
           var all = document.querySelectorAll('[data-theme-toggle]');
           for (var j = 0; j < all.length; j++) sync(all[j]);
         });

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -15,13 +15,14 @@ import {
   Upload,
   ClipboardPaste
 } from 'lucide-react';
-import { useCtfStore, FilterState, HtbTargetStatus } from '../../store/useCtfStore';
+import { useCtfStore, FilterState, HtbTargetStatus, type SortOption } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
+import { afterFirstPaint } from '../../utils/afterFirstPaint';
 import { Platform, Difficulty, OperatingSystem } from '../../types';
 import { createMachineFilter, getActiveTrackIds } from '../../utils/machineFilter';
-import { getTrackProgress, type TrackProgress } from '../../utils/trackProgress';
+import { createTrackProgressLookup } from '../../utils/trackProgress';
 import { getOrderedActiveTrack, resolveSortMode, sortMachines } from '../../utils/trackerSort';
 import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
 import { KanbanBoard } from './KanbanBoard';
@@ -37,12 +38,7 @@ import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
 import { CanvasSkeleton, ViewSkeleton } from '../common/Skeleton';
 import { PRACTICE_TRACKS, TRACK_BY_ID } from '../../data/tracksData';
-import { 
-  VULN_CATEGORIES, 
-  VulnDomainId, 
-  classifyMachine, 
-  getCategoryDef 
-} from '../../utils/categoryUtils';
+import { getCategoryDef } from '../../utils/categoryUtils';
 
 const SORT_OPTIONS: CyberSelectOption[] = [
   { value: 'recommended', label: 'Recommended' },
@@ -74,6 +70,9 @@ const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
   { value: 'COMPLETED', label: 'Pwned' },
 ];
 
+// Rough height of the import card per breakpoint (measured), used only while it is not on screen yet.
+const IMPORT_SLOT = 'mb-4 min-h-[557px] sm:min-h-[290px] xl:min-h-[326px]';
+
 export const IMPORT_PANEL_HINT_ID = 'tracker-import-panel';
 
 export const TrackerView: React.FC = () => {
@@ -82,12 +81,13 @@ export const TrackerView: React.FC = () => {
     filters,
     setFilters,
     resetFilters,
-    viewMode,
+    viewMode: storeViewMode,
     setViewMode,
     setReconAutomationModalOpen,
     setSelectedMachineId,
     soundEnabled,
     loadCatalog,
+    isCatalogLoaded,
     setFilterDrawerOpen,
     addCustomMachine,
     updateMachine,
@@ -103,6 +103,7 @@ export const TrackerView: React.FC = () => {
       setSelectedMachineId: s.setSelectedMachineId,
       soundEnabled: s.soundEnabled,
       loadCatalog: s.loadCatalog,
+      isCatalogLoaded: s.isCatalogLoaded,
       setFilterDrawerOpen: s.setFilterDrawerOpen,
       addCustomMachine: s.addCustomMachine,
       updateMachine: s.updateMachine,
@@ -122,7 +123,16 @@ export const TrackerView: React.FC = () => {
   const importSkipped = useOnboardingStore((s) => s.dismissedHints.includes(IMPORT_PANEL_HINT_ID));
   // Bumped by the Import menu so an already-open card remounts and takes focus again.
   const [importNonce, setImportNonce] = useState(0);
-  const showImportPanel = storageReady && !importDismissed && (importRequested || (!hasSolved && !importSkipped));
+  const wantsImportPanel = !importDismissed && (importRequested || (!hasSolved && !importSkipped));
+  const showImportPanel = storageReady && wantsImportPanel;
+  // Storage can stay unavailable (private browsing): give the placeholder a bounded wait, then drop it.
+  const [slotExpired, setSlotExpired] = useState(false);
+  const holdingSlot = wantsImportPanel && !storageReady;
+  useEffect(() => {
+    if (!holdingSlot) return;
+    const t = setTimeout(() => setSlotExpired(true), 3000);
+    return () => clearTimeout(t);
+  }, [holdingSlot]);
 
   // The filter drawer chunk is fetched the first time it is opened, then kept mounted for its exit animation.
   const filterDrawerOpen = useCtfStore((s) => s.filterDrawerOpen);
@@ -136,28 +146,47 @@ export const TrackerView: React.FC = () => {
 
   const sessionSeed = React.useMemo(() => Math.floor(Math.random() * 1000000), []);
 
-  // Progress per track (chip row, strip and track counts all read this one pass over the catalog)
-  const trackProgress = React.useMemo(() => {
-    const byTrack = new Map<string, TrackProgress>();
-    PRACTICE_TRACKS.forEach((t) => byTrack.set(t.id, getTrackProgress(t, machines)));
-    return byTrack;
-  }, [machines]);
+  // Progress per track (track menu, strip and track counts), each track worked out when first read.
+  const trackProgress = React.useMemo(
+    // Track totals only mean something against the full catalog: until it merges, no counts are shown.
+    () => createTrackProgressLookup(isCatalogLoaded ? PRACTICE_TRACKS : [], machines),
+    [machines, isCatalogLoaded],
+  );
 
-  // Lazy-load master machine catalog when TrackerView mounts
+  // Load the master machine catalog once the first paint has settled, so its chunks never race the largest
+  // contentful paint. Until then the page shows the starter rows (see catalogPending below). Opening the
+  // scan importer asks for it at once.
+  // A load that fails (offline, a stale deploy) drops the skeleton so the normal empty state can show.
+  const [catalogFailed, setCatalogFailed] = useState(false);
   React.useEffect(() => {
-    loadCatalog();
+    let live = true;
+    void afterFirstPaint()
+      .then(() => (live ? loadCatalog() : undefined))
+      .then(() => {
+        const s = useCtfStore.getState();
+        if (live && !s.isCatalogLoaded && !s.isCatalogLoading) setCatalogFailed(true);
+      });
+    return () => {
+      live = false;
+    };
   }, [loadCatalog]);
 
-  // On mobile viewports (< 768px), default to cards view on initial mount if not explicitly set
+
+  // On mobile viewports (< 768px), default to cards view on initial mount if not explicitly set. The pick is
+  // made before the first render (the store still says kanban then), so the board never renders kanban and swaps.
+  const [mobileGridDefault, setMobileGridDefault] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768 &&
+      !localStorage.getItem('ctf_tracker_view_mode_set')
+  );
   React.useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      const hasStoredView = localStorage.getItem('ctf_tracker_view_mode_set');
-      if (!hasStoredView) {
-        setViewMode('grid');
-        localStorage.setItem('ctf_tracker_view_mode_set', 'true');
-      }
-    }
-  }, [setViewMode]);
+    if (!mobileGridDefault) return;
+    setViewMode('grid');
+    localStorage.setItem('ctf_tracker_view_mode_set', 'true');
+    setMobileGridDefault(false);
+  }, [mobileGridDefault, setViewMode]);
+  const viewMode = mobileGridDefault ? 'grid' : storeViewMode;
 
   // URL-synchronized filters & deep-linking for target sharing (#/tracker?target=RootMe or ?search=...)
   React.useEffect(() => {
@@ -248,43 +277,6 @@ export const TrackerView: React.FC = () => {
       }
     }
   }, [filters.selectedVulnCategory, filters.selectedDomain, setFilters]);
-
-  // Extract all unique tags across machines
-
-  // Track statistics (pwned count & total for each track)
-
-  // Memoized live category and domain counts across all catalog targets
-  useMemo(() => {
-        const catCounts: Record<string, number> = { ALL: machines.length };
-        const domCounts: Record<VulnDomainId, number> = {
-            all: machines.length,
-            web: 0,
-            ad: 0,
-            system: 0,
-            advanced: 0,
-        };
-        VULN_CATEGORIES.forEach((c) => {
-            catCounts[c.id] = 0;
-        });
-        let adCount = 0;
-        let nonAdCount = 0;
-        machines.forEach((m) => {
-            const res = classifyMachine(m);
-            if (res.isAD) adCount++;
-            else nonAdCount++;
-            res.domains.forEach((d) => {
-                domCounts[d] = (domCounts[d] || 0) + 1;
-            });
-            res.categories.forEach((catId) => {
-                if (catCounts[catId] !== undefined) {
-                    catCounts[catId]++;
-                }
-            });
-        });
-        catCounts['AD_TOTAL'] = adCount;
-        catCounts['NON_AD_TOTAL'] = nonAdCount;
-        return { categoryCounts: catCounts, domainCounts: domCounts };
-    }, [machines]);
 
   // Deferred filter state for 120 FPS typing responsiveness
   const deferredFilters = React.useDeferredValue(filters);
@@ -452,6 +444,9 @@ export const TrackerView: React.FC = () => {
   }, [filters, setFilters, dueFilterOn, toggleDueFilter]);
 
   const [multiImportOpen, setMultiImportOpen] = useState(false);
+  React.useEffect(() => {
+    if (multiImportOpen) void loadCatalog();
+  }, [multiImportOpen, loadCatalog]);
 
   const activeTrackIds = getActiveTrackIds(filters);
   const activeTrack = activeTrackIds.length === 1 ? TRACK_BY_ID.get(activeTrackIds[0]) : undefined;
@@ -466,7 +461,7 @@ export const TrackerView: React.FC = () => {
   };
 
   // The count only shows while filters hide part of the catalog.
-  const hiddenByFilters = filteredMachines.length !== machines.length;
+  const hiddenByFilters = isCatalogLoaded && filteredMachines.length !== machines.length;
   const countLabel = (
     <span className="font-mono tabular-nums text-xs text-muted whitespace-nowrap px-1" aria-live="polite">
       {hiddenByFilters ? `${filteredMachines.length} of ${machines.length}` : ''}
@@ -521,6 +516,7 @@ export const TrackerView: React.FC = () => {
           open={multiImportOpen}
           onClose={() => setMultiImportOpen(false)}
           machines={liveMachines}
+          catalogReady={isCatalogLoaded}
           soundEnabled={soundEnabled}
           addCustomMachine={addCustomMachine}
           updateMachine={updateMachine}
@@ -726,7 +722,7 @@ export const TrackerView: React.FC = () => {
                 name="tracker-sort-select"
                 aria-label={`Sort targets - ${sortOptions.find(o => o.value === (filters.sortBy || 'default'))?.label || 'Default Order'}`}
                 value={filters.sortBy || 'default'}
-                onChange={(val) => setFilters({ sortBy: val as any })}
+                onChange={(val) => setFilters({ sortBy: val as SortOption })}
                 options={sortOptions}
                 variant="transparent"
                 size="xs"
@@ -861,8 +857,10 @@ export const TrackerView: React.FC = () => {
         </React.Suspense>
       )}
 
+      {/* The card's space is held from the first render (storage not ready, chunk still loading), so the board below stays put. */}
+      {wantsImportPanel && !showImportPanel && !slotExpired && <div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}
       {showImportPanel && (
-        <React.Suspense fallback={null}>
+        <React.Suspense fallback={<div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}>
           <ImportPanels
             key={importNonce}
             csvRequested={csvRequested}
@@ -884,7 +882,12 @@ export const TrackerView: React.FC = () => {
       )}
 
       {/* Main View Renderer */}
-      {filteredMachines.length === 0 ? (
+      {filteredMachines.length === 0 && !isCatalogLoaded && !catalogFailed ? (
+        // The full catalog is still loading: the starter rows alone say nothing about what the filters match.
+        <div data-testid="catalog-pending">
+          <ViewSkeleton label="Loading machines…" />
+        </div>
+      ) : filteredMachines.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-12 px-4 text-center rounded-2xl border border-dashed border-strong">
           <p className="text-sm text-secondary font-sans max-w-md">
             {filters.searchQuery

@@ -331,7 +331,7 @@ export function evaluateOperatorGamification(
   // - Nmap scan: 5 XP each
   // - AD machine pwn: 25 XP bonus
   // - Exam passed: 100 XP each
-  let calculatedXp = 
+  const calculatedXp = 
     (footholdCount * 10) +
     (easyRoots * 20) +
     (mediumRoots * 40) +

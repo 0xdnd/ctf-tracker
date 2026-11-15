@@ -8,6 +8,7 @@ import { NotesWorkspaceTabStrip } from '../../components/workspace/NotesWorkspac
 import { MobileNav } from '../../components/layout/MobileNav';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { seedImportedNotes } from '../fixtures/userNoteFixtures';
+type PersistApi = { persist: { getOptions: () => { merge: (persisted: unknown, current: unknown) => { openTabIds: string[]; activeTabId: string | null } } } };
 
 describe('Persistent Multi-Tab Notes Workspace Engine', () => {
   beforeEach(() => {
@@ -168,7 +169,7 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
 
   it('keeps persisted tab IDs in persist merge (imported notes hydrate later) and readers skip missing ones', () => {
     const store = useNotesWorkspaceStore.getState();
-    const config = (useNotesWorkspaceStore as any).persist;
+    const config = (useNotesWorkspaceStore as unknown as PersistApi).persist;
 
     // An imported note id that has not hydrated yet plus a stale legacy id
     const legacyState = {
@@ -267,7 +268,7 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
             commands: ['GetUserSPNs.py'],
             relPath: 'custom/ad.md',
             rawMarkdown: '# Custom AD Playbook',
-          } as any,
+          } as never,
         ],
       });
       useNotesWorkspaceStore.setState({

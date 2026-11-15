@@ -1,4 +1,4 @@
-import React, { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
+import React, { Component, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
@@ -11,6 +11,8 @@ import { WelcomeCard } from './WelcomeCard';
 import { PageHint } from './PageHint';
 import { useAnyModalOpen } from './useAnyModalOpen';
 import { useOnboardingStore } from './useOnboardingStore';
+import { afterFirstPaint } from '../utils/afterFirstPaint';
+import { hideStaticWelcome, removeStaticWelcome, takeStaticWelcomeIntent } from './staticWelcome';
 
 // The runner, Guide Center and all the guide steps only load when one of them is actually used.
 const TourRunner = lazy(() => import('./TourRunner'));
@@ -46,14 +48,29 @@ class RunnerErrorBoundary extends Component<RunnerBoundaryProps, { hasError: boo
   }
 }
 
-/** Shown while the runner chunk loads, so the welcome screen never waits on the network. */
+/**
+ * The welcome card. Painted by the main bundle, so the first thing a new visitor sees (and the page's largest
+ * contentful paint) never waits on the runner chunk. The runner takes over once the first paint has settled.
+ */
 const WelcomeFallback: React.FC = () => {
   const next = useOnboardingStore((st) => st.next);
   const finishTour = useOnboardingStore((st) => st.finishTour);
+  const navigate = useNavigate();
+  // The HTML copy of this card (if the page had one) is covered in the same commit this one appears, so nothing flickers.
+  // A button pressed on it before the app was ready is replayed here.
+  useLayoutEffect(() => {
+    hideStaticWelcome();
+    const intent = takeStaticWelcomeIntent();
+    if (intent === 'start') next();
+    else if (intent) {
+      finishTour();
+      if (intent === 'import') navigate('/tracker?import=1');
+    }
+  }, [next, finishTour, navigate]);
   return (
     <div className="fixed inset-0 z-critical" data-testid="tour-overlay">
-      <div className="absolute inset-0 bg-surface-inverse/80" aria-hidden="true" />
-      <div className="absolute inset-0 flex items-center justify-center p-3">
+      <div className="absolute inset-0" style={{ background: DIM }} aria-hidden="true" />
+      <div className="absolute inset-0 flex items-center justify-center p-3 max-md:items-start">
         <div
           role="dialog"
           aria-modal="true"
@@ -61,7 +78,7 @@ const WelcomeFallback: React.FC = () => {
           aria-describedby="tour-body"
           data-testid="tour-welcome-fallback"
           style={{ boxShadow: CARD_SHADOW }}
-          className={`max-h-full w-[28rem] max-w-full overflow-y-auto p-5 md:p-7 ${cardSurface}`}
+          className={`max-h-full w-[28rem] max-w-full overflow-y-auto p-5 max-md:mt-[calc(6vh-0.75rem)] max-md:max-h-[88vh] md:p-7 ${cardSurface}`}
         >
           <WelcomeCard onStart={() => next()} onSkip={finishTour} />
         </div>
@@ -109,6 +126,15 @@ export const OnboardingLayer: React.FC = () => {
   const notesOpen = useNotesWorkspaceStore((st) => st.isOpen);
   const examStatus = useExamStore((st) => st.status);
   const stepIndex = useOnboardingStore((st) => st.stepIndex);
+  // Once the tour is over (or never going to show) the HTML welcome card is dropped for good.
+  // Read live: on the first mount this effect can run before this render's tourActive has caught up with useFirstRunTour.
+  useEffect(() => {
+    if (!useOnboardingStore.getState().tourActive) removeStaticWelcome();
+  }, [tourActive]);
+  // A modal the page opened by itself (a shared ?target= link) holds the tour back; the HTML card must not stay on top of it.
+  useEffect(() => {
+    if (modalOpen) removeStaticWelcome();
+  }, [modalOpen]);
   const examLive = examStatus === 'running' || examStatus === 'paused';
   const routeGuideId = guideIdForPath(pathname, examLive);
   // Subscribed so the route's tip appears or goes away on its own, for example when the catalog finishes loading.
@@ -202,15 +228,42 @@ export const OnboardingLayer: React.FC = () => {
   if (launchPending) landedFromLaunch.current = true;
   else if (!runner.value) landedFromLaunch.current = false;
 
+  // The runner chunk and its card wait for the first paint to settle, so the chunk request does not start before
+  // the page's largest contentful paint. Meanwhile the welcome card above is on screen; Start tour or a guide
+  // launch mounts the runner at once.
+  const [paintSettled, setPaintSettled] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void afterFirstPaint().then(() => {
+      if (live) setPaintSettled(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const runnerRendered = useRef(false);
+  const deferRunner =
+    runner.value === 'tour' &&
+    !runner.closing &&
+    stepIndex === 0 &&
+    !landedFromLaunch.current &&
+    !paintSettled &&
+    !runnerRendered.current;
+  if (runner.value && !runner.closing && !deferRunner) runnerRendered.current = true;
+  else if (!runner.value) runnerRendered.current = false;
+  // Closed before the runner ever loaded: nothing to animate away.
+  const skipRunner = runner.closing && !runnerRendered.current;
+
   return (
     <>
-      {runner.value && (
+      {deferRunner && <WelcomeFallback />}
+      {runner.value && !deferRunner && !skipRunner && (
         <RunnerErrorBoundary key={runner.value} mode={runner.value}>
           <Suspense
             fallback={
               showTour && stepIndex === 0 ? (
                 <WelcomeFallback />
-              ) : landedFromLaunch.current ? (
+              ) : landedFromLaunch.current || showTour ? (
                 <div aria-hidden="true" className="fixed inset-0 z-critical" style={{ background: DIM }} />
               ) : null
             }

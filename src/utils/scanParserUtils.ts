@@ -101,7 +101,7 @@ export function parseNmapXml(xmlContent: string): ScanImportResult | null {
     // Defense against XML entity expansion (Billion Laughs) and XXE constructs.
     // Handles multi-line / nested DTD internal subsets (strip all <!DOCTYPE ... [ ... ]> and <!ENTITY... blocks)
     const sanitizedXml = xmlContent
-      .replace(/<!DOCTYPE\b[^>\[]*\[[\s\S]*?\][^>]*>/gi, '')
+      .replace(/<!DOCTYPE\b[^>[]*\[[\s\S]*?\][^>]*>/gi, '')
       .replace(/<!DOCTYPE\b[^>]*>/gi, '')
       .replace(/<!ENTITY\b[\s\S]*?>/gi, '')
       .replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)[a-zA-Z0-9_-]+;/gi, '');
@@ -750,7 +750,7 @@ export function parseMultiHostScan(raw: string): ParsedMultiHost[] {
       if (typeof window === 'undefined' || typeof DOMParser === 'undefined') return [];
 
       const sanitizedXml = trimmed
-        .replace(/<!DOCTYPE\b[^>\[]*\[[\s\S]*?\][^>]*>/gi, '')
+        .replace(/<!DOCTYPE\b[^>[]*\[[\s\S]*?\][^>]*>/gi, '')
         .replace(/<!DOCTYPE\b[^>]*>/gi, '')
         .replace(/<!ENTITY\b[\s\S]*?>/gi, '')
         .replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)[a-zA-Z0-9_-]+;/gi, '');

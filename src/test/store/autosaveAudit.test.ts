@@ -4,11 +4,11 @@ import { SCHEMA_VERSION } from '../../utils/schemaWriteGate';
 
 const idb = vi.hoisted(() => ({
   workspace: new Map<string, unknown>(),
-  deep: new Map<string, any>(),
+  deep: new Map<string, { writeups: Record<string, { writeupMarkdown?: string }>; customNotes: unknown[] }>(),
   /** When set, replaces the deep-record read (to delay or fail it). */
-  deepLoader: null as null | ((id: string) => Promise<any>),
+  deepLoader: null as null | ((id: string) => Promise<unknown>),
   /** When set, replaces the IndexedDB workspace-copy read (to delay it). */
-  workspaceLoader: null as null | ((key: string) => Promise<any>),
+  workspaceLoader: null as null | ((key: string) => Promise<unknown>),
 }));
 vi.mock('../../utils/indexedDbDeepStorage', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../utils/indexedDbDeepStorage')>()),
@@ -198,7 +198,7 @@ describe('item 5: storage quota', () => {
   it('setItem reports failure, keeps the value in memory and getItem prefers it over the stale disk copy', async () => {
     const mod = await boot();
     localStorage.setItem('zb-test-key', 'old');
-    const alerts: any[] = [];
+    const alerts: unknown[] = [];
     const onAlert = (e: Event) => alerts.push((e as CustomEvent).detail);
     window.addEventListener('zerobox:storage', onAlert);
     const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
@@ -383,7 +383,7 @@ describe('item 8: deleted writeups and notes stay deleted', () => {
     await vi.waitFor(() => expect(mod.useCtfStore.getState().isDeepStorageLoaded).toBe(true));
     mod.useCtfStore.getState().updateMachine('custom-mine', { writeupMarkdown: '' });
     mod.flushProfileSave();
-    expect(idb.deep.get('guest').writeups).toEqual({});
+    expect(idb.deep.get('guest')?.writeups).toEqual({});
 
     const reloaded = await boot();
     await vi.waitFor(() => expect(reloaded.useCtfStore.getState().isDeepStorageLoaded).toBe(true));
@@ -414,7 +414,7 @@ describe('item 9: vault note saves surface failure', () => {
     const mod = await boot();
     const vault = await import('../../utils/indexedDbVault'); // the setup.ts mock instance of this boot
     const s = () => mod.useCtfStore.getState();
-    s().setUserNotes([{ id: 'vault-note', title: 'V', rawMarkdown: 'a' } as any]);
+    s().setUserNotes([{ id: 'vault-note', title: 'V', rawMarkdown: 'a' } as never]);
 
     vi.mocked(vault.saveVaultToIndexedDb).mockRejectedValueOnce(new Error('aborted'));
     await expect(s().updateNoteContent('vault-note', 'b')).rejects.toThrow('aborted');
@@ -434,7 +434,7 @@ describe('item 9: vault note saves surface failure', () => {
     const mod = await boot();
     const vault = await import('../../utils/indexedDbVault');
     vi.mocked(vault.loadVaultFromIndexedDb).mockResolvedValueOnce({
-      notes: [{ id: 'late-note', title: 'L', rawMarkdown: 'a' } as any],
+      notes: [{ id: 'late-note', title: 'L', rawMarkdown: 'a' } as never],
       wikilinkMap: {},
       importedAt: '2026-01-01T00:00:00.000Z',
     });
@@ -515,9 +515,9 @@ describe('pagehide flushes like visibilitychange hidden', () => {
 
 describe('advisor 1+2: deep-record hydration is profile-guarded and failure-aware', () => {
   const deferred = () => {
-    let resolve!: (v: any) => void;
+    let resolve!: (v: unknown) => void;
     let reject!: (e: unknown) => void;
-    const promise = new Promise<any>((res, rej) => ((resolve = res), (reject = rej)));
+    const promise = new Promise<unknown>((res, rej) => ((resolve = res), (reject = rej)));
     return { promise, resolve, reject };
   };
 
@@ -554,7 +554,7 @@ describe('advisor 1+2: deep-record hydration is profile-guarded and failure-awar
     expect(s().isDeepStorageLoaded).toBe(false);
     s().updateMachine('custom-a', { ip: '10.10.5.5' });
     mod.flushProfileSave();
-    expect(idb.deep.get('guest').writeups['custom-a'].writeupMarkdown).toBe('ONLY IN IDB');
+    expect(idb.deep.get('guest')?.writeups['custom-a']?.writeupMarkdown).toBe('ONLY IN IDB');
 
     fail = false;
     await vi.waitFor(() => expect(s().isDeepStorageLoaded).toBe(true), { timeout: 4_000 });

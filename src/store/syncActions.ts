@@ -17,6 +17,7 @@ import {
   type MergeBackupResult,
 } from './useCtfStore';
 import { saveLootState } from './lootPersistence';
+import { CATALOG_NOT_LOADED_MESSAGE, CatalogNotLoadedError, loadCatalogOrFail } from './catalogGuard';
 import { takePreSyncSnapshot } from './preMigrationBackup';
 import { saveVaultToIndexedDb } from '../utils/indexedDbVault';
 import { loadDeepProfileData, mergeDeepPayloadsIntoMachines } from '../utils/indexedDbDeepStorage';
@@ -56,6 +57,8 @@ async function withDeepWriteups(machines: Machine[], profileId: string): Promise
 
 export async function exportSyncFile(): Promise<string> {
   const get = useCtfStore.getState;
+  // The catalog loads after first paint: a sync file built before it merged would lack the catalog-side fields.
+  if (!(await loadCatalogOrFail())) throw new CatalogNotLoadedError();
   const profileId = get().currentProfileId || 'guest';
   const machines = await withDeepWriteups(machinesWithActiveTimer(get()), profileId);
   return buildSyncFile(
@@ -72,8 +75,9 @@ export async function mergeBackup(jsonStr: string, resolutions?: Record<string, 
   if (!remote) return { status: 'invalid' };
   const profileId = get().currentProfileId || 'guest';
   const deviceId = getOrCreateDeviceId();
-  // Full catalog first: pristine catalog rows in the file are then recognised as such.
-  await get().loadCatalog();
+  // Full catalog first: pristine catalog rows in the file are then recognised as such. Without it every catalog row
+  // would be compared against the starter list, so stop before anything is previewed or written.
+  if (!(await loadCatalogOrFail())) return { status: 'failed', error: CATALOG_NOT_LOADED_MESSAGE };
 
   const compute = async () => {
     const state = get();

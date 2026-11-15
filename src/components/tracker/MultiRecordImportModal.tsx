@@ -84,6 +84,8 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   machines: Machine[];
+  /** False until the full catalog has merged: matching against the starter rows would create duplicates. Defaults to true. */
+  catalogReady?: boolean;
   soundEnabled?: boolean;
   addCustomMachine: (m: Omit<Machine, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateMachine: (id: string, updates: Partial<Machine>) => void;
@@ -100,6 +102,7 @@ export const MultiRecordImportModal: React.FC<ModalProps> = ({
   open,
   onClose,
   machines,
+  catalogReady = true,
   soundEnabled,
   addCustomMachine,
   updateMachine,
@@ -109,8 +112,8 @@ export const MultiRecordImportModal: React.FC<ModalProps> = ({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const rows = useMemo(
-    () => (text.trim() ? planMultiRecordImport(parseMultiHostScan(text), machines) : []),
-    [text, machines],
+    () => (catalogReady && text.trim() ? planMultiRecordImport(parseMultiHostScan(text), machines) : []),
+    [catalogReady, text, machines],
   );
 
   const close = () => {
@@ -186,7 +189,10 @@ export const MultiRecordImportModal: React.FC<ModalProps> = ({
           {error && <span role="alert" className="text-xs text-callout-danger-fg">{error}</span>}
         </div>
 
-        {text.trim() && rows.length === 0 && (
+        {!catalogReady && text.trim() && (
+          <p role="status" className="text-xs text-secondary">Loading the machine catalog...</p>
+        )}
+        {catalogReady && text.trim() && rows.length === 0 && (
           <p role="status" className="text-xs text-callout-warn-fg">No hosts found in this text.</p>
         )}
         {rows.length > 0 && (

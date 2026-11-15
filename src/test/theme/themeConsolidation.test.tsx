@@ -527,13 +527,13 @@ describe('Theme System Consolidation (3 Core Themes: Obsidian, OffSec, HTB)', ()
     });
 
     it('validates workspace export payload includes themePreset and validateWorkspacePayload extracts it', () => {
-      const state: any = {
+      const state = {
         machines: [],
         globalVars: {},
         cheatsheets: [],
         activitySessions: [],
         themePreset: 'htb',
-      };
+      } as unknown as Parameters<typeof exportWorkspaceToJson>[0];
       const json = exportWorkspaceToJson(state);
       const parsed = JSON.parse(json);
       expect(parsed.themePreset).toBe('htb');

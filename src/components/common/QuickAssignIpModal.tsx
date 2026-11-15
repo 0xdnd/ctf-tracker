@@ -46,6 +46,7 @@ export const QuickAssignIpModal: React.FC = () => {
         }
       }, 50);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on machine id only so edits to machine do not reset the input
   }, [machine?.id]);
 
   if (!assignIpMachineId || !machine) return null;
@@ -89,7 +90,9 @@ export const QuickAssignIpModal: React.FC = () => {
         setErrorMsg('');
         if (soundEnabled) playCyberSound('copy');
       }
-    } catch {}
+    } catch {
+      // clipboard read denied; leave input unchanged
+    }
   };
 
   const handlePreFill = (prefix: string) => {
@@ -116,7 +119,7 @@ export const QuickAssignIpModal: React.FC = () => {
       zIndex="modalNested"
       className="!bg-surface-inverse/70"
     >
-      <div data-testid="quick-assign-ip-modal" onKeyDown={handleKeyDown}>
+      <div data-testid="quick-assign-ip-modal" role="presentation" onKeyDown={handleKeyDown}>
         {/* Header Strip */}
         <div className="flex items-center justify-between border-b border-subtle p-4 bg-surface-card">
           <div className="flex items-center gap-2.5">
@@ -169,8 +172,8 @@ export const QuickAssignIpModal: React.FC = () => {
 
           {/* Input Field */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-secondary flex items-center justify-between">
-              <span>Spawned target IP</span>
+            <div className="text-[11px] font-medium text-secondary flex items-center justify-between">
+              <label htmlFor="quick-assign-ip-input">Spawned target IP</label>
               <button
                 type="button"
                 onClick={handlePaste}
@@ -178,7 +181,7 @@ export const QuickAssignIpModal: React.FC = () => {
               >
                 <Clipboard className="w-3 h-3" /> Paste from clipboard
               </button>
-            </label>
+            </div>
 
             <div className="relative">
               <input

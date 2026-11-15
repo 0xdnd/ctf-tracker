@@ -794,6 +794,7 @@ export const EvidenceVaultPage: React.FC = () => {
         <div className="sm:rounded-xl sm:border sm:border-subtle sm:bg-surface-card sm:overflow-hidden machined-edge">
           <div className="sm:overflow-x-auto sm:max-h-[calc(100vh-320px)]">
             <table role="table" className="block sm:table w-full text-left border-collapse sm:min-w-[960px]">
+            {/* eslint-disable jsx-a11y/no-redundant-roles, jsx-a11y/no-interactive-element-to-noninteractive-role -- explicit table roles are required: the mobile layout sets display:block on table elements, which drops their native semantics in some browsers */}
               <thead
                 role="rowgroup"
                 className="hidden sm:table-header-group sticky top-0 z-10 bg-surface-base border-b border-subtle text-xs text-muted font-medium"
@@ -1000,6 +1001,7 @@ export const EvidenceVaultPage: React.FC = () => {
                   </tr>
                 )}
               </tbody>
+            {/* eslint-enable jsx-a11y/no-redundant-roles, jsx-a11y/no-interactive-element-to-noninteractive-role */}
             </table>
           </div>
         </div>

@@ -95,7 +95,7 @@ export function engageSchemaWriteGate(reason: SchemaWriteGateReason): void {
   listeners.forEach((cb) => {
     try {
       cb(reason);
-    } catch {}
+    } catch { /* a throwing listener must not block the remaining listeners */ }
   });
 }
 
@@ -157,5 +157,5 @@ export function recordSchemaVersion(): void {
     } else if (stored > SCHEMA_VERSION) {
       engageSchemaWriteGate('newer-schema');
     }
-  } catch {}
+  } catch { /* storage unavailable (private mode or quota); leave the gate state unchanged */ }
 }

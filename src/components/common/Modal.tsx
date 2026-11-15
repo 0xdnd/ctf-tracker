@@ -138,7 +138,7 @@ const ModalSurface: React.FC<SurfaceProps> = ({
 
   if (!animated) {
     return (
-      <div className={backdropClass} onClick={handleBackdropClick} data-modal-backdrop>
+      <div className={backdropClass} role="presentation" onClick={handleBackdropClick} data-modal-backdrop>
         <div {...panelProps}>{body}</div>
       </div>
     );

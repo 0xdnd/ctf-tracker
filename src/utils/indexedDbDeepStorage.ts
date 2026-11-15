@@ -9,7 +9,7 @@ export interface DeepWriteupEntry {
 
 export interface DeepProfilePayload {
   writeups: Record<string, DeepWriteupEntry>;
-  customNotes?: any[];
+  customNotes?: unknown[];
   updatedAt: string;
 }
 
@@ -49,7 +49,7 @@ function openDeepDatabase(): Promise<IDBDatabase | null> {
         const db = request.result;
         db.onversionchange = () => {
           console.warn('[ZeroBox Deep Storage] Database version change detected, closing connection.');
-          try { db.close(); } catch {}
+          try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
         };
         resolve(db);
       };
@@ -168,7 +168,7 @@ async function saveDeepProfileDataNow(
       const safeDone = () => {
         if (!isResolved) {
           isResolved = true;
-          try { activeDb.close(); } catch {}
+          try { activeDb.close(); } catch { /* best-effort close; the connection may already be closed */ }
           resolve();
         }
       };
@@ -199,7 +199,7 @@ async function saveDeepProfileDataNow(
     });
   } catch (err) {
     console.warn('[ZeroBox Deep Storage] Could not persist to IndexedDB:', err);
-    try { db?.close(); } catch {}
+    try { db?.close(); } catch { /* best-effort close; the connection may already be closed */ }
   }
 }
 
@@ -216,7 +216,7 @@ export async function restoreDeepProfileData(profileId: string, payload: DeepPro
     const done = (ok: boolean) => {
       if (settled) return;
       settled = true;
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
       resolve(ok);
     };
     try {
@@ -249,7 +249,7 @@ export async function loadDeepProfileData(profileId: string): Promise<DeepProfil
       request.onsuccess = () => {
         const opened = request.result;
         opened.onversionchange = () => {
-          try { opened.close(); } catch {}
+          try { opened.close(); } catch { /* best-effort close; the connection may already be closed */ }
         };
         resolve(opened);
       };
@@ -263,7 +263,7 @@ export async function loadDeepProfileData(profileId: string): Promise<DeepProfil
     const done = (err: unknown, res: DeepProfilePayload | null = null) => {
       if (settled) return;
       settled = true;
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
       if (err) reject(err);
       else resolve(res);
     };
@@ -309,7 +309,7 @@ export async function deleteMachineDeepData(profileId: string, machineId: string
       const safeDone = () => {
         if (!isResolved) {
           isResolved = true;
-          try { activeDb.close(); } catch {}
+          try { activeDb.close(); } catch { /* best-effort close; the connection may already be closed */ }
           resolve();
         }
       };
@@ -334,13 +334,13 @@ export async function deleteMachineDeepData(profileId: string, machineId: string
           }
         };
         req.onerror = () => safeDone();
-      } catch (err) {
+      } catch {
         safeDone();
       }
     });
   } catch (err) {
     console.warn('[ZeroBox Deep Storage] Could not delete machine deep data:', err);
-    try { db?.close(); } catch {}
+    try { db?.close(); } catch { /* best-effort close; the connection may already be closed */ }
   }
 }
 
@@ -377,7 +377,7 @@ async function runProofImageTx<T>(
     const done = (value: T) => {
       if (settled) return;
       settled = true;
-      try { db.close(); } catch {}
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
       resolve(value);
     };
     try {

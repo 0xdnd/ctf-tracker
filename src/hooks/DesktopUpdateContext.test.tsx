@@ -1,12 +1,10 @@
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as tauriCore from '@tauri-apps/api/core';
 import * as tauriUpdater from '@tauri-apps/plugin-updater';
 import { DesktopUpdateProvider, AUTO_CHECK_DELAY_MS } from './DesktopUpdateContext';
 import { UpdateControl } from '../components/common/OperatorDossierModal';
 import { useToastStore } from '../store/useToastStore';
 
-vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false) }));
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn().mockResolvedValue('2.5.2') }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn().mockResolvedValue(undefined) }));
@@ -24,13 +22,18 @@ async function advance() {
   });
 }
 
+/** What @tauri-apps/api's isTauri() reads; the hook checks it directly so the package stays out of the web entry bundle. */
+const setTauri = (on: boolean) => {
+  (window as unknown as { isTauri?: boolean }).isTauri = on;
+};
+
 describe('DesktopUpdateProvider', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     useToastStore.setState({ toasts: [] });
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(false);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(false);
   });
   afterEach(() => vi.useRealTimers());
 
@@ -42,7 +45,7 @@ describe('DesktopUpdateProvider', () => {
   });
 
   it('checks once on desktop and stays silent when the check fails', async () => {
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    setTauri(true);
     vi.mocked(tauriUpdater.check).mockRejectedValue(new Error('offline'));
     render(tree);
     expect(tauriUpdater.check).not.toHaveBeenCalled();
@@ -54,12 +57,12 @@ describe('DesktopUpdateProvider', () => {
   });
 
   it('shows a notice and the restart button when an update is ready', async () => {
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    setTauri(true);
     vi.mocked(tauriUpdater.check).mockResolvedValue({
       version: '2.6.0',
       download: vi.fn().mockResolvedValue(undefined),
       install: vi.fn(),
-    } as any);
+    } as never);
     render(tree);
     await advance();
     const toasts = useToastStore.getState().toasts;
@@ -71,7 +74,7 @@ describe('DesktopUpdateProvider', () => {
   });
 
   it('reports the latest version after a manual check', async () => {
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    setTauri(true);
     vi.mocked(tauriUpdater.check).mockResolvedValue(null);
     render(tree);
     await advance();
@@ -84,7 +87,7 @@ describe('DesktopUpdateProvider', () => {
   });
 
   it('shows a short error after a failed manual check', async () => {
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    setTauri(true);
     vi.mocked(tauriUpdater.check).mockResolvedValue(null);
     render(tree);
     await advance();

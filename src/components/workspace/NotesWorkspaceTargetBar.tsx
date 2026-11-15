@@ -468,6 +468,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
             onChange={(e) => setPickerQuery(e.target.value)}
             placeholder="Filter targets by name or IP..."
             aria-label="Filter targets"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- popover filter opened on demand
             autoFocus
             className="w-full h-7 px-2 rounded border border-subtle bg-surface-sunken text-[11px] text-primary placeholder-muted focus:outline-none focus:border-accent"
           />
@@ -538,6 +539,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
               onChange={(e) => setLootUser(e.target.value)}
               placeholder="Username (e.g. svc_loanmgr, admin)"
               aria-label="Loot username"
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- inline form opened on demand
               autoFocus
               className="w-full h-7 px-2 rounded border border-subtle bg-surface-sunken text-[11px] font-mono text-primary placeholder-muted focus:outline-none focus:border-accent"
             />

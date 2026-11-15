@@ -5,6 +5,6 @@
 export const isTauriTarget = (): boolean => {
   if (import.meta.env.VITE_TARGET === 'tauri') return true;
   if (typeof window === 'undefined') return false;
-  const w = window as any;
+  const w = window as unknown as Record<string, unknown>;
   return Boolean(w.__TAURI_INTERNALS__ || w.__TAURI__);
 };

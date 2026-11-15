@@ -312,7 +312,7 @@ describe('Adversarial Stress Test: Attack Graph State Persistence & Filter Invar
         safeLocalStorage.setItem(ATTACK_GRAPH_STORAGE_KEY, raw);
 
         // loadInitialAttackGraphState must NEVER throw
-        let loadedState: any;
+        let loadedState = null as unknown as ReturnType<typeof loadInitialAttackGraphState>;
         expect(() => {
           loadedState = loadInitialAttackGraphState();
         }).not.toThrow();
@@ -327,7 +327,7 @@ describe('Adversarial Stress Test: Attack Graph State Persistence & Filter Invar
     it('documents edge case: schema-level primitive value in graphNodePositions', () => {
       safeLocalStorage.setItem(ATTACK_GRAPH_STORAGE_KEY, '{"graphNodePositions": 42, "graphEdges": 99}');
 
-      let loadedState: any;
+      let loadedState = null as unknown as ReturnType<typeof loadInitialAttackGraphState>;
       expect(() => {
         loadedState = loadInitialAttackGraphState();
       }).not.toThrow();

@@ -216,7 +216,8 @@ describe('(5) merge ∘ lean ∘ merge is a fixed point', () => {
         // Heavy official fields are catalog-owned: a stale copy the old build stored is dropped by lean and only
         // comes back from the catalog, so compare everything the operator owns.
         const userOwned = (r?: Machine) => {
-          const { officialSynopsis: _s, officialPdf: _p, officialWalkthrough: _w, ...rest } = r ?? ({} as Machine);
+          const rest: Record<string, unknown> = { ...(r ?? {}) };
+          for (const key of ['officialSynopsis', 'officialPdf', 'officialWalkthrough']) delete rest[key];
           return rest;
         };
         expect(userOwned(y2.find((r) => r.id === id))).toEqual(userOwned(y1.find((r) => r.id === id)));

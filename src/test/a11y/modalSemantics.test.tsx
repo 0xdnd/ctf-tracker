@@ -146,7 +146,7 @@ describe('modal semantics: prop-driven dialogs', () => {
 });
 
 describe('modal semantics: MobileNav drawer', () => {
-  it('exposes a named dialog, locks scroll, and closes on Escape', () => {
+  it('exposes a named dialog, locks scroll, and closes on Escape', async () => {
     useCtfStore.setState({ mobileMenuOpen: true });
     render(
       <MemoryRouter>
@@ -154,7 +154,8 @@ describe('modal semantics: MobileNav drawer', () => {
       </MemoryRouter>
     );
 
-    const dialog = screen.getByRole('dialog', { name: 'Navigation menu' });
+    // The menu is its own lazy chunk, mounted when the menu first opens.
+    const dialog = await screen.findByRole('dialog', { name: 'Navigation menu' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(document.body.style.overflow).toBe('hidden');
 

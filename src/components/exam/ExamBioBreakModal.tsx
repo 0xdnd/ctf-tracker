@@ -106,6 +106,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
           {/* Backdrop */}
           <div
             data-testid="bio-break-backdrop"
+            role="presentation"
             className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-sm"
             onClick={onClose}
           />

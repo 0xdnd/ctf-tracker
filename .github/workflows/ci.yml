@@ -42,6 +42,14 @@ jobs:
       - name: Check Bundle Size Budget
         run: node scripts/check-bundle-size.mjs
 
+      - name: Unused code report (knip, report-only)
+        run: npm run knip
+        continue-on-error: true
+
+      - name: Data freshness report (report-only)
+        run: npm run check:freshness
+        continue-on-error: true
+
   desktop-check:
     runs-on: ubuntu-22.04
     timeout-minutes: 30

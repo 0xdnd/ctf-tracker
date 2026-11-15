@@ -40,6 +40,8 @@ export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 }
 
 const { INITIAL_MACHINES, ACTIVE_MACHINES, appendActiveMachines, PRACTICE_TRACKS, OFFICIAL_HTB_PRO_LABS } = loadData();
+// Pro Lab host and flag totals, from each lab's "<n>-hosts" / "<n>-flags" tag.
+const proLabTotal = (kind) => OFFICIAL_HTB_PRO_LABS.reduce((sum, lab) => sum + Number((lab.tags || []).find((t) => t.endsWith(`-${kind}`))?.split('-')[0] || 0), 0);
 const all = appendActiveMachines(INITIAL_MACHINES);
 // PG and VulnHub rows live in src/data/catalogSources and join the catalog at runtime (loadMachinesCatalog).
 const readCatalogSource = (f) => JSON.parse(fs.readFileSync(path.join(root, 'src/data/catalogSources', f), 'utf8'));
@@ -109,12 +111,12 @@ const lines = [
       ['TryHackMe (THM)', thm.length],
       ['Proving Grounds (PG)', pgRows.length],
       ['VulnHub', vulnhubRows.length],
-      ['מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs)', `**${OFFICIAL_HTB_PRO_LABS.length}** מעבדות (170 שרתים, 280 דגלים)`],
+      ['מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs)', `**${OFFICIAL_HTB_PRO_LABS.length}** מעבדות (${proLabTotal('hosts')} שרתים, ${proLabTotal('flags')} דגלים)`],
       ...(other.length ? [['פלטפורמות אחרות', other.length]] : []),
     ]
   ),
   '',
-  'הקטלוג המובנה כולל ' + ctfTotal.toLocaleString('en-US') + ' יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
+  'הקטלוג המובנה כולל ' + ctfTotal.toLocaleString('en-US') + ' יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף ' + OFFICIAL_HTB_PRO_LABS.length + ' תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו\').',
   '',
   '## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה',
   '',

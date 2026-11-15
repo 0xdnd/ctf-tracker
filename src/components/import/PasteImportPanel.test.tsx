@@ -35,7 +35,7 @@ beforeEach(() => {
   vi.mocked(playCyberSound).mockClear();
   vi.mocked(triggerRootCelebration).mockClear();
   useToastStore.setState({ toasts: [] });
-  useCtfStore.setState({ machines: seed.map((m) => ({ ...m })), soundEnabled: false, loadCatalog: vi.fn() } as never);
+  useCtfStore.setState({ machines: seed.map((m) => ({ ...m })), soundEnabled: false, isCatalogLoaded: true, loadCatalog: vi.fn() } as never);
 });
 afterEach(cleanup);
 

@@ -74,7 +74,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
   }, [defaultLanguage]);
 
   // Real-time live editable content state
-  const [liveContent, setLiveContent] = useState<string>(() => note.rawMarkdown || (note as any).content || '');
+  const [liveContent, setLiveContent] = useState<string>(() => note.rawMarkdown || (note as unknown as { content?: string }).content || '');
   const updateNoteContent = useCtfStore((s) => s.updateNoteContent);
 
   const handleToggleCheckbox = useCallback((lineIndex: number, newChecked: boolean) => {
@@ -107,7 +107,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
   const deferredContent = useDeferredValue(liveContent);
 
   // The note's text in the store (it changes on our own saves and when another tab saves the note).
-  const storeText: string = note.rawMarkdown || (note as any).content || '';
+  const storeText: string = note.rawMarkdown || (note as unknown as { content?: string }).content || '';
   const editorOpen = viewMode === 'raw' || viewMode === 'split';
   const syncedNoteIdRef = useRef(note.id);
 

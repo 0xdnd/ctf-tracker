@@ -139,6 +139,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
   if (isEditing) {
     return (
       <div
+        role="presentation"
         onClick={(e) => e.stopPropagation()}
         className={`inline-flex items-center gap-1 bg-surface-card border ${variant === 'hardware' ? 'border-accent' : 'border-accent/70'} rounded-[3px] p-0.5 font-mono tabular-nums ${className}`}
       >
@@ -180,6 +181,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
   if (isPlaceholder) {
     return (
       <div
+        role="presentation"
         onClick={(e) => e.stopPropagation()}
         className={`group/ip inline-flex items-center gap-1 font-mono tabular-nums ${sizeClasses.text} ${className}`}
       >
@@ -188,7 +190,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
           <button
             type="button"
             onClick={handleOpenQuickModal}
-            aria-label={size === 'xs' ? (initialIp ? `Set IP (${initialIp})` : 'Set dynamic IP') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}
+            aria-label={size === 'xs' ? (initialIp ? `${initialIp}, set IP` : 'Set IP, dynamic') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}
             className={`min-h-[24px] inline-flex items-center gap-1 ${size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-0.5'} text-callout-warn-fg hover:bg-callout-warn-fg/10 transition-interactive active:scale-[0.97] font-bold tabular-nums`}
             title="Dynamic spawned IP needed! Click to quickly assign spawned instance IP"
           >
@@ -210,6 +212,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
 
   return (
     <div
+      role="presentation"
       onClick={(e) => e.stopPropagation()}
       className={`group/ip inline-flex items-center gap-1.5 font-mono tabular-nums ${sizeClasses.text} ${className}`}
     >
@@ -226,14 +229,15 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
             : 'bg-surface-sunken border-subtle hover:border-strong text-primary'
         }`}
       >
-        <span
+        <button
+          type="button"
           onClick={handleCopy}
           onDoubleClick={handleStartEdit}
           className="cursor-pointer font-bold select-all tabular-nums"
           title="Click to copy IP • Double-click to edit"
         >
           {initialIp}
-        </span>
+        </button>
 
         {/* Copy confirmation or icon */}
         {copied ? (

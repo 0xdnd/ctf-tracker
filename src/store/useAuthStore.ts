@@ -39,7 +39,8 @@ export const DEFAULT_DANIEL_PROFILE: User = {
 // Legacy Google sign-in leftovers: drop the old client-id key and strip retired fields from persisted state.
 const stripLegacyGoogleFields = <T extends object>(u: T): T => {
   if (!u || typeof u !== 'object') return u;
-  const { googleId: _googleId, ...rest } = u as T & { googleId?: unknown };
+  const rest = { ...(u as T & { googleId?: unknown }) };
+  delete rest.googleId;
   return rest as T;
 };
 
@@ -127,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
             name: cleanName,
             callsign: cleanCallsign,
             role: opts.role || existing.role || 'Tactical Operator',
-            badgeColor: (opts.badgeColor as any) || existing.badgeColor || 'emerald',
+            badgeColor: opts.badgeColor || existing.badgeColor || 'emerald',
             avatarId: opts.avatarId || existing.avatarId || 'glitch-skull',
             avatarUrl: opts.avatarUrl || resolvedAvatar.dataUri,
             updatedAt: new Date().toISOString(),
@@ -137,7 +138,7 @@ export const useAuthStore = create<AuthState>()(
             name: cleanName,
             callsign: cleanCallsign,
             role: opts.role || 'Tactical Operator',
-            badgeColor: (opts.badgeColor as any) || 'emerald',
+            badgeColor: opts.badgeColor || 'emerald',
             avatarId: opts.avatarId || 'glitch-skull',
             avatarUrl: opts.avatarUrl || resolvedAvatar.dataUri,
             unlockedTrophies: {},
@@ -328,7 +329,8 @@ export const useAuthStore = create<AuthState>()(
       }),
       merge: (persistedState, currentState) => {
         const p = (persistedState ?? {}) as Record<string, unknown>;
-        const { googleClientId: _legacyClientId, ...rest } = p;
+        const rest = { ...p };
+        delete rest.googleClientId;
         const merged = { ...currentState, ...rest } as AuthState;
         if (merged.user) merged.user = stripLegacyGoogleFields(merged.user);
         if (Array.isArray(merged.profiles)) merged.profiles = merged.profiles.map(stripLegacyGoogleFields);

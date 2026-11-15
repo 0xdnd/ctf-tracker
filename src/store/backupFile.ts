@@ -6,6 +6,7 @@
  * encrypts afterwards. Import verifies the checksum before anything is applied.
  */
 import { useCtfStore, broadcastVaultNotesUpdated } from './useCtfStore';
+import { CATALOG_NOT_LOADED_MESSAGE, CatalogNotLoadedError, loadCatalogOrFail } from './catalogGuard';
 import { dumpVaultForBackup, upsertVaultNotesFromBackup } from '../utils/indexedDbVault';
 import { validateWorkspacePayload } from '../utils/workspaceStorage';
 import { isSchemaWriteGated } from '../utils/schemaWriteGate';
@@ -64,6 +65,8 @@ export function isV3BackupText(text: string): boolean {
  * only when WebCrypto is unavailable (insecure context). Rejects when the vault cannot be read.
  */
 export async function buildBackupFile(options?: { redactSecrets?: boolean }): Promise<string> {
+  // The catalog loads after first paint: exporting before it merged would drop the catalog-side machine fields.
+  if (!(await loadCatalogOrFail())) throw new CatalogNotLoadedError();
   const core = JSON.parse(useCtfStore.getState().exportBackup(options)) as Record<string, unknown>;
   const redact = options?.redactSecrets === true;
   if (redact) delete core.examState; // exam answers/notes can hold secrets
@@ -84,7 +87,7 @@ export async function buildBackupFile(options?: { redactSecrets?: boolean }): Pr
   return JSON.stringify(payload, null, 2);
 }
 
-export type BackupImportFailure = 'malformed' | 'invalid' | 'checksum' | 'unverifiable' | 'gated';
+export type BackupImportFailure = 'malformed' | 'invalid' | 'checksum' | 'unverifiable' | 'gated' | 'catalog';
 
 export type BackupImportResult =
   | { ok: true; verified: boolean; warnings: string[] }
@@ -115,6 +118,8 @@ export async function checkBackupIntegrity(text: string): Promise<Extract<Backup
  */
 export async function importBackupFile(text: string): Promise<BackupImportResult> {
   const store = useCtfStore.getState;
+  // Replace-import merges the file's machines with the catalog, so the catalog has to be in first.
+  if (!(await loadCatalogOrFail())) return fail('catalog', CATALOG_NOT_LOADED_MESSAGE);
   let raw: unknown;
   try {
     raw = JSON.parse(text);

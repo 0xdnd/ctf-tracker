@@ -177,8 +177,8 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
     document.documentElement.removeAttribute('data-mode');
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
-    delete (document as any).startViewTransition;
-    delete (document.documentElement as any).animate;
+    delete (document as unknown as Record<string, unknown>).startViewTransition;
+    delete (document.documentElement as unknown as Record<string, unknown>).animate;
   });
 
   afterEach(() => {
@@ -187,8 +187,8 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
     document.documentElement.removeAttribute('data-mode');
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
-    delete (document as any).startViewTransition;
-    delete (document.documentElement as any).animate;
+    delete (document as unknown as Record<string, unknown>).startViewTransition;
+    delete (document.documentElement as unknown as Record<string, unknown>).animate;
     vi.restoreAllMocks();
   });
 
@@ -304,7 +304,7 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
       const mockAnimate = vi.fn().mockReturnValue({ finished: Promise.resolve() });
 
       // Mock View Transitions API on document
-      (document as any).startViewTransition = mockStartViewTransition;
+      (document as unknown as Record<string, unknown>).startViewTransition = mockStartViewTransition;
       document.documentElement.animate = mockAnimate;
 
       const { result } = renderHook(() => useTheme(), { wrapper: ThemeProvider });
@@ -338,8 +338,8 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
         })
       );
 
-      delete (document as any).startViewTransition;
-      delete (document.documentElement as any).animate;
+      delete (document as unknown as Record<string, unknown>).startViewTransition;
+      delete (document.documentElement as unknown as Record<string, unknown>).animate;
     });
 
     it('gracefully handles rejected View Transition without throwing or crashing', async () => {
@@ -356,7 +356,7 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
         };
       });
 
-      (document as any).startViewTransition = mockStartViewTransition;
+      (document as unknown as Record<string, unknown>).startViewTransition = mockStartViewTransition;
       document.documentElement.animate = vi.fn();
 
       const { result } = renderHook(() => useTheme(), { wrapper: ThemeProvider });
@@ -367,8 +367,8 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
         }).not.toThrow();
       });
 
-      delete (document as any).startViewTransition;
-      delete (document.documentElement as any).animate;
+      delete (document as unknown as Record<string, unknown>).startViewTransition;
+      delete (document.documentElement as unknown as Record<string, unknown>).animate;
     });
   });
 
@@ -408,7 +408,7 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
 
     it('bypasses View Transitions and animation classes when prefers-reduced-motion is active', () => {
       const mockStartViewTransition = vi.fn();
-      (document as any).startViewTransition = mockStartViewTransition;
+      (document as unknown as Record<string, unknown>).startViewTransition = mockStartViewTransition;
 
       const origMatchMedia = window.matchMedia;
       window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -434,7 +434,7 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
       // Theme-transition class MUST NOT be added
       expect(document.documentElement.classList.contains('theme-transition')).toBe(false);
 
-      delete (document as any).startViewTransition;
+      delete (document as unknown as Record<string, unknown>).startViewTransition;
       window.matchMedia = origMatchMedia;
     });
   });

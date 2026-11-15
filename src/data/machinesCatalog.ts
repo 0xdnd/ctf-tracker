@@ -1,6 +1,6 @@
 // ZeroBox Master Target Catalog
 // 100% Pure CTF Challenges (TryHackMe & Hack The Box)
-// Daniel Dayan's Solved Roster: 45 HTB + 18 THM = 63 Pwned Targets
+// Solved roster counts are derived from the data (see countOwnerSolved in catalogStats.ts)
 // Enriched with official synopses & writeup links (no third-party walkthrough text)
 import { Machine } from '../types';
 

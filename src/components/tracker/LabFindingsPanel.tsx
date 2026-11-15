@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { AlertOctagon, Plus, Edit2, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { Machine, LabFinding, NewLabFindingInput, FindingSeverity } from '../../types';
@@ -18,6 +18,7 @@ const SEVERITY_COLORS: Record<FindingSeverity, { bg: string; text: string; borde
 };
 
 export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, className = '' }) => {
+  const uid = useId();
   const addFinding = useCtfStore((s) => s.addFinding);
   const updateFinding = useCtfStore((s) => s.updateFinding);
   const removeFinding = useCtfStore((s) => s.removeFinding);
@@ -120,8 +121,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-medium text-secondary block mb-1">Finding Title *</label>
-              <input
+              <label htmlFor={`${uid}-123`} className="text-[11px] font-medium text-secondary block mb-1">Finding Title *</label>
+              <input id={`${uid}-123`}
                 type="text"
                 required
                 value={formTitle}
@@ -133,8 +134,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] font-medium text-secondary block mb-1">Severity</label>
-                <select
+                <label htmlFor={`${uid}-136`} className="text-[11px] font-medium text-secondary block mb-1">Severity</label>
+                <select id={`${uid}-136`}
                   value={formSeverity}
                   onChange={(e) => setFormSeverity(e.target.value as FindingSeverity)}
                   className="w-full h-8 px-2 rounded-lg border border-subtle bg-surface-card text-xs text-primary focus:border-accent focus:outline-none"
@@ -148,8 +149,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
               </div>
 
               <div>
-                <label className="text-[11px] font-medium text-secondary block mb-1">CVSS Score (0-10)</label>
-                <input
+                <label htmlFor={`${uid}-151`} className="text-[11px] font-medium text-secondary block mb-1">CVSS Score (0-10)</label>
+                <input id={`${uid}-151`}
                   type="number"
                   step="0.1"
                   min="0"
@@ -165,8 +166,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-medium text-secondary block mb-1">CWE / CVE identifier</label>
-              <input
+              <label htmlFor={`${uid}-168`} className="text-[11px] font-medium text-secondary block mb-1">CWE / CVE identifier</label>
+              <input id={`${uid}-168`}
                 type="text"
                 value={formCweCve}
                 onChange={(e) => setFormCweCve(e.target.value)}
@@ -176,8 +177,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-secondary block mb-1">Affected Service</label>
-              <input
+              <label htmlFor={`${uid}-179`} className="text-[11px] font-medium text-secondary block mb-1">Affected Service</label>
+              <input id={`${uid}-179`}
                 type="text"
                 value={formService}
                 onChange={(e) => setFormService(e.target.value)}
@@ -188,8 +189,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
           </div>
 
           <div>
-            <label className="text-[11px] font-medium text-secondary block mb-1">Proof of Concept / Repro Steps</label>
-            <textarea
+            <label htmlFor={`${uid}-191`} className="text-[11px] font-medium text-secondary block mb-1">Proof of Concept / Repro Steps</label>
+            <textarea id={`${uid}-191`}
               rows={2}
               value={formRepro}
               onChange={(e) => setFormRepro(e.target.value)}
@@ -199,8 +200,8 @@ export const LabFindingsPanel: React.FC<LabFindingsPanelProps> = ({ machine, cla
           </div>
 
           <div>
-            <label className="text-[11px] font-medium text-secondary block mb-1">Remediation Guidance</label>
-            <textarea
+            <label htmlFor={`${uid}-202`} className="text-[11px] font-medium text-secondary block mb-1">Remediation Guidance</label>
+            <textarea id={`${uid}-202`}
               rows={2}
               value={formRemediation}
               onChange={(e) => setFormRemediation(e.target.value)}

@@ -198,7 +198,8 @@ describe('SEO generator: on-site writeup in the machine page', () => {
     expect(out.with.html).not.toContain('Read the writeup');
     const slugs = fs.readdirSync(path.join(out.base.dist, 'machines'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
     expect(slugs.length).toBeGreaterThan(10);
-    for (const s of slugs.filter((x) => ![SLUG, 'htb-blue', 'htb-cap'].includes(x))) {
+    // all/ and page/ are the machines list (/machines/all/, /machines/page/<n>/), not machine pages.
+    for (const s of slugs.filter((x) => ![SLUG, 'htb-blue', 'htb-cap', 'all', 'page'].includes(x))) {
       const read = (d: string) => pick(fs.readFileSync(path.join(d, 'machines', s, 'index.html'), 'utf8'));
       expect(read(out.with.dist), s).toEqual(read(out.base.dist));
     }

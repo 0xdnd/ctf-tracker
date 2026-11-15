@@ -89,6 +89,7 @@ beforeEach(() => {
   exportBackup = vi.fn((options?: { redactSecrets?: boolean }) => backupJson(Boolean(options?.redactSecrets)));
   importBackup = vi.fn(() => true);
   useCtfStore.setState({
+    isCatalogLoaded: true,
     backupModalOpen: true,
     soundEnabled: false,
     exportBackup: exportBackup as never,

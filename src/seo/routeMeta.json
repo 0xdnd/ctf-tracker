@@ -36,7 +36,7 @@
     "h1": "Interactive cheatsheet workspace",
     "intro": "A searchable library of pentest commands and reverse shell payloads. Set LHOST, LPORT and the target IP once and they are substituted into every snippet, so there is nothing to retype mid-exam.",
     "bullets": [
-      "130+ Linux and Windows reverse shell payloads with listener commands",
+      "{{shellCount}} Linux and Windows reverse shell payloads with listener commands",
       "Dynamic variables: LHOST, LPORT and TARGET_IP injected into every command",
       "Searchable snippet library organised by category",
       "Add your own custom snippets",
@@ -51,7 +51,7 @@
     "h1": "Reverse shell generator",
     "intro": "Set your LHOST and LPORT once, pick a shell and payload, and copy a ready-to-paste reverse shell with the matching listener command. Everything runs in your browser.",
     "bullets": [
-      "130+ Linux and Windows reverse shell payloads",
+      "{{shellCount}} Linux and Windows reverse shell payloads",
       "LHOST, LPORT and target IP filled in for you",
       "Encoding and wrapper options for tricky targets",
       "Matching listener commands for nc, ncat, socat and more",
@@ -80,7 +80,7 @@
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
     "bullets": [
-      "Seven exam tracks, each with its own duration: OSCP (23h45m), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m)",
+      "{{examTrackCountWord}} exam tracks, each with its own duration: {{examTrackDurations}}",
       "Countdown timer with pause, bio breaks and a burndown chart",
       "Point scoring against the pass threshold, with OSCP Active Directory points credited per machine",
       "Flag format validation and evidence proof uploads",

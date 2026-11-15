@@ -25,6 +25,7 @@ import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore
 import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
 import { PageHeader } from '../common/PageHeader';
 import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
+import { Skeleton, SkeletonRegion } from '../common/Skeleton';
 import { buildHeatmapWeeks, WEEKDAY_LONG, WEEKDAY_SHORT, type HeatLevel } from '../../utils/analyticsHeatmap';
 
 // Theme-token paint for SVG attributes (Tailwind has no stroke/fill utilities for the text/border token sets).
@@ -36,6 +37,7 @@ const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
 // Per-item stagger: at most 40ms per item, capped at 6 items.
 const stagger = (i: number) => Math.min(i, 6) * 0.04;
 
+const tiers: Difficulty[] = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
 const CARD = 'p-5 rounded-2xl border border-subtle bg-surface-card machined-edge';
 
 const TIER_COLOR: Record<Difficulty, string> = {
@@ -237,7 +239,6 @@ export const AnalyticsView: React.FC = () => {
   }, [rootedMachines]);
 
   // Difficulty Tier Progress Matrix
-  const tiers: Difficulty[] = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
   const difficultyMatrix = useMemo(() => {
     return tiers.map((tier) => {
       const totalInTier = machines.filter((m) => m.difficulty === tier).length;
@@ -463,7 +464,7 @@ export const AnalyticsView: React.FC = () => {
             onOpenTracker={() => navigate('/tracker')}
             onLoadDemo={() => { void restoreDanielSolves(); }}
           />
-          <Suspense fallback={null}>
+          <Suspense fallback={<SkeletonRegion label="Loading import panel…"><Skeleton height={140} className="w-full" /></SkeletonRegion>}>
             <PasteImportPanel onApplied={() => navigate('/tracker')} />
           </Suspense>
         </div>

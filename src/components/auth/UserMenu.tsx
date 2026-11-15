@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useCtfStore } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
 import { buildBackupFile, importBackupFile } from '../../store/backupFile';
+import { CatalogNotLoadedError } from '../../store/catalogGuard';
 import { toast } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
@@ -103,7 +104,11 @@ export const UserMenu: React.FC = () => {
       jsonStr = await buildBackupFile();
     } catch (err) {
       console.warn('[ZeroBox] Quick export failed.', err);
-      toast.error('Backup export failed. Your data could not be read; try again or use the Backup dialog.');
+      toast.error(
+        err instanceof CatalogNotLoadedError
+          ? err.message
+          : 'Backup export failed. Your data could not be read; try again or use the Backup dialog.'
+      );
       return;
     }
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -137,8 +142,8 @@ export const UserMenu: React.FC = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = (e: any) => {
-      const file = e.target.files?.[0];
+    input.onchange = (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async (event) => {
@@ -298,12 +303,13 @@ export const UserMenu: React.FC = () => {
           </div>
 
           {/* Quick Trophy Case & Rank Progress Pill */}
-          <div 
+          <button
+            type="button"
             onClick={() => {
               setDropdownOpen(false);
               useAuthStore.getState().setOperatorProfileModalOpen(true);
             }}
-            className="p-2.5 rounded-xl bg-surface-inverse border border-inverse hover:border-strong cursor-pointer transition-colors group"
+            className="block w-full text-left p-2.5 rounded-xl bg-surface-inverse border border-inverse hover:border-strong cursor-pointer transition-colors group"
           >
             <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-on-inverse-muted group-hover:text-on-inverse flex items-center gap-1 font-medium">
@@ -320,7 +326,7 @@ export const UserMenu: React.FC = () => {
                 style={{ transform: `scaleX(${gamification.rankProgressPct / 100})` }}
               />
             </div>
-          </div>
+          </button>
 
           {/* 1-Click Large Save Button */}
           <button

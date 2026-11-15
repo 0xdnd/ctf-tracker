@@ -52,6 +52,34 @@ export const buildTrackOrderIndex = (
 export const sortByTrackOrder = (list: Machine[], index: ReadonlyMap<string, number>): Machine[] =>
   list.sort((a, b) => (index.get(a.id) ?? LAST) - (index.get(b.id) ?? LAST));
 
+/** What the tracker toolbar reads: one track's progress by id. */
+export type TrackProgressLookup = Pick<ReadonlyMap<string, TrackProgress>, 'get'>;
+
+/**
+ * Progress per track, worked out the first time a track is read (the track menu opens, the active track's
+ * strip shows) and kept for this machine list, instead of one pass over the whole catalog for every track
+ * on each render.
+ */
+export const createTrackProgressLookup = (
+  tracks: readonly Pick<PracticeTrack, 'id' | 'order' | 'filterFn'>[],
+  machines: readonly Machine[],
+): TrackProgressLookup => {
+  const byId = new Map(tracks.map((t) => [t.id, t]));
+  const computed = new Map<string, TrackProgress>();
+  return {
+    get: (id) => {
+      let p = computed.get(id);
+      if (!p) {
+        const track = byId.get(id);
+        if (!track) return undefined;
+        p = getTrackProgress(track, machines);
+        computed.set(id, p);
+      }
+      return p;
+    },
+  };
+};
+
 /** Progress through a track: the machines the track matches, how many are done, and the next one to do. */
 export const getTrackProgress = (
   track: Pick<PracticeTrack, 'id' | 'order' | 'filterFn'>,

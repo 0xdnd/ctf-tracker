@@ -88,12 +88,17 @@ if (typeof window !== 'undefined' && 'storage' in navigator) {
   }
 }
 
-(window as any).__SPECTER_LOADED__ = true;
+(window as unknown as Record<string, unknown>).__SPECTER_LOADED__ = true;
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </React.StrictMode>
-);
+// The first render runs as a transition: React then slices the render work into short tasks instead of building the
+// whole app shell in one long one. The prerendered page stays visible until the commit.
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+React.startTransition(() => {
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+});

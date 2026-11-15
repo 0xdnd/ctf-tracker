@@ -1,51 +1,19 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { motion } from 'framer-motion';
 import { stripTrailingSlash } from '../../utils/pathUtils';
-import {
-  Crosshair,
-  Zap,
-  Menu,
-  X,
-  Volume2,
-  VolumeX,
-  Database,
-  Plus,
-  Search,
-  Server,
-  Copy,
-  Check,
-  ChevronRight,
-  Save,
-  Coffee,
-  Scale,
-  Settings,
-  User,
-  KeyRound,
-  Route,
-  SquareTerminal,
-  Code,
-  NotebookPen,
-  Timer,
-  NotebookText,
-  Compass
-} from 'lucide-react';
+import { Crosshair, Zap, Menu, Route, Code, NotebookText } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
-import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
-import { countDueReviews } from '../../utils/spacedRepetition';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useShallow } from 'zustand/react/shallow';
-import { useAuthStore } from '../../store/useAuthStore';
-import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
-import { CyberLogo } from '../common/CyberLogo';
-import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
-import { ThemeToggle } from '../common/ThemeToggle';
-// Only shown inside the opened menu sheet, so it loads on first use.
-const ThemePresetDropdown = React.lazy(() =>
-  import('../common/ThemePresetDropdown').then((m) => ({ default: m.ThemePresetDropdown }))
-);
+import { playCyberSound } from '../../utils/helpers';
+import { afterFirstPaint } from '../../utils/afterFirstPaint';
+
+// The slide-out menu behind "More" is only needed once someone opens it, so it loads as its own chunk. The request
+// starts after the first paint has settled, so the menu is usually ready by the time it is tapped.
+const loadMobileNavDrawer = () => import('./MobileNavDrawer');
+const MobileNavDrawer = React.lazy(loadMobileNavDrawer);
 
 export const MobileNav: React.FC = () => {
   const navigate = useNavigate();
@@ -53,89 +21,40 @@ export const MobileNav: React.FC = () => {
 
   const {
     setActiveTab,
-    machines,
     reconAutomationModalOpen,
     setReconAutomationModalOpen,
     mobileMenuOpen,
     setMobileMenuOpen,
-    setCommandPaletteOpen,
-    setNewMachineModalOpen,
-    setBackupModalOpen,
     soundEnabled,
-    toggleSound,
-    globalVars,
-    setGlobalVars,
-    saveProfileData,
-    currentProfileId,
-    setOperatorModalOpen,
-    setLicenseModalOpen,
-    setSettingsModalOpen,
   } = useCtfStore(
     useShallow((s) => ({
-      activeTab: s.activeTab,
       setActiveTab: s.setActiveTab,
-      machines: s.machines,
       reconAutomationModalOpen: s.reconAutomationModalOpen,
       setReconAutomationModalOpen: s.setReconAutomationModalOpen,
       mobileMenuOpen: s.mobileMenuOpen,
       setMobileMenuOpen: s.setMobileMenuOpen,
-      setCommandPaletteOpen: s.setCommandPaletteOpen,
-      setNewMachineModalOpen: s.setNewMachineModalOpen,
-      setBackupModalOpen: s.setBackupModalOpen,
       soundEnabled: s.soundEnabled,
-      toggleSound: s.toggleSound,
-      globalVars: s.globalVars,
-      setGlobalVars: s.setGlobalVars,
-      saveProfileData: s.saveProfileData,
-      currentProfileId: s.currentProfileId,
-      setOperatorModalOpen: s.setOperatorModalOpen,
-      setLicenseModalOpen: s.setLicenseModalOpen,
-      setSettingsModalOpen: s.setSettingsModalOpen,
     }))
   );
 
-  const user = useAuthStore((s) => s.user);
-  const [copiedVar, setCopiedVar] = React.useState<'lhost' | 'lport' | null>(null);
-  const [justSavedMobile, setJustSavedMobile] = React.useState(false);
-
-  const drawerRef = useFocusTrap<HTMLDivElement>({
-    isActive: mobileMenuOpen,
-    onClose: () => setMobileMenuOpen(false),
-  });
-
-  // Lock page scroll while the drawer is open.
+  // Mounted from the first time the menu opens and kept, so the close animation still plays.
+  const [drawerEverOpened, setDrawerEverOpened] = React.useState(mobileMenuOpen);
+  if (mobileMenuOpen && !drawerEverOpened) setDrawerEverOpened(true);
   React.useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    let live = true;
+    void afterFirstPaint().then(() => {
+      if (live) void loadMobileNavDrawer();
+    });
     return () => {
-      document.body.style.overflow = previous;
+      live = false;
     };
-  }, [mobileMenuOpen]);
+  }, []);
 
   const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
   const openNotesCount = useOpenTabCount();
   const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
-  const { totalMachines, rootedMachines } = React.useMemo(() => {
-    let rooted = 0;
-    for (let i = 0; i < machines.length; i++) {
-      const s = machines[i].status;
-      if (s === 'root' || s === 'completed') rooted++;
-    }
-    return { totalMachines: machines.length, rootedMachines: rooted };
-  }, [machines]);
-
-  const handleMobileQuickSave = () => {
-    saveProfileData(currentProfileId);
-    setJustSavedMobile(true);
-    if (soundEnabled) playCyberSound('root');
-    setTimeout(() => setJustSavedMobile(false), 2000);
-  };
-
-  const dueReviews = React.useMemo(() => countDueReviews(machines, Date.now()), [machines]);
-
-  const handleNavClick = (path: string, tabId: any, state?: { scrollTo: string }) => {
+  const handleNavClick = (path: string, tabId: Parameters<typeof setActiveTab>[0], state?: { scrollTo: string }) => {
     setActiveTab(tabId);
     navigate(path, state ? { state } : undefined);
     setMobileMenuOpen(false);
@@ -143,26 +62,9 @@ export const MobileNav: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   };
 
-  const handleCopyVar = async (val: string, field: 'lhost' | 'lport') => {
-    if (!val) return;
-    await safeCopyToClipboard(val);
-    setCopiedVar(field);
-    if (soundEnabled) playCyberSound('copy');
-    setTimeout(() => setCopiedVar(null), 2000);
-  };
-
   const tabBase =
     'flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 rounded-lg transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
   const tabState = (active: boolean) => (active ? 'text-primary font-medium' : 'text-muted hover:text-primary');
-  const rowBase =
-    'w-full min-h-[44px] px-3 rounded-lg flex items-center justify-between text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
-  const rowState = (active: boolean) =>
-    active
-      ? 'bg-surface-hover text-primary font-medium'
-      : 'text-secondary hover:bg-surface-hover hover:text-primary';
-  const sectionLabel = 'text-[11px] font-medium text-muted px-1 mb-1';
-  const iconCls = 'w-4 h-4 text-muted flex-shrink-0';
-
   const currentPath = stripTrailingSlash(location.pathname);
   const isTracker = currentPath === '/tracker' || currentPath === '/' || location.pathname.startsWith('/target');
 
@@ -251,384 +153,12 @@ export const MobileNav: React.FC = () => {
         </div>
       </nav>
 
-      {/* Slide-out drawer */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-[60] flex font-sans">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.12 } }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-surface-inverse/70"
-            />
-
-            {/* Sliding panel */}
-            <motion.div
-              ref={drawerRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Navigation menu"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%', transition: { duration: 0.15, ease: 'easeOut' } }}
-              transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
-              className="relative ml-auto w-[85%] max-w-sm h-full bg-surface-card border-l border-subtle shadow-xl flex flex-col z-10 overflow-hidden"
-            >
-              {/* Drawer header */}
-              <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-card">
-                <div className="flex items-center gap-2.5">
-                  <CyberLogo size="md" />
-                  <div>
-                    <div className="font-semibold text-primary text-sm tracking-tight">
-                      ZERO<span className="text-accent">BOX</span>
-                    </div>
-                    <div className="text-[11px] text-muted">Lab and CTF suite</div>
-                  </div>
-                </div>
-
-                <button
-                  aria-label="Close menu"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-11 h-11 flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Drawer body */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-5 text-sm scrollbar-thin">
-                {/* Operator and save */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-1">
-                    <div className="text-xs text-muted">
-                      Operator <span className="text-primary font-medium">{user ? user.name : 'Local Operator'}</span>
-                    </div>
-                    <div className="text-xs text-muted tabular-nums">
-                      <span className="font-mono tabular-nums text-secondary">{rootedMachines} / {totalMachines}</span> pwned
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={handleMobileQuickSave}
-                      className={`min-h-[44px] px-2 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-1.5 border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                        justSavedMobile
-                          ? 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
-                          : 'bg-surface-base border-subtle text-primary hover:bg-surface-hover'
-                      }`}
-                    >
-                      {justSavedMobile ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-                      <span>{justSavedMobile ? 'Saved' : 'Save data'}</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        useAuthStore.getState().setOperatorProfileModalOpen(true);
-                        if (soundEnabled) playCyberSound('click');
-                      }}
-                      className="min-h-[44px] px-2 rounded-lg font-medium text-sm bg-accent text-on-accent hover:bg-accent-hover transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-card"
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      <span>Profiles</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Payload variables */}
-                <div className="space-y-2">
-                  <div className={`${sectionLabel} flex items-center gap-1.5`}>
-                    <Server className="w-3 h-3" /> Payload tuning (LHOST:LPORT)
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-[11px] text-muted">LHOST (tun0)</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors ${
-                        copiedVar === 'lhost' ? 'border-callout-success-border' : 'border-subtle'
-                      }`}>
-                        <input
-                          type="text"
-                          id="mobile-lhost-input"
-                          name="mobile-lhost"
-                          aria-label="Attacker Host LHOST"
-                          value={globalVars.lhost}
-                          onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-                          className="w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
-                        />
-                        <button
-                          aria-label="Copy LHOST"
-                          onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
-                          className="p-1.5 rounded transition-colors flex items-center gap-0.5 text-muted hover:text-primary cursor-pointer"
-                          title="Copy LHOST"
-                        >
-                          {copiedVar === 'lhost' ? (
-                            <Check className="w-3.5 h-3.5 text-callout-success-fg" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-[11px] text-muted">LPORT</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors ${
-                        copiedVar === 'lport' ? 'border-callout-success-border' : 'border-subtle'
-                      }`}>
-                        <input
-                          type="text"
-                          id="mobile-lport-input"
-                          name="mobile-lport"
-                          aria-label="Attacker Port LPORT"
-                          value={globalVars.lport}
-                          onChange={(e) => setGlobalVars({ lport: e.target.value })}
-                          className="w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
-                        />
-                        <button
-                          aria-label="Copy LPORT"
-                          onClick={() => handleCopyVar(globalVars.lport, 'lport')}
-                          className="p-1.5 rounded transition-colors flex items-center gap-0.5 text-muted hover:text-primary cursor-pointer"
-                          title="Copy LPORT"
-                        >
-                          {copiedVar === 'lport' ? (
-                            <Check className="w-3.5 h-3.5 text-callout-success-fg" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Modules */}
-                <div className="space-y-0.5">
-                  <div className={sectionLabel}>Modules</div>
-
-                  <button
-                    onClick={() => handleNavClick('/vault', 'vault')}
-                    className={`${rowBase} ${rowState(location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot'))}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <KeyRound className={iconCls} />
-                      <span>Vault</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => handleNavClick('/reverse-shell', 'revshell')}
-                    className={`${rowBase} ${rowState(location.pathname.startsWith('/reverse-shell'))}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <SquareTerminal className={iconCls} />
-                      <span>Reverse Shells</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => handleNavClick('/writeup', 'writeup')}
-                    className={`${rowBase} ${rowState(location.pathname.startsWith('/writeup'))}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <NotebookPen className={iconCls} />
-                      <span>Writeup Studio</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => handleNavClick('/exam', 'exam')}
-                    className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/exam')}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Timer className={iconCls} />
-                      <span>24h Exam Simulator (OSCP)</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => handleNavClick('/analytics', 'analytics', dueReviews > 0 ? { scrollTo: 'review' } : undefined)}
-                    className={`${rowBase} ${rowState(stripTrailingSlash(location.pathname) === '/analytics')}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <AnalyticsMonitorIcon className={iconCls} />
-                      <span>Pwn Analytics & Radar</span>
-                      {dueReviews > 0 && (
-                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-mono font-bold tabular-nums">
-                          {dueReviews}
-                          <span className="sr-only"> {dueReviews === 1 ? 'review' : 'reviews'} due</span>
-                        </span>
-                      )}
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setCommandPaletteOpen(true);
-                    }}
-                    className={`${rowBase} ${rowState(false)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Search className={iconCls} />
-                      <span>Command Search (Ctrl+K)</span>
-                    </div>
-                    <kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle">Ctrl+K</kbd>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setNewMachineModalOpen(true);
-                    }}
-                    className={`${rowBase} ${rowState(false)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Plus className={iconCls} />
-                      <span>Deploy Custom Target</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setBackupModalOpen(true);
-                    }}
-                    className={`${rowBase} ${rowState(false)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Database className={iconCls} />
-                      <span>Backup / Restore JSON</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-                </div>
-
-                {/* Environment and theme */}
-                <div className="space-y-1">
-                  <div className={sectionLabel}>Environment and theme</div>
-                  <div className="px-3 min-h-[56px] rounded-lg bg-surface-base border border-subtle flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-primary">Appearance</div>
-                      <div className="text-[11px] text-muted">Light or dark</div>
-                    </div>
-                    <ThemeToggle size="sm" showLabel />
-                  </div>
-
-                  <div className="px-3 min-h-[56px] rounded-lg bg-surface-base border border-subtle flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-primary">Theme Preset</div>
-                      <div className="text-[11px] text-muted">Obsidian, Red Team / OffSec, Hack The Box</div>
-                    </div>
-                    <React.Suspense fallback={null}>
-                      <ThemePresetDropdown />
-                    </React.Suspense>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setSettingsModalOpen(true);
-                      if (soundEnabled) playCyberSound('click');
-                    }}
-                    className={`${rowBase} ${rowState(false)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Settings className={iconCls} />
-                      <span>Operator Settings & Themes</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      useOnboardingStore.getState().openGuideCenter();
-                      if (soundEnabled) playCyberSound('click');
-                    }}
-                    className={`${rowBase} ${rowState(false)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Compass className={iconCls} />
-                      <span>Full guide</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted" />
-                  </button>
-
-                  <button
-                    onClick={toggleSound}
-                    className={`${rowBase} ${rowState(false)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      {soundEnabled ? <Volume2 className={iconCls} /> : <VolumeX className={iconCls} />}
-                      <span>{soundEnabled ? 'Audio on' : 'Audio muted'}</span>
-                    </div>
-                    <span className={`text-[11px] font-medium ${soundEnabled ? 'text-callout-success-fg' : 'text-muted'}`}>
-                      {soundEnabled ? 'On' : 'Off'}
-                    </span>
-                  </button>
-                </div>
-
-                {/* Creator and support */}
-                <div className="pt-3 border-t border-subtle space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-md bg-surface-hover border border-subtle flex items-center justify-center text-primary text-[11px] font-semibold">
-                        DD
-                      </div>
-                      <div>
-                        <div className="text-primary font-medium text-sm">Daniel Dayan</div>
-                        <div className="text-[11px] text-muted">@0xdnd, creator and architect</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setOperatorModalOpen(true);
-                      }}
-                      className="min-h-[44px] px-2 text-xs text-accent hover:underline font-medium cursor-pointer"
-                    >
-                      Dossier
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <a
-                      href={CREATOR_PROFILE_LINKS.coffee}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="min-h-[44px] rounded-lg bg-surface-base hover:bg-surface-hover border border-subtle text-secondary hover:text-primary flex items-center justify-center gap-1.5 font-medium text-xs transition-colors"
-                    >
-                      <Coffee className="w-3.5 h-3.5" />
-                      <span>Buy a Coffee</span>
-                    </a>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setLicenseModalOpen(true);
-                      }}
-                      className="min-h-[44px] rounded-lg bg-surface-base hover:bg-surface-hover border border-subtle text-secondary hover:text-primary flex items-center justify-center gap-1.5 text-xs font-medium transition-colors cursor-pointer"
-                    >
-                      <Scale className="w-3.5 h-3.5" />
-                      <span>License</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Drawer footer */}
-              <div className="p-3 border-t border-subtle bg-surface-card text-center text-[11px] text-muted">
-                ZeroBox mobile
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Slide-out drawer: loaded when the menu is first opened, then kept mounted so it can animate closed */}
+      {drawerEverOpened && (
+        <React.Suspense fallback={null}>
+          <MobileNavDrawer onNavigate={handleNavClick} />
+        </React.Suspense>
+      )}
     </>
   );
 };

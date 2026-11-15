@@ -160,6 +160,7 @@ export function CyberSelect<T extends string = string>({
       const currentIndex = options.findIndex((opt) => opt.value === value);
       setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- options intentionally excluded; recompute highlight only on open/value change
   }, [isOpen, value]);
 
   // Reset highlighted index to top matching option when typing in search input
@@ -244,6 +245,7 @@ export function CyberSelect<T extends string = string>({
   return (
     <div
       ref={containerRef}
+      role="presentation"
       className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={handleKeyDown}
     >
@@ -592,6 +594,7 @@ export function CyberMultiSelect<T extends string = string>({
   return (
     <div
       ref={containerRef}
+      role="presentation"
       className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {

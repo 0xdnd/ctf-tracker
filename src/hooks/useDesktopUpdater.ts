@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
-import { getVersion as getTauriVersion } from '@tauri-apps/api/app';
 import type { Update } from '@tauri-apps/plugin-updater';
 import { checkpointTimerAndFlush } from '../store/useCtfStore';
 import { useToastStore } from '../store/useToastStore';
@@ -36,11 +34,12 @@ const PRE_INSTALL_FLUSH_GRACE_MS = 350;
 
 function detectIsTauri(): boolean {
   if (typeof window === 'undefined') return false;
+  // window.isTauri is what @tauri-apps/api's isTauri() reads; checking it directly keeps that package out of the web entry bundle.
+  const w = window as unknown as Record<string, unknown>;
   return Boolean(
-    (typeof isTauri === 'function' && isTauri()) ||
-    (window as any).__TAURI_INTERNALS__ ||
-    (window as any).__TAURI__ ||
-    (window as any).isTauri
+    w.__TAURI_INTERNALS__ ||
+    w.__TAURI__ ||
+    w.isTauri
   );
 }
 
@@ -69,7 +68,8 @@ export function useDesktopUpdater(): DesktopUpdaterState {
     if (!isDesktop) return;
 
     if (isTauriApp) {
-      getTauriVersion()
+      import('@tauri-apps/api/app')
+        .then(({ getVersion }) => getVersion())
         .then((ver) => setVersion(ver))
         .catch(() => setVersion(APP_VERSION));
       return;
@@ -173,11 +173,12 @@ export function useDesktopUpdater(): DesktopUpdaterState {
         } else {
           setStatus('not-available');
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const err = e as { message?: string } | null | undefined;
         pendingUpdateRef.current = null;
         setProgressPercent(0);
         setStatus('error');
-        const rawErr = e?.message || String(e || '');
+        const rawErr = err?.message || String(e || '');
         if (rawErr.includes('429')) {
           setErrorMessage('Rate limit reached (HTTP 429). Please wait before checking again.');
           setRetryTimeoutSeconds(60);
@@ -207,9 +208,9 @@ export function useDesktopUpdater(): DesktopUpdaterState {
           setStatus('error');
           setErrorMessage(res.error);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         setStatus('error');
-        setErrorMessage(e?.message || 'Check failed');
+        setErrorMessage((e as { message?: string } | null | undefined)?.message || 'Check failed');
       }
     }
   }, [isDesktop, isTauriApp, isElectron]);

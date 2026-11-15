@@ -601,15 +601,18 @@ export const CommandPalette: React.FC = () => {
     if (activeEl) {
       activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [selectedIndex, commandPaletteOpen]);
+  }, [selectedIndex, commandPaletteOpen, trapRef]);
 
   // z-popover (130): above Modal's z-modal/z-modalNested, so Ctrl+K inside Settings or MachineDetail renders
   // on top of the dialog that its focus trap now outranks; below toasts. Instant, no animation.
   const palette = commandPaletteOpen ? (
         <div
           data-command-palette-backdrop
+          role="presentation"
           className="fixed inset-0 z-popover flex items-start justify-center pt-20 p-4 bg-surface-inverse/70 font-sans"
-          onClick={() => setCommandPaletteOpen(false)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCommandPaletteOpen(false);
+          }}
         >
           <div
             ref={trapRef}
@@ -617,7 +620,6 @@ export const CommandPalette: React.FC = () => {
             aria-modal="true"
             aria-label="Command palette"
             className="w-full max-w-2xl rounded-xl border border-subtle bg-surface-elevated shadow-xl overflow-hidden machined-edge"
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Search Input Bar */}
             <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card">
@@ -631,7 +633,6 @@ export const CommandPalette: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search commands, machines, notes, writeups..."
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
-            autoFocus
           />
           {query && (
             <button 

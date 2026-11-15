@@ -43,7 +43,7 @@ let examAlertChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
   try {
     examAlertChannel = new BroadcastChannel('zerobox_exam_alerts');
-  } catch {}
+  } catch { /* BroadcastChannel unavailable or blocked; cross-tab alarm dedupe is best-effort */ }
 }
 
 function playDedupedAlarm() {
@@ -54,7 +54,7 @@ function playDedupedAlarm() {
   try {
     localStorage.setItem('zerobox_last_alarm_played_at', String(now));
     examAlertChannel?.postMessage({ type: 'ALARM_PLAYED', timestamp: now });
-  } catch {}
+  } catch { /* storage or channel unavailable; alarm still plays locally */ }
   playCyberAlert('alarm');
 }
 
@@ -326,7 +326,7 @@ const selectiveExamStorage = {
     try {
       localStorage.removeItem(name);
       lastStoredPayload = '';
-    } catch {}
+    } catch { /* storage unavailable (private mode); nothing to remove */ }
   },
 };
 
@@ -514,7 +514,7 @@ export const useExamStore = create<ExamStore>()(
         const scoreBefore = calculateExamScore(state.track, state.boxes);
 
         const now = new Date().toISOString();
-        let wasAlreadyPwned = flagType === 'user' ? box.userPwned : box.rootPwned;
+        const wasAlreadyPwned = flagType === 'user' ? box.userPwned : box.rootPwned;
 
         const updatedBoxes = state.boxes.map((b) => {
           if (b.id !== boxId) return b;

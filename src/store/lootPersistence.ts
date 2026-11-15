@@ -69,7 +69,8 @@ const lootStorage = {
     try {
       localStorage.setItem(name, value);
       memoryFallback.delete(name);
-    } catch (e: any) {
+    } catch (err: unknown) {
+      const e = err as { name?: string; code?: number; number?: number; message?: string } | null | undefined;
       memoryFallback.set(name, value);
       const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.number === -2147024882;
       try {
@@ -80,7 +81,7 @@ const lootStorage = {
               : { kind: 'error', message: String(e?.message || e) },
           })
         );
-      } catch {}
+      } catch { /* event dispatch is best-effort; the in-memory fallback already holds the value */ }
     }
   },
   remove(name: string): void {
@@ -88,7 +89,7 @@ const lootStorage = {
     memoryFallback.delete(name);
     try {
       localStorage.removeItem(name);
-    } catch {}
+    } catch { /* storage unavailable; the in-memory entry was already removed */ }
   },
 };
 

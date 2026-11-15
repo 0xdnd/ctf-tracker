@@ -101,9 +101,9 @@ describe('Tier 4 E2E: Strict DOMPurify XSS Sanitization & Vector Neutralization 
 
     it('XSS-06: Handles empty, null, and non-string inputs gracefully without exceptions', () => {
       expect(sanitizeHtml('')).toBe('');
-      expect(sanitizeHtml(null as any)).toBe('');
-      expect(sanitizeHtml(undefined as any)).toBe('');
-      expect(sanitizeHtml(12345 as any)).toBe('');
+      expect(sanitizeHtml(null as never)).toBe('');
+      expect(sanitizeHtml(undefined as never)).toBe('');
+      expect(sanitizeHtml(12345 as never)).toBe('');
     });
   });
 
@@ -146,8 +146,8 @@ describe('Tier 4 E2E: Strict DOMPurify XSS Sanitization & Vector Neutralization 
 
     it('XSS-09: Handles empty, null, and non-string SVG inputs safely', () => {
       expect(sanitizeSvg('')).toBe('');
-      expect(sanitizeSvg(null as any)).toBe('');
-      expect(sanitizeSvg(undefined as any)).toBe('');
+      expect(sanitizeSvg(null as never)).toBe('');
+      expect(sanitizeSvg(undefined as never)).toBe('');
     });
   });
 
@@ -163,7 +163,7 @@ describe('Tier 4 E2E: Strict DOMPurify XSS Sanitization & Vector Neutralization 
         </div>
       `;
 
-      (window as any).PwnedState = false;
+      (window as unknown as Record<string, unknown>).PwnedState = false;
 
       const cleanHtml = sanitizeHtml(dirtyCombo);
 
@@ -186,7 +186,7 @@ describe('Tier 4 E2E: Strict DOMPurify XSS Sanitization & Vector Neutralization 
       }
 
       // Assert that state was never corrupted
-      expect((window as any).PwnedState).toBe(false);
+      expect((window as unknown as Record<string, unknown>).PwnedState).toBe(false);
 
       // Cleanup
       document.body.removeChild(testContainer);

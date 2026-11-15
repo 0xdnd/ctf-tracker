@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { Terminal, Key, ChevronDown, ChevronUp, RotateCcw, ShieldAlert, Sparkles } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -30,6 +30,7 @@ const writeStoredExpanded = (value: boolean): void => {
 };
 
 export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = '' }) => {
+  const uid = useId();
   const { globalVars, setGlobalVars, soundEnabled } = useCtfStore(
     useShallow((s) => ({
       globalVars: s.globalVars,
@@ -120,8 +121,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
       {expanded && (
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 text-xs">
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">LHOST</label>
-          <input
+          <label htmlFor={`${uid}-123`} className="text-[10px] font-mono uppercase text-muted block">LHOST</label>
+          <input id={`${uid}-123`}
             type="text"
             value={globalVars.lhost || ''}
             onChange={(e) => handleUpdate('lhost', e.target.value)}
@@ -130,8 +131,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">LPORT</label>
-          <input
+          <label htmlFor={`${uid}-133`} className="text-[10px] font-mono uppercase text-muted block">LPORT</label>
+          <input id={`${uid}-133`}
             type="text"
             value={globalVars.lport || ''}
             onChange={(e) => handleUpdate('lport', e.target.value)}
@@ -140,8 +141,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">TARGET_IP</label>
-          <input
+          <label htmlFor={`${uid}-143`} className="text-[10px] font-mono uppercase text-muted block">TARGET_IP</label>
+          <input id={`${uid}-143`}
             type="text"
             value={targetIpDraft ?? displayTargetIp}
             onChange={(e) => setTargetIpDraft(e.target.value)}
@@ -158,8 +159,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">DOMAIN</label>
-          <input
+          <label htmlFor={`${uid}-161`} className="text-[10px] font-mono uppercase text-muted block">DOMAIN</label>
+          <input id={`${uid}-161`}
             type="text"
             value={globalVars.domain || ''}
             onChange={(e) => handleUpdate('domain', e.target.value)}
@@ -168,8 +169,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">DC_IP</label>
-          <input
+          <label htmlFor={`${uid}-171`} className="text-[10px] font-mono uppercase text-muted block">DC_IP</label>
+          <input id={`${uid}-171`}
             type="text"
             value={globalVars.dcIp || ''}
             onChange={(e) => handleUpdate('dcIp', e.target.value)}
@@ -178,8 +179,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">USER</label>
-          <input
+          <label htmlFor={`${uid}-181`} className="text-[10px] font-mono uppercase text-muted block">USER</label>
+          <input id={`${uid}-181`}
             type="text"
             value={globalVars.user || ''}
             onChange={(e) => handleUpdate('user', e.target.value)}
@@ -203,8 +204,8 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono uppercase text-muted block">WORDLIST</label>
-          <input
+          <label htmlFor={`${uid}-206`} className="text-[10px] font-mono uppercase text-muted block">WORDLIST</label>
+          <input id={`${uid}-206`}
             type="text"
             value={globalVars.wordlist || ''}
             onChange={(e) => handleUpdate('wordlist', e.target.value)}

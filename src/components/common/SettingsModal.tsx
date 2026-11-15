@@ -457,10 +457,11 @@ export const SettingsModal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-muted block mb-1">
+                  <label htmlFor="settings-lhost" className="text-[10px] text-muted block mb-1">
                     Attacker IP (LHOST)
                   </label>
                   <input
+                    id="settings-lhost"
                     type="text"
                     value={globalVars.lhost}
                     onChange={(e) => setGlobalVars({ lhost: e.target.value })}
@@ -469,10 +470,11 @@ export const SettingsModal: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-muted block mb-1">
+                  <label htmlFor="settings-lport" className="text-[10px] text-muted block mb-1">
                     Attacker Port (LPORT)
                   </label>
                   <input
+                    id="settings-lport"
                     type="text"
                     value={globalVars.lport}
                     onChange={(e) => setGlobalVars({ lport: e.target.value })}

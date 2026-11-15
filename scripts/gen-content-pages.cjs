@@ -8,7 +8,7 @@ const { TRACK_TO_CERT, getModel, getGuides, getWriteups, hasOwnerWriteup, isNoin
 const TECH = require('./lib/techniques.cjs');
 const { normTag, tagKey, HEAD_GENERIC_TAGS, createTagCleaner } = require('./lib/tags.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
-const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ICON, ctaBox, fitTitle, truncate, techArticleLd, stampArticle } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ICON, ctaBox, fitTitle, truncate, techArticleLd, stampArticle, stampUpdated } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 // GEN_CONTENT_DIST points the generator at another output dir (used by tests); then public/sitemap.xml is left alone.
@@ -36,7 +36,7 @@ function gitDate(rel) {
     let v = '';
     try {
       v = git(['log', '-1', '--format=%cs', '--', rel]);
-    } catch (e) {
+    } catch {
       v = '';
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) v = rel === GEN_FILE ? FALLBACK_DATE : gitDate(GEN_FILE);
@@ -51,7 +51,7 @@ function firstGitDate(rel) {
     let v = '';
     try {
       v = git(['log', '--reverse', '--format=%cs', '--', rel]).split(/\r?\n/)[0] || '';
-    } catch (e) {
+    } catch {
       v = '';
     }
     firstCache.set(rel, /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '');
@@ -79,9 +79,12 @@ const seenMeta = { title: new Map(), description: new Map() };
 
 // priority stays in the signature for the callers but is no longer written anywhere (Google ignores it).
 // srcs: the page's source files, for datePublished (defaults to the type's source). lastmod is the page's dateModified and sitemap lastmod.
+// List and hub pages without a TechArticle still show when their data last changed (the same date as their sitemap lastmod).
+const DATED_HUB_TYPES = new Set(['machines-hub', 'cert-hub', 'technique', 'technique-hub', 'cheatsheet', 'cheatsheet-hub', 'methodology-hub', 'pentest-hub']);
 function emit(type, urlPath, html, priority, lastmodOverride, srcs) {
   const lastmod = lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]);
   html = stampArticle(html, { modified: lastmod, published: minFirstDate(...(srcs || [SRC[TYPE_SRC[type]]]).filter(Boolean)) });
+  if (DATED_HUB_TYPES.has(type)) html = stampUpdated(html, lastmod);
   const dir = path.join(distDir, urlPath.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'), injectBeacon(html), 'utf8');
@@ -149,7 +152,6 @@ const phaseCard = (href, num, title, subtitle, count, names) =>
   `<li><a class="hubcard" href="${href}"><span class="hc-num" aria-hidden="true">${String(num).padStart(2, '0')}</span><div class="hc-main"><h2 class="hc-title">${esc(title)}</h2><span class="hc-sub">${esc(subtitle)}</span><span class="hc-count">${esc(count)}</span>${hubItems(names)}</div>${hubArrow}</a></li>`;
 
 const code = (s) => `<pre><code>${esc(s)}</code></pre>`;
-const stripEmoji = (s) => s.replace(/[\p{Extended_Pictographic}️‍]/gu, '').replace(/\s+/g, ' ').trim();
 
 function inline(s) {
   return esc(s)
@@ -184,7 +186,11 @@ for (const m of withPage) {
 // Tags cell for the list tables: first `max` cleaned tags as links (hub tables put the matching tags first); a row with no tag renders an empty cell.
 // data-* on a list row for public/table-filter.js (search, filter, sort): name, OS, difficulty, platform and the cleaned tags joined by "|".
 const rowData = (m) => ` data-name="${esc(m.name)}" data-os="${esc(m.os)}" data-difficulty="${esc(m.difficulty)}" data-platform="${esc(m.platform)}" data-tags="${esc(shownTags(m).map((e) => e.label).join('|'))}"`;
-const tagsCell = (entries, max = 4) => entries.slice(0, max).map(tagLink).join(', ');
+// An empty cell reads as "No tags" to screen readers (the dash itself is hidden from them).
+const NO_TAGS = '<span aria-hidden="true">—</span><span class="sr-only">No tags</span>';
+const tagsCell = (entries, max = 4) => (entries.length ? entries.slice(0, max).map(tagLink).join(', ') : NO_TAGS);
+// Narrow screens hide the Tags column; these chips (plain text, hidden from 640px up) show the same tags under the machine name. Nothing for a row without tags.
+const tagChipsSm = (entries, max = 4) => (entries.length ? `<span class="tags-sm">${entries.slice(0, max).map((e) => `<span class="tag">${esc(e.label)}</span>`).join('')}</span>` : '');
 
 function related(m) {
   const score = new Map();
@@ -252,7 +258,6 @@ const certHubs = Object.entries(certCountsAll)
     machines: model.machines.filter((m) => (m.certifications || []).includes(cert)),
   }));
 const techGroups = TECH.GROUPS.map((g) => ({ ...g, machines: model.machines.filter((m) => TECH.matchesMachine(g, m)) })).filter((g) => g.machines.length >= TECH_MIN);
-const certFirst = certHubs.find((c) => c.cert === 'OSCP') || certHubs[0];
 const PLATFORM_NAME = { HTB: 'Hack The Box', THM: 'TryHackMe', PG: 'Proving Grounds', VulnHub: 'VulnHub' };
 const DIFF_ORDER = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
 const mUrl = (m) => `/machines/${m.slug}/`;
@@ -314,10 +319,10 @@ function tagHub(label) {
 }
 function tagHref({ label }) {
   const tech = tagHub(label);
-  return tech ? `/techniques/${tech.slug}/` : `/machines/?tag=${encodeURIComponent(label)}`;
+  return tech ? `/techniques/${tech.slug}/` : `/machines/all/?tag=${encodeURIComponent(label)}`;
 }
 // The filtered-list links are internal search states of /machines/, not pages of their own: they carry rel="nofollow" (hub links do not).
-const tagRel = (e) => (tagHref(e).startsWith('/machines/?tag=') ? ' rel="nofollow"' : '');
+const tagRel = (e) => (tagHref(e).startsWith('/machines/all/?tag=') ? ' rel="nofollow"' : '');
 const tagLink = (e) => `<a href="${esc(tagHref(e))}"${tagRel(e)}>${esc(e.label)}</a>`;
 const tagChip = (e) => `<a class="tag" href="${esc(tagHref(e))}"${tagRel(e)}>${esc(e.label)}</a>`;
 const ROOM_REL = 'nofollow noopener';
@@ -329,8 +334,8 @@ const hubTitle = (m) => (isStartingPointHub(m.roomUrl) ? ` title="${esc(STARTING
 const article = (word) => (/^[aeiou]/i.test(String(word).trim()) ? 'an' : 'a');
 
 // Meta description for a machine page: the hint's first sentence when it fits as a complete sentence, else a facts-based sentence.
-function machineDesc(m, summary, tagList) {
-  const kindWord = (m.ownWriteup || m.hasSiteWriteup) ? 'writeup' : 'attack path';
+function machineDesc(m, summary) {
+  const kindWord = (m.ownWriteupHref || m.hasSiteWriteup) ? 'writeup' : 'attack path';
   const first = String(summary).replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s+/)[0];
   const lead = `${m.name} ${m.platform} ${kindWord}: `;
   // A usable hint is a real sentence (not a stub like "Hack The Box Linux machine." or the generated "Solved ..." line).
@@ -436,7 +441,7 @@ function writeupSection(m, w) {
 </section>`;
 }
 
-// Snippet wording for two writeup pages (search query wording). Facts only: platform, OS, difficulty and the catalog hint's own topic.
+// Snippet wording for two writeup pages (search query wording), used only while the page has a reachable writeup. Facts only: platform, OS, difficulty and the catalog hint's own topic.
 const SNIPPET_OVERRIDES = {
   'thm-recruit': {
     title: 'TryHackMe Recruit Writeup (Linux, Medium) | ZeroBox',
@@ -454,7 +459,7 @@ for (const m of withPage) {
   const srcs = w ? [...MACHINE_SRC, w.relPath] : MACHINE_SRC;
   const lastmod = maxDateOf(...srcs);
   const plat = PLATFORM_NAME[m.platform] || m.platform;
-  const hasWriteup = Boolean(w || m.ownWriteup);
+  const hasWriteup = Boolean(w || m.ownWriteupHref);
   const kind = hasWriteup ? 'Writeup & Attack Path' : 'Attack Path & Techniques';
   const kindShort = hasWriteup ? 'Writeup' : 'Attack Path';
   const title = fitTitle(
@@ -487,7 +492,7 @@ for (const m of withPage) {
       href: `/tracker/?target=${encodeURIComponent(m.id)}`,
       label: `Open ${m.name} in the tracker`,
       links: [
-        m.ownWriteup ? { href: m.ownWriteup, label: 'Read the full writeup', rel: 'noopener' } : null,
+        m.ownWriteupHref ? { href: m.ownWriteupHref, label: 'Read the full writeup', rel: 'noopener' } : null,
         m.roomUrl ? { href: m.roomUrl, label: isStartingPointHub(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open ${m.name} on ${plat}`, rel: ROOM_REL } : null,
       ].filter(Boolean),
     }),
@@ -518,9 +523,10 @@ for (const m of withPage) {
     renderPage({
       path: mUrl(m),
       noindex: isNoindexMachine(m),
-      title: (SNIPPET_OVERRIDES[m.slug] || {}).title || title,
-      description: (SNIPPET_OVERRIDES[m.slug] || {}).description || machineDesc(m, m.hint || template, tagList),
-      h1: (SNIPPET_OVERRIDES[m.slug] || {}).h1 || (hasWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`),
+      ogPlatform: m.platform,
+      title: (hasWriteup ? SNIPPET_OVERRIDES[m.slug] || {} : {}).title || title,
+      description: (hasWriteup ? SNIPPET_OVERRIDES[m.slug] || {} : {}).description || machineDesc(m, m.hint || template, tagList),
+      h1: (hasWriteup ? SNIPPET_OVERRIDES[m.slug] || {} : {}).h1 || (hasWriteup ? `${m.name} writeup and attack path` : `${m.name} attack path and techniques`),
       body,
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [m.name, mUrl(m)]],
       ld: [
@@ -566,69 +572,168 @@ for (const m of withPage) {
       : esc(m.name);
   const hubNameCell = (m) =>
     m.hasPage ? `<a href="${mUrl(m)}">${esc(m.name)}</a>` : SAFE_ROOM.test(m.roomUrl || '') ? `<a href="${esc(m.roomUrl)}" rel="nofollow noopener"${hubTitle(m)}>${esc(m.name)}</a>` : esc(m.name);
-  // One h3 + table per OS and difficulty, same markup for every platform.
-  const platformTables = (list, nameCell) => {
-    const out = [];
+  // One h3 + table per OS and difficulty, same markup for every platform. The rows are flattened in display order
+  // (HTB, THM, then Proving Grounds and VulnHub; OS, difficulty, name) and cut into pages of MX_PER_PAGE rows:
+  // /machines/ is page 1, /machines/page/<n>/ the rest. /machines/all/ keeps every row on one noindex page with the search and filters.
+  const MX_PER_PAGE = 100;
+  const groupsOf = (list) => {
     const groups = new Map();
     for (const m of list) {
       const k = `${m.os}|${m.difficulty}`;
       if (!groups.has(k)) groups.set(k, []);
       groups.get(k).push(m);
     }
-    const keys = [...groups.keys()].sort((a, b) => {
-      const [ao, ad] = a.split('|');
-      const [bo, bd] = b.split('|');
-      return ao.localeCompare(bo) || DIFF_ORDER.indexOf(ad) - DIFF_ORDER.indexOf(bd);
-    });
-    for (const k of keys) {
-      const [os, diff] = k.split('|');
-      const rows = groups.get(k).sort((a, b) => a.name.localeCompare(b.name));
-      out.push(`<h3>${esc(os)} ${esc(diff)} (${rows.length})</h3>`);
+    return [...groups.keys()]
+      .sort((a, b) => {
+        const [ao, ad] = a.split('|');
+        const [bo, bd] = b.split('|');
+        return ao.localeCompare(bo) || DIFF_ORDER.indexOf(ad) - DIFF_ORDER.indexOf(bd);
+      })
+      .map((k) => ({ key: k, rows: groups.get(k).sort((a, b) => a.name.localeCompare(b.name)) }));
+  };
+  const sections = [
+    ...platforms.map((p) => ({ p, list: byPlatform[p], nameCell: hubNameCell, extra: false })),
+    ...extraPlatforms.map((p) => ({ p, list: extraBy[p], nameCell: extraNameCell, extra: true })),
+  ];
+  const items = [];
+  for (const sec of sections) {
+    for (const g of groupsOf(sec.list)) g.rows.forEach((m, i) => items.push({ sec, g, i, m }));
+  }
+  const secFirst = new Map();
+  for (const it of items) if (!secFirst.has(it.sec)) secFirst.set(it.sec, it);
+  const pageCount = Math.ceil(items.length / MX_PER_PAGE);
+  const pageUrl = (n) => (n === 1 ? '/machines/' : `/machines/page/${n}/`);
+  const pageOfItem = (idx) => Math.floor(idx / MX_PER_PAGE) + 1;
+  const secHeading = (sec, continued) =>
+    `<h2 id="${sec.p.toLowerCase()}">${esc(PLATFORM_NAME[sec.p] || sec.p)} machines${sec.extra ? ' in the app catalog (listed here without pages)' : ''}${continued ? ' (continued)' : ''}</h2>`;
+  const secNote = (sec) =>
+    `<p class="sec-note">These ${nf(sec.list.length)} ${esc(PLATFORM_NAME[sec.p])} machines are in the ZeroBox app catalog and are listed here without pages: there is no writeup or attack path for them on this site, and the search and filters cover them.${
+      sec.p === 'PG' ? ' The names are not links because every Proving Grounds machine shares one portal page.' : ' Where the VulnHub search for a name lists that machine, the name is followed by a link to that search.'
+    }</p>`;
+  // Renders a run of items: a platform h2 where the platform changes, an h3 + table where the OS/difficulty group changes.
+  const renderItems = (run) => {
+    const out = [];
+    let sec = null;
+    let g = null;
+    let rows = [];
+    const flush = () => {
+      if (!rows.length) return;
       out.push(
         `<table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th><th class="hide-sm">Tags</th></tr></thead><tbody>` +
-          rows.map((m) => `<tr${rowData(m)}><td>${nameCell(m)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td class="hide-sm">${tagsCell(shownTags(m))}</td></tr>`).join('') +
+          rows.map(({ m, sec: s }) => `<tr${rowData(m)}><td>${s.nameCell(m)}${tagChipsSm(shownTags(m))}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td class="hide-sm">${tagsCell(shownTags(m))}</td></tr>`).join('') +
           `</tbody></table>`
       );
+      rows = [];
+    };
+    for (const it of run) {
+      if (it.sec !== sec) {
+        flush();
+        sec = it.sec;
+        g = null;
+        const first = secFirst.get(sec) === it;
+        out.push(secHeading(sec, !first));
+        if (sec.extra && first) out.push(secNote(sec));
+      }
+      if (it.g !== g) {
+        flush();
+        g = it.g;
+        const [os, diff] = g.key.split('|');
+        out.push(`<h3>${esc(os)} ${esc(diff)} (${g.rows.length})${it.i > 0 ? ' (continued)' : ''}</h3>`);
+      }
+      rows.push(it);
     }
+    flush();
     return out;
   };
-  const parts = [];
-  parts.push(
-    `<p class="lead">Browse ${nf(model.catalogCounts.htbThm)} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, linked below; the rest are listed for reference with a link to the official room and can be tracked in ZeroBox. The ZeroBox app catalog also holds ${nf(extraBy.PG.length)} Proving Grounds and ${nf(extraBy.VulnHub.length)} VulnHub machines. They are listed further down without pages, so the search and filters on this page cover all ${nf(model.catalogCounts.htbThm + extraTotal)} machines.</p>`
-  );
-  parts.push(ctaBox({ body: 'Track these machines in ZeroBox: free, offline, no signup.', href: '/tracker/', label: 'Track these machines' }));
-  parts.push(`<p>Preparing for an exam? Start with the <a href="/oscp-like-machines/">OSCP-like machines</a> list, or read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> before you pick boxes.</p>`);
-  parts.push(
-    `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-pro-labs-guide/', '/cpts-exam-guide/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`
-  );
-  parts.push(`<div class="chips">${[...platforms.map((p) => [p, byPlatform[p].length]), ...extraPlatforms.map((p) => [p, extraBy[p].length])].map(([p, n]) => `<a href="#${p.toLowerCase()}">${esc(PLATFORM_NAME[p] || p)} (${n})</a>`).join('')}</div>`);
-  for (const p of platforms) {
-    parts.push(`<h2 id="${p.toLowerCase()}">${esc(PLATFORM_NAME[p] || p)} machines</h2>`);
-    parts.push(...platformTables(byPlatform[p], hubNameCell));
+  const total = model.catalogCounts.htbThm + extraTotal;
+  const pager = (n, where) => {
+    if (pageCount < 2) return '';
+    const link = (k, label, rel) => (k === n ? `<span aria-current="page">${label}</span>` : `<a href="${pageUrl(k)}"${rel ? ` rel="${rel}"` : ''}>${label}</a>`);
+    const nums = Array.from({ length: pageCount }, (_, i) => link(i + 1, String(i + 1)));
+    return `<nav class="pager" aria-label="Machine list pages${where === 'end' ? ', end of list' : ''}">${n > 1 ? `<a href="${pageUrl(n - 1)}" rel="prev">Previous</a>` : ''}${nums.join('')}${n < pageCount ? `<a href="${pageUrl(n + 1)}" rel="next">Next</a>` : ''}</nav>`;
+  };
+  const searchForm = () =>
+    `<form class="tf mx-search" action="/machines/all/" method="get" role="search"><div class="tf-field tf-search"><label for="mx-q">Search all ${nf(total)} machines</label><input id="mx-q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Name, tag or technique" /></div><div class="mx-search-actions"><button class="btn" type="submit">Search</button><a href="/machines/all/">Browse all with filters</a></div></form>`;
+  // Where each platform starts, for the jump chips.
+  const platformStart = (p) => {
+    const idx = items.findIndex((x) => x.sec.p === p);
+    return `${pageUrl(pageOfItem(idx))}#${p.toLowerCase()}`;
+  };
+  const platformChips = (hrefFor) =>
+    `<div class="chips">${sections.map((s) => `<a href="${hrefFor(s.p)}">${esc(PLATFORM_NAME[s.p] || s.p)} (${s.list.length})</a>`).join('')}</div>`;
+  const hubChips = `<h2>Machine lists, techniques and guides</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/techniques/">All techniques (${techGroups.length})</a>${guideChips(['/htb-pro-labs-guide/', '/cpts-exam-guide/', '/oscp-exam-scoring-and-time-budget/', '/oscp-report-template/', '/htb-progress-tracker/', '/tj-null-list/', '/htb-vs-tryhackme/'])}</div>`;
+  const solved = [...withPage].sort((a, b) => a.name.localeCompare(b.name));
+  const solvedTable =
+    `<h2 id="solved">Machines I solved (${solved.length})</h2><p>Each of these has its own attack path page.</p>` +
+    `<table class="list"><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>` +
+    solved.map((m) => `<tr><td><a href="${mUrl(m)}">${esc(m.name)}</a></td><td>${esc(PLATFORM_NAME[m.platform] || m.platform)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td></tr>`).join('') +
+    `</tbody></table>`;
+  const closing = ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' });
+  const listTitle = fitTitle(`Hack The Box Machines List: ${nf(total)} HTB, THM, PG, VulnHub`, `HTB, THM, PG & VulnHub Machines List: ${nf(total)} Boxes`, `Machines List: ${nf(total)} Boxes`);
+
+  for (let n = 1; n <= pageCount; n++) {
+    const run = items.slice((n - 1) * MX_PER_PAGE, n * MX_PER_PAGE);
+    const from = (n - 1) * MX_PER_PAGE + 1;
+    const to = from + run.length - 1;
+    const onPage = [...new Set(run.map((x) => PLATFORM_NAME[x.sec.p] || x.sec.p))];
+    const listAnd = (a) => (a.length > 1 ? `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}` : a[0]);
+    const parts = [];
+    if (n === 1) {
+      parts.push(
+        `<p class="lead">Browse ${nf(model.catalogCounts.htbThm)} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, listed first below; the rest are listed for reference (Hack The Box, TryHackMe and many VulnHub rows link to the official page; Proving Grounds rows do not) and can be tracked in ZeroBox. The ZeroBox app catalog also holds ${nf(extraBy.PG.length)} Proving Grounds and ${nf(extraBy.VulnHub.length)} VulnHub machines, listed after them without pages. The list runs over ${pageCount} pages of ${MX_PER_PAGE}; the search covers all ${nf(total)} machines.</p>`
+      );
+      parts.push(ctaBox({ body: 'Track these machines in ZeroBox: free, offline, no signup.', href: '/tracker/', label: 'Track these machines' }));
+      parts.push(`<p>Preparing for an exam? Start with the <a href="/oscp-like-machines/">OSCP-like machines</a> list, or read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> before you pick boxes.</p>`);
+      parts.push(hubChips);
+    } else {
+      parts.push(`<p class="lead">Rows ${nf(from)} to ${nf(to)} of the ${nf(total)} machines in the list (${listAnd(onPage)}), by platform, operating system and difficulty. <a href="/machines/">Back to page 1</a> for the machines I solved and the list guides.</p>`);
+    }
+    parts.push(searchForm());
+    parts.push(platformChips(platformStart));
+    if (n === 1) parts.push(solvedTable);
+    parts.push(pager(n));
+    parts.push(...renderItems(run));
+    parts.push(pager(n, 'end'));
+    parts.push(closing);
+    const html = renderPage({
+      path: pageUrl(n),
+      title: n === 1 ? listTitle : `Machines List, Page ${n} of ${pageCount} | ZeroBox`,
+      description:
+        n === 1
+          ? `Free list of ${nf(total)} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines by OS and difficulty. Track them offline, no signup.`
+          : `Page ${n} of ${pageCount} of the free machines list: ${listAnd(onPage)} machines ${nf(from)} to ${nf(to)} of ${nf(total)}, by OS and difficulty.`,
+      h1: n === 1 ? 'Hack The Box, TryHackMe, Proving Grounds and VulnHub machines list' : `Machines list, page ${n} of ${pageCount}`,
+      body: parts.join('\n'),
+      crumbs: n === 1 ? [['Home', '/'], ['Machines', '/machines/']] : [['Home', '/'], ['Machines', '/machines/'], [`Page ${n}`, pageUrl(n)]],
+      ogType: 'website',
+      redirectListQuery: n === 1,
+      ld: n === 1 ? [itemListLd('Solved Hack The Box and TryHackMe machines', '/machines/', solved)] : [],
+    });
+    if (n === 1) console.log(`machines hub size: ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB (page 1 of ${pageCount})`);
+    emit('machines-hub', pageUrl(n), html, 0.8);
   }
-  for (const p of extraPlatforms) {
-    parts.push(`<h2 id="${p.toLowerCase()}">${esc(PLATFORM_NAME[p])} machines in the app catalog (listed here without pages)</h2>`);
-    parts.push(
-      `<p class="sec-note">These ${nf(extraBy[p].length)} ${esc(PLATFORM_NAME[p])} machines are in the ZeroBox app catalog and are listed here without pages: there is no writeup or attack path for them on this site, and the search and filters above cover them.${
-        p === 'PG' ? ' The names are not links because every Proving Grounds machine shares one portal page.' : ' Where the VulnHub search for a name lists that machine, the name is followed by a link to that search.'
-      }</p>`
-    );
-    parts.push(...platformTables(extraBy[p], extraNameCell));
+
+  // Every row on one page with the search, filters and sort (public/table-filter.js). noindex: the paged list above is the indexed copy.
+  {
+    const parts = [
+      `<p class="lead">All ${nf(total)} machines on one page, with search, filters and sort. For a lighter page, browse the <a href="/machines/">machines list</a> ${MX_PER_PAGE} at a time.</p>`,
+      platformChips((p) => `#${p.toLowerCase()}`),
+      ...renderItems(items),
+      closing,
+    ];
+    const html = renderPage({
+      path: '/machines/all/',
+      title: `Search All ${nf(total)} Machines: HTB, THM, PG, VulnHub | ZeroBox`,
+      description: `Search and filter all ${nf(total)} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines on one page by name, tag, OS and difficulty.`,
+      h1: `Search all ${nf(total)} machines`,
+      body: parts.join('\n'),
+      crumbs: [['Home', '/'], ['Machines', '/machines/'], ['All', '/machines/all/']],
+      ogType: 'website',
+      noindex: true,
+      tableFilter: true,
+    });
+    emit('machines-all', '/machines/all/', html, 0.3, gitDate(SRC.machines));
   }
-  parts.push(ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' }));
-  const html = renderPage({
-    path: '/machines/',
-    title: fitTitle(`Hack The Box Machines List: ${nf(model.catalogCounts.htbThm + extraTotal)} HTB, THM, PG, VulnHub`, `HTB, THM, PG & VulnHub Machines List: ${nf(model.catalogCounts.htbThm + extraTotal)} Boxes`, `Machines List: ${nf(model.catalogCounts.htbThm + extraTotal)} Boxes`),
-    description: `Free filterable list of ${nf(model.catalogCounts.htbThm + extraTotal)} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines by OS and difficulty. Track them offline, no signup.`,
-    h1: 'Hack The Box, TryHackMe, Proving Grounds and VulnHub machines list',
-    body: parts.join('\n'),
-    crumbs: [['Home', '/'], ['Machines', '/machines/']],
-    ogType: 'website',
-    tableFilter: true,
-    ld: [itemListLd('Solved Hack The Box and TryHackMe machines', '/machines/', [...withPage].sort((a, b) => a.name.localeCompare(b.name)))],
-  });
-  console.log(`machines hub size: ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB`);
-  emit('machines-hub', '/machines/', html, 0.8);
 }
 
 // ===================== Cheatsheets =====================
@@ -740,7 +845,8 @@ emit(
 {
   const fill = (s) => String(s || '').replace(/\{ip\}/g, '{LHOST}').replace(/\{port\}/g, '{LPORT}').replace(/\{shell\}/g, '/bin/bash');
   const body = [
-    `<p class="lead">${model.shellAvailableCount} reverse shell, bind shell, MSFVenom, HoaxShell and TTY upgrade one-liners across ${model.shellLangs.length} languages and platforms. Replace <code>{LHOST}</code> with your attacker IP and <code>{LPORT}</code> with your listener port, and start the listener first.</p>`,
+    `<p class="lead">${model.shellAvailableCount} reverse shell, bind shell, MSFVenom, HoaxShell and TTY upgrade one-liners across ${model.shellLangs.length} languages and platforms. Replace <code>{LHOST}</code> with your attacker IP and <code>{LPORT}</code> with your listener port, either in the two fields below or by hand, then copy a command and start the listener first.</p>`,
+    `<div class="tf rs-fill" id="rs-fill" role="group" aria-label="Fill in your values" hidden><div class="tf-controls"><div class="tf-field"><label for="rs-lhost">LHOST (your IP)</label><input id="rs-lhost" type="text" autocomplete="off" spellcheck="false" placeholder="{LHOST}" /></div><div class="tf-field"><label for="rs-lport">LPORT (listener port)</label><input id="rs-lport" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="{LPORT}" /></div></div></div>`,
     ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell.', href: '/cheatsheets/', label: 'Generate a shell' }),
     `<div class="chips">${model.shellLangs.map((l) => `<a href="#${esc(l.anchor)}">${esc(l.language)} (${l.availableCount})</a>`).join('')}</div>`,
     `<!--email_off-->`,
@@ -957,8 +1063,10 @@ function rowTags(m, g) {
   if (!g) return tagsCell(cleaned);
   const hits = cleaned.filter((e) => e.raws.some((t) => TECH.matchesTag(g, t)));
   const items = [...(isEditorOnly(g, m) ? ['<span class="mapped">Editor-mapped</span>'] : []), ...hits.map(tagLink), ...cleaned.filter((e) => !hits.includes(e)).map(tagLink)];
-  return items.slice(0, Math.max(4, hits.length + 1)).join(', ');
+  return items.length ? items.slice(0, Math.max(4, hits.length + 1)).join(', ') : NO_TAGS;
 }
+// Mobile chips in the same order as the wide Tags cell: on a technique page, the tags matching it come first.
+const chipTags = (m, g) => { const c = shownTags(m); if (!g) return c; const hits = c.filter((e) => e.raws.some((t) => TECH.matchesTag(g, t))); return [...hits, ...c.filter((e) => !hits.includes(e))]; };
 function machineSections(list, g, filterable = false) {
   const ordered = orderMachines(list);
   const diffs = DIFF_ORDER.filter((d) => ordered.some((m) => m.difficulty === d));
@@ -970,7 +1078,7 @@ function machineSections(list, g, filterable = false) {
         `<h3 id="${diffId(d)}">${esc(d)} (${rows.length})</h3>` +
         `<table class="list"><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th class="hide-sm">Tags</th></tr></thead><tbody>` +
         rows
-          .map((m) => `<tr${filterable ? rowData(m) : ''}><td>${nameCell(m)}</td><td>${esc(m.platform)}</td><td>${esc(m.os)}</td><td class="hide-sm">${rowTags(m, g)}</td></tr>`)
+          .map((m) => `<tr${filterable ? rowData(m) : ''}><td>${nameCell(m)}${tagChipsSm(chipTags(m, g))}</td><td>${esc(m.platform)}</td><td>${esc(m.os)}</td><td class="hide-sm">${rowTags(m, g)}</td></tr>`)
           .join('') +
         `</tbody></table>`
       );
@@ -1298,7 +1406,7 @@ for (const g of guides) {
 // ===================== About (scripts/lib/about.cjs) =====================
 {
   const { buildAboutPages, ABOUT_SRC } = require('./lib/about.cjs');
-  const stats = { machines: model.catalogCounts.ctf, guidedLabs: model.catalogCounts.guided, solved: withPage.length, writeups: withPage.filter((m) => m.ownWriteup || m.hasSiteWriteup).length, techniqueHubs: techGroups.length };
+  const stats = { machines: model.catalogCounts.ctf, guidedLabs: model.catalogCounts.guided, solved: withPage.length, writeups: withPage.filter((m) => m.ownWriteupHref || m.hasSiteWriteup).length, techniqueHubs: techGroups.length };
   for (const p of buildAboutPages({ renderPage, stats })) emit('about', p.path, p.html, 0.5, gitDate(ABOUT_SRC));
 }
 
@@ -1315,7 +1423,7 @@ const staticUrls = [
 ];
 const { SITEMAP_EXCLUDE } = require('./lib/sitemap-policy.cjs');
 // Machine pages parked as noindex (no owner writeup yet, see isNoindexMachine) stay live but are not listed.
-const seen = new Set([...SITEMAP_EXCLUDE, ...withPage.filter(isNoindexMachine).map(mUrl)]);
+const seen = new Set([...SITEMAP_EXCLUDE, '/machines/all/', ...withPage.filter(isNoindexMachine).map(mUrl)]);
 const all = [...staticUrls, ...pages.map((p) => ({ loc: p.loc, lastmod: p.lastmod || gitDate(GEN_FILE) }))].filter((u) => !seen.has(u.loc) && seen.add(u.loc));
 // Real indexable paths for the 404 page's "Did you mean" (public/404.js fetches it; small, fixed).
 fs.writeFileSync(path.join(distDir, '404-paths.json'), JSON.stringify(all.map((u) => u.loc).filter((l) => l !== '/')), 'utf8');
@@ -1326,7 +1434,7 @@ const LANDING_IMAGES = ['hero-app', 'burn-chart', 'graph', 'table', 'vault', 'ex
 let landingShots = [];
 try {
   landingShots = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8'));
-} catch (e) {
+} catch {
   console.warn('gen-content-pages: scripts/templates/landing-shots.json unreadable; sitemap has no image entries');
 }
 const imagesFor = (loc) => {

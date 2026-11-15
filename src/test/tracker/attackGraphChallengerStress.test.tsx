@@ -187,7 +187,7 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
         const exoticMachine = createTestMachine({
           id: `box-os-${os || 'empty'}`,
           name: `Box-${os || 'empty'}`,
-          os: os as any,
+          os: os as never,
           ip: '10.10.10.99',
         });
 
@@ -557,7 +557,7 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
 
         useCtfStore.setState({ 
           machines: [testMachine], 
-          themePreset: theme as any 
+          themePreset: theme as never 
         });
 
         const { container } = render(

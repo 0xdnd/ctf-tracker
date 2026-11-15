@@ -238,7 +238,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       ];
 
       combos.forEach(({ theme, isDark, expectedClass, expectedTheme }) => {
-        useCtfStore.getState().setThemePreset(theme as any);
+        useCtfStore.getState().setThemePreset(theme as never);
         applyThemeToDOM(isDark ? 'dark' : 'light', false);
         expect(document.documentElement.classList.contains(expectedClass)).toBe(true);
         expect(document.documentElement.getAttribute('data-theme')).toBe(expectedTheme);
@@ -429,7 +429,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
     });
 
     it('verifies MotionConfigContext propagates reducedMotion="user" and useReducedMotionConfig dynamically reflects mode', () => {
-      let capturedContext: any = null;
+      let capturedContext = null as { reducedMotion?: unknown } | null;
       let configResultAlways: boolean | null = null;
       let configResultNever: boolean | null = null;
 
@@ -474,7 +474,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
 
     it('verifies toggleTheme skips View Transitions when prefers-reduced-motion is active', () => {
       const mockStartViewTransition = vi.fn();
-      (document as any).startViewTransition = mockStartViewTransition;
+      (document as unknown as Record<string, unknown>).startViewTransition = mockStartViewTransition;
 
       const origMatchMedia = window.matchMedia;
       window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -497,7 +497,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       // Verify DOM does not gain theme-transition class under reduced-motion
       expect(document.documentElement.classList.contains('theme-transition')).toBe(false);
 
-      delete (document as any).startViewTransition;
+      delete (document as unknown as Record<string, unknown>).startViewTransition;
       window.matchMedia = origMatchMedia;
     });
   });
@@ -563,7 +563,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(operatorPill).not.toBeNull();
       expect(operatorPill?.className).toContain('h-8');
       expect(operatorPill?.className).toContain('w-8');
-      expect(operatorPill?.querySelector('.hidden.xl\:flex'), 'ROOT badge was removed from the operator button').toBeNull();
+      expect(operatorPill?.querySelector('.hidden.xl\\:flex'), 'ROOT badge was removed from the operator button').toBeNull();
       expect(operatorPill?.textContent).not.toContain('ROOT');
       expect(operatorPill?.getAttribute('aria-label')).toMatch(/\d+ rooted/);
 

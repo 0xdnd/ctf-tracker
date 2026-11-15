@@ -26,6 +26,7 @@ import { OpenNoteOptions } from '../../types/workspace';
 import { slugifyHeading } from '../../utils/workspaceLinkInterceptor';
 import { getHeadingLineMatching } from '../../utils/noteMeta';
 import { renderPlaceholderChips } from '../common/PlaceholderChip';
+import { Skeleton } from '../common/Skeleton';
 
 const MermaidDiagram = lazy(() => import('./MermaidDiagram'));
 
@@ -380,6 +381,15 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
         className={`my-3 rounded-lg border border-l-2 ${variant} ${borderColor} ${bgColor} overflow-hidden`}
       >
         <div
+          role={callout.isFoldable ? 'button' : 'presentation'}
+          tabIndex={callout.isFoldable ? 0 : undefined}
+          aria-expanded={callout.isFoldable ? isOpen : undefined}
+          onKeyDown={(e) => {
+            if (callout.isFoldable && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              toggleCallout(idx);
+            }
+          }}
           onClick={() => callout.isFoldable && toggleCallout(idx)}
           className={`flex items-center justify-between px-3.5 py-2 select-none ${
             callout.isFoldable ? 'cursor-pointer hover:bg-surface-hover' : ''
@@ -476,7 +486,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             </button>
           </div>
           {isMermaid ? (
-            <Suspense fallback={<div className="h-40" />}>
+            <Suspense fallback={<Skeleton height={160} className="w-full" />}>
               <MermaidDiagram source={rawCode} fallback={codeBody} />
             </Suspense>
           ) : (
@@ -663,6 +673,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
           elements.push(
             <div
               key={`chk-${i}`}
+              role="presentation"
               onClick={(e) => {
                 if ((e.target as HTMLElement).tagName.toLowerCase() !== 'input') {
                   toggleChecklist(i, isChecked);

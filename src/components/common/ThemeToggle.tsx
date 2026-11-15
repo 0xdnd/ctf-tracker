@@ -93,12 +93,14 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
       {/* Optional mode label */}
       {showLabel && (
-        <span
+        <button
+          type="button"
+          tabIndex={-1}
           className="text-xs font-medium text-secondary hover:text-primary transition-colors duration-150 cursor-pointer"
           onClick={handleToggle}
         >
           {isDark ? 'Dark' : 'Light'}
-        </span>
+        </button>
       )}
     </div>
   );

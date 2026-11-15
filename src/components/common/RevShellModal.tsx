@@ -136,6 +136,7 @@ export const RevShellModal: React.FC = () => {
     >
       {/* Intentionally dark panel in both color modes */}
       <div
+        role="presentation"
         className="w-full max-w-2xl bg-surface-inverse text-on-inverse border border-inverse rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >

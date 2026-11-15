@@ -284,7 +284,7 @@ describe('Certification Exam Compliance & Scoring Engine (R2 & R3)', () => {
     it('CRTO-01: Passing threshold must be 75 points (6 of 8 objectives @ 12.5 pts)', () => {
       const boxes = buildCrtoObjectives(6); // 6 * 12.5 = 75 pts
       // Note: Passing 'CRTO' track to calculateExamScore
-      const result = calculateExamScore('CRTO' as any, boxes);
+      const result = calculateExamScore('CRTO' as never, boxes);
 
       expect(result.totalScore).toBe(75);
       // In accordance with R2 / ORIGINAL_REQUEST.md, CRTO threshold is 75 pts
@@ -295,7 +295,7 @@ describe('Certification Exam Compliance & Scoring Engine (R2 & R3)', () => {
 
     it('CRTO-02: 5 objectives (62.5 pts) fails passing threshold with 12.5 points needed', () => {
       const boxes = buildCrtoObjectives(5); // 5 * 12.5 = 62.5 pts
-      const result = calculateExamScore('CRTO' as any, boxes);
+      const result = calculateExamScore('CRTO' as never, boxes);
 
       expect(result.totalScore).toBe(62.5);
       expect(result.passThreshold).toBe(75);
@@ -305,7 +305,7 @@ describe('Certification Exam Compliance & Scoring Engine (R2 & R3)', () => {
 
     it('CRTO-03: Full 8 objectives achieves 100 points', () => {
       const boxes = buildCrtoObjectives(8);
-      const result = calculateExamScore('CRTO' as any, boxes);
+      const result = calculateExamScore('CRTO' as never, boxes);
 
       expect(result.totalScore).toBe(100);
       expect(result.isPassing).toBe(true);

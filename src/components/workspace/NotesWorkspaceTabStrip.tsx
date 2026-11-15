@@ -69,6 +69,7 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
       {/* Scrollable Tab Container */}
       <div
         ref={tabStripRef}
+        role="tablist"
         className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1 min-w-0 pr-2 py-1"
       >
         {tabs.map(({ id: tabId, tab }) => {
@@ -80,7 +81,16 @@ export const NotesWorkspaceTabStrip: React.FC = () => {
             <div
               key={tabId}
               data-tab-kind={tab.kind}
+              role="tab"
+              tabIndex={0}
+              aria-selected={isActive}
               onClick={() => setActiveTab(tabId)}
+              onKeyDown={(e) => {
+                if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  setActiveTab(tabId);
+                }
+              }}
               className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors border flex-shrink-0 max-w-[160px] sm:max-w-[200px] ${
                 isActive
                   ? 'text-accent border-transparent'

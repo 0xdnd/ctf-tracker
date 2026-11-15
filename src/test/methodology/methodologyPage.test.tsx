@@ -5,14 +5,14 @@ import { MethodologyPage } from '../../pages/MethodologyPage';
 import { useCtfStore } from '../../store/useCtfStore';
 
 beforeAll(() => {
-  (globalThis as any).IntersectionObserver = class {
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
     takeRecords() { return []; }
   };
   // jsdom doesn't implement smooth scrolling; PhaseNav calls it on click.
-  (Element.prototype as any).scrollIntoView = () => {};
+  (Element.prototype as unknown as Record<string, unknown>).scrollIntoView = () => {};
 });
 
 const renderPage = () =>
@@ -37,7 +37,7 @@ const baseMachine = (overrides: Record<string, unknown> = {}) => ({
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   ...overrides,
-}) as any;
+}) as never;
 
 describe('MethodologyPage', () => {
   it('renders the playbook header and search input', () => {

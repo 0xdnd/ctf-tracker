@@ -42,7 +42,9 @@ export class ErrorBoundary extends Component<Props, State> {
         }
       }
       keysToRemove.forEach((k) => localStorage.removeItem(k));
-    } catch (_) {}
+    } catch {
+      // storage unavailable; reload anyway
+    }
     window.location.reload();
   };
 

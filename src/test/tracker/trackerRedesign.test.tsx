@@ -44,6 +44,7 @@ describe('Wave 2 lane B - tracker redesign', () => {
       soundEnabled: false,
       viewMode: 'kanban',
       activeTargetId: null,
+      isCatalogLoaded: true,
     });
   });
 

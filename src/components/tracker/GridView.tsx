@@ -154,6 +154,7 @@ const GridCard = React.memo<GridCardProps>(({
 
   return (
     <div
+      role="presentation"
       onClick={() => onSelectMachine(m.id)}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -244,7 +245,7 @@ const GridCard = React.memo<GridCardProps>(({
 
             {/* Hint spoiler */}
             {m.hint ? (
-              <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-3" role="presentation" onClick={(e) => e.stopPropagation()}>
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs font-medium text-muted">Intel hint</span>
                   <button
@@ -260,6 +261,7 @@ const GridCard = React.memo<GridCardProps>(({
                 </div>
                 {/* Plain div: framer-motion `layout` measures every card's box on mount (forced reflow). */}
                 <div
+                  role="presentation"
                   className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
                     isHintRevealed
                       ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
@@ -305,7 +307,7 @@ const GridCard = React.memo<GridCardProps>(({
       </div>
 
       {/* Footer: flags + engage stay visible, utility actions reveal on hover/focus */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-3" onClick={(e) => e.stopPropagation()}>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-3" role="presentation" onClick={(e) => e.stopPropagation()}>
         {m.isActive ? (
           <div className="flex items-center gap-1.5 text-[11px] text-muted font-mono">
             <Lock className="h-3 w-3 text-callout-warn-fg" />
@@ -431,6 +433,10 @@ interface GridViewProps {
   filteredMachines: Machine[];
 }
 
+/** Cards mounted in the first pass, and the batch size that follows. */
+const FIRST_REVEAL = 6;
+const REVEAL_STEP = 4;
+
 export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
   const navigate = useNavigate();
   const {
@@ -457,15 +463,33 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
 
   const [revealedHints, setRevealedHints] = useState<Record<string, boolean>>({});
   const [visibleCount, setVisibleCount] = useState(32);
+  // Cards are mounted a few at a time: the first screenful at once, the rest one small batch per task, so a list swap
+  // (the catalog arriving, a filter change) never builds every card inside one long task.
+  const [revealed, setRevealed] = useState(FIRST_REVEAL);
 
-  // Reset or adjust visibleCount when filters change
+  // Adjusted during render, so no frame shows the old window.
+  const [listLength, setListLength] = useState(filteredMachines.length);
+  if (listLength !== filteredMachines.length) {
+    // Only a large change (catalog arrival, filter switch) restarts the batched reveal; a small one (a delete, a status
+    // toggle under a filter) keeps the mounted cards so they do not unmount and replay their enter animation.
+    if (listLength === 0 || Math.abs(filteredMachines.length - listLength) > REVEAL_STEP) {
+      setVisibleCount(32);
+      setRevealed(FIRST_REVEAL);
+    }
+    setListLength(filteredMachines.length);
+  }
+
+  const mountedCount = Math.min(visibleCount, revealed, filteredMachines.length);
+  const settled = mountedCount >= Math.min(visibleCount, filteredMachines.length);
   React.useEffect(() => {
-    setVisibleCount(32);
-  }, [filteredMachines.length]);
+    if (settled) return;
+    const t = setTimeout(() => setRevealed((r) => r + REVEAL_STEP), 0);
+    return () => clearTimeout(t);
+  }, [settled, revealed]);
 
   const visibleMachines = React.useMemo(() => {
-    return filteredMachines.slice(0, visibleCount);
-  }, [filteredMachines, visibleCount]);
+    return filteredMachines.slice(0, mountedCount);
+  }, [filteredMachines, mountedCount]);
 
   const toggleHint = useCallback((e: React.MouseEvent, machineId: string) => {
     e.stopPropagation();
@@ -521,11 +545,15 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
         ))}
       </div>
 
-      {filteredMachines.length > visibleCount && (
+      {settled && filteredMachines.length > visibleCount && (
         <div className="flex flex-col items-center justify-center pt-4 pb-8">
           <button
             type="button"
-            onClick={() => setVisibleCount((prev) => prev + 32)}
+            onClick={() => {
+              // A page the user asked for mounts at once (as before), so this button stays mounted and keeps focus.
+              setVisibleCount((prev) => prev + 32);
+              setRevealed((prev) => prev + 32);
+            }}
             className="px-6 py-2.5 min-h-[44px] rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary hover:text-primary font-medium text-sm transition-colors active:scale-[0.97] cursor-pointer"
           >
             Load more targets <span className="font-mono tabular-nums text-muted">({visibleCount} of {filteredMachines.length})</span>

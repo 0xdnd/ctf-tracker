@@ -17,14 +17,14 @@ function setup({ controller = true, waiting = false } = {}) {
   const regEv = emitter();
   const docEv = emitter();
   const waitingWorker = { postMessage: vi.fn() };
-  const reg: any = {
+  const reg: Record<string, unknown> = {
     ...regEv,
     waiting: waiting ? waitingWorker : null,
     installing: null,
     update: vi.fn().mockResolvedValue(undefined),
   };
-  const sw: any = { ...swEv, controller: controller ? {} : null, register: vi.fn().mockResolvedValue(reg) };
-  const doc: any = { ...docEv, visibilityState: 'visible' };
+  const sw: Record<string, unknown> = { ...swEv, controller: controller ? {} : null, register: vi.fn().mockResolvedValue(reg) };
+  const doc: Record<string, unknown> = { ...docEv, visibilityState: 'visible' };
   const order: string[] = [];
   const location = { reload: vi.fn(() => order.push('reload')) };
   const notify = vi.fn();
@@ -35,19 +35,19 @@ function setup({ controller = true, waiting = false } = {}) {
   let t = 1_000_000;
   const init = () =>
     initServiceWorkerUpdates({
-      navigator: { serviceWorker: sw },
+      navigator: { serviceWorker: sw as never },
       location,
       notify,
       flushBeforeReload,
       now: () => t,
-      document: doc,
+      document: doc as never,
     });
   return { sw, swEv, regEv, docEv, doc, reg, waitingWorker, location, notify, flushBeforeReload, order, init, advance: (ms: number) => (t += ms) };
 }
 
 const installing = (state: string) => {
   const ev = emitter();
-  const w: any = { ...ev, state };
+  const w: Record<string, unknown> = { ...ev, state };
   return {
     w,
     fire: (s: string) => {

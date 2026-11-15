@@ -533,13 +533,13 @@ export { SYNC_CHANNEL_NAME, syncChannel };
 
 export const broadcastCrossTabMessage = (
   type: 'STATE_UPDATED' | 'WRITEUPS_UPDATED' | 'MACHINE_DELETED' | 'MACHINE_ADDED' | 'NOTES_UPDATED',
-  payload?: any
+  payload?: unknown
 ) => {
   // A gated (outdated/restoring) tab must not push its edits into other tabs, which would persist them.
   if (isSchemaWriteGated()) return;
   try {
     syncChannel?.postMessage({ type, payload, timestamp: Date.now() });
-  } catch {}
+  } catch { /* channel closed or unavailable; cross-tab broadcast is best-effort */ }
 };
 
 /**
@@ -634,7 +634,8 @@ export const safeLocalStorage = {
       inMemoryFallbackStorage.delete(name);
       failingStorageKeys.delete(name);
       return true;
-    } catch (e: any) {
+    } catch (err: unknown) {
+      const e = err as { name?: string; code?: number; number?: number; message?: string } | null | undefined;
       isStorageEphemeral = true;
       inMemoryFallbackStorage.set(name, value);
       if (failingStorageKeys.has(name)) return false;
@@ -648,7 +649,7 @@ export const safeLocalStorage = {
               : { kind: 'error', message: `Could not save to browser storage (${String(e?.message || e)}). Changes are kept in memory only; export a backup.`, sticky: true },
           })
         );
-      } catch {}
+      } catch { /* event dispatch is best-effort; the in-memory fallback already holds the value */ }
       return false;
     }
   },
@@ -742,7 +743,7 @@ function claimLegacyAttackGraphOnce(): string | null {
     let blobProfileId: unknown = null;
     try {
       blobProfileId = JSON.parse(safeLocalStorage.getItem('zerobox-tactical-store') || 'null')?.state?.currentProfileId;
-    } catch {}
+    } catch { /* unreadable or corrupt blob; leave blobProfileId as null */ }
     if (
       legacy &&
       typeof blobProfileId === 'string' &&
@@ -818,7 +819,7 @@ export const getInitialProfileId = (): string => {
           return parsed.state.user.id;
         }
       }
-    } catch {}
+    } catch { /* unreadable auth blob; fall back to the guest profile */ }
   }
   return 'guest';
 };
@@ -946,7 +947,7 @@ export const loadInitialProfileData = (profileId: string) => {
             if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
               state = candidate;
             }
-          } catch {}
+          } catch { /* unreadable legacy blob; ignore it and keep the default state */ }
         }
       }
 
@@ -970,7 +971,7 @@ export const loadInitialProfileData = (profileId: string) => {
       }
 
       return state;
-    } catch {}
+    } catch { /* unreadable stored profile; fall through and report none found */ }
   }
   return null;
 };
@@ -1019,7 +1020,10 @@ export const toLeanMachines = (machines: Machine[]): Machine[] => {
         return { ...m, isCustom: true };
       }
       // For static catalog machines, strip heavy static content that is deterministically rehydrated by mergeMachinesWithCatalog
-      const { officialWalkthrough, officialSynopsis, officialPdf, ...userFields } = m;
+      const userFields = { ...m };
+      delete userFields.officialWalkthrough;
+      delete userFields.officialSynopsis;
+      delete userFields.officialPdf;
       return userFields as Machine;
     });
 };
@@ -1380,7 +1384,7 @@ export const mergeMachinesWithCatalog = (
             officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
             officialWalkthrough: undefined,
             tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
-            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
+            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as Machine['certifications'],
           });
         } else {
           // Clean slate baseline: Catalog metadata is decoupled from candidate solve history.
@@ -1415,7 +1419,7 @@ export const mergeMachinesWithCatalog = (
             officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
             officialWalkthrough: undefined,
             tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
-            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as any,
+            certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as Machine['certifications'],
           });
         }
       } else if (m.isCustom || genuineCustom || keepUnmatched || hasUserProgress(m)) {
@@ -1460,6 +1464,8 @@ let lastPersistedVersion: number | undefined;
 let lastFailedSnapshot: unknown;
 // pruneMisstampedCustomMachines runs once per session, after the first full-catalog merge
 let customStoragePruned = false;
+/** The catalog load in flight, shared by every concurrent loadCatalog() caller. */
+let catalogLoadInFlight: Promise<void> | null = null;
 
 // Version write gate: must be decided before the store boots (hydration writes synchronously).
 export const SCHEMA_GATE_TOAST_MESSAGE = 'ZeroBox was updated in another tab — reload to continue.';
@@ -1608,38 +1614,48 @@ export const useCtfStore = create<CtfStoreState>()(
           }));
           get().saveProfileData();
           return { success: true, count: validated.restoredCount };
-        } catch (err: any) {
-          return { success: false, error: err?.message || 'Failed to parse JSON file' };
+        } catch (err: unknown) {
+          return { success: false, error: (err as { message?: string } | null | undefined)?.message || 'Failed to parse JSON file' };
         }
       },
 
-      loadCatalog: async () => {
-        if (get().isCatalogLoaded || get().isCatalogLoading) return;
+      loadCatalog: () => {
+        if (get().isCatalogLoaded) return Promise.resolve();
+        // Concurrent callers (the idle scheduler, a backup export, a merge) all wait on the one load in flight.
+        if (catalogLoadInFlight) return catalogLoadInFlight;
+        if (get().isCatalogLoading) return Promise.resolve();
         // Transient flag: not part of partialize(), so this set() never re-serializes the machines.
         set({ isCatalogLoading: true });
-        try {
-          const INITIAL_MACHINES = await loadMachinesCatalog();
-          const state = get();
-          const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset, INITIAL_MACHINES);
-          const unchanged =
-            merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
-          // Single set(): keep the existing machines reference when the merge changed nothing so
-          // subscribers and the persist layer see no machines change.
-          set({
-            ...(unchanged ? {} : { machines: merged }),
-            isCatalogLoaded: true,
-            isCatalogLoading: false,
-          });
-          // Full catalog is in: every mis-stamped catalog row is now normalized, so drop their stale custom copies once.
-          // Never before the pre-migration snapshot exists; a failed/unconfirmed prune is retried next session.
-          if (!customStoragePruned && (await whenPreMigrationBackupSettled()) !== 'failed') {
-            const removed = pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
-            if (removed >= 0) customStoragePruned = true;
+        const run = (async () => {
+          try {
+            const INITIAL_MACHINES = await loadMachinesCatalog();
+            const state = get();
+            const merged = mergeMachinesWithCatalog(state.machines, state.userSolvesReset, INITIAL_MACHINES);
+            const unchanged =
+              merged.length === state.machines.length && merged.every((m, i) => m === state.machines[i]);
+            // Single atomic set() with the FULL catalog: never merge in slices, because mergeMachinesWithCatalog
+            // drops unmatched stored rows when it is handed a partial catalog. Keep the existing machines
+            // reference when the merge changed nothing so subscribers and the persist layer see no change.
+            set({
+              ...(unchanged ? {} : { machines: merged }),
+              isCatalogLoaded: true,
+              isCatalogLoading: false,
+            });
+            // Full catalog is in: every mis-stamped catalog row is now normalized, so drop their stale custom copies once.
+            // Never before the pre-migration snapshot exists; a failed/unconfirmed prune is retried next session.
+            if (!customStoragePruned && (await whenPreMigrationBackupSettled()) !== 'failed') {
+              const removed = pruneMisstampedCustomMachines(get().machines, get().currentProfileId || 'guest', flushProfileSave);
+              if (removed >= 0) customStoragePruned = true;
+            }
+          } catch (err) {
+            console.error('Failed to lazy load machinesCatalog:', err);
+            set({ isCatalogLoading: false });
+          } finally {
+            catalogLoadInFlight = null;
           }
-        } catch (err) {
-          console.error('Failed to lazy load machinesCatalog:', err);
-          set({ isCatalogLoading: false });
-        }
+        })();
+        catalogLoadInFlight = run;
+        return run;
       },
 
       setAppBrand: (brandId) => set({ appBrand: brandId }),
@@ -1830,7 +1846,7 @@ export const useCtfStore = create<CtfStoreState>()(
           let activeId = state.activeTargetId;
           let newGlobalVars = state.globalVars;
           let assignIpId = state.assignIpMachineId;
-          let shouldStartTimer = state.isTimerRunning;
+          const shouldStartTimer = state.isTimerRunning;
 
           if (status === 'recon' || status === 'foothold') {
             activeId = id;
@@ -3083,11 +3099,11 @@ export const useCtfStore = create<CtfStoreState>()(
           if (rawMachines) {
             const userSolvesReset = Boolean(data.userSolvesReset);
             const normalizedMachines = mergeMachinesWithCatalog(
-              rawMachines.map((m: any) => ({
+              rawMachines.map((m) => ({
                 ...m,
                 tags: Array.isArray(m?.tags) ? m.tags : [],
                 openPorts: Array.isArray(m?.openPorts) ? m.openPorts : [],
-                checklist: m?.checklist && typeof m.checklist === 'object' ? m.checklist : {},
+                checklist: (m?.checklist && typeof m.checklist === 'object' ? m.checklist : {}) as Machine['checklist'],
               })),
               userSolvesReset
             );
@@ -3101,13 +3117,13 @@ export const useCtfStore = create<CtfStoreState>()(
               const out: Partial<AttackGraphPersistedState> = {};
               if (Array.isArray(data.graphEdges)) {
                 out.graphEdges = data.graphEdges.filter(
-                  (e: any) => e && typeof e.id === 'string' && typeof e.sourceId === 'string' && typeof e.targetId === 'string'
+                  (e) => e && typeof e.id === 'string' && typeof e.sourceId === 'string' && typeof e.targetId === 'string'
                 );
               }
               if (data.graphNodePositions && typeof data.graphNodePositions === 'object') {
                 const pos: Record<string, AttackNodePosition> = {};
                 for (const [k, v] of Object.entries(data.graphNodePositions)) {
-                  if (v && isNum((v as any).x) && isNum((v as any).y)) pos[k] = { x: (v as any).x, y: (v as any).y };
+                  if (v && isNum(v.x) && isNum(v.y)) pos[k] = { x: v.x, y: v.y };
                 }
                 out.graphNodePositions = pos;
               }
@@ -3383,13 +3399,13 @@ export const useCtfStore = create<CtfStoreState>()(
       // whenever partialize() hands back the exact same snapshot object (transient-only set() calls such as
       // timer ticks, modal flags and isCatalogLoading), and parses the stored blob only once at boot.
       storage: {
-        getItem: (name: string): StorageValue<any> | null => {
+        getItem: (name: string): StorageValue<PersistedSlice> | null => {
           if (typeof window === 'undefined') return null;
           try {
             const raw = safeLocalStorage.getItem(name);
             if (!raw) return null;
             // Throws on corrupted JSON; handled below without surfacing an uncaught SyntaxError at boot
-            return JSON.parse(raw) as StorageValue<any>;
+            return JSON.parse(raw) as StorageValue<PersistedSlice>;
           } catch (err) {
             console.warn(
               `[ZeroBox Storage] Corrupted JSON detected in '${name}'. Quarantining and falling back to clean default state:`,
@@ -3401,11 +3417,11 @@ export const useCtfStore = create<CtfStoreState>()(
                 safeLocalStorage.setItem(`${name}_corrupted_backup_${Date.now()}`, corrupted);
               }
               safeLocalStorage.removeItem(name);
-            } catch {}
+            } catch { /* quarantine is best-effort; the corrupted entry is dropped either way */ }
             return null;
           }
         },
-        setItem: (name: string, value: StorageValue<any>): void => {
+        setItem: (name: string, value: StorageValue<PersistedSlice>): void => {
           if (value.state === lastPersistedSnapshot && value.version === lastPersistedVersion) return;
           // Gated (newer schema / restore): nothing is written and nothing is recorded, neither as persisted nor
           // as failed, so the release listener below re-flushes this snapshot once the gate lifts.
@@ -3425,16 +3441,16 @@ export const useCtfStore = create<CtfStoreState>()(
           safeLocalStorage.removeItem(name);
         },
       },
-      migrate: (persistedState: any, fromVersion: number) => {
+      migrate: (persistedState: unknown, fromVersion: number) => {
         if (fromVersion > SCHEMA_VERSION) {
           // Written by a newer build: never down-convert or write it back. Read-only until reload.
           engageSchemaWriteGate('newer-schema');
-          return persistedState;
+          return persistedState as PersistedSlice;
         }
         // v3 (isCustom normalization) needs no state transform here: mergeMachinesWithCatalog normalizes every
         // entry point. Snapshot the raw strings first (synchronous capture, async IndexedDB write).
         takePreMigrationBackup(fromVersion);
-        const persisted = persistedState || {};
+        const persisted = (persistedState || {}) as MigratablePersisted;
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
         }
@@ -3467,7 +3483,7 @@ export const useCtfStore = create<CtfStoreState>()(
           machines: mergeMachinesWithCatalog(combinedMachines, userSolvesReset),
         };
       },
-      merge: (persistedState: any, currentState: CtfStoreState) => {
+      merge: (persistedState: unknown, currentState: CtfStoreState) => {
         // No blob (first run, or a corrupted one was quarantined): the initial state already holds the profile
         // copy. Merging an empty blob would replace its machines with the bare catalog and clear its notes.
         if (persistedState === null || persistedState === undefined) {
@@ -3602,7 +3618,7 @@ const bootHasNotesList = (() => {
     try {
       const parsed = JSON.parse(safeLocalStorage.getItem(key) || 'null');
       if (Array.isArray((parsed?.state || parsed)?.customNotes)) return true;
-    } catch {}
+    } catch { /* unreadable or corrupt blob; try the next storage key */ }
   }
   return false;
 })();
@@ -3629,7 +3645,7 @@ function hydrateDeepProfile(profileId: string, gen: number, options: { refillNot
       }
       // Only for a workspace saved without a notes list (older or quota-stripped copies); an empty list is a deletion.
       if (options.refillNotes && deep?.customNotes?.length && state.customNotes.length === 0) {
-        patch.customNotes = deep.customNotes;
+        patch.customNotes = deep.customNotes as CptsNoteEntry[];
       }
       useCtfStore.setState(patch);
     },
@@ -3669,11 +3685,32 @@ function profileEditedSinceBoot(state: CtfStoreState): boolean {
   });
 }
 
+/** The slice of the store that partialize() persists under 'zerobox-tactical-store' (a plain JSON snapshot). */
+type PersistedSlice = Record<string, unknown>;
+
+/** A persisted blob as migrate() sees it: any older shape, so every field is optional and may carry retired keys. */
+type MigratablePersisted = Record<string, unknown> & {
+  currentProfileId?: string;
+  appBrand?: string;
+  uiScale?: string;
+  themePreset?: string;
+  userSolvesReset?: unknown;
+  machines?: unknown;
+  customNotes?: unknown;
+  deletedNoteIds?: unknown;
+  notesEpoch?: unknown;
+  tombstonesEpoch?: unknown;
+  deletedMachineIds?: unknown;
+};
+
+/** The IndexedDB workspace copy: the persisted profile fields plus the save timestamp. */
+type ResilientWorkspaceCopy = Partial<CtfStoreState> & { savedAt?: string };
+
 async function restoreFromResilientCopy(profileId: string, check: 'missing' | number | null) {
   if (check === null) return;
-  const copy = await loadWorkspaceFromIdb<Record<string, any>>(`zb:workspace:${profileId}`).catch(() => null);
+  const copy = await loadWorkspaceFromIdb<ResilientWorkspaceCopy>(`zb:workspace:${profileId}`).catch(() => null);
   if (!copy || !Array.isArray(copy.machines)) return;
-  if (check !== 'missing' && !(Date.parse(copy.savedAt) > check)) return;
+  if (check !== 'missing' && !(Date.parse(String(copy.savedAt)) > check)) return;
   // Gated (newer schema or a restore in progress) or switched profile meanwhile: leave everything alone.
   if (isSchemaWriteGated() || (useCtfStore.getState().currentProfileId || 'guest') !== profileId) return;
   // The user already worked in this tab: restoring would replace those edits. Keep them (they get saved).
@@ -3726,8 +3763,8 @@ let lastSavedNotesEpoch = useCtfStore.getState().notesEpoch;
 let lastSavedTombstonesEpoch = useCtfStore.getState().tombstonesEpoch;
 let lastSavedDeletedMachineIds = useCtfStore.getState().deletedMachineIds;
 let lastSavedUserSolvesReset = useCtfStore.getState().userSolvesReset;
-let saveDebounceTimer: any = null;
-let maxWaitTimer: any = null;
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let maxWaitTimer: ReturnType<typeof setTimeout> | null = null;
 /** True while this tab applies profile data another tab just wrote (see the storage listener). */
 let applyingExternalProfile = false;
 
@@ -4227,7 +4264,7 @@ if (typeof window !== 'undefined') {
   });
 
   // Tauri v2 native close listener: flush profile immediately before process destruction
-  const isTauri = Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__);
+  const isTauri = Boolean((window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ || (window as unknown as Record<string, unknown>).__TAURI__);
   if (isTauri) {
     import('@tauri-apps/api/event').then(({ listen }) => {
       listen('tauri-app-close-requested', () => {

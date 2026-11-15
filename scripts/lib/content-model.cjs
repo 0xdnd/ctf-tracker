@@ -75,7 +75,6 @@ function isRealSummary(hint) {
 const STARTING_POINT_HUB_URL = 'https://app.hackthebox.com/starting-point';
 const isStartingPointHub = (url) => url === STARTING_POINT_HUB_URL;
 
-const wordCount = (s) => (s ? String(s).split(/\s+/).filter(Boolean).length : 0);
 
 const TRACK_TO_CERT = {
   'tjnull-oscp': 'OSCP',
@@ -86,6 +85,11 @@ const TRACK_TO_CERT = {
   'cwee-web': 'CWEE',
   'crto-ad': 'Active-Directory',
 };
+
+// 0xdnd.gitbook.io/thm-writeups is offline (404 since 2026-11); the writeups move to the owner's website. Set true (or repoint) when they are back.
+const GITBOOK_LIVE = false;
+// /machines/all/ and /machines/page/<n>/ belong to the machines list.
+const RESERVED_MACHINE_SLUGS = new Set(['all', 'page']);
 
 function getModel() {
   if (cached) return cached;
@@ -104,6 +108,7 @@ function getModel() {
   const machines = [...d.INITIAL_MACHINES, ...active].map((m) => {
     let slug = slugify(`${m.platform}-${m.name}`);
     if (!slug || used.has(slug)) slug = slugify(m.id) || slug;
+    if (RESERVED_MACHINE_SLUGS.has(slug)) throw new Error(`content-model: machine slug "${slug}" is reserved for the machines list`);
     const base = slug;
     let n = 2;
     while (used.has(slug)) slug = `${base}-${n++}`;
@@ -123,7 +128,9 @@ function getModel() {
     const hasIppsec = Boolean(!isAct && ippsecTrack && ippsecTrack.filterFn(safe));
     const ownerSolved = !isAct && (m.status === 'completed' || /0xdnd\.gitbook\.io/.test(m.writeupUrl || ''));
     const ownWriteup = (!isAct && /^https:\/\/0xdnd\.gitbook\.io\//.test(m.writeupUrl || '')) ? m.writeupUrl : '';
-    return { ...safe, certifications: [...certs], hasIppsec, slug, ownWriteup, hasPage: ownerSolved };
+    // ownWriteup still marks the page as an owner writeup (title, H1, indexing); the link itself is only emitted while the GitBook is online.
+    const ownWriteupHref = GITBOOK_LIVE ? ownWriteup : '';
+    return { ...safe, certifications: [...certs], hasIppsec, slug, ownWriteup, ownWriteupHref, hasPage: ownerSolved };
   });
 
   // ---- Owner notes (scripts/data/machine-notes.json: { "<machine slug>": "note text" }, see scripts/data/README.md) ----
@@ -178,6 +185,9 @@ function getModel() {
     .map((n) => ({ ...n, slug: slugify(n.id) }));
 
   const examTracks = Object.values(d.EXAM_TRACK_CONFIGS).map((t) => t.id);
+  // "OSCP (23h45m)", "CPTS (10 days)": whole days from 72h up, else hours and minutes.
+  const fmtDuration = (s) => (s % 86400 === 0 && s >= 72 * 3600 ? `${s / 86400} days` : `${Math.floor(s / 3600)}h${s % 3600 ? `${Math.round((s % 3600) / 60)}m` : ''}`);
+  const examTrackDurations = Object.values(d.EXAM_TRACK_CONFIGS).map((t) => `${t.id} (${fmtDuration(t.durationSeconds)})`);
   const htbThm = machines.filter((m) => m.platform === 'HTB' || m.platform === 'THM').length;
   const catalogCounts = { total: machines.length, htbThm, ctf: htbThm + EXTRA_PLATFORM_COUNT, guided: machines.length - htbThm };
   const proLabs = d.OFFICIAL_HTB_PRO_LABS || [];
@@ -185,7 +195,7 @@ function getModel() {
   // Proving Grounds and VulnHub catalog rows (name, OS, difficulty, tags, room link only; no hint, flags or ids beyond the catalog's own).
   const extraMachines = EXTRA_ROWS.flat().map((m) => ({ id: m.id, name: m.name, platform: m.platform, os: m.os, difficulty: m.difficulty, tags: m.tags || [], roomUrl: m.roomUrl || '', hasPage: false }));
 
-  cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, catalogCounts, MIN_WORDS };
+  cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, examTrackDurations, catalogCounts, MIN_WORDS };
   return cached;
 }
 

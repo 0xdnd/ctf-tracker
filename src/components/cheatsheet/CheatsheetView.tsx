@@ -425,7 +425,8 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     setHighlightByNote((prev) => {
       if (q) return prev[note.id] === q ? prev : { ...prev, [note.id]: q };
       if (!(note.id in prev)) return prev;
-      const { [note.id]: _dropped, ...rest } = prev;
+      const rest = { ...prev };
+      delete rest[note.id];
       return rest;
     });
     handleOpenObsidianNote(note);
@@ -522,6 +523,8 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       setSelectedCategory(catParam);
       setViewMode('tactical');
     }
+  // location.hash is only forwarded on redirect; re-running on hash changes would re-apply deep links.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultMode, isFullscreen, location.pathname, location.search, allActiveNotes, setActiveObsidianNote, navigate]);
 
   // /notes?new=1 (from the dock's empty state) opens the new-note modal once, then drops the param.
@@ -1331,6 +1334,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       {jumpDropdownOpen && (
                         <>
                           <div
+                            role="presentation"
                             className="fixed inset-0 z-40"
                             onClick={() => setJumpDropdownOpen(false)}
                           />
@@ -1340,6 +1344,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                               name="cpts-jump-search"
                               aria-label="Type note name, tag, or tool"
                               type="text"
+                              // eslint-disable-next-line jsx-a11y/no-autofocus -- search field in a just-opened dropdown
                               autoFocus
                               value={jumpSearchQuery}
                               onChange={(e) => setJumpSearchQuery(e.target.value)}
@@ -1636,6 +1641,15 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <div
                       key={note.id}
                       id={`cpts-note-${note.id}`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+                        e.preventDefault();
+                        openFromResults(note);
+                        setObsidianNavView('files');
+                        if (isNarrow) closeDrawers();
+                      }}
                       onClick={() => {
                         openFromResults(note);
                         setObsidianNavView('files');

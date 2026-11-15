@@ -27,6 +27,7 @@ beforeEach(() => {
   useCtfStore.setState({
     machines: [box('htb-lame', 'Lame'), box('htb-forest', 'Forest'), box('htb-sauna', 'Sauna')],
     isDeepStorageLoaded: true,
+    isCatalogLoaded: true,
     loadCatalog: vi.fn(),
     selectedMachineId: null,
     soundEnabled: false,

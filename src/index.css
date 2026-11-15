@@ -12,10 +12,10 @@
   --surface-card: 255 255 255;          /* #ffffff - Pure White Surface */
   --surface-elevated: 255 255 255;      /* #ffffff - Elevated Popover */
   --surface-sunken: 228 228 231;        /* #e4e4e7 - Zinc-200 Recessed Input/Code */
-  --surface-hover: 238 238 240;         /* #eeeeef - Subtle Hover */
+  --surface-hover: 228 228 231;         /* #e4e4e7 - Visible hover on white cards */
 
   --border-subtle: 228 228 231;         /* #e4e4e7 - Sharp Zinc Divider */
-  --border-strong: 212 212 216;         /* #d4d4d8 - High-Contrast Border */
+  --border-strong: 180 180 188;         /* #b4b4bc - Hover/emphasis border, distinct from subtle */
   --border-accent: 3 105 161;           /* #0369a1 - Deep Sky Accent (>=4.5:1 as text) */
   --accent-fg: 255 255 255;             /* white on deep sky accent #0369a1 (~5.9:1) */
 

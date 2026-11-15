@@ -116,7 +116,7 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
     if (userMap && Object.keys(userMap).length > 0) {
       activeMap = userMap;
     }
-  } catch {}
+  } catch { /* store unavailable; fall back to the empty wikilink map */ }
 
   // 1. Direct check in precomputed wikilinkMap
   if (activeMap[lower]) {
@@ -253,7 +253,7 @@ export function parseObsidianNote(rawMarkdown: string): ParsedObsidianNote {
 
   // 2. Extract English / Technical methodology section
   // Strip frontmatter, Hebrew upgrade blocks, and Hebrew card blocks for clean English technical view
-  let englishSection = rawMarkdown
+  const englishSection = rawMarkdown
     .replace(/^---[\s\S]*?---\n*/, '')
     .replace(/<!--\s*CPTS-HEBREW-UPGRADE:START\s*-->[\s\S]*?<!--\s*CPTS-HEBREW-UPGRADE:END\s*-->\n*/, '')
     .replace(/##\s*כרטיס עבודה עברי[\s\S]*?(?=\n##\s*1|\n##\s*\[|\n---|\n#\s+[^#]|$)/, '')

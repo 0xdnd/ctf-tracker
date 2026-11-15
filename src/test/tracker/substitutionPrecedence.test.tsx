@@ -56,7 +56,7 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     }));
   }
-  (globalThis as any).IntersectionObserver = class {
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -85,14 +85,14 @@ beforeEach(() => {
         tags: ['test'],
       },
     ],
-  } as any);
+  } as never);
 });
 
 afterEach(() => cleanup());
 
 describe('engaged-target precedence across views', () => {
   it('SnippetsDrawer resolves {TARGET_IP} and {ip} to the engaged IP', async () => {
-    useCtfStore.setState({ snippetsDrawerOpen: true } as any);
+    useCtfStore.setState({ snippetsDrawerOpen: true } as never);
     render(
       <MemoryRouter>
         <SnippetsDrawer />
@@ -118,7 +118,7 @@ describe('engaged-target precedence across views', () => {
   });
 
   it('CheatsheetView falls back to the global RHOST when no target is engaged', async () => {
-    useCtfStore.setState({ activeTargetId: null } as any);
+    useCtfStore.setState({ activeTargetId: null } as never);
     render(
       <MemoryRouter initialEntries={['/cheatsheet']}>
         <CheatsheetView defaultMode="tactical" />
@@ -132,7 +132,7 @@ describe('engaged-target precedence across views', () => {
   });
 
   it('ChecklistWorkspace (interpolateCommand consumer) shows the engaged IP, not the global RHOST', () => {
-    render(<ChecklistWorkspace machine={ENGAGED_MACHINE as any} />);
+    render(<ChecklistWorkspace machine={ENGAGED_MACHINE as never} />);
     const engaged = screen.getAllByText(new RegExp(ENGAGED_IP.replace(/\./g, '\\.')));
     expect(engaged.length).toBeGreaterThan(0);
     expect(screen.queryAllByText(new RegExp(GLOBAL_RHOST.replace(/\./g, '\\.') + '(?!\\d)')).length).toBe(0);
@@ -179,7 +179,7 @@ describe('engaged-target precedence across views', () => {
     expect(result.current.targetIp).toBe(ENGAGED_IP);
     expect(interpolateCommand(TEMPLATE, result.current)).toBe(EXPECTED);
 
-    useCtfStore.setState({ activeTargetId: null } as any);
+    useCtfStore.setState({ activeTargetId: null } as never);
     expect(selectActiveTargetIp(useCtfStore.getState())).toBeUndefined();
     const fallback = renderHook(() => useEffectiveGlobalVars(GLOBAL_VARS));
     expect(fallback.result.current.targetIp).toBe(GLOBAL_RHOST);

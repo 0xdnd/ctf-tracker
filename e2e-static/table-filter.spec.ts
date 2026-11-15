@@ -7,7 +7,7 @@ import { test, expect, type Page } from '@playwright/test';
  */
 
 const PAGES = [
-  '/machines/',
+  '/machines/all/',
   '/oscp-like-machines/',
   '/active-directory-machines/',
   '/cwee-like-machines/',
@@ -58,8 +58,8 @@ for (const url of PAGES) {
   });
 }
 
-test('/machines/: search, filters, sort, empty state and reset', async ({ page }) => {
-  const { problems, requests } = await open(page, '/machines/');
+test('/machines/all/: search, filters, sort, empty state and reset', async ({ page }) => {
+  const { problems, requests } = await open(page, '/machines/all/');
   const url0 = page.url();
   const loaded = requests.length;
   const total = await rows(page).count();
@@ -142,7 +142,7 @@ test('/oscp-like-machines/: tag filter, empty state and sort inside the difficul
 
 test('at 375px the pages do not scroll sideways and the toolbar fits', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const url of ['/machines/', '/oscp-like-machines/']) {
+  for (const url of ['/machines/all/', '/oscp-like-machines/']) {
     await open(page, url);
     const w = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(w.scroll, url).toBeLessThanOrEqual(w.client);
@@ -153,7 +153,7 @@ test('at 375px the pages do not scroll sideways and the toolbar fits', async ({ 
 
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
-  for (const url of ['/machines/', '/oscp-like-machines/']) {
+  for (const url of ['/machines/all/', '/oscp-like-machines/']) {
     test(`${url} shows the full table and no toolbar`, async ({ page }) => {
       await page.goto(url, { waitUntil: 'load' });
       await expect(page.locator('.tf')).toHaveCount(0);
@@ -165,7 +165,7 @@ test.describe('without JavaScript', () => {
 });
 
 test('other pages do not load the script', async ({ request }) => {
-  for (const url of ['/', '/techniques/', '/techniques/active-directory/', '/machines/htb-archetype/', '/tj-null-list/']) {
+  for (const url of ['/', '/machines/', '/machines/page/2/', '/techniques/', '/techniques/active-directory/', '/machines/htb-archetype/', '/tj-null-list/']) {
     const res = await request.get(url);
     expect(res.status(), url).toBe(200);
     expect(await res.text(), url).not.toContain('table-filter.js');

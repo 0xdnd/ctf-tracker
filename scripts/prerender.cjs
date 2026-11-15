@@ -11,7 +11,18 @@ const distDir = path.join(rootDir, 'dist');
 const ORIGIN = 'https://ctftracker.com';
 const routes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
 const { getModel, getGuides } = require('./lib/content-model.cjs');
+const { injectWelcome } = require('./lib/welcome-static.cjs');
 const model = getModel();
+const ROUTE_SUMMARIES = require('./lib/route-summaries.cjs');
+const listAnd = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
+const NUM_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
+// routeMeta.json bullets carry {{tokens}} for counts that change with the data; only this script renders them.
+const ROUTE_TOKENS = {
+  shellCount: String(model.shellAvailableCount),
+  examTrackCountWord: NUM_WORDS[model.examTracks.length] || String(model.examTracks.length),
+  examTrackDurations: listAnd(model.examTrackDurations),
+};
+const fillTokens = (s) => String(s).replace(/\{\{(\w+)\}\}/g, (m, k) => { if (!(k in ROUTE_TOKENS)) throw new Error(`prerender: unknown token ${m}`); return ROUTE_TOKENS[k]; });
 
 const shellSrc = path.join(distDir, 'index.html');
 if (!fs.existsSync(shellSrc)) {
@@ -35,12 +46,13 @@ fs.writeFileSync(
 
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
+const { ogImageFor } = require('./og/pages.cjs');
 const { CSS_HREF, THEME_SCRIPT, webPageGraphLd, personLd, PERSON_ID } = require('./lib/layout.cjs');
 // The two hero images (window + pacing card) are part of the first paint, so every width of them is precached too.
 let heroShots = [];
 try {
   heroShots = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8')).filter((x) => x.name === 'hero-app' || x.name === 'burn-chart');
-} catch (e) {
+} catch {
   heroShots = [];
 }
 const heroAssets = heroShots.flatMap((x) => (x.srcset || []).map((v) => v.src));
@@ -107,6 +119,7 @@ function exploreBlock(route) {
 }
 
 function staticBlock(route) {
+  const summary = ROUTE_SUMMARIES[route.path] || [];
   const links = [{ path: '/', label: 'Home' }, ...routes.map((r) => ({ path: r.path, label: NAV_LABEL[r.path] || r.h1 }))]
     .filter((l) => l.path !== route.path)
     .map((l) => [l.path, l.label]);
@@ -114,8 +127,9 @@ function staticBlock(route) {
     `<div data-prerender style="max-width:760px;margin:0 auto;padding:32px 20px;background:#09090b;color:#f4f4f5;` +
     `font:16px/1.6 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh">` +
     `<h1 style="font-size:30px;line-height:1.2;margin:0 0 12px">${esc(route.h1)}</h1>` +
-    `<p style="color:#a1a1aa">${esc(route.intro)}</p>` +
-    `<ul style="color:#f4f4f5;padding-left:20px">${route.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` +
+    `<p style="color:#a1a1aa">${esc(fillTokens(route.intro))}</p>` +
+    summary.map((p) => `<p style="color:#d4d4d8">${esc(fillTokens(p))}</p>`).join('') +
+    `<ul style="color:#f4f4f5;padding-left:20px">${route.bullets.map((b) => `<li>${esc(fillTokens(b))}</li>`).join('')}</ul>` +
     `<nav aria-label="ZeroBox sections" style="margin-top:24px">${linkList(links)}</nav>` +
     exploreBlock(route) +
     `</div>`
@@ -123,6 +137,8 @@ function staticBlock(route) {
 }
 
 // ---- Route pages ----
+// The first-run tour never starts on these (see isFirstRunTourExcludedPath), so they get no static welcome card.
+const WELCOME_SKIP_ROUTES = new Set(['/notes/', '/oscp-points-calculator/']);
 const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/', '/exam/', '/cheatsheets/', '/reverse-shell/']);
 let written = 0;
 for (const route of routes) {
@@ -137,6 +153,14 @@ for (const route of routes) {
   html = setTag(html, /<meta name="twitter:url"[^>]*>/, `<meta name="twitter:url" content="${url}" />`, 'twitter:url');
   html = setTag(html, /<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${esc(route.title)}" />`, 'twitter:title');
   html = setTag(html, /<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${esc(route.description)}" />`, 'twitter:description');
+  // Per-route share image (the shell carries the landing /og.png); routes without one keep it.
+  const og = ogImageFor(route.path);
+  if (og) {
+    html = setTag(html, /<meta property="og:image"[^>]*>/, `<meta property="og:image" content="${ORIGIN}${og.file}" />`, 'og:image');
+    html = setTag(html, /<meta property="og:image:alt"[^>]*>/, `<meta property="og:image:alt" content="${esc(og.alt)}" />`, 'og:image:alt');
+    html = setTag(html, /<meta name="twitter:image"[^>]*>/, `<meta name="twitter:image" content="${ORIGIN}${og.file}" />`, 'twitter:image');
+    html = setTag(html, /<meta name="twitter:image:alt"[^>]*>/, `<meta name="twitter:image:alt" content="${esc(og.alt)}" />`, 'twitter:image:alt');
+  }
   // Keep the boot splash (from index.html) after the SEO block: hidden for no-JS users, shown by CSS under .js.
   html = setTag(html, ROOT_RE, `<div id="root">${staticBlock(route)}${splashHtml}</div>`, '<div id="root"> with boot splash');
 
@@ -166,6 +190,9 @@ for (const route of routes) {
   // App surfaces (user data UIs, and the thin /exam/ and /cheatsheets/ shells) stay out of the index; the content hubs are indexable.
   if (NOINDEX_ROUTES.has(route.path)) html = html.replace('</head>', '    <meta name="robots" content="noindex">\n  </head>');
 
+  // First-visit welcome card painted from HTML (hidden unless the head gate finds a first visit). Not on routes the tour skips.
+  if (!WELCOME_SKIP_ROUTES.has(route.path)) html = injectWelcome(html);
+
   const outDir = path.join(distDir, route.path.replace(/^\/|\/$/g, ''));
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf8');
@@ -184,8 +211,8 @@ const FAQ = [
   ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, the app has no telemetry, and your data stays on your device.'],
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
   ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
-  ['Which platforms and machines are supported?', `ZeroBox ships with a pre-loaded catalog of ${nf.format(CTF_MACHINES)} CTF machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub${GUIDED_LABS > 0 ? `, plus ${GUIDED_LABS} guided labs` : ""}. It also has 10 Pro Lab presets, such as Dante, Zephyr and Offshore, that fill in only the public lab name, difficulty and official link when you add a Pro Lab as your own target. You can also add custom targets for any other lab or live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.`],
-  ['Which certification exams can I simulate?', `The exam simulator includes timed practice for ${EXAM_TRACKS.length} tracks: OSCP (23h45m), CPTS (10 days), CRTO (48h), OSEP (48h), CRTP (24h), PNPT (5 days) and OSWE (47h45m), with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.`],
+  ['Which platforms and machines are supported?', `ZeroBox ships with a pre-loaded catalog of ${nf.format(CTF_MACHINES)} CTF machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub${GUIDED_LABS > 0 ? `, plus ${GUIDED_LABS} guided labs` : ""}. It also has ${model.proLabs.length} Pro Lab presets, such as Dante, Zephyr and Offshore, that fill in only the public lab name, difficulty and official link when you add a Pro Lab as your own target. You can also add custom targets for any other lab or live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.`],
+  ['Which certification exams can I simulate?', `The exam simulator includes timed practice for ${EXAM_TRACKS.length} tracks: ${listAnd(model.examTrackDurations)}, with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.`],
   ['Does ZeroBox comply with Hack The Box rules for active machines and Pro Labs?', 'Yes. ZeroBox strictly enforces Hack The Box Acceptable Use Policy (AUP §8.2). Active seasonal machines and enterprise Pro Labs are limited to public listing metadata (name, scope/host count, difficulty, and official link). Walkthroughs, attack vectors, intel hints, flags, and writeups are strictly excluded. ZeroBox operates entirely offline in your browser and transmits no network telemetry.'],
   ['Is there a desktop app?', 'Yes. Desktop installers are published on GitHub Releases, and you can also build the Tauri app from source using the instructions in the GitHub README.'],
 ];
@@ -293,7 +320,7 @@ if (fs.existsSync(shotSrc)) {
 let shotList = [];
 try {
   shotList = JSON.parse(fs.readFileSync(path.join(__dirname, 'templates', 'landing-shots.json'), 'utf8'));
-} catch (e) {
+} catch {
   shotList = [];
 }
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
@@ -347,7 +374,7 @@ function heroPreload() {
 const HUD_SIZES = '(min-width:1100px) 280px,(min-width:900px) 240px,(min-width:640px) 200px,min(calc((100vw - 32px) * .62),230px)';
 const heroHud = () =>
   hasShot(shotByName['burn-chart'])
-    ? shotImg('burn-chart', { sizes: HUD_SIZES, alt: '', eager: 'low' })
+    ? shotImg('burn-chart', { sizes: HUD_SIZES, alt: 'Exam pacing card: burn-down of points left against the time remaining', eager: 'low' })
     : shotImg('exam', { sizes: HUD_SIZES, alt: '', eager: 'low' });
 
 const { siteHeader, siteFooter, fontPreloadTags, ICON, REPO, LINKEDIN } = require('./lib/layout.cjs');

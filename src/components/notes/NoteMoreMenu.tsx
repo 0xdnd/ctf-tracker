@@ -218,6 +218,7 @@ export const NoteMoreMenu: React.FC<NoteMoreMenuProps> = ({
           ref={menuRef}
           id={menuId}
           role="menu"
+          tabIndex={-1}
           aria-label="More options"
           onKeyDown={handleMenuKeyDown}
           className="absolute right-0 top-full z-[100] mt-1 w-[190px] rounded-md border border-strong bg-surface-elevated p-1 shadow-xl"

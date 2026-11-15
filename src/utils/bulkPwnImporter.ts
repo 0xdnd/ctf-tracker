@@ -54,7 +54,8 @@ export function extractCandidateNames(raw: string): string[] {
           if (typeof item === 'string') {
             names.push(item);
           } else if (item && typeof item === 'object') {
-            const val = (item as any).name || (item as any).machine || (item as any).target || (item as any).title || (item as any).room || (item as any).id;
+            const rec = item as Record<string, unknown>;
+            const val = rec.name || rec.machine || rec.target || rec.title || rec.room || rec.id;
             if (typeof val === 'string') names.push(val);
           }
         }
@@ -80,7 +81,7 @@ export function extractCandidateNames(raw: string): string[] {
 
     // Split by comma or tab if it looks like CSV
     if (cleanLine.includes(',') || cleanLine.includes('\t') || cleanLine.includes(';')) {
-      const parts = cleanLine.split(/[,;\t]+/).map(p => p.trim().replace(/^[\"\']|[\"\']$/g, '')).filter(Boolean);
+      const parts = cleanLine.split(/[,;\t]+/).map(p => p.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
       // Input that is one line of plain names ("Lame, Forest, Sauna") is a list: keep every name.
       // Multi-line input is rows of columns, so only the first column is a name.
       if (lines.length === 1 && parts.length > 1 && !parts.some((p) => METADATA_PART.test(p))) {

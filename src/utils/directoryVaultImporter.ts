@@ -12,29 +12,29 @@ export { isIgnoredVaultPath, isSafeRelativePath };
  * Recursively traverses a FileSystemEntry (standard HTML5 directory drag-and-drop entry)
  */
 export async function traverseFileSystemEntry(
-  entry: any,
+  entry: FileSystemEntry,
   currentPath = ''
 ): Promise<{ path: string; file: File }[]> {
   const results: { path: string; file: File }[] = [];
 
   if (entry.isFile) {
     const file = await new Promise<File>((resolve, reject) => {
-      entry.file(resolve, reject);
+      (entry as FileSystemFileEntry).file(resolve, reject);
     });
     const relativePath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
     if (isSafeRelativePath(relativePath) && !isIgnoredVaultPath(relativePath) && /\.(md|markdown)$/i.test(entry.name)) {
       results.push({ path: relativePath, file });
     }
   } else if (entry.isDirectory) {
-    const dirReader = entry.createReader();
-    const readEntries = async (): Promise<any[]> => {
+    const dirReader = (entry as FileSystemDirectoryEntry).createReader();
+    const readEntries = async (): Promise<FileSystemEntry[]> => {
       return new Promise((resolve, reject) => {
         dirReader.readEntries(resolve, reject);
       });
     };
 
-    let entries: any[] = [];
-    let batch: any[] = await readEntries();
+    let entries: FileSystemEntry[] = [];
+    let batch: FileSystemEntry[] = await readEntries();
     while (batch.length > 0) {
       entries = entries.concat(batch);
       batch = await readEntries();
@@ -81,7 +81,7 @@ export async function extractFilesFromDataTransfer(
   } else if (dataTransfer.files && dataTransfer.files.length > 0) {
     for (let i = 0; i < dataTransfer.files.length; i++) {
       const file = dataTransfer.files[i];
-      const relPath = (file as any).webkitRelativePath || file.name;
+      const relPath = file.webkitRelativePath || file.name;
       if (isSafeRelativePath(relPath) && !isIgnoredVaultPath(relPath) && /\.(md|markdown)$/i.test(file.name)) {
         collected.push({ path: relPath, file });
       }
@@ -116,14 +116,14 @@ export async function parseObsidianVaultDirectory(
         fileArray.push(item);
       } else {
         const file = item as File;
-        const path = (file as any).webkitRelativePath || file.name;
+        const path = file.webkitRelativePath || file.name;
         fileArray.push({ path, file });
       }
     }
   } else {
     for (let i = 0; i < fileSource.length; i++) {
       const file = fileSource[i];
-      const path = (file as any).webkitRelativePath || file.name;
+      const path = file.webkitRelativePath || file.name;
       fileArray.push({ path, file });
     }
   }

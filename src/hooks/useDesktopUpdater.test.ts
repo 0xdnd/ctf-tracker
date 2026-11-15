@@ -1,16 +1,11 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useDesktopUpdater } from './useDesktopUpdater';
-import * as tauriCore from '@tauri-apps/api/core';
 import * as tauriApp from '@tauri-apps/api/app';
 import * as tauriUpdater from '@tauri-apps/plugin-updater';
 import * as tauriProcess from '@tauri-apps/plugin-process';
 import * as ctfStore from '../store/useCtfStore';
 import { useToastStore } from '../store/useToastStore';
-
-vi.mock('@tauri-apps/api/core', () => ({
-  isTauri: vi.fn(() => false),
-}));
 
 vi.mock('@tauri-apps/api/app', () => ({
   getVersion: vi.fn().mockResolvedValue('2.0.0'),
@@ -28,12 +23,17 @@ vi.mock('../store/useCtfStore', () => ({
   checkpointTimerAndFlush: vi.fn(),
 }));
 
+/** What @tauri-apps/api's isTauri() reads; the hook checks it directly so the package stays out of the web entry bundle. */
+const setTauri = (on: boolean) => {
+  (window as unknown as { isTauri?: boolean }).isTauri = on;
+};
+
 describe('useDesktopUpdater hook', () => {
   const originalElectronAPI = window.electronAPI;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(tauriCore.isTauri).mockReturnValue(false);
+    setTauri(false);
   });
 
   afterEach(() => {
@@ -41,8 +41,8 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('initializes in web mode when running in standard browser', () => {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(false);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(false);
 
     const { result } = renderHook(() => useDesktopUpdater());
 
@@ -53,9 +53,9 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('subscribes to updater events when running inside Electron', async () => {
-    let availableCallback: any = null;
-    let progressCallback: any = null;
-    let downloadedCallback: any = null;
+    let availableCallback = null as ((payload: unknown) => void) | null;
+    let progressCallback = null as ((payload: unknown) => void) | null;
+    let downloadedCallback = null as ((payload: unknown) => void) | null;
 
     window.electronAPI = {
       isElectron: true,
@@ -113,8 +113,8 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('supports native Tauri v2 updater checking, downloading, and installing', async () => {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(true);
     vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
 
     const mockInstall = vi.fn().mockResolvedValue(undefined);
@@ -131,7 +131,7 @@ describe('useDesktopUpdater hook', () => {
       install: mockInstall,
     };
 
-    vi.mocked(tauriUpdater.check).mockResolvedValue(mockUpdate as any);
+    vi.mocked(tauriUpdater.check).mockResolvedValue(mockUpdate as never);
 
     const { result } = renderHook(() => useDesktopUpdater());
 
@@ -164,8 +164,8 @@ describe('useDesktopUpdater hook', () => {
   });
 
   async function readyDownloadedUpdate(install: () => Promise<void>) {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(true);
     vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
     vi.mocked(tauriUpdater.check).mockResolvedValue({
       version: '2.1.0',
@@ -236,10 +236,10 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('ignores a concurrent checkForUpdates while one is in flight', async () => {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(true);
     vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
-    vi.mocked(tauriUpdater.check).mockResolvedValue(null as any);
+    vi.mocked(tauriUpdater.check).mockResolvedValue(null as never);
 
     const { result } = renderHook(() => useDesktopUpdater());
     await act(async () => {
@@ -274,7 +274,7 @@ describe('useDesktopUpdater hook', () => {
 
   it('shows an error toast when install fails and allows a retry', async () => {
     const addToast = vi.fn();
-    const spy = vi.spyOn(useToastStore, 'getState').mockReturnValue({ addToast } as any);
+    const spy = vi.spyOn(useToastStore, 'getState').mockReturnValue({ addToast } as never);
     const install = vi.fn().mockRejectedValueOnce(new Error('installer failed')).mockResolvedValue(undefined);
 
     const { result } = await readyDownloadedUpdate(install);
@@ -296,8 +296,8 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('handles HTTP 429 rate limiting with structured error and 60s retry timeout', async () => {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(true);
     vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
 
     vi.mocked(tauriUpdater.check).mockRejectedValue(new Error('GitHub API responded with 429 Too Many Requests'));
@@ -318,8 +318,8 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('handles HTTP 500 / 503 server errors with 30s retry timeout', async () => {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(true);
     vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
 
     vi.mocked(tauriUpdater.check).mockRejectedValue(new Error('Remote server returned HTTP 503 Service Unavailable'));
@@ -339,8 +339,8 @@ describe('useDesktopUpdater hook', () => {
   });
 
   it('handles mid-stream network drop, resets progress, and enforces 15s retry timeout', async () => {
-    delete (window as any).electronAPI;
-    vi.mocked(tauriCore.isTauri).mockReturnValue(true);
+    delete (window as unknown as Record<string, unknown>).electronAPI;
+    setTauri(true);
     vi.mocked(tauriApp.getVersion).mockResolvedValue('2.0.0');
 
     const mockDownload = vi.fn().mockImplementation(async (onEvent) => {
@@ -356,7 +356,7 @@ describe('useDesktopUpdater hook', () => {
       install: vi.fn(),
     };
 
-    vi.mocked(tauriUpdater.check).mockResolvedValue(mockUpdate as any);
+    vi.mocked(tauriUpdater.check).mockResolvedValue(mockUpdate as never);
 
     const { result } = renderHook(() => useDesktopUpdater());
     await act(async () => {

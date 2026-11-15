@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import { Copy, Check, Sparkles, Cpu } from 'lucide-react';
 import { encodeUtf16LeBase64 } from '../../utils/shellEncoders';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
@@ -6,6 +6,7 @@ import { toast } from '../../store/useToastStore';
 import { useCtfStore } from '../../store/useCtfStore';
 
 export const PowerShellEncoderTool: React.FC = () => {
+  const uid = useId();
   const { globalVars, soundEnabled } = useCtfStore();
   const lhost = globalVars.lhost || '10.10.14.X';
   const lport = globalVars.lport || '4444';
@@ -76,7 +77,7 @@ export const PowerShellEncoderTool: React.FC = () => {
 
       {/* Preset pills */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-secondary">Quick Presets</label>
+        <div className="text-xs font-medium text-secondary">Quick Presets</div>
         <div className="flex flex-wrap gap-1.5">
           {presets.map((p) => (
             <button
@@ -97,10 +98,10 @@ export const PowerShellEncoderTool: React.FC = () => {
       {/* Input Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <label className="font-medium text-primary">PowerShell Script / Command Input</label>
+          <label htmlFor={`${uid}-100`} className="font-medium text-primary">PowerShell Script / Command Input</label>
           <span className="font-mono text-muted text-[11px]">{inputCommand.length} characters</span>
         </div>
-        <textarea
+        <textarea id={`${uid}-100`}
           rows={5}
           value={inputCommand}
           onChange={(e) => setInputCommand(e.target.value)}
@@ -143,10 +144,10 @@ export const PowerShellEncoderTool: React.FC = () => {
       {/* Output Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <label className="font-semibold text-primary flex items-center gap-1.5">
+          <div className="font-semibold text-primary flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-accent" />
             <span>Encoded Execution String</span>
-          </label>
+          </div>
           <span className="font-mono text-muted text-[11px]">{fullCommandLine.length} characters</span>
         </div>
 

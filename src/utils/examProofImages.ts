@@ -85,7 +85,8 @@ export async function createScreenshotProof(
 ): Promise<ScreenshotProof> {
   const imageRef = await persistProofImage(proofImageRefFor(boxId, flagType, proof.id), proof.dataUrl);
   if (!imageRef) return proof;
-  const { dataUrl: _inline, ...meta } = proof;
+  const meta: ScreenshotProof = { ...proof };
+  delete meta.dataUrl;
   return { ...meta, imageRef };
 }
 
@@ -197,7 +198,8 @@ export async function migrateLegacyProofImages(
             // Only swap if the inline image is still the one that was written.
             if (!hit || sc.imageRef || sc.dataUrl !== hit.dataUrl) return sc;
             applied.add(key);
-            const { dataUrl: _inline, ...meta } = sc;
+            const meta = { ...sc };
+            delete meta.dataUrl;
             return { ...meta, imageRef: hit.ref };
           }),
         };

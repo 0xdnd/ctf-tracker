@@ -19,7 +19,7 @@ const machine = {
   platform: 'HackTheBox',
   difficulty: 'Easy',
   openPorts: [80],
-} as any;
+} as unknown as Machine & { openPorts: number[] };
 
 describe('ChecklistWorkspace', () => {
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe('ChecklistWorkspace', () => {
 
   it('resets the checklist only after confirmAction resolves true', async () => {
     const reset = vi.fn();
-    useCtfStore.setState({ resetMachineChecklist: reset } as any);
+    useCtfStore.setState({ resetMachineChecklist: reset } as never);
     confirmMock.mockResolvedValue(true);
     render(<ChecklistWorkspace machine={machine} />);
     fireEvent.click(screen.getByTitle('Reset Checklist Progress'));
@@ -47,7 +47,7 @@ describe('ChecklistWorkspace', () => {
 
   it('does not reset when confirmation is declined', async () => {
     const reset = vi.fn();
-    useCtfStore.setState({ resetMachineChecklist: reset } as any);
+    useCtfStore.setState({ resetMachineChecklist: reset } as never);
     confirmMock.mockResolvedValue(false);
     render(<ChecklistWorkspace machine={machine} />);
     fireEvent.click(screen.getByTitle('Reset Checklist Progress'));
@@ -57,7 +57,7 @@ describe('ChecklistWorkspace', () => {
 
   it('imports open ports from pasted nmap text via the shared scan parser and merges them', () => {
     const setPorts = vi.fn();
-    useCtfStore.setState({ setMachineOpenPorts: setPorts } as any);
+    useCtfStore.setState({ setMachineOpenPorts: setPorts } as never);
     render(<ChecklistWorkspace machine={machine} />);
     fireEvent.click(screen.getByText('Import Nmap Scan'));
     fireEvent.change(screen.getByLabelText('Paste Nmap scan stdout'), {
@@ -84,7 +84,7 @@ describe('ChecklistWorkspace Next up card (methodology variant)', () => {
   const originalSetChecklistItemStatus = useCtfStore.getState().setChecklistItemStatus;
 
   afterEach(() => {
-    useCtfStore.setState({ setChecklistItemStatus: originalSetChecklistItemStatus } as any);
+    useCtfStore.setState({ setChecklistItemStatus: originalSetChecklistItemStatus } as never);
   });
 
   it('does not render the Next up card, or remove the Current objective line, for the default variant', () => {
@@ -107,7 +107,7 @@ describe('ChecklistWorkspace Next up card (methodology variant)', () => {
       checklist: {
         openPorts: machine.openPorts,
         activeItemId: 'p02-banner-grab',
-        itemsState: { 'p02-banner-grab': { status: 'in_progress' } },
+        itemsState: { 'p02-banner-grab': { status: 'in_progress' as const } },
       },
     };
     render(<ChecklistWorkspace machine={activeMachine} variant="methodology" />);
@@ -150,8 +150,8 @@ describe('ChecklistWorkspace Next up card (methodology variant)', () => {
               },
             } as Machine;
           });
-        }) as any,
-      } as any);
+        }) as never,
+      } as never);
       return <ChecklistWorkspace machine={m} variant="methodology" />;
     }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import { Key, Server, Terminal, Eye, EyeOff, Copy, Check, Trash2, ShieldCheck, Layers, Clock } from 'lucide-react';
 import { 
   VaultEvidenceItem, 
@@ -97,6 +97,7 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
   onDeleteCustom,
   soundEnabled = false,
 }) => {
+  const uid = useId();
   const [groupingMode, setGroupingMode] = useState<TimelineGrouping>('phase');
   const [filterTarget, setFilterTarget] = useState<string>('all');
 
@@ -192,10 +193,10 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted">
+          <label htmlFor={`${uid}-195`} className="text-xs font-medium text-muted">
             Target
           </label>
-          <select
+          <select id={`${uid}-195`}
             value={filterTarget}
             onChange={(e) => setFilterTarget(e.target.value)}
             className="px-2.5 h-8 max-sm:h-11 rounded-lg bg-surface-card border border-subtle text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus:border-accent cursor-pointer"

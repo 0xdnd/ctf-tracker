@@ -173,7 +173,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Titles: EN & HE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-secondary font-semibold mb-1 text-[11px]">
+              <label htmlFor="new-cpts-note-title-en" className="block text-secondary font-semibold mb-1 text-[11px]">
                 Note Title (English) *
               </label>
               <input
@@ -190,7 +190,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-secondary font-semibold mb-1 text-[11px]">
+              <label htmlFor="new-cpts-note-title-he" className="block text-secondary font-semibold mb-1 text-[11px]">
                 Note Title (Hebrew - אופציונלי)
               </label>
               <input
@@ -210,7 +210,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Directory & Path Selection */}
           <div className="space-y-1.5 p-3 rounded-lg bg-surface-sunken/70 border border-subtle">
             <div className="flex items-center justify-between">
-              <label className="block text-primary font-semibold text-[11px] flex items-center gap-1.5">
+              <label htmlFor={useCustomDir ? "new-cpts-note-custom-dir" : "new-cpts-note-dir"} className="block text-primary font-semibold text-[11px] flex items-center gap-1.5">
                 <Folder className="w-3.5 h-3.5 text-muted" />
                 <span>Target Directory / Sub-folder Depth</span>
               </label>
@@ -241,6 +241,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
               </div>
             ) : (
               <CyberSelect
+                id="new-cpts-note-dir"
                 value={selectedDir}
                 onChange={setSelectedDir}
                 options={existingDirectories.map((dir) => ({
@@ -260,10 +261,11 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Attack Stage, Tools, Tags */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-muted font-semibold mb-1 text-[10px]">
+              <label htmlFor="new-cpts-note-stage" className="block text-muted font-semibold mb-1 text-[10px]">
                 Offensive Stage
               </label>
               <CyberSelect
+                id="new-cpts-note-stage"
                 value={stage}
                 onChange={setStage}
                 options={STAGE_OPTIONS}
@@ -275,7 +277,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-muted font-semibold mb-1 text-[10px]">
+              <label htmlFor="new-cpts-note-tools" className="block text-muted font-semibold mb-1 text-[10px]">
                 Tools (comma-separated)
               </label>
               <input
@@ -291,7 +293,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-muted font-semibold mb-1 text-[10px]">
+              <label htmlFor="new-cpts-note-tags" className="block text-muted font-semibold mb-1 text-[10px]">
                 Tags (comma-separated)
               </label>
               <input
@@ -310,7 +312,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Commands Textarea */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="block text-secondary font-semibold text-[11px] flex items-center gap-1.5">
+              <label htmlFor="new-cpts-note-commands" className="block text-secondary font-semibold text-[11px] flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-muted" />
                 <span>Commands & Payloads (One per line)</span>
               </label>
@@ -333,7 +335,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           {/* Summaries: English & Hebrew */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-muted font-semibold mb-1 text-[10px]">
+              <label htmlFor="new-cpts-note-en-summary" className="block text-muted font-semibold mb-1 text-[10px]">
                 Practical Objective (English Summary)
               </label>
               <textarea
@@ -349,7 +351,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-muted font-semibold mb-1 text-[10px]">
+              <label htmlFor="new-cpts-note-he-summary" className="block text-muted font-semibold mb-1 text-[10px]">
                 מטרה מעשית (תקציר בעברית)
               </label>
               <textarea
@@ -368,7 +370,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
 
           {/* Full Markdown (Optional) */}
           <div>
-            <label className="block text-muted font-semibold mb-1 text-[10px]">
+            <label htmlFor="new-cpts-note-markdown" className="block text-muted font-semibold mb-1 text-[10px]">
               Full Obsidian Markdown Content (Optional)
             </label>
             <textarea

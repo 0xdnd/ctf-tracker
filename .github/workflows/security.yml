@@ -1,0 +1,92 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: npm audit (report-only)
+        continue-on-error: true
+        run: |
+          set +e
+          npm audit --audit-level=high 2>&1 | tee audit.txt
+          status=${PIPESTATUS[0]}
+          {
+            echo "### npm audit (high and above)"
+            echo
+            echo "Exit code: $status (report-only, does not fail the build)"
+            echo
+            echo '```'
+            tail -n 60 audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+  cargo-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: cargo audit (report-only)
+        continue-on-error: true
+        working-directory: src-tauri
+        run: |
+          set +e
+          cargo audit 2>&1 | tee audit.txt
+          status=${PIPESTATUS[0]}
+          {
+            echo "### cargo audit"
+            echo
+            echo "Exit code: $status (report-only, does not fail the build)"
+            echo
+            echo '```'
+            tail -n 60 audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:javascript-typescript

@@ -34,7 +34,8 @@ export const isChecksumAvailable = (): boolean =>
 /** SHA-256 hex of the canonical payload without its `checksum` field. Rejects when WebCrypto is unavailable. */
 export async function computeBackupChecksum(payload: Record<string, unknown>): Promise<string> {
   if (!isChecksumAvailable()) throw new Error('WebCrypto is unavailable');
-  const { checksum: _omit, ...rest } = payload;
+  const rest = { ...payload };
+  delete rest.checksum;
   const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalJson(rest)));
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
 }

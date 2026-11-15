@@ -14,10 +14,10 @@
 
 [![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
-[![GitHub Stars](https://img.shields.io/badge/Stars-23-F59E0B?style=for-the-badge&logo=github)](https://github.com/0xdnd/ctf-tracker/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=for-the-badge&logo=github&color=F59E0B&labelColor=0B0F19)](https://github.com/0xdnd/ctf-tracker/stargazers)
 [![Machines](https://img.shields.io/badge/Machines-1376-10B981?style=for-the-badge)](https://ctftracker.com/)
-[![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-130%2B-EF4444?style=for-the-badge)](https://ctftracker.com/)
-[![Tests](https://img.shields.io/badge/Tests-212%20suites%20%7C%203234%20passing-10B981?style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
+[![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-131-EF4444?style=for-the-badge)](https://ctftracker.com/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/0xdnd/ctf-tracker/ci.yml?branch=main&label=CI&style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
 [![Live at ctftracker.com](https://img.shields.io/badge/Live_at-ctftracker.com-10B981?style=flat-square&logo=cloudflare)](https://ctftracker.com/)
 [![Creator](https://img.shields.io/badge/Creator-Daniel%20Dayan%20(@0xdnd)-10B981?style=flat-square&logo=github)](https://0xdnd.github.io/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Daniel%20Dayan-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/daniel-dayan-a66322352/)
@@ -28,7 +28,7 @@
 
 <a href="https://ctftracker.com"><img src=".github/assets/demo.gif" alt="ZeroBox demo: browsing HTB targets, dragging a machine across the Kanban board to Root Pwned, and the reverse shell generator" width="800" /></a>
 
-**[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)** · **[📝 Writeups](https://0xdnd.gitbook.io/thm-writeups/)**
+**[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)**
 
 </div>
 
@@ -57,7 +57,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 |:---|:---|
 | 📋 A messy spreadsheet of boxes | **1376 HTB, THM, PG & VulnHub machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
 | 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
-| 🐚 Googling "python reverse shell" again | **129 reverse shells** with matching listeners, one click to copy |
+| 🐚 Googling "python reverse shell" again | **131 reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
 | 😰 Wondering if you're exam-ready | A **24h exam simulator** with OSCP/CPTS/CRTO-style scoring |
 
@@ -85,7 +85,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ### 3. 🧭 Methodology & Field Manual
 - **Attack methodology:** Phase-by-phase tree with decision branches and playbooks.
 - **Dynamic cheatsheet:** Set `LHOST`, `LPORT`, `TARGET_IP` once and they are injected into every command.
-- **Reverse shell builder & modal:** 129 Linux and Windows payloads (`RevShellModal`) with matching listeners and one-click copy.
+- **Reverse shell builder & modal:** 131 Linux and Windows payloads (`RevShellModal`) with matching listeners and one-click copy.
 - **Offensive Forge Utilities:** Multi-host scan parsing, payload encoding, and transfer server presets (`offensiveForgeUtils`, `multiHostScanParser`).
 - **Notes workspace:** Obsidian-style note viewer with multi-tab docked notes and an IndexedDB-backed private vault.
 
@@ -128,7 +128,7 @@ Bug reports, ideas and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIB
 ## 🛠️ Local Development & Build
 
 ### Prerequisites
-- Node.js 18+ (tested on Node.js 24)
+- Node.js 22.12+ (tested on Node.js 24)
 - npm 9+
 
 ```bash
@@ -162,7 +162,7 @@ npm run tauri:build   # build an installer
 ### ✅ Testing
 ```bash
 npx tsc --noEmit   # type check
-npm test           # 212 test suites / 3,200+ unit & component tests (Vitest)
+npm test           # unit & component tests (Vitest)
 npm run test:e2e   # browser E2E crawl (Python + Playwright)
 ```
 
@@ -198,7 +198,6 @@ Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring
 | 🌐 **Official Portfolio** | `Daniel Dayan Security & Research` | [**0xdnd.github.io**](https://0xdnd.github.io/) |
 | 💼 **LinkedIn Profile** | `daniel-dayan-a66322352` | [**Connect on LinkedIn**](https://www.linkedin.com/in/daniel-dayan-a66322352/) |
 | 💻 **GitHub Repositories** | `@0xdnd` | [**Follow on GitHub**](https://github.com/0xdnd) |
-| 📝 **CTF Write-ups & Docs** | `THM & HTB Research Vault` | [**Read GitBook Writeups**](https://0xdnd.gitbook.io/thm-writeups/) |
 | ☕ **Buy Me a Coffee** | `0xdnd` | [**Support on Buy Me a Coffee**](https://buymeacoffee.com/0xdnd) |
 
 </div>

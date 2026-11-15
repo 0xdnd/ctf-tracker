@@ -97,7 +97,7 @@ describe('M1 Store Foundation: noteStoreUpdates.test.ts', () => {
       expect(rawStored).toBeTruthy();
 
       const parsed = JSON.parse(rawStored!);
-      const storedNote = parsed.customNotes.find((n: any) => n.id === 'custom-note-save-check');
+      const storedNote = parsed.customNotes.find((n: { id: string }) => n.id === 'custom-note-save-check');
       expect(storedNote).toBeDefined();
       expect(storedNote.rawMarkdown).toBe('After save markdown');
       expect(storedNote.dateModified).toBeDefined();

@@ -6,7 +6,7 @@ function beaconTag() {
   let token = '';
   try {
     token = String(JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'seo', 'site.json'), 'utf8')).cfBeaconToken || '');
-  } catch (e) {
+  } catch {
     console.warn('site: could not read src/seo/site.json');
     return '';
   }

@@ -116,9 +116,9 @@ export default defineConfig(({ mode }) => {
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Entry budget is 560 KB (MAX_ENTRY_BYTES in scripts/check-bundle-size.mjs); machinesCatalog is a lazy chunk loaded via loadMachinesCatalog().
+    // Entry budget is 549 KB (MAX_ENTRY_BYTES in scripts/check-bundle-size.mjs); machinesCatalog is a lazy chunk loaded via loadMachinesCatalog().
     // Keep this in step with the entry budget; lazy chunks (mermaid) may still warn.
-    chunkSizeWarningLimit: 560,
+    chunkSizeWarningLimit: 549,
     // App code importing the lazy mermaid glue is already running, so the app chunks it depends on
     // are loaded; skip their preload list there. Imports inside mermaid keep normal preloading.
     modulePreload: {

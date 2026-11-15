@@ -374,6 +374,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
     <div
       ref={dropzoneRef}
       onPaste={handlePaste}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- container must be focusable to receive Ctrl+V paste events
       tabIndex={0}
       data-testid="evidence-dropzone"
       className={`p-4 rounded-2xl bg-surface-card border border-subtle font-sans space-y-4 ${className}`}
@@ -525,6 +526,14 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           className={`cursor-pointer border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-[background-color,border-color] ${
  isDragOver
  ? 'border-accent bg-accent-muted'
@@ -535,6 +544,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
             ref={fileInputRef}
             data-testid="evidence-file-input"
             type="file"
+            aria-label="Choose evidence image files"
             accept="image/*"
             onChange={handleFileInputChange}
             className="hidden"

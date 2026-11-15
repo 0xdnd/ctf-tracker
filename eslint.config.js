@@ -56,5 +56,10 @@ export default tseslint.config(
       'jsx-a11y/no-interactive-element-to-noninteractive-role': 'warn',
       'no-control-regex': 'warn',
     },
+  },  {
+    // CommonJS build scripts legitimately use require().
+    files: ['**/*.cjs'],
+    languageOptions: { globals: { ...globals.node } },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 );

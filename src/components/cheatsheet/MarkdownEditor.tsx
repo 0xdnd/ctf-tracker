@@ -745,6 +745,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     }}
                     placeholder="Search nmap, ffuf, BloodHound, SUID..."
                     aria-label="Search cheatsheet snippets"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- search field opened on demand
                     autoFocus
                     className="w-full h-7 pl-6 pr-2 rounded border border-subtle bg-surface-sunken text-[11px] text-primary placeholder-muted focus:outline-none focus:border-accent"
                   />

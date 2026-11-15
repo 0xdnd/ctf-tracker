@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useToastStore } from '../../store/useToastStore';
 import { playCyberSound, triggerRootCelebration } from '../../utils/helpers';
+import { afterFirstPaint } from '../../utils/afterFirstPaint';
 import { extractCandidateNames, matchCandidateNamesToCatalog, suggestCatalogMatches } from '../../utils/bulkPwnImporter';
 import type { Machine, Platform } from '../../types';
 
@@ -32,11 +33,12 @@ interface PasteImportPanelProps {
 /** Paste a list of solved boxes, review what matched, then apply. Nothing changes until Apply is pressed. */
 export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, focusOnMount, onSkip, className = '' }) => {
   const uid = useId();
-  const { machines, batchUpdateMachineStatus, loadCatalog, soundEnabled } = useCtfStore(
+  const { machines, batchUpdateMachineStatus, loadCatalog, isCatalogLoaded, soundEnabled } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
       batchUpdateMachineStatus: s.batchUpdateMachineStatus,
       loadCatalog: s.loadCatalog,
+      isCatalogLoaded: s.isCatalogLoaded,
       soundEnabled: s.soundEnabled,
     }))
   );
@@ -50,8 +52,16 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
   const backRef = useRef<HTMLButtonElement>(null);
   const focusAfterToggle = useRef(false);
 
+  // The catalog loads after first paint so it never races the largest contentful paint. Typing or previewing
+  // asks for it at once, and nothing is matched against the pre-catalog rows (see catalogReady).
   useEffect(() => {
-    loadCatalog();
+    let live = true;
+    void afterFirstPaint().then(() => {
+      if (live) void loadCatalog();
+    });
+    return () => {
+      live = false;
+    };
   }, [loadCatalog]);
   useEffect(() => {
     if (focusOnMount) textRef.current?.focus();
@@ -66,7 +76,8 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
   const shownText = preview ? SAMPLE_SOLVED_LIST : text;
   const activePicked = useMemo<Record<string, string>>(() => (preview ? {} : picked), [preview, picked]);
   const prefer = platform || undefined;
-  const candidates = useMemo(() => extractCandidateNames(shownText), [shownText]);
+  const catalogReady = isCatalogLoaded;
+  const candidates = useMemo(() => (catalogReady ? extractCandidateNames(shownText) : []), [catalogReady, shownText]);
   const result = useMemo(
     () => matchCandidateNamesToCatalog(candidates, machines, { preferPlatform: prefer }),
     [candidates, machines, prefer]
@@ -105,12 +116,14 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
   const countsLabel = `${newRows.length} new, ${alreadyCount} already solved, ${unmatched.length} unmatched`;
 
   const updateText = (value: string) => {
+    void loadCatalog();
     setText(value);
     setPicked({});
   };
 
   const togglePreview = (on: boolean) => {
     focusAfterToggle.current = true;
+    void loadCatalog();
     setPreview(on);
   };
 
@@ -261,7 +274,9 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
         <p role="status" aria-live="polite" className="text-xs text-secondary">
           {preview
             ? 'This is an example. Paste your own list to import.'
-            : text.trim()
+            : !catalogReady && text.trim()
+              ? 'Loading the machine catalog...'
+              : text.trim()
               ? newRows.length === 0 ? 'No new boxes to mark yet.' : 'Nothing changes until you press Apply.'
               : 'Nothing to import yet.'}
         </p>
@@ -282,7 +297,15 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
           className="inline-flex items-center justify-center gap-2 px-4 h-10 rounded-xl text-sm font-medium bg-accent hover:brightness-110 text-on-accent disabled:opacity-40 disabled:cursor-not-allowed transition-[filter,transform] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent max-sm:w-full [@media(pointer:coarse)]:h-11"
         >
           <Check className="w-4 h-4" aria-hidden="true" />
-          <span>{preview ? 'Preview only: nothing is saved' : text.trim() ? `Apply: ${countsLabel}` : 'Apply import'}</span>
+          <span>
+              {preview
+                ? 'Preview only: nothing is saved'
+                : !catalogReady && text.trim()
+                  ? 'Loading the machine catalog...'
+                  : text.trim()
+                    ? `Apply: ${countsLabel}`
+                    : 'Apply import'}
+            </span>
         </button>
         </div>
       </div>

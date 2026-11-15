@@ -344,14 +344,15 @@ describe('guides that need context', () => {
 });
 
 describe('entry points', () => {
-  it('the mobile More menu opens Guide Center and closes itself', () => {
+  it('the mobile More menu opens Guide Center and closes itself', async () => {
     useCtfStore.setState({ mobileMenuOpen: true });
     render(
       <MemoryRouter>
         <MobileNav />
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Full guide' }));
+    // The menu is its own lazy chunk, mounted when the menu first opens.
+    fireEvent.click(await screen.findByRole('button', { name: 'Full guide' }));
     expect(useOnboardingStore.getState().guideCenterOpen).toBe(true);
     expect(useCtfStore.getState().mobileMenuOpen).toBe(false);
   });

@@ -167,7 +167,7 @@ describe('Hack The Box Terms of Service (AUP §8.2) Name-Only Enforcement for Ac
         addListener: () => {},
         removeListener: () => {},
         dispatchEvent: () => false,
-      })) as any;
+      })) as never;
 
       const machines = useCtfStore.getState().machines;
       render(

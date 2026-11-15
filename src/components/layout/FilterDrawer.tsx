@@ -465,6 +465,7 @@ export const FilterDrawer: React.FC = () => {
     });
 
     return list;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers close over `filters`, which is already a dependency
   }, [filters, activeTrackIds, drawerDomain]);
 
   // Subtitle previews for headers
@@ -527,6 +528,7 @@ export const FilterDrawer: React.FC = () => {
     <div className="fixed inset-0 z-[100]">
       {/* Backdrop */}
       <div 
+        role="presentation"
         className="absolute inset-0 bg-surface-inverse/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={() => setFilterDrawerOpen(false)}
       />
@@ -777,7 +779,7 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs text-secondary font-semibold block">Target Completion Status</label>
+                <span className="text-xs text-secondary font-semibold block">Target Completion Status</span>
                 <div className="grid grid-cols-2 gap-1.5">
                   {STATUS_OPTIONS.map((st) => {
                     const isSelected = (filters.selectedStatus || 'ALL') === st.value;
@@ -804,7 +806,7 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div className="space-y-1.5 pt-2 border-t border-subtle">
-                <label className="text-xs text-secondary font-semibold block">Certification Scopes</label>
+                <span className="text-xs text-secondary font-semibold block">Certification Scopes</span>
                 <div className="grid grid-cols-4 gap-1.5">
                   {CERT_OPTIONS.map((cert) => {
                     const isSelected = filters.selectedCert === cert;
@@ -830,7 +832,7 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div className="pt-2 border-t border-subtle">
-                <label className="flex items-center justify-between cursor-pointer group py-1">
+                <label htmlFor="filter-exclude-ad" aria-label="Exclude Active Directory" className="flex items-center justify-between cursor-pointer group py-1">
                   <div>
                     <span className="text-xs font-semibold text-secondary group-hover:text-accent transition-colors">
                       Exclude Active Directory
@@ -843,6 +845,7 @@ export const FilterDrawer: React.FC = () => {
                     <div className={`w-4 h-4 rounded-full bg-surface-card transition-transform ${filters.excludeActiveDirectory ? 'translate-x-4' : 'translate-x-0 bg-surface-hover'}`} />
                   </div>
                   <input
+                    id="filter-exclude-ad"
                     type="checkbox"
                     className="sr-only"
                     checked={Boolean(filters.excludeActiveDirectory)}
@@ -1042,8 +1045,9 @@ export const FilterDrawer: React.FC = () => {
           >
             <div className="space-y-3.5">
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">Target Language / Stack</label>
+                <label htmlFor="filter-language" className="text-xs font-semibold text-secondary block mb-1">Target Language / Stack</label>
                 <CyberSelect
+                  id="filter-language"
                   value={filters.selectedLanguage || 'ALL'}
                   onChange={(val) => {
                     setFilters({ selectedLanguage: val });
@@ -1058,8 +1062,9 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">Area of Security Focus</label>
+                <label htmlFor="filter-area" className="text-xs font-semibold text-secondary block mb-1">Area of Security Focus</label>
                 <CyberSelect
+                  id="filter-area"
                   value={filters.selectedAreaOfInterest || 'ALL'}
                   onChange={(val) => {
                     setFilters({ selectedAreaOfInterest: val });
@@ -1074,8 +1079,9 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">Specific Vulnerability Vector</label>
+                <label htmlFor="filter-vuln" className="text-xs font-semibold text-secondary block mb-1">Specific Vulnerability Vector</label>
                 <CyberSelect
+                  id="filter-vuln"
                   value={filters.selectedVulnCategory || 'ALL'}
                   onChange={(val) => {
                     setFilters({ selectedVulnCategory: val });
@@ -1090,8 +1096,9 @@ export const FilterDrawer: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-secondary block mb-1">OS-Specific Technique</label>
+                <label htmlFor="filter-technique" className="text-xs font-semibold text-secondary block mb-1">OS-Specific Technique</label>
                 <CyberSelect
+                  id="filter-technique"
                   value={filters.selectedTechnique || 'ALL'}
                   onChange={(val) => {
                     setFilters({ selectedTechnique: val });

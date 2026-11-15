@@ -20,7 +20,7 @@ describe('ResilientStorage Engine', () => {
 
   describe('beforeunload Export Guard', () => {
     it('prevents unload when there are unexported changes', () => {
-      let dirtyCount = 5;
+      const dirtyCount = 5;
       activeUnbind = bindExportGuard(() => dirtyCount);
 
       const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
@@ -32,7 +32,7 @@ describe('ResilientStorage Engine', () => {
     });
 
     it('does not prevent unload when dirtyCount is 0', () => {
-      let dirtyCount = 0;
+      const dirtyCount = 0;
       activeUnbind = bindExportGuard(() => dirtyCount);
 
       const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;

@@ -302,7 +302,9 @@ export const ExamSimulatorPage: React.FC = () => {
     a.download = `${track}_EXAM_REPORT_${candidateCallsign || 'candidate'}_${new Date().toISOString().slice(0, 10)}.md`;
     try {
       a.click();
-    } catch {}
+    } catch {
+      // jsdom may not implement anchor navigation; the download click is best-effort.
+    }
     URL.revokeObjectURL(url);
   };
 

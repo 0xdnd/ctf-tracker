@@ -177,11 +177,12 @@ const KanbanCard = React.memo<KanbanCardProps>(({
       style={style}
       {...listeners}
       data-testid="kanban-card"
+      role="presentation"
       onClick={() => onSelect(m.id)}
       className={`group cyber-kanban-contain relative cursor-pointer rounded-lg border p-3 transition-interactive duration-150 surface-card-depth machined-edge active:scale-[0.97] ${
         isActiveTarget
           ? 'border-accent bg-accent-muted ring-1 ring-accent/40'
-          : 'border-subtle bg-surface-card hover:border-strong hover:bg-surface-hover'
+          : 'border-subtle bg-surface-card hover:border-strong hover:bg-surface-hover hover:-translate-y-0.5 hover:shadow-md motion-reduce:hover:transform-none'
       }`}
     >
       {/* Row 1: status dot, name, stage and engage controls */}

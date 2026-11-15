@@ -94,12 +94,12 @@ describe('Challenger M1_2 Empirical Stress Harness: EditableIpBadge & Hardware C
       const root = container.firstElementChild as HTMLElement;
       expect(root.className).toContain('tabular-nums');
 
-      const actionButton = screen.getByRole('button', { name: /Set IP \(10\.10\.x\.x\)/i });
+      const actionButton = screen.getByRole('button', { name: /^10\.10\.x\.x, set IP$/i });
       expect(actionButton.className).toContain('tabular-nums');
 
       // Test with completely empty IP
       rerender(<EditableIpBadge machineId="test-mach-1" initialIp="" size="xs" />);
-      const emptyActionButton = screen.getByRole('button', { name: /Set dynamic IP/i });
+      const emptyActionButton = screen.getByRole('button', { name: /^Set IP, dynamic$/i });
       expect(emptyActionButton.className).toContain('tabular-nums');
     });
 
@@ -140,7 +140,7 @@ describe('Challenger M1_2 Empirical Stress Harness: EditableIpBadge & Hardware C
         <EditableIpBadge machineId="test-mach-1" initialIp="10.10.x.x" size="xs" />
       );
 
-      const setIpBtn = screen.getByRole('button', { name: /Set IP \(10\.10\.x\.x\)/i });
+      const setIpBtn = screen.getByRole('button', { name: /^10\.10\.x\.x, set IP$/i });
       expect(setIpBtn.className).toContain('active:scale-[0.97]');
 
       const editInlineBtn = screen.getByRole('button', { name: /Edit IP inline/i });
@@ -217,7 +217,7 @@ describe('Challenger M1_2 Empirical Stress Harness: EditableIpBadge & Hardware C
         <EditableIpBadge machineId="test-mach-1" initialIp="10.10.x.x" />
       );
 
-      const setBtn = screen.getByRole('button', { name: /Set IP \(10\.10\.x\.x\)/i });
+      const setBtn = screen.getByRole('button', { name: /^10\.10\.x\.x, set IP$/i });
       fireEvent.click(setBtn);
 
       expect(useCtfStore.getState().assignIpMachineId).toBe('test-mach-1');

@@ -14,6 +14,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Machine, TargetServicePort } from '../../types';
+import type { PortTriageStatus } from '../../types/labStudy';
 import { detectAndParseScan, ScanImportResult, ParsedHost } from '../../utils/scanParserUtils';
 import { buildMachineDraftFromHost, deriveServiceTags, toTargetServices } from '../../utils/scanCardHelper';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -254,6 +255,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
         {/* Drag and Drop Zone or Text Area */}
         {!isPasteMode ? (
           <div
+            role="presentation"
             onDragOver={(e) => {
               e.preventDefault();
               setIsDragging(true);
@@ -270,6 +272,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
             <input
               ref={fileInputRef}
               type="file"
+              aria-label="Choose scan result file"
               accept=".xml,.nmap,.gnmap,.txt,.log"
               onChange={handleFileInputChange}
               className="hidden"
@@ -399,7 +402,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
                         aria-label={`Triage status for port ${svc.port}`}
                         value={triage.status || 'untested'}
                         onChange={(e) =>
-                          setPortTriage(machine.id, triageKey, { status: e.target.value as any })
+                          setPortTriage(machine.id, triageKey, { status: e.target.value as PortTriageStatus })
                         }
                         className="h-7 px-2 rounded-lg border border-subtle bg-surface-sunken text-xs font-medium text-primary focus:border-accent focus:outline-none cursor-pointer"
                       >

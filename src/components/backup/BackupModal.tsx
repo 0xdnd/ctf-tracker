@@ -48,8 +48,10 @@ import {
   type PassphraseStrength,
 } from '../../utils/backupCrypto';
 import { buildBackupFile, checkBackupIntegrity, importBackupFile, isV3BackupText } from '../../store/backupFile';
+import { CatalogNotLoadedError } from '../../store/catalogGuard';
 import { isChecksumAvailable } from '../../utils/backupChecksum';
 import { SAMPLE_SOLVE_COUNT } from '../../data/demoSolvedRoster';
+import { CATALOG_TOTAL } from '../../data/catalogStats';
 
 const STRENGTH_LABEL: Record<PassphraseStrength, string> = {
   'too-short': 'Too short',
@@ -66,7 +68,7 @@ const STRENGTH_CLASS: Record<PassphraseStrength, string> = {
 };
 
 const describeCryptoError = (err: unknown): string =>
-  err instanceof BackupCryptoError ? err.message : WRONG_PASSPHRASE_MESSAGE;
+  err instanceof BackupCryptoError || err instanceof CatalogNotLoadedError ? err.message : WRONG_PASSPHRASE_MESSAGE;
 
 const EXPORT_BUILD_ERROR = 'Could not read your notes from IndexedDB, so no backup was made. Try again.';
 
@@ -294,7 +296,7 @@ export const BackupModal: React.FC = () => {
       return await buildBackupFile({ redactSecrets });
     } catch (err) {
       console.error('Failed to build the backup file:', err);
-      setExportError(EXPORT_BUILD_ERROR);
+      setExportError(err instanceof CatalogNotLoadedError ? err.message : EXPORT_BUILD_ERROR);
       return null;
     }
   };
@@ -421,6 +423,8 @@ export const BackupModal: React.FC = () => {
       await runMerge(payload);
       return;
     }
+    // Older files go through the store's importBackup directly: let the catalog finish loading first.
+    if (!useCtfStore.getState().isCatalogLoaded) await useCtfStore.getState().loadCatalog();
     try {
       const success = importBackup(payload);
       if (success) {
@@ -561,7 +565,7 @@ export const BackupModal: React.FC = () => {
   const handleResetSolvesToZero = async () => {
     const ok = await confirmAction({
       title: 'Start fresh CTF journey?',
-      body: `This will reset all 1376 targets to unsolved (0% progress) so you can track your own personal solves from scratch. You can load the ${SAMPLE_SOLVE_COUNT} sample solves later with 1 click, but that does not bring back your own progress.`,
+      body: `This will reset all ${CATALOG_TOTAL} targets to unsolved (0% progress) so you can track your own personal solves from scratch. You can load the ${SAMPLE_SOLVE_COUNT} sample solves later with 1 click, but that does not bring back your own progress.`,
       confirmLabel: 'Reset to 0%',
       tone: 'danger',
     });
@@ -1234,7 +1238,7 @@ export const BackupModal: React.FC = () => {
                 </div>
                 <p className="text-muted text-[11px] leading-relaxed">
                   Paste a list of machines you have already solved on <strong>Hack The Box</strong> or <strong>TryHackMe</strong> (comma separated, line-by-line, or exported CSV). 
-                  ZeroBox matches them against the 1376-target catalog and marks them solved.
+                  ZeroBox matches them against the {CATALOG_TOTAL}-target catalog and marks them solved.
                 </p>
               </div>
 

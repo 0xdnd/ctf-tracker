@@ -219,7 +219,10 @@ const RunnerView: React.FC<RunnerViewProps> = ({
   const altAnchor = finished ? undefined : step.altAnchor;
 
   const [rect, setRect] = useState<Rect | null>(null);
-  const [settled, setSettled] = useState(false);
+  // The runner mounts over the welcome card the layer already painted (same text, same card), so that first
+  // step must appear in place: no overlay fade, no card fade, and a centered card with no waiting for an anchor.
+  const startedOnWelcome = useRef(Boolean(step.welcome)).current;
+  const [settled, setSettled] = useState(startedOnWelcome && !activeAnchor);
   const [cardPos, setCardPos] = useState<CardPos | null>(null);
   const [dock, setDock] = useState<Dock>('bottom');
   const [graceOver, setGraceOver] = useState(false);
@@ -719,7 +722,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       className={`fixed inset-0 z-critical overflow-hidden ${handsOnLive || closing ? 'pointer-events-none' : ''}`}
       data-testid="tour-overlay"
       data-guide-surface=""
-      initial={landed ? false : { opacity: 0 }}
+      initial={landed || startedOnWelcome ? false : { opacity: 0 }}
       animate={{ opacity: closing && !handoff ? 0 : 1 }}
       transition={{ duration: closing ? CLOSE_MS / 1000 : 0.16, ease: EASE_OUT }}
     >
@@ -774,7 +777,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
         transition={
           isMobile
             ? { duration: reduced ? 0 : 0.15 }
-            : { ...moveTransition, opacity: { duration: reduced ? 0 : 0.15 } }
+            : { ...moveTransition, opacity: { duration: reduced || (startedOnWelcome && !placedOnce.current) ? 0 : 0.15 } }
         }
         style={
           isSheet

@@ -13,6 +13,7 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { CommandPalette } from '../../components/layout/CommandPalette';
 import { INITIAL_CHEATSHEET } from '../../data/cheatsheetsData';
 import { seedImportedNotes } from '../fixtures/userNoteFixtures';
+type PersistApi = { persist: { getOptions: () => { merge: (persisted: unknown, current: unknown) => { openTabIds: string[]; activeTabId: string | null } } } };
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 Element.prototype.scrollIntoView = vi.fn();
@@ -123,7 +124,7 @@ describe('hydration-safe pruning', () => {
   });
 
   it('never prunes inside the persist merge', () => {
-    const config = (useNotesWorkspaceStore as any).persist;
+    const config = (useNotesWorkspaceStore as unknown as PersistApi).persist;
     const merged = config
       .getOptions()
       .merge({ openTabIds: ['pending-note', 'cheat:gone'], activeTabId: 'pending-note' }, useNotesWorkspaceStore.getState());

@@ -7,8 +7,8 @@ color-scheme:light;
 --line:#e4e4e7;--line-strong:#d4d4d8;
 --text:#09090b;--text-2:#27272a;--muted:#52525b;--faint:#63636b;
 --accent:#0369a1;--accent-hover:#075985;--accent-ink:#ffffff;--ok:#047857;
---focus:#0369a1;--link:#0369a1;--header-bg:rgb(250 250 250/.85);--ring-offset:var(--bg);
---btn2-bg:#ffffff;--btn2-border:#8b8b94;--btn2-hover-bg:#f4f4f5;--btn2-hover-border:#52525b;
+--focus:#0369a1;--link:#0369a1;--header-bg:rgb(250 250 250);--ring-offset:var(--bg);
+--shadow-lift:0 8px 20px -8px rgb(9 9 11/.22);--row-hover:#ececef;--btn2-bg:#ffffff;--btn2-border:#8b8b94;--btn2-hover-bg:#f4f4f5;--btn2-hover-border:#52525b;
 }
 :root[data-theme="light"] .cta-box, :root[data-theme="light"] .closing, :root[data-theme="light"] .card, :root[data-theme="light"] .facts-panel{--ring-offset:var(--card)}
 :root[data-theme="light"] ::selection{background:rgb(3 105 161/.25)}

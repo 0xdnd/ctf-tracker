@@ -168,6 +168,7 @@ export const FloatingPayloadBar: React.FC = () => {
   const menuIconCls = 'w-3.5 h-3.5 text-muted group-hover:text-primary shrink-0';
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape collapses the bar from any focused descendant
     <aside
       aria-label="Tactical Payload Bar"
       className={`hidden md:block ${tacticalUnset ? 'lg:hidden' : ''} fixed bottom-3 right-3 z-40 font-sans select-none`}
@@ -337,7 +338,8 @@ export const FloatingPayloadBar: React.FC = () => {
             </div>
 
             {activeMachine && (
-              <div
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   copyWithFeedback('chip-target-ip', targetIp);
@@ -350,7 +352,7 @@ export const FloatingPayloadBar: React.FC = () => {
                 {copiedKey === 'chip-target-ip' && (
                   <Check className="w-3 h-3 text-callout-success-fg ml-0.5" />
                 )}
-              </div>
+              </button>
             )}
 
             <button
@@ -541,10 +543,11 @@ export const FloatingPayloadBar: React.FC = () => {
                         const isCopied = copiedKey === `shell-${shell.name}`;
 
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={shell.name}
                             onClick={() => copyWithFeedback(`shell-${shell.name}`, cmd)}
-                            className="flex items-center justify-between p-2 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle cursor-pointer group transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+                            className="w-full text-left flex items-center justify-between p-2 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle cursor-pointer group transition-[transform,background-color,border-color,color] active:scale-[0.98]"
                           >
                             <div className="flex items-center gap-2 min-w-0 pr-2">
                               <span className="text-[11px] text-muted w-[52px] flex-shrink-0">{shell.category}</span>
@@ -558,7 +561,7 @@ export const FloatingPayloadBar: React.FC = () => {
                               </span>
                             </div>
 
-                            <button
+                            <span
                               title="Copy Payload"
                               className="p-1 text-muted group-hover:text-primary shrink-0"
                             >
@@ -567,8 +570,8 @@ export const FloatingPayloadBar: React.FC = () => {
                               ) : (
                                 <Copy className="w-3.5 h-3.5" />
                               )}
-                            </button>
-                          </div>
+                            </span>
+                          </button>
                         );
                       })}
                     </motion.div>

@@ -278,7 +278,7 @@ describe('Tier 3 & Tier 1 E2E: Air-Gapped Offline Runtime Persistence & Network-
       // Verify stored under profile-specific key in localStorage
       const redteamStored = localStorage.getItem('specter_ctf_profile_redteam');
       expect(redteamStored).not.toBeNull();
-      expect(JSON.parse(redteamStored!).machines.some((m: any) => m.name === 'Red-Box-1')).toBe(true);
+      expect(JSON.parse(redteamStored!).machines.some((m: { name: string }) => m.name === 'Red-Box-1')).toBe(true);
 
       // Switch to Profile 2 (BlueTeam)
       useCtfStore.getState().loadProfileData('blueteam');
@@ -301,8 +301,8 @@ describe('Tier 3 & Tier 1 E2E: Air-Gapped Offline Runtime Persistence & Network-
       // Verify Blueteam does not contain Red-Box-1
       const blueteamStored = localStorage.getItem('specter_ctf_profile_blueteam');
       expect(blueteamStored).not.toBeNull();
-      expect(JSON.parse(blueteamStored!).machines.some((m: any) => m.name === 'Red-Box-1')).toBe(false);
-      expect(JSON.parse(blueteamStored!).machines.some((m: any) => m.name === 'Blue-Box-1')).toBe(true);
+      expect(JSON.parse(blueteamStored!).machines.some((m: { name: string }) => m.name === 'Red-Box-1')).toBe(false);
+      expect(JSON.parse(blueteamStored!).machines.some((m: { name: string }) => m.name === 'Blue-Box-1')).toBe(true);
     });
   });
 
@@ -492,7 +492,7 @@ print(base64.b64encode(pickle.dumps(Exploit())))
       expect(validation.success).toBe(true);
       expect(validation.data?.machines?.length).toBe(1);
       expect(validation.data?.machines?.[0].name).toBe('Target-1');
-      expect((Object.prototype as any).polluted).toBeUndefined();
+      expect((Object.prototype as unknown as Record<string, unknown>).polluted).toBeUndefined();
 
       // Zero network calls
       expect(interceptedNetworkCalls.length).toBe(0);

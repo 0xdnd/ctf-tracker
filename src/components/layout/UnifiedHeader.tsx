@@ -297,7 +297,7 @@ export const UnifiedHeader: React.FC = () => {
               <button
                 onClick={handleQuickUserPwn}
                 className={`${flagBtnBase} ${
-                  Boolean(activeMachine.userPwnedAt || activeMachine.userFlag || activeMachine.status === 'foothold' || activeMachine.status === 'root' || activeMachine.status === 'completed')
+                  (activeMachine.userPwnedAt || activeMachine.userFlag || activeMachine.status === 'foothold' || activeMachine.status === 'root' || activeMachine.status === 'completed')
                     ? 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border/40'
                     : 'bg-transparent hover:bg-surface-hover text-muted hover:text-primary border-subtle'
                 }`}
@@ -310,7 +310,7 @@ export const UnifiedHeader: React.FC = () => {
               <button
                 onClick={handleQuickRootPwn}
                 className={`${flagBtnBase} ${
-                  Boolean(activeMachine.rootPwnedAt || activeMachine.rootFlag || activeMachine.status === 'root' || activeMachine.status === 'completed')
+                  (activeMachine.rootPwnedAt || activeMachine.rootFlag || activeMachine.status === 'root' || activeMachine.status === 'completed')
                     ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border/40'
                     : 'bg-transparent hover:bg-surface-hover text-muted hover:text-primary border-subtle'
                 }`}
@@ -405,6 +405,7 @@ export const UnifiedHeader: React.FC = () => {
               onChange={(e) => setTargetSearch(e.target.value)}
               placeholder="Search target name or IP..."
               className="w-full px-2.5 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent tabular-nums"
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- search field in a dropdown the user just opened
               autoFocus
             />
             {activeTargetId && (

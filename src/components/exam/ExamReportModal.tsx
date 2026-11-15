@@ -220,7 +220,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {}
+    } catch {
+      // DOM append/click failed; download link not triggered
+    }
     URL.revokeObjectURL(url);
     playCyberSound('export');
     setDownloadFeedback('Markdown report (.md) downloaded.');
@@ -241,7 +243,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {}
+    } catch {
+      // DOM append/click failed; download link not triggered
+    }
     URL.revokeObjectURL(url);
     playCyberSound('export');
     setDownloadFeedback('Air-gapped standalone HTML report (.html) downloaded.');
@@ -266,7 +270,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-      } catch {}
+      } catch {
+        // DOM append/click failed; download link not triggered
+      }
       URL.revokeObjectURL(url);
       playCyberSound('export');
       setDownloadFeedback(
@@ -298,6 +304,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       {/* Backdrop */}
       <div
         data-testid="exam-report-backdrop"
+        role="presentation"
         className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-sm"
         onClick={onClose}
       />

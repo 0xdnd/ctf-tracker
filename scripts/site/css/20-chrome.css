@@ -26,7 +26,7 @@
 .link-arrow .ico{flex:none;width:16px;height:16px;transition:transform var(--spring-dur) var(--spring)}
 .link-arrow:focus-visible{outline:2px solid transparent;box-shadow:0 0 0 2px var(--ring-offset),0 0 0 4px var(--focus)}
 @media(hover:hover) and (pointer:fine){
-.btn:hover{--b:var(--accent-hover);color:var(--accent-ink);transform:translateY(-1px);will-change:transform;box-shadow:inset 0 1px 0 rgb(255 255 255/.28),inset 0 -1px 0 rgb(0 0 0/.12),0 1px 2px rgb(0 0 0/.35),0 8px 18px -8px rgb(14 165 233/.34)}
+.btn:hover{--b:var(--accent-hover);color:var(--accent-ink);transform:translateY(-2px);will-change:transform;box-shadow:inset 0 1px 0 rgb(255 255 255/.28),inset 0 -1px 0 rgb(0 0 0/.12),0 2px 4px rgb(0 0 0/.4),0 12px 24px -8px rgb(14 165 233/.5)}
 .btn:hover:active{transform:translateY(0) scale(.97);box-shadow:inset 0 -1px 0 rgb(0 0 0/.12),0 1px 2px rgb(0 0 0/.35)}
 .btn-secondary:hover{background:var(--btn2-hover-bg);border-color:var(--btn2-hover-border);color:var(--text);box-shadow:inset 0 1px 0 rgb(255 255 255/.06),0 4px 12px -6px rgb(0 0 0/.5)}
 .btn-secondary:hover:active{box-shadow:0 1px 2px rgb(0 0 0/.3)}
@@ -36,11 +36,10 @@
 .link-arrow:hover{color:var(--accent-hover);background-size:100% 1px}
 }
 @media(prefers-reduced-motion:reduce){.btn,.link-arrow,.btn .ico,.link-arrow .ico,.theme-toggle{transition:background-color .15s,border-color .15s,color .15s}.btn:active,.btn:hover,.btn:hover:active,.theme-toggle:active{transform:none}.btn:hover .ico,.link-arrow:hover .ico{transform:none}}
-.site-header{position:sticky;top:0;z-index:50;background:var(--header-bg);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%)}
+.site-header{position:sticky;top:0;z-index:50;background:var(--header-bg)}
 .site-header::after{content:"";position:absolute;left:0;right:0;top:100%;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--line),transparent);box-shadow:0 6px 12px -6px rgb(0 0 0/.35);opacity:.6}
 @supports(animation-timeline:scroll()){.site-header::after{opacity:0;animation:edge linear forwards;animation-timeline:scroll();animation-range:0 24px}}
 @keyframes edge{to{opacity:1}}
-@media(prefers-reduced-transparency:reduce){.site-header{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}}
 .bar{position:relative;display:flex;align-items:center;gap:var(--s3);min-height:var(--header-h)}
 .brand{display:inline-flex;align-items:center;gap:10px;margin-right:auto;color:var(--text);font-weight:650;letter-spacing:-.01em;text-decoration:none}
 .brand img{width:32px;height:32px;border-radius:var(--r-md)}

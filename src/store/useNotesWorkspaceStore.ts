@@ -61,7 +61,7 @@ export function resolveTabById(tabId: string): ResolvedTab | null {
     try {
       const live = useCtfStore.getState().cheatsheets;
       if (Array.isArray(live)) pool = live;
-    } catch {}
+    } catch { /* live store unavailable; fall back to the built-in cheatsheet pool */ }
     const entry = pool.find((c) => c.id === entryId) ?? INITIAL_CHEATSHEET.find((c) => c.id === entryId);
     return entry ? { kind: 'cheat', entry } : null;
   }
@@ -298,7 +298,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
           try {
             const saved = localStorage.getItem('zerobox_obsidian_active_tab');
             if (saved && all.some((n) => n.id === saved)) seedId = saved;
-          } catch {}
+          } catch { /* localStorage unavailable; keep the first note as the seed tab */ }
           const hydrated = useCtfStore.getState().userNotesHydrated;
           return {
             isOpen: true,
@@ -374,7 +374,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
             const match = all.find((n) => n.id === cheatsheetActive);
             if (match) return match;
           }
-        } catch {}
+        } catch { /* localStorage unavailable; fall back to the first note */ }
         return all[0] || null;
       },
 
@@ -391,7 +391,7 @@ export const useNotesWorkspaceStore = create<NotesWorkspaceState>()(
     }),
     {
       name: 'zerobox_notes_workspace',
-      merge: (persistedState: any, currentState: NotesWorkspaceState) => {
+      merge: (persistedState: unknown, currentState: NotesWorkspaceState) => {
         const validModes: ObsidianViewMode[] = ['reading', 'split', 'raw'];
         const merged = { ...currentState, ...(persistedState as Partial<NotesWorkspaceState>) };
         if (!validModes.includes(merged.viewMode)) {

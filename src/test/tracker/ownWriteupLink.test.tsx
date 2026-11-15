@@ -34,7 +34,7 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     }));
   }
-  (globalThis as any).IntersectionObserver = class {
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -43,13 +43,13 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  useCtfStore.setState({ machines: [WITH_OWN, WITHOUT_OWN], selectedMachineId: null, soundEnabled: false } as any);
+  useCtfStore.setState({ machines: [WITH_OWN, WITHOUT_OWN], selectedMachineId: null, soundEnabled: false } as never);
 });
 
 afterEach(() => cleanup());
 
 const open = (id: string) => {
-  useCtfStore.setState({ selectedMachineId: id } as any);
+  useCtfStore.setState({ selectedMachineId: id } as never);
   render(
     <MemoryRouter>
       <MachineDetailModal />

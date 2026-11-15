@@ -72,11 +72,13 @@ function startServer() {
   });
 }
 
+// Not content pages: /machines/all/ and /machines/page/<n>/ are the machines list.
+const LIST_DIRS = new Set(['all', 'page']);
 function firstSub(dir) {
   const d = path.join(DIST, dir);
   if (!fs.existsSync(d)) return null;
   const sub = fs.readdirSync(d, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && fs.existsSync(path.join(d, e.name, 'index.html')))
+    .filter((e) => e.isDirectory() && !LIST_DIRS.has(e.name) && fs.existsSync(path.join(d, e.name, 'index.html')))
     .map((e) => e.name).sort()[0];
   return sub ? `/${dir}/${sub}/` : null;
 }
@@ -165,7 +167,7 @@ for (const v of variants) {
     viewport: { width: v.w, height: 900 }, colorScheme: v.scheme,
     reducedMotion: v.rm ? 'reduce' : 'no-preference',
   });
-  if (v.scheme === 'light') await ctx.addInitScript(() => { try { localStorage.setItem('zb-site-theme', 'light'); } catch {} });
+  if (v.scheme === 'light') await ctx.addInitScript(() => { try { localStorage.setItem('zb-site-theme', 'light'); } catch { /* theme not storable */ } });
   await ctx.addInitScript(() => {
     window.__csp = [];
     document.addEventListener('securitypolicyviolation', (e) =>
@@ -310,7 +312,7 @@ const staticNotes = [];
   let checked = 0;
   for (const e of fs.existsSync(machinesDir) ? fs.readdirSync(machinesDir, { withFileTypes: true }) : []) {
     const file = path.join(machinesDir, e.name, 'index.html');
-    if (!e.isDirectory() || !fs.existsSync(file)) continue;
+    if (!e.isDirectory() || LIST_DIRS.has(e.name) || !fs.existsSync(file)) continue;
     const html = fs.readFileSync(file, 'utf8');
     const lead = (html.match(/<p class="lead">([\s\S]*?)<\/p>/) || [])[1];
     if (lead === undefined) continue;
@@ -329,7 +331,7 @@ const staticNotes = [];
 }
 
 {
-  // Tag links (technique hub or /machines/?tag=): one displayed label always goes to one destination, across every page,
+  // Tag links (technique hub or /machines/all/?tag=): one displayed label always goes to one destination, across every page,
   // and only the filtered-list links carry rel="nofollow".
   const dests = new Map();
   let links = 0;
@@ -339,9 +341,9 @@ const staticNotes = [];
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith('.html')) {
         const html = fs.readFileSync(p, 'utf8');
-        for (const m of html.matchAll(/<a (?:class="tag" )?href="(\/techniques\/[^"?]+\/|\/machines\/\?tag=[^"]+)"( rel="nofollow")?>([^<]+)<\/a>/g)) {
+        for (const m of html.matchAll(/<a (?:class="tag" )?href="(\/techniques\/[^"?]+\/|\/machines\/all\/\?tag=[^"]+)"( rel="nofollow")?>([^<]+)<\/a>/g)) {
           links++;
-          const isList = m[1].startsWith('/machines/?tag=');
+          const isList = m[1].startsWith('/machines/all/?tag=');
           if (isList && !m[2]) staticFails.push(`tag links: ${m[1]} on ${path.relative(DIST, p)} has no rel="nofollow"`);
           if (!isList && m[2]) staticFails.push(`tag links: hub link ${m[1]} on ${path.relative(DIST, p)} has rel="nofollow"`);
           const label = decodeText(m[3]);

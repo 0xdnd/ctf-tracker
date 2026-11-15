@@ -33,3 +33,14 @@ describe('ImportPanels', () => {
     expect(screen.getByLabelText(/Box names/)).not.toHaveFocus();
   });
 });
+
+describe('ImportPanels loading fallback', () => {
+  it('shows a labelled skeleton while the CSV importer chunk loads', async () => {
+    vi.resetModules();
+    const { ImportPanels: Fresh } = await import('./ImportPanels');
+    render(<Fresh csvRequested />);
+    expect(screen.getByText('Loading CSV import…')).toBeInTheDocument();
+    expect(await screen.findByTestId('csv-import-panel')).toBeInTheDocument();
+    expect(screen.queryByText('Loading CSV import…')).not.toBeInTheDocument();
+  });
+});

@@ -316,7 +316,7 @@ export const ExamFindingsEditor: React.FC<{ boxes: ExamBox[] }> = ({ boxes }) =>
                         setConfirmDeleteId(null);
                       }}
                       onBlur={() => setConfirmDeleteId(null)}
-                      autoFocus
+                      ref={(el) => el?.focus()}
                       className={`${GHOST_BTN} !border-callout-danger-border !text-callout-danger-fg`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />

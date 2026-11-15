@@ -126,3 +126,6 @@ promo-mobile/
 promo-opus/
 public/videos/
 skills-lock.json
+
+# Second updater key (public half stays local)
+src-tauri/updater2.key.pub

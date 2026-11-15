@@ -21,10 +21,10 @@ describe('Adversarial Stress Test: DOMPurify Sanitization & XML Entity Defenses'
       const container = document.createElement('div');
       container.innerHTML = html;
 
-      let scriptCount = container.querySelectorAll('script').length;
-      let iframeCount = container.querySelectorAll('iframe').length;
-      let objectCount = container.querySelectorAll('object').length;
-      let embedCount = container.querySelectorAll('embed').length;
+      const scriptCount = container.querySelectorAll('script').length;
+      const iframeCount = container.querySelectorAll('iframe').length;
+      const objectCount = container.querySelectorAll('object').length;
+      const embedCount = container.querySelectorAll('embed').length;
       let styleCount = container.querySelectorAll('style').length;
       let onAttrCount = 0;
       let javascriptUriCount = 0;
@@ -35,10 +35,11 @@ describe('Adversarial Stress Test: DOMPurify Sanitization & XML Entity Defenses'
           if (attr.name.toLowerCase().startsWith('on')) {
             onAttrCount++;
           }
-          if (
-            attr.value.toLowerCase().replace(/[\s\x00-\x1f]/g, '').includes('javascript:') ||
-            attr.value.toLowerCase().replace(/[\s\x00-\x1f]/g, '').includes('data:text/html')
-          ) {
+          // Strip whitespace and C0 control characters (0x00-0x1f) before matching URI schemes.
+          const normalizedValue = Array.from(attr.value.toLowerCase())
+            .filter((ch) => ch.charCodeAt(0) > 0x1f && !/\s/.test(ch))
+            .join('');
+          if (normalizedValue.includes('javascript:') || normalizedValue.includes('data:text/html')) {
             javascriptUriCount++;
           }
           if (attr.name.toLowerCase() === 'style') {

@@ -62,9 +62,9 @@ describe('Challenger M1_1 Adversarial Stress Harness: Motion Tokens & Invariants
       expect(TACTICAL_SPRING.bounce).toBe(0);
       expect(TACTICAL_SPRING.duration).toBe(0.28);
       // Ensure no conflicting spring parameters
-      expect((TACTICAL_SPRING as any).stiffness).toBeUndefined();
-      expect((TACTICAL_SPRING as any).damping).toBeUndefined();
-      expect((TACTICAL_SPRING as any).mass).toBeUndefined();
+      expect((TACTICAL_SPRING as unknown as Record<string, unknown>).stiffness).toBeUndefined();
+      expect((TACTICAL_SPRING as unknown as Record<string, unknown>).damping).toBeUndefined();
+      expect((TACTICAL_SPRING as unknown as Record<string, unknown>).mass).toBeUndefined();
     });
 
     it('enforces strict asymmetric contract in MODAL_ASYMMETRIC_TRANSITION', () => {
@@ -109,7 +109,7 @@ describe('Challenger M1_1 Adversarial Stress Harness: Motion Tokens & Invariants
 
   describe('3. MotionConfig Root Hierarchy & Reduced-Motion Context Invariants', () => {
     it('sets reducedMotion="user" in MotionConfigContext when mounted', () => {
-      let contextValue: any = null;
+      let contextValue = null as unknown as { reducedMotion?: unknown };
 
       const ContextInspector = () => {
         contextValue = useContext(MotionConfigContext);

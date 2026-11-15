@@ -41,8 +41,8 @@ describe('workspaceStorage validation & serialization', () => {
 
   it('serializes workspace to JSON correctly', () => {
     const state = {
-      machines: [{ id: 'm1', name: 'Target1', ip: '10.10.10.1', os: 'Linux', difficulty: 'Easy', status: 'backlog' } as any],
-      globalVars: { lhost: '10.10.14.2', lport: '9001' } as any,
+      machines: [{ id: 'm1', name: 'Target1', ip: '10.10.10.1', os: 'Linux', difficulty: 'Easy', status: 'backlog' } as never],
+      globalVars: { lhost: '10.10.14.2', lport: '9001' } as never,
       cheatsheets: [],
       activitySessions: [],
     };

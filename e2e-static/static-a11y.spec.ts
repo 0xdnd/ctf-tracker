@@ -17,6 +17,8 @@ const PAGES = [
   '/oscp-points-calculator/',
   // Machine list pages with the search/filter/sort toolbar (public/table-filter.js).
   '/machines/',
+  '/machines/page/2/',
+  '/machines/all/',
   '/oscp-like-machines/',
   '/active-directory-machines/',
   '/cwee-like-machines/',
@@ -41,6 +43,8 @@ for (const url of PAGES) {
   test(`axe: no serious/critical violations on ${url}`, async ({ page }) => {
     const response = await page.goto(url, { waitUntil: 'load' });
     expect(response?.status()).toBe(200);
+    // Let entrance fades finish (time-based animations only; scroll-driven ones never finish), or axe measures half-faded text.
+    await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).map((a) => a.finished.catch(() => undefined))));
 
     // page.evaluate bypasses the page CSP, unlike addScriptTag.
     await page.evaluate(axeSource);

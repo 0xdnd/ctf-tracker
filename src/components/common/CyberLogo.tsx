@@ -26,7 +26,6 @@ const DEFAULT_LOGO = `${import.meta.env.BASE_URL}logo-zerobox.webp`;
 export const CyberLogo: React.FC<CyberLogoProps> = ({ 
   size = 'lg', 
   className = '',
-  glow: _glow,
   theme: explicitTheme
 }) => {
   const currentStoreTheme = useCtfStore((s) => s.themePreset || 'obsidian');
@@ -66,7 +65,7 @@ export const CyberLogo: React.FC<CyberLogoProps> = ({
         height={pxMap[size]}
         alt={`ZeroBox logo - ${activePreset}`}
         key={activePreset}
-        {...(size === 'sm' ? ({ fetchpriority: 'high' } as any) : {})}
+        {...(size === 'sm' ? ({ fetchpriority: 'high' } as Record<string, string>) : {})}
         decoding="async"
         className="w-full h-full object-contain select-none"
       />

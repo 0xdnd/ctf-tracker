@@ -36,7 +36,7 @@ export interface ElectronAPI {
   platform: string;
   getVersion: () => Promise<string>;
   isPackaged: () => Promise<boolean>;
-  checkForUpdates: () => Promise<{ success: boolean; dev?: boolean; error?: string; result?: any }>;
+  checkForUpdates: () => Promise<{ success: boolean; dev?: boolean; error?: string; result?: unknown }>;
   quitAndInstall: () => Promise<void>;
   onCheckingForUpdate: (callback: () => void) => () => void;
   onUpdateAvailable: (callback: (info: ElectronUpdateInfo) => void) => () => void;

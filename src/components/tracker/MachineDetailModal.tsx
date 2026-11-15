@@ -196,7 +196,7 @@ export const MachineDetailModal: React.FC = () => {
 
   const checklistCompletedCount = useMemo(() => {
     if (!machine?.checklist?.itemsState) return 0;
-    return Object.values(machine.checklist.itemsState).filter((s: any) => s.status === 'done').length;
+    return Object.values(machine.checklist.itemsState).filter((s) => s.status === 'done').length;
   }, [machine?.checklist?.itemsState]);
 
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
@@ -1275,6 +1275,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </button>
               </div>
               <div
+                role="presentation"
                 onClick={() => setShowHint(!showHint)}
                 className={`p-2 rounded border border-subtle text-xs cursor-pointer select-none transition-colors ${
                   showHint ? 'bg-surface-card text-primary' : 'blur-sm text-transparent bg-surface-hover/60'

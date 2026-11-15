@@ -27,6 +27,7 @@ import { CYBER_AVATAR_PRESETS, getAvatarSvgDataUri } from '../../data/avatarPres
 import { evaluateOperatorGamification, syncOperatorTrophies } from '../../utils/gamificationEngine';
 import { TrophyCategory } from '../../types/gamification';
 import { SAMPLE_SOLVE_COUNT } from '../../data/demoSolvedRoster';
+import { CATALOG_TOTAL } from '../../data/catalogStats';
 
 const ROLE_OPTIONS = [
   { id: 'Tactical CTF Operator', label: 'General CTF Operator', icon: Target },
@@ -147,8 +148,8 @@ export const OperatorProfileModal: React.FC = () => {
           try {
             const data = JSON.parse(raw);
             const machs = Array.isArray(data.machines) ? data.machines : [];
-            const rooted = machs.filter((m: any) => m.status === 'root' || m.status === 'completed').length;
-            const footholds = machs.filter((m: any) => m.status === 'foothold').length;
+            const rooted = machs.filter((m: { status?: string }) => m.status === 'root' || m.status === 'completed').length;
+            const footholds = machs.filter((m: { status?: string }) => m.status === 'foothold').length;
             stats[p.id] = { totalPwned: rooted + footholds, rooted, footholds };
           } catch {
             stats[p.id] = { totalPwned: 0, rooted: 0, footholds: 0 };
@@ -245,7 +246,8 @@ export const OperatorProfileModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
-      <div 
+      <div
+        role="presentation"
         className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-md transition-opacity animate-in fade-in"
         onClick={() => setOperatorProfileModalOpen(false)}
       />
@@ -323,6 +325,7 @@ export const OperatorProfileModal: React.FC = () => {
                           }
                         }}
                         className="px-2 py-0.5 text-xs font-medium rounded-lg border border-strong bg-surface-card text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- inline rename field, focus is the intent
                         autoFocus
                         placeholder="New Callsign"
                       />
@@ -439,7 +442,7 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
               <p className="text-[11px] text-tertiary">
                 {userSolvesReset
-                  ? 'Tracking your own progress from 0%. All 1376 targets ready.'
+                  ? `Tracking your own progress from 0%. All ${CATALOG_TOTAL} targets ready.`
                   : 'Sample solves are loaded as reference walkthroughs.'}
               </p>
             </div>
@@ -603,6 +606,7 @@ export const OperatorProfileModal: React.FC = () => {
                                     }
                                   }}
                                   className="px-2 py-0.5 text-xs rounded border border-strong bg-surface-card text-primary focus:outline-none focus:border-accent"
+                                  // eslint-disable-next-line jsx-a11y/no-autofocus -- inline rename field, focus is the intent
                                   autoFocus
                                   placeholder="Callsign"
                                 />
@@ -756,11 +760,12 @@ export const OperatorProfileModal: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <label htmlFor="operator-profile-name" className="block text-xs font-medium text-secondary mb-1">
                   Operator name or callsign <span className="text-callout-danger-fg">*</span>
                 </label>
                 <input
                   ref={inputRef}
+                  id="operator-profile-name"
                   type="text"
                   maxLength={24}
                   value={operatorName}
@@ -817,9 +822,9 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <span className="block text-xs font-medium text-secondary mb-1">
                   Role
-                </label>
+                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {ROLE_OPTIONS.map((r) => {
                     const isSelected = selectedRole === r.id;
@@ -843,9 +848,9 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <span className="block text-xs font-medium text-secondary mb-1">
                   Accent color
-                </label>
+                </span>
                 <div className="flex items-center gap-2">
                   {ACCENT_COLORS.map((c) => (
                     <button
@@ -864,13 +869,15 @@ export const OperatorProfileModal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
+                <span className="block text-xs font-medium text-secondary mb-1">
                   Workspace for new operators
-                </label>
+                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={workspaceMode === 'fresh'}
                     onClick={() => setWorkspaceMode('fresh')}
-                    className={`p-3 rounded-xl border cursor-pointer transition-colors ${
+                    className={`p-3 rounded-xl border cursor-pointer transition-colors text-left ${
  workspaceMode === 'fresh'
  ? 'bg-surface-sunken border-subtle '
  : 'bg-surface-base border-subtle opacity-70 hover:opacity-100'
@@ -881,13 +888,15 @@ export const OperatorProfileModal: React.FC = () => {
                       <span className="text-[11px] px-1 rounded bg-surface-card text-secondary border border-subtle">Recommended</span>
                     </div>
                     <p className="text-[11px] text-tertiary mt-1 leading-snug">
-                      All 1376 targets loaded with 0 solves and empty flags and notes.
+                      All {CATALOG_TOTAL} targets loaded with 0 solves and empty flags and notes.
                     </p>
-                  </div>
+                  </button>
 
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={workspaceMode === 'clone'}
                     onClick={() => setWorkspaceMode('clone')}
-                    className={`p-3 rounded-xl border cursor-pointer transition-colors ${
+                    className={`p-3 rounded-xl border cursor-pointer transition-colors text-left ${
  workspaceMode === 'clone'
  ? 'bg-surface-sunken border-subtle '
  : 'bg-surface-base border-subtle opacity-70 hover:opacity-100'
@@ -899,7 +908,7 @@ export const OperatorProfileModal: React.FC = () => {
                     <p className="text-[11px] text-tertiary mt-1 leading-snug">
                       Copies your machines, flags and notes into the new operator.
                     </p>
-                  </div>
+                  </button>
                 </div>
               </div>
 

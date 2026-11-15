@@ -26,7 +26,7 @@ a.tag{color:var(--text-2)}
 .pending-label{color:var(--text-2);font-weight:600}
 .mapped{color:var(--text-2);font-style:italic}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:var(--s4);margin:var(--s4) 0 var(--s6)}
-.card{display:block;padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--text);text-decoration:none;transition:border-color .15s,background-color .15s}
+.card{display:block;padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--text);text-decoration:none;transition:border-color .15s,background-color .15s,transform .15s ease-out,box-shadow .15s ease-out}
 .card h2,.card h3{margin:0 0 var(--s2);padding:0;border:0;font-size:1.0625rem;line-height:1.3;letter-spacing:-.01em}
 .card p{margin:0;color:var(--muted);font-size:var(--fs-small);line-height:1.55}
 .cta-box{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s4) var(--s5);margin:var(--s6) 0;padding:var(--s5);border:1px solid var(--line-strong);border-radius:var(--r-lg);background:var(--card)}
@@ -62,7 +62,7 @@ th,td{padding:10px}
 .hub-grid>.hubcard{height:100%}
 .hub-path>li{position:relative;min-width:0;display:flex}
 .hub-path>li>.hubcard{flex:1}
-.hubcard{--hc-pad:var(--s5);position:relative;display:flex;align-items:flex-start;gap:var(--s4);min-width:0;padding:var(--hc-pad);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--text);text-decoration:none;transition:border-color .15s ease-out,transform .15s ease-out}
+.hubcard{--hc-pad:var(--s5);position:relative;display:flex;align-items:flex-start;gap:var(--s4);min-width:0;padding:var(--hc-pad);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--text);text-decoration:none;transition:border-color .15s ease-out,transform .15s ease-out,box-shadow .15s ease-out}
 .hubcard:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .hubcard:active{transform:scale(.985)}
 .hubcard .hc-main{display:flex;flex-direction:column;flex:1;min-width:0;gap:var(--s1)}
@@ -81,16 +81,17 @@ th,td{padding:10px}
 .hub-path>li:nth-child(4)::after{display:none}
 }
 @media(hover:hover) and (pointer:fine){
-.hubcard:hover{border-color:var(--accent)}
+.hubcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-lift)}
 .hubcard:hover .hc-arrow{transform:translateX(3px);color:var(--accent)}
 }
-@media(prefers-reduced-motion:reduce){.hubcard,.hubcard .hc-arrow{transition:border-color .15s,color .15s}.hubcard:active{transform:none}.hubcard:hover .hc-arrow{transform:none}}
+@media(prefers-reduced-motion:reduce){.hubcard,.hubcard .hc-arrow{transition:border-color .15s,color .15s}.hubcard:active,.hubcard:hover{transform:none}.hubcard:hover .hc-arrow{transform:none}}
 @media(hover:hover) and (pointer:fine){
 .chips a:hover{border-color:var(--accent);background:var(--hover);color:var(--text)}
-.card:hover{border-color:var(--line-strong);background:var(--elev)}
-tbody tr:hover{background:var(--card)}
+.card:hover{border-color:var(--line-strong);background:var(--elev);transform:translateY(-2px);box-shadow:var(--shadow-lift)}
+tbody tr{transition:background-color .12s}
+tbody tr:hover{background:var(--row-hover,var(--hover))}
 }
-@media(prefers-reduced-motion:reduce){.chips a,.card{transition:none}}
+@media(prefers-reduced-motion:reduce){.chips a,.card{transition:none}.card:hover{transform:none}}
 /* 404: the missing address shown as a tracker card. Tokens only, so every theme works. */
 .nf{max-width:34rem;margin-inline:auto;padding-top:var(--s5);padding-bottom:var(--s6);text-align:center}
 @media(min-width:640px){.nf{padding-top:var(--s7)}}
@@ -128,6 +129,27 @@ tbody tr:hover{background:var(--card)}
 
 /* Machine list toolbar (public/table-filter.js). Filtering toggles [hidden]; author display rules on chips and tables would otherwise win. */
 main [hidden]{display:none!important}
+/* Machine tables: tag chips under the name, shown only where the Tags column is hidden (<640px). */
+.tags-sm{display:none}
+@media(max-width:639px){.tags-sm{display:block;margin-top:var(--s1)}}
+.tags-sm .tag{margin:0 var(--s1) 0 0;padding:0 8px;font-size:.75rem}
+/* Reverse shell fill-in box (shares the .tf field styles) and code copy buttons (public/copy-code.js). */
+.rs-fill{margin-top:var(--s4)}
+.cc-wrap{position:relative}
+.cc-wrap pre{position:relative}
+pre.cc{padding-top:48px}
+.cc-btn{position:absolute;top:8px;right:8px;z-index:1;min-width:64px;min-height:32px;padding:0 var(--s3);border:1px solid #52525b;border-radius:var(--r-md);background:#27272a;color:#f4f4f5;font:inherit;font-size:.8125rem;font-weight:600;line-height:1;cursor:pointer}
+.cc-btn:hover{background:#3f3f46}
+.cc-btn:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+@media(min-width:640px){pre.cc{padding-top:var(--s4);padding-right:5.5rem}}
+main:focus{outline:none}
+/* Machines list pages: search form and pager. */
+.mx-search{display:grid;gap:var(--s3)}
+.mx-search-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3) var(--s4)}
+.pager{display:flex;flex-wrap:wrap;gap:var(--s2);margin:var(--s5) 0}
+.pager a,.pager span{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;padding:0 var(--s3);border:1px solid var(--line);border-radius:var(--r-md);text-decoration:none}
+.pager span[aria-current]{background:var(--card);border-color:var(--line-strong);color:var(--text);font-weight:650}
+.pager a:hover{border-color:var(--line-strong);background:var(--card)}
 .tf{margin:var(--s5) 0 var(--s4);padding:var(--s4);border:1px solid var(--line);border-radius:var(--r-md);background:var(--card)}
 .tf-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:var(--s3);align-items:end}
 .tf-search{grid-column:1/-1}

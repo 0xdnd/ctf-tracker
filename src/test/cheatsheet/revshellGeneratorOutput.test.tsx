@@ -43,7 +43,7 @@ const CTX = contextFromGlobalVars(
     cred: 'pass123',
     wordlist: 'rockyou.txt',
     customVars: {},
-  } as any,
+  } as never,
   { activeTargetIp: TARGET_IP }
 );
 

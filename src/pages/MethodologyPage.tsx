@@ -725,6 +725,7 @@ export const MethodologyPage: React.FC = () => {
                                       {item.commandSnippet && (
                                         <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-inverse p-2 text-[12px]">
                                           <div
+                                            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- keyboard-focusable scroll region so overflowing commands can be scrolled without a mouse
                                             tabIndex={0}
                                             role="region"
                                             aria-label={`Command for ${item.title}`}

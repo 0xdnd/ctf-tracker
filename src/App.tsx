@@ -27,6 +27,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { ConfirmDialog } from "./components/common/ConfirmDialog";
 import { AlertTriangle, Database } from 'lucide-react';
 import { isTauriTarget } from './utils/runtimeTarget';
+import { afterFirstPaint } from './utils/afterFirstPaint';
 import { useRouteMeta } from './hooks/useRouteMeta';
 import { LegacyNotesRedirect } from './components/common/LegacyNotesRedirect';
 import { getShellChrome, isFullscreenNotesPath } from './utils/fullscreenRoutes';
@@ -280,20 +281,16 @@ const MainAppContent: React.FC = () => {
   useEffect(() => {
     // Auto-hydrate private field manual notes and wikilinks from local IndexedDB
     useCtfStore.getState().loadUserNotesFromDb();
-    // Hydrate the full master catalog (separate ~600 KB chunk) off the critical path:
-    // wait for browser idle so it never competes with first paint / route chunks.
-    // Routes that need it (tracker, target detail) trigger loadCatalog() themselves.
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
+    // Hydrate the full master catalog (separate ~600 KB chunk) off the critical path: afterFirstPaint waits for
+    // load, two frames and an idle moment, so the chunk requests start after the largest contentful paint.
+    // Routes that need it sooner (target detail, the importers) call loadCatalog() themselves.
+    let live = true;
+    void afterFirstPaint().then(() => {
+      if (live) void useCtfStore.getState().loadCatalog();
+    });
+    return () => {
+      live = false;
     };
-    const hydrate = () => { useCtfStore.getState().loadCatalog(); };
-    if (typeof w.requestIdleCallback === 'function') {
-      const idleId = w.requestIdleCallback(hydrate, { timeout: 3000 });
-      return () => w.cancelIdleCallback?.(idleId);
-    }
-    const timerId = window.setTimeout(hydrate, 1500);
-    return () => window.clearTimeout(timerId);
   }, []);
 
   // Sync store activeTab with route
@@ -347,6 +344,21 @@ const MainAppContent: React.FC = () => {
       }}
       className="w-full overflow-hidden bg-slate-50 dark:bg-cyber-bg text-slate-900 dark:text-cyber-text flex flex-col font-sans selection:bg-cyan-500/25 selection:text-current dark:selection:bg-cyan-400/25 dark:selection:text-white relative"
     >
+      {chrome.mainLayout !== 'fullscreen' && (
+        <a
+          href="#main"
+          onClick={(e) => {
+            e.preventDefault();
+            const el = document.getElementById('main');
+            el?.focus();
+            el?.scrollIntoView();
+          }}
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[1000] focus:rounded-lg focus:bg-cyber-emerald focus:px-3 focus:py-2 focus:text-sm focus:font-bold focus:text-black focus:shadow-lg"
+        >
+          Skip to content
+        </a>
+      )}
+
       {/* Scroll Progress Bar */}
       <ScrollProgressBar />
 
@@ -504,8 +516,10 @@ const MainAppContent: React.FC = () => {
 
         {/* Main Stage View */}
         <main
+          id="main"
+          tabIndex={-1}
           ref={setScrollElement}
-          className={`flex-1 min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
+          className={`outline-none flex-1 min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
             chrome.mainLayout === 'fullscreen' ? 'overflow-hidden' : 'overflow-y-auto'
           } ${
             chrome.mainLayout === 'default' ? 'p-3 pb-24 sm:p-4 md:p-6 md:pb-12' : chrome.mainLayout === 'bare' ? 'p-0 pb-0' : 'p-0'
