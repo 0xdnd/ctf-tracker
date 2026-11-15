@@ -1,6 +1,6 @@
 [package]
 name = "zerobox"
-version = "2.5.5"
+version = "2.5.6"
 description = "ZeroBox: free, offline CTF tracker for Hack The Box and TryHackMe with loot, notes and OSCP/CPTS exam prep."
 authors = ["Daniel Dayan (0xdnd)"]
 license-file = "../LICENSE"

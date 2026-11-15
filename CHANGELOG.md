@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [2.5.6] - 2026-11-15
+
+### Changed
+- Faster tracker first load: static welcome card, deferred catalog loading, fewer layout shifts.
+- Copy buttons on every code block, LHOST/LPORT fill fields on the reverse shells page.
+- Paged machines list, dated guide hubs, per-page share images, opaque header on scroll.
+- Consistent hover lift on cards and rows; visible card hover in light theme.
+- External links in the desktop app open over https only.
+
+### Fixed
+- Solve counts and catalog totals derived from data instead of hard-coded numbers.
+- Dead writeup links hidden; accessibility labels, skip links and focus on main content.
+
 ## [2.5.5] - 2026-11-10
 
 ### Added

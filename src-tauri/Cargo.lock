@@ -5358,7 +5358,7 @@ dependencies = [
 
 [[package]]
 name = "zerobox"
-version = "2.5.5"
+version = "2.5.6"
 dependencies = [
  "log",
  "serde",
