@@ -94,7 +94,7 @@ describe('Notes area ships no bundled notes', () => {
 
     const empty = screen.getByTestId('notes-empty-state');
     expect(empty).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Your field manual is empty' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No notes yet' })).toBeInTheDocument();
     expect(
       screen.getByText('It shows your own Markdown notes, for example an Obsidian vault. You need to import them first.')
     ).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe('Notes area ships no bundled notes', () => {
     const newNoteBtn = Array.from(empty.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'New note');
     expect(newNoteBtn).toBeDefined();
     fireEvent.click(newNoteBtn!);
-    expect(screen.getByText('New field manual note')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /New note/ })).toBeInTheDocument();
   });
 
   it('shows imported notes instead of the empty state once the user imports a vault', () => {

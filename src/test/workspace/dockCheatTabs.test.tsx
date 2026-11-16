@@ -148,14 +148,14 @@ describe('open-tabs badge', () => {
       </MemoryRouter>
     );
 
-  it('counts only tabs that resolve and says "N open"', () => {
+  it('no longer shows an open-tab count on the sidebar Notes item', () => {
     act(() => {
       useNotesWorkspaceStore.setState({
         openTabIds: ['01-recon-port-scanning', cheatTabId(NMAP.id), 'ghost-note', 'cheat:gone'],
       });
     });
     renderSidebar();
-    expect(screen.getByText('2 open')).toBeInTheDocument();
+    expect(screen.queryByText('2 open')).not.toBeInTheDocument();
   });
 
   it('is hidden when no tab resolves', () => {

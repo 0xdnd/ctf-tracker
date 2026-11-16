@@ -140,7 +140,7 @@ describe('PNPT in the track picker', () => {
     );
     const card = screen.getByTestId('exam-track-select-pnpt');
     expect(card).toHaveTextContent('Pass: all objectives');
-    expect(card).toHaveTextContent('Duration: 120h + 48h report');
+    expect(card).toHaveTextContent('5 days + 48h report');
     fireEvent.click(card);
     const state = useExamStore.getState();
     expect(state.track).toBe('PNPT');

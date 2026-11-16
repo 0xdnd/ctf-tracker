@@ -14,7 +14,7 @@ export const ReverseShellsPage: React.FC = () => (
     className="mx-auto w-full max-w-6xl space-y-6 pb-12 text-sm"
   >
     <PageHeader
-      title="Reverse shells"
+      title="Reverse Shells"
       icon={<Terminal />}
       description="A reverse shell makes a target machine connect back to yours, so you can control it. Pick a payload, copy it, and start your listener first."
     />

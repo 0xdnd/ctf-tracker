@@ -59,6 +59,8 @@ export interface CptsNoteEntry {
   outgoingWikilinks?: string[];
   backlinks?: string[];
   rawMarkdown?: string;
+  /** Whether difficulty and stage came from the note's frontmatter (false: importer default). */
+  metaFromFrontmatter?: { difficulty: boolean; stage: boolean };
 }
 
 /**

@@ -91,7 +91,7 @@ describe('per-machine views never borrow the engaged machine IP', () => {
         </Routes>
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByTitle('Toggle the quick reference from your notes'));
+    fireEvent.click(screen.getByRole('button', { name: /Your notes/ }));
     const region = screen.getByRole('region', { name: 'Matching notes' });
     expect(region.textContent).toContain('probe');
     expect(region.textContent).not.toContain(ENGAGED_IP);

@@ -434,8 +434,8 @@ describe('finish moment', () => {
 
     const finish = await screen.findByTestId('guide-finish');
     expect(finish).toHaveAttribute('role', 'dialog');
-    expect(screen.getByRole('heading', { name: 'Methodology done' })).toBeInTheDocument();
-    expect(finish).toHaveTextContent('Next up: Reverse shells.');
+    expect(screen.getByRole('heading', { name: 'Attack Methodology done' })).toBeInTheDocument();
+    expect(finish).toHaveTextContent('Next up: Reverse Shells.');
     await waitFor(() => expect(screen.getByRole('img', { name: '1 of 22 guides done' })).toBeInTheDocument());
     expect(useOnboardingStore.getState().hintShowing).toBe(true);
 

@@ -208,7 +208,7 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
       icon: 'notes',
       anchor: 'snippets-library',
       title: 'Switch libraries',
-      body: 'Snippets holds ready-made commands. Field manual holds your own notes once you import them.',
+      body: 'Snippets holds ready-made commands. Notes holds your own notes once you import them.',
     },
   ],
   'reverse-shells': [
@@ -279,7 +279,7 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
       anchor: 'writeup-export',
       altAnchor: 'writeup-target',
       title: 'Export it',
-      body: 'Press Export HTML to save a page you can share or print.',
+      body: 'Press Export, then choose HTML report to save a page you can share or print.',
     },
   ],
   exam: [
@@ -595,7 +595,8 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
     {
       id: 'graph-views',
       icon: 'list',
-      anchor: 'tracker-views',
+      anchor: 'layout-switcher',
+      phoneAnchor: 'tracker-views',
       title: 'Switch views',
       body: 'Use these buttons to go back to the board, table or cards, or to come back to the graph.',
       phoneBody: 'Use these buttons to go back to the board, table or cards.',

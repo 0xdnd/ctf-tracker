@@ -143,13 +143,13 @@ export const UnifiedHeader: React.FC = () => {
 
   const routeName = useMemo(() => {
     const p = location.pathname;
-    if (p.startsWith('/tracker')) return 'Labs / Targets';
+    if (p.startsWith('/tracker')) return 'Tracker';
     if (p.startsWith('/vault') || p.startsWith('/evidence') || p.startsWith('/loot')) return 'Evidence Vault';
-    if (p.startsWith('/cheatsheets') || p.startsWith('/notes') || p.startsWith('/cpts') || p.startsWith('/field-manual')) return p.startsWith('/cheatsheets') ? 'Snippets' : 'Field Manual';
+    if (p.startsWith('/cheatsheets') || p.startsWith('/notes') || p.startsWith('/cpts') || p.startsWith('/field-manual')) return p.startsWith('/cheatsheets') ? 'Snippets' : 'Notes';
     if (p.startsWith('/reverse-shell')) return 'Reverse Shells';
     if (p.startsWith('/writeup')) return 'Writeup Studio';
     if (p.startsWith('/analytics')) return 'Analytics';
-    if (p.startsWith('/methodology')) return 'Methodology';
+    if (p.startsWith('/methodology')) return 'Attack Methodology';
     if (p.startsWith('/exam')) return 'Exam Simulator';
     if (p.startsWith('/target')) return activeMachine ? activeMachine.name : 'Target Cockpit';
     if (p.startsWith('/theme')) return 'Theme Matrix';
@@ -655,18 +655,18 @@ export const UnifiedHeader: React.FC = () => {
             if (soundEnabled) playCyberSound('click');
           }}
           className={`hidden lg:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
-          title="Toggle Notes Workspace Sidecar (Alt+N)"
-          aria-label="Toggle Field Notes Sidecar"
+          title="Toggle notes panel (Alt+N)"
+          aria-label="Toggle notes panel"
         >
           <div className="relative flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
-            {openNotesCount > 0 && (
-              <span title={`${openNotesCount} open`} aria-label={`${openNotesCount} open`} data-testid="notes-open-badge" className="absolute -top-1.5 -right-2 min-w-[12px] h-3 text-center text-[9px] leading-[12px] px-0.5 rounded-full bg-accent text-on-accent font-medium tabular-nums">
-                {openNotesCount}
-              </span>
-            )}
           </div>
           <span className="hidden lg:inline">Notes</span>
+          {openNotesCount > 0 && (
+            <span title={`${openNotesCount} open`} aria-label={`${openNotesCount} open`} data-testid="notes-open-badge" className="hidden min-w-[16px] rounded-full bg-accent px-1 text-center text-[10px] font-medium leading-4 tabular-nums text-on-accent lg:inline-block">
+              {openNotesCount}
+            </span>
+          )}
         </button>
 
         {/* Command palette trigger */}

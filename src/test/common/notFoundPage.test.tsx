@@ -64,9 +64,9 @@ describe('NotFoundPage (In-App 404 Component)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Machine Tracker')).toBeInTheDocument();
+    expect(screen.getByText('Tracker')).toBeInTheDocument();
     expect(screen.getByText('Evidence Vault')).toBeInTheDocument();
-    expect(screen.getByText('Methodology')).toBeInTheDocument();
+    expect(screen.getByText('Attack Methodology')).toBeInTheDocument();
     expect(screen.getByText('Cheatsheets')).toBeInTheDocument();
     expect(screen.getByText('Notes')).toBeInTheDocument();
     expect(screen.getByText('Writeup Studio')).toBeInTheDocument();

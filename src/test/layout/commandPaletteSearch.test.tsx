@@ -102,9 +102,9 @@ describe('command palette full-text search', () => {
     mountPalette();
     type(SECRET);
     expect(document.body.textContent).not.toContain(SECRET);
-    expect(screen.queryByRole('group', { name: 'Vault' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Evidence Vault' })).toBeNull();
     type('svc_backup');
-    expect(screen.getByRole('group', { name: 'Vault' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Evidence Vault' })).toBeTruthy();
     expect(document.body.textContent).not.toContain(SECRET);
   });
 });

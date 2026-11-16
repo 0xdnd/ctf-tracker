@@ -82,6 +82,11 @@
 .footer-brand .brand{margin:0 0 var(--s3);font-size:1.0625rem}
 .footer-brand .brand img{width:28px;height:28px}
 .footer-brand p{max-width:44ch;margin:0;font-size:13px;line-height:1.6}
+.footer-brand .coffee-line{margin-top:var(--s3)}
+.coffee-link{display:inline-flex;align-items:center;gap:6px;padding:4px 0;color:var(--muted);text-decoration:none}
+.coffee-link .ico{width:14px;height:14px;flex:none}
+@media(hover:hover) and (pointer:fine){.coffee-link:hover{color:var(--text);text-decoration:underline}}
+.coffee-note{margin:var(--s6) 0 0;color:var(--muted)}
 .footer-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s6) var(--s5)}
 .footer-nav h2{margin:0 0 var(--s3);font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 .footer-nav ul{margin:0;padding:0;list-style:none}

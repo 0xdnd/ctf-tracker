@@ -121,7 +121,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             <BookOpen className="w-5 h-5 text-muted" />
             <div>
               <h3 id="new-cpts-note-title" className="text-base font-semibold text-primary flex items-center gap-2">
-                <span>New field manual note</span>
+                <span>New note</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary">
                   OBSIDIAN COMPATIBLE
                 </span>

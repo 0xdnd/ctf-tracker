@@ -13,7 +13,8 @@ import {
   Share2,
   X,
   Upload,
-  ClipboardPaste
+  ClipboardPaste,
+  AlertCircle
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus, type SortOption } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
@@ -33,10 +34,14 @@ const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m
 const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
 const MultiRecordImportModal = React.lazy(() => import('./MultiRecordImportModal').then((m) => ({ default: m.MultiRecordImportModal })));
 const ImportPanels = React.lazy(() => import('../import/ImportPanels').then((m) => ({ default: m.ImportPanels })));
-const FilterDrawer = React.lazy(() => import('../layout/FilterDrawer').then((m) => ({ default: m.FilterDrawer })));
+const loadFilterDrawer = () => import('../layout/FilterDrawer');
+const FilterDrawer = React.lazy(() => loadFilterDrawer().then((m) => ({ default: m.FilterDrawer })));
+// Filters button: pressed while the drawer is open, and the icon spins until its chunk has arrived.
+const FILTER_BTN_PRESSED = 'aria-expanded:bg-surface-hover aria-expanded:text-primary';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
 import { CanvasSkeleton, ViewSkeleton } from '../common/Skeleton';
+import { EmptyState } from '../common/EmptyState';
 import { PRACTICE_TRACKS, TRACK_BY_ID } from '../../data/tracksData';
 import { getCategoryDef } from '../../utils/categoryUtils';
 
@@ -72,6 +77,8 @@ const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
 
 // Rough height of the import card per breakpoint (measured), used only while it is not on screen yet.
 const IMPORT_SLOT = 'mb-4 min-h-[557px] sm:min-h-[290px] xl:min-h-[326px]';
+// A first visit starts on the one-row banner; the tall slot is for a card that opens expanded.
+const IMPORT_SLOT_BANNER = 'mb-4 min-h-[82px] sm:min-h-[58px]';
 
 export const IMPORT_PANEL_HINT_ID = 'tracker-import-panel';
 
@@ -91,6 +98,7 @@ export const TrackerView: React.FC = () => {
     setFilterDrawerOpen,
     addCustomMachine,
     updateMachine,
+    focusMode,
   } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
@@ -107,6 +115,7 @@ export const TrackerView: React.FC = () => {
       setFilterDrawerOpen: s.setFilterDrawerOpen,
       addCustomMachine: s.addCustomMachine,
       updateMachine: s.updateMachine,
+      focusMode: s.focusMode,
     }))
   );
 
@@ -135,6 +144,7 @@ export const TrackerView: React.FC = () => {
   }, [importClosing]);
   const wantsImportPanel = importClosing || (!importDismissed && (importRequested || (!hasSolved && !importSkipped)));
   const showImportPanel = storageReady && wantsImportPanel;
+  const slotClass = importRequested || importNonce > 0 ? IMPORT_SLOT : IMPORT_SLOT_BANNER;
   // Storage can stay unavailable (private browsing): give the placeholder a bounded wait, then drop it.
   const [slotExpired, setSlotExpired] = useState(false);
   const holdingSlot = wantsImportPanel && !storageReady;
@@ -148,6 +158,15 @@ export const TrackerView: React.FC = () => {
   const filterDrawerOpen = useCtfStore((s) => s.filterDrawerOpen);
   const [filterDrawerSeen, setFilterDrawerSeen] = useState(filterDrawerOpen);
   if (filterDrawerOpen && !filterDrawerSeen) setFilterDrawerSeen(true);
+  const [filterDrawerLoading, setFilterDrawerLoading] = useState(false);
+  const openFilters = () => {
+    setFilterDrawerOpen(true);
+    if (!filterDrawerSeen) {
+      setFilterDrawerLoading(true);
+      void loadFilterDrawer().finally(() => setFilterDrawerLoading(false));
+    }
+    if (soundEnabled) playCyberSound('click');
+  };
 
   // The catalog swap (starter rows -> the full catalog of 1000+ machines) re-derives every list below. Rendering from a deferred
   // copy lets React keep the UI responsive and interrupt that re-render. (startTransition around a zustand
@@ -166,8 +185,15 @@ export const TrackerView: React.FC = () => {
   // Load the master machine catalog once the first paint has settled, so its chunks never race the largest
   // contentful paint. Until then the page shows the starter rows (see catalogPending below). Opening the
   // scan importer asks for it at once.
-  // A load that fails (offline, a stale deploy) drops the skeleton so the normal empty state can show.
+  // A load that fails (offline, a stale deploy) drops the skeleton and shows an error state with a Retry button.
   const [catalogFailed, setCatalogFailed] = useState(false);
+  const retryCatalog = useCallback(() => {
+    setCatalogFailed(false);
+    void loadCatalog().then(() => {
+      const s = useCtfStore.getState();
+      if (!s.isCatalogLoaded && !s.isCatalogLoading) setCatalogFailed(true);
+    });
+  }, [loadCatalog]);
   React.useEffect(() => {
     let live = true;
     void afterFirstPaint()
@@ -572,14 +598,17 @@ export const TrackerView: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => { setFilterDrawerOpen(true); if (soundEnabled) playCyberSound('click'); }}
-              className={`${TOOLBAR_BTN} h-11 px-3.5 ${
+              onClick={openFilters}
+              aria-haspopup="dialog"
+              aria-expanded={filterDrawerOpen}
+              aria-busy={filterDrawerLoading}
+              className={`${TOOLBAR_BTN} ${FILTER_BTN_PRESSED} h-11 px-3.5 ${
                 activeFilterCount > 0 ? 'border-accent text-accent' : ''
               }`}
               title="Open filters"
               aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className={`w-4 h-4 ${filterDrawerLoading ? 'animate-pulse' : ''}`} />
               <span>Filters</span>
               {activeFilterCount > 0 && (
                 <span className="font-mono text-xs tabular-nums">{activeFilterCount}</span>
@@ -711,14 +740,17 @@ export const TrackerView: React.FC = () => {
             {/* Filters (OS, difficulty, platform, certs and more live in the drawer) */}
             <button
               type="button"
-              onClick={() => { setFilterDrawerOpen(true); if (soundEnabled) playCyberSound('click'); }}
-              className={`${TOOLBAR_BTN} h-8 px-2.5 ${
+              onClick={openFilters}
+              aria-haspopup="dialog"
+              aria-expanded={filterDrawerOpen}
+              aria-busy={filterDrawerLoading}
+              className={`${TOOLBAR_BTN} ${FILTER_BTN_PRESSED} h-8 px-2.5 ${
                 activeFilterCount > 0 ? 'border-accent text-accent' : ''
               }`}
               title="Open filters"
               aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <SlidersHorizontal className={`w-3.5 h-3.5 ${filterDrawerLoading ? 'animate-pulse' : ''}`} />
               <span>Filters</span>
               {activeFilterCount > 0 && (
                 <span className="font-mono text-xs tabular-nums">{activeFilterCount}</span>
@@ -760,53 +792,25 @@ export const TrackerView: React.FC = () => {
               }
             />
 
-            {/* View switcher */}
-            <div role="group" aria-label="View mode" data-tour="tracker-views" className={SEGMENT_WRAP}>
-              <button
-                type="button"
-                data-testid="view-kanban"
-                aria-label="Kanban View"
-                aria-pressed={viewMode === 'kanban'}
-                onClick={() => setViewMode('kanban')}
-                className={`${VIEW_BTN} w-7 h-7 ${viewMode === 'kanban' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Kanban View"
-              >
-                <Kanban className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-table"
-                aria-label="Table View"
-                aria-pressed={viewMode === 'table'}
-                onClick={() => setViewMode('table')}
-                className={`${VIEW_BTN} w-7 h-7 ${viewMode === 'table' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Table View"
-              >
-                <Table className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-grid"
-                aria-label="Grid View"
-                aria-pressed={viewMode === 'grid'}
-                onClick={() => setViewMode('grid')}
-                className={`${VIEW_BTN} w-7 h-7 ${viewMode === 'grid' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                data-testid="view-graph"
-                aria-label="Attack Graph View"
-                aria-pressed={viewMode === 'graph'}
-                onClick={() => setViewMode('graph')}
-                className={`${VIEW_BTN} w-7 h-7 ${viewMode === 'graph' ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
-                title="Attack Graph View"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {/* The sidebar owns the desktop view switch; focus mode hides the sidebar, so the toolbar carries one then. */}
+            {focusMode && (
+              <div role="group" aria-label="View mode" className={SEGMENT_WRAP}>
+                {[...MOBILE_VIEWS, { mode: 'graph', label: 'Attack Graph', Icon: Share2 }].map(({ mode, label, Icon }) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    data-testid={`view-${mode}`}
+                    aria-label={`${label} View`}
+                    aria-pressed={viewMode === mode}
+                    onClick={() => setViewMode(mode as typeof viewMode)}
+                    className={`${VIEW_BTN} w-7 h-7 ${viewMode === mode ? VIEW_BTN_ON : VIEW_BTN_OFF}`}
+                    title={`${label} View`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -869,11 +873,11 @@ export const TrackerView: React.FC = () => {
       )}
 
       {/* The card's space is held from the first render (storage not ready, chunk still loading), so the board below stays put. */}
-      {wantsImportPanel && !showImportPanel && !slotExpired && <div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}
+      {wantsImportPanel && !showImportPanel && !slotExpired && <div aria-hidden="true" data-testid="import-slot" className={slotClass} />}
       {showImportPanel && (
         <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${importClosing ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}>
           <div className={`min-h-0 ${importClosing ? 'overflow-hidden' : ''}`}>
-            <React.Suspense fallback={<div aria-hidden="true" data-testid="import-slot" className={IMPORT_SLOT} />}>
+            <React.Suspense fallback={<div aria-hidden="true" data-testid="import-slot" className={slotClass} />}>
               <ImportPanels
                 key={importNonce}
                 csvRequested={csvRequested}
@@ -903,6 +907,15 @@ export const TrackerView: React.FC = () => {
         // The full catalog is still loading: the starter rows alone say nothing about what the filters match.
         <div data-testid="catalog-pending">
           <ViewSkeleton label="Loading machines…" />
+        </div>
+      ) : filteredMachines.length === 0 && catalogFailed && !isCatalogLoaded ? (
+        <div data-testid="catalog-error" role="alert">
+          <EmptyState
+            icon={AlertCircle}
+            title="Could not load the machine list."
+            description="Check your connection, then try again."
+            action={{ label: 'Retry', onClick: retryCatalog, icon: RotateCcw }}
+          />
         </div>
       ) : filteredMachines.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-12 px-4 text-center rounded-2xl border border-dashed border-strong">

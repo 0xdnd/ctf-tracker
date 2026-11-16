@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Flame,
@@ -19,13 +19,11 @@ import { classifyMachine } from '../../utils/categoryUtils';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { CyberButton } from '../common/CyberButton';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
-const PasteImportPanel = lazy(() => import('../import/PasteImportPanel').then((m) => ({ default: m.PasteImportPanel })));
 import { ReadinessSection } from './ReadinessSection';
 import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore';
 import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
 import { PageHeader } from '../common/PageHeader';
 import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
-import { Skeleton, SkeletonRegion } from '../common/Skeleton';
 import { buildHeatmapWeeks, WEEKDAY_LONG, WEEKDAY_SHORT, type HeatLevel } from '../../utils/analyticsHeatmap';
 
 // Theme-token paint for SVG attributes (Tailwind has no stroke/fill utilities for the text/border token sets).
@@ -418,15 +416,15 @@ export const AnalyticsView: React.FC = () => {
   };
 
   const kpis = [
-    { label: 'Total pwned', val: `${rootedMachines.length} / ${machines.length}`, icon: Award, sub: `${machines.length > 0 ? Math.round((rootedMachines.length / machines.length) * 100) : 0}% catalog completed` },
+    { label: 'Total pwned', val: rootedMachines.length.toLocaleString(), icon: Award, sub: `of ${machines.length.toLocaleString()} solved` },
     { label: 'Engagement time', val: formatDurationHuman(totalSecondsTracked), icon: Clock, sub: `${formatSeconds(totalSecondsTracked)} exact timer` },
     { label: 'Avg time to user', val: avgTimeToUser > 0 ? formatDurationHuman(avgTimeToUser) : 'N/A', icon: Target, sub: avgTimeToUser > 0 ? 'Initial foothold benchmark' : 'Appears after a timed user flag' },
     { label: 'Avg time to root', val: avgTimeToRoot > 0 ? formatDurationHuman(avgTimeToRoot) : 'N/A', icon: Zap, sub: avgTimeToRoot > 0 ? 'Privesc benchmark' : 'Appears after a timed root' },
     {
       label: 'Streak',
-      val: `${streak.current} ${streak.current === 1 ? 'day' : 'days'}`,
+      val: streak.current === 0 ? 'None yet' : `${streak.current} ${streak.current === 1 ? 'day' : 'days'}`,
       icon: Flame,
-      sub: `Longest ${streak.longest} ${streak.longest === 1 ? 'day' : 'days'}`,
+      sub: streak.current === 0 && streak.longest === 0 ? 'Log a session today to start one' : `Longest ${streak.longest} ${streak.longest === 1 ? 'day' : 'days'}`,
       active: streak.activeToday,
       wide: true,
     },
@@ -436,25 +434,26 @@ export const AnalyticsView: React.FC = () => {
     <div className="space-y-6 w-full pb-12">
 
       <PageHeader
-        title="Analytics and skill radar"
+        title="Analytics"
         description="Time benchmarks, difficulty progress and your attack-vector strengths."
         icon={<AnalyticsMonitorIcon aria-hidden="true" />}
       >
         <div data-tour="analytics-totals" className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="px-3 py-1 rounded-lg bg-surface-sunken border border-subtle text-secondary font-medium">
-            <span className="tabular-nums font-mono text-primary">{rootedMachines.length}</span> targets rooted
-          </span>
-          <span className="px-3 py-1 rounded-lg bg-surface-sunken border border-subtle text-secondary font-medium">
-            <span className="tabular-nums font-mono text-primary">{footholdsCount}</span> footholds
-          </span>
-          <CyberButton
-            size="sm"
-            variant="secondary"
-            iconLeft={<Award className="w-3.5 h-3.5" aria-hidden="true" />}
-            onClick={() => setFlexCardModalOpen(true, 'passed')}
-          >
-            Share that I passed
-          </CyberButton>
+          {hasData && footholdsCount > 0 && (
+            <span className="px-3 py-1 rounded-lg bg-surface-sunken border border-subtle text-secondary font-medium">
+              <span className="tabular-nums font-mono text-primary">{footholdsCount}</span> footholds
+            </span>
+          )}
+          {hasRooted && (
+            <CyberButton
+              size="sm"
+              variant="secondary"
+              iconLeft={<Award className="w-3.5 h-3.5" aria-hidden="true" />}
+              onClick={() => setFlexCardModalOpen(true, 'passed')}
+            >
+              Share my progress
+            </CyberButton>
+          )}
         </div>
       </PageHeader>
 
@@ -464,9 +463,6 @@ export const AnalyticsView: React.FC = () => {
             onOpenTracker={() => navigate('/tracker')}
             onLoadDemo={() => { void restoreDanielSolves(); }}
           />
-          <Suspense fallback={<SkeletonRegion label="Loading import panel…"><Skeleton height={140} className="w-full" /></SkeletonRegion>}>
-            <PasteImportPanel onApplied={() => navigate('/tracker')} />
-          </Suspense>
         </div>
       ) : (
       <>

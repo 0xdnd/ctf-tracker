@@ -39,7 +39,7 @@ describe('open in new tab buttons', () => {
     fireEvent.click(btn);
     expect(openInNewTab).toHaveBeenCalledWith('/tracker');
     expect(onBack).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to ZeroBox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to app' }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 });
@@ -47,21 +47,22 @@ describe('open in new tab buttons', () => {
 describe('sidebar Notes link', () => {
   it('is a real link to the field manual', () => {
     renderSidebar();
-    expect(screen.getByRole('link', { name: 'Notes Workspace' })).toHaveAttribute('href', '/field-manual');
+    expect(screen.getByRole('link', { name: 'Notes' })).toHaveAttribute('href', '/field-manual');
   });
 
-  it('plain click still toggles the sidecar (default prevented)', () => {
+  it('plain click navigates inside the app (default prevented), not the side panel', () => {
     renderSidebar();
-    const notAborted = fireEvent.click(screen.getByRole('link', { name: 'Notes Workspace' }));
+    const notAborted = fireEvent.click(screen.getByRole('link', { name: 'Notes' }));
     expect(notAborted).toBe(false);
-    expect(useNotesWorkspaceStore.getState().isOpen).toBe(true);
+    expect(window.location.pathname).toBe('/field-manual');
+    expect(useNotesWorkspaceStore.getState().isOpen).toBe(false);
   });
 
   it.each([{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }])(
     'modified click %o is left to the browser',
     (mods) => {
       renderSidebar();
-      const notAborted = fireEvent.click(screen.getByRole('link', { name: 'Notes Workspace' }), mods);
+      const notAborted = fireEvent.click(screen.getByRole('link', { name: 'Notes' }), mods);
       expect(notAborted).toBe(true);
       expect(useNotesWorkspaceStore.getState().isOpen).toBe(false);
     },

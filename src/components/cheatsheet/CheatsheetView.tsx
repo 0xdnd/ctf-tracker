@@ -32,7 +32,6 @@ import {
 } from '../../data/cheatsheetsData';
 import { interpolateCommand, playCyberSound } from '../../utils/helpers';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
-import { useSnippetTotals } from '../../hooks/useSnippetTotals';
 import {
   CptsNoteEntry,
   CptsTreeNode,
@@ -54,7 +53,7 @@ import { NotesRibbon, type NotesRibbonPanel } from '../notes/NotesRibbon';
 import { NotesLeftPanel } from '../notes/NotesLeftPanel';
 import { NotesRightPanel } from '../notes/NotesRightPanel';
 import { NotesStatusBar } from '../notes/NotesStatusBar';
-import { countWords, getNoteOutline } from '../../utils/noteMeta';
+import { countWords, displayNoteMeta, getNoteOutline } from '../../utils/noteMeta';
 import { isFullscreenNotesPath } from '../../utils/fullscreenRoutes';
 import { getLastAppRoute } from '../../utils/lastAppRoute';
 import { useNoteIndex } from '../../hooks/useNoteIndex';
@@ -71,6 +70,8 @@ import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens
 import { confirmAction } from '../../store/useConfirmStore';
 import { useToastStore } from '../../store/useToastStore';
 import { hasUnsavedNoteEdits } from '../../utils/unsavedNoteEdits';
+
+const SNIPPET_PAGE_SIZE = 30;
 
 const SNIPPET_CATEGORIES: CyberSelectOption[] = [
   { value: 'network', label: '01. Network Discovery & Port Scanning' },
@@ -372,7 +373,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     const held = new Set([...customNotes, ...userNotes].map((n) => n.id));
     return deletedNoteIds.filter((id) => held.has(id)).length;
   }, [deletedNoteIds, customNotes, userNotes]);
-  const totals = useSnippetTotals();
 
   const activeObsidianNote = useMemo(() => {
     if (!activeObsidianNoteId) return null;
@@ -577,6 +577,10 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   };
 
   // Filter cheatsheet commands
+  const [visibleCommandCount, setVisibleCommandCount] = useState(SNIPPET_PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCommandCount(SNIPPET_PAGE_SIZE);
+  }, [deferredSearchQuery, selectedCategory]);
   const filteredCommands = useMemo(() => {
     return cheatsheets.filter((cmd) => {
       if (selectedCategory === 'starred') {
@@ -1085,25 +1089,11 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   };
 
-  const [confirmWipeVault, setConfirmWipeVault] = useState(false);
-
-  useEffect(() => {
-    if (confirmWipeVault) {
-      const timer = setTimeout(() => setConfirmWipeVault(false), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [confirmWipeVault]);
-
+  // The left panel asks for confirmation before calling this.
   const handleWipeVaultConfirm = () => {
-    if (!confirmWipeVault) {
-      setConfirmWipeVault(true);
-      return;
-    }
-
     // Same as the per-note delete, for every note the button counts: tombstoned, not a whole-vault wipe.
     deleteNotes(allActiveNotes.map((n) => n.id));
     if (soundEnabled) playCyberSound('root');
-    setConfirmWipeVault(false);
     // Full-screen: stay in the shell and show its empty state.
     if (!isFullscreen) setViewMode('tactical');
   };
@@ -1186,7 +1176,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       onSelectTag={handleSelectTag}
       deletedCount={restorableCount}
       onRestoreDeleted={handleRestoreDeletedNotes}
-      wipeArmed={confirmWipeVault}
       wipeCount={allActiveNotes.length}
       onWipeVault={handleWipeVaultConfirm}
       onShowCards={() => {
@@ -1228,9 +1217,9 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   <BookOpen className="w-8 h-8" />
                 </div>
                 <div className="space-y-1.5 max-w-md">
-                  <h3 className="text-base font-semibold text-primary">No Note Open</h3>
+                  <h3 className="text-base font-semibold text-primary">Pick a note</h3>
                   <p className="text-xs text-muted leading-relaxed">
-                    Select a playbook from the Obsidian Vault Explorer on the left, or open a playbook to get started.
+                    Choose a note on the left, or create a new one.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -1245,7 +1234,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       className="px-3.5 py-2 rounded-xl bg-accent text-on-accent text-xs font-semibold hover:bg-accent-hover transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
-                      <span>Open First Playbook ({allActiveNotes[0].titleEn || allActiveNotes[0].title})</span>
+                      <span>Open first note ({allActiveNotes[0].titleEn || allActiveNotes[0].title})</span>
                     </button>
                   )}
                   <button
@@ -1606,9 +1595,11 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                 <NoteMatchSnippets markdown={note.rawMarkdown} query={deferredSearchQuery} />
                               </td>
                               <td className="py-2 px-3 text-center">
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted">
-                                  {note.stage || 'General'}
-                                </span>
+                                {displayNoteMeta(note, 'stage') && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted">
+                                    {note.stage}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-2 px-3 text-center font-mono text-[11px] text-accent">
                                 {note.commands?.length || 0}
@@ -1782,7 +1773,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               <div className="w-full max-w-xl rounded-md border border-subtle bg-surface-card">
                 <EmptyState
                   icon={BookOpen}
-                  title="Your field manual is empty"
+                  title="No notes yet"
                   description="It shows your own Markdown notes, for example an Obsidian vault. You need to import them first."
                   action={{
                     label: 'Import your notes',
@@ -1819,7 +1810,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       ) : (
         <>
           <PageHeader
-            title="Snippets & payloads"
+            title="Snippets"
             icon={<Terminal />}
             description="Ready-made commands for common hacking jobs, with your own details filled in."
             primaryAction={
@@ -1870,11 +1861,11 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       setViewMode('cpts-manual');
                       navigate('/field-manual');
                     }}
-                    title="Switch to Obsidian Field Manual"
+                    title="Switch to your notes"
                     className={`${switchBase} text-muted hover:text-primary`}
                   >
                     <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span>Field manual</span>
+                    <span>Notes</span>
                   </button>
                 </div>
               </div>
@@ -1889,12 +1880,6 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
             {/* Left column: categories */}
             <div className="space-y-1">
-              {totals.notes > 0 && (
-                <p data-testid="snippets-scope-note" className="px-2 pb-1 text-xs text-muted">
-                  {totals.snippets} snippets here. The sidebar badge also counts your {totals.notes}{' '}
-                  {totals.notes === 1 ? 'note' : 'notes'} ({totals.total} in total).
-                </p>
-              )}
               <div className="items-center justify-between px-2 py-1 text-xs font-medium text-muted select-none hidden lg:flex">
                 <span>Categories</span>
                 <span className="tabular-nums">{cheatsheets.length}</span>
@@ -1939,7 +1924,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     type="text"
                     id="cheatsheet-search-input"
                     name="cheatsheet-search"
-                    aria-label="Search cheatsheets and field manual notes"
+                    aria-label="Search cheatsheets and notes"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -1965,7 +1950,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     No command snippets matching this query.
                   </div>
                 ) : (
-                  filteredCommands.map((cmd, idx) => {
+                  filteredCommands.slice(0, visibleCommandCount).map((cmd, idx) => {
                     const interpolated = interpolateCommand(cmd.commandTemplate, effectiveVars);
                     const isCopied = copiedId === cmd.id;
 
@@ -2003,7 +1988,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             <motion.button aria-label="Star snippet"
                               whileTap={{ scale: 0.9 }}
                               onClick={() => toggleStarCommand(cmd.id)}
-                              className="p-1 rounded text-muted hover:text-callout-warn-fg transition-colors"
+                              className="p-1 max-md:p-2 rounded text-muted hover:text-callout-warn-fg transition-colors"
                               title="Bookmark / Star Snippet"
                             >
                               <Star
@@ -2021,7 +2006,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                                     deleteCustomCommand(cmd.id);
                                   }
                                 }}
-                                className="p-1 rounded text-muted hover:text-callout-danger-fg transition-colors"
+                                className="p-1 max-md:p-2 rounded text-muted hover:text-callout-danger-fg transition-colors"
                                 title="Delete Snippet"
                                 aria-label="Delete snippet"
                               >
@@ -2032,7 +2017,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                             <button
                               type="button"
                               onClick={() => useNotesWorkspaceStore.getState().openCheat(cmd.id)}
-                              className="p-1 rounded text-muted hover:text-primary transition-colors"
+                              className="p-1 max-md:p-2 rounded text-muted hover:text-primary transition-colors"
                               title="Open in Notes"
                               aria-label={`Open ${cmd.title} in Notes`}
                             >
@@ -2089,6 +2074,15 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                       </motion.div>
                     );
                   })
+                )}
+                {filteredCommands.length > visibleCommandCount && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCommandCount((n) => n + SNIPPET_PAGE_SIZE)}
+                    className="inline-flex min-h-8 items-center rounded-md border border-subtle bg-surface-card px-3 text-xs font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                  >
+                    Show more ({filteredCommands.length - visibleCommandCount} left)
+                  </button>
                 )}
               </div>
             </div>

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { NotesLeftPanel } from '../../components/notes/NotesLeftPanel';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { CheatsheetView } from '../../components/cheatsheet/CheatsheetView';
 import { useCtfStore } from '../../store/useCtfStore';
 import { resetNoteIndexCacheForTests } from '../../hooks/useNoteIndex';
@@ -45,6 +46,7 @@ function setup() {
   return render(
     <MemoryRouter initialEntries={['/field-manual']}>
       <CheatsheetView defaultMode="cpts-manual" />
+      <ConfirmDialog />
     </MemoryRouter>,
   );
 }
@@ -86,7 +88,7 @@ describe('field manual left panel', () => {
   it('ribbon Search focuses the input and lists body matches with a snippet', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-    const box = screen.getByLabelText('Search field manual notes');
+    const box = screen.getByLabelText('Search notes');
     expect(box).toHaveFocus();
     fireEvent.change(box, { target: { value: 'zebrafish' } });
     const results = screen.getByTestId('notes-search-results');
@@ -99,7 +101,7 @@ describe('field manual left panel', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     expect(screen.getByText('Type to search note text.')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Search field manual notes'), { target: { value: 'qqqqq' } });
+    fireEvent.change(screen.getByLabelText('Search notes'), { target: { value: 'qqqqq' } });
     expect(screen.getByText('No results.')).toBeInTheDocument();
   });
 
@@ -107,7 +109,7 @@ describe('field manual left panel', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: 'Expand all folders' }));
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-    fireEvent.change(screen.getByLabelText('Search field manual notes'), { target: { value: 'zebrafish' } });
+    fireEvent.change(screen.getByLabelText('Search notes'), { target: { value: 'zebrafish' } });
     fireEvent.click(screen.getByRole('button', { name: 'Files' }));
     expect(screen.getByTestId('notes-left-panel')).toHaveAttribute('data-state', 'open');
     expect(inTree('Note n1')).toBe(true);
@@ -147,12 +149,14 @@ describe('field manual left panel', () => {
     expect(panel.hasAttribute('inert')).toBe(true);
   });
 
-  it('the footer keeps the wipe button with its two-click confirm text', () => {
+  it('bulk delete lives in the more menu and asks for confirmation', async () => {
     setup();
-    const wipe = screen.getByTestId('header-delete-notes-btn');
-    expect(wipe).toHaveTextContent('Delete (2)');
-    fireEvent.click(wipe);
-    expect(screen.getByTestId('header-delete-notes-btn')).toHaveTextContent('Confirm Delete (2)?');
+    expect(screen.queryByTestId('header-delete-notes-btn')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More file actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete all imported notes (2)' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog).toHaveTextContent('Delete all 2 notes?');
+    expect(dialog).toHaveTextContent('cannot be undone');
   });
 });
 
@@ -165,7 +169,7 @@ describe('left panel search while the deferred query lags', () => {
       onExpandAll: noop, onCollapseAll: noop, onNewNote: noop, onImport: noop,
       activeTag: null, onClearTag: noop, query: 'qqqqq', onQueryChange: noop, results: [],
       onOpenResult: noop, tags: new Map(), onSelectTag: noop, deletedCount: 0, onRestoreDeleted: noop,
-      wipeArmed: false, wipeCount: 0, onWipeVault: noop, onShowCards: noop, onShowTable: noop,
+      wipeCount: 0, onWipeVault: noop, onShowCards: noop, onShowTable: noop,
       onBackToSnippets: noop,
     } as unknown as React.ComponentProps<typeof NotesLeftPanel>;
     const { rerender } = render(<NotesLeftPanel {...props} resultsPending />);

@@ -107,7 +107,7 @@ describe('Back from a legacy share link', () => {
     useCtfStore.setState({ isHydrated: true, customNotes: [mk('A', 'body')], userNotes: [], deletedNoteIds: [] });
     render(<App />);
     expect(await screen.findByTestId('field-manual-shell')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to ZeroBox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to app' }));
     await waitFor(() => expect(window.location.pathname).toBe('/tracker'));
     await waitFor(() => expect(screen.queryByTestId('field-manual-shell')).toBeNull());
   });

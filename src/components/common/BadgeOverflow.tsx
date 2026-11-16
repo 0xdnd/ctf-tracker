@@ -114,7 +114,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
             aria-label={expanded ? 'Show fewer' : `${rest.length} more`}
             aria-expanded={expanded}
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex h-6 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:min-w-8 [@media(pointer:coarse)]:justify-center"
+            className="inline-flex h-6 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-11 [@media(pointer:coarse)]:justify-center"
           >
             {expanded ? 'Less' : `+${rest.length}`}
           </button>

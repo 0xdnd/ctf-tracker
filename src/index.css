@@ -383,7 +383,7 @@
   --accent-fg: 9 9 11;                  /* near-black on light-luminance accent (>=4.5:1) */
   --text-primary: 255 255 255;
   --text-muted: 161 161 170;
-  --text-tertiary: 113 113 122;
+  --text-tertiary: 135 135 143;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -419,7 +419,7 @@
   --accent-fg: 255 255 255;             /* white on deep sky accent #0369a1 (~5.9:1) */
   --text-primary: 9 9 11;
   --text-muted: 82 82 91;
-  --text-tertiary: 140 140 145;
+  --text-tertiary: 100 100 108;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -647,10 +647,33 @@
   [role="button"]:focus-visible:focus-visible,
   [role="tab"]:focus-visible:focus-visible,
   [role="menuitem"]:focus-visible:focus-visible,
-  [tabindex="0"]:focus-visible:focus-visible {
+  [role="switch"]:focus-visible:focus-visible,
+  [role="checkbox"]:focus-visible:focus-visible,
+  [role="radio"]:focus-visible:focus-visible,
+  [role="option"]:focus-visible:focus-visible,
+  [role="link"]:focus-visible:focus-visible,
+  [role="treeitem"]:focus-visible:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible:focus-visible {
     outline: 2px solid rgb(var(--border-accent));
     outline-offset: 2px;
   }
+}
+
+/* Press feedback for every plain button. :where() keeps specificity at zero, so a component's own transition or transform wins. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(button:not(:disabled, [role="tab"])) {
+    transition: transform 120ms var(--ease-out);
+  }
+  :where(button:not(:disabled, [role="tab"]):active) {
+    transform: scale(0.97);
+  }
+}
+
+/* Timers and live figures keep their width as digits change */
+time,
+output,
+[role="timer"] {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Telemetry: IPs, ports, hashes, shell commands, file paths, timers and counters only */
@@ -837,10 +860,17 @@ html:not(.dark) .border-gray-900 {
 /* 60/120 FPS Rendering & GPU Acceleration Optimization */
 .cyber-card-contain {
   content-visibility: auto;
-  contain-intrinsic-size: 1px 260px;
+  contain-intrinsic-size: 1px 113px;
   contain: layout paint;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+/* Touch screens get 44px targets, so the card is taller: keep the placeholder honest. */
+@media (pointer: coarse) {
+  .cyber-card-contain {
+    contain-intrinsic-size: 1px 173px;
+  }
 }
 
 .cyber-kanban-contain {
@@ -909,9 +939,16 @@ html:not(.dark) .border-gray-900 {
   color: rgb(var(--text-primary));
 }
 
-/* A page tip (src/onboarding/PageHint.tsx) is fixed above the bottom bar on phones: keep room under the page while it is up so it never hides the last content. */
+/* A page tip (src/onboarding/PageHint.tsx) is a slim bar fixed to the bottom edge: keep room under the page while it is up so it never hides content. */
+html[data-page-hint] #main {
+  padding-bottom: 6rem;
+}
+/* On desktop the bar spans the full width, so the sidebar also keeps room for its footer links. */
+html[data-page-hint] [data-testid='app-sidebar'] {
+  padding-bottom: 3rem;
+}
 @media (max-width: 767px) {
   html[data-page-hint] #main {
-    padding-bottom: 14rem;
+    padding-bottom: 10rem;
   }
 }

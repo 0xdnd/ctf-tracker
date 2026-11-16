@@ -8,7 +8,7 @@ import { guideTipAvailability } from './guideRegistry';
 import { registerGuideNavigator } from './guideLaunch';
 import { CARD_SHADOW, CLOSE_MS, DIM, cardSurface } from './guideMotion';
 import { WelcomeCard } from './WelcomeCard';
-import { PageHint } from './PageHint';
+import { PageHint, sessionTipAllows } from './PageHint';
 import { useAnyModalOpen } from './useAnyModalOpen';
 import { useOnboardingStore } from './useOnboardingStore';
 import { afterFirstPaint } from '../utils/afterFirstPaint';
@@ -191,7 +191,7 @@ export const OnboardingLayer: React.FC = () => {
   }
   // A tip never offers a guide that cannot run here (a missing machine, an exam past its setup screen).
   const tipCanRun = (id: string) => (id === routeGuideId ? routeTipOk : guideTipAvailability(id, pathname).available);
-  const candidate = ordered.find((id) => !dismissed.includes(id) && tipCanRun(id)) ?? null;
+  const candidate = ordered.find((id) => !dismissed.includes(id) && sessionTipAllows(id) && tipCanRun(id)) ?? null;
 
   const guideSurfaceUp = guide !== null || finishedGuide !== null || centerOpen || launchPending !== null;
 

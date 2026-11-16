@@ -24,7 +24,7 @@ import { DockSearchPanel } from './DockSearchPanel';
 import { NoteTagsPanel } from '../notes/NoteTagsPanel';
 import { useNoteIndex } from '../../hooks/useNoteIndex';
 import { getBacklinksForNote, type CptsNoteEntry } from '../../utils/obsidianManualUtils';
-import { countWords, getNoteOutline } from '../../utils/noteMeta';
+import { countWords, displayCategory, getNoteOutline, shouldShowSubCategory } from '../../utils/noteMeta';
 import { buildNoteMenuEntries } from '../../utils/noteMenuEntries';
 import { playCyberSound } from '../../utils/helpers';
 
@@ -394,14 +394,14 @@ export const DockBody: React.FC<DockBodyProps> = ({
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[13px] text-tertiary">
         {activeTab.kind === 'note' ? (
           <>
-            <span className="truncate">{activeTab.note.category}</span>
-            {activeTab.note.subCategory && (
+            {displayCategory(activeTab.note) && <span className="truncate">{displayCategory(activeTab.note)}</span>}
+            {displayCategory(activeTab.note) && shouldShowSubCategory(activeTab.note) && (
               <>
                 <span aria-hidden="true" className="flex-shrink-0">/</span>
                 <span className="truncate">{activeTab.note.subCategory}</span>
               </>
             )}
-            <span aria-hidden="true" className="flex-shrink-0">/</span>
+            {displayCategory(activeTab.note) && <span aria-hidden="true" className="flex-shrink-0">/</span>}
             <span className="truncate font-medium text-muted">{activeTab.note.titleEn || activeTab.note.title}</span>
           </>
         ) : (
@@ -476,7 +476,7 @@ export const DockBody: React.FC<DockBodyProps> = ({
       <button
         type="button"
         aria-label="Open in full screen"
-        title={activeNote ? 'Open this note in the full-screen field manual' : 'Open a note to view it full screen'}
+        title={activeNote ? 'Open this note in the full-screen Notes page' : 'Open a note to view it full screen'}
         data-testid="dock-open-fullscreen"
         disabled={!activeNote}
         onClick={openFullScreen}

@@ -8,6 +8,7 @@ import { resetNoteIndexCacheForTests } from '../../hooks/useNoteIndex';
 import { rememberAppRoute, getLastAppRoute } from '../../utils/lastAppRoute';
 import { SECTION_GUIDES } from '../../onboarding/content';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -40,6 +41,7 @@ function setup(initial: string) {
     <MemoryRouter initialEntries={[initial]}>
       <Probe />
       <CheatsheetView defaultMode="cpts-manual" />
+      <ConfirmDialog />
     </MemoryRouter>,
   );
 }
@@ -75,14 +77,14 @@ describe('field manual shell navigation', () => {
   it('back returns to the remembered route', () => {
     sessionStorage.setItem('zerobox_last_app_route', '/analytics');
     setup('/field-manual');
-    fireEvent.click(screen.getByRole('button', { name: 'Back to ZeroBox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to app' }));
     expect(loc.pathname).toBe('/analytics');
   });
 
   it('back falls back to /tracker', () => {
     sessionStorage.clear();
     setup('/field-manual');
-    fireEvent.click(screen.getByRole('button', { name: 'Back to ZeroBox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to app' }));
     expect(loc.pathname).toBe('/tracker');
   });
 
@@ -98,7 +100,7 @@ describe('field manual shell navigation', () => {
     const shell = screen.getByTestId('field-manual-shell');
     expect(within(shell).getByTestId('notes-empty-state')).toBeInTheDocument();
     expect(screen.getByTestId('notes-left-panel')).toHaveAttribute('data-state', 'closed');
-    expect(screen.getByRole('button', { name: 'Back to ZeroBox' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to app' })).toBeInTheDocument();
   });
 
   it('/cheatsheets?note=A redirects to /field-manual with A open after the remount', async () => {
@@ -116,12 +118,14 @@ describe('field manual shell navigation', () => {
 
   it('wiping the vault on /field-manual stays in the shell', async () => {
     setup('/field-manual');
-    fireEvent.click(screen.getByTestId('header-delete-notes-btn'));
+    fireEvent.click(screen.getByRole('button', { name: 'More file actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Delete all imported notes/ }));
+    const dialog = await screen.findByRole('alertdialog');
     await act(async () => {
-      fireEvent.click(screen.getByTestId('header-delete-notes-btn'));
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete all' }));
     });
     expect(screen.getByTestId('notes-empty-state')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Back to ZeroBox' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to app' })).toBeInTheDocument();
   });
 
   it('/field-manual?category=web still renders the shell', () => {
@@ -152,7 +156,7 @@ describe('field manual shell navigation', () => {
     expect(screen.getByTestId('notes-left-panel')).toHaveAttribute('data-state', 'closed');
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     expect(screen.getByTestId('notes-left-panel')).toHaveAttribute('data-state', 'open');
-    expect(screen.getByLabelText('Search field manual notes')).toHaveFocus();
+    expect(screen.getByLabelText('Search notes')).toHaveFocus();
   });
 
   it('rememberAppRoute ignores legacy links that redirect into the field manual', () => {

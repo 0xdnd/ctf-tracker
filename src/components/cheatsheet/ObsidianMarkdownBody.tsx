@@ -295,7 +295,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
               }
             }}
             className="inline-flex items-center gap-1 font-medium text-accent rounded-sm underline underline-offset-2 decoration-accent/40 hover:decoration-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
-            title={`Search field manual for: ${targetRaw}`}
+            title={`Search notes for: ${targetRaw}`}
           >
             <Search className="w-2.5 h-2.5 opacity-70 inline flex-shrink-0 text-accent" />
             <span>{displayText}</span>
@@ -686,7 +686,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
                 checked={isChecked}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => toggleChecklist(i, isChecked)}
-                className="mt-1 w-4 h-4 rounded border-accent/50 bg-surface-sunken text-accent focus:ring-accent cursor-pointer flex-shrink-0"
+                className="mt-1 w-4 h-4 max-md:w-6 max-md:h-6 max-md:mt-0 rounded border-accent/50 bg-surface-sunken text-accent focus:ring-accent cursor-pointer flex-shrink-0"
               />
               <span className={isChecked ? 'line-through text-muted opacity-70' : 'text-primary'}>
                 {renderWithWikilinks(itemText)}

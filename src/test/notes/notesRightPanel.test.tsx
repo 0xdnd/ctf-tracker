@@ -46,7 +46,7 @@ describe('NotesRightPanel', () => {
       <NotesRightPanel note={b} backlinks={[a]} outline={[]} onOpenNote={onOpen} onSelectHeading={vi.fn()} onCollapse={vi.fn()} />,
     );
     expect(screen.getByText('Backlinks (1)')).toBeInTheDocument();
-    expect(screen.getByText('see [[Note B]] here')).toBeInTheDocument();
+    expect(screen.getByText('see Note B here')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Note A'));
     expect(onOpen).toHaveBeenCalledWith('A');
   });
@@ -78,7 +78,7 @@ describe('NotesRightPanel', () => {
     );
     expect(screen.getByText('Backlinks (0)')).toBeInTheDocument();
     expect(screen.getByText('No backlinks yet.')).toBeInTheDocument();
-    expect(screen.getByText('No headings in this note.')).toBeInTheDocument();
+    expect(screen.getByText('Only a title, no sections yet')).toBeInTheDocument();
   });
 
   it('collapse button calls onCollapse', () => {

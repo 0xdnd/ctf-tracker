@@ -80,7 +80,7 @@ export const MobileNav: React.FC = () => {
             className={`${tabBase} ${tabState(isTracker)}`}
           >
             <Crosshair className="w-4 h-4" />
-            <span className="text-[11px] mt-0.5">Targets</span>
+            <span className="text-[11px] mt-0.5">Tracker</span>
             {isTracker && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
 

@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+
+// One page tip per browser session: each test starts a fresh session.
+beforeEach(() => {
+  if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('zb-page-tip-shown');
+});
 
 // Mock IndexedDB vault utilities for clean node/jsdom test runs
 vi.mock('../utils/indexedDbVault', () => {

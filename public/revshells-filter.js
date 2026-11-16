@@ -1,7 +1,8 @@
-/* Language filter and search for /revshells/.
+/* Language filter, search and paging for /revshells/.
    Progressive enhancement: the page ships every shell as plain HTML (<section class="rs-lang"> per language, <div class="rs-item"> per shell).
    This script only adds a toolbar and toggles `hidden` on items, languages and jump chips, so Copy and the LHOST / LPORT fields (public/copy-code.js)
-   keep working on whatever is visible. Without JS the full list shows. No network, no storage. The pure helpers are also exported for tests (module.exports). */
+   keep working on whatever is visible. Shells are paged PAGE_SIZE at a time on the same URL (a shell is never split, "Unavailable" entries take no slot).
+   Without JS the full list shows. No network, no storage. The pure helpers are also exported for tests (module.exports). */
 (function () {
   'use strict';
 
@@ -22,7 +23,25 @@
     return 'Showing ' + shown + ' of ' + total + ' shells';
   }
 
-  var api = { norm: norm, matches: matches, countText: countText };
+  var PAGE_SIZE = 20; // shells per page
+
+  // total counted shells, 1-based page (clamped into range). start/end are 1-based shell numbers on that page (0 when there are none).
+  function pageSlice(total, page, size) {
+    var pages = Math.max(1, Math.ceil(total / size));
+    var p = Math.min(pages, Math.max(1, Math.floor(Number(page)) || 1));
+    return { page: p, pages: pages, start: total ? (p - 1) * size + 1 : 0, end: Math.min(total, p * size) };
+  }
+
+  // 1-based page that holds the shell at 0-based position index among the counted shells.
+  function pageOf(index, size) {
+    return Math.floor(index / size) + 1;
+  }
+
+  function rangeText(start, end, total) {
+    return 'Showing ' + start + '-' + end + ' of ' + total + ' shells';
+  }
+
+  var api = { norm: norm, matches: matches, countText: countText, pageSlice: pageSlice, pageOf: pageOf, rangeText: rangeText, PAGE_SIZE: PAGE_SIZE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined') return;
 
@@ -52,7 +71,7 @@
       var lang = sec.getAttribute('data-lang') || '';
       var h2 = sec.querySelector('h2');
       var chip = chipByLang[lang];
-      var group = { el: sec, lang: lang, label: chip ? chip.textContent : h2 ? h2.textContent : lang, chip: chip || null, items: [] };
+      var group = { el: sec, h2: h2, h2Text: h2 ? h2.textContent : '', lang: lang, label: chip ? chip.textContent : h2 ? h2.textContent : lang, chip: chip || null, items: [] };
       var nodes = sec.querySelectorAll('.rs-item');
       for (var j = 0; j < nodes.length; j++) {
         // Name, category, platform and notes, plus every command as served (data-template is the copy script's untouched copy).
@@ -70,6 +89,7 @@
     if (!total) return;
 
     var state = { q: '', lang: '' };
+    var page = 1;
     var toolbar = el('div', { class: 'tf rs-filter', role: 'search', 'aria-label': 'Search and filter reverse shells' });
     var controls = el('div', { class: 'tf-controls' });
 
@@ -104,37 +124,137 @@
     var anchorEl = chips || langs[0].el;
     anchorEl.parentNode.insertBefore(toolbar, anchorEl);
 
-    function apply() {
-      var shown = 0;
+    // Pager: one above the list and one below it. Focus goes to the list heading (tabindex -1); "Page X of Y" is announced through the count line.
+    var head = el('h2', { class: 'rs-list-head', id: 'rs-list-head', tabindex: '-1', hidden: '' }, 'Reverse shells');
+    langs[0].el.parentNode.insertBefore(head, langs[0].el);
+    var pagers = [];
+    function makePager(where) {
+      var nav = el('nav', { class: 'rs-pager', 'aria-label': 'Reverse shell pages (' + where + ')', hidden: '' });
+      var prev = el('button', { type: 'button', class: 'btn btn-secondary btn-sm' }, 'Previous');
+      var label = el('span', { class: 'rs-pager-label' });
+      var next = el('button', { type: 'button', class: 'btn btn-secondary btn-sm' }, 'Next');
+      nav.appendChild(prev);
+      nav.appendChild(label);
+      nav.appendChild(next);
+      prev.addEventListener('click', function () { goPage(page - 1, true); });
+      next.addEventListener('click', function () { goPage(page + 1, true); });
+      pagers.push({ nav: nav, prev: prev, next: next, label: label });
+      return nav;
+    }
+    langs[0].el.parentNode.insertBefore(makePager('top'), langs[0].el);
+    var lastEl = langs[langs.length - 1].el;
+    lastEl.parentNode.insertBefore(makePager('bottom'), lastEl.nextSibling);
+
+    // ?page=N only while no filter is active; replaceState, so Back leaves the page. Dropping the hash keeps a reload on the same page.
+    function syncUrl() {
+      try {
+        var u = new URL(location.href);
+        var filtered = !!(state.q || state.lang);
+        if (!filtered && page > 1) u.searchParams.set('page', String(page));
+        else u.searchParams.delete('page');
+        u.hash = '';
+        history.replaceState(history.state, '', u.pathname + u.search);
+      } catch {
+        /* the page works without it */
+      }
+    }
+
+    // opts.url === false: leave the address bar alone (hash navigation owns it).
+    function apply(opts) {
+      var counted = 0;
+      var lastPage = 1;
+      langs.forEach(function (g) {
+        g.first = null;
+        g.items.forEach(function (it) {
+          it.ok = matches(it, state);
+          if (!it.ok) return;
+          if (!it.off) {
+            it.page = pageOf(counted, PAGE_SIZE);
+            lastPage = it.page;
+            counted++;
+          } else it.page = lastPage; // shown on the page of the shell before it, takes no slot
+          if (!g.first) g.first = it;
+        });
+      });
+      var sl = pageSlice(counted, page, PAGE_SIZE);
+      page = sl.page;
       var anyVisible = false;
       langs.forEach(function (g) {
-        var visibleItems = 0;
+        var onPage = 0;
         g.items.forEach(function (it) {
-          var ok = matches(it, state);
-          it.el.hidden = !ok;
-          if (ok) {
-            visibleItems++;
-            if (!it.off) shown++;
-          }
+          var show = it.ok && it.page === page;
+          it.el.hidden = !show;
+          if (show) onPage++;
         });
-        g.el.hidden = !visibleItems;
-        if (g.chip) g.chip.hidden = !visibleItems;
-        if (visibleItems) anyVisible = true;
+        g.el.hidden = !onPage;
+        if (g.chip) g.chip.hidden = !g.first;
+        if (g.first) anyVisible = true;
+        if (g.h2) {
+          var cont = onPage && g.first.page !== page ? ' (continued)' : '';
+          if (g.h2.textContent !== g.h2Text + cont) g.h2.textContent = g.h2Text + cont;
+        }
       });
-      count.textContent = countText(shown, total);
+      var multi = sl.pages > 1;
+      count.textContent = multi ? rangeText(sl.start, sl.end, counted) + '. Page ' + page + ' of ' + sl.pages : countText(counted, total);
       empty.hidden = anyVisible;
+      head.hidden = !multi;
+      pagers.forEach(function (p) {
+        p.nav.hidden = !multi;
+        p.label.textContent = 'Page ' + page + ' of ' + sl.pages;
+        p.prev.disabled = page <= 1;
+        p.next.disabled = page >= sl.pages;
+      });
+      if (!opts || opts.url !== false) syncUrl();
     }
+
+    function goPage(n, focus) {
+      page = n;
+      apply();
+      if (focus) head.focus();
+    }
+
+    function bring(node) {
+      if (node && node.scrollIntoView) node.scrollIntoView();
+    }
+
+    // Opens the page that holds the language's first match, then scrolls to its heading.
+    function goToLang(lang) {
+      var g = null;
+      for (var k = 0; k < langs.length; k++) if (langs[k].lang === lang) g = langs[k];
+      if (!g || !g.first) return false;
+      if (g.first.page !== page) {
+        page = g.first.page;
+        apply({ url: false });
+      }
+      bring(g.h2 || g.el);
+      return true;
+    }
+    function hashLang() {
+      try {
+        return decodeURIComponent(location.hash.slice(1));
+      } catch {
+        return '';
+      }
+    }
+    Object.keys(chipByLang).forEach(function (l) {
+      chipByLang[l].addEventListener('click', function () { goToLang(l); });
+    });
+    window.addEventListener('hashchange', function () {
+      if (hashLang()) goToLang(hashLang());
+    });
 
     var timer = 0;
     search.addEventListener('input', function () {
       clearTimeout(timer);
       timer = setTimeout(function () {
         state.q = search.value;
+        page = 1;
         apply();
       }, 120);
     });
     select.addEventListener('change', function () {
       state.lang = select.value;
+      page = 1;
       apply();
     });
     function clearAll() {
@@ -142,6 +262,7 @@
       state = { q: '', lang: '' };
       search.value = '';
       select.value = '';
+      page = 1;
       apply();
     }
     reset.addEventListener('click', clearAll);
@@ -149,6 +270,12 @@
       clearAll();
       search.focus();
     });
+
+    // Start: ?page=N (clamped), then an outside #lang link wins over it.
+    var m = /[?&]page=(\d+)/.exec(location.search);
+    if (m) page = parseInt(m[1], 10);
+    apply({ url: false });
+    if (hashLang()) goToLang(hashLang());
   }
 
   function start() {

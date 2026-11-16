@@ -63,7 +63,7 @@ describe('EvidenceVaultPage component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Evidence vault' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Evidence Vault' })).toBeInTheDocument();
     // Verify KPI counters exist
     expect(screen.getByText('Total artifacts')).toBeInTheDocument();
     expect(screen.getByText('Flags captured')).toBeInTheDocument();

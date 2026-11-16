@@ -56,7 +56,7 @@ describe('NotFoundPage Component', () => {
     expect(screen.getByText('Go back')).toBeInTheDocument();
 
     // Section directory
-    expect(screen.getByText('Machine Tracker')).toBeInTheDocument();
+    expect(screen.getByText('Tracker')).toBeInTheDocument();
     expect(screen.getByText('Evidence Vault')).toBeInTheDocument();
     expect(screen.getByText('Exam Simulator')).toBeInTheDocument();
     expect(screen.getByText('Analytics')).toBeInTheDocument();

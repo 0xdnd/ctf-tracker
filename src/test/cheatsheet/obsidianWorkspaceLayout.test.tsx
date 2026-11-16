@@ -177,7 +177,7 @@ describe('Obsidian Workspace Architecture in CheatsheetView', () => {
     expect(screen.queryByTestId('tab-strip-scroll-container')).not.toBeInTheDocument();
     const emptyState = screen.getByTestId('empty-obsidian-workspace');
     expect(emptyState).toBeInTheDocument();
-    expect(screen.getByText('No Note Open')).toBeInTheDocument();
+    expect(screen.getByText('Pick a note')).toBeInTheDocument();
 
     // Clicking "Open First Playbook" button restores the note viewer
     const openFirstBtn = screen.getByTestId('empty-state-open-first-note');

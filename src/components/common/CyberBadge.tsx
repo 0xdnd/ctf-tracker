@@ -22,7 +22,7 @@ export const CyberBadge: React.FC<CyberBadgeProps> = ({
 }) => {
   // Compact, consistent heights: xs 16px, sm (default) 20px, md 24px. Sentence case, no glow.
   const sizeClasses = {
-    xs: 'h-4 text-[11px] leading-none px-1 rounded gap-1',
+    xs: 'h-4 text-xs leading-none px-1 rounded gap-1',
     sm: 'h-5 text-xs leading-none px-1.5 rounded gap-1',
     md: 'h-6 text-xs leading-none px-2 rounded gap-1.5',
   }[size];

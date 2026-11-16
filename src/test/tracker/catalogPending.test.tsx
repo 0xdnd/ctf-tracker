@@ -84,7 +84,7 @@ describe('TrackerView before the catalog has merged', () => {
     expect(screen.getByText(/No machines match/)).toBeInTheDocument();
   });
 
-  it('drops the skeleton for the normal empty state when the catalog load fails', async () => {
+  it('drops the skeleton for an error state with Retry when the catalog load fails, and Retry re-runs the load', async () => {
     vi.useFakeTimers();
     try {
       useCtfStore.getState().setFilters({ selectedPlatform: 'PG' });
@@ -93,9 +93,14 @@ describe('TrackerView before the catalog has merged', () => {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5000);
       });
-      expect(loadCatalog).toHaveBeenCalled();
+      expect(loadCatalog).toHaveBeenCalledTimes(1);
       expect(screen.queryByTestId('catalog-pending')).toBeNull();
-      expect(screen.getByText(/No machines match/)).toBeInTheDocument();
+      expect(screen.getByText('Could not load the machine list.')).toBeInTheDocument();
+      expect(screen.queryByText(/No machines match/)).toBeNull();
+      await act(async () => {
+        screen.getByRole('button', { name: /Retry/ }).click();
+      });
+      expect(loadCatalog).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();
     }

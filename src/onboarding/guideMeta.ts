@@ -122,37 +122,37 @@ export const GUIDE_META: Record<string, GuideMeta> = {
   methodology: {
     id: 'methodology',
     icon: 'compass',
-    title: 'Methodology',
+    title: 'Attack Methodology',
     intro: 'Follow a step-by-step plan for one machine, from the first look to full access.',
   },
   cheatsheets: {
     id: 'cheatsheets',
     icon: 'code',
-    title: 'Snippets and payloads',
+    title: 'Snippets',
     intro: 'Ready-made commands for common jobs, with your own details filled in. Reverse shells have their own page.',
   },
   'reverse-shells': {
     id: 'reverse-shells',
     icon: 'shell',
-    title: 'Reverse shells',
+    title: 'Reverse Shells',
     intro: 'Build the command that makes a target connect back to your machine, so you can control it.',
   },
   'field-manual': {
     id: 'field-manual',
     icon: 'notes',
-    title: 'Field manual',
-    intro: 'Your field manual shows your own Markdown notes, for example an Obsidian vault. It is empty until you import some.',
+    title: 'Notes',
+    intro: 'The Notes page shows your own Markdown notes, for example an Obsidian vault. It stays empty until you import some.',
   },
   writeup: {
     id: 'writeup',
     icon: 'file',
-    title: 'Writeup studio',
+    title: 'Writeup Studio',
     intro: 'A writeup is a report of how you solved a machine. Write it here with a live preview.',
   },
   exam: {
     id: 'exam',
     icon: 'exam',
-    title: 'Exam simulator',
+    title: 'Exam Simulator',
     intro: 'Practice a certification exam with a real countdown, scoring and rules.',
   },
   'exam-room': {
@@ -166,7 +166,7 @@ export const GUIDE_META: Record<string, GuideMeta> = {
   vault: {
     id: 'vault',
     icon: 'vault',
-    title: 'Vault',
+    title: 'Evidence Vault',
     intro: 'The vault keeps what you find in one place: passwords, flags, hashes and keys.',
   },
   analytics: {

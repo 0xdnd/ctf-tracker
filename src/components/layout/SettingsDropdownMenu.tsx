@@ -1,4 +1,5 @@
 import React from 'react';
+import { CoffeeLink } from '../common/CoffeeLink';
 import { Settings, Volume2, VolumeX, ZoomIn, ZoomOut, Keyboard, FileCode, Download, Upload, Terminal, ShieldCheck, SlidersHorizontal, Users, BookOpen } from 'lucide-react';
 import { APP_VERSION } from '../../utils/appVersion';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -281,9 +282,10 @@ const SettingsDropdownMenu: React.FC<SettingsDropdownMenuProps> = ({ onClose, on
           </span>
         </button>
 
-        <div className="px-2 py-1 text-[11px] text-muted flex items-center gap-3">
+        <div className="px-2 py-1 text-[11px] text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
           <a href="https://ctftracker.com/privacy/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline">Privacy</a>
           <a href="https://ctftracker.com/terms/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline">Terms</a>
+          <CoffeeLink />
         </div>
 
         <div className="h-px bg-surface-hover my-1" />

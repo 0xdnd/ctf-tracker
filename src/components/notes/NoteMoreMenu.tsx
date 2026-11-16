@@ -136,7 +136,7 @@ export const NoteMoreMenu: React.FC<NoteMoreMenuProps> = ({
             tabIndex={-1}
             data-testid="modal-lang-en"
             onClick={() => onLanguageChange('en')}
-            title="English technical playbook only"
+            title="English notes only"
             className={`${stepBtn} ${language === 'en' ? 'bg-accent text-on-accent hover:bg-accent hover:text-on-accent' : ''}`}
           >
             EN

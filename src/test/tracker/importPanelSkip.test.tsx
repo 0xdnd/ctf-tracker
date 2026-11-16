@@ -42,16 +42,19 @@ afterEach(cleanup);
 describe('tracker import card skip', () => {
   it('shows with nothing solved, skip hides it for good, ?import=1 brings it back', async () => {
     const first = render(view('/tracker'));
-    expect(await screen.findByTestId('paste-import-panel')).toBeInTheDocument();
+    // A first visit gets the one-row banner; the form is behind its Import button.
+    expect(await screen.findByTestId('import-banner')).toBeInTheDocument();
+    expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Skip, I'm starting fresh/ }));
     // The card folds away first (about 220 ms), then unmounts.
-    await waitFor(() => expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByTestId('import-banner')).not.toBeInTheDocument());
     expect(useOnboardingStore.getState().dismissedHints).toContain(IMPORT_PANEL_HINT_ID);
 
     first.unmount();
     render(view('/tracker'));
     await Promise.resolve();
+    expect(screen.queryByTestId('import-banner')).not.toBeInTheDocument();
     expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument();
     cleanup();
 
@@ -71,7 +74,7 @@ describe('tracker import card skip', () => {
   it('the Import menu entry brings the card back after a skip', async () => {
     render(view('/tracker'));
     fireEvent.click(await screen.findByRole('button', { name: /Skip, I'm starting fresh/ }));
-    await waitFor(() => expect(screen.queryByTestId('paste-import-panel')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByTestId('import-banner')).not.toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: 'Import' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Import solved boxes' }));

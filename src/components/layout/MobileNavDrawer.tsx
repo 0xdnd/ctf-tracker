@@ -281,7 +281,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <KeyRound className={iconCls} />
-                      <span>Vault</span>
+                      <span>Evidence Vault</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
@@ -314,7 +314,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <Timer className={iconCls} />
-                      <span>24h Exam Simulator (OSCP)</span>
+                      <span>Exam Simulator (OSCP)</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
@@ -325,7 +325,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <AnalyticsMonitorIcon className={iconCls} />
-                      <span>Pwn Analytics & Radar</span>
+                      <span>Analytics</span>
                       {dueReviews > 0 && (
                         <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-mono font-bold tabular-nums">
                           {dueReviews}

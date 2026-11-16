@@ -70,7 +70,7 @@ describe('EvidenceVaultPage backed by the credential/loot store slice', () => {
 
   it('logging evidence writes through the store and persists under the v2 key, not the legacy one', async () => {
     setup();
-    fireEvent.click(screen.getAllByRole('button', { name: /Log evidence/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /Log (new )?evidence/i })[0]);
     fireEvent.change(screen.getByPlaceholderText(/e\.g\. Administrator/i), { target: { value: 'backup_admin' } });
     fireEvent.change(screen.getByPlaceholderText(/Paste password, hash/i), { target: { value: 'Spring2026!Pwned' } });
     fireEvent.click(screen.getByRole('button', { name: /Save to Vault/i }));
@@ -86,7 +86,7 @@ describe('EvidenceVaultPage backed by the credential/loot store slice', () => {
   it('logging the same credential twice does not create a duplicate row', async () => {
     useCtfStore.getState().addCredential({ type: 'password', username: 'dup_user', secret: 'same' });
     setup();
-    fireEvent.click(screen.getAllByRole('button', { name: /Log evidence/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /Log (new )?evidence/i })[0]);
     fireEvent.change(screen.getByPlaceholderText(/e\.g\. Administrator/i), { target: { value: 'dup_user' } });
     fireEvent.change(screen.getByPlaceholderText(/Paste password, hash/i), { target: { value: 'same' } });
     fireEvent.click(screen.getByRole('button', { name: /Save to Vault/i }));
@@ -97,7 +97,7 @@ describe('EvidenceVaultPage backed by the credential/loot store slice', () => {
 
   it('a logged flag is stored as a loot item, not a credential', async () => {
     setup();
-    fireEvent.click(screen.getAllByRole('button', { name: /Log evidence/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /Log (new )?evidence/i })[0]);
     const dialog = screen.getByRole('dialog');
     fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'flag' } });
     fireEvent.change(screen.getByPlaceholderText(/Paste password, hash/i), { target: { value: 'HTB{manual_flag}' } });

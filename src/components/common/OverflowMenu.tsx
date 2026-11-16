@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { MoreHorizontal } from 'lucide-react';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
@@ -6,6 +7,8 @@ import { TACTICAL_SPRING } from '../../utils/motionTokens';
 export interface OverflowItem {
   id: string;
   label: string;
+  /** Full accessible name when the visible label is short; it must contain the visible label. */
+  ariaLabel?: string;
   icon?: React.ReactNode;
   onSelect: () => void;
   danger?: boolean;
@@ -23,6 +26,11 @@ export interface OverflowMenuProps {
   triggerContent?: React.ReactNode;
   /** Classes for the trigger when `triggerContent` is used. */
   triggerClassName?: string;
+  /**
+   * Render the menu in document.body, positioned from the trigger (flips above when short of room), so a parent with
+   * overflow-hidden or CSS containment cannot clip it. It closes on scroll and resize.
+   */
+  portal?: boolean;
 }
 
 /**
@@ -39,14 +47,17 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
   className = '',
   triggerContent,
   triggerClassName,
+  portal = false,
 }) => {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [instant, setInstant] = useState(false);
   const reduceMotion = useReducedMotion();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<DOMRect | null>(null);
 
   const getEnabledItems = useCallback((): HTMLButtonElement[] => {
     if (!menuRef.current) return [];
@@ -62,25 +73,57 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
 
   // Move focus into the menu on open.
   useEffect(() => {
-    if (!open) return;
+    if (!open || (portal && !pos)) return;
     getEnabledItems()[0]?.focus();
-  }, [open, getEnabledItems]);
+  }, [open, portal, pos, getEnabledItems]);
 
-  // Close on outside press.
+  // Portal mode: place the menu from the trigger's rect before paint.
+  useLayoutEffect(() => {
+    const trigger = triggerRef.current;
+    const menu = menuRef.current;
+    if (!portal) return;
+    if (!open || !trigger || !menu) {
+      setPos(null);
+      return;
+    }
+    const r = trigger.getBoundingClientRect();
+    anchorRef.current = r;
+    const w = menu.offsetWidth;
+    const h = menu.offsetHeight;
+    const left = Math.max(8, Math.min(align === 'right' ? r.right - w : r.left, window.innerWidth - w - 8));
+    const top = r.bottom + 4 + h > window.innerHeight && r.top - 4 - h >= 0 ? r.top - 4 - h : r.bottom + 4;
+    setPos({ top, left });
+  }, [portal, open, align]);
+
+  // Close on outside press (the portal menu lives outside the root, so it counts as inside).
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+      const t = e.target as Node;
+      if (rootRef.current && !rootRef.current.contains(t) && !menuRef.current?.contains(t)) {
         setOpen(false);
       }
     };
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('touchstart', onPointerDown);
+    // A detached menu would drift away from its trigger, so it closes on a resize or once the trigger has moved.
+    const onResize = () => setOpen(false);
+    const onScroll = () => {
+      const r = triggerRef.current?.getBoundingClientRect();
+      const was = anchorRef.current;
+      if (!r || !was || Math.abs(r.top - was.top) > 1 || Math.abs(r.left - was.left) > 1) setOpen(false);
+    };
+    if (portal) {
+      window.addEventListener('scroll', onScroll, true);
+      window.addEventListener('resize', onResize);
+    }
     return () => {
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('touchstart', onPointerDown);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
     };
-  }, [open]);
+  }, [open, portal]);
 
   if (items.length === 0) return null;
 
@@ -124,7 +167,8 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
         close(true);
         break;
       case 'Tab':
-        close(false);
+        // A portal menu sits at the end of the page, so Tab continues from the trigger instead.
+        close(portal);
         break;
       default:
         break;
@@ -132,6 +176,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
   };
 
   const skipMotion = instant || Boolean(reduceMotion);
+  const wrap = (node: React.ReactElement) => (portal ? createPortal(node, document.body) : node);
   const originClass = align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left';
 
   return (
@@ -154,6 +199,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
         {triggerContent ?? <MoreHorizontal className="h-4 w-4" aria-hidden="true" />}
       </button>
 
+      {wrap(
       <AnimatePresence>
         {open && (
           <motion.div
@@ -162,11 +208,13 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
             role="menu"
             aria-label={label}
             onKeyDown={handleMenuKeyDown}
+            onClick={portal ? (e) => e.stopPropagation() : undefined}
+            style={portal ? { top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden' } : undefined}
             initial={skipMotion ? false : { opacity: 0, scale: 0.96, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: skipMotion ? 0 : 0.12, ease: 'easeOut' } }}
             transition={skipMotion ? { duration: 0 } : TACTICAL_SPRING}
-            className={`absolute top-full z-[100] mt-1 min-w-[180px] max-w-[260px] rounded-xl border border-subtle bg-surface-elevated p-1 shadow-lg machined-edge ${originClass}`}
+            className={`${portal ? 'fixed' : 'absolute top-full mt-1'} z-[100] min-w-[180px] max-w-[260px] rounded-xl border border-subtle bg-surface-elevated p-1 shadow-lg machined-edge ${portal ? '' : originClass}`}
           >
             {items.map((item) => (
               <button
@@ -175,6 +223,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
                 role="menuitem"
                 tabIndex={-1}
                 disabled={item.disabled}
+                aria-label={item.ariaLabel}
                 onClick={() => {
                   if (item.disabled) return;
                   setOpen(false);
@@ -198,6 +247,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+      )}
     </div>
   );
 };

@@ -56,7 +56,7 @@ describe('tracker import slot expiry', () => {
     setup(true);
     const spy = vi.spyOn(globalThis, 'setTimeout');
     render(view());
-    expect(await screen.findByTestId('paste-import-panel')).toBeInTheDocument();
+    expect(await screen.findByTestId('import-banner')).toBeInTheDocument();
     expect(spy.mock.calls.some((c) => c[1] === 3000)).toBe(false);
   });
 });

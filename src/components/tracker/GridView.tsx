@@ -13,6 +13,8 @@ import {
   ExternalLink,
   ListChecks,
   Maximize2,
+  MoreHorizontal,
+  Share2,
   Lock,
   Upload,
   Zap,
@@ -30,16 +32,13 @@ import { PlatformBadge } from '../common/PlatformBadge';
 import { CardIpBadge } from './CardIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
 import { DifficultyBadge } from '../common/DifficultyBadge';
-import { ShareLinkButton } from '../common/ShareLinkButton';
+import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
+import { copyShareLink } from '../../utils/shareLink';
 import { TargetTypeBadge } from '../common/TargetTypeBadge';
 import { isTargetTypeTag } from '../../utils/targetType';
 
-/** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
-const REVEAL =
-  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150';
-
 const ICON_BTN =
-  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
+  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
 
 interface GridCardProps {
   machine: Machine;
@@ -130,13 +129,68 @@ const GridCard = React.memo<GridCardProps>(({
   const statusLabel = m.status === 'root' ? 'Root pwned' : m.status.charAt(0).toUpperCase() + m.status.slice(1);
 
   const flagBtn = (captured: boolean, tone: 'warn' | 'success') =>
-    `inline-flex h-6 items-center gap-1 rounded-md border px-2 font-mono text-xs font-medium tabular-nums transition-colors duration-150 active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 ${
+    `inline-flex h-6 items-center gap-1 rounded-md border px-2 font-mono text-xs font-medium tabular-nums transition-colors duration-150 active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-11 [@media(pointer:coarse)]:justify-center ${
       captured
         ? tone === 'warn'
           ? 'bg-callout-warn-bg border-callout-warn-border text-callout-warn-fg'
           : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
         : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
     }`;
+
+  const roomHref = sanitizeExternalUrl(m.roomUrl);
+  const moreItems: OverflowItem[] = [
+    {
+      id: 'share',
+      label: 'Share link',
+      ariaLabel: `Share direct link to ${m.name}`,
+      icon: <Share2 className="h-3.5 w-3.5" />,
+      onSelect: () => {
+        void copyShareLink(`/target/${m.id}`).then((ok) => {
+          if (ok && soundEnabled) playCyberSound('copy');
+          setScanToast(ok ? { message: 'Link copied' } : { message: 'Could not copy link', isError: true });
+          setTimeout(() => setScanToast(null), 2000);
+        });
+      },
+    },
+    {
+      id: 'dossier',
+      label: 'Mission dossier',
+      ariaLabel: `Open dedicated mission dossier for ${m.name}`,
+      icon: <Maximize2 className="h-3.5 w-3.5" />,
+      onSelect: () => onOpenDetail(m.id),
+    },
+    ...(m.isActive
+      ? []
+      : [
+          {
+            id: 'report',
+            label: 'Pre-report',
+            ariaLabel: `Open executive pentest pre-report for ${m.name}`,
+            icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+            onSelect: () => onOpenReport(m.id),
+          },
+          {
+            id: 'writeup',
+            label: 'Writeup studio',
+            ariaLabel: `Open writeup studio for ${m.name}`,
+            icon: <FileText className="h-3.5 w-3.5" />,
+            onSelect: () => onOpenWriteup(m.id),
+          },
+        ]),
+    ...(roomHref
+      ? [
+          {
+            id: 'room',
+            label: isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Room link',
+            ariaLabel: isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`,
+            icon: <ExternalLink className="h-3.5 w-3.5" />,
+            onSelect: () => {
+              window.open(roomHref, '_blank', 'noopener,noreferrer');
+            },
+          },
+        ]
+      : []),
+  ];
 
   const metaBadges: React.ReactNode[] = [
     ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
@@ -159,7 +213,7 @@ const GridCard = React.memo<GridCardProps>(({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`group cyber-card-contain relative flex cursor-pointer flex-col h-full justify-between overflow-hidden rounded-2xl border bg-surface-card p-4 transition-interactive duration-150 surface-card-depth machined-edge hover:bg-surface-hover active:scale-[0.97] ${
+      className={`group cyber-card-contain relative flex cursor-pointer flex-col h-full justify-between overflow-hidden rounded-2xl border bg-surface-card px-3.5 py-3 transition-interactive duration-150 surface-card-depth machined-edge hover:bg-surface-hover active:scale-[0.97] ${
         isActiveTarget
           ? 'border-accent ring-1 ring-accent/40'
           : 'border-subtle hover:border-strong'
@@ -198,8 +252,9 @@ const GridCard = React.memo<GridCardProps>(({
       <div>
         {/* Name + status dot */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2 font-sans text-base font-semibold text-primary">
-            <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${statusDot}`} />
+          <div className="flex min-w-0 items-center gap-2 font-sans text-base font-semibold leading-5 text-primary">
+            <span aria-hidden="true" title={statusLabel} className={`h-2 w-2 shrink-0 rounded-full ${statusDot}`} />
+            <span className="sr-only">{statusLabel}:</span>
             <span className="truncate">{m.name}</span>
             {m.isActive && (
               <span className="inline-flex h-5 shrink-0 items-center rounded border border-callout-warn-border bg-callout-warn-bg px-1.5 text-xs font-medium text-callout-warn-fg">
@@ -217,75 +272,63 @@ const GridCard = React.memo<GridCardProps>(({
 
         {/* IP (telemetry) + status label + time */}
         {m.isActive ? (
-          <div className="mt-3 pl-4 space-y-2">
-            <div className="flex items-center gap-1.5 rounded-lg border border-callout-warn-border bg-callout-warn-bg px-2.5 py-1.5 text-xs text-callout-warn-fg">
+          <div className="mt-2 space-y-1.5">
+            <div className="flex items-center gap-1.5 rounded-lg border border-callout-warn-border bg-callout-warn-bg px-2.5 py-1.5 text-[13px] text-callout-warn-fg">
               <Lock className="h-3.5 w-3.5 flex-shrink-0 text-callout-warn-fg" />
               <span>HTB ToS Protected · Name Only</span>
             </div>
-            <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
+            <div className="flex items-center gap-1 font-mono text-[13px] tabular-nums text-muted">
               <Clock className="h-3 w-3 shrink-0" />
               <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
             </div>
           </div>
         ) : (
           <>
-            <div className="mt-1 flex items-center justify-between gap-2 pl-4">
-              <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
-              <div className="flex items-center gap-1 font-mono text-xs tabular-nums text-muted">
-                <Clock className="h-3 w-3 shrink-0" />
-                <span>{formatDurationHuman(m.timeSpentSeconds)}</span>
-              </div>
-            </div>
-            <div className="mt-0.5 pl-4 text-xs text-muted font-sans">{statusLabel}</div>
-
-            {/* Platform, OS and difficulty inline, rest behind +N */}
-            <div className="mt-3 pl-4">
-              <BadgeOverflow badges={metaBadges} max={3} />
-            </div>
-
-            {/* Hint spoiler */}
-            {m.hint ? (
-              <div className="mt-3" role="presentation" onClick={(e) => e.stopPropagation()}>
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted">Intel hint</span>
+            <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2">
+              <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" backlog={m.status === 'backlog'} className="font-mono !text-[13px] tabular-nums" />
+              <div className="flex items-center gap-1.5 text-[13px] tabular-nums text-muted">
+                {m.status !== 'backlog' && <span className="font-sans">{statusLabel}</span>}
+                {m.timeSpentSeconds > 0 && (
+                  <>
+                    <Clock className="h-3 w-3 shrink-0" />
+                    <span className="font-mono">{formatDurationHuman(m.timeSpentSeconds)}</span>
+                  </>
+                )}
+                {m.hint ? (
                   <button
                     type="button"
                     onClick={(e) => onToggleHint(e, m.id)}
-                    className="flex cursor-pointer items-center gap-1 text-xs text-muted transition-colors hover:text-primary active:scale-[0.97]"
+                    aria-expanded={isHintRevealed}
+                    className="inline-flex h-6 cursor-pointer items-center gap-1 rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium text-muted transition-colors hover:border-strong hover:text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11"
                     title={isHintRevealed ? 'Hide Intel Hint' : 'Peek Intel Hint'}
                     aria-label={isHintRevealed ? `Hide intel hint for ${m.name}` : `Peek intel hint for ${m.name}`}
                   >
                     {isHintRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    {isHintRevealed ? 'Hide' : 'Peek'}
+                    Hint
                   </button>
-                </div>
-                {/* Plain div: framer-motion `layout` measures every card's box on mount (forced reflow). */}
-                <div
-                  role="presentation"
-                  className={`rounded-lg border text-xs leading-relaxed transition-colors duration-200 ${
-                    isHintRevealed
-                      ? 'max-h-48 overflow-y-auto border-subtle bg-surface-sunken p-2.5 text-primary'
-                      : 'flex cursor-pointer select-none items-center justify-center border-subtle bg-surface-sunken/60 p-2 px-2.5 text-muted hover:border-strong hover:text-primary'
-                  }`}
-                  onClick={(e) => {
-                    if (!isHintRevealed) onToggleHint(e, m.id);
-                  }}
-                >
-                  {isHintRevealed ? (
-                    m.hint
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-xs">
-                      <Eye className="h-3 w-3 text-muted" />
-                      <span>Click to reveal hint</span>
-                    </span>
-                  )}
-                </div>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Platform, OS and difficulty inline, rest behind +N */}
+            <div className="mt-1">
+              <BadgeOverflow badges={metaBadges} max={3} inline />
+            </div>
+
+            {/* Hint spoiler: stays out of the card until asked for */}
+            {m.hint && isHintRevealed ? (
+              <div
+                role="presentation"
+                onClick={(e) => e.stopPropagation()}
+                className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-subtle bg-surface-sunken p-2 text-[13px] leading-relaxed text-primary"
+              >
+                {m.hint}
               </div>
             ) : null}
 
             {/* Open ports (telemetry) */}
             {m.openPorts && m.openPorts.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-1">
+              <div className="mt-2 flex flex-wrap items-center gap-1">
                 <span className="flex items-center gap-1 text-xs text-muted">
                   <Radio className="h-3 w-3 text-muted" /> Ports
                 </span>
@@ -306,10 +349,10 @@ const GridCard = React.memo<GridCardProps>(({
         )}
       </div>
 
-      {/* Footer: flags + engage stay visible, utility actions reveal on hover/focus */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-3" role="presentation" onClick={(e) => e.stopPropagation()}>
+      {/* Footer: flags on the left; open and engage always visible, the rest in the more menu */}
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 border-t border-subtle pt-1.5" role="presentation" onClick={(e) => e.stopPropagation()}>
         {m.isActive ? (
-          <div className="flex items-center gap-1.5 text-[11px] text-muted font-mono">
+          <div className="flex items-center gap-1.5 text-xs text-muted font-mono">
             <Lock className="h-3 w-3 text-callout-warn-fg" />
             <span>Protected</span>
           </div>
@@ -322,7 +365,7 @@ const GridCard = React.memo<GridCardProps>(({
               title="Toggle User Flag"
               aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
             >
-              <Flag className="h-2.5 w-2.5" /> U
+              <Flag className="h-3 w-3" /> User
             </button>
             <button
               type="button"
@@ -331,88 +374,21 @@ const GridCard = React.memo<GridCardProps>(({
               title="Toggle Root Flag"
               aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
             >
-              <Flag className="h-2.5 w-2.5" /> R
+              <Flag className="h-3 w-3" /> Root
             </button>
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3">
-          <div className={`flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
-            {!m.isActive && (
-              <button
-                type="button"
-                onClick={() => onSelectMachine(m.id)}
-                className={ICON_BTN}
-                title="Attack Methodology Checklist"
-                aria-label={`Open attack methodology checklist for ${m.name}`}
-              >
-                <ListChecks className="h-3.5 w-3.5" />
-              </button>
-            )}
-
-            <ShareLinkButton
-              path={`/target/${m.id}`}
-              title={m.name}
-              iconOnly
-              className={`${ICON_BTN} hover:text-accent`}
-            />
-
-            <button
-              type="button"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                onOpenDetail(m.id);
-              }}
-              className={ICON_BTN}
-              title="Open Dedicated Full-Page Mission"
-              aria-label={`Open dedicated mission dossier for ${m.name}`}
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-            </button>
-
-            {!m.isActive && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    onOpenReport(m.id);
-                  }}
-                  className={`${ICON_BTN} hover:text-accent`}
-                  title="Open Executive Pentest Pre-Report"
-                  aria-label={`Open executive pentest pre-report for ${m.name}`}
-                >
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    onOpenWriteup(m.id);
-                  }}
-                  className={`${ICON_BTN} hover:text-accent`}
-                  title="Open Writeup"
-                  aria-label={`Open writeup studio for ${m.name}`}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                </button>
-              </>
-            )}
-
-            {Boolean(sanitizeExternalUrl(m.roomUrl)) && (
-              <a
-                href={sanitizeExternalUrl(m.roomUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={ICON_BTN}
-                title={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Open Room Link'}
-                aria-label={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`}
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            )}
-          </div>
+        <div className="flex items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-2">
+          <button
+            type="button"
+            onClick={() => onSelectMachine(m.id)}
+            className={ICON_BTN}
+            title={m.isActive ? 'Open compliance details' : 'Open attack methodology checklist'}
+            aria-label={m.isActive ? `Open active target compliance details for ${m.name}` : `Open attack methodology checklist for ${m.name}`}
+          >
+            <ListChecks className="h-3.5 w-3.5" />
+          </button>
 
           <button
             type="button"
@@ -423,6 +399,14 @@ const GridCard = React.memo<GridCardProps>(({
           >
             <Crosshair className="h-3.5 w-3.5" />
           </button>
+
+          <OverflowMenu
+            portal
+            items={moreItems}
+            label={`More actions for ${m.name}`}
+            triggerContent={<MoreHorizontal className="h-3.5 w-3.5" aria-hidden="true" />}
+            triggerClassName={`${ICON_BTN} aria-expanded:bg-surface-hover aria-expanded:text-primary`}
+          />
         </div>
       </div>
     </div>
@@ -521,7 +505,7 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-4">
         {visibleMachines.map((m, idx) => (
           <div
             key={m.id}

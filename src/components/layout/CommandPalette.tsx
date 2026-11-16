@@ -59,7 +59,7 @@ const Highlight: React.FC<{ text: string; ranges: Range[] }> = ({ text, ranges }
 const SEARCH_SECTIONS: { key: SearchSection; label: string }[] = [
   { key: 'notes', label: 'Notes' },
   { key: 'writeups', label: 'Writeups' },
-  { key: 'vault', label: 'Vault' },
+  { key: 'vault', label: 'Evidence Vault' },
 ];
 
 interface PaletteItem {
@@ -464,7 +464,7 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-exam-view',
-        label: '24h Exam Simulator (OSCP / CPTS)',
+        label: 'Exam Simulator (OSCP / CPTS)',
         icon: Timer,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',

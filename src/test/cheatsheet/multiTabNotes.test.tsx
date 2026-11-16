@@ -376,7 +376,7 @@ describe('Multi-Tab Note Workspace in ObsidianNoteViewer', () => {
       />
     );
 
-    const region = screen.getByRole('region', { name: /Field manual note/i });
+    const region = screen.getByRole('region', { name: /Note viewer workspace/i });
     expect(region).toBeInTheDocument();
     expect(region).toHaveClass('w-full', 'h-full');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

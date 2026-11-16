@@ -81,7 +81,7 @@ export const PlatformBadge: React.FC<PlatformBadgeProps> = React.memo(({
   if (!platform) return null;
   const fullName = platformFullName(platform);
   const sizeClasses = {
-    sm: 'h-4 text-[11px] px-1 gap-1',
+    sm: 'h-4 text-xs px-1 gap-1',
     md: 'h-5 text-xs px-1.5 gap-1',
     lg: 'h-6 text-xs px-2.5 gap-1.5',
   }[size];

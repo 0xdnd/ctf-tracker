@@ -28,6 +28,7 @@ import { SplitOrientation } from '../../types/workspace';
 import { ObsidianTabContent } from './ObsidianTabContent';
 import { NoteMoreMenu, NoteMoreMenuEntry } from '../notes/NoteMoreMenu';
 import { handleWorkspaceLinkClick, scrollToHeadingAnchor } from '../../utils/workspaceLinkInterceptor';
+import { displayCategory, shouldShowSubCategory } from '../../utils/noteMeta';
 import { useNotesWorkspaceStore, ObsidianViewMode } from '../../store/useNotesWorkspaceStore';
 import { useToastStore } from '../../store/useToastStore';
 import { buildNoteMenuEntries } from '../../utils/noteMenuEntries';
@@ -499,12 +500,15 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   // One right-panel toggle in a split view: the active pane's header owns it.
   const showRightPanelToggle = Boolean(onToggleRightPanel) && !isPopout && (!isSplitView || isPaneActive);
 
+  // The importer's "General Tactical" is only a fallback label: show the real folder, or nothing.
+  const crumbCategory = displayCategory(note);
+
   const iconBtn =
     'inline-flex h-7 w-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1';
   const segBtn =
     'cursor-pointer rounded-sm px-2.5 py-1 transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ';
   const segOn = 'bg-accent font-semibold text-on-accent';
-  const segOff = 'text-secondary hover:text-primary';
+  const segOff = 'text-primary hover:bg-surface-hover';
 
   const handleLanguageChange = useCallback(
     (l: ObsidianNoteLanguage) => {
@@ -565,7 +569,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsLeft}
-          className="flex-shrink-0 cursor-pointer rounded-sm p-1 text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
+          className="relative inline-flex h-6 w-6 flex-shrink-0 items-center justify-center cursor-pointer rounded-sm text-muted after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
           title="Scroll tabs left"
           aria-label="Scroll tabs left"
         >
@@ -622,7 +626,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                     ? 'h-[31px] bg-surface-base border-subtle text-primary font-semibold'
                     : 'h-[30px] border-transparent text-muted hover:text-secondary hover:bg-surface-hover'
                 }`}
-                title={`${tab.titleEn || tab.title} (${tab.category})${isPinned ? ' [Pinned]' : ''}`}
+                title={`${tab.titleEn || tab.title}${displayCategory(tab) ? ` (${displayCategory(tab)})` : ''}${isPinned ? ' [Pinned]' : ''}`}
               >
                 {isActive && (
                   <motion.span
@@ -666,7 +670,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                       if (soundEnabled) playCyberSound('click');
                       handleCloseSpecificTab(tab.id);
                     }}
-                    className="flex-shrink-0 cursor-pointer rounded-sm p-0.5 text-muted opacity-60 transition-[opacity,background-color,color] duration-150 motion-reduce:transition-none group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
+                    className="relative flex-shrink-0 cursor-pointer rounded-sm p-0.5 text-muted opacity-60 after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']  transition-[opacity,background-color,color] duration-150 motion-reduce:transition-none group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                     title="Close tab (Alt+W)"
                     aria-label={`Close tab ${tab.titleEn || tab.title}`}
                   >
@@ -682,7 +686,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         <button
           type="button"
           onClick={handleScrollTabsRight}
-          className="flex-shrink-0 cursor-pointer rounded-sm p-1 text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
+          className="relative inline-flex h-6 w-6 flex-shrink-0 items-center justify-center cursor-pointer rounded-sm text-muted after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-surface-hover hover:text-primary transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
           title="Scroll tabs right"
           aria-label="Scroll tabs right"
         >
@@ -713,7 +717,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
               <div className="flex items-center justify-between px-2 pt-1 border-b border-subtle pb-1.5">
                 <span className="text-[11px] font-semibold text-secondary flex items-center gap-1.5">
                   <BookOpen className="w-3 h-3 text-accent" />
-                  Field manual quick picker
+                  Notes quick picker
                 </span>
                 <span className="text-[10px] text-muted">
                   Esc to close
@@ -777,7 +781,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                             {n.titleEn || n.title}
                           </div>
                           <div className="text-[10px] text-muted truncate">
-                            {n.category} {n.subCategory ? `› ${n.subCategory}` : ''}
+                            {[displayCategory(n), shouldShowSubCategory(n) ? `› ${n.subCategory}` : ''].filter(Boolean).join(' ')}
                           </div>
                         </div>
                         {isOpen ? (
@@ -953,20 +957,20 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             data-testid="note-breadcrumb"
             className="flex min-w-0 items-center gap-1.5 text-[13px] text-tertiary"
           >
-            <span className="truncate">{note.category}</span>
-            {note.subCategory && (
+            {crumbCategory && <span className="hidden truncate md:inline">{crumbCategory}</span>}
+            {crumbCategory && shouldShowSubCategory(note) && (
               <>
                 <span aria-hidden="true" className="hidden flex-shrink-0 md:inline">/</span>
                 <span className="hidden truncate md:inline">{note.subCategory}</span>
               </>
             )}
-            <span aria-hidden="true" className="flex-shrink-0">/</span>
+            {crumbCategory && <span aria-hidden="true" className="hidden flex-shrink-0 md:inline">/</span>}
             <span className="truncate font-medium text-muted">{note.titleEn || note.title}</span>
           </nav>
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-1">
-          <div className="flex items-center rounded-sm bg-surface-sunken p-0.5 text-[11px]">
+          <div className="flex items-center rounded-sm border border-strong bg-surface-sunken p-0.5 text-[11px]">
             <button
               type="button"
               onClick={() => setViewMode('reading')}
@@ -1090,7 +1094,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
       ref={modalRef}
       tabIndex={-1}
       role="region"
-      aria-label="Field manual note viewer workspace"
+      aria-label="Note viewer workspace"
       data-testid="obsidian-note-viewer-docked"
       data-pane-id={paneId}
       className="w-full h-full flex flex-col outline-none select-none"

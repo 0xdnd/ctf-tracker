@@ -17,11 +17,11 @@ export const dockMaxPx = (viewportWidth: number): number => Math.max(DOCK_MIN_PX
 export const clampDockWidth = (px: number, viewportWidth: number): number =>
   Math.round(Math.min(dockMaxPx(viewportWidth), Math.max(DOCK_MIN_PX, px)));
 
-/** Pixel width of a preset (mirrors the 48vw/420-896 and 68vw/540-1152 classes the dock used before). */
+/** Pixel width of a preset (mirrors the 33vw/360-520 and 68vw/540-900 classes of the dock). */
 export const dockPresetWidth = (size: DockSize, viewportWidth: number): number =>
   size === 'expanded'
-    ? Math.min(1152, Math.max(540, viewportWidth * 0.68))
-    : Math.min(896, Math.max(420, viewportWidth * 0.48));
+    ? Math.min(900, Math.max(540, viewportWidth * 0.68))
+    : Math.min(520, Math.max(360, viewportWidth * 0.33));
 
 const currentViewportWidth = (): number => (typeof window !== 'undefined' && window.innerWidth) || 1280;
 export type ObsidianViewMode = 'reading' | 'split' | 'raw';

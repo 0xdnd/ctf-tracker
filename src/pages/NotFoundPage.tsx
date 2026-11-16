@@ -25,9 +25,9 @@ interface QuickLink {
 }
 
 const QUICK_LINKS: QuickLink[] = [
-  { path: '/tracker', name: 'Machine Tracker', description: 'HTB and THM targets, Kanban and table views', icon: Home },
+  { path: '/tracker', name: 'Tracker', description: 'HTB and THM targets, Kanban and table views', icon: Home },
   { path: '/vault', name: 'Evidence Vault', description: 'Stored credentials, flags, hashes and findings', icon: Database },
-  { path: '/methodology', name: 'Methodology', description: 'Attack lifecycle checklists and commands', icon: Layers },
+  { path: '/methodology', name: 'Attack Methodology', description: 'Attack lifecycle checklists and commands', icon: Layers },
   { path: '/cheatsheets', name: 'Cheatsheets', description: 'Offensive command templates and payloads', icon: Terminal },
   { path: '/notes', name: 'Notes', description: 'Your imported Obsidian vault and your own notes', icon: BookOpen },
   { path: '/writeup', name: 'Writeup Studio', description: 'Markdown reporting and documentation editor', icon: ShieldAlert },

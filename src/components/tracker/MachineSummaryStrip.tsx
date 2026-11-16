@@ -67,7 +67,7 @@ export const MachineSummaryStrip: React.FC<MachineSummaryStripProps> = ({ machin
     <button key={key} type="button" aria-label={aria} onClick={() => onNavigate(tab)} className={chipClass}>
       <span className="text-muted">{label}</span>
       <span className="font-medium tabular-nums text-primary">{value}</span>
-      {note && <span className="text-[11px] text-muted">{note}</span>}
+      {note && <span className="text-xs text-muted">{note}</span>}
     </button>
   );
 

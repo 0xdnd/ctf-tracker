@@ -16,13 +16,13 @@ export const DifficultyBadge: React.FC<DifficultyBadgeProps> = React.memo(({
   variant = 'default',
 }) => {
   const sizeClasses = {
-    xs: 'h-4 text-[11px] px-1 rounded',
+    xs: 'h-4 text-xs px-1 rounded',
     sm: 'h-5 text-xs px-1.5 rounded',
     md: 'h-6 text-xs px-2.5 rounded',
   }[size];
 
   const hardwareSizeClasses = {
-    xs: 'h-4 text-[11px] px-1',
+    xs: 'h-4 text-xs px-1',
     sm: 'h-5 text-xs px-1.5',
     md: 'h-6 text-xs px-2.5',
   }[size];

@@ -7,6 +7,10 @@ import {
   getNoteOutline,
   countWords,
   getBacklinkSnippet,
+  stripWikilinks,
+  shouldShowSubCategory,
+  displayCategory,
+  displayNoteMeta,
 } from '../../utils/noteMeta';
 import { slugifyHeading } from '../../utils/workspaceLinkInterceptor';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
@@ -75,12 +79,56 @@ describe('countWords', () => {
 describe('getBacklinkSnippet', () => {
   it('finds the linking line', () =>
     expect(getBacklinkSnippet(mk('A', 'x\nsee [[recon basics|here]] now'), { ...mk('B', ''), ...n })).toBe(
-      'see [[recon basics|here]] now',
+      'see here now',
     ));
   it('falls back to the file name', () =>
     expect(
       getBacklinkSnippet(mk('A', 'x\n  see [[file-name#h]]  '), mk('B', '', { relPath: 'dir/file-name.md' })),
-    ).toBe('see [[file-name#h]]'));
+    ).toBe('see file-name'));
   it('returns an empty string when nothing links', () =>
     expect(getBacklinkSnippet(mk('A', 'plain'), mk('B', ''))).toBe(''));
+});
+
+describe('stripWikilinks', () => {
+  it('renders targets, aliases and headings as plain text', () =>
+    expect(stripWikilinks('a [[Target]] b [[T|Alias]] c [[Page#Heading]] d')).toBe('a Target b Alias c Page d'));
+});
+
+describe('shouldShowSubCategory', () => {
+  const c = (category: string, subCategory: string) => ({ category, subCategory });
+  it('hides a sub-folder equal to the category, ignoring number prefixes', () => {
+    expect(shouldShowSubCategory(c('Networking', 'Networking'))).toBe(false);
+    expect(shouldShowSubCategory(c('Recon', '01 Recon'))).toBe(false);
+    expect(shouldShowSubCategory(c('01-Recon', '01_recon'))).toBe(false);
+  });
+  it('shows a different sub-folder', () => {
+    expect(shouldShowSubCategory(c('Networking', 'Ports and services'))).toBe(true);
+    expect(shouldShowSubCategory(c('Networking', ''))).toBe(false);
+  });
+});
+
+describe('displayCategory', () => {
+  it('returns real categories unchanged', () => {
+    expect(displayCategory({ category: 'Networking', relPath: 'Networking/a.md' })).toBe('Networking');
+  });
+  it('hides the General Tactical fallback for root notes', () => {
+    expect(displayCategory({ category: 'General Tactical', relPath: 'a.md' })).toBe('');
+  });
+  it('uses the real folder for General Tactical notes in folders', () => {
+    expect(displayCategory({ category: 'General Tactical', relPath: '01-Recon/sub/a.md' })).toBe('Recon / sub');
+  });
+});
+
+describe('displayNoteMeta', () => {
+  const note = (x: Partial<CptsNoteEntry>) => ({ difficulty: 'intermediate', stage: 'Exploitation', ...x }) as CptsNoteEntry;
+  it('honours the frontmatter flag', () => {
+    const f = { difficulty: true, stage: false };
+    expect(displayNoteMeta(note({ metaFromFrontmatter: f }), 'difficulty')).toBe('intermediate');
+    expect(displayNoteMeta(note({ metaFromFrontmatter: f }), 'stage')).toBeUndefined();
+  });
+  it('hides the old defaults on notes without a flag but keeps other values', () => {
+    expect(displayNoteMeta(note({}), 'difficulty')).toBeUndefined();
+    expect(displayNoteMeta(note({}), 'stage')).toBeUndefined();
+    expect(displayNoteMeta(note({ stage: 'Recon' }), 'stage')).toBe('Recon');
+  });
 });

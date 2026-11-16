@@ -7,9 +7,18 @@ import { isPlaceholderIp } from '../../utils/ipInput';
 const QUIET =
   'opacity-60 hover:opacity-100 focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity motion-reduce:transition-none';
 
-/** The machine-IP pill for tracker cards and rows: quiet while it is a placeholder and no address is set anywhere yet. */
-export const CardIpBadge: React.FC<EditableIpBadgeProps> = ({ className = '', ...props }) => {
+/**
+ * The machine-IP pill for tracker cards and rows: quiet while it is a placeholder and no address is set anywhere yet.
+ * `backlog` shows plain text (the boxed field starts at Recon); copy and edit still work.
+ */
+export const CardIpBadge: React.FC<EditableIpBadgeProps & { backlog?: boolean }> = ({ className = '', backlog, ...props }) => {
   const unset = useCtfStore(selectTacticalVarsUnset);
   const quiet = unset && isPlaceholderIp(props.initialIp);
-  return <EditableIpBadge {...props} className={quiet ? `${className} ${QUIET}` : className} />;
+  return (
+    <EditableIpBadge
+      {...props}
+      plain={backlog}
+      className={quiet ? `${className} ${QUIET}` : className}
+    />
+  );
 };

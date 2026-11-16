@@ -8,7 +8,7 @@ const { TRACK_TO_CERT, getModel, getGuides, getWriteups, isNoindexMachine, slugi
 const TECH = require('./lib/techniques.cjs');
 const { normTag, tagKey, HEAD_GENERIC_TAGS, createTagCleaner } = require('./lib/tags.cjs');
 const { injectBeacon } = require('./lib/site.cjs');
-const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ICON, ctaBox, fitTitle, truncate, techArticleLd, stampArticle, stampUpdated } = require('./lib/layout.cjs');
+const { ORIGIN, esc, renderPage, render404Page, STATIC_CSS, ICON, ctaBox, coffeeNote, fitTitle, truncate, techArticleLd, stampArticle, stampUpdated } = require('./lib/layout.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 // GEN_CONTENT_DIST points the generator at another output dir (used by tests); then public/sitemap.xml is left alone.
@@ -750,6 +750,7 @@ for (const t of model.topics) {
     ctaBox({ title: 'Use these commands with your values filled in.', body: 'ZeroBox interpolates target IP, domain and credentials into every command.', href: '/cheatsheets/', label: 'Open the cheatsheet' }),
     (() => { const hs = techGroups.filter((g) => (g.cheatsheetTopics || []).includes(t.slug)); return hs.length ? `<h2>Practise by technique</h2><div class="chips">${hs.map((g) => `<a href="/techniques/${g.slug}/">${esc(g.name)} (${g.machines.length})</a>`).join('')}</div>` : ''; })(),
     `<h2>More cheatsheets</h2><div class="chips">${model.topics.filter((o) => o !== t).map((o) => `<a href="/cheatsheets/${o.slug}/">${esc(o.name)}</a>`).join('')}<a href="/revshells/">Reverse shells</a></div>`,
+    coffeeNote(),
   ].join('\n');
   emit(
     'cheatsheet',
@@ -867,6 +868,7 @@ emit(
         `</section>`
     ),
     `<!--/email_off-->`,
+    coffeeNote(),
   ].join('\n');
   emit(
     'revshells',

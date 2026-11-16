@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { GUIDE_META } from './guideMeta';
 import { guideTipAvailability } from './guideRegistry';
-import { CARD_SHADOW, CardActions, EASE_OUT, PressButton, buttonStyles, cardBody, cardSurface, cardTitle } from './guideMotion';
+import { EASE_OUT, PressButton, buttonStyles } from './guideMotion';
 import { TOUR_ICONS } from './icons';
 import { useOnboardingStore } from './useOnboardingStore';
 
@@ -12,9 +12,29 @@ interface PageHintProps {
   pathname?: string;
 }
 
+const SESSION_TIP_KEY = 'zb-page-tip-shown';
+
+/** One tip per browser session: the first tip shown owns the slot; only that same tip may reappear (until dismissed). */
+export const sessionTipAllows = (id: string): boolean => {
+  try {
+    const owner = sessionStorage.getItem(SESSION_TIP_KEY);
+    return owner === null || owner === id;
+  } catch {
+    return true;
+  }
+};
+
+const claimSessionTip = (id: string): void => {
+  try {
+    if (sessionStorage.getItem(SESSION_TIP_KEY) === null) sessionStorage.setItem(SESSION_TIP_KEY, id);
+  } catch {
+    /* storage unavailable: no session limit */
+  }
+};
+
 /**
- * One-time offer of a section's guide. Non-modal: no focus trap and no focus steal. It marks itself as a trap
- * companion so an open modal's focus trap lets Tab reach its buttons.
+ * One-time offer of a section's guide, as a compact bar along the bottom edge. Non-modal: no focus trap and no
+ * focus steal. It marks itself as a trap companion so an open modal's focus trap lets Tab reach its buttons.
  */
 export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
   const guide = GUIDE_META[guideId];
@@ -23,12 +43,14 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
   const startGuide = useOnboardingStore((s) => s.startGuide);
   const reduceMotion = useReducedMotion();
   const shown = Boolean(guide);
-  // While the tip is up, phone layouts keep room under the page (index.css: html[data-page-hint]) so it never hides the last content.
+  // While the tip is up, every width keeps room under the page (index.css: html[data-page-hint]) so it never hides content.
+  // The tip also claims this browser session's single tip slot (sessionTipAllows).
   useEffect(() => {
     if (!shown) return;
+    claimSessionTip(guideId);
     document.documentElement.setAttribute('data-page-hint', '');
     return () => document.documentElement.removeAttribute('data-page-hint');
-  }, [shown]);
+  }, [shown, guideId]);
   if (!guide) return null;
   const Icon = TOUR_ICONS[guide.icon];
   const showMe = () => {
@@ -47,30 +69,23 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
       initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduceMotion ? 0 : 0.18, ease: EASE_OUT }}
-      style={{ boxShadow: CARD_SHADOW }}
-      className={`fixed bottom-20 left-2 right-2 z-popover p-5 md:bottom-4 md:left-auto md:right-4 md:w-[25rem] ${cardSurface}`}
+      className="fixed bottom-20 left-2 right-2 z-popover flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-subtle bg-surface-card px-3 py-1.5 font-sans shadow-lg md:bottom-0 md:left-0 md:right-0 md:max-h-12 md:flex-nowrap md:rounded-none md:border-x-0 md:border-b-0"
     >
-      <div className="flex items-center gap-2.5">
-        <Icon className="h-[18px] w-[18px] flex-shrink-0 text-muted" aria-hidden="true" />
-        <h2 id={titleId} className={`min-w-0 ${cardTitle}`}>
-          {guide.title}
-        </h2>
-      </div>
-      <p className={cardBody}>{guide.intro}</p>
-      <CardActions
-        exit={
-          <PressButton onClick={() => setTipsOff(true)} className={`-ml-3 whitespace-nowrap ${buttonStyles.ghost}`}>
-            Don&apos;t show tips
-          </PressButton>
-        }
-      >
-        <PressButton onClick={() => dismissHint(guide.id)} className={`whitespace-nowrap ${buttonStyles.secondary}`}>
+      <Icon className="h-4 w-4 flex-shrink-0 text-muted" aria-hidden="true" />
+      <h2 id={titleId} className="min-w-0 flex-1 truncate text-sm font-semibold text-primary">
+        {guide.title}
+      </h2>
+      <div className="flex items-center gap-1.5">
+        <PressButton onClick={() => setTipsOff(true)} className={`whitespace-nowrap !py-1 text-xs ${buttonStyles.ghost}`}>
+          Don&apos;t show tips
+        </PressButton>
+        <PressButton onClick={() => dismissHint(guide.id)} className={`whitespace-nowrap !py-1 ${buttonStyles.secondary}`}>
           Not now
         </PressButton>
-        <PressButton onClick={showMe} className={`whitespace-nowrap ${buttonStyles.primary}`}>
+        <PressButton onClick={showMe} className={`whitespace-nowrap !py-1 ${buttonStyles.primary}`}>
           Show me
         </PressButton>
-      </CardActions>
+      </div>
     </motion.section>
   );
 };

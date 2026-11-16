@@ -49,13 +49,37 @@ describe('Wave 2 lane B - tracker redesign', () => {
   });
 
   describe('TrackerView toolbar', () => {
-    it('keeps view switcher test ids and both search inputs mounted', () => {
+    it('keeps one view switcher: the toolbar one is phone-only, the sidebar owns the desktop one', () => {
       wrap(<TrackerView />);
-      for (const id of ['view-kanban', 'view-table', 'view-grid', 'view-graph', 'view-kanban-mobile', 'view-table-mobile', 'view-grid-mobile']) {
+      for (const id of ['view-kanban-mobile', 'view-table-mobile', 'view-grid-mobile']) {
         expect(screen.getByTestId(id)).toBeInTheDocument();
       }
+      for (const id of ['view-kanban', 'view-table', 'view-grid', 'view-graph']) {
+        expect(screen.queryByTestId(id)).not.toBeInTheDocument();
+      }
+      expect(screen.getAllByRole('group', { name: 'View mode' })).toHaveLength(1);
       expect(document.getElementById('tracker-search-input')).not.toBeNull();
       expect(document.getElementById('tracker-search-input-mobile')).not.toBeNull();
+    });
+
+    it('focus mode hides the sidebar, so the desktop toolbar carries the view switch then', () => {
+      useCtfStore.setState({ focusMode: true } as never);
+      wrap(<TrackerView />);
+      for (const id of ['view-kanban', 'view-table', 'view-grid', 'view-graph']) {
+        expect(screen.getByTestId(id)).toBeInTheDocument();
+      }
+      fireEvent.click(screen.getByTestId('view-graph'));
+      expect(useCtfStore.getState().viewMode).toBe('graph');
+      useCtfStore.setState({ focusMode: false } as never);
+    });
+
+    it('Filters button reports the drawer as expanded the moment it is pressed', () => {
+      wrap(<TrackerView />);
+      const btn = screen.getAllByRole('button', { name: 'Filters' })[0];
+      expect(btn).toHaveAttribute('aria-haspopup', 'dialog');
+      expect(btn).toHaveAttribute('aria-expanded', 'false');
+      fireEvent.click(btn);
+      expect(btn).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('has no track dropdown in the toolbar and drops OS/difficulty/cert selects too', () => {

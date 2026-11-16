@@ -87,7 +87,41 @@ export function getBacklinkSnippet(source: CptsNoteEntry, target: CptsNoteEntry)
   const needles = [...noteTitleCandidates(target), base].filter(Boolean).map((c) => `[[${c.toLowerCase()}`);
   for (const line of (source.rawMarkdown ?? '').split(/\r?\n/)) {
     const lower = line.toLowerCase();
-    if (needles.some((needle) => lower.includes(needle))) return line.trim();
+    if (needles.some((needle) => lower.includes(needle))) return stripWikilinks(line.trim());
   }
   return '';
+}
+
+/** [[Target]] -> Target, [[Target|Alias]] -> Alias, [[Target#Heading]] -> Target. */
+export function stripWikilinks(s: string): string {
+  return s.replace(/\[\[([^\]|]*?)(?:\|([^\]]*))?\]\]/g, (_m, target: string, alias?: string) =>
+    (alias ?? target.split('#')[0]).trim(),
+  );
+}
+
+const NUM_PREFIX = /^\d+[-_\s]+/;
+
+/** False when the sub-folder only repeats the category (ignoring a leading "01 " style number). */
+export function shouldShowSubCategory(n: Pick<CptsNoteEntry, 'category' | 'subCategory'>): boolean {
+  if (!n.subCategory) return false;
+  const strip = (s: string) => s.replace(NUM_PREFIX, '').trim().toLowerCase();
+  return strip(n.subCategory) !== strip(n.category || '');
+}
+
+/** Category label for breadcrumbs and lists. "General Tactical" is only an importer fallback: show the real folder or nothing. */
+export function displayCategory(n: Pick<CptsNoteEntry, 'category' | 'relPath'>): string {
+  if (n.category !== 'General Tactical') return n.category || '';
+  const dirs = (n.relPath || '').replace(/\\/g, '/').split('/').filter(Boolean).slice(0, -1);
+  return dirs.length ? dirs.map((d) => d.replace(/^\d+[-_\s]+/, '')).join(' / ') : '';
+}
+
+const OLD_DEFAULTS = { difficulty: 'intermediate', stage: 'Exploitation' } as const;
+
+/** The difficulty or stage to show as a chip, or undefined when it was only an importer default. */
+export function displayNoteMeta(n: CptsNoteEntry, key: 'difficulty' | 'stage'): string | undefined {
+  const v = n[key];
+  if (!v) return undefined;
+  const flag = n.metaFromFrontmatter?.[key];
+  if (flag !== undefined) return flag ? v : undefined;
+  return v === OLD_DEFAULTS[key] ? undefined : v;
 }

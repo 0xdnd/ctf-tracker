@@ -8,7 +8,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { EmptyState } from '../components/common/EmptyState';
 import { CyberBadge } from '../components/common/CyberBadge';
-import { EditableIpBadge } from '../components/common/EditableIpBadge';
+import { isPlaceholderIp } from '../utils/ipInput';
 import { CyberSelect } from '../components/common/CyberSelect';
 import { playCyberSound, safeCopyToClipboard } from '../utils/helpers';
 import { Platform, Machine, Credential, CredentialType, LootItem } from '../types';
@@ -108,6 +108,8 @@ export const lootItemToEvidenceItem = (l: LootItem, machines: Machine[]): VaultE
   isCustom: true,
 });
 
+const PAGE_SIZE = 30;
+
 export const EvidenceVaultPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -142,6 +144,7 @@ export const EvidenceVaultPage: React.FC = () => {
     const t = searchParams.get('target');
     return t && machines.some((m) => m.id === t) ? t : 'all';
   });
+  const [pageShown, setPageShown] = useState({ key: '', n: PAGE_SIZE });
   const [viewMode, setViewMode] = useState<'table' | 'timeline' | 'matrix'>('table');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -478,6 +481,9 @@ export const EvidenceVaultPage: React.FC = () => {
     { label: 'Recon services', value: metrics.services, category: 'service' },
   ];
 
+  const filterKey = `${searchQuery}|${selectedCategory}|${selectedPlatform}|${selectedTargetId}`;
+  const shownLimit = pageShown.key === filterKey ? pageShown.n : PAGE_SIZE;
+
   const segBase =
     'flex items-center gap-1.5 px-3 h-8 max-sm:h-11 rounded-md text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer whitespace-nowrap';
 
@@ -485,11 +491,12 @@ export const EvidenceVaultPage: React.FC = () => {
     <div className="w-full space-y-6 font-sans text-primary pb-12" data-testid="evidence-vault-page">
       {/* 1. Page header */}
       <PageHeader
-        title="Evidence vault"
+        title="Evidence Vault"
         description="Credentials, flags, hashes, keys and recon findings across your targets."
         icon={<Database />}
         overflowAnchor="vault-menu"
         primaryAction={
+          evidenceItems.length === 0 ? undefined : (
           <CyberButton
             variant="primary"
             size="md"
@@ -500,8 +507,10 @@ export const EvidenceVaultPage: React.FC = () => {
           >
             Log evidence
           </CyberButton>
+          )
         }
         actions={
+          evidenceItems.length === 0 ? undefined : (
           <>
             <CyberButton
               variant="secondary"
@@ -524,8 +533,9 @@ export const EvidenceVaultPage: React.FC = () => {
               Export loot
             </CyberButton>
           </>
+          )
         }
-        overflow={[
+        overflow={evidenceItems.length === 0 ? undefined : [
           {
             id: 'reveal',
             label: allRevealed ? 'Mask all secrets' : 'Reveal all secrets',
@@ -553,9 +563,18 @@ export const EvidenceVaultPage: React.FC = () => {
         ]}
       />
 
+      {evidenceItems.length === 0 ? (
+        <EmptyState
+          icon={Database}
+          title="Your vault is empty"
+          description="Flags, loot and other evidence you collect on targets will be stored here."
+          action={{ label: 'Log new evidence', icon: Plus, onClick: () => setIsAddModalOpen(true) }}
+        />
+      ) : (
+      <>
       {/* 2. Stat tiles: clickable category filters */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {statTiles.map((tile) => {
+        {statTiles.filter((tile) => tile.value > 0).map((tile) => {
           const isSelected = selectedCategory === tile.category;
           return (
             <button
@@ -809,7 +828,7 @@ export const EvidenceVaultPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody role="rowgroup" className="block sm:table-row-group sm:divide-y sm:divide-subtle max-sm:space-y-3">
-                {filteredItems.map((item) => {
+                {filteredItems.slice(0, shownLimit).map((item) => {
                   const isRevealed = Boolean(revealedIds[item.id] || allRevealed);
                   const isCopied = copiedId === item.id;
                   const hashCandidates = (item.category === 'hash' || item.category === 'password')
@@ -833,7 +852,19 @@ export const EvidenceVaultPage: React.FC = () => {
                                 <span title="Added by you"><CyberBadge variant="warning" size="xs">Logged</CyberBadge></span>
                               )}
                             </div>
-                            <EditableIpBadge machineId={item.targetId} initialIp={item.targetIp} size="xs" className="mt-0.5 font-mono tabular-nums" />
+                            {isPlaceholderIp(item.targetIp) || item.targetIp === '0.0.0.0' ? (
+                              <span className="mt-0.5 block text-xs text-muted">Not set</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(item.targetIp, `ip-${item.id}`)}
+                                aria-label={`Copy IP ${item.targetIp}`}
+                                title="Click to copy IP"
+                                className="mt-0.5 block cursor-pointer text-left font-mono text-xs tabular-nums text-muted hover:text-primary"
+                              >
+                                {copiedId === `ip-${item.id}` ? 'Copied' : item.targetIp}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -978,14 +1009,6 @@ export const EvidenceVaultPage: React.FC = () => {
                 {filteredItems.length === 0 && (
                   <tr role="row" className="block sm:table-row">
                     <td role="cell" colSpan={6} className="block sm:table-cell py-12 text-center text-muted">
-                      {evidenceItems.length === 0 ? (
-                        <EmptyState
-                          icon={Database}
-                          title="Your vault is empty"
-                          description="Flags, loot and other evidence you collect on targets will be stored here."
-                          action={{ label: 'Log new evidence', icon: Plus, onClick: () => setIsAddModalOpen(true) }}
-                        />
-                      ) : (
                         <EmptyState
                           icon={Search}
                           title="No evidence matches these filters"
@@ -996,7 +1019,6 @@ export const EvidenceVaultPage: React.FC = () => {
                           }}
                           secondaryAction={{ label: 'Log new evidence', onClick: () => setIsAddModalOpen(true) }}
                         />
-                      )}
                     </td>
                   </tr>
                 )}
@@ -1004,7 +1026,22 @@ export const EvidenceVaultPage: React.FC = () => {
             {/* eslint-enable jsx-a11y/no-redundant-roles, jsx-a11y/no-interactive-element-to-noninteractive-role */}
             </table>
           </div>
+          {filteredItems.length > shownLimit && (
+            <div className="flex items-center justify-center gap-3 border-t border-subtle p-3 text-xs text-muted max-sm:border-0">
+              <span className="tabular-nums">Showing {shownLimit} of {filteredItems.length}</span>
+              <CyberButton
+                variant="secondary"
+                size="sm"
+                onClick={() => setPageShown({ key: filterKey, n: shownLimit + PAGE_SIZE })}
+              >
+                Show more
+              </CyberButton>
+            </div>
+          )}
         </div>
+      )}
+
+      </>
       )}
 
       {/* 5. Add custom loot modal & export drawer */}

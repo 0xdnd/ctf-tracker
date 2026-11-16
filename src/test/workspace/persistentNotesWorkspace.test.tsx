@@ -158,13 +158,14 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
       </BrowserRouter>
     );
 
-    const sidebarNotesBtn = screen.getByLabelText('Notes Workspace');
+    const sidebarNotesBtn = screen.getByLabelText('Notes');
     expect(sidebarNotesBtn).toBeInTheDocument();
-    expect(screen.getByText('2 open')).toBeInTheDocument();
+    expect(screen.queryByText('2 open')).not.toBeInTheDocument();
 
-    // Clicking sidebar button toggles notes workspace open
+    // A plain click opens the full Notes page, not the side panel
     fireEvent.click(sidebarNotesBtn);
-    expect(useNotesWorkspaceStore.getState().isOpen).toBe(true);
+    expect(window.location.pathname).toBe('/field-manual');
+    expect(useNotesWorkspaceStore.getState().isOpen).toBe(false);
   });
 
   it('keeps persisted tab IDs in persist merge (imported notes hydrate later) and readers skip missing ones', () => {
@@ -205,8 +206,8 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
 
     expect(useNotesWorkspaceStore.getState().isOpen).toBe(true);
 
-    // Tapping Targets navigation tab closes the open notes sheet
-    const targetsBtn = screen.getByText('Targets');
+    // Tapping Tracker navigation tab closes the open notes sheet
+    const targetsBtn = screen.getByText('Tracker');
     fireEvent.click(targetsBtn);
     expect(useNotesWorkspaceStore.getState().isOpen).toBe(false);
   });

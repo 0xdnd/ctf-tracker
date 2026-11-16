@@ -198,12 +198,13 @@ describe('section guides', () => {
     await waitFor(() => expect(screen.getByTestId('page-hint')).toBeInTheDocument());
   });
 
-  it('opening the notes panel offers the notes guide first, then the route guide', () => {
+  it('shows one tip per session: opening the notes panel does not add a second one', () => {
     renderAt('/vault');
     act(() => useNotesWorkspaceStore.setState({ isOpen: true }));
-    expect(screen.getByRole('region', { name: 'Notes panel' })).toBeInTheDocument();
+    expect(screen.getAllByTestId('page-hint')).toHaveLength(1);
+    expect(screen.getByRole('region', { name: 'Evidence Vault' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
-    expect(screen.getByRole('region', { name: 'Vault' })).toBeInTheDocument();
+    expect(screen.queryByTestId('page-hint')).not.toBeInTheDocument();
   });
 
   it('shows the backup intro over the backup modal on first open only', () => {
@@ -335,12 +336,14 @@ describe('more guides', () => {
 
   it('the /notes page, focus mode and the running exam room have guides', () => {
     const a = renderAt('/notes');
-    expect(screen.getByRole('region', { name: 'Field manual' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Notes' })).toBeInTheDocument();
     a.unmount();
+    sessionStorage.clear();
     act(() => useCtfStore.setState({ machines: [{ id: 'abc', name: 'Abc', isActive: false } as never], isCatalogLoaded: true }));
     const b = renderAt('/target/abc/focus');
     expect(screen.getByRole('region', { name: 'Focus mode' })).toBeInTheDocument();
     b.unmount();
+    sessionStorage.clear();
     act(() => useExamStore.setState({ status: 'running' }));
     renderAt('/exam');
     expect(screen.getByRole('region', { name: 'Your exam is running' })).toBeInTheDocument();

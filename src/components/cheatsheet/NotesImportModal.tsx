@@ -255,7 +255,7 @@ export const NotesImportModal: React.FC = () => {
         const text = await file.text();
         await stageJsonImport(
           text,
-          (count) => `Successfully imported and cached ${count} field manual notes into local browser IndexedDB!`
+          (count) => `Successfully imported and cached ${count} notes into local browser IndexedDB!`
         );
       }
     } catch (err) {
@@ -369,7 +369,7 @@ export const NotesImportModal: React.FC = () => {
     try {
       await stageJsonImport(
         pastedJson,
-        (count) => `Successfully imported and cached ${count} field manual notes into local browser IndexedDB!`
+        (count) => `Successfully imported and cached ${count} notes into local browser IndexedDB!`
       );
       setPastedJson('');
     } catch (err) {
@@ -799,10 +799,10 @@ export const NotesImportModal: React.FC = () => {
                 <div className="p-4 rounded-lg bg-surface-card/40 border border-cyber-card space-y-3">
                   <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
                     <Download size={16} className="text-muted" />
-                    <span>Export Field Manual Backup</span>
+                    <span>Export Notes Backup</span>
                   </h3>
                   <p className="text-xs text-muted">
-                    Generate a downloadable JSON file containing all active field manual notes currently loaded in your browser session. You can re-import this file on any machine or browser.
+                    Generate a downloadable JSON file containing all active notes currently loaded in your browser session. You can re-import this file on any machine or browser.
                   </p>
                   <button
                     onClick={handleExportBackup}

@@ -78,7 +78,7 @@ export const OsBadge: React.FC<OsBadgeProps> = React.memo(({
   variant = 'default',
 }) => {
   const sizeClasses = {
-    xs: 'h-4 px-1 text-[11px]',
+    xs: 'h-4 px-1 text-xs',
     sm: 'h-5 px-1.5 text-xs',
     md: 'h-6 px-2 text-xs',
   };

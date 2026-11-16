@@ -316,7 +316,7 @@ export const MethodologyPage: React.FC = () => {
       className="mx-auto max-w-6xl space-y-6 pb-20 text-sm"
     >
       <PageHeader
-        title="Attack lifecycle"
+        title="Attack Methodology"
         description="Eight-phase playbook with copyable commands that fill in your target and attacker values."
         primaryAction={
           <CyberButton
@@ -368,7 +368,7 @@ export const MethodologyPage: React.FC = () => {
         </div>
       </PageHeader>
 
-      {/* Global Offensive HUD Variables */}
+      {/* Your details (global variables) */}
       <GlobalHudVarsBar />
 
       {viewMode === 'transfers' ? (
@@ -573,7 +573,7 @@ export const MethodologyPage: React.FC = () => {
             {/* Service branch chips */}
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <div className="min-w-0 flex-1 basis-full sm:basis-0">
-                <div className="flex flex-wrap items-center gap-1.5 py-0.5">
+                <div className="no-scrollbar flex flex-nowrap items-center gap-1.5 overflow-x-auto py-1 pl-1 pr-10 [mask-image:linear-gradient(to_right,black_88%,transparent)]">
                   <span className="mr-1 flex-shrink-0 text-xs text-muted">Branches</span>
                   <button
                     onClick={() => setSelectedBranch('all')}
@@ -584,7 +584,7 @@ export const MethodologyPage: React.FC = () => {
 
                   {SERVICE_BRANCHES.map((b) => {
                     const isSelected = selectedBranch === b.type;
-                    const { letter, label } = splitBranchTitle(b.name);
+                    const { label } = splitBranchTitle(b.name);
                     const shortLabel = shortenBranchLabel(label);
                     return (
                       <button
@@ -594,9 +594,6 @@ export const MethodologyPage: React.FC = () => {
                         className={`${chipBase} ${isSelected ? chipOn : chipOff}`}
                       >
                         {getBranchIcon(b.type)}
-                        {letter && (
-                          <span className="font-mono text-[10px] text-muted" aria-hidden="true">{letter}</span>
-                        )}
                         <span>{shortLabel}</span>
                       </button>
                     );

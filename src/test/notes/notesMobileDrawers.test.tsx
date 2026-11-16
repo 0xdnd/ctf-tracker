@@ -127,6 +127,6 @@ describe('field manual drawers under 768 px', () => {
 
   it('back to ZeroBox is reachable with drawers closed', () => {
     setup();
-    expect(screen.getByRole('button', { name: 'Back to ZeroBox' }).closest('[data-testid="notes-left-panel"]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Back to app' }).closest('[data-testid="notes-left-panel"]')).toBeNull();
   });
 });

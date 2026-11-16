@@ -9,6 +9,7 @@ import { resetNoteIndexCacheForTests } from '../../hooks/useNoteIndex';
 import { registerUnsavedNoteEdits } from '../../utils/unsavedNoteEdits';
 import { clearVaultFromIndexedDb } from '../../utils/indexedDbVault';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -34,8 +35,20 @@ const renderManual = () =>
   render(
     <MemoryRouter initialEntries={['/field-manual']}>
       <CheatsheetView defaultMode="cpts-manual" />
+      <ConfirmDialog />
     </MemoryRouter>,
   );
+
+/** Menu item, then the dialog's confirm button. */
+const deleteAllViaMenu = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'More file actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete all imported notes (2)' }));
+  const dialog = await screen.findByRole('alertdialog');
+  expect(dialog).toHaveTextContent('cannot be undone');
+  await act(async () => {
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete all' }));
+  });
+};
 
 /** What the storage-event merge leaves in this tab after another tab deleted `id`. */
 const deletedElsewhere = (id: string) =>
@@ -60,17 +73,13 @@ afterEach(() => cleanup());
 describe('field manual bulk delete', () => {
   it('confirm deletes the counted notes as tombstones, like the per-note delete', async () => {
     renderManual();
-    const btn = screen.getByTestId('header-delete-notes-btn');
-    expect(btn).toHaveTextContent('Delete (2)');
-    fireEvent.click(btn);
-    expect(screen.getByTestId('header-delete-notes-btn')).toHaveTextContent('Confirm Delete (2)?');
-    fireEvent.click(screen.getByTestId('header-delete-notes-btn'));
+    await deleteAllViaMenu();
 
     await waitFor(() => expect(useCtfStore.getState().customNotes).toHaveLength(0));
     expect([...useCtfStore.getState().deletedNoteIds].sort()).toEqual(['A', 'B']);
     // Not the whole-vault wipe: the stored vault is left to the per-note path.
     expect(clearVaultFromIndexedDb).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('header-delete-notes-btn')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More file actions' })).toBeNull();
     // Restore would bring nothing back (the notes are gone, only tombstones remain), so it is not offered.
     expect(screen.queryByRole('button', { name: /Restore/ })).toBeNull();
   });
@@ -79,8 +88,7 @@ describe('field manual bulk delete', () => {
     localStorage.setItem('zerobox_obsidian_open_tabs', JSON.stringify(['A', 'B']));
     renderManual();
     expect(screen.getByTestId('note-tab-A')).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('header-delete-notes-btn'));
-    fireEvent.click(screen.getByTestId('header-delete-notes-btn'));
+    await deleteAllViaMenu();
     await waitFor(() => expect(screen.queryByTestId('note-tab-A')).toBeNull());
     expect(screen.queryByTestId('note-tab-B')).toBeNull();
   });

@@ -229,7 +229,7 @@ export const SnippetsDrawer: React.FC = () => {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => toggleStarCommand(cmd.id)}
-                        className={`p-1 rounded hover:bg-surface-inverse transition-colors cursor-pointer ${
+                        className={`p-1 max-md:p-2 rounded hover:bg-surface-inverse transition-colors cursor-pointer ${
                           cmd.isStarred ? 'text-syntax-number' : 'text-on-inverse-muted hover:text-on-inverse'
                         }`}
                         title={cmd.isStarred ? 'Unstar' : 'Star command'}
@@ -241,7 +241,7 @@ export const SnippetsDrawer: React.FC = () => {
                           setSnippetsDrawerOpen(false);
                           useNotesWorkspaceStore.getState().openCheat(cmd.id);
                         }}
-                        className="p-1 rounded text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse transition-colors cursor-pointer"
+                        className="p-1 max-md:p-2 rounded text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse transition-colors cursor-pointer"
                         title="Open in Notes"
                         aria-label={`Open ${cmd.title} in Notes`}
                       >

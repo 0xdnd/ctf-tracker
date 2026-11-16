@@ -43,7 +43,7 @@ export const ReadinessSection: React.FC = () => {
           <div className="text-xl font-semibold font-mono text-primary tabular-nums tracking-tight" data-testid="readiness-score">
             {readiness.score}%
             <span className="ml-2 text-xs font-sans font-normal text-muted">
-              {readiness.solved}/{readiness.attempted} solved
+              {readiness.solved} of {readiness.attempted} boxes you started
             </span>
           </div>
           {readiness.weakestTags.length > 0 && (
@@ -63,7 +63,7 @@ export const ReadinessSection: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedMachineId(m.id)}
-                    className="text-accent hover:underline cursor-pointer font-medium"
+                    className="text-accent hover:underline cursor-pointer font-medium max-md:inline-block max-md:min-h-6 max-md:py-1 max-md:-my-1"
                   >
                     {m.name}
                   </button>
@@ -75,21 +75,24 @@ export const ReadinessSection: React.FC = () => {
       </div>
 
       {/* Review queue */}
+      {due > 0 && (
       <div id="review" className="scroll-mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-sunken border border-subtle px-3 py-2">
         <div className="text-xs text-secondary">
           <h3 className="inline font-semibold text-primary">Review queue:</h3>{' '}
           <span className="tabular-nums font-mono text-primary">{due}</span>{' '}
           {due === 1 ? 'machine is' : 'machines are'} due for review
         </div>
+        {due > 0 && (
         <button
           type="button"
           onClick={showDueInTracker}
-          disabled={due === 0}
           className="inline-flex items-center h-8 px-2.5 rounded-lg border border-subtle bg-surface-card text-xs font-medium text-secondary hover:bg-surface-hover hover:text-primary transition-colors active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11"
         >
           Show due in tracker
         </button>
+        )}
       </div>
+      )}
     </section>
   );
 };

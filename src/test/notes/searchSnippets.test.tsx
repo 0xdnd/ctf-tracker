@@ -63,11 +63,11 @@ function setup(search: string) {
     </MemoryRouter>,
   );
   if (search) {
-    fireEvent.change(screen.getByLabelText('Search cheatsheets and field manual notes'), {
+    fireEvent.change(screen.getByLabelText('Search cheatsheets and notes'), {
       target: { value: search },
     });
   }
-  fireEvent.click(screen.getByRole('button', { name: /Field manual/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Notes/ }));
   fireEvent.click(screen.getAllByRole('button', { name: 'Table' })[0]);
 }
 

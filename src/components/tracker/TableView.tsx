@@ -194,7 +194,8 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
   </div>
 );
 
-const FlagButtons: React.FC<Pick<TableRowProps, 'machine' | 'onToggleUserFlag' | 'onToggleRootFlag'>> = ({
+const FlagButtons: React.FC<Pick<TableRowProps, 'machine' | 'onToggleUserFlag' | 'onToggleRootFlag'> & { full?: boolean }> = ({
+  full = false,
   machine: m,
   onToggleUserFlag,
   onToggleRootFlag,
@@ -207,19 +208,19 @@ const FlagButtons: React.FC<Pick<TableRowProps, 'machine' | 'onToggleUserFlag' |
         type="button"
         onClick={() => onToggleUserFlag(m.id)}
         className={flagBtnClass(hasUser, 'warn')}
-        title="Toggle User Flag"
+        title="User flag"
         aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
       >
-        <Flag className="w-2.5 h-2.5" /> U
+        <Flag className="w-2.5 h-2.5" /> {full ? 'User' : <>U<span className="hidden xl:inline">ser</span></>}
       </button>
       <button
         type="button"
         onClick={() => onToggleRootFlag(m.id, hasRoot)}
         className={flagBtnClass(hasRoot, 'success')}
-        title="Toggle Root Flag"
+        title="Root flag"
         aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
       >
-        <Flag className="w-2.5 h-2.5" /> R
+        <Flag className="w-2.5 h-2.5" /> {full ? 'Root' : <>R<span className="hidden xl:inline">oot</span></>}
       </button>
     </div>
   );
@@ -262,7 +263,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Target name & IP */}
-      <td className="sticky left-10 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-4">
+      <td className="sticky left-10 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-3">
         <div className="flex items-center gap-2.5">
           <PlatformIcon platform={m.platform} className="w-4 h-4 flex-shrink-0" />
           <div>
@@ -276,7 +277,7 @@ const TableRow = React.memo<TableRowProps>(({
               )}
             </div>
             {m.isActive ? (
-              <div className="mt-0.5 text-[11px] font-mono text-muted">HTB ToS Protected</div>
+              <div className="mt-0.5 text-xs font-mono text-muted">HTB ToS Protected</div>
             ) : (
               <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5 tabular-nums font-mono text-xs" />
             )}
@@ -285,7 +286,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Platform */}
-      <td className="py-2.5 px-3">
+      <td className="py-2.5 px-2 max-[1535px]:hidden">
         <PlatformBadge platform={m.platform} size="sm" />
       </td>
 
@@ -297,7 +298,7 @@ const TableRow = React.memo<TableRowProps>(({
           <BadgeOverflow
             badges={[
               <OsBadge key="os" os={m.os} size="xs" />,
-              <CategoryBadge key="cat" machine={m} size="xs" />,
+              <span key="cat" className="max-[1535px]:hidden"><CategoryBadge machine={m} size="xs" /></span>,
             ]}
             max={2}
           />
@@ -305,7 +306,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Difficulty */}
-      <td className="py-2.5 px-3">
+      <td className="py-2.5 px-2 min-w-[112px] whitespace-nowrap">
         <DifficultyBadge difficulty={m.difficulty} size="sm" />
       </td>
 
@@ -322,7 +323,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Flags */}
-      <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
+      <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
         {m.isActive ? (
           <span className="text-xs text-muted flex items-center gap-1 font-mono">
             <Lock className="w-3 h-3 text-callout-warn-fg" /> Protected
@@ -333,12 +334,12 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Time */}
-      <td className="py-2.5 px-3">
+      <td className="py-2.5 px-2 max-[1099px]:hidden">
         <span className="text-secondary font-mono tabular-nums text-xs">{formatSeconds(m.timeSpentSeconds)}</span>
       </td>
 
       {/* Tracks */}
-      <td className="py-2.5 px-3">
+      <td className="py-2.5 px-2 max-[1535px]:hidden">
         {m.isActive ? (
           <span className="text-muted font-mono text-xs">—</span>
         ) : (
@@ -357,7 +358,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Actions */}
-      <td className="sticky right-0 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]" onClick={(e) => e.stopPropagation()}>
+      <td className="xl:sticky xl:right-0 xl:z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[120px] xl:min-w-[140px]" onClick={(e) => e.stopPropagation()}>
         <RowActions
           machine={m}
           isActiveTarget={isActiveTarget}
@@ -405,7 +406,7 @@ const StackedCard = React.memo<TableRowProps>(({
     </div>
     <div className="mt-1 pl-4">
       {m.isActive ? (
-        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-callout-warn-fg">
+        <span className="inline-flex items-center gap-1 text-xs font-mono text-callout-warn-fg">
           <Lock className="w-3 h-3" />
           <span>HTB ToS Protected</span>
         </span>
@@ -415,7 +416,7 @@ const StackedCard = React.memo<TableRowProps>(({
     </div>
     <div className="mt-2.5 flex items-center justify-between gap-2 pl-4">
       {m.isActive ? (
-        <span className="text-[11px] text-muted font-mono">Protected Target</span>
+        <span className="text-xs text-muted font-mono">Protected Target</span>
       ) : (
         <BadgeOverflow
           badges={[
@@ -436,7 +437,7 @@ const StackedCard = React.memo<TableRowProps>(({
       )}
     </div>
     <div className="mt-3 flex items-center justify-between gap-2" role="presentation" onClick={(e) => e.stopPropagation()}>
-      <FlagButtons machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />
+      <FlagButtons full machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />
       <CyberSelect<PipelineStatus>
         value={m.status}
         onChange={(newStatus) => onStatusChange(newStatus, m.id)}
@@ -461,15 +462,15 @@ const StackedCard = React.memo<TableRowProps>(({
 ));
 
 const HEADERS: { label: string; field?: SortField; className: string }[] = [
-  { label: 'Target', field: 'name', className: 'sticky left-10 z-20 bg-surface-base py-3 px-4' },
-  { label: 'Platform', field: 'platform', className: 'py-3 px-3' },
-  { label: 'OS', field: 'os', className: 'py-3 px-3' },
-  { label: 'Difficulty', field: 'difficulty', className: 'py-3 px-3' },
-  { label: 'Status', field: 'status', className: 'py-3 px-3' },
-  { label: 'Flags', className: 'py-3 px-3' },
-  { label: 'Time', field: 'timeSpentSeconds', className: 'py-3 px-3' },
-  { label: 'Tracks', className: 'py-3 px-3' },
-  { label: 'Actions', className: 'sticky right-0 z-20 bg-surface-base py-3 px-4 text-right pr-6 whitespace-nowrap min-w-[200px]' },
+  { label: 'Target', field: 'name', className: 'sticky left-10 z-20 bg-surface-base py-3 px-3' },
+  { label: 'Platform', field: 'platform', className: 'py-3 px-2 min-w-[96px] whitespace-nowrap max-[1535px]:hidden' },
+  { label: 'OS', field: 'os', className: 'py-3 px-2 min-w-[110px] whitespace-nowrap' },
+  { label: 'Difficulty', field: 'difficulty', className: 'py-3 px-2 min-w-[112px] whitespace-nowrap' },
+  { label: 'Status', field: 'status', className: 'py-3 px-2 min-w-[112px] whitespace-nowrap' },
+  { label: 'Flags', className: 'py-3 px-2' },
+  { label: 'Time', field: 'timeSpentSeconds', className: 'py-3 px-2 max-[1099px]:hidden' },
+  { label: 'Tracks', className: 'py-3 px-2 max-[1535px]:hidden' },
+  { label: 'Actions', className: 'xl:sticky xl:right-0 xl:z-20 bg-surface-base py-3 px-4 text-right pr-6 whitespace-nowrap min-w-[120px] xl:min-w-[140px]' },
 ];
 
 export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
@@ -801,7 +802,7 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
       className="rounded-2xl border border-subtle bg-surface-card overflow-hidden text-xs pb-4 mb-20 surface-card-depth machined-edge"
     >
       <div ref={parentRef} className="overflow-x-auto max-h-[calc(100vh-230px)] overflow-y-auto">
-        <table className="w-full text-left border-collapse min-w-[1120px]">
+        <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-surface-base/95 backdrop-blur-sm border-b border-subtle text-xs text-muted font-sans font-semibold machined-edge">
             <tr>
               <th className="sticky left-0 z-20 bg-surface-base py-3 pl-4 pr-0 w-10">

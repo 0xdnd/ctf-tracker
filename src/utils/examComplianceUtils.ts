@@ -190,7 +190,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     maxScore: OSCP_MAX_POINTS,
     // AD points count per machine (10 / 10 / 20), so passing never requires the full chain.
     requiresAdFullChain: false,
-    description: '23 hour 45 minute hands-on certification exam consisting of a 3-machine Active Directory set (40 pts, scored per machine: 10, 10 and 20) and 3 independent standalone machines (20 pts each). Passing threshold: 70 pts.',
+    description: 'An Active Directory set of 3 machines plus 3 standalone machines, 70 of 100 points to pass.',
     targetSummary: '3-Box AD Set (40 pts) + 3 Standalone Targets (60 pts)',
   },
   CPTS: {
@@ -200,7 +200,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     passThreshold: 85,
     maxScore: 100,
     requiresAdFullChain: false,
-    description: '10-day enterprise network penetration test simulating an extensive multi-tier corporate environment with DMZ, internal networks, Active Directory, and vault tier with 14 flag objectives. Passing threshold: 85 pts.',
+    description: 'A multi-tier corporate network with Active Directory and 14 flags, 85 points to pass.',
     targetSummary: 'Multi-Stage Enterprise Network (14 Flag Objectives)',
   },
   CRTO: {
@@ -210,7 +210,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     passThreshold: 75,
     maxScore: 100,
     requiresAdFullChain: false,
-    description: '48-hour Red Team Operator exam focusing on assumed breach operations, Cobalt Strike C2 infrastructure, Active Directory domain dominance, and operational security checkpoints. Passing threshold: 75 pts.',
+    description: 'An assumed breach red team exam with Cobalt Strike and Active Directory, 75 points to pass.',
     targetSummary: '8 C2 Red Team Objectives (12.5 pts each)',
     scoringNote: 'Approximate layout',
   },
@@ -221,7 +221,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     passThreshold: 100,
     maxScore: 100,
     requiresAdFullChain: false,
-    description: 'Evasion Techniques and Breaching Defenses 48-hour practical exam.',
+    description: 'A practical exam on evasion techniques and breaching defenses.',
     targetSummary: 'Enterprise Defense Evasion Lab',
     scoringNote: 'Objective-based',
   },
@@ -232,7 +232,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     passThreshold: 100,
     maxScore: 100,
     requiresAdFullChain: false,
-    description: 'Certified Red Team Professional Active Directory practical assessment.',
+    description: 'A practical Active Directory red team assessment.',
     targetSummary: 'Active Directory Domain Lab',
     scoringNote: 'Objective-based',
   },
@@ -251,7 +251,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     scoringModel: 'objective',
     reportWindowSeconds: 2 * 24 * 3600, // 2 days after the lab window
     debriefMinutes: 15,
-    description: 'Modeled on the published PNPT rules: 5 days of lab time, 2 days to write the report, then a live 15-minute debrief. Objective-based (OSINT, Active Directory exploitation, domain controller compromise); no flags or points.',
+    description: 'Objective based, with no flags or points, followed by a report and a live debrief.',
     targetSummary: '5 Objective Chain to Domain Controller (no flags)',
     scoringNote: 'Objective-based',
   },
@@ -269,7 +269,7 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     maxScore: 100,
     requiresAdFullChain: false,
     reportWindowSeconds: 24 * 3600, // 24h to send documentation after the exam
-    description: 'Modeled on the published OSWE rules: 47h45m proctored white-box web exam, 100 points available, 85 to pass, with 24 further hours to send documentation. Authentication bypass and remote code execution objectives per web application.',
+    description: 'A white-box web exam with 100 points available, 85 to pass, plus a report window.',
     targetSummary: '2 Web Apps: Auth Bypass (35) + RCE (15) per app',
   },
 };

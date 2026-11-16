@@ -139,7 +139,7 @@ describe('modal semantics: prop-driven dialogs', () => {
   it('NewCptsNoteModal exposes a named dialog and Escape calls onClose', () => {
     const onClose = vi.fn();
     render(<NewCptsNoteModal isOpen onClose={onClose} onSave={vi.fn()} existingDirectories={['Methodology']} />);
-    expect(screen.getByRole('dialog', { name: /New field manual note/ }).getAttribute('aria-modal')).toBe('true');
+    expect(screen.getByRole('dialog', { name: /New note/ }).getAttribute('aria-modal')).toBe('true');
     pressEscape();
     expect(onClose).toHaveBeenCalledTimes(1);
   });

@@ -14,6 +14,8 @@ import { ALL_SHELL_ITEMS, availableShellItems, ShellCategory, ShellItem } from '
 import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 import { resolveTemplate, contextFromGlobalVars } from '../../utils/variableSubstitution';
 
+const SHELL_PAGE_SIZE = 20;
+
 interface ReverseShellGeneratorProps {
   initialCategory?: ShellCategory;
 }
@@ -304,6 +306,21 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () =>
     return list;
   }, [platformFilter, searchQuery]);
 
+  // Payload chips: first page only, grouped by language; the page resets whenever the filtered list changes.
+  const [visibleShellCount, setVisibleShellCount] = useState(SHELL_PAGE_SIZE);
+  useEffect(() => {
+    setVisibleShellCount(SHELL_PAGE_SIZE);
+  }, [filteredShells]);
+  const groupedShells = useMemo(() => {
+    const groups = new Map<string, ShellItem[]>();
+    for (const shell of filteredShells.slice(0, visibleShellCount)) {
+      const list = groups.get(shell.language);
+      if (list) list.push(shell);
+      else groups.set(shell.language, [shell]);
+    }
+    return Array.from(groups.entries());
+  }, [filteredShells, visibleShellCount]);
+
   // Unavailable rows (no recovered command) are still shown and selectable so users can see why a
   // known payload is missing, but they never count toward a displayed total.
   const availableFilteredCount = useMemo(
@@ -404,7 +421,7 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () =>
   const segOff = 'text-muted hover:text-primary';
 
   return (
-    <div className="space-y-4 text-xs">
+    <div className="flex flex-col gap-4 text-xs">
       {/* 1. Attacker configuration */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-subtle pb-4">
         {/* LHOST / LPORT / TARGET are edited once in the page header; presets only here */}
@@ -531,50 +548,69 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () =>
       </div>
 
       {/* 3. Payload selector chips */}
-      <div data-tour="rs-payloads" className="max-h-36 overflow-y-auto scrollbar-thin">
-        <div className="flex flex-wrap gap-1.5">
-          {filteredShells.length === 0 ? (
-            <div className="p-2 text-xs text-muted">No reverse shells matched your query.</div>
-          ) : (
-            filteredShells.map((shell) => {
-              const isSelected = shell.id === selectedShellId;
-              return (
-                <button
-                  key={shell.id}
-                  onClick={() => {
-                    handleSelectShell(shell);
-                    if (soundEnabled) playCyberSound('click');
-                  }}
-                  aria-pressed={isSelected}
-                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
-                    isSelected
-                      ? 'border-accent bg-accent-muted font-medium text-primary'
-                      : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
-                  }`}
-                  title={shell.unavailable ? `${shell.name} - unavailable` : `${shell.name} (${shell.language}) - ${shell.platform}`}
-                >
-                  <span>{shell.name}</span>
-                  {shell.unavailable ? (
-                    <span className="rounded px-1 text-[11px] font-medium text-callout-warn-fg">Unavailable</span>
-                  ) : (
-                    shell.isFullScript && (
-                      <span className="rounded px-1 text-[11px] font-medium text-muted">File</span>
-                    )
-                  )}
-                </button>
-              );
-            })
-          )}
-        </div>
+      <div data-tour="rs-payloads" className="flex flex-col gap-2.5">
+        {filteredShells.length === 0 ? (
+          <div className="p-2 text-xs text-muted">No reverse shells matched your query.</div>
+        ) : (
+          <>
+            {groupedShells.map(([language, shells]) => (
+              <div key={language} role="group" aria-label={language} className="space-y-1">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">{language}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {shells.map((shell) => {
+                    const isSelected = shell.id === selectedShellId;
+                    return (
+                      <button
+                        key={shell.id}
+                        onClick={() => {
+                          handleSelectShell(shell);
+                          if (soundEnabled) playCyberSound('click');
+                        }}
+                        aria-pressed={isSelected}
+                        className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                          isSelected
+                            ? 'border-accent bg-accent-muted font-medium text-primary'
+                            : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                        }`}
+                        title={shell.unavailable ? `${shell.name} - unavailable` : `${shell.name} (${shell.language}) - ${shell.platform}`}
+                      >
+                        <span>{shell.name}</span>
+                        {shell.unavailable ? (
+                          <span className="rounded px-1 text-[11px] font-medium text-callout-warn-fg">Unavailable</span>
+                        ) : (
+                          shell.isFullScript && (
+                            <span className="rounded px-1 text-[11px] font-medium text-muted">File</span>
+                          )
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {filteredShells.length > visibleShellCount && (
+              <button
+                type="button"
+                onClick={() => setVisibleShellCount((n) => n + SHELL_PAGE_SIZE)}
+                className="inline-flex min-h-8 items-center rounded-md border border-subtle bg-surface-card px-3 text-xs font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary cursor-pointer [@media(pointer:coarse)]:min-h-11"
+              >
+                Show more ({filteredShells.length - visibleShellCount} left)
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       {/* 4. Payload terminal: the one intentionally dark panel */}
-      <div data-tour="rs-payload-box" className="overflow-hidden rounded-xl border border-subtle">
+      <div data-tour="rs-payload-box" className="overflow-hidden rounded-xl border border-subtle max-md:order-first">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-subtle bg-surface-sunken px-3.5 py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-xs font-semibold text-primary">{activeShell.name}</span>
-            <span className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary">
-              {activeShell.platform}
+            <span
+              className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary"
+              title={activeShell.platform === 'Both' ? 'Works on both Linux and Windows targets' : undefined}
+            >
+              {activeShell.platform === 'Both' ? 'Linux + Windows' : activeShell.platform}
             </span>
             <span className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary">
               {activeShell.language}

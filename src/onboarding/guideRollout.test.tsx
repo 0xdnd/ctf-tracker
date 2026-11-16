@@ -186,8 +186,8 @@ describe('guide cards', () => {
     renderAt('/analytics');
     const hint = screen.getByTestId('page-hint');
     expect(hint).toHaveAttribute('data-trap-companion');
-    expect(hint.className).toContain('rounded-2xl');
-    expect(within(hint).getByRole('heading', { name: 'Analytics' }).className).toContain('text-[17px]');
+    expect(hint.className).toContain('md:max-h-12');
+    expect(within(hint).getByRole('heading', { name: 'Analytics' })).toBeInTheDocument();
     expect(within(hint).getByRole('button', { name: 'Show me' })).toBeInTheDocument();
     expect(within(hint).getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });

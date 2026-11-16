@@ -57,7 +57,7 @@ function setup() {
     </MemoryRouter>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-  return screen.getByLabelText('Search field manual notes');
+  return screen.getByLabelText('Search notes');
 }
 
 describe('full-text search in the field manual sidebar', () => {

@@ -44,7 +44,7 @@ import {
   generateExamReportMarkdown,
   isActiveDirectoryBox,
   supportsWeightedScoring} from '../utils/examComplianceUtils';
-import { computeExamPacing, formatSecondsToHms, formatSecondsToHoursMinutes } from '../utils/examPacingUtils';
+import { computeExamPacing, formatSecondsToHms } from '../utils/examPacingUtils';
 import { ExamEvidenceDropzone } from '../components/exam/ExamEvidenceDropzone';
 import { ExamBurndownChart } from '../components/exam/ExamBurndownChart';
 import { buildBurndownSeries, resolveChartWindow, readPersistedChartExpiry } from '../utils/examBurndown';
@@ -54,6 +54,13 @@ import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
 import { ExamReportModal } from '../components/exam/ExamReportModal';
 import { useExamRabbitHole } from '../hooks/useExamRabbitHole';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
+
+const formatExamLength = (sec: number): string => {
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  if (!m && h >= 48 && h % 24 === 0) return `${h / 24} days`;
+  return `${h} hours${m ? ` ${m} min` : ''}`;
+};
 
 export const ExamSimulatorPage: React.FC = () => {
   const {
@@ -404,7 +411,7 @@ export const ExamSimulatorPage: React.FC = () => {
           className="space-y-6 animate-in fade-in duration-200"
         >
           <PageHeader
-            title="Certification exam simulator"
+            title="Exam Simulator"
             description="Timed OSCP, CPTS and CRTO practice with scoring, pacing and an evidence checklist."
             icon={<GraduationCap />}
             primaryAction={
@@ -433,7 +440,7 @@ export const ExamSimulatorPage: React.FC = () => {
               </span>
             </div>
 
-            <div data-tour="exam-tracks" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div data-tour="exam-tracks" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4">
               {(Object.keys(EXAM_TRACK_CONFIGS) as ExamTrack[]).map((t) => {
                 const conf = EXAM_TRACK_CONFIGS[t];
                 const isSelected = track === t;
@@ -449,7 +456,7 @@ export const ExamSimulatorPage: React.FC = () => {
                         setTrack(t, pool, solvedIds);
                       }
                     }}
-                    className={`cursor-pointer p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge ${
+                    className={`flex h-full cursor-pointer flex-col p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge ${
  isSelected
  ? 'bg-surface-sunken border-accent ring-1 ring-accent'
  : 'bg-surface-card border-subtle hover:border-strong'
@@ -459,29 +466,29 @@ export const ExamSimulatorPage: React.FC = () => {
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle">
                         {t}
                       </span>
-                      <span className="text-[11px] font-medium text-muted font-mono tabular-nums">
+                      <span className="whitespace-nowrap text-[11px] font-medium text-muted font-mono tabular-nums">
                         {conf.scoringModel === 'objective' ? 'Pass: all objectives' : `Pass: ${conf.passThreshold} pts`}
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-primary mb-1">
-                      {conf.name}
+                    <h3 className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-primary">
+                      <span>{conf.name}</span>
                       {conf.scoringNote && (
                         <span
                           data-testid={`exam-track-note-${t.toLowerCase()}`}
-                          className="ml-2 align-middle text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle"
+                          className="inline-block whitespace-nowrap text-[11px] font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle"
                         >
                           {conf.scoringNote}
                         </span>
                       )}
                     </h3>
-                    <p className="text-[11px] text-muted line-clamp-3 mb-3 leading-relaxed">
+                    <p className="text-xs text-secondary mb-3 leading-relaxed">
                       {conf.description}
                     </p>
 
-                    <div className="pt-2 border-t border-subtle text-[11px] text-muted flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                    <div className="mt-auto flex flex-col gap-1 border-t border-subtle pt-2 text-[11px] text-muted">
                       <span className="font-mono tabular-nums">
-                        Duration: {formatSecondsToHoursMinutes(conf.durationSeconds).replace(/ 0m$/, '')}
+                        <span className="text-sm font-semibold text-primary">{formatExamLength(conf.durationSeconds)}</span>
                         {conf.reportWindowSeconds ? ` + ${Math.round(conf.reportWindowSeconds / 3600)}h report` : ''}
                       </span>
                       <span>{conf.targetSummary}</span>
@@ -553,13 +560,13 @@ export const ExamSimulatorPage: React.FC = () => {
               </p>
               {supportsWeightedScoring(track) && (
                 <div>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-secondary">
+                  <label className="flex items-center gap-2 max-md:min-h-8 cursor-pointer text-xs text-secondary">
                     <input
                       type="checkbox"
                       data-testid="exam-weighted-toggle"
                       checked={scoringMode === 'weighted'}
                       onChange={(e) => setScoringMode(e.target.checked ? 'weighted' : 'official', pool, solvedIds)}
-                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0"
+                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0 max-md:h-6 max-md:w-6"
                     />
                     <span className="font-medium text-secondary">Weight points by difficulty</span>
                   </label>
@@ -575,7 +582,7 @@ export const ExamSimulatorPage: React.FC = () => {
                   <Link
                     to="/oscp-points-calculator"
                     data-testid="exam-oscp-calculator-link"
-                    className="text-secondary underline underline-offset-2 hover:text-primary"
+                    className="text-secondary underline underline-offset-2 hover:text-primary max-md:inline-block max-md:py-1.5 max-md:-my-1.5"
                   >
                     Open the OSCP points calculator
                   </Link>{' '}

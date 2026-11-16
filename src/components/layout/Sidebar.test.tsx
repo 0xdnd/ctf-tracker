@@ -39,6 +39,23 @@ describe('Sidebar component', () => {
     expect(screen.getByRole('button', { name: /Expand Sidebar/i })).toBeInTheDocument();
   });
 
+  it('keeps the layout switch when collapsed, as icon-only buttons with names', () => {
+    useCtfStore.setState({ activeTab: 'tracker', viewMode: 'kanban' } as never);
+    render(
+      <BrowserRouter>
+        <Sidebar />
+      </BrowserRouter>
+    );
+    expect(screen.getByTestId('view-grid')).toHaveTextContent('Cards');
+    fireEvent.click(screen.getByRole('button', { name: /Collapse Sidebar/i }));
+    const grid = screen.getByRole('button', { name: 'Grid Cards View' });
+    expect(grid).toHaveAttribute('data-testid', 'view-grid');
+    expect(grid).not.toHaveTextContent('Cards');
+    expect(screen.getByTestId('view-kanban')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(grid);
+    expect(useCtfStore.getState().viewMode).toBe('grid');
+  });
+
   it('renders Vault navigation link', () => {
     render(
       <BrowserRouter>
@@ -46,7 +63,7 @@ describe('Sidebar component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Vault')).toBeInTheDocument();
+    expect(screen.getByText('Evidence Vault')).toBeInTheDocument();
   });
 
   describe('badges follow the store', () => {
@@ -71,51 +88,32 @@ describe('Sidebar component', () => {
 
     it('updates the tracker, vault, progress and analytics badges when a machine status changes', () => {
       render(<BrowserRouter><Sidebar /></BrowserRouter>);
-      expect(badgeOf('Lab & Target Tracker').getByText('0/2')).toBeInTheDocument();
-      expect(badgeOf('Vault').getByText('0')).toBeInTheDocument();
+      expect(badgeOf('Tracker').getByText('0/2')).toBeInTheDocument();
+      expect(badgeOf('Evidence Vault').getByText('0')).toBeInTheDocument();
       expect(screen.queryByTestId('review-due-badge')).toBeNull();
 
       act(() => useCtfStore.getState().updateMachineStatus('a', 'foothold'));
-      expect(badgeOf('Lab & Target Tracker').getByText('0/2')).toBeInTheDocument();
-      expect(badgeOf('Vault').getByText('1')).toBeInTheDocument();
+      expect(badgeOf('Tracker').getByText('0/2')).toBeInTheDocument();
+      expect(badgeOf('Evidence Vault').getByText('1')).toBeInTheDocument();
 
       act(() => useCtfStore.getState().updateMachineStatus('a', 'root'));
-      expect(badgeOf('Lab & Target Tracker').getByText('1/2')).toBeInTheDocument();
+      expect(badgeOf('Tracker').getByText('1/2')).toBeInTheDocument();
       // The Vault badge counts what the Vault page lists: user flag plus root flag now
-      expect(badgeOf('Vault').getByText('2')).toBeInTheDocument();
+      expect(badgeOf('Evidence Vault').getByText('2')).toBeInTheDocument();
       expect(screen.getByText('50%')).toBeInTheDocument();
 
       act(() => useCtfStore.getState().updateMachine('b', { nextReviewAt: Date.now() - 1000 }));
       expect(screen.getByTestId('review-due-badge')).toHaveTextContent(/^1/);
     });
 
-    it('labels the snippets badge with what it counts', () => {
-      render(<BrowserRouter><Sidebar /></BrowserRouter>);
-      expect(badgeOf('Snippets').getByText('85').closest('[title]')).toHaveAttribute('title', '85 snippets');
-
-      act(() => useCtfStore.setState({ userNotes: [{ id: 'n1' }, { id: 'n2' }, { id: 'n3' }] as never }));
-      const badge = badgeOf('Snippets').getByText('88');
-      expect(badge.closest('[title]')).toHaveAttribute('title', '85 snippets + 3 notes');
-      expect(screen.getByText('85 snippets + 3 notes')).toHaveClass('sr-only');
-    });
-
-    it('counts authored notes in the snippets badge and title, and drops them when removed', () => {
+    it('counts only snippets in the badge, never notes', () => {
       render(<BrowserRouter><Sidebar /></BrowserRouter>);
       expect(badgeOf('Snippets').getByText('85')).toBeInTheDocument();
 
+      act(() => useCtfStore.setState({ userNotes: [{ id: 'n1' }, { id: 'n2' }, { id: 'n3' }] as never }));
       act(() => useCtfStore.getState().addCustomNote({ title: 'My new note' }));
-      const noteId = useCtfStore.getState().customNotes[0].id;
-      const badge = badgeOf('Snippets').getByText('86');
-      expect(badge.closest('[title]')).toHaveAttribute('title', '85 snippets + 1 note');
-
-      act(() => useCtfStore.setState({ userNotes: [{ id: 'n1' }, { id: 'n2' }] as never }));
-      expect(badgeOf('Snippets').getByText('88').closest('[title]')).toHaveAttribute('title', '85 snippets + 3 notes');
-
-      act(() => useCtfStore.getState().deleteNote(noteId));
-      expect(badgeOf('Snippets').getByText('87').closest('[title]')).toHaveAttribute('title', '85 snippets + 2 notes');
-
-      act(() => useCtfStore.setState({ deletedNoteIds: ['n1'] }));
-      expect(badgeOf('Snippets').getByText('86').closest('[title]')).toHaveAttribute('title', '85 snippets + 1 note');
+      expect(badgeOf('Snippets').getByText('85')).toBeInTheDocument();
+      expect(screen.queryByText('88')).not.toBeInTheDocument();
     });
 
     it('raises the due count when a scheduled review passes while the app stays open', () => {

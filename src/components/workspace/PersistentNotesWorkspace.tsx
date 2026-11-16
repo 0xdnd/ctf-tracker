@@ -229,8 +229,8 @@ export const PersistentNotesWorkspace: React.FC = () => {
           customWidth !== null
             ? ''
             : dockSize === 'expanded'
-              ? 'w-[68vw] min-w-[540px] max-w-6xl'
-              : 'w-[48vw] min-w-[420px] max-w-4xl'
+              ? 'w-[68vw] min-w-[540px] max-w-[900px]'
+              : 'w-[33vw] min-w-[360px] max-w-[520px]'
         } [&[data-dock-dragging=true]_iframe]:pointer-events-none`}
       >
         <DockResizeHandle />

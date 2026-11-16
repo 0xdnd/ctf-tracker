@@ -73,10 +73,10 @@ describe('Readiness on the Analytics page', () => {
     expect(screen.getByText('tracker page')).toBeInTheDocument();
   });
 
-  it('disables the queue button when nothing is due', () => {
+  it('hides the queue button when nothing is due', () => {
     useCtfStore.setState({ machines: [box('a'), box('c', { nextReviewAt: future })] });
     render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
-    expect(screen.getByRole('button', { name: 'Show due in tracker' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Show due in tracker' })).toBeNull();
   });
 
   it('scrolls to #review when opened with the sidebar scroll state', () => {
@@ -122,8 +122,16 @@ describe('Sidebar review badge', () => {
     );
     const scrollIntoView = vi.fn(function (this: Element) { seen = this.id; });
     Element.prototype.scrollIntoView = scrollIntoView;
-    fireEvent.click(screen.getByRole('button', { name: /Skill Radar & Analytics/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Analytics/ }));
     expect(scrollIntoView).toHaveBeenCalled();
     expect(seen).toBe('review');
+  });
+});
+
+describe('ReadinessSection review queue empty state', () => {
+  it('hides the review queue when nothing is due', () => {
+    useCtfStore.setState({ machines: [], activitySessions: [] });
+    render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
+    expect(document.getElementById('review')).toBeNull();
   });
 });

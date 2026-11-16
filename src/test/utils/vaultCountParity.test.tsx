@@ -54,6 +54,7 @@ describe('Vault sidebar badge parity with the Vault page', () => {
     useCtfStore.setState({ machines: [], credentials: [], lootItems: [] });
     render(<BrowserRouter><EvidenceVaultPage /></BrowserRouter>);
     expect(countVaultItems([], [], [])).toBe(0);
-    expect(pageTotal()).toBe(0);
+    expect(screen.queryByText('Total artifacts')).toBeNull();
+    expect(screen.getByText('Your vault is empty')).toBeInTheDocument();
   });
 });

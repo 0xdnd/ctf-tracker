@@ -199,7 +199,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
-          className="block min-w-0 flex-1 cursor-pointer truncate rounded-xs border-0 bg-transparent p-0 text-left font-sans text-sm font-semibold leading-snug text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="line-clamp-2 min-w-0 flex-1 cursor-pointer break-words rounded-xs border-0 bg-transparent p-0 text-left font-sans text-sm font-semibold leading-snug text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           {m.name}
         </button>
@@ -243,7 +243,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
 
       {/* Row 2: IP (telemetry) and time spent */}
       {m.isActive ? (
-        <div className="mt-1.5 pl-4 text-[11px] text-muted font-mono flex items-center justify-between">
+        <div className="mt-1.5 pl-4 text-xs text-muted font-mono flex items-center justify-between">
           <span className="flex items-center gap-1 text-callout-warn-fg">
             <Lock className="h-3 w-3 text-callout-warn-fg" /> HTB ToS Protected
           </span>
@@ -360,21 +360,23 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
           : 'border-subtle bg-surface-card/60'
       } backdrop-blur-sm ${
         isMobileActive ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'
-      } lg:h-[var(--kanban-h,calc(100vh-270px))] lg:min-h-[480px]`}
+      } lg:h-[var(--kanban-h,calc(100vh-270px))] lg:min-h-[480px] lg:snap-start ${
+        laneMachines.length === 0 ? 'lg:w-40 lg:shrink-0' : 'lg:w-60 lg:min-w-60 lg:max-w-[30rem] lg:flex-1'
+      }`}
     >
       {/* Lane header: sentence-case title, mono count */}
       <div className={`border-b px-3 py-2.5 flex-shrink-0 flex items-center justify-between gap-3 font-sans transition-colors duration-150 ${isOver ? 'border-accent/60 bg-accent/15' : 'border-subtle bg-surface-card/90'}`}>
         <div className="flex items-center gap-2 min-w-0">
           <LaneIcon className="w-3.5 h-3.5 shrink-0 text-muted" />
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-primary truncate font-sans">
+            <div className={`text-sm font-semibold text-primary font-sans ${laneMachines.length === 0 ? 'lg:leading-tight' : 'truncate'}`}>
               {lane.title}
             </div>
-            <div className="text-xs text-muted truncate font-sans" title={lane.subtitle}>{lane.subtitle}</div>
+            <div className={`text-xs text-muted truncate font-sans ${laneMachines.length === 0 ? 'lg:hidden' : ''}`} title={lane.subtitle}>{lane.subtitle}</div>
             {laneMachines.length > limit && (
                 <button
                   onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
-                  className="mt-1 text-xs px-1.5 py-0.5 rounded bg-accent-muted text-accent border border-accent/30 font-medium hover:bg-accent/20 transition-colors active:scale-[0.97] cursor-pointer font-sans whitespace-nowrap"
+                  className="mt-1 min-h-6 text-xs px-2 py-1 rounded bg-accent-muted text-accent border border-accent/30 font-medium hover:bg-accent/20 transition-colors active:scale-[0.97] cursor-pointer font-sans whitespace-nowrap"
                   title="Render all targets in this lane immediately"
                 >
                   Show all
@@ -440,7 +442,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         )}
 
         {laneMachines.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2.5 p-6 text-center border border-dashed border-subtle rounded-lg min-h-[120px]">
+          <div className={`flex flex-col items-center justify-center gap-2.5 p-6 text-center border border-dashed border-subtle rounded-lg min-h-[120px] ${lane.id === 'backlog' ? '' : 'lg:hidden'}`}>
             <p className="text-sm text-muted font-sans max-w-[210px] leading-snug">
               {lane.emptyLine}
             </p>
@@ -555,15 +557,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     }
   }, [hideEmptyLanes, visibleLanes, mobileActiveLane]);
 
-  const gridColsClass = React.useMemo(() => {
-    const count = visibleLanes.length;
-    if (count === 1) return 'grid-cols-1';
-    if (count === 2) return 'grid-cols-1 lg:grid-cols-2';
-    if (count === 3) return 'grid-cols-1 lg:grid-cols-3';
-    if (count === 4) return 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-4';
-    return 'grid-cols-1 lg:grid-cols-3 xl:grid-cols-5';
-  }, [visibleLanes.length]);
-
   // One memo for every lane: stable per-lane arrays (full lane + displayed slice) so React.memo(KanbanLane) holds
   // across unrelated parent re-renders. The engaged target is pinned into the displayed slice.
   const laneData = React.useMemo(() => {
@@ -665,7 +658,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
       <div
         ref={gridRef}
-        className={`grid ${gridColsClass} gap-3.5 items-start transition-colors`}
+        role="region"
+        aria-label="Kanban lanes, scroll horizontally"
+        className="grid grid-cols-1 gap-3.5 items-start transition-colors lg:flex lg:overflow-x-auto lg:snap-x lg:snap-proximity lg:pb-3 lg:scroll-pl-0 rounded-xl"
       >
         {visibleLanes.map((lane) => {
           const { laneMachines, displayedMachines } = laneData.get(lane.id)!;

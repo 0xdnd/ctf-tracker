@@ -172,3 +172,10 @@ main:focus{outline:none}
 /* Back to top (public/table-filter.js adds it after the first screen of scrolling). Fixed, so it never moves the layout. */
 .tf-top[hidden]{display:none}
 .tf-top{position:fixed;right:var(--s4);bottom:var(--s4);z-index:40;box-shadow:var(--shadow-lift)}
+/* /revshells/ paging (public/revshells-filter.js adds the pagers and the list heading; without JS none of this exists). */
+.rs-list-head{margin:var(--s5) 0 0;font-size:var(--fs-small);font-weight:600;color:var(--text-2)}
+.rs-list-head:focus{outline:none}
+.rs-pager{display:flex;align-items:center;justify-content:center;gap:var(--s4);margin:var(--s4) 0}
+.rs-pager[hidden],.rs-list-head[hidden]{display:none}
+.rs-pager-label{color:var(--text-2);font-size:var(--fs-small);min-width:7rem;text-align:center}
+.rs-pager .btn:disabled{opacity:.5;cursor:not-allowed}

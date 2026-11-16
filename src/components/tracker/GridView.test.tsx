@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { GridView } from './GridView';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -102,5 +102,51 @@ describe('GridView progressive mount', () => {
     expect(cardCount()).toBe(6);
     await flush();
     expect(cardCount()).toBe(32);
+  });
+});
+
+describe('GridView card actions', () => {
+  beforeEach(() => {
+    useCtfStore.setState({ activeTargetId: null, soundEnabled: false, selectedMachineId: null, reportMachineId: null });
+  });
+
+  it('keeps the hint behind one small control until it is used', () => {
+    const [m] = makeMachines(1);
+    mount([{ ...m, hint: 'Look at the web root' } as Machine]);
+    expect(screen.queryByText('Look at the web root')).toBeNull();
+    const peek = screen.getByRole('button', { name: 'Peek intel hint for box0' });
+    expect(peek).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(peek);
+    expect(screen.getByText('Look at the web root')).toBeInTheDocument();
+    expect(useCtfStore.getState().selectedMachineId).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide intel hint for box0' }));
+    expect(screen.queryByText('Look at the web root')).toBeNull();
+  });
+
+  it('opens the machine from the visible open button', () => {
+    mount(makeMachines(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Open attack methodology checklist for box0' }));
+    expect(useCtfStore.getState().selectedMachineId).toBe('box-0');
+  });
+
+  it('puts the other actions in a menu rendered outside the card, without selecting the card', async () => {
+    mount(makeMachines(1));
+    const card = document.querySelector('.cyber-card-contain') as HTMLElement;
+    expect(screen.queryByRole('menu')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for box0' }));
+    const menu = screen.getByRole('menu');
+    expect(card.contains(menu)).toBe(false);
+    expect(menu.parentElement).toBe(document.body);
+    const names = screen.getAllByRole('menuitem').map((el) => el.getAttribute('aria-label'));
+    expect(names).toEqual([
+      'Share direct link to box0',
+      'Open dedicated mission dossier for box0',
+      'Open executive pentest pre-report for box0',
+      'Open writeup studio for box0',
+    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open executive pentest pre-report for box0' }));
+    expect(useCtfStore.getState().reportMachineId).toBe('box-0');
+    expect(useCtfStore.getState().selectedMachineId).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
 });

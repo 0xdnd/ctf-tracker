@@ -65,8 +65,8 @@ describe('ZEROBOX Audit & Polish Verification Suite', () => {
     expect(screen.getByText('Reverse Shells')).toBeInTheDocument();
     const navItem = screen.getByText('Snippets');
     expect(navItem).toBeInTheDocument();
-    // Badge shows combined snippets + vault notes: 85 + 12 = 97
-    expect(screen.getByText('97')).toBeInTheDocument();
+    // Badge shows the snippet count only, the same number the Snippets tab shows
+    expect(screen.getByText('85')).toBeInTheDocument();
   });
 
   it('R3 (Deep Linking): TrackerView parses ?target=RootMe from URL search params', () => {

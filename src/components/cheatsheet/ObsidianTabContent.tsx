@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useDeferredValue, useCallb
 import { BookOpen, Link as LinkIcon, Clock, List, Edit3, Copy, Download, FileCheck2 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { copyNoteMarkdown, downloadNoteMarkdown, sendNoteToReport } from '../../utils/noteActions';
-import { noteTitleCandidates } from '../../utils/noteMeta';
+import { displayCategory, displayNoteMeta, noteTitleCandidates } from '../../utils/noteMeta';
 import { CptsNoteEntry, parseObsidianNote, getBacklinksForNote } from '../../utils/obsidianManualUtils';
 import { playCyberSound } from '../../utils/helpers';
 import { GlobalVariables } from '../../types';
@@ -287,7 +287,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                   {b.titleEn || b.title}
                 </div>
                 <div className="text-[10px] text-muted truncate">
-                  {b.category} {b.subCategory ? `› ${b.subCategory}` : ''}
+                  {[displayCategory(b), b.subCategory ? `› ${b.subCategory}` : ''].filter(Boolean).join(' ')}
                 </div>
               </button>
             ))}
@@ -298,6 +298,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
   );
 
   const isShell = variant === 'shell';
+  // Imported notes copy their tags into tools; show each word once (as the tag chip).
+  const tagSet = new Set((note.tags ?? []).map((t) => t.toLowerCase()));
   const columnWidth = isShell ? (viewMode === 'split' ? 'max-w-[1440px]' : 'max-w-[720px]') : isMaximized ? 'max-w-full px-6 sm:px-12' : 'max-w-6xl';
   const columnPadding = isShell
     ? 'px-4 pb-[100px] pt-6 md:px-6 md:pb-[120px] md:pt-10'
@@ -324,7 +326,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           </h1>
           <div data-testid="note-meta" className="mb-7 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-tertiary">
             {note.tags?.map((t) => {
-              const chipClass = 'rounded-sm bg-accent-muted px-2 py-0.5 text-accent';
+              const chipClass = 'rounded-sm bg-accent-muted px-2 py-0.5 text-accent max-md:inline-flex max-md:min-h-6 max-md:items-center';
               return onTagClick ? (
                 <button
                   key={t}
@@ -340,8 +342,8 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 </span>
               );
             })}
-            {note.stage && <span>Stage: {note.stage}</span>}
-            {note.difficulty && <span>{note.difficulty}</span>}
+            {displayNoteMeta(note, 'stage') && <span>Stage: {note.stage}</span>}
+            {displayNoteMeta(note, 'difficulty') && <span>{note.difficulty}</span>}
             {note.noteType && <span>{note.noteType}</span>}
             {note.dateModified && (
               <span className="flex items-center gap-1">
@@ -349,7 +351,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 <time dateTime={note.dateModified} title={note.dateModified}>{formatNoteDate(note.dateModified)}</time>
               </span>
             )}
-            {note.tools?.map((tool) => (
+            {note.tools?.filter((tool) => !tagSet.has(tool.toLowerCase())).map((tool) => (
               <span key={tool} className="rounded-sm bg-surface-sunken px-2 py-0.5 font-mono text-secondary">
                 {tool}
               </span>
@@ -374,16 +376,18 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
             </h1>
 
             <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-              {note.stage && (
+              {displayNoteMeta(note, 'stage') && (
                 <span className="px-2 py-0.5 rounded font-semibold bg-surface-sunken text-accent border border-accent/30">
                   Stage: {note.stage}
                 </span>
               )}
-              <span className="px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/30">
-                {note.difficulty || 'Core'}
-              </span>
+              {displayNoteMeta(note, 'difficulty') && (
+                <span className="px-2 py-0.5 rounded bg-accent-muted text-accent border border-accent/30">
+                  {note.difficulty}
+                </span>
+              )}
               <span className="px-2 py-0.5 rounded bg-surface-sunken border border-subtle text-muted">
-                {note.noteType || 'Field Manual'}
+                {note.noteType || 'Note'}
               </span>
               {note.dateModified && (
                 <span className="px-2 py-0.5 rounded text-muted bg-surface-sunken border border-subtle flex items-center gap-1">
@@ -444,7 +448,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               {note.tags && note.tags.length > 0 && (
                 <div className="flex items-center gap-1 flex-wrap">
                   {note.tags.map((t) => {
-                    const chipClass = 'text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent';
+                    const chipClass = 'text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent max-md:inline-flex max-md:min-h-6 max-md:items-center';
                     return onTagClick ? (
                       <button
                         key={t}

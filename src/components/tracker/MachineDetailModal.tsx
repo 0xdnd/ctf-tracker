@@ -68,6 +68,7 @@ import { LabTimelineAndIndependence } from './LabTimelineAndIndependence';
 import { communityLink, ownWriteupHref, resolveHubRootWriteupHref } from '../../utils/machineLinks';
 import { isTauriTarget } from '../../utils/runtimeTarget';
 
+const SEC_BTN = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent border border-strong text-secondary hover:text-primary hover:bg-surface-hover font-medium text-xs transition-colors active:scale-[0.97] cursor-pointer";
 const HEADER_ICON_BTN =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
 
@@ -313,6 +314,13 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
     setTimeout(() => setCopiedReportMd(false), 2000);
   };
 
+  const NEXT_STEP: Partial<Record<PipelineStatus, [PipelineStatus, string]>> = {
+    backlog: ['recon', 'Start recon'],
+    recon: ['foothold', 'Mark foothold'],
+    foothold: ['root', 'Mark root'],
+    root: ['completed', 'Mark completed'],
+  };
+
   const pipelineStages: { id: PipelineStatus; label: string; title: string }[] = [
     { id: 'backlog', label: 'Backlog', title: 'Backlog' },
     { id: 'recon', label: 'Recon', title: 'Recon in progress' },
@@ -421,7 +429,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   setSelectedMachineId(machine.id);
                   setReconAutomationModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 h-8 px-3 mr-1 rounded-lg bg-accent text-on-accent hover:bg-accent-hover font-medium text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
+                className={`${SEC_BTN} mr-1 [@media(pointer:coarse)]:h-11`}
                 title="Open Multi-Format Scan Importer & Payload Crafter for this target"
               >
                 <Zap className="w-3.5 h-3.5" />
@@ -1263,7 +1271,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
             <div className="p-3 rounded-lg border border-subtle bg-surface-sunken">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-callout-warn-fg font-semibold flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 text-callout-warn-fg" /> Intel hint (spoiler masked)
+                  <AlertCircle className="w-3 h-3 text-callout-warn-fg" /> Hint (spoiler masked)
                 </span>
                 <button
                   type="button"
@@ -1271,7 +1279,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                   className="text-xs text-tertiary hover:text-primary flex items-center gap-1"
                 >
                   {showHint ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  <span>{showHint ? 'Mask Hint' : 'Reveal Hint'}</span>
+                  <span>{showHint ? 'Hide hint' : 'Show hint'}</span>
                 </button>
               </div>
               <div
@@ -1555,7 +1563,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
               <>
                 <button
                   onClick={() => setReportMachineId(machine.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-callout-tip-bg hover:bg-callout-tip-bg border border-callout-tip-border text-callout-tip-fg hover:text-callout-tip-fg font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
+                  className={SEC_BTN}
                   title="Open Printable Pentest Report PDF"
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -1563,15 +1571,23 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
                 </button>
                 <button
                   onClick={handleOpenInWriteup}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-muted border border-accent text-callout-info-fg hover:bg-accent hover:text-on-accent font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] shadow-xs"
+                  className={SEC_BTN}
                 >
                   <FileText className="w-3.5 h-3.5" /> Writeup Studio
                 </button>
               </>
             )}
+            {NEXT_STEP[machine.status] && (
+              <button
+                onClick={() => handleStatusChange(NEXT_STEP[machine.status]![0])}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-on-accent hover:bg-accent-hover font-semibold text-xs transition-colors active:scale-[0.97] cursor-pointer"
+              >
+                {NEXT_STEP[machine.status]![1]}
+              </button>
+            )}
             <button
               onClick={() => setSelectedMachineId(null)}
-              className="px-4 py-1.5 rounded-lg bg-surface-card border border-strong text-primary hover:border-callout-success-border transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] font-medium shadow-xs"
+              className="px-3 py-1.5 rounded-lg text-xs bg-transparent text-secondary hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] font-medium"
             >
               Done
             </button>

@@ -86,7 +86,7 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Terminal className="w-4 h-4 text-accent" />
-          <span className="text-xs font-semibold text-primary whitespace-nowrap">Offensive HUD Variables</span>
+          <span className="text-xs font-semibold text-primary whitespace-nowrap">Your details</span>
           {credIsHash && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border text-[10px] font-mono">
               <ShieldAlert className="w-3 h-3" />
@@ -118,6 +118,9 @@ export const GlobalHudVarsBar: React.FC<GlobalHudVarsBarProps> = ({ className = 
       </div>
 
       {/* Core variables quick-pills (collapsed by default; toggled via "Edit variables") */}
+      {expanded && (
+      <p className="text-xs text-secondary">Fill these once and every command below uses them.</p>
+      )}
       {expanded && (
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 text-xs">
         <div className="space-y-1">

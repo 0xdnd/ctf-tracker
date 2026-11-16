@@ -63,7 +63,7 @@ describe('NotesRibbon footer', () => {
   it('keeps the default footer and replaces it when given one', () => {
     const props = { activePanel: null, onSelectPanel: vi.fn(), onOpenSwitcher: vi.fn() };
     const { unmount } = render(<NotesRibbon {...props} onBack={vi.fn()} />);
-    expect(screen.getByLabelText('Back to ZeroBox')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to app' })).toBeInTheDocument();
     expect(screen.getByTestId('notes-ribbon')).toHaveAttribute('data-tour', 'notes-ribbon');
     unmount();
     render(
@@ -73,7 +73,7 @@ describe('NotesRibbon footer', () => {
         panelButtonProps={{ files: { 'data-testid': 'files-btn' } }}
       />,
     );
-    expect(screen.queryByLabelText('Back to ZeroBox')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back to app' })).toBeNull();
     expect(screen.getByText('custom')).toBeInTheDocument();
     expect(screen.getByTestId('files-btn')).toHaveAttribute('aria-label', 'Files');
   });

@@ -226,6 +226,18 @@ See [[nmap]].
       expect(sqliNote?.outgoingWikilinks).toContain(nmapNote?.id);
     });
 
+    it('records whether difficulty and stage came from frontmatter', async () => {
+      const zip = new JSZip();
+      zip.file('a/with.md', '---\ntitle: With\ndifficulty: hard\n---\nbody');
+      zip.file('a/without.md', '---\ntitle: Without\n---\nbody');
+      const result = await parseObsidianVaultZip(await zip.generateAsync({ type: 'blob' }));
+      const w = result.notes.find((n) => n.filename === 'with');
+      const wo = result.notes.find((n) => n.filename === 'without');
+      expect(w?.difficulty).toBe('hard');
+      expect(w?.metaFromFrontmatter).toEqual({ difficulty: true, stage: false });
+      expect(wo?.metaFromFrontmatter).toEqual({ difficulty: false, stage: false });
+    });
+
     it('rejects zip slip entries and ignores out-of-bounds traversal paths inside archives', async () => {
       const zip = new JSZip();
       zip.file('../../etc/passwd', 'root:x:0:0:root:/root:/bin/bash');

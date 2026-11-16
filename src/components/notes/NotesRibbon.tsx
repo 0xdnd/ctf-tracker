@@ -1,5 +1,6 @@
 import React from 'react';
-import { Folder, Search, Hash, Zap, ExternalLink, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Folder, Search, Hash, Zap, ExternalLink, type LucideIcon } from 'lucide-react';
+import { Tooltip } from '../common/Tooltip';
 import { openInNewTab } from '../../utils/openInNewTab';
 
 import type { NotesPanelView } from '../../store/useNotesWorkspaceStore';
@@ -12,7 +13,7 @@ export interface NotesRibbonProps {
   /** Pressing the active panel while it is open toggles the sidebar closed. */
   onSelectPanel: (p: NotesRibbonPanel) => void;
   onOpenSwitcher: () => void;
-  /** Full-screen "Back to ZeroBox". Ignored when `footer` is given. */
+  /** Full-screen "Back to app". Ignored when `footer` is given. */
   onBack?: () => void;
   /** Replaces the default bottom buttons (open in new tab, back). */
   footer?: React.ReactNode;
@@ -38,7 +39,7 @@ export const NotesRibbon: React.FC<NotesRibbonProps> = ({
   panelButtonProps,
 }) => (
   <nav
-    aria-label="Field manual ribbon"
+    aria-label="Notes ribbon"
     data-testid="notes-ribbon"
     data-tour="notes-ribbon"
     className="flex w-11 flex-shrink-0 flex-col items-center gap-1 border-r border-subtle bg-surface-sunken py-2"
@@ -81,16 +82,16 @@ export const NotesRibbon: React.FC<NotesRibbonProps> = ({
         >
           <ExternalLink className="h-[18px] w-[18px]" aria-hidden={true} />
         </button>
-        <button
-          type="button"
-          aria-label="Back to ZeroBox"
-          title="Back to ZeroBox"
-          onClick={() => onBack?.()}
-          className="flex w-full cursor-pointer flex-col items-center gap-0.5 py-1 text-[11px] leading-none text-muted transition-colors duration-150 motion-reduce:transition-none hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
-        >
-          <span aria-hidden="true">←</span>
-          <span aria-hidden="true">ZeroBox</span>
-        </button>
+        <Tooltip content="Back to app" side="right">
+          <button
+            type="button"
+            aria-label="Back to app"
+            onClick={() => onBack?.()}
+            className={`${btn} border border-subtle text-secondary hover:bg-surface-hover hover:text-primary`}
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </Tooltip>
       </>
     )}
   </nav>

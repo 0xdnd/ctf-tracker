@@ -278,6 +278,7 @@ export async function parseObsidianRawItems(
       filename: fileName,
       difficulty: frontmatter['difficulty'] || 'intermediate',
       stage: frontmatter['stage'] || 'Exploitation',
+      metaFromFrontmatter: { difficulty: !!frontmatter['difficulty'], stage: !!frontmatter['stage'] },
       commands,
       tools: tools.length > 0 ? tools : tags.slice(0, 5),
       tags,

@@ -4,6 +4,7 @@ import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { stripTrailingSlash } from '../../utils/pathUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { CoffeeLink } from '../common/CoffeeLink';
 import {
   Crosshair,
   Terminal,
@@ -23,10 +24,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
-import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useExamStore } from '../../store/examStore';
-import { useOpenTabCount } from '../../hooks/useOpenTabCount';
-import { useSnippetTotals } from '../../hooks/useSnippetTotals';
 import { useTrackerCounts } from '../../hooks/useTrackerCounts';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
@@ -42,12 +40,10 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const notesHref = isTauriTarget() ? '#/field-manual' : '/field-manual';
   const location = useLocation();
+  const isNotesPage = location.pathname.startsWith('/field-manual') || location.pathname.startsWith('/notes');
 
-  const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
   // Track ids are already short (OSCP, CPTS, CRTO...), so the badge shows the track the setup screen is on
   const examTrack = useExamStore((s) => s.track);
-  const openNotesCount = useOpenTabCount();
-  const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
 
   const { 
     activeTab, 
@@ -91,22 +87,20 @@ export const Sidebar: React.FC = () => {
   }, []);
   const dueReviews = useMemo(() => countDueReviews(machines, now), [machines, now]);
 
-  const { snippets: snippetCount, notes: noteCount, total: snippetTotal } = useSnippetTotals();
-  const snippetsBadgeLabel =
-    noteCount > 0 ? `${snippetCount} snippets + ${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : `${snippetCount} snippets`;
+  const snippetCount = useCtfStore((s) => (s.cheatsheets ?? []).length);
 
   const navItems = [
     {
       id: 'tracker',
       path: '/tracker',
-      label: 'Lab & Target Tracker',
+      label: 'Tracker',
       icon: Crosshair,
       badge: `${rootedMachines}/${totalMachines}`,
     },
     {
       id: 'vault',
       path: '/vault',
-      label: 'Vault',
+      label: 'Evidence Vault',
       icon: KeyRound,
       badge: `${vaultCount}`,
     },
@@ -127,8 +121,7 @@ export const Sidebar: React.FC = () => {
       path: '/cheatsheets',
       label: 'Snippets',
       icon: Code,
-      badge: `${snippetTotal}`,
-      badgeLabel: snippetsBadgeLabel,
+      badge: `${snippetCount}`,
     },
     {
       id: 'writeup',
@@ -139,14 +132,14 @@ export const Sidebar: React.FC = () => {
     {
       id: 'analytics',
       path: '/analytics',
-      label: 'Skill Radar & Analytics',
+      label: 'Analytics',
       icon: AnalyticsMonitorIcon,
       dueBadge: dueReviews,
     },
     {
       id: 'exam',
       path: '/exam',
-      label: '24h Exam Simulator',
+      label: 'Exam Simulator',
       icon: Timer,
       badge: examTrack,
     },
@@ -194,7 +187,7 @@ export const Sidebar: React.FC = () => {
           const isActive =
             stripTrailingSlash(location.pathname) === item.path ||
             (item.id === 'tracker' && (stripTrailingSlash(location.pathname) === '/' || location.pathname.startsWith('/target'))) ||
-            (item.id === 'cheatsheet' && (location.pathname.startsWith('/cheatsheet') || location.pathname.startsWith('/field-manual') || location.pathname.startsWith('/notes') || location.pathname.startsWith('/cpts'))) ||
+            (item.id === 'cheatsheet' && (location.pathname.startsWith('/cheatsheet') || location.pathname.startsWith('/cpts'))) ||
             (item.id === 'vault' && (location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')));
           return (
             <motion.button
@@ -219,17 +212,9 @@ export const Sidebar: React.FC = () => {
                   <span className="truncate mr-2">{item.label}</span>
                   {'badge' in item && item.badge && (
                     <span
-                      title={'badgeLabel' in item ? item.badgeLabel : undefined}
                       className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums"
                     >
-                      {'badgeLabel' in item ? (
-                        <>
-                          <span aria-hidden="true">{item.badge}</span>
-                          <span className="sr-only">{item.badgeLabel}</span>
-                        </>
-                      ) : (
-                        item.badge
-                      )}
+                      {item.badge}
                     </span>
                   )}
                   {'dueBadge' in item && item.dueBadge > 0 && (
@@ -253,7 +238,7 @@ export const Sidebar: React.FC = () => {
           );
         })}
 
-        {/* Field Notes Workspace Sidecar Toggle: a real link so Ctrl/Cmd+click and middle-click open the field manual in a new tab */}
+        {/* Notes: a real link, so a plain click opens the full Notes page and Ctrl/Cmd+click or middle-click open a new tab */}
         <div className="relative">
           <motion.a
             whileTap={{ scale: 0.97 }}
@@ -268,37 +253,30 @@ export const Sidebar: React.FC = () => {
                 return;
               }
               e.preventDefault();
-              toggleNotesWorkspace();
+              navigate('/field-manual');
               if (soundEnabled) playCyberSound('click');
             }}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               collapsed ? '' : 'pr-9'
             } ${
-              isNotesOpen
+              isNotesPage
                 ? 'bg-surface-hover text-primary font-medium'
                 : 'text-secondary hover:text-primary hover:bg-surface-hover/70'
             }`}
-            title={isNotesOpen ? 'Close Notes Workspace (Alt+N)' : 'Open Notes Workspace (Alt+N)'}
-            aria-label="Notes Workspace"
+            title="Open Notes"
+            aria-label="Notes"
+            aria-current={isNotesPage ? 'page' : undefined}
           >
-            {isNotesOpen && (
+            {isNotesPage && (
               <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />
             )}
             <div className="flex-shrink-0 relative">
-              <NotebookText className={`w-4 h-4 ${isNotesOpen ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
-              {openNotesCount > 0 && collapsed && (
-                <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-accent" />
-              )}
+              <NotebookText className={`w-4 h-4 ${isNotesPage ? 'text-accent' : 'text-muted group-hover:text-secondary'}`} />
             </div>
 
             {!collapsed && (
               <div className="flex-1 flex items-center justify-between min-w-0 text-left">
                 <span className="truncate mr-2">Notes</span>
-                {openNotesCount > 0 && (
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted flex-shrink-0 font-mono font-medium whitespace-nowrap tabular-nums">
-                    {openNotesCount} open
-                  </span>
-                )}
               </div>
             )}
           </motion.a>
@@ -316,13 +294,17 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* View switcher when in Tracker view */}
-        {activeTab === 'tracker' && !collapsed && (
+        {activeTab === 'tracker' && (
           <div className="mt-3 pt-2.5 border-t border-subtle">
-            <div className="px-2 text-[11px] font-medium text-muted mb-1.5">Layout</div>
-            <div data-tour="layout-switcher" className="grid grid-cols-4 gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle">
+            {!collapsed && <div className="px-2 text-[11px] font-medium text-muted mb-1.5">Layout</div>}
+            <div data-tour="layout-switcher" className={`grid ${collapsed ? 'grid-cols-1' : 'grid-cols-4'} gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle`}>
               {layoutModes.map(({ id, label, title, Icon }) => (
                 <button
                   key={id}
+                  type="button"
+                  aria-label={collapsed ? title : undefined}
+                  data-testid={`view-${id}`}
+                  aria-pressed={viewMode === id}
                   onClick={() => {
                     setViewMode(id);
                     if (soundEnabled) playCyberSound('click');
@@ -335,7 +317,7 @@ export const Sidebar: React.FC = () => {
                   title={title}
                 >
                   <Icon className="w-3.5 h-3.5 mb-0.5" />
-                  <span>{label}</span>
+                  {!collapsed && <span>{label}</span>}
                 </button>
               ))}
             </div>
@@ -398,9 +380,10 @@ export const Sidebar: React.FC = () => {
             </div>
             <span className="text-[11px] text-muted flex-shrink-0 group-hover:text-secondary">About</span>
           </button>
-          <div className="flex items-center gap-3 px-2 text-[11px] text-muted">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 text-[11px] text-muted">
             <a href="https://ctftracker.com/privacy/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Privacy</a>
             <a href="https://ctftracker.com/terms/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Terms</a>
+            <CoffeeLink />
           </div>
         </div>
       ) : (

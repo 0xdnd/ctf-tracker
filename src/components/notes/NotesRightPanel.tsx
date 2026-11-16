@@ -62,7 +62,9 @@ export const NotesRightPanel: React.FC<NotesRightPanelProps> = ({
       <section data-testid="right-panel-outline" aria-label="Outline">
         <h2 className={sectionTitle}>Outline</h2>
         {outline.length === 0 ? (
-          <div className={emptyText}>No headings in this note.</div>
+          <div className={emptyText}>
+            {note ? 'Only a title, no sections yet' : 'Open a note to see its outline'}
+          </div>
         ) : (
           <div className="px-1">
             {outline.map((o, i) => (

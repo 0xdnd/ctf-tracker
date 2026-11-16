@@ -21,7 +21,7 @@ describe('Analytics icon', () => {
   it('uses the same icon in the sidebar item and the page header', () => {
     useCtfStore.setState({ soundEnabled: false, machines: [] });
     const { container: side } = render(<MemoryRouter><Sidebar /></MemoryRouter>);
-    const item = screen.getByRole('button', { name: /Skill Radar & Analytics/ });
+    const item = screen.getByRole('button', { name: /^Analytics/ });
     expect(item.querySelector('svg.lucide-analytics-monitor')).not.toBeNull();
     side.remove();
     const { container: page } = render(<MemoryRouter><AnalyticsView /></MemoryRouter>);

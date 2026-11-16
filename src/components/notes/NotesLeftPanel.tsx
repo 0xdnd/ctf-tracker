@@ -11,6 +11,8 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
+import { OverflowMenu } from '../common/OverflowMenu';
+import { confirmAction } from '../../store/useConfirmStore';
 import type { CptsNoteEntry, CptsTreeNode } from '../../utils/obsidianManualUtils';
 import { CptsTreeItem } from '../cheatsheet/CptsTreeItem';
 import { NoteMatchSnippets } from '../cheatsheet/NoteMatchSnippets';
@@ -52,7 +54,6 @@ export interface NotesLeftPanelProps {
   // footer
   deletedCount: number;
   onRestoreDeleted: () => void;
-  wipeArmed: boolean;
   wipeCount: number;
   onWipeVault: () => void;
   onShowCards: () => void;
@@ -72,7 +73,7 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
     view, onCollapse, focusSignal, tree, expandedFolders, onToggleFolder, selectedPath, onSelectFolder,
     onSelectNote, onDeleteNote, onAddNoteToFolder, langMode, activeNoteId, onExpandAll, onCollapseAll,
     onNewNote, onImport, activeTag, onClearTag, query, onQueryChange, results, onOpenResult, tags,
-    onSelectTag, deletedCount, onRestoreDeleted, wipeArmed, wipeCount, onWipeVault, onShowCards,
+    onSelectTag, deletedCount, onRestoreDeleted, wipeCount, onWipeVault, onShowCards,
     onShowTable, onBackToSnippets,
   } = props;
 
@@ -112,6 +113,31 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
                 <ChevronsDownUp className="h-4 w-4" aria-hidden={true} />
               </button>
             </>
+          )}
+          {view === 'files' && wipeCount > 0 && (
+            <OverflowMenu
+              portal
+              label="More file actions"
+              className={iconBtn}
+              items={[
+                {
+                  id: 'delete-all',
+                  label: `Delete all imported notes (${wipeCount})`,
+                  icon: <Trash2 className="h-3.5 w-3.5" aria-hidden={true} />,
+                  danger: true,
+                  onSelect: () => {
+                    void confirmAction({
+                      title: `Delete all ${wipeCount} notes?`,
+                      body: `This removes all ${wipeCount} notes from the notes list. This cannot be undone.`,
+                      confirmLabel: 'Delete all',
+                      tone: 'danger',
+                    }).then((ok) => {
+                      if (ok) onWipeVault();
+                    });
+                  },
+                },
+              ]}
+            />
           )}
           <button type="button" className={iconBtn} onClick={onCollapse} title="Collapse explorer (Ctrl+B)" aria-label="Collapse sidebar">
             <PanelLeft className="h-4 w-4" aria-hidden={true} />
@@ -167,7 +193,7 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
                 type="text"
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
-                aria-label="Search field manual notes"
+                aria-label="Search notes"
                 placeholder="Search notes…"
                 className="w-full rounded-md border border-subtle bg-surface-sunken py-1.5 pl-2.5 pr-7 text-xs text-primary placeholder:text-muted focus:border-accent focus:outline-none"
               />
@@ -232,29 +258,9 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
             ↺ {deletedCount} deleted · Restore
           </button>
         )}
-        {wipeCount > 0 && (
-          <button
-            type="button"
-            data-testid="header-delete-notes-btn"
-            onClick={onWipeVault}
-            className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
-              wipeArmed
-                ? 'border border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg'
-                : 'border border-subtle text-muted hover:bg-callout-danger-bg hover:text-callout-danger-fg'
-            }`}
-            title={
-              wipeArmed
-                ? `Click again to permanently delete all ${wipeCount} notes (cannot be undone)`
-                : `Delete all ${wipeCount} notes`
-            }
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden={true} />
-            <span>{wipeArmed ? `Confirm Delete (${wipeCount})?` : `Delete (${wipeCount})`}</span>
-          </button>
-        )}
         <button type="button" className={footBtn} onClick={onBackToSnippets}>
           <Terminal className="h-3.5 w-3.5" aria-hidden={true} />
-          <span>← Back to snippets</span>
+          <span>Snippets</span>
         </button>
       </div>
     </div>

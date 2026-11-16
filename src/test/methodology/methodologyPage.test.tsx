@@ -42,7 +42,7 @@ const baseMachine = (overrides: Record<string, unknown> = {}) => ({
 describe('MethodologyPage', () => {
   it('renders the playbook header and search input', () => {
     renderPage();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Attack Lifecycle/i);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Attack Methodology/i);
     expect(screen.getByLabelText(/Search methodology commands/i)).toBeInTheDocument();
   });
 

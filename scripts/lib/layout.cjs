@@ -101,8 +101,14 @@ const ICON = {
   warn: svgIcon('ico-warn', '<path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/>'),
   github: svgIcon('ico-github', '<path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5"/>'),
   linkedin: svgIcon('ico-linkedin', '<path d="M8 11v5"/><path d="M8 8v.01"/><path d="M12 16v-5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/><path d="M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4z"/>'),
+  coffee: svgIcon('ico-coffee', '<path d="M3 14c.83 .642 2.077 1.017 3.5 1c1.423 .017 2.67 -.358 3.5 -1c.83 -.642 2.077 -1.017 3.5 -1c1.423 -.017 2.67 .358 3.5 1"/><path d="M8 3a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2"/><path d="M12 3a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2"/><path d="M3 10h14v5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -6 -6v-5z"/><path d="M16.746 16.726a3 3 0 1 0 .252 -5.555"/>'),
   ext: svgIcon('ico-ext', '<path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>'),
 };
+
+// "Buy me a coffee": a plain link with an inline cup icon, no third-party widget script. Footer of every page; coffeeNote() closes the revshells and cheatsheet pages.
+const COFFEE_URL = 'https://buymeacoffee.com/0xdnd';
+const coffeeLink = () => `<a class="coffee-link" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer">${ICON.coffee}Buy me a coffee</a>`;
+const coffeeNote = () => `<p class="coffee-note">Found this useful? ${coffeeLink()}.</p>`;
 
 /**
  * Content-page call-to-action. title/body are trusted HTML (callers escape); label is escaped here.
@@ -172,7 +178,8 @@ function siteFooter({ analyticsNote: note } = {}) {
     <div class="footer-grid">
       <div class="footer-brand">
         <a class="brand" href="/"><img src="/icon-192.png" width="28" height="28" alt="" aria-hidden="true" />ZeroBox</a>
-        <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
+        <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. only test systems you are authorised to test.</p>
+        <p class="coffee-line">${coffeeLink()}</p>
       </div>
       <nav class="footer-nav" aria-label="Footer">${cols}</nav>
     </div>
@@ -487,4 +494,4 @@ ${siteFooter({ analyticsNote: '' })}
 `;
 }
 
-module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, stampUpdated, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, REPO, GITHUB_PROFILE, LINKEDIN };
+module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, stampUpdated, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, coffeeLink, coffeeNote, COFFEE_URL, REPO, GITHUB_PROFILE, LINKEDIN };

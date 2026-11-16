@@ -102,7 +102,7 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
 
       expect(screen.getByTestId('exam-setup-view')).toBeInTheDocument();
       expect(screen.getByTestId('exam-start-btn')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Certification exam simulator' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Exam Simulator' })).toBeInTheDocument();
 
       // Track selection cards
       expect(screen.getByTestId('exam-track-select-oscp')).toBeInTheDocument();
