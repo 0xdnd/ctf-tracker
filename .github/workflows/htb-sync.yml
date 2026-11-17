@@ -1,8 +1,8 @@
 # Requirements:
-#  - Repo setting "Allow GitHub Actions to create and approve pull requests"
-#    (Settings > Actions > General > Workflow permissions) must be ON.
-#  - Secret HTB_TOKEN must exist (HTB labs API token).
-# Bot PRs created with GITHUB_TOKEN do not trigger CI, so tests run here before pushing.
+#  - Secret HTB_TOKEN must exist (an HTB App Token from app.hackthebox.com account settings).
+# This workflow commits directly to main (no PR) when src/data/activeMachines.json changed and
+# tests passed, then dispatches deploy.yml, because pushes made with GITHUB_TOKEN do not
+# trigger other workflows.
 name: HTB active machines sync
 
 on:
@@ -12,7 +12,11 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  actions: write
+
+concurrency:
+  group: htb-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -22,12 +26,29 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+      - name: Check HTB_TOKEN
+        env:
+          HTB_TOKEN: ${{ secrets.HTB_TOKEN }}
+        run: |
+          if [ -z "$HTB_TOKEN" ]; then
+            echo "::error::HTB_TOKEN is empty. Add the repo secret HTB_TOKEN (an HTB App Token from app.hackthebox.com account settings)."
+            exit 1
+          fi
       - name: Sync active machines
         env:
           HTB_TOKEN: ${{ secrets.HTB_TOKEN }}
         run: |
           set -o pipefail
           node scripts/sync-htb-active.mjs | tee /tmp/sync-summary.txt
+      - name: Job summary
+        run: |
+          {
+            echo '### HTB active machines sync'
+            echo
+            echo '~~~~'
+            tr -d '`' < /tmp/sync-summary.txt
+            echo '~~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Install and test
         run: |
           if git diff --quiet -- src/data/activeMachines.json; then
@@ -36,7 +57,7 @@ jobs:
           fi
           npm ci
           npm test
-      - name: Open PR if changed
+      - name: Commit to main and deploy
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -44,19 +65,10 @@ jobs:
             echo "No changes."
             exit 0
           fi
-          BRANCH="chore/htb-active-sync"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH"
           git add src/data/activeMachines.json
-          git commit -m "chore(data): sync active HTB machines"
-          git push --force origin "$BRANCH"
-          {
-            echo "Automated weekly sync of the active HTB machine list (metadata only). Tests passed in the sync workflow."
-            echo
-            echo '~~~~'
-            tr -d '`' < /tmp/sync-summary.txt
-            echo '~~~~'
-          } > /tmp/pr-body.md
-          gh pr create --base main --head "$BRANCH" --title "chore(data): sync active HTB machines $(date -u +%F)" --body-file /tmp/pr-body.md \
-            || gh pr edit "$BRANCH" --body-file /tmp/pr-body.md
+          git commit -m "chore(data): sync active HTB machines $(date -u +%F)"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main
