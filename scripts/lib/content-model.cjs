@@ -58,7 +58,12 @@ const MIN_WORDS = 150;
 // catalogCounts.htbThm scopes copy that names only HTB/THM; catalogCounts.ctf is the full count.
 // The PG and VulnHub rows are kept apart from `machines` (and from catalogCounts): only the /machines/ list reads them, as plain rows without pages.
 const EXTRA_SOURCES = ['pg', 'vulnhub'];
-const EXTRA_ROWS = EXTRA_SOURCES.map((f) => JSON.parse(fs.readFileSync(path.join(rootDir, 'src', 'data', 'catalogSources', f + '.json'), 'utf8')));
+// Both source files are stored packed (pg-pack.cjs, vulnhub-pack.cjs); the platform comes from the source file.
+const EXTRA_PLATFORMS = { pg: 'PG', vulnhub: 'VulnHub' };
+const EXTRA_ROWS = EXTRA_SOURCES.map((f) => {
+  const rows = JSON.parse(fs.readFileSync(path.join(rootDir, 'src', 'data', 'catalogSources', f + '.json'), 'utf8'));
+  return require(`./${f}-pack.cjs`).unpackRows(rows);
+});
 const EXTRA_PLATFORM_COUNT = EXTRA_ROWS.reduce((n, rows) => n + rows.length, 0);
 // Words that only restate the catalog facts shown beside a summary (platform, OS, difficulty): a hint made of nothing else is a stub.
 const STUB_WORDS = new Set(['a', 'an', 'the', 'is', 'hack', 'box', 'tryhackme', 'proving', 'grounds', 'vulnhub', 'machine', 'rated', 'difficulty', 'level', 'very', 'easy', 'medium', 'hard', 'insane', 'linux', 'windows', 'freebsd', 'openbsd', 'android', 'other']);
@@ -194,7 +199,7 @@ function getModel() {
   const proLabs = d.OFFICIAL_HTB_PRO_LABS || [];
 
   // Proving Grounds and VulnHub catalog rows (name, OS, difficulty, tags, room link only; no hint, flags or ids beyond the catalog's own).
-  const extraMachines = EXTRA_ROWS.flat().map((m) => ({ id: m.id, name: m.name, platform: m.platform, os: m.os, difficulty: m.difficulty, tags: m.tags || [], roomUrl: m.roomUrl || '', hasPage: false }));
+  const extraMachines = EXTRA_ROWS.flatMap((rows, i) => rows.map((m) => ({ ...m, platform: EXTRA_PLATFORMS[EXTRA_SOURCES[i]] }))).map((m) => ({ id: m.id, name: m.name, platform: m.platform, os: m.os, difficulty: m.difficulty, tags: m.tags || [], roomUrl: m.roomUrl || '', hasPage: false }));
 
   cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, examTrackConfigs: Object.values(d.EXAM_TRACK_CONFIGS), rabbitHoleExamMinutes: d.RABBIT_HOLE_THRESHOLDS.examMinutes, examTrackDurations, catalogCounts, MIN_WORDS };
   return cached;

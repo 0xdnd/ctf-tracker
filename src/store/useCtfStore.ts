@@ -1240,6 +1240,15 @@ function scheduleReview(m: Machine, value: SolveIndependence, reviewCount: numbe
   );
 }
 
+const PG_TIER_TAGS = ['PG-Play', 'PG-Practice'];
+
+/** Stored tags minus a stale PG tier tag: when the catalog row carries one tier tag, the other tier tag is dropped. */
+const dropStaleTierTag = (stored: string[] | undefined, catalogTags: string[] | undefined): string[] => {
+  const tier = PG_TIER_TAGS.find((t) => catalogTags?.includes(t));
+  const tags = stored || [];
+  return tier ? tags.filter((t) => !PG_TIER_TAGS.includes(t) || t === tier) : tags;
+};
+
 export const mergeMachinesWithCatalog = (
   storedMachines?: Machine[],
   userSolvesReset: boolean = false,
@@ -1319,6 +1328,8 @@ export const mergeMachinesWithCatalog = (
 
       // Multi-tier lookup to safeguard against catalog ID, name, or platform drift
       let catalogMachine = map.get(m.id);
+      // True when the row matched by id or alias: the catalog then owns the descriptive fields (see catalogOwned).
+      let matchedByIdOrAlias = Boolean(catalogMachine);
       // Operator-created machines only ever match by exact id; fuzzy tiers would fold e.g. a custom "Lame" into htb-lame.
       const genuineCustom = isGenuineCustom(m);
 
@@ -1329,6 +1340,8 @@ export const mergeMachinesWithCatalog = (
         const aliasTarget = idAliasTarget || (normName && CATALOG_MACHINE_ALIASES[normName]);
         if (aliasTarget) {
           catalogMachine = map.get(aliasTarget) || nameMap.get(aliasTarget.toLowerCase().trim());
+          // Only an id alias counts; a name that happens to be an alias key is a name match and stays fuzzy.
+          matchedByIdOrAlias = Boolean(catalogMachine && idAliasTarget);
         }
       }
 
@@ -1354,6 +1367,17 @@ export const mergeMachinesWithCatalog = (
       const customFlag = catalogMachine && !genuineCustom ? { isCustom: undefined } : {};
       if (catalogMachine) {
         const isAuthoritativeActive = Boolean(catalogMachine.isActive || isKnownActiveByName(catalogMachine));
+        // No UI edits these fields on a catalog row, so a stored copy is only ever stale. Fuzzy matches keep the stored values.
+        const catalogOwned =
+          matchedByIdOrAlias && !genuineCustom
+            ? {
+                name: catalogMachine.name,
+                difficulty: catalogMachine.difficulty,
+                os: catalogMachine.os,
+                roomUrl: catalogMachine.roomUrl,
+                platform: catalogMachine.platform,
+              }
+            : {};
         if (userSolvesReset) {
           // User started fresh: respect their current status (unsolved/foothold/completed) and progress without forcing catalog completed status
           const mStatus = m.status || 'backlog';
@@ -1365,6 +1389,7 @@ export const mergeMachinesWithCatalog = (
             ...catalogMachine,
             ...m,
             ...customFlag,
+            ...catalogOwned,
             isActive: isAuthoritativeActive,
             status: m.status || 'unsolved',
             userFlag: m.userFlag,
@@ -1383,7 +1408,7 @@ export const mergeMachinesWithCatalog = (
             officialPdf: catalogMachine.officialPdf || m.officialPdf,
             officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
             officialWalkthrough: undefined,
-            tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
+            tags: Array.from(new Set([...(catalogMachine.tags || []), ...dropStaleTierTag(m.tags, catalogMachine.tags)])),
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as Machine['certifications'],
           });
         } else {
@@ -1400,6 +1425,7 @@ export const mergeMachinesWithCatalog = (
             ...catalogMachine,
             ...m,
             ...customFlag,
+            ...catalogOwned,
             isActive: isAuthoritativeActive,
             status: userHasProgress ? mStatus : 'backlog',
             userFlag: m.userFlag || '',
@@ -1418,7 +1444,7 @@ export const mergeMachinesWithCatalog = (
             officialPdf: catalogMachine.officialPdf || m.officialPdf,
             officialSynopsis: catalogMachine.officialSynopsis || m.officialSynopsis,
             officialWalkthrough: undefined,
-            tags: Array.from(new Set([...(catalogMachine.tags || []), ...(m.tags || [])])),
+            tags: Array.from(new Set([...(catalogMachine.tags || []), ...dropStaleTierTag(m.tags, catalogMachine.tags)])),
             certifications: Array.from(new Set([...(catalogMachine.certifications || []), ...(m.certifications || [])])) as Machine['certifications'],
           });
         }

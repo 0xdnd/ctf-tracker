@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import pg from '../../data/catalogSources/pg.json';
 import vulnhub from '../../data/catalogSources/vulnhub.json';
 import { loadMachinesCatalog } from '../../data/loadMachinesCatalog';
+import { INITIAL_MACHINES } from '../../data/machinesCatalog';
+import { appendActiveMachines } from '../../data/activeMachines';
 import { mergeMachinesWithCatalog } from '../../store/useCtfStore';
 import type { Machine } from '../../types';
 
@@ -11,8 +13,9 @@ beforeAll(async () => {
 });
 
 describe('catalog with PG and VulnHub', () => {
-  it('appends both sources to the 1031 base rows', () => {
-    expect(catalog.length).toBe(1031 + (pg as unknown[]).length + (vulnhub as unknown[]).length);
+  it('appends both sources to the HTB and THM base rows', () => {
+    const base = appendActiveMachines(INITIAL_MACHINES).length;
+    expect(catalog.length).toBe(base + (pg as unknown[]).length + (vulnhub as unknown[]).length);
     expect(catalog.filter((m) => m.platform === 'PG')).toHaveLength((pg as unknown[]).length);
     expect(catalog.filter((m) => m.platform === 'VulnHub')).toHaveLength((vulnhub as unknown[]).length);
   });

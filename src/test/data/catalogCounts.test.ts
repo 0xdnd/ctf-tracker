@@ -21,10 +21,11 @@ const METADATA_ONLY_RETIRED = INITIAL_MACHINES.filter(
   (m) => m.platform === 'HTB' && m.isActive === false && m.tags.length === 0 && !m.hint && !m.writeupUrl
 ).length;
 
-// INITIAL_MACHINES + activeMachines.json hold only the 1,031 HTB and THM rows; PG and VulnHub rows
+// INITIAL_MACHINES + activeMachines.json hold only the HTB and THM rows; PG and VulnHub rows
 // come from src/data/catalogSources and join at runtime (loadMachinesCatalog). The copy counts all of them.
-const HTB_THM_TOTAL = 1031;
-const PURE_CTF_TOTAL = 1376;
+// Nothing here is a literal: scripts/update-catalog-counts.mjs rewrites the copy, and these numbers come from the data files.
+const HTB_THM_TOTAL = TOTAL;
+const PURE_CTF_TOTAL = HTB_THM_TOTAL + pg.length + vulnhub.length;
 
 const UI_FILES = [
   'src/components/auth/OperatorProfileModal.tsx',
@@ -38,21 +39,18 @@ describe('hard-coded catalog counts', () => {
   it('computed numbers add up', () => {
     expect(ACTIVE).toBe(ACTIVE_MACHINES.machines.length);
     expect(TOTAL).toBe(RETIRED_HTB + ACTIVE + THM);
-    expect(TOTAL).toBe(HTB_THM_TOTAL);
-    expect(HTB_THM_TOTAL + pg.length + vulnhub.length).toBe(PURE_CTF_TOTAL);
     console.log('[catalog counts]', JSON.stringify({ TOTAL, RETIRED_HTB, ACTIVE, THM, METADATA_ONLY_RETIRED }));
   });
 
   it('CATALOG_TOTAL equals the HTB+THM rows plus the PG and VulnHub source files', () => {
     expect(CATALOG_TOTAL).toBe(HTB_THM_TOTAL + pg.length + vulnhub.length);
-    expect(CATALOG_TOTAL).toBe(PURE_CTF_TOTAL);
   });
 
   it.each(UI_FILES)('%s uses CATALOG_TOTAL and has no raw catalog count', (file) => {
     const src = read(file);
     expect(src, file).toContain('CATALOG_TOTAL');
     expect(src, file).toMatch(/import \{[^}]*CATALOG_TOTAL[^}]*\} from '[^']*catalogStats'/);
-    expect(src, file).not.toContain('1376');
+    expect(src, file).not.toContain(String(PURE_CTF_TOTAL));
   });
 
   it('owner solved roster counts match the seeded catalog', () => {
@@ -94,6 +92,16 @@ describe('hard-coded catalog counts', () => {
     expect(all(readme, /\b(\d+) active (?:HTB|Hack The Box) machines/g)).toEqual([ACTIVE]);
     expect(all(readme, /\b(\d+) (?:THM CTF rooms|TryHackMe CTF rooms)/g)).toEqual([THM]);
     expect(all(readme, /; (\d+) of them \(mostly retired since 2024\)/g)).toEqual([METADATA_ONLY_RETIRED]);
+  });
+});
+
+describe('public/llms-full.txt catalog counts', () => {
+  it('states the full and the HTB+THM machine counts from the data files', () => {
+    const nf = new Intl.NumberFormat('en-US');
+    const m = read('public/llms-full.txt').match(/It tracks ([\d,]+) machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub \(([\d,]+) of them Hack The Box and TryHackMe/);
+    expect(m, 'llms-full.txt catalog line').not.toBeNull();
+    expect(m![1]).toBe(nf.format(PURE_CTF_TOTAL));
+    expect(m![2]).toBe(nf.format(HTB_THM_TOTAL));
   });
 });
 

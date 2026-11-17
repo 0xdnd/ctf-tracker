@@ -565,13 +565,11 @@ for (const m of withPage) {
   const nf = (n) => n.toLocaleString('en-US');
   const extraTotal = extraPlatforms.reduce((n, p) => n + extraBy[p].length, 0);
   // Name cell of a Proving Grounds / VulnHub row. PG's room link is one portal page shared by every row, so the name stays plain text.
-  // A VulnHub row links to the site's search for that name only when the search was checked to list that machine (VULNHUB_SEARCH_OK);
-  // the link is labelled as a search so it never reads as the machine's own page.
-  const VULNHUB_SEARCH_OK = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'vulnhub-search-ok.json'), 'utf8')).ids);
-  const VULNHUB_SEARCH = /^https:\/\/www\.vulnhub\.com\/\?q=[^\s"<>]+$/;
+  // A VulnHub row links straight to its entry page (the sync stores the real entry url); any other url stays plain text.
+  const VULNHUB_ENTRY = /^https:\/\/www\.vulnhub\.com\/entry\/[a-z0-9_.,-]+\/$/;
   const extraNameCell = (m) =>
-    m.platform === 'VulnHub' && VULNHUB_SEARCH_OK.has(m.id) && VULNHUB_SEARCH.test(m.roomUrl)
-      ? `${esc(m.name)} <a class="ext" href="${esc(m.roomUrl)}" rel="nofollow noopener" aria-label="Search VulnHub for ${esc(m.name)}">(VulnHub search)</a>`
+    m.platform === 'VulnHub' && VULNHUB_ENTRY.test(m.roomUrl)
+      ? `<a class="ext" href="${esc(m.roomUrl)}" rel="nofollow noopener" aria-label="Open ${esc(m.name)} on VulnHub">${esc(m.name)}</a>`
       : esc(m.name);
   const hubNameCell = (m) =>
     m.hasPage ? `<a href="${mUrl(m)}">${esc(m.name)}</a>` : SAFE_ROOM.test(m.roomUrl || '') ? `<a href="${esc(m.roomUrl)}" rel="nofollow noopener"${hubTitle(m)}>${esc(m.name)}</a>` : esc(m.name);
@@ -611,7 +609,7 @@ for (const m of withPage) {
     `<h2 id="${sec.p.toLowerCase()}">${esc(PLATFORM_NAME[sec.p] || sec.p)} machines${sec.extra ? ' in the app catalog (listed here without pages)' : ''}${continued ? ' (continued)' : ''}</h2>`;
   const secNote = (sec) =>
     `<p class="sec-note">These ${nf(sec.list.length)} ${esc(PLATFORM_NAME[sec.p])} machines are in the ZeroBox app catalog and are listed here without pages: there is no writeup or attack path for them on this site, and the search and filters cover them.${
-      sec.p === 'PG' ? ' The names are not links because every Proving Grounds machine shares one portal page.' : ' Where the VulnHub search for a name lists that machine, the name is followed by a link to that search.'
+      sec.p === 'PG' ? ' The names are not links because every Proving Grounds machine shares one portal page.' : ' Each name links to its entry page on VulnHub.'
     }</p>`;
   // Renders a run of items: a platform h2 where the platform changes, an h3 + table where the OS/difficulty group changes.
   const renderItems = (run, lean = false) => {
@@ -672,7 +670,7 @@ for (const m of withPage) {
     solved.map((m) => `<tr><td><a href="${mUrl(m)}">${esc(m.name)}</a></td><td>${platCell(m.platform)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td></tr>`).join('') +
     `</tbody></table>`;
   const closing = ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' });
-  const listTitle = fitTitle(`Hack The Box Machines List: ${nf(total)} HTB, THM, PG, VulnHub`, `HTB, THM, PG & VulnHub Machines List: ${nf(total)} Boxes`, `Machines List: ${nf(total)} Boxes`);
+  const listTitle = fitTitle(`HTB, THM, PG & VulnHub Machines List: ${nf(total)} Boxes`, `Machines List: ${nf(total)} Boxes`);
 
   for (let n = 1; n <= pageCount; n++) {
     const run = items.slice((n - 1) * MX_PER_PAGE, n * MX_PER_PAGE);

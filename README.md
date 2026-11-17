@@ -15,7 +15,7 @@
 [![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
 [![GitHub Stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=for-the-badge&logo=github&color=F59E0B&labelColor=0B0F19)](https://github.com/0xdnd/ctf-tracker/stargazers)
-[![Machines](https://img.shields.io/badge/Machines-1376-10B981?style=for-the-badge)](https://ctftracker.com/)
+[![Machines](https://img.shields.io/badge/Machines-2186-10B981?style=for-the-badge)](https://ctftracker.com/)
 [![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-131-EF4444?style=for-the-badge)](https://ctftracker.com/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/0xdnd/ctf-tracker/ci.yml?branch=main&label=CI&style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
 [![Live at ctftracker.com](https://img.shields.io/badge/Live_at-ctftracker.com-10B981?style=flat-square&logo=cloudflare)](https://ctftracker.com/)
@@ -55,7 +55,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 
 | Instead of… | ZeroBox gives you… |
 |:---|:---|
-| 📋 A messy spreadsheet of boxes | **1376 HTB, THM, PG & VulnHub machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
+| 📋 A messy spreadsheet of boxes | **2186 HTB, THM, PG & VulnHub machines** pre-loaded, on a Kanban board from *Backlog* to *Pwned* |
 | 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
 | 🐚 Googling "python reverse shell" again | **131 reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
@@ -70,7 +70,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 ## 🚀 Core Modules
 
 ### 1. 🛡️ Lab & Machine Tracker
-- **1376-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, OffSec Proving Grounds and VulnHub boxes, plus custom targets, Pro Labs and exams.
+- **2186-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, OffSec Proving Grounds and VulnHub boxes, plus custom targets, Pro Labs and exams.
 - **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
 - **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO).
@@ -180,7 +180,7 @@ Yes. It's free for personal and educational use, needs no account, and has no pa
 Everything is stored locally in your browser (LocalStorage + IndexedDB). There is no backend and nothing is uploaded. You can export a JSON backup at any time.
 
 **Which platforms does it cover?**
-560 retired Hack The Box machines, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 451 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
+560 retired Hack The Box machines, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 559 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
 
 **Can I use it to prepare for OSCP or CPTS?**
 Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
@@ -215,7 +215,7 @@ ZeroBox is engineered to strictly uphold the Terms of Service, Acceptable Use Po
 - **Anti-Scraping / No-Crawling:** ZeroBox contains zero scrapers, bots, or automated crawlers targeting HTB servers (HTB UA §6.1).
 
 ### 2. 🎯 TryHackMe Terms of Use (§3 & §5)
-- **Practice Challenge Rooms Only:** 451 public community challenge rooms are indexed for individual tracking (multiplayer/KoTH competition rooms excluded).
+- **Practice Challenge Rooms Only:** 559 public community challenge rooms are indexed for individual tracking (multiplayer/KoTH competition rooms excluded).
 - **Zero Raw Flag Dumping:** Solved milestones in Daniel Dayan's verified roster utilize synthetic educational tokens (e.g., `THM{flag_captured_daniel_dayan}`) rather than raw live challenge flags.
 - **Zero Data Harvesting:** No automated data extraction or scraping tools are used against THM infrastructure.
 

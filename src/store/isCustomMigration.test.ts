@@ -8,7 +8,9 @@ import {
 import { hasUserProgress, isGenuineCustom } from './machineNormalization';
 import { STARTER_MACHINES } from '../data/starterMachines';
 import { INITIAL_MACHINES } from '../data/machinesCatalog';
-import type { Machine } from '../types';
+import pgSource from '../data/catalogSources/pg.json';
+import { expandPgRows } from '../data/loadMachinesCatalog';
+import type { Machine, PgRow } from '../types';
 
 const PERSIST_KEY = 'zerobox-tactical-store';
 // In the full catalog (with official synopsis + pdf) but NOT in STARTER_MACHINES.
@@ -387,5 +389,97 @@ describe('(10) active/seasonal sanitization still applies to unstamped rows', ()
     const row = merged.find((m) => m.name === 'Lame');
     expect(row).toBeDefined();
     expect(row?.isCustom).toBeFalsy();
+  });
+});
+
+describe('(11) catalog-owned descriptive fields on id/alias matches', () => {
+  // PG rows live in a lazily loaded source, so build the same full catalog the app merges against.
+  const PG_ROWS = expandPgRows(pgSource as unknown as PgRow[]);
+  const FULL_CATALOG = [...INITIAL_MACHINES, ...PG_ROWS];
+  const catalogRow = (id: string): Machine => {
+    const row = FULL_CATALOG.find((m) => m.id === id);
+    if (!row) throw new Error(`fixture ${id} missing from catalog`);
+    return row;
+  };
+  const PG_ID = 'pg-glasgow-smile-1-1';
+
+  it.each([false, true])('refreshes name and difficulty, keeps progress and extra tags (userSolvesReset=%s)', (userSolvesReset) => {
+    const cat = catalogRow(PG_ID);
+    const stale = {
+      ...cat,
+      name: 'Glasgow Smile 1.1',
+      difficulty: cat.difficulty === 'Easy' ? 'Hard' : 'Easy',
+      status: 'completed' as const,
+      userFlag: 'user_flag_proof',
+      rootFlag: 'root_flag_proof',
+      quickNotes: 'my notes',
+      timeSpentSeconds: 4321,
+      tags: [...(cat.tags || []), 'mine'],
+    } as Machine;
+    expect(stale.name).not.toBe(cat.name);
+    const row = mergeMachinesWithCatalog([stale], userSolvesReset, FULL_CATALOG).find((m) => m.id === PG_ID)!;
+    expect(row.name).toBe(cat.name);
+    expect(row.difficulty).toBe(cat.difficulty);
+    expect(row.os).toBe(cat.os);
+    expect(row.platform).toBe(cat.platform);
+    expect(row.roomUrl).toBe(cat.roomUrl);
+    expect(row.status).toBe('completed');
+    expect(row.userFlag).toBe('user_flag_proof');
+    expect(row.rootFlag).toBe('root_flag_proof');
+    expect(row.quickNotes).toBe('my notes');
+    expect(row.timeSpentSeconds).toBe(4321);
+    expect(row.updatedAt).toBe(stale.updatedAt);
+    expect(row.tags).toContain('mine');
+  });
+
+  it('a tier-moved PG row keeps only the catalog tier tag plus the user tags', () => {
+    const cat = catalogRow('pg-bottleneck');
+    expect(cat.tags).toContain('PG-Practice');
+    expect(cat.tags).not.toContain('PG-Play');
+    const stored = { ...cat, tags: ['PG-Play', 'mine'] } as Machine;
+    const row = mergeMachinesWithCatalog([stored], false, FULL_CATALOG).find((m) => m.id === 'pg-bottleneck')!;
+    expect(row.tags).toContain('PG-Practice');
+    expect(row.tags).toContain('mine');
+    expect(row.tags).not.toContain('PG-Play');
+    expect([...(row.tags || [])].sort()).toEqual([...new Set([...(cat.tags || []), 'mine'])].sort());
+  });
+
+  it('a genuine custom named like a catalog machine is untouched', () => {
+    const cat = catalogRow('pg-bottleneck');
+    const custom = box({
+      id: 'custom-1700000000000-bottleneck',
+      name: cat.name,
+      os: 'Windows',
+      difficulty: 'Insane',
+      platform: 'Custom' as Machine['platform'],
+      roomUrl: 'https://example.test/mine',
+      tags: ['PG-Play', 'mine'],
+      isCustom: true,
+    });
+    const row = mergeMachinesWithCatalog([custom], false, FULL_CATALOG).find((m) => m.id === custom.id)!;
+    expect(row).toMatchObject({ name: cat.name, os: 'Windows', difficulty: 'Insane', platform: 'Custom', roomUrl: 'https://example.test/mine' });
+    expect(row.tags).toEqual(['PG-Play', 'mine']);
+  });
+
+  it('a fuzzy-matched legacy row keeps its stored descriptive fields (as before)', () => {
+    const lame = catalogRow('htb-lame');
+    const legacy = box({ id: 'legacy-lame-slug', name: 'Lame', platform: 'HTB', os: 'Windows', difficulty: 'Insane', quickNotes: 'notes' });
+    expect(lame.difficulty).not.toBe('Insane');
+    const row = mergeMachinesWithCatalog([legacy], false, FULL_CATALOG).find((m) => m.id === legacy.id)!;
+    expect(row).toBeDefined();
+    expect(row.quickNotes).toBe('notes');
+    expect(row.difficulty).toBe('Insane');
+    expect(row.os).toBe('Windows');
+  });
+
+  it('merge, lean, merge is a fixed point for a refreshed stale row', () => {
+    const cat = catalogRow('pg-bottleneck');
+    const stale = { ...cat, name: 'Old Name', difficulty: 'Easy', tags: ['PG-Play', 'mine'], status: 'foothold' as const, userFlag: 'x' } as Machine;
+    const y1 = mergeMachinesWithCatalog([stale], false, FULL_CATALOG);
+    const y2 = mergeMachinesWithCatalog(toLeanMachines(y1), false, FULL_CATALOG);
+    // Never-stored catalog rows gain default fields on their first stored merge, so compare the stored row only.
+    expect(y2.find((m) => m.id === 'pg-bottleneck')).toEqual(y1.find((m) => m.id === 'pg-bottleneck'));
+    const y3 = mergeMachinesWithCatalog(toLeanMachines(y2), false, FULL_CATALOG);
+    expect(y3).toEqual(y2);
   });
 });

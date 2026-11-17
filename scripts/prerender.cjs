@@ -105,8 +105,7 @@ function setTag(html, re, replacement, label) {
 }
 
 // The shell's #root holds only the boot splash (index.html). Route pages keep it after the SEO block.
-const SPLASH_RE = /<div id="boot-splash"[\s\S]*?<\/div>/;
-const ROOT_RE = /<div id="root">\s*<div id="boot-splash"[\s\S]*?<\/div>\s*<\/div>/;
+const { SPLASH_RE, ROOT_RE } = require('./lib/splash.cjs');
 const splashMatch = shell.match(SPLASH_RE);
 if (!splashMatch) throw new Error('prerender: boot splash missing from shell');
 const splashHtml = splashMatch[0];

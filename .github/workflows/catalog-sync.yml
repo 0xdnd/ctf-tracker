@@ -1,0 +1,113 @@
+# Requirements:
+#  - Secret HTB_TOKEN is optional (an HTB App Token from app.hackthebox.com account settings). Without it the HTB step
+#    is skipped; the VulnHub and PG syncs need no secret.
+#  - No pull-request permission is needed: this workflow commits directly to main (like the former HTB-only sync) once
+#    tests, the build and the bundle-size check pass, then dispatches deploy.yml, because pushes made with
+#    GITHUB_TOKEN do not trigger other workflows. If the checks fail nothing is pushed and the job fails.
+name: Catalog sync
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: catalog-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # The count script and the content model bundle with esbuild, so install before any sync step.
+      - run: npm ci
+      - name: Sync VulnHub catalog
+        id: vulnhub
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/sync-vulnhub.mjs | tee /tmp/vulnhub-summary.txt
+      - name: Sync Proving Grounds catalog
+        id: pg
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/sync-pg.mjs | tee /tmp/pg-summary.txt
+      - name: Sync active HTB machines
+        id: htb
+        continue-on-error: true
+        env:
+          HTB_TOKEN: ${{ secrets.HTB_TOKEN }}
+        run: |
+          set -o pipefail
+          if [ -z "$HTB_TOKEN" ]; then
+            echo "::notice::HTB_TOKEN is not set; skipping the HTB sync."
+            echo "Skipped: HTB_TOKEN is not set." > /tmp/htb-summary.txt
+            exit 0
+          fi
+          node scripts/sync-htb-active.mjs | tee /tmp/htb-summary.txt
+      - name: Update catalog counts
+        id: counts
+        run: node scripts/update-catalog-counts.mjs
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo '### Catalog sync'
+            echo
+            echo "VulnHub: ${{ steps.vulnhub.outcome }}, PG: ${{ steps.pg.outcome }}, HTB: ${{ steps.htb.outcome }}"
+            for s in vulnhub pg htb; do
+              echo
+              echo "#### $s"
+              echo '~~~~'
+              tr -d '`' < "/tmp/$s-summary.txt" 2>/dev/null || echo "no output"
+              echo '~~~~'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Detect changes
+        id: changes
+        run: |
+          if [ -z "$(git status --porcelain src/data public README.md docs/CATALOG_STATS.md scripts/data)" ]; then
+            echo "No changes; stopping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Test and build
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          npm test
+          npm run build
+          node scripts/check-bundle-size.mjs
+      - name: Commit to main and deploy
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Only the data and count files; the build output stays out of the commit.
+          git add src/data/catalogSources/vulnhub.json src/data/catalogSources/pg.json src/data/activeMachines.json src/data/catalogStats.ts \
+            public/llms.txt public/llms-full.txt README.md docs/CATALOG_STATS.md \
+            scripts/data/vulnhub-raw.json scripts/data/vulnhub-id-map.json scripts/data/pg-raw.json scripts/data/pg-id-map.json
+          if git diff --cached --quiet; then
+            echo "Nothing staged; stopping."
+            exit 0
+          fi
+          git commit -m "chore(data): weekly catalog sync (VulnHub, PG, HTB) $(date -u +%F)"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main
+      - name: Fail the run if a sync step failed
+        if: always() && (steps.vulnhub.outcome == 'failure' || steps.pg.outcome == 'failure' || steps.htb.outcome == 'failure')
+        run: |
+          echo "::error::Sync failed: vulnhub=${{ steps.vulnhub.outcome }}, pg=${{ steps.pg.outcome }}, htb=${{ steps.htb.outcome }}"
+          exit 1

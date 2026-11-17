@@ -66,6 +66,49 @@ export interface Machine {
   updatedAt: string;
 }
 
+/**
+ * A logical row of src/data/catalogSources/vulnhub.json: only the fields that differ per row. The file stores it packed
+ * (VulnhubPackedRow); expandVulnhubRows in loadMachinesCatalog.ts adds the constant Machine fields (platform, ip, status,
+ * flags, timestamps) on top of the unpacked row.
+ */
+export interface VulnhubRow {
+  id: string;
+  name: string;
+  os: OperatingSystem;
+  difficulty: Difficulty;
+  roomUrl: string;
+  /** The entry states no difficulty, so `difficulty` is a placeholder (Medium). */
+  difficultyUnrated?: true;
+  /** Only on the original hand-imported rows (series tag, Also-on-PG-Play). */
+  tags?: string[];
+  certifications?: Machine['certifications'];
+}
+
+/** Packed form of a VulnhubRow, [name, link, d, o?, x?]; the layout is documented in scripts/lib/vulnhub-pack.cjs. */
+export type VulnhubPackedRow = [
+  name: string,
+  link: number | string,
+  difficulty: number,
+  os?: number,
+  extra?: { id?: string; tags?: string[]; certifications?: Machine['certifications'] },
+];
+
+/** Compact row of src/data/catalogSources/pg.json; expandPgRows in loadMachinesCatalog.ts adds the constant Machine fields (layout: scripts/lib/pg-pack.cjs). */
+export interface PgRow {
+  id: string;
+  name: string;
+  os: OperatingSystem;
+  difficulty: Difficulty;
+  tier: 'Play' | 'Practice';
+  /** Only when not exactly ['PG-<tier>']. */
+  tags?: string[];
+  certifications?: Machine['certifications'];
+  /** Only when it differs from the tier url. */
+  roomUrl?: string;
+  /** [createdAt, updatedAt], only when they differ from the shared PG stamp. */
+  stamp?: [string, string];
+}
+
 /** Record of a hard-deleted machine, so a sync merge does not bring it back. */
 export interface MachineTombstone {
   id: string;

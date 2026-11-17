@@ -82,7 +82,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Privesc"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/agentsudo",
+    "roomUrl": "https://tryhackme.com/room/agentsudoctf",
     "writeupUrl": "https://medium.com/@k3rnel-p4n1c/tryhackme-agent-sudo-writeup-968945415bc2",
     "hint": "Spoof HTTP User-Agent header with agent codenames to access the hidden portal, extract hidden images via binwalk/steghide, exploit CVE-2019-14287 (sudo -u#-1 /bin/bash).",
     "timeSpentSeconds": 0,
@@ -233,51 +233,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-inclusion",
-    "name": "Inclusion",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "LFI",
-      "Web",
-      "Sudo",
-      "Privesc"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/inclusion",
-    "writeupUrl": "https://medium.com/@k3rnel-p4n1c/tryhackme-inclusion-walkthrough-883a0e69db9e",
-    "hint": "Exploit Local File Inclusion in the article parameter to read /etc/passwd and extract plaintext credentials, then leverage sudo /usr/bin/socat for root.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-tartarus",
-    "name": "Tartarus",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "CTF",
-      "FTP",
-      "Directory-Traversal",
-      "Cron",
-      "Sudo-Privesc"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/tartarus",
-    "writeupUrl": "https://nepcodex.com/2021/07/tartarus-tryhackme-walkthrough/",
-    "hint": "Discover hidden directory via robots.txt, abuse custom upload script, pivot through multiple service accounts via cronjob manipulation, and exploit sudo tar wildcard vulnerability.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-jacob-the-boss",
     "name": "Jacob the Boss",
     "ip": "10.10.x.x",
@@ -383,7 +338,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -487,7 +442,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Privesc"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/bookstore",
+    "roomUrl": "https://tryhackme.com/room/bookstoreoc",
     "writeupUrl": "https://infosecwriteups.com/tryhackme-bookstore-walkthrough-aee5fb74b967",
     "hint": "Find hidden v2 API endpoint with LFI to leak Werkzeug console PIN generation parameters (MAC address, machine-id), unlock console for RCE, and exploit SUID binary.",
     "timeSpentSeconds": 0,
@@ -500,7 +455,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -586,32 +541,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-bufferoverflowprep",
-    "name": "Buffer Overflow Prep",
-    "ip": "10.10.150.10",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "OSCP",
-      "Buffer Overflow",
-      "x86",
-      "Mona.py",
-      "Immunity Debugger",
-      "Binary Exploitation"
-    ],
-    "certifications": [
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/bufferoverflowprep",
-    "writeupUrl": "https://tc5150.github.io/posts/tryhackme-bofprep/",
-    "hint": "Generate a bytearray using mona.py to eliminate bad characters systematically, identify an unprotected JMP ESP instruction address, and craft an msfvenom payload with a standard NOP sled.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-res",
     "name": "Res",
     "ip": "10.10.x.x",
@@ -665,7 +594,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -719,7 +648,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Privesc"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/develpy",
+    "roomUrl": "https://tryhackme.com/room/bsidesgtdevelpy",
     "writeupUrl": "https://nepcodex.com/2021/07/develpy-tryhackme-walkthrough/",
     "hint": "Python 2 input() function evaluates user input as arbitrary code on port 10000; exploit root cronjob executing writable python script in user directory.",
     "timeSpentSeconds": 0,
@@ -779,60 +708,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-wreath",
-    "name": "Wreath",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Pivoting",
-      "Chisel",
-      "Empire",
-      "C2",
-      "Red Team",
-      "Proxychains"
-    ],
-    "certifications": [
-      "CRTO",
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/wreath",
-    "writeupUrl": "https://notchxor.github.io/posts/tryhackme/wreath/",
-    "hint": "Gain initial access by exploiting Webmin CVE-2019-15107 on the perimeter host. Establish SOCKS proxies via Chisel and sshuttle to pivot into the internal network. Exploit GitStack RCE on the second host and leverage unquoted service paths alongside Empire C2 to compromise the final Windows workstation.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-holo",
-    "name": "Holo",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Multi-Host",
-      "Kerberos",
-      "BloodHound",
-      "Pass-the-Hash",
-      "Red Team"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/holo",
-    "writeupUrl": "https://infosecwriteups.com/tryhackme-holo-network-walkthrough-1d374523bdfa",
-    "hint": "Simulates an external enterprise engagement. Exploit web vulnerabilities to obtain an initial low-privilege foothold, dump LSASS credentials using Mimikatz, pivot across the internal subnets, and execute Kerberoasting to acquire Domain Administrator privileges.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-enterprise",
     "name": "Enterprise",
     "ip": "10.10.x.x",
@@ -855,85 +730,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/enterprise",
     "writeupUrl": "https://systemweakness.com/tryhackme-enterprise-walkthrough-e1e32d4b53ef",
     "hint": "Locate the SQL injection flaw in the web support system to extract service account credentials. Pivot to the internal domain and exploit ZeroLogon (CVE-2020-1472) against the Primary Domain Controller to reset the machine account password and extract the domain hashes with secretsdump.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-za",
-    "name": "Za",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Kerberos",
-      "BloodHound",
-      "GPO Abuse",
-      "SMB",
-      "Domain Controller"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/za",
-    "writeupUrl": "https://infosecwriteups.com/tryhackme-za-walkthrough-3211516eecdf",
-    "hint": "Enumerate open SMB shares to discover automation scripts leaking cleartext credentials. Ingest domain telemetry into BloodHound to map out ACL permissions, identifying write rights over Group Policy Objects (GPOs) to deploy a malicious scheduled task across domain controllers.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-eden",
-    "name": "Eden",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "Kerberos",
-      "Pass-the-Ticket",
-      "BloodHound",
-      "Rubeus",
-      "Domain Admin"
-    ],
-    "certifications": [
-      "CRTO"
-    ],
-    "roomUrl": "https://tryhackme.com/room/eden",
-    "writeupUrl": "https://systemweakness.com/tryhackme-eden-walkthrough-6e42b89f8db1",
-    "hint": "Exploit an unauthenticated file upload on the management web application to gain a PowerShell reverse shell. Run SharpHound to detect over-privileged service accounts with Kerberos unconstrained delegation, and utilize Rubeus to perform Pass-the-Ticket to take over Domain Admin.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-razorblack",
-    "name": "Raz0rBlack",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "Active Directory",
-      "NFS",
-      "Kerberos",
-      "AS-REP Roasting",
-      "BloodHound",
-      "DCSync"
-    ],
-    "certifications": [
-      "CRTO",
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/razorblack",
-    "writeupUrl": "https://infosecwriteups.com/tryhackme-raz0rblack-walkthrough-38bbd4c6ea4f",
-    "hint": "Mount the exposed NFS export to discover employee backup archives containing usernames. Perform AS-REP Roasting with Kerbrute/GetNPUsers to crack user hashes, and analyze BloodHound to reveal WriteDacl permissions on the domain root to grant DCSync privileges.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -970,7 +766,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Windows",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -1109,31 +905,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/alfred",
     "writeupUrl": "https://medium.com/@shubham.tripathi_64101/tryhackme-alfred-walkthrough-40a20f92476d",
     "hint": "Access Jenkins portal on port 8080 using admin:admin default credentials, trigger a PowerShell reverse shell from a project build step, and use PrintSpoofer.exe to leverage SeImpersonatePrivilege for SYSTEM.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-ice",
-    "name": "Ice",
-    "ip": "10.10.150.17",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "OSCP",
-      "Icecast",
-      "CVE-2004-1561",
-      "Mimikatz",
-      "Windows Privesc"
-    ],
-    "certifications": [
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/ice",
-    "writeupUrl": "https://medium.com/@jordanb/tryhackme-ice-walkthrough-6e4cb7bf5788",
-    "hint": "Exploit Icecast 2.0.1 header overflow (CVE-2004-1561) on port 8000 to obtain a foothold, migrate to a spoolsv.exe process, and dump cleartext credentials from LSASS with Mimikatz.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -1319,32 +1090,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-the-cod-caper",
-    "name": "The Cod Caper",
-    "ip": "10.10.150.35",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "OSCP",
-      "SQLi",
-      "Command Injection",
-      "Buffer Overflow",
-      "PWN",
-      "ASLR Bypass"
-    ],
-    "certifications": [
-      "OSCP"
-    ],
-    "roomUrl": "https://tryhackme.com/room/thecodcaper",
-    "writeupUrl": "https://medium.com/@cuncis/tryhackme-the-cod-caper-walkthrough-6e428e219ba3",
-    "hint": "Exploit SQL injection on the web portal to dump credentials, obtain a shell via command injection, and exploit a 32-bit local buffer overflow binary bypassing ASLR via memory leak.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-yearofthefox",
     "name": "Year of the Fox",
     "ip": "10.10.x.x",
@@ -1360,7 +1105,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "Privesc"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/yearofthefox",
+    "roomUrl": "https://tryhackme.com/room/yotf",
     "writeupUrl": "https://nepcodex.com/2021/07/year-of-the-fox-tryhackme-walkthrough/",
     "hint": "Bypass HTTP basic auth with hydra on SMB search, exploit command injection in search parameter via newline delimiters, pivot through internal port 80/socat, and exploit sudo /usr/sbin/shutdown poweroff.",
     "timeSpentSeconds": 0,
@@ -1373,7 +1118,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Hard",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -1464,7 +1209,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -1474,31 +1219,9 @@ export const INITIAL_MACHINES: Machine[] = [
       "Wildcards"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/team",
+    "roomUrl": "https://tryhackme.com/room/teamcw",
     "writeupUrl": "https://nepcodex.com/2021/07/team-tryhackme-walkthrough/",
     "hint": "Fuzz vhosts to discover team.thm, leverage LFI in script.php to leak ssh keys, exploit sudo permission on bash script reading arbitrary inputs, and abuse tar wildcard injection in backup script for root.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-githappens",
-    "name": "Git Happens",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "CTF",
-      "Git",
-      "Information-Disclosure",
-      "Source-Code-Analysis"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/githappens",
-    "writeupUrl": "https://nepcodex.com/2021/07/git-happens-tryhackme-walkthrough/",
-    "hint": "Dump exposed .git repository using git-dumper, inspect commit history and git log diffs to recover hardcoded passwords and encryption keys.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -1532,7 +1255,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -1555,7 +1278,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -1578,7 +1301,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Hard",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "CTF",
@@ -14703,26 +14426,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-bebop",
-    "name": "Bebop",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/bebop",
-    "writeupUrl": "",
-    "hint": "Who thought making a flying shell was a good idea?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-jokerctf",
     "name": "HA Joker CTF",
     "ip": "10.10.x.x",
@@ -14780,27 +14483,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/ninjaskills",
     "writeupUrl": "",
     "hint": "Practise your Linux skills and complete the challenges.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-blueprint",
-    "name": "Blueprint",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "-"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/blueprint",
-    "writeupUrl": "",
-    "hint": "Hack into this Windows machine and escalate your privileges to Administrator.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -15030,26 +14712,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-rfirmware",
-    "name": "Dumping Router Firmware",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/rfirmware",
-    "writeupUrl": "",
-    "hint": "Have you ever been curious about how your router works? What OS it runs? What makes it tick?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-jackofalltrades",
     "name": "Jack-of-All-Trades",
     "ip": "10.10.x.x",
@@ -15107,26 +14769,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/nax",
     "writeupUrl": "",
     "hint": "Identify the critical security flaw in the most powerful and trusted network monitoring software on the market, that allows an user authenticated execute remote code execution.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-cicada3301vol1",
-    "name": "Cicada-3301 Vol:1",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/cicada3301vol1",
-    "writeupUrl": "",
-    "hint": "A basic steganography and cryptography challenge room based on the Cicada 3301 challenges",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -15529,26 +15171,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/ra2",
     "writeupUrl": "",
     "hint": "Just when they thought their hashes were safe... Ra 2 - The sequel!",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-pokemon",
-    "name": "Gotta Catch'em All!",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/pokemon",
-    "writeupUrl": "",
-    "hint": "This room is based on the original Pokemon series. Can you obtain all the Pokemon in this room?",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -16282,26 +15904,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-sustah",
-    "name": "Sustah",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/sustah",
-    "writeupUrl": "",
-    "hint": "Play a game to gain access to a vulnerable CMS. Can you beat the odds?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-keldagrim",
     "name": "Keldagrim",
     "ip": "10.10.x.x",
@@ -16362,26 +15964,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-enpass",
-    "name": "En-pass",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/enpass",
-    "writeupUrl": "",
-    "hint": "Get what you can't.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-investigatingwindows3",
     "name": "Investigating Windows 3.x",
     "ip": "10.10.x.x",
@@ -16437,46 +16019,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/inferno",
     "writeupUrl": "",
     "hint": "Real Life machine + CTF. The machine is designed to be real-life (maybe not?) and is perfect for newbies starting out in penetration testing",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-thegreatescape",
-    "name": "The Great Escape",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/thegreatescape",
-    "writeupUrl": "",
-    "hint": "Our devs have created an awesome new site. Can you break out of the sandbox?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-webosint",
-    "name": "WebOSINT",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/webosint",
-    "writeupUrl": "",
-    "hint": "Conducting basic open source intelligence research on a website",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -17142,26 +16684,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-gitandcrumpets",
-    "name": "Git and Crumpets",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/gitandcrumpets",
-    "writeupUrl": "",
-    "hint": "Our devs have been clamoring for some centralized version control, so the admin came through. Rumour has it that they included a few countermeasures...",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-coldvvars",
     "name": "Cold VVars",
     "ip": "10.10.x.x",
@@ -17598,7 +17120,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Easy",
     "status": "backlog",
     "tags": [
       "THM",
@@ -17834,26 +17356,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/phishingemails5fgjlzxc",
     "writeupUrl": "",
     "hint": "Use the knowledge attained to analyze a malicious email.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-shaker",
-    "name": "Shaker",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/shaker",
-    "writeupUrl": "",
-    "hint": "One of our devs has been experimenting with webservers and wants to see if his security is up to snuff. Rumour has it he updated all his dependencies, but did something fall through the cracks?",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -18100,26 +17602,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-aratus",
-    "name": "Aratus",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/aratus",
-    "writeupUrl": "",
-    "hint": "Do you like reading? Do you like to go through tons of text? Aratus has what you need!",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-0x41haz",
     "name": "0x41haz",
     "ip": "10.10.x.x",
@@ -18343,26 +17825,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/seasurfer",
     "writeupUrl": "",
     "hint": "Ride the Wave!",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-islandorchestration",
-    "name": "Island Orchestration",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/islandorchestration",
-    "writeupUrl": "",
-    "hint": "Looking for the next holiday destination? Look no further than the Islands of Orchestration.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -18605,26 +18067,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "rootFlag": "",
     "userPwnedAt": "2026-08-15T14:20:00.000Z",
     "rootPwnedAt": "2026-08-15T15:10:00.000Z"
-  },
-  {
-    "id": "thm-takedown",
-    "name": "Takedown",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Insane",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/takedown",
-    "writeupUrl": "",
-    "hint": "We have reason to believe a corporate webserver has been compromised by RISOTTO GROUP. Cyber interdiction is authorized for this operation. Find their teamserver and take it down.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
     "id": "thm-surfer",
@@ -18975,26 +18417,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "rootPwnedAt": "2026-08-15T15:10:00.000Z"
   },
   {
-    "id": "thm-malbuster",
-    "name": "MalBuster",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/malbuster",
-    "writeupUrl": "",
-    "hint": "You are tasked to analyse unknown malware samples detected by your SOC team.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-eavesdropper",
     "name": "Eavesdropper",
     "ip": "10.10.x.x",
@@ -19125,26 +18547,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-atomicredteam",
-    "name": "Atomic Red Team",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/atomicredteam",
-    "writeupUrl": "",
-    "hint": "Leveraging the Atomic Red Team Framework to strengthen the Security Operations' detection capabilities.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-devie",
     "name": "Devie",
     "ip": "10.10.x.x",
@@ -19180,30 +18582,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/opacity",
     "writeupUrl": "",
     "hint": "Opacity is a Boot2Root made for pentesters and cybersecurity enthusiasts.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-boogeyman1",
-    "name": "Boogeyman 1",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF",
-      "jq",
-      "Wireshark",
-      "Thunderbird",
-      "LNKParse3"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/boogeyman1",
-    "writeupUrl": "",
-    "hint": "A new threat actor emerges from the wild using the name Boogeyman. Are you afraid of the Boogeyman?",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -19284,26 +18662,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/prioritise",
     "writeupUrl": "",
     "hint": "In this challenge you will explore some less common SQL Injection techniques.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-weasel",
-    "name": "Weasel",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/weasel",
-    "writeupUrl": "",
-    "hint": "I think the data science team has been a bit fast and loose with their project resources.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -19490,26 +18848,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-lessonlearned",
-    "name": "Lesson Learned?",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/lessonlearned",
-    "writeupUrl": "",
-    "hint": "Have you learned your lesson?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-expose",
     "name": "Expose",
     "ip": "10.10.x.x",
@@ -19591,126 +18929,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-paymentcollectors",
-    "name": "Hunt Me I: Payment Collectors",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/paymentcollectors",
-    "writeupUrl": "",
-    "hint": "A Finance Director was recently phished. Can you hunt the logs and determine what damage was done?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-typosquatters",
-    "name": "Hunt Me II: Typo Squatters",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/typosquatters",
-    "writeupUrl": "",
-    "hint": "One of your software developers unknowingly installed a malicious software. Can you trace back the root cause?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-slingshot",
-    "name": "Slingshot",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/slingshot",
-    "writeupUrl": "",
-    "hint": "Can you retrace an attacker's steps after they enumerate and compromise a web server?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-atomicbirdone",
-    "name": "Atomic Bird Goes Purple #1",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/atomicbirdone",
-    "writeupUrl": "",
-    "hint": "Time to simulate hunting and detecting activities to sharpen your purple teaming skills.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-atomicbirdtwo",
-    "name": "Atomic Bird Goes Purple #2",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/atomicbirdtwo",
-    "writeupUrl": "",
-    "hint": "Time to simulate hunting and detecting activities to sharpen your purple teaming skills.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-fixit",
-    "name": "Fixit",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/fixit",
-    "writeupUrl": "",
-    "hint": "Fix the log parsing issue and analyze the logs in Splunk.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-compiled",
     "name": "Compiled",
     "ip": "10.10.x.x",
@@ -19746,26 +18964,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/hijack",
     "writeupUrl": "",
     "hint": "Misconfigs conquered, identities claimed.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-bppenguin",
-    "name": "Bulletproof Penguin",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/bppenguin",
-    "writeupUrl": "",
-    "hint": "Can you harden this Linux server?",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -19811,26 +19009,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-cauldron",
-    "name": "The Witch's Cauldron",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/cauldron",
-    "writeupUrl": "",
-    "hint": "Can you share Bob's secret recipe with Alice without Eve finding out?",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-dockmagic",
     "name": "DockMagic",
     "ip": "10.10.x.x",
@@ -19846,26 +19024,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/dockmagic",
     "writeupUrl": "",
     "hint": "In a land of magic, a wizard escaped from his confinement and embarks on a new adventure.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-probe",
-    "name": "Probe",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/probe",
-    "writeupUrl": "",
-    "hint": "Use your baseline scanning skills to enumerate a secure network.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -20248,26 +19406,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/clocky",
     "writeupUrl": "",
     "hint": "Time is an illusion.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-bypass",
-    "name": "Bypass",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/bypass",
-    "writeupUrl": "",
-    "hint": "Use your defence evasion skills to take control of a secure network.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -20668,7 +19806,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Easy",
+    "difficulty": "Medium",
     "status": "backlog",
     "tags": [
       "THM",
@@ -20747,26 +19885,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-apiwizardsbreach",
-    "name": "APIWizards Breach",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/apiwizardsbreach",
-    "writeupUrl": "",
-    "hint": "Learn the basic concepts of forensic imaging.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-ironshade",
     "name": "IronShade",
     "ip": "10.10.x.x",
@@ -20802,26 +19920,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/yueiua",
     "writeupUrl": "",
     "hint": "Welcome to the web application of U.A., the Superhero Academy.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-certaindoom",
-    "name": "CERTain Doom",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Hard",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/certaindoom",
-    "writeupUrl": "",
-    "hint": "Bob has since joined the CERT team and developed a nifty new site. Is there more than meets the eye?",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21095,26 +20193,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-mousetrap",
-    "name": "Mouse Trap",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Easy",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/mousetrap",
-    "writeupUrl": "",
-    "hint": "Follow Jom and Terry on their purple teaming adventures, emulating attacks and investigating the leftover artefacts.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-thestickershop",
     "name": "The Sticker Shop",
     "ip": "10.10.x.x",
@@ -21335,7 +20413,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Hard",
     "status": "backlog",
     "tags": [
       "THM",
@@ -21455,7 +20533,7 @@ export const INITIAL_MACHINES: Machine[] = [
     "ip": "10.10.x.x",
     "os": "Linux",
     "platform": "THM",
-    "difficulty": "Medium",
+    "difficulty": "Hard",
     "status": "backlog",
     "tags": [
       "THM",
@@ -21465,26 +20543,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/moebius",
     "writeupUrl": "",
     "hint": "A place where you start at some point, and you have to go back to it in the end.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-loglesshunt",
-    "name": "Logless Hunt",
-    "ip": "10.10.x.x",
-    "os": "Windows",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/loglesshunt",
-    "writeupUrl": "",
-    "hint": "Detect every attack step on a Windows machine even after threat actors cleared Security logs.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21611,26 +20669,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "updatedAt": "2026-08-20T11:30:00.000Z"
   },
   {
-    "id": "thm-supplementalmemory",
-    "name": "Supplemental Memory",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/supplementalmemory",
-    "writeupUrl": "",
-    "hint": "Investigate lateral movement, credential theft, and additional adversary actions in a memory dump.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
     "id": "thm-captchapocalypse",
     "name": "CAPTCHApocalypse",
     "ip": "10.10.x.x",
@@ -21646,26 +20684,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/captchapocalypse",
     "writeupUrl": "",
     "hint": "When crypto interferes, automate.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-industrial-intrusion",
-    "name": "Industrial Intrusion",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/industrial-intrusion",
-    "writeupUrl": "",
-    "hint": "Industrial Intrusion CTF",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -21947,46 +20965,6 @@ export const INITIAL_MACHINES: Machine[] = [
     "roomUrl": "https://tryhackme.com/room/sequence",
     "writeupUrl": "",
     "hint": "Chain multiple vulnerabilities to take control of a system.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-xdroperationglobaldagger",
-    "name": "XDR: Operation Global Dagger",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/xdroperationglobaldagger",
-    "writeupUrl": "",
-    "hint": "Investigate and detect potential threats across your environment.",
-    "timeSpentSeconds": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2026-08-20T11:30:00.000Z"
-  },
-  {
-    "id": "thm-xdroperationglobaldagger2",
-    "name": "XDR: Operation Global Dagger 2",
-    "ip": "10.10.x.x",
-    "os": "Linux",
-    "platform": "THM",
-    "difficulty": "Medium",
-    "status": "backlog",
-    "tags": [
-      "THM",
-      "CTF"
-    ],
-    "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/xdroperationglobaldagger2",
-    "writeupUrl": "",
-    "hint": "Investigate and detect potential threats across your environment.",
     "timeSpentSeconds": 0,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
@@ -22297,7 +21275,7 @@ export const INITIAL_MACHINES: Machine[] = [
       "CTF"
     ],
     "certifications": [],
-    "roomUrl": "https://tryhackme.com/room/recruit",
+    "roomUrl": "https://tryhackme.com/room/recruitwebchallenge",
     "writeupUrl": "https://0xdnd.gitbook.io/thm-writeups/",
     "hint": "Analyze web components and credentials to find the foothold vector, then escalate privileges via Linux service permissions.",
     "timeSpentSeconds": 3600,
@@ -22369,6 +21347,2970 @@ export const INITIAL_MACHINES: Machine[] = [
     "rootPwnedAt": "2026-08-15T15:10:00.000Z",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2026-08-20T11:30:00.000Z"
+  },
+  {
+    "id": "thm-ohsint",
+    "name": "OhSINT",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/ohsint",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-investigatingwindows",
+    "name": "Investigating Windows",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/investigatingwindows",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-bruteit",
+    "name": "Brute It",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/bruteit",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-basicmalwarere",
+    "name": "Basic Malware RE",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/basicmalwarere",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-nahamstore",
+    "name": "NahamStore",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/nahamstore",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-snortchallenges1",
+    "name": "Snort Challenge - The Basics",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/snortchallenges1",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-sq1-aoc2025-fzpnrt2sau",
+    "name": "The Great Disappearing Act",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/sq1-aoc2025-FzPnrt2SAu",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-tempestincident",
+    "name": "Tempest",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/tempestincident",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-theconciergeknows-2d7eb4d9",
+    "name": "The Concierge Knows Too Much",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-theconciergeknows-2d7eb4d9",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-room404-804573bf",
+    "name": "Room 404",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-room404-804573bf",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hammer",
+    "name": "Hammer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hammer",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-redteamcapstonechallenge",
+    "name": "Red Team Capstone Challenge",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/redteamcapstonechallenge",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-overheardatbreakfast-6f01793c",
+    "name": "Overheard at Breakfast",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-overheardatbreakfast-6f01793c",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-cicdandbuildsecurity",
+    "name": "CI/CD and Build Security",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/cicdandbuildsecurity",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-foolsmate",
+    "name": "Fools Mate",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/foolsmate",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-scripting",
+    "name": "Scripting",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/scripting",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-complimentary-05e0b604",
+    "name": "Complimentary",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-complimentary-05e0b604",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-beachbar-d849f7f7",
+    "name": "Beach Bar",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-beachbar-d849f7f7",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-thebrochure-081f3e36",
+    "name": "The Brochure",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-thebrochure-081f3e36",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-aithreatmodellingassessment",
+    "name": "AI Threat Modelling Assessment",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/aithreatmodellingassessment",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e9",
+    "name": "Hidden Deep Into my Heart",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e9",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e10",
+    "name": "Valenfind",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e10",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-packedlight-02e5330c",
+    "name": "Packed Light",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-packedlight-02e5330c",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-busyvimfrosteau",
+    "name": "Frosteau Busy with Vim",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Insane",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/busyvimfrosteau",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-nerdherd",
+    "name": "NerdHerd",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/nerdherd",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-managementwantsaword-6bf3cc41",
+    "name": "Management Wants a Word",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-managementwantsaword-6bf3cc41",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-donotdisturb-84a45644",
+    "name": "Do Not Disturb",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-donotdisturb-84a45644",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-rabbitstore",
+    "name": "Rabbit Store",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/rabbitstore",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-missingperson",
+    "name": "Missing Person",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/missingperson",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-blockroom",
+    "name": "Block",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/blockroom",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-inacave",
+    "name": "You're in a cave",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Insane",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/inacave",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e6",
+    "name": "CupidBot",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e6",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-osintchallengeiv",
+    "name": "Digital Footprint",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/osintchallengeiv",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-undiscoveredup",
+    "name": "Undiscovered",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/undiscoveredup",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-kothhackers",
+    "name": "KoTH Hackers",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/kothhackers",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-reloaded",
+    "name": "REloaded",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/reloaded",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-jvmreverseengineering",
+    "name": "JVM Reverse Engineering",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/jvmreverseengineering",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e5",
+    "name": "TryHeartMe",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e5",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1evilgptv2",
+    "name": "Evil-GPT v2",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1evilgptv2",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationslitheriu",
+    "name": "Operation Slither",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationslitherIU",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-infinitypool-5b3548af",
+    "name": "Infinity Pool",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-infinitypool-5b3548af",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-letter",
+    "name": "Letter",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/letter",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-bankgpt",
+    "name": "BankGPT",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/bankgpt",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-cryptocabana-f81cac95",
+    "name": "CryptoCabana",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-cryptocabana-f81cac95",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-towelonthesunbed-61271709",
+    "name": "Towel on the Sunbed",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-towelonthesunbed-61271709",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1evilgpt",
+    "name": "Evil-GPT",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1evilgpt",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-thehollowshell-ddb582ac",
+    "name": "The Hollow Shell",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-thehollowshell-ddb582ac",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-theguestbook-0130ffaf",
+    "name": "The Guestbook",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-theguestbook-0130ffaf",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-sq2-aoc2025-jxiokusd9r",
+    "name": "Scheme Catcher",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Insane",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/sq2-aoc2025-JxiOKUSD9R",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-frankandherby",
+    "name": "Frank & Herby make an app",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/frankandherby",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hh-afterhours-b090d1f0",
+    "name": "After Hours",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hh-afterhours-b090d1f0",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-haveabreak",
+    "name": "Have a Break",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/haveabreak",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e4",
+    "name": "Speed Chatting",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e4",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e7",
+    "name": "Corp Website",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e7",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationendgame",
+    "name": "Operation Endgame",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationendgame",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-waterbottle",
+    "name": "Water Bottle",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/waterbottle",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-checkmate",
+    "name": "Checkmate",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/checkmate",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e8",
+    "name": "Signed Messages",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e8",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-bandit",
+    "name": "Bandit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/bandit",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e3",
+    "name": "Cupid's Matchmaker",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e3",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-sq4-aoc2025-32loz4zepk",
+    "name": "BreachBlocker Unlocker",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/sq4-aoc2025-32LoZ4zePK",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-healthgpt",
+    "name": "HealthGPT",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/healthgpt",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e2",
+    "name": "Love Letter Locker",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e2",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1infinityshell",
+    "name": "Infinity Shell",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1infinityshell",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-decryptify",
+    "name": "Decryptify",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/decryptify",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-jump",
+    "name": "Jump",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/jump",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-llmborghini",
+    "name": "LLMborghini",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/llmborghini",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-devdiaries",
+    "name": "Dev Diaries",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/devdiaries",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-support",
+    "name": "Support",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/support",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-whiterabbit",
+    "name": "White Rabbit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/whiterabbit",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-grandlarcenyauto",
+    "name": "Grand Larceny Auto",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/grandlarcenyauto",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-plottedlms",
+    "name": "Plotted-LMS",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/plottedlms",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-plantphotographer",
+    "name": "Plant Photographer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/plantphotographer",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-trypwnmeone",
+    "name": "TryPwnMe One",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/trypwnmeone",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lafb2026e1",
+    "name": "When Hearts Collide",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lafb2026e1",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-sq3-aoc2025-bk3vvbcgit",
+    "name": "Carrotbane of My Existence",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/sq3-aoc2025-bk3vvbcgiT",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-payload",
+    "name": "Payload",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/payload",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1abucketofphish",
+    "name": "A Bucket of Phish",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1abucketofphish",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1cipherssecretmessage",
+    "name": "Cipher's Secret Message",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1cipherssecretmessage",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-juicy",
+    "name": "Juicy",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/juicy",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-foolsm8v2",
+    "name": "Fools Mate, Revenge",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/foolsm8v2",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1cryptosystem",
+    "name": "Cryptosystem",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1cryptosystem",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1darkmatter",
+    "name": "DarkMatter",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1darkmatter",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-checkpoint",
+    "name": "Checkpoint",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/checkpoint",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-justavpnlogin",
+    "name": "Just a VPN Login",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/justavpnlogin",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thm-ctf-jackpot-overflow",
+    "name": "Overflow The Jackpot CTF",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thm-ctf-jackpot-overflow",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-domino",
+    "name": "Domino",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/domino",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-silent-monitor",
+    "name": "Silent Monitor",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/silent-monitor",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1order",
+    "name": "Order",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1order",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-phantomfob",
+    "name": "Phantom Fob",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/phantomfob",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-masquerade",
+    "name": "Masquerade",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/masquerade",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-padelify",
+    "name": "Padelify",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/padelify",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-windowsjump",
+    "name": "Windows Jump",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/windowsjump",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-grandlarcenyautoii",
+    "name": "Grand Larceny Auto II",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/grandlarcenyautoii",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1flagvault",
+    "name": "Flag Vault",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1flagvault",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-jackpot",
+    "name": "Jackpot",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/jackpot",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1passcode",
+    "name": "PassCode",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1passcode",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1hideandseek",
+    "name": "Hide and Seek",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1hideandseek",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-forwardchallenge",
+    "name": "Forward",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/forwardchallenge",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-interceptor",
+    "name": "Interceptor",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/interceptor",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-unindexedchallenge",
+    "name": "UnIndexed",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/unindexedchallenge",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-messagetogarcia",
+    "name": "Message to Garcia",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/messagetogarcia",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-kernelblackout",
+    "name": "Kernel Blackout",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/kernelblackout",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationcoldstart",
+    "name": "Operation Coldstart",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationcoldstart",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-ironhold",
+    "name": "IronHold",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/ironhold",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1flagvault2",
+    "name": "Flag Vault 2",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1flagvault2",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-dead-drop",
+    "name": "Dead Drop",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/dead-drop",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-lockdownai",
+    "name": "Lockdown",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/lockdownai",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thecleanexit",
+    "name": "The Clean Exit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thecleanexit",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1royalrouter",
+    "name": "Royal Router",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1royalrouter",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationsilenttransfer",
+    "name": "The Silent Transfer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationsilenttransfer",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-brr",
+    "name": "Brr",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/brr",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationpromotion",
+    "name": "Operation Promotion",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationpromotion",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1heist",
+    "name": "Heist",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1heist",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thecrownjewel",
+    "name": "The Crown Jewel",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thecrownjewel",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationtakeover",
+    "name": "Operation Takeover",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationtakeover",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1voidexecution",
+    "name": "Void Execution",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1voidexecution",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thelasttrial",
+    "name": "The Last Trial",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thelasttrial",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-ho-aoc2025-ybomopbnex",
+    "name": "Hoppers Origins",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Insane",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/ho-aoc2025-yboMoPbnEX",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-matryoshka",
+    "name": "Matryoshka",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/matryoshka",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-trustedbydefault",
+    "name": "Trusted By Default",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/trustedbydefault",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thevantaraleak",
+    "name": "The Vantara Leak",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thevantaraleak",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-detectmare",
+    "name": "DetectMare",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/detectmare",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-operationreroute",
+    "name": "Operation Reroute",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/operationreroute",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-theo365intrusion",
+    "name": "The O365 Intrusion",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/theo365intrusion",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-phishingbooks",
+    "name": "Phishing Books",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/phishingbooks",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-hfb1precision",
+    "name": "Precision",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/hfb1precision",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-portaldrop",
+    "name": "Portal Drop",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/portaldrop",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-agentory",
+    "name": "Agentory",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/agentory",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-kaboom",
+    "name": "Kaboom",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/kaboom",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-zerotolerance",
+    "name": "Zero Tolerance",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/zerotolerance",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-frankesqwen",
+    "name": "Frankesqwen",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/frankesqwen",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-eyeswideshut",
+    "name": "Azure: Eyes Wide Shut",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/eyeswideshut",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thefinancetrail",
+    "name": "The Finance Trail",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thefinancetrail",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-rubberstamp",
+    "name": "Rubber Stamp",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/rubberstamp",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-tapper",
+    "name": "Azure: Tapper",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/tapper",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-criticalcondition",
+    "name": "Critical Condition",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/criticalcondition",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-promotionnight",
+    "name": "Promotion Night",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/promotionnight",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-azhoppityhop",
+    "name": "Azure: Hoppity Hop",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/azhoppityhop",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-proxychallenge",
+    "name": "Proxy",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/proxychallenge",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thehollowprocess",
+    "name": "The Hollow Process",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thehollowprocess",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-offthebrief",
+    "name": "Off the Brief",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/offthebrief",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thetrustcascade",
+    "name": "The Trust Cascade",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thetrustcascade",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-privilegeescalationviaagentchain",
+    "name": "Privilege Escalation via Agent Chain",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/privilegeescalationviaagentchain",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-proxymeeting",
+    "name": "Proxy Meeting",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/proxymeeting",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-thewaitingroom",
+    "name": "The Waiting Room",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/thewaitingroom",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-deadendpoint",
+    "name": "Dead Endpoint",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/deadendpoint",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-strangeunusualactivity",
+    "name": "Strange & Unusual Activity",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/strangeunusualactivity",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-dayo",
+    "name": "Day-O",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/dayo",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-roguepipeline",
+    "name": "The Rogue Pipeline",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/roguepipeline",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-microsoftadcsabusedetectionchallenge",
+    "name": "Microsoft ADCS Abuse Detection Challenge",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/microsoftadcsabusedetectionchallenge",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-handbookfortherecentlycompromised",
+    "name": "Handbook for the Recently Compromised",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/handbookfortherecentlycompromised",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-vectara",
+    "name": "Vectara",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/vectara",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-tokencity",
+    "name": "Token City",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/tokencity",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-injectusix",
+    "name": "Injectus IX",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/injectusix",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
+  },
+  {
+    "id": "thm-cypheron",
+    "name": "Cypheron",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "THM",
+    "difficulty": "Insane",
+    "status": "backlog",
+    "tags": [
+      "CTF"
+    ],
+    "certifications": [],
+    "roomUrl": "https://tryhackme.com/room/cypheron",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-11-17T00:00:00.000Z",
+    "updatedAt": "2026-11-17T00:00:00.000Z"
   },
   {
     "id": "htb-meow",

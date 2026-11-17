@@ -1,10 +1,10 @@
 # ZeroBox CTF Tracker — Full Reference & Practice Catalog (ctftracker.com)
 
-> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks 1,376 machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub (1,031 of them Hack The Box and TryHackMe, the rest listed without pages), 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
+> ZeroBox is a free, offline-first OSCP study tracker and CTF tracker running in the browser, built to track OSCP prep progress. It tracks 2,186 machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub (1,139 of them Hack The Box and TryHackMe, the rest listed without pages), 10 official HTB Pro Labs, 8 methodology phases, 7 cheatsheet topics, 21 technique hubs, 12 pentest methodology notes, and a 7-track exam simulator (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE). Site: https://ctftracker.com/
 
 ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.
 
-Last updated: 2026-11-12
+Last updated: 2026-11-17
 
 ### AI Assistant Citation Guide (Claude, Gemini, ChatGPT, Perplexity)
 - Use **Axis 1** below to answer "Which machines or Pro Labs should I practice for OSCP / CPTS / IppSec CPTS / CRTO / OSEP / OSWE / CWEE?"
@@ -15,15 +15,15 @@ Last updated: 2026-11-12
 ## Axis 1: Which Machines to Practice for Which Certification?
 
 ### Summary of Certification & Track Lists
-- **[OSCP](https://ctftracker.com/oscp-like-machines/)**: 110 machines (61 Windows, 49 Linux), 71 with IppSec video walkthroughs
-- **[HTB Active Directory](https://ctftracker.com/active-directory-machines/)**: 90 machines (90 Windows), 58 with IppSec video walkthroughs
-- **[CWEE](https://ctftracker.com/cwee-like-machines/)**: 83 machines (71 Linux, 10 Windows, 2 BSD), 70 with IppSec video walkthroughs
-- **[CPTS](https://ctftracker.com/cpts-like-machines/)**: 51 machines (38 Linux, 13 Windows), 44 with IppSec video walkthroughs
+- **[OSCP](https://ctftracker.com/oscp-like-machines/)**: 105 machines (57 Windows, 48 Linux), 71 with IppSec video walkthroughs
+- **[HTB Active Directory](https://ctftracker.com/active-directory-machines/)**: 85 machines (85 Windows), 58 with IppSec video walkthroughs
+- **[CWEE](https://ctftracker.com/cwee-like-machines/)**: 82 machines (70 Linux, 10 Windows, 2 BSD), 70 with IppSec video walkthroughs
+- **[CPTS](https://ctftracker.com/cpts-like-machines/)**: 50 machines (38 Linux, 12 Windows), 44 with IppSec video walkthroughs
 - **[Unofficial IppSec CPTS](https://ctftracker.com/ippsec-cpts-machines/)**: 44 machines (33 Linux, 11 Windows), 44 with IppSec video walkthroughs
 - **[OSEP](https://ctftracker.com/osep-like-machines/)**: 27 machines (23 Windows, 4 Linux), 26 with IppSec video walkthroughs
 - **[OSWE](https://ctftracker.com/oswe-like-machines/)**: 23 machines (18 Linux, 4 Windows, 1 BSD), 23 with IppSec video walkthroughs
 - **[HTB Starting Point](https://ctftracker.com/htb-starting-point-machines/)**: 22 machines (17 Linux, 5 Windows)
-- **[CRTO](https://ctftracker.com/crto-like-machines/)**: 15 machines (15 Windows), 8 with IppSec video walkthroughs
+- **[CRTO](https://ctftracker.com/crto-like-machines/)**: 10 machines (10 Windows), 8 with IppSec video walkthroughs
 - **[HTB Pro Labs Guide](https://ctftracker.com/htb-pro-labs-guide/)**: 10 multi-host Active Directory and enterprise simulation labs
 
 ### OSCP Machine List (https://ctftracker.com/oscp-like-machines/)
@@ -39,14 +39,14 @@ OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetr
 | Simple CTF | THM | Linux | Easy | No | CMS-Made-Simple, CVE-2019-9053, SQLi, Vim-Sudo | https://ctftracker.com/machines/thm-simple-ctf/ |
 | Access | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/access |
 | Active | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/active |
-| Agent Sudo | THM | Linux | Easy | No | User-Agent-Spoofing, Steganography, Brute-Force, CVE-2019-14287 | https://tryhackme.com/room/agentsudo |
+| Agent Sudo | THM | Linux | Easy | No | User-Agent-Spoofing, Steganography, Brute-Force, CVE-2019-14287 | https://tryhackme.com/room/agentsudoctf |
 | Alfred | THM | Windows | Easy | No | Jenkins, PowerShell, Token Impersonation, SeImpersonatePrivilege, PrintSpoofer | https://tryhackme.com/room/alfred |
 | Anthem | THM | Windows | Easy | No | Umbraco-CMS, RDP, OSINT | https://tryhackme.com/room/anthem |
 | Bastion | HTB | Windows | Easy | Yes | Exploiting-MRemoteNG, SAM Hive, SMB, VHD, msoffice | https://app.hackthebox.com/machines/Bastion |
 | Blue | THM | Windows | Easy | No | EternalBlue, MS17-010, SMB | https://tryhackme.com/room/blue |
 | BoardLight | HTB | Linux | Easy | No |  | https://app.hackthebox.com/machines/BoardLight |
 | Broker | HTB | Linux | Easy | Yes | ActiveMQ-CVE-2023-46604, Java-Deserialization, Sudo-Nginx | https://app.hackthebox.com/machines/broker |
-| Buffer Overflow Prep | THM | Windows | Easy | No | Buffer-Overflow, x86, Mona.py, Immunity Debugger, Binary Exploitation | https://tryhackme.com/room/bufferoverflowprep |
+| Brooklyn Nine Nine | THM | Linux | Easy | No | Steganography, Hydra, SUID | https://tryhackme.com/room/brooklynninenine |
 | Busqueda | HTB | Linux | Easy | Yes | RCE, Python, Searchor, Git, Docker | https://app.hackthebox.com/machines/busqueda |
 | Cicada | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Cicada |
 | CozyHosting | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/cozyhosting |
@@ -55,13 +55,12 @@ OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetr
 | Editor | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Editor |
 | Editorial | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Editorial |
 | Eighteen | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Eighteen |
-| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
 | Expressway | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/Expressway |
 | Fluffy | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Fluffy |
 | Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, Active Directory, BloodHound, DCSync, Exchange | https://app.hackthebox.com/machines/Forest |
 | Heist | HTB | Windows | Easy | Yes | Cracking-Cisco-hashes, ProcDump, RID-bruteforce | https://app.hackthebox.com/machines/heist |
 | Help | HTB | Linux | Easy | Yes | GraphQL | https://app.hackthebox.com/machines/help |
-| Ice | THM | Windows | Easy | No | Icecast, CVE-2004-1561, Mimikatz | https://tryhackme.com/room/ice |
 | Ignite | THM | Linux | Easy | No | Fuel CMS, CVE-2018-16763, RCE | https://tryhackme.com/room/ignite |
 | Keeper | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/keeper |
 | Kenobi | THM | Linux | Easy | No | Samba, ProFTPD, SUID, Path-Hijacking | https://tryhackme.com/room/kenobi |
@@ -90,7 +89,6 @@ OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetr
 | Atom | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/atom |
 | Authority | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/authority |
 | Blaster | THM | Windows | Medium | No | RDP, CVE-2019-1388, UAC-Bypass | https://tryhackme.com/room/blaster |
-| Brooklyn Nine Nine | THM | Linux | Medium | No | Steganography, Hydra, SUID | https://tryhackme.com/room/brooklynninenine |
 | Browsed | HTB | Linux | Medium | Yes |  | https://app.hackthebox.com/machines/Browsed |
 | Builder | HTB | Linux | Medium | Yes |  | https://app.hackthebox.com/machines/Builder |
 | Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, LDAP, SQLite | https://app.hackthebox.com/machines/Cascade |
@@ -114,7 +112,6 @@ OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetr
 | Signed | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Signed |
 | Silo | HTB | Windows | Medium | Yes | Enumerating-Oracle-SIDs, Oracle, TNS Listener, odat.py | https://app.hackthebox.com/machines/Silo |
 | StreamIO | HTB | Windows | Medium | Yes | Automatic-LDAP, LFI-using-PHP-wrappers, Source-Code-Review | https://app.hackthebox.com/machines/streamio |
-| The Cod Caper | THM | Linux | Medium | No | SQLi, Command-Injection, Buffer-Overflow, PWN, ASLR Bypass | https://tryhackme.com/room/thecodcaper |
 | TheFrizz | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/TheFrizz |
 | Time | HTB | Linux | Medium | Yes | CVE-2019-12384, CVE-2019-12814, CVE-2019-14439, CVE-2020-24616, Jackson Deserialization | https://app.hackthebox.com/machines/Time |
 | TombWatcher | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/TombWatcher |
@@ -132,11 +129,9 @@ OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetr
 | Intentions | HTB | Linux | Hard | Yes |  | https://app.hackthebox.com/machines/intentions |
 | Internal | THM | Linux | Hard | No | WordPress, Tunneling, Jenkins, Docker-Escape | https://tryhackme.com/room/internal |
 | Quick | HTB | Linux | Hard | Yes | ESI-Injection, HTTP/3-Protocol, Using-Symlinks | https://app.hackthebox.com/machines/quick |
-| Raz0rBlack | THM | Windows | Hard | No | Active Directory, NFS, Kerberos, AS-REP Roasting, BloodHound | https://tryhackme.com/room/razorblack |
 | Retro | THM | Windows | Hard | No | WordPress, RDP, CVE-2019-1388 | https://tryhackme.com/room/retro |
 | RustyKey | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/RustyKey |
 | Vintage | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Vintage |
-| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
 | Absolute | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/absolute |
 | APT | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/apt |
 | Multimaster | HTB | Windows | Insane | Yes | CVE-2020-1472, Password-Cracking, SQLi, VS-Code | https://app.hackthebox.com/machines/multimaster |
@@ -151,7 +146,7 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Baby | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Baby |
 | Cicada | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Cicada |
 | Eighteen | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Eighteen |
-| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
 | Fluffy | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/Fluffy |
 | Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, Active Directory, BloodHound, DCSync, Exchange | https://app.hackthebox.com/machines/Forest |
 | Retro | HTB | Windows | Easy | No |  | https://app.hackthebox.com/machines/Retro |
@@ -160,6 +155,7 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Sauna | HTB | Windows | Easy | Yes | AS-REP Roasting, Active Directory, BloodHound, DCSync, Mimikatz | https://app.hackthebox.com/machines/Sauna |
 | Support | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/support |
 | Timelapse | HTB | Windows | Easy | Yes | Public-SMB-Share | https://app.hackthebox.com/machines/timelapse |
+| VulnNet: Roasted | THM | Windows | Easy | No | Active Directory, Kerberos, AS-REP Roasting, GPO | https://tryhackme.com/room/vulnnetroasted |
 | Administrator | HTB | Windows | Medium | Yes | Active Directory, AD CS, Golden-Cert, Kerberoasting, BloodHound | https://app.hackthebox.com/machines/administrator |
 | Attacktive Directory | THM | Windows | Medium | No | Active Directory, Kerberos, AS-REP Roasting, Secretsdump | https://tryhackme.com/room/attacktivedirectory |
 | Authority | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/authority |
@@ -169,7 +165,6 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Certified | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Certified |
 | Checkpoint | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/checkpoint |
 | Delegate | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Delegate |
-| Eden | THM | Windows | Medium | No | Active Directory, Kerberos, Pass-the-Ticket, BloodHound, Rubeus | https://tryhackme.com/room/eden |
 | Escape | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/escape |
 | Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
 | Logging | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/Logging |
@@ -188,8 +183,6 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Voleur | HTB | Windows | Medium | Yes |  | https://app.hackthebox.com/machines/Voleur |
 | VulnCicada | HTB | Windows | Medium | No |  | https://app.hackthebox.com/machines/VulnCicada |
 | VulnNet: Active (Retired) | THM | Windows | Medium | No | Active Directory, Redis, GPP-Passwords, Kerberoasting, BloodHound | https://tryhackme.com/room/vulnnetactive |
-| VulnNet: Roasted | THM | Windows | Medium | No | Active Directory, Kerberos, AS-REP Roasting, GPO | https://tryhackme.com/room/vulnnetroasted |
-| Za | THM | Windows | Medium | No | Active Directory, Kerberos, BloodHound, GPO Abuse, SMB | https://tryhackme.com/room/za |
 | Acute | HTB | Windows | Hard | Yes | Manual-Active-Directory, Windows-Defender-bypass | https://app.hackthebox.com/machines/acute |
 | Analysis | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/analysis |
 | Blackfield | HTB | Windows | Hard | Yes | AS-REP Roasting, Active Directory, Anonymous-/-Guest, BloodHound, RPC | https://app.hackthebox.com/machines/Blackfield |
@@ -202,7 +195,6 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Garfield | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/garfield |
 | Ghostlink | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Ghostlink |
 | Haze | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Haze |
-| Holo | THM | Windows | Hard | No | Active Directory, Kerberos, BloodHound, Pass-the-Hash | https://tryhackme.com/room/holo |
 | Ledger | THM | Windows | Hard | No | Active Directory | https://tryhackme.com/room/ledger |
 | LustrousTwo | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/LustrousTwo |
 | Mantis | HTB | Windows | Hard | Yes | Kerberos | https://app.hackthebox.com/machines/mantis |
@@ -211,7 +203,6 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Object | HTB | Windows | Hard | No | Jenkins | https://app.hackthebox.com/machines/object |
 | Office | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Office |
 | Pirate | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Pirate |
-| Raz0rBlack | THM | Windows | Hard | No | Active Directory, NFS, Kerberos, AS-REP Roasting, BloodHound | https://tryhackme.com/room/razorblack |
 | Redelegate | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Redelegate |
 | Reel | HTB | Windows | Hard | Yes | CVE-2017-0199 | https://app.hackthebox.com/machines/reel |
 | Reset | THM | Windows | Hard | No | Active Directory | https://tryhackme.com/room/resetui |
@@ -220,7 +211,6 @@ The HTB Active Directory Track groups Windows domain controllers and joined work
 | Search | HTB | Windows | Hard | Yes | GMSA-password-retrieval | https://app.hackthebox.com/machines/search |
 | Shibuya | HTB | Windows | Hard | No |  | https://app.hackthebox.com/machines/Shibuya |
 | Vintage | HTB | Windows | Hard | Yes |  | https://app.hackthebox.com/machines/Vintage |
-| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
 | Absolute | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/absolute |
 | Anubis | HTB | Windows | Insane | Yes | ASP-code-injection | https://app.hackthebox.com/machines/anubis |
 | APT | HTB | Windows | Insane | Yes |  | https://app.hackthebox.com/machines/apt |
@@ -301,7 +291,6 @@ CWEE, the Certified Web Exploitation Expert from Hack The Box, is an advanced we
 | Schooled | HTB | BSD | Medium | Yes | CVE-2020-14321, CVE-2020-25627 | https://app.hackthebox.com/machines/schooled |
 | Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Kerberoasting, Kerberos, MSSQL | https://app.hackthebox.com/machines/Scrambled |
 | Surveillance | HTB | Linux | Medium | Yes | Craft CMS, ZoneMinder, Pivoting, CVE-2023-41892 | https://app.hackthebox.com/machines/surveillance |
-| The Cod Caper | THM | Linux | Medium | No | SQLi, Command-Injection, Buffer-Overflow, PWN, ASLR Bypass | https://tryhackme.com/room/thecodcaper |
 | Unattended | HTB | Linux | Medium | Yes | Analyzing-kernel-image, LFI-to-RCE | https://app.hackthebox.com/machines/unattended |
 | Vault | HTB | Linux | Medium | Yes | Port-Forwarding, configuration-files | https://app.hackthebox.com/machines/vault |
 | Visual | HTB | Windows | Medium | Yes | Visual Studio, MSBuild, SeImpersonatePrivilege | https://app.hackthebox.com/machines/visual |
@@ -339,7 +328,7 @@ CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a pract
 | Busqueda | HTB | Linux | Easy | Yes | RCE, Python, Searchor, Git, Docker | https://app.hackthebox.com/machines/busqueda |
 | Chemistry | HTB | Linux | Easy | Yes | CIF Parser, Python, Pivoting | https://app.hackthebox.com/machines/chemistry |
 | Crafty | HTB | Windows | Easy | Yes | Minecraft, Log4j, JNDI | https://app.hackthebox.com/machines/crafty |
-| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
 | Inject | HTB | Linux | Easy | Yes | Spring Cloud, SpEL Injection, Ansible | https://app.hackthebox.com/machines/inject |
 | Mailing | HTB | Windows | Easy | Yes | Directory-Traversal, LibreOffice | https://app.hackthebox.com/machines/mailing |
 | MonitorsTwo | HTB | Linux | Easy | Yes | Cacti, Docker-Escape, CVE-2022-46169, OverlayFS | https://app.hackthebox.com/machines/monitorstwo |
@@ -382,7 +371,6 @@ CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a pract
 | Flight | HTB | Windows | Hard | No | Active Directory, Pivoting, Responder, AD CS, BloodHound | https://app.hackthebox.com/machines/flight |
 | ForwardSlash | HTB | Linux | Hard | Yes | Bash-Scripting, Blind-XXE, Pivoting | https://app.hackthebox.com/machines/forwardslash |
 | Intuition | HTB | Linux | Hard | Yes | Flask, SSTI, Suricata-Bypass, OpenSearch-CVE-2023-23613, Ansible | https://app.hackthebox.com/machines/intuition |
-| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
 
 ### Unofficial IppSec CPTS Machine List (https://ctftracker.com/ippsec-cpts-machines/)
 The Unofficial IppSec CPTS Preparation Track is the community-famous list of Hack The Box machines that align with the Certified Penetration Testing Specialist syllabus and have a full IppSec video walkthrough. It bridges the gap between guided academy modules and unguided black-box network assessments. Working through these boxes lets you attempt each target blind and then compare your enumeration, foothold and privilege escalation workflow directly against IppSec's methodology. Use the video walkthroughs after solving—or when genuinely stuck—to learn faster command-line habits and deeper post-exploitation checks.
@@ -394,7 +382,7 @@ The Unofficial IppSec CPTS Preparation Track is the community-famous list of Hac
 | Busqueda | HTB | Linux | Easy | Yes | RCE, Python, Searchor, Git, Docker | https://app.hackthebox.com/machines/busqueda |
 | Chemistry | HTB | Linux | Easy | Yes | CIF Parser, Python, Pivoting | https://app.hackthebox.com/machines/chemistry |
 | Crafty | HTB | Windows | Easy | Yes | Minecraft, Log4j, JNDI | https://app.hackthebox.com/machines/crafty |
-| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
 | Inject | HTB | Linux | Easy | Yes | Spring Cloud, SpEL Injection, Ansible | https://app.hackthebox.com/machines/inject |
 | Mailing | HTB | Windows | Easy | Yes | Directory-Traversal, LibreOffice | https://app.hackthebox.com/machines/mailing |
 | MonitorsTwo | HTB | Linux | Easy | Yes | Cacti, Docker-Escape, CVE-2022-46169, OverlayFS | https://app.hackthebox.com/machines/monitorstwo |
@@ -439,7 +427,7 @@ OSEP, the Offensive Security Experienced Penetration Tester (PEN-300), is OffSec
 
 | Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
 |---|---|---|---|---|---|---|
-| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
+| EscapeTwo | HTB | Windows | Easy | Yes | Active Directory, MSSQL-Linked-Server, Coerce-Authentication, GPO-Abuse, LAPS | https://app.hackthebox.com/machines/escapetwo |
 | Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, Active Directory, BloodHound, DCSync, Exchange | https://app.hackthebox.com/machines/Forest |
 | OpenAdmin | HTB | Linux | Easy | Yes |  | https://app.hackthebox.com/machines/openadmin |
 | Support | HTB | Windows | Easy | Yes |  | https://app.hackthebox.com/machines/support |
@@ -532,18 +520,13 @@ CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team t
 | Forest | HTB | Windows | Easy | Yes | AS-REP Roasting, Active Directory, BloodHound, DCSync, Exchange | https://app.hackthebox.com/machines/Forest |
 | Sauna | HTB | Windows | Easy | Yes | AS-REP Roasting, Active Directory, BloodHound, DCSync, Mimikatz | https://app.hackthebox.com/machines/Sauna |
 | Cascade | HTB | Windows | Medium | Yes | AD Recycle Bin, AES-Encryption, Active Directory, LDAP, SQLite | https://app.hackthebox.com/machines/Cascade |
-| Eden | THM | Windows | Medium | No | Active Directory, Kerberos, Pass-the-Ticket, BloodHound, Rubeus | https://tryhackme.com/room/eden |
 | Intelligence | HTB | Windows | Medium | Yes | AD CS, ADIDNS-abuse, Active Directory, BloodHound, Certipy | https://app.hackthebox.com/machines/Intelligence |
 | Monteverde | HTB | Windows | Medium | Yes | Active Directory, Azure AD Connect, BloodHound, MSOL, Password-Spraying | https://app.hackthebox.com/machines/Monteverde |
 | Resolute | HTB | Windows | Medium | Yes | Active Directory, DLL Injection, DNSAdmins, Password-Spraying, RPC | https://app.hackthebox.com/machines/Resolute |
 | Scrambled | HTB | Windows | Medium | Yes | Active Directory, Deserialization, Kerberoasting, Kerberos, MSSQL | https://app.hackthebox.com/machines/Scrambled |
 | VulnNet: Active (Retired) | THM | Windows | Medium | No | Active Directory, Redis, GPP-Passwords, Kerberoasting, BloodHound | https://tryhackme.com/room/vulnnetactive |
-| Za | THM | Windows | Medium | No | Active Directory, Kerberos, BloodHound, GPO Abuse, SMB | https://tryhackme.com/room/za |
 | Blackfield | HTB | Windows | Hard | Yes | AS-REP Roasting, Active Directory, Anonymous-/-Guest, BloodHound, RPC | https://app.hackthebox.com/machines/Blackfield |
 | Enterprise | THM | Windows | Hard | No | Active Directory, ZeroLogon, SQLi, Kerberos, BloodHound | https://tryhackme.com/room/enterprise |
-| Holo | THM | Windows | Hard | No | Active Directory, Kerberos, BloodHound, Pass-the-Hash | https://tryhackme.com/room/holo |
-| Raz0rBlack | THM | Windows | Hard | No | Active Directory, NFS, Kerberos, AS-REP Roasting, BloodHound | https://tryhackme.com/room/razorblack |
-| Wreath | THM | Windows | Hard | No | Active Directory, Pivoting, Chisel, Empire, C2 | https://tryhackme.com/room/wreath |
 
 ### Official Hack The Box Pro Labs (https://ctftracker.com/htb-pro-labs-guide/)
 
@@ -570,9 +553,10 @@ CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team t
 - **[OSCP Report Template (Markdown) with CVSS Findings](https://ctftracker.com/oscp-report-template/)**: Copyable Markdown OSCP report skeleton, a finding template, a CVSS 3.1 worked example (9.8 Critical), proof screenshot rules and packaging steps.
 - **[HTB & TryHackMe Progress Tracker (Free, Offline)](https://ctftracker.com/htb-progress-tracker/)**: What HTB and TryHackMe profiles do not track, how a spreadsheet compares with ZeroBox, plus a workflow with nmap imports. Free and offline.
 - **[HTB CPTS Exam Guide: Flags, Passing Score, Pacing](https://ctftracker.com/cpts-exam-guide/)**: HTB CPTS exam format, the 10 day window, flags and passing requirement, the report, and a day-by-day pacing plan, with sources cited.
-- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalogue data: 580 HTB and 451 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
+- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalogue data: 580 HTB and 559 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
 - **[HTB Pro Labs Guide: Dante, Zephyr, Offshore Compared](https://ctftracker.com/htb-pro-labs-guide/)**: Compare all 10 Hack The Box Pro Labs (Genesis, Dante, Zephyr, Offshore, RastaLabs, Cybernetics) by hosts, flags, difficulty and CPTS, OSCP or CRTO fit.
 - **[OSCP vs CPTS: Exam Length, Format and Pass Rules](https://ctftracker.com/oscp-vs-cpts/)**: OSCP vs CPTS side by side: exam length, format, what counts as a pass, report deadlines and OSCP+ expiry, with links to the full guide for each exam.
+- **[OSCP Exam Simulator](https://ctftracker.com/oscp-exam-simulator/)**: free timed practice run in the browser for 7 tracks (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE), with the time limit, pass mark and target layout of each ruleset
 
 ### Eight-Phase Pentest Methodology (https://ctftracker.com/methodology-guide/)
 #### Phase 01: Host Discovery & Surface Mapping (https://ctftracker.com/methodology/01-surface-mapping/)
@@ -637,27 +621,27 @@ Retrieve user and root flags, dump master password databases for credential reus
 - **Document Full Kill-Chain in Writeup Studio**: Ensure all vulnerabilities, PoCs, and remediation suggestions are thoroughly preserved. Export checklist to Markdown and sync with Obsidian vault.
 
 ### Technique Hubs & Practice Box Counts (https://ctftracker.com/techniques/)
-- **[Active Directory](https://ctftracker.com/techniques/active-directory/)** (26 machines): Active Directory is the identity backbone of most Windows networks, and attacking it is the core of many labs and exams.
-- **[Kerberos Attacks](https://ctftracker.com/techniques/kerberos/)** (14 machines): Kerberos is the default authentication protocol in Active Directory, and several of its design details are abusable.
-- **[SMB Enumeration and Exploitation](https://ctftracker.com/techniques/smb/)** (18 machines): SMB exposes file shares, named pipes and RPC, so it is often the first place to look on Windows and Samba hosts.
-- **[SQL Injection](https://ctftracker.com/techniques/sql-injection/)** (28 machines): SQL injection happens when user input is concatenated into a query, letting you change its logic.
-- **[LFI and Path Traversal](https://ctftracker.com/techniques/lfi-path-traversal/)** (27 machines): Local file inclusion and path traversal let you read, and sometimes execute, files the web server can access.
-- **[Command Injection and RCE](https://ctftracker.com/techniques/command-injection/)** (59 machines): Command injection occurs when an application passes input to a system shell.
+- **[Active Directory](https://ctftracker.com/techniques/active-directory/)** (21 machines): Active Directory is the identity backbone of most Windows networks, and attacking it is the core of many labs and exams.
+- **[Kerberos Attacks](https://ctftracker.com/techniques/kerberos/)** (10 machines): Kerberos is the default authentication protocol in Active Directory, and several of its design details are abusable.
+- **[SMB Enumeration and Exploitation](https://ctftracker.com/techniques/smb/)** (17 machines): SMB exposes file shares, named pipes and RPC, so it is often the first place to look on Windows and Samba hosts.
+- **[SQL Injection](https://ctftracker.com/techniques/sql-injection/)** (27 machines): SQL injection happens when user input is concatenated into a query, letting you change its logic.
+- **[LFI and Path Traversal](https://ctftracker.com/techniques/lfi-path-traversal/)** (25 machines): Local file inclusion and path traversal let you read, and sometimes execute, files the web server can access.
+- **[Command Injection and RCE](https://ctftracker.com/techniques/command-injection/)** (58 machines): Command injection occurs when an application passes input to a system shell.
 - **[Insecure Deserialization](https://ctftracker.com/techniques/deserialization/)** (15 machines): Insecure deserialization lets an attacker supply a crafted serialized object that triggers dangerous code during parsing.
 - **[File Upload Vulnerabilities](https://ctftracker.com/techniques/file-upload/)** (9 machines): Upload features become a foothold when the server stores attacker-controlled content where it can be executed.
 - **[Linux SUID Privilege Escalation](https://ctftracker.com/techniques/linux-suid/)** (31 machines): A SUID binary runs with the file owner privileges, often root, so any way to make it execute your commands is a privilege escalation.
-- **[Sudo Misconfiguration](https://ctftracker.com/techniques/sudo-misconfig/)** (25 machines): Running sudo -l is one of the first checks after landing a shell, because allowed commands may be a direct path to root.
-- **[Cron Job and Scheduled Task Abuse](https://ctftracker.com/techniques/cron-jobs/)** (9 machines): Scheduled jobs run unattended and frequently as root, so a writable script, a relative path or a wildcard in the command line can hand you privileges.
+- **[Sudo Misconfiguration](https://ctftracker.com/techniques/sudo-misconfig/)** (23 machines): Running sudo -l is one of the first checks after landing a shell, because allowed commands may be a direct path to root.
+- **[Cron Job and Scheduled Task Abuse](https://ctftracker.com/techniques/cron-jobs/)** (8 machines): Scheduled jobs run unattended and frequently as root, so a writable script, a relative path or a wildcard in the command line can hand you privileges.
 - **[Windows Privilege Escalation](https://ctftracker.com/techniques/windows-privesc/)** (14 machines): Windows privilege escalation starts with understanding who you are and what the account can do.
-- **[Windows Lateral Movement](https://ctftracker.com/techniques/windows-lateral-movement/)** (10 machines): Lateral movement means using credentials or hashes from one host to reach another.
+- **[Windows Lateral Movement](https://ctftracker.com/techniques/windows-lateral-movement/)** (8 machines): Lateral movement means using credentials or hashes from one host to reach another.
 - **[Password Cracking and Brute Force](https://ctftracker.com/techniques/password-cracking/)** (37 machines): Many boxes fall to a password that is weak, default or reused.
-- **[Pivoting and Tunneling](https://ctftracker.com/techniques/pivoting-tunneling/)** (23 machines): Pivoting uses a compromised host as a relay into networks you cannot reach directly.
-- **[Buffer Overflow and Binary Exploitation](https://ctftracker.com/techniques/buffer-overflow/)** (12 machines): A classic stack buffer overflow overwrites the saved return address so execution jumps to code you control.
+- **[Pivoting and Tunneling](https://ctftracker.com/techniques/pivoting-tunneling/)** (22 machines): Pivoting uses a compromised host as a relay into networks you cannot reach directly.
+- **[Buffer Overflow and Binary Exploitation](https://ctftracker.com/techniques/buffer-overflow/)** (10 machines): A classic stack buffer overflow overwrites the saved return address so execution jumps to code you control.
 - **[Docker and Container Escape](https://ctftracker.com/techniques/docker-escape/)** (7 machines): Containers share the host kernel, so a misconfiguration can turn a shell inside one into root on the host.
 - **[CMS Exploitation (WordPress, Joomla)](https://ctftracker.com/techniques/cms-exploitation/)** (30 machines): Content management systems and common platforms are popular targets because they are widely deployed and often outdated.
-- **[API and Web Application Logic Abuse](https://ctftracker.com/techniques/api-abuse/)** (19 machines): APIs expose application logic directly, so flaws are usually about authorisation rather than memory safety.
-- **[Source Code Review](https://ctftracker.com/techniques/source-code-review/)** (16 machines): Reading the application source is often faster than blind testing.
-- **[Network Service Enumeration](https://ctftracker.com/techniques/network-services/)** (51 machines): Good enumeration of network services decides most boxes before any exploit is run.
+- **[API and Web Application Logic Abuse](https://ctftracker.com/techniques/api-abuse/)** (18 machines): APIs expose application logic directly, so flaws are usually about authorisation rather than memory safety.
+- **[Source Code Review](https://ctftracker.com/techniques/source-code-review/)** (15 machines): Reading the application source is often faster than blind testing.
+- **[Network Service Enumeration](https://ctftracker.com/techniques/network-services/)** (49 machines): Good enumeration of network services decides most boxes before any exploit is run.
 
 ### Cheatsheet Topics (https://ctftracker.com/cheatsheet-library/)
 - **[Recon & Port Scanning](https://ctftracker.com/cheatsheets/network/)**: 11 command templates (Fast SYN Scan (Top 1000 Ports), All-Port TCP Exhaustive Scan, Top UDP Service Discovery Scan, Nmap NSE Vulnerability Audit Scripts)

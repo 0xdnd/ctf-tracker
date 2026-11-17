@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import pgRows from '../../data/catalogSources/pg.json';
 import vulnhubRows from '../../data/catalogSources/vulnhub.json';
+import { expandPgRows, expandVulnhubRows } from '../../data/loadMachinesCatalog';
+import type { PgRow, VulnhubPackedRow } from '../../types';
 import { matchCandidateNamesToCatalog } from '../../utils/bulkPwnImporter';
 import { mergeMachinesWithCatalog } from '../../store/useCtfStore';
 import type { Machine } from '../../types';
@@ -125,7 +127,7 @@ describe('cross-platform name clashes (Retro, Watcher, Reset, Compiled)', () => 
 });
 
 describe('PG/VulnHub names that clash with HTB/THM names', () => {
-  const newRows = [...(pgRows as unknown as Machine[]), ...(vulnhubRows as unknown as Machine[])];
+  const newRows = [...expandPgRows(pgRows as unknown as PgRow[]), ...expandVulnhubRows(vulnhubRows as unknown as VulnhubPackedRow[])];
   const base = INITIAL_MACHINES.filter((m) => m.platform === 'HTB' || m.platform === 'THM');
   const baseNames = new Set(base.map((m) => m.name.toLowerCase().trim()));
   const clashes = newRows.filter((m) => baseNames.has(m.name.toLowerCase().trim()));

@@ -276,9 +276,12 @@ describe('Tier 3 & Tier 1 E2E: Air-Gapped Offline Runtime Persistence & Network-
       useCtfStore.getState().saveProfileData('redteam');
 
       // Verify stored under profile-specific key in localStorage
-      const redteamStored = localStorage.getItem('specter_ctf_profile_redteam');
+      const redteamStored = localStorage.getItem('zerobox_operator_profile_redteam');
       expect(redteamStored).not.toBeNull();
       expect(JSON.parse(redteamStored!).machines.some((m: { name: string }) => m.name === 'Red-Box-1')).toBe(true);
+      // The specter_ctf_profile_* copy is a best-effort mirror (dropped when localStorage is full): when present it must equal the primary key.
+      const redMirror = localStorage.getItem('specter_ctf_profile_redteam');
+      if (redMirror !== null) expect(redMirror).toBe(redteamStored);
 
       // Switch to Profile 2 (BlueTeam)
       useCtfStore.getState().loadProfileData('blueteam');
@@ -299,10 +302,12 @@ describe('Tier 3 & Tier 1 E2E: Air-Gapped Offline Runtime Persistence & Network-
       useCtfStore.getState().saveProfileData('blueteam');
 
       // Verify Blueteam does not contain Red-Box-1
-      const blueteamStored = localStorage.getItem('specter_ctf_profile_blueteam');
+      const blueteamStored = localStorage.getItem('zerobox_operator_profile_blueteam');
       expect(blueteamStored).not.toBeNull();
       expect(JSON.parse(blueteamStored!).machines.some((m: { name: string }) => m.name === 'Red-Box-1')).toBe(false);
       expect(JSON.parse(blueteamStored!).machines.some((m: { name: string }) => m.name === 'Blue-Box-1')).toBe(true);
+      const blueMirror = localStorage.getItem('specter_ctf_profile_blueteam');
+      if (blueMirror !== null) expect(blueMirror).toBe(blueteamStored);
     });
   });
 

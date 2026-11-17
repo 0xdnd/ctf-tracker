@@ -1,7 +1,7 @@
 import type { Machine } from '../types';
 
 /** HTB + THM + Proving Grounds + VulnHub rows. Checked against the data files in catalogCounts.test.ts. */
-export const CATALOG_TOTAL = 1376;
+export const CATALOG_TOTAL = 2186;
 
 export interface OwnerSolved {
   total: number;

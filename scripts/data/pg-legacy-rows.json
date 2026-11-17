@@ -1,0 +1,4403 @@
+[
+  {
+    "id": "pg-air",
+    "name": "Air",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-apex",
+    "name": "Apex",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-assignment",
+    "name": "Assignment",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-astronaut",
+    "name": "Astronaut",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-badcorp",
+    "name": "BadCorp",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-banzai",
+    "name": "Banzai",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-bitforge",
+    "name": "BitForge",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-blackgate",
+    "name": "BlackGate",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-boolean",
+    "name": "Boolean",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-bratarina",
+    "name": "Bratarina",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-breakout",
+    "name": "Breakout",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-bullybox",
+    "name": "bullyBox",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-bunyip",
+    "name": "Bunyip",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cassios",
+    "name": "Cassios",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-catto",
+    "name": "Catto",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-charlotte",
+    "name": "Charlotte",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-chatty",
+    "name": "Chatty",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-clamav",
+    "name": "ClamAV",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-clue",
+    "name": "Clue",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-clyde",
+    "name": "Clyde",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cobweb",
+    "name": "Cobweb",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cockpit",
+    "name": "Cockpit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-codo",
+    "name": "Codo",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cookiecutter",
+    "name": "CookieCutter",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-crane",
+    "name": "Crane",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cve-2023-33831",
+    "name": "CVE-2023-33831",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cve-2023-40582",
+    "name": "CVE-2023-40582",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cve-2023-6019",
+    "name": "CVE-2023-6019",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cve-2024-48061",
+    "name": "CVE-2024-48061",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-deployer",
+    "name": "Deployer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-depreciated",
+    "name": "Depreciated",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-dev-working",
+    "name": "dev_working",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-develop",
+    "name": "Develop",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-dibble",
+    "name": "Dibble",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-educated",
+    "name": "Educated",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-erp",
+    "name": "ERP",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-escape",
+    "name": "Escape",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-exfiltrated",
+    "name": "Exfiltrated",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-exghost",
+    "name": "Exghost",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-extplorer",
+    "name": "Extplorer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-fail",
+    "name": "Fail",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-fanatastic",
+    "name": "Fanatastic",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-fired",
+    "name": "Fired",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-flasky",
+    "name": "Flasky",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-flimsy",
+    "name": "Flimsy",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-flu",
+    "name": "Flu",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-forward",
+    "name": "Forward",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-fractal",
+    "name": "Fractal",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-g00g",
+    "name": "G00g",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-glider",
+    "name": "Glider",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-glpi",
+    "name": "GLPI",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-graph",
+    "name": "Graph",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hawat",
+    "name": "Hawat",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hetemit",
+    "name": "Hetemit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hub",
+    "name": "Hub",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hunit",
+    "name": "Hunit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-illusion",
+    "name": "Illusion",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-image",
+    "name": "image",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-injecto",
+    "name": "Injecto",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-interface",
+    "name": "Interface",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-jordak",
+    "name": "Jordak",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-keyvault",
+    "name": "KeyVault",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-lavita",
+    "name": "LaVita",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-law",
+    "name": "law",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-levram",
+    "name": "Levram",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-malbec",
+    "name": "Malbec",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-mantis",
+    "name": "Mantis",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-maria",
+    "name": "Maria",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-markers",
+    "name": "Markers",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-marketing",
+    "name": "Marketing",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-marshalled",
+    "name": "Marshalled",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-matrimony",
+    "name": "Matrimony",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-megavolt",
+    "name": "Megavolt",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-morbo",
+    "name": "Morbo",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-muddy",
+    "name": "Muddy",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-mzeeav",
+    "name": "MZEEAV",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-nappa",
+    "name": "Nappa",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-nibbles",
+    "name": "Nibbles",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-nukem",
+    "name": "Nukem",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-ochima",
+    "name": "Ochima",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-outdated",
+    "name": "Outdated",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pathway",
+    "name": "Pathway",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-payday",
+    "name": "PayDay",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pc",
+    "name": "pc",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pebbles",
+    "name": "Pebbles",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pelican",
+    "name": "Pelican",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-peppo",
+    "name": "Peppo",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-phobos",
+    "name": "Phobos",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pipe",
+    "name": "Pipe",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-planetexpress",
+    "name": "PlanetExpress",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-plum",
+    "name": "plum",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-postfish",
+    "name": "Postfish",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-press",
+    "name": "press",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-prostore",
+    "name": "ProStore",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pyloader",
+    "name": "pyLoader",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-quackerjack",
+    "name": "Quackerjack",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-readys",
+    "name": "Readys",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-reconstruction",
+    "name": "Reconstruction",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-rookie-mistake",
+    "name": "Rookie Mistake",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-roquefort",
+    "name": "Roquefort",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-rpc1",
+    "name": "RPC1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-rubydome",
+    "name": "RubyDome",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-scrutiny",
+    "name": "Scrutiny",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-shiftdel",
+    "name": "Shiftdel",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-shifty",
+    "name": "Shifty",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sirol",
+    "name": "Sirol",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-snookums",
+    "name": "Snookums",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sona",
+    "name": "Sona",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sorcerer",
+    "name": "Sorcerer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-spaghetti",
+    "name": "Spaghetti",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-spidersociety",
+    "name": "SpiderSociety",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-splodge",
+    "name": "Splodge",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-springauth-attack",
+    "name": "SpringAuth_Attack",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-spx",
+    "name": "SPX",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-surf",
+    "name": "Surf",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sybaris",
+    "name": "Sybaris",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-synapse",
+    "name": "Synapse",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-thor",
+    "name": "Thor",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-tico",
+    "name": "Tico",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-twiggy",
+    "name": "Twiggy",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-uc404",
+    "name": "UC404",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-upsploit",
+    "name": "Upsploit",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-validator",
+    "name": "Validator",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-vanity",
+    "name": "Vanity",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-vmdak",
+    "name": "Vmdak",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-voip",
+    "name": "VoIP",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-walla",
+    "name": "Walla",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-wallpaperhub",
+    "name": "WallpaperHub",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-webcal",
+    "name": "WebCal",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-wheels",
+    "name": "Wheels",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-wombo",
+    "name": "Wombo",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-workaholic",
+    "name": "Workaholic",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-xposedapi",
+    "name": "Xposedapi",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-zab",
+    "name": "Zab",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-zenphoto",
+    "name": "ZenPhoto",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-zino",
+    "name": "Zino",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-zipper",
+    "name": "Zipper",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-lunar",
+    "name": "Lunar",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sea",
+    "name": "Sea",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-access",
+    "name": "Access",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-algernon",
+    "name": "Algernon",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-authby",
+    "name": "AuthBy",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-billyboss",
+    "name": "Billyboss",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-butch",
+    "name": "Butch",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-compromised",
+    "name": "Compromised",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-craft",
+    "name": "Craft",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-craft2",
+    "name": "Craft2",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-dvr4",
+    "name": "DVR4",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-fish",
+    "name": "Fish",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-heist",
+    "name": "Heist",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-helpdesk",
+    "name": "Helpdesk",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hepet",
+    "name": "Hepet",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hokkaido",
+    "name": "Hokkaido",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-hutch",
+    "name": "Hutch",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-internal",
+    "name": "Internal",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-jacko",
+    "name": "Jacko",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-kevin",
+    "name": "Kevin",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-kyoto",
+    "name": "Kyoto",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-meathead",
+    "name": "Meathead",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-medjed",
+    "name": "Medjed",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-metallus",
+    "name": "Metallus",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-mice",
+    "name": "Mice",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-monster",
+    "name": "Monster",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-nagoya",
+    "name": "Nagoya",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-nara",
+    "name": "Nara",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-nickel",
+    "name": "Nickel",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-osaka",
+    "name": "Osaka",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-resourced",
+    "name": "Resourced",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-robust",
+    "name": "Robust",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-shenzi",
+    "name": "Shenzi",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-slort",
+    "name": "Slort",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-squid",
+    "name": "Squid",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-symbolic",
+    "name": "Symbolic",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-ut99",
+    "name": "UT99",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-vault",
+    "name": "Vault",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-vector",
+    "name": "Vector",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Practice"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/practice",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-amaterasu",
+    "name": "Amaterasu",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-assertion101",
+    "name": "Assertion101",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-bbscute",
+    "name": "BBSCute",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-blogger",
+    "name": "Blogger",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-bottleneck",
+    "name": "Bottleneck",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-btrsys2-1",
+    "name": "BTRSys2.1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-coldboxeasy",
+    "name": "ColdBoxEasy",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-cybersploit1",
+    "name": "CyberSploit1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-dawn",
+    "name": "Dawn",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-dawn2",
+    "name": "Dawn2",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-dawn3",
+    "name": "Dawn3",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-election1",
+    "name": "Election1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-empire-breakout",
+    "name": "Empire-breakout",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-evilbox-one",
+    "name": "EvilBox-One",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-funboxeasy",
+    "name": "FunboxEasy",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-funboxrookie",
+    "name": "FunboxRookie",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-gaara",
+    "name": "Gaara",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-geisha",
+    "name": "Geisha",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-gitroot",
+    "name": "GitRoot",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-glasgow-smile-1-1",
+    "name": "Glasgow Smile 1.1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-ha-natraj",
+    "name": "Ha-Natraj",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-icmp",
+    "name": "ICMP",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-inclusiveness",
+    "name": "Inclusiveness",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-infosecprep",
+    "name": "InfosecPrep",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-insanityhosting",
+    "name": "InsanityHosting",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-katana",
+    "name": "Katana",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-lampiao",
+    "name": "Lampiao",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-loly",
+    "name": "Loly",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-moneybox",
+    "name": "Moneybox",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-monitoring",
+    "name": "Monitoring",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-my-cmsms",
+    "name": "My-CMSMS",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-noname",
+    "name": "NoName",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-onsystemshelldredd",
+    "name": "OnSystemShellDredd",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-photographer",
+    "name": "Photographer",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-potato",
+    "name": "Potato",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-powergrid-1-0-1",
+    "name": "PowerGrid 1.0.1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Hard",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pwned1",
+    "name": "Pwned1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-pyexp",
+    "name": "PyExp",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sams",
+    "name": "Sams",
+    "ip": "10.10.x.x",
+    "os": "Windows",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-seppuku",
+    "name": "Seppuku",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-shakabrah",
+    "name": "Shakabrah",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-solstice",
+    "name": "Solstice",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sosimple",
+    "name": "SoSimple",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-sumo",
+    "name": "Sumo",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-tre",
+    "name": "Tre",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [
+      "OSCP"
+    ],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-vegeta1",
+    "name": "Vegeta1",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Easy",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  },
+  {
+    "id": "pg-y0usef",
+    "name": "Y0usef",
+    "ip": "10.10.x.x",
+    "os": "Linux",
+    "platform": "PG",
+    "difficulty": "Medium",
+    "status": "backlog",
+    "tags": [
+      "PG-Play"
+    ],
+    "certifications": [],
+    "roomUrl": "https://portal.offsec.com/labs/play",
+    "writeupUrl": "",
+    "hint": "",
+    "timeSpentSeconds": 0,
+    "createdAt": "2026-10-28T00:00:00.000Z",
+    "updatedAt": "2026-10-28T00:00:00.000Z"
+  }
+]

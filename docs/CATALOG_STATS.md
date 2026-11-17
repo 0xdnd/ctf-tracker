@@ -6,18 +6,18 @@
 
 | מדד | מספר |
 | --- | --- |
-| סה"כ מכונות ויעדים בודדים בקטלוג | **1376** |
-| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **1376** (580 HTB + 451 THM + 223 PG + 122 VulnHub) |
+| סה"כ מכונות ויעדים בודדים בקטלוג | **2186** |
+| מתוכן מכונות אתגר טהורות (Pure CTF Challenges) | **2186** (580 HTB + 559 THM + 339 PG + 708 VulnHub) |
 | מתוכן מעבדות מודרכות ושותפים (Guided Labs) | 0 (הוסרו כליל מהקטלוג) |
 | Hack The Box (HTB) | 580 |
 | מתוכן מפורשות (Retired) | 560 |
 | מתוכן פעילות (Active), מטא-דאטה בלבד | 20 |
-| TryHackMe (THM) | 451 |
-| Proving Grounds (PG) | 223 |
-| VulnHub | 122 |
+| TryHackMe (THM) | 559 |
+| Proving Grounds (PG) | 339 |
+| VulnHub | 708 |
 | מעבדות ארגוניות מוגדרות מראש (HTB Pro Labs) | **10** מעבדות (170 שרתים, 280 דגלים) |
 
-הקטלוג המובנה כולל 1,376 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
+הקטלוג המובנה כולל 2,186 יעדי אתגר טהורים (איחוד של `src/data/machinesCatalog.ts`, `src/data/activeMachines.json` ו-`src/data/catalogSources`), ובנוסף 10 תבניות מוכנות מראש למעבדות ה-Pro Labs של Hack The Box (Dante, Zephyr, Offshore וכו').
 
 ## Hack The Box: פעילות, מפורשות ושורות מטא-דאטה
 
@@ -37,23 +37,23 @@
 | רמת קושי | HTB מפורשות (Retired) | HTB פעילות (Active) | THM | סה"כ |
 | --- | --- | --- | --- | --- |
 | Very Easy | 22 | 0 | 1 | 23 |
-| Easy | 163 | 6 | 145 | 314 |
-| Medium | 191 | 6 | 216 | 413 |
-| Hard | 119 | 4 | 83 | 206 |
-| Insane | 65 | 4 | 6 | 75 |
-| **סה"כ** | **560** | **20** | **451** | **1031** |
+| Easy | 163 | 6 | 198 | 367 |
+| Medium | 191 | 6 | 251 | 448 |
+| Hard | 119 | 4 | 99 | 222 |
+| Insane | 65 | 4 | 10 | 79 |
+| **סה"כ** | **560** | **20** | **559** | **1139** |
 
 ## פילוח לפי מערכת הפעלה
 
 | מערכת הפעלה | HTB מפורשות (Retired) | HTB פעילות (Active) | THM | סה"כ |
 | --- | --- | --- | --- | --- |
-| Linux | 383 | 12 | 414 | 809 |
+| Linux | 383 | 12 | 522 | 917 |
 | Windows | 165 | 8 | 35 | 208 |
 | BSD | 10 | 0 | 0 | 10 |
 | Other | 1 | 0 | 1 | 2 |
 | Android | 1 | 0 | 0 | 1 |
 | macOS | 0 | 0 | 1 | 1 |
-| **סה"כ** | **560** | **20** | **451** | **1031** |
+| **סה"כ** | **560** | **20** | **559** | **1139** |
 
 ## המכונות הפעילות ב-HTB (20)
 
@@ -88,20 +88,20 @@
 
 | מזהה | שם המסלול | קטגוריה | HTB | THM | סה"כ |
 | --- | --- | --- | --- | --- | --- |
-| `tjnull-oscp` | TJ_Null's OSCP NetSec Preparation | certification | 70 | 34 | **104** |
+| `tjnull-oscp` | TJ_Null's OSCP NetSec Preparation | certification | 70 | 29 | **99** |
 | `osep` | OSEP Evasion & Lateral Movement Preparation | certification | 27 | 0 | **27** |
 | `oswe` | OSWE Web Exploitation & Code Review Preparation | certification | 23 | 0 | **23** |
-| `cpts-path` | Certified Penetration Testing Specialist (CPTS) | certification | 49 | 2 | **51** |
+| `cpts-path` | Certified Penetration Testing Specialist (CPTS) | certification | 49 | 1 | **50** |
 | `ippsec-cpts` | Unofficial IppSec CPTS Preparation Track | certification | 44 | 0 | **44** |
-| `cwee-web` | HTB CWEE & CWES Advanced Web Exploitation | certification | 76 | 7 | **83** |
+| `cwee-web` | HTB CWEE & CWES Advanced Web Exploitation | certification | 76 | 6 | **82** |
 | `popular-classics` | Community Classics & Hall of Fame | curated | 40 | 13 | **53** |
 | `ippsec-vault` | IppSec Video Walkthrough Masterclass | curated | 449 | 0 | **449** |
-| `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 79 | 11 | **90** |
-| `web-master` | Web Exploitation Master Pathway | technique | 56 | 33 | **89** |
-| `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 31 | **39** |
-| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 175 | 62 | **237** |
-| `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 146 | **337** |
-| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 192 | 89 | **281** |
+| `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 79 | 6 | **85** |
+| `web-master` | Web Exploitation Master Pathway | technique | 56 | 31 | **87** |
+| `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 29 | **37** |
+| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 175 | 61 | **236** |
+| `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 199 | **390** |
+| `insane-hardcore` | Hardcore & Insane Challenge Track | level | 192 | 109 | **301** |
 
 רשימות השמות של המסלולים נשמרות ב-`src/data/trackSources/` (שמות בלבד, עם תאריך ומקור):
 

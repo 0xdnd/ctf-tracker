@@ -5,6 +5,7 @@
 // Safety guards (refuse, exit non-zero, write nothing): fewer than MIN_ACTIVE rows, more than
 // MAX_ACTIVE rows, more than half of the previous names removed, or MAX_PAGES reached without a last page.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -140,6 +141,7 @@ async function main() {
   const next = { asOf, source: 'labs.hackthebox.com API, automated sync', note, machines };
   writeFileSync(DATA_FILE, JSON.stringify(next, null, 2) + '\n');
   console.log(`Wrote ${DATA_FILE}`);
+  if (spawnSync(process.execPath, [resolve(ROOT, 'scripts/update-catalog-counts.mjs')], { stdio: 'inherit' }).status !== 0) throw new Error('update-catalog-counts.mjs failed');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
