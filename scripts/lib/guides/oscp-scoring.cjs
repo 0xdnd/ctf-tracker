@@ -91,7 +91,7 @@ function build({ esc }) {
 <h2>Next steps</h2>
 <ul>
 <li><a href="/oscp-points-calculator/">OSCP points calculator</a>: tick your flags and see your total.</li>
-<li><a href="/exam/">Exam simulator</a>: rehearse the 24 hour clock with pacing and a burndown chart.</li>
+<li><a href="/oscp-exam-simulator/">Exam simulator</a>: rehearse the 24 hour clock with pacing and a burndown chart.</li>
 <li><a href="/tj-null-list/">TJ Null list</a>: the community list of practice machines.</li>
 <li><a href="/oscp-like-machines/">OSCP-like machines</a>: practice boxes grouped by difficulty.</li>
 <li><a href="/techniques/active-directory/">Active Directory techniques</a>: practice machines and key commands for the AD set.</li>
@@ -122,7 +122,7 @@ ${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban boa
       label: 'Start a mock exam',
     },
     faq,
-    related: ['/exam/', '/tj-null-list/', '/oscp-like-machines/', '/oscp-report-template/', '/methodology-guide/'],
+    related: ['/oscp-exam-simulator/', '/tj-null-list/', '/oscp-like-machines/', '/oscp-report-template/', '/methodology-guide/'],
     sources: [
       ['https://www.offsec.com/blog/oscp-grading-update/', 'OffSec: OSCP+ Scoring Update', 'published 2026-10-21'],
       ['https://help.offsec.com/hc/en-us/articles/54589877508884-OSCP-Equated-Scaled-Scoring-FAQ', 'OffSec Help Center: OSCP+ Equated Scaled Scoring FAQ'],

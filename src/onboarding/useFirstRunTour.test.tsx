@@ -41,6 +41,9 @@ describe('useFirstRunTour', () => {
     expect(isFirstRunTourExcludedPath('/oscp-points-calculator')).toBe(true);
     expect(isFirstRunTourExcludedPath('/oscp-points-calculator/')).toBe(true);
     expect(isFirstRunTourExcludedPath('/tracker')).toBe(false);
+    expect(isFirstRunTourExcludedPath('/exam')).toBe(true);
+    expect(isFirstRunTourExcludedPath('/exam/')).toBe(true);
+    expect(isFirstRunTourExcludedPath('/exam-x')).toBe(false);
     const { rerender } = renderHook(({ path }) => useFirstRunTour(!isFirstRunTourExcludedPath(path)), {
       initialProps: { path: '/oscp-points-calculator/' },
     });

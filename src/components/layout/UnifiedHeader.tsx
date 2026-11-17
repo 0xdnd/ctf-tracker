@@ -25,6 +25,7 @@ import {
   BookOpen,
   User
 } from 'lucide-react';
+import { isTauriTarget } from '../../utils/runtimeTarget';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
@@ -243,18 +244,25 @@ export const UnifiedHeader: React.FC = () => {
     >
       {/* 1. Left: brand and route */}
       <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
-        <Link
-          to="/tracker"
-          className="flex items-center gap-2 group transition-opacity hover:opacity-90 active:scale-[0.97]"
-          title="ZeroBox"
-        >
-          <CyberLogo size="sm" />
-          <div className="hidden sm:flex flex-col text-left leading-none" data-tauri-drag-region="false">
-            <span className="font-semibold text-sm tracking-tight text-primary">
-              ZERO<span className="text-accent">BOX</span>
-            </span>
-          </div>
-        </Link>
+        {isTauriTarget() ? (
+          <Link to="/tracker" className="flex items-center gap-2 group transition-opacity hover:opacity-90 active:scale-[0.97]" title="ZeroBox">
+            <CyberLogo size="sm" />
+            <div className="hidden sm:flex flex-col text-left leading-none" data-tauri-drag-region="false">
+              <span className="font-semibold text-sm tracking-tight text-primary">
+                ZERO<span className="text-accent">BOX</span>
+              </span>
+            </div>
+          </Link>
+        ) : (
+          <a href="/" className="flex items-center gap-2 group transition-opacity hover:opacity-90 active:scale-[0.97]" title="ZeroBox">
+            <CyberLogo size="sm" />
+            <div className="hidden sm:flex flex-col text-left leading-none" data-tauri-drag-region="false">
+              <span className="font-semibold text-sm tracking-tight text-primary">
+                ZERO<span className="text-accent">BOX</span>
+              </span>
+            </div>
+          </a>
+        )}
 
         <div className="hidden 2xl:flex items-center gap-1 text-secondary text-xs pl-1">
           <ChevronRight className="w-3 h-3 text-muted" />

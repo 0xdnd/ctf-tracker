@@ -141,7 +141,7 @@ function build({ esc }) {
 <li>Upload before the deadline, which per OffSec is 24 hours after the exam ends.</li>
 </ol>
 <h2>Generate it in ZeroBox</h2>
-<p>The ZeroBox exam report generator turns your session into this structure. It records proof screenshots against each flag, takes findings with a CVSS 3.1 vector, sorts them by severity, and exports Markdown or a standalone HTML report. The submission bundle is a <code>.zip</code> holding <code>report.md</code>, <code>report.html</code>, a <code>proofs/</code> folder, <code>findings.json</code> and a README. OffSec wants a PDF in a <code>.7z</code>, so print <code>report.html</code> to PDF and archive it yourself. Rehearse that whole path in a mock exam from the <a href="/exam/">exam simulator</a>, and see the <a href="/oscp-exam-scoring-and-time-budget/">time budget guide</a> for when to start writing.</p>`;
+<p>The ZeroBox exam report generator turns your session into this structure. It records proof screenshots against each flag, takes findings with a CVSS 3.1 vector, sorts them by severity, and exports Markdown or a standalone HTML report. The submission bundle is a <code>.zip</code> holding <code>report.md</code>, <code>report.html</code>, a <code>proofs/</code> folder, <code>findings.json</code> and a README. OffSec wants a PDF in a <code>.7z</code>, so print <code>report.html</code> to PDF and archive it yourself. Rehearse that whole path in a mock exam from the <a href="/oscp-exam-simulator/">exam simulator</a>, and see the <a href="/oscp-exam-scoring-and-time-budget/">time budget guide</a> for when to start writing.</p>`;
 
   return {
     path: PATH,
@@ -159,7 +159,7 @@ function build({ esc }) {
       label: 'Start a mock exam',
     },
     faq,
-    related: ['/oscp-exam-scoring-and-time-budget/', '/exam/', '/methodology-guide/', '/tj-null-list/', '/cheatsheet-library/'],
+    related: ['/oscp-exam-scoring-and-time-budget/', '/oscp-exam-simulator/', '/methodology-guide/', '/tj-null-list/', '/cheatsheet-library/'],
     sources: [
       ['https://help.offsec.com/hc/en-us/articles/360046787731-OSCP-Reporting-Requirements', 'OffSec Help Center: OSCP+ Reporting Requirements'],
       ['https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide', 'OffSec Help Center: OSCP+ Exam Guide'],

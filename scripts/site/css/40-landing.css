@@ -28,6 +28,8 @@
 .proof .num{color:var(--text);font:600 1.5rem/1.3 var(--font-mono);letter-spacing:-.02em;text-decoration:none;font-variant-numeric:tabular-nums}
 .proof .lbl{color:var(--muted);font-size:.875rem}
 .proof .proof-text .num{font-family:var(--font-sans);letter-spacing:-.01em}
+/* Phone and tablet (two columns): the third cell and the text cell each span both columns so no cell is left alone beside a gap; every stat keeps the same number-over-label stack. */
+@media(max-width:899px){.proof li:nth-child(n+3){grid-column:1/-1;padding-left:0;border-left:0}}
 .proof .link-arrow{min-height:24px;font-size:.875rem}
 .sec{padding-top:var(--section-y)}
 .sec-head{max-width:var(--prose);margin-bottom:var(--s6)}
@@ -126,6 +128,17 @@
 @media(min-width:1100px){
 .hero-grid{grid-template-columns:minmax(0,1fr) 480px;gap:var(--s8)}
 .pace{left:-44px;bottom:-40px;width:280px}
+}
+/* Phone crops: the wide app screenshots are too small to read at the column width, so under 640px each one shows a zoomed region in a fixed-ratio frame
+   (the same file, no art direction; sizes in prerender.cjs ask for the larger candidate). --z zoom, --x/--y offset of the visible region as a % of the frame width. */
+@media(max-width:639px){
+.crop{aspect-ratio:var(--ar);overflow:hidden}
+.crop img{width:calc(var(--z)*100%);max-width:none;height:auto;margin:calc(var(--y)*-1) 0 0 calc(var(--x)*-1)}
+.crop-hero{--ar:1/1;--z:1.25;--x:0%;--y:0%}
+.crop-graph{--ar:4/3;--z:2.8;--x:106%;--y:12%}
+.crop-table{--ar:1/1;--z:1.5;--x:0%;--y:0%}
+.crop-exam{--ar:1/1;--z:1.5;--x:0%;--y:0%}
+.crop-vault{--ar:1/1;--z:1.4;--x:0%;--y:0%}
 }
 @media(hover:hover) and (pointer:fine){.mod:hover h3,.guides a:hover .g-t{color:var(--accent-hover)}.mod:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift)}}
 @media(prefers-reduced-motion:reduce){.mod{transition:none}.mod:hover{transform:none}}

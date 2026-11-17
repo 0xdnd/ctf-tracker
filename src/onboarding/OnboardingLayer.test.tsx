@@ -4,12 +4,15 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { OnboardingLayer } from './OnboardingLayer';
 import { FIRST_RUN_STEP_IDS, SECTION_GUIDES, TOUR_STEPS, guideIdForPath } from './content';
 import { useOnboardingStore } from './useOnboardingStore';
+import { FIRST_RUN_KEY } from './useFirstRunTour';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
 import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 
 const resetStores = () => {
   window.localStorage.clear();
+  // Onboarding already completed, so a landing page the first-run welcome skips still shows its tip. The first-visit tests below clear this.
+  window.localStorage.setItem(FIRST_RUN_KEY, 'true');
   useOnboardingStore.setState({
     tourDone: false,
     dismissedHints: [],
@@ -164,6 +167,22 @@ describe('section guides', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByTestId('tour-card')).not.toBeInTheDocument());
     expect(useOnboardingStore.getState().dismissedHints).toContain('exam');
+  });
+
+  it('shows no tips bar on a first visit to a page the welcome skips, and shows it once onboarding is done or elsewhere', () => {
+    window.localStorage.removeItem(FIRST_RUN_KEY);
+    const a = renderAt('/exam/');
+    expect(screen.queryByTestId('page-hint')).not.toBeInTheDocument();
+    a.unmount();
+    sessionStorage.clear();
+    // Another page keeps its tip on a first visit.
+    const b = renderAt('/vault');
+    expect(screen.getByTestId('page-hint')).toBeInTheDocument();
+    b.unmount();
+    sessionStorage.clear();
+    window.localStorage.setItem(FIRST_RUN_KEY, 'true');
+    renderAt('/exam/');
+    expect(screen.getByTestId('page-hint')).toBeInTheDocument();
   });
 
   it("Don't show tips turns every guide off", () => {

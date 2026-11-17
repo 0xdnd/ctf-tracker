@@ -15,7 +15,7 @@ const MARKER = 'data-zb-welcome';
 // still written by useFirstRunTour. A click on a static button is recorded for React to replay once it has mounted.
 const GATE_SCRIPT =
   `(function(){try{var d=document.documentElement,l=location;` +
-  `if(/^\\/oscp-points-calculator\\/?$/.test(l.pathname)||/^\\/(field-manual|notes)\\/?$/i.test(l.pathname)||/[?&]popout=true(&|$)/.test(l.search)||/[?&](target|machine)=/.test(l.search))return;` +
+  `if(/^\\/(oscp-points-calculator|exam)\\/?$/.test(l.pathname)||/^\\/(field-manual|notes)\\/?$/i.test(l.pathname)||/[?&]popout=true(&|$)/.test(l.search)||/[?&](target|machine)=/.test(l.search))return;` +
   `if(localStorage.getItem('${FIRST_RUN_KEY}'))return;` +
   `try{var o=JSON.parse(localStorage.getItem('${ONBOARDING_KEY}')||'null');if(o&&o.tourDone===true)return}catch(e){}` +
   `var w=innerWidth,z=w>=1200?'':w>=1024?'0.90':w>=768?'0.85':'';` +

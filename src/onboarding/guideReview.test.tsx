@@ -5,6 +5,7 @@ import { SECTION_GUIDES, guideSteps, resolveStep } from './content';
 import { guideAvailability, guideTipAvailability } from './guideRegistry';
 import { OnboardingLayer } from './OnboardingLayer';
 import { useOnboardingStore } from './useOnboardingStore';
+import { FIRST_RUN_KEY } from './useFirstRunTour';
 import { useCtfStore } from '../store/useCtfStore';
 import { useExamStore } from '../store/examStore';
 import type { Machine } from '../types';
@@ -15,6 +16,8 @@ const machine = (over: Partial<Machine>): Machine => ({ id: 'abc', name: 'Abc', 
 
 const reset = () => {
   window.localStorage.clear();
+  // Onboarding done: /exam/ shows no tips bar on a first visit.
+  window.localStorage.setItem(FIRST_RUN_KEY, 'true');
   useOnboardingStore.getState().cancelLaunch();
   useOnboardingStore.setState({
     tourDone: true,

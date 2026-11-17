@@ -80,7 +80,7 @@ const seenMeta = { title: new Map(), description: new Map() };
 // priority stays in the signature for the callers but is no longer written anywhere (Google ignores it).
 // srcs: the page's source files, for datePublished (defaults to the type's source). lastmod is the page's dateModified and sitemap lastmod.
 // List and hub pages without a TechArticle still show when their data last changed (the same date as their sitemap lastmod).
-const DATED_HUB_TYPES = new Set(['about', 'machines-hub', 'cert-hub', 'technique', 'technique-hub', 'cheatsheet', 'cheatsheet-hub', 'methodology-hub', 'pentest-hub']);
+const DATED_HUB_TYPES = new Set(['about', 'exam-simulator', 'machines-hub', 'cert-hub', 'technique', 'technique-hub', 'cheatsheet', 'cheatsheet-hub', 'methodology-hub', 'pentest-hub']);
 function emit(type, urlPath, html, priority, lastmodOverride, srcs) {
   const lastmod = lastmodOverride !== undefined ? lastmodOverride : gitDate(SRC[TYPE_SRC[type]]);
   html = stampArticle(html, { modified: lastmod, published: minFirstDate(...(srcs || [SRC[TYPE_SRC[type]]]).filter(Boolean)) });
@@ -260,6 +260,8 @@ const certHubs = Object.entries(certCountsAll)
   }));
 const techGroups = TECH.GROUPS.map((g) => ({ ...g, machines: model.machines.filter((m) => TECH.matchesMachine(g, m)) })).filter((g) => g.machines.length >= TECH_MIN);
 const PLATFORM_NAME = { HTB: 'Hack The Box', THM: 'TryHackMe', PG: 'Proving Grounds', VulnHub: 'VulnHub' };
+// Platform cell: full name on wide screens; under 480px the short form (HTB, THM, ...) keeps the row to one line and the full name stays in the DOM for screen readers (30-content.css .pl-f / .pl-s).
+const platCell = (p) => { const full = PLATFORM_NAME[p] || p; return `<span class="pl-f">${esc(full)}</span><span class="pl-s" aria-hidden="true" title="${esc(full)}">${esc(p)}</span>`; };
 const DIFF_ORDER = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
 const mUrl = (m) => `/machines/${m.slug}/`;
 const SAFE_ROOM = /^https:\/\/(www\.)?(app\.hackthebox\.com|tryhackme\.com)\//;
@@ -654,7 +656,7 @@ for (const m of withPage) {
     return `<nav class="pager" aria-label="Machine list pages${where === 'end' ? ', end of list' : ''}">${n > 1 ? `<a href="${pageUrl(n - 1)}" rel="prev">Previous</a>` : ''}${nums.join('')}${n < pageCount ? `<a href="${pageUrl(n + 1)}" rel="next">Next</a>` : ''}</nav>`;
   };
   const searchForm = () =>
-    `<form class="tf mx-search" action="/machines/all/" method="get" role="search"><div class="tf-field tf-search"><label for="mx-q">Search all ${nf(total)} machines</label><input id="mx-q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Name, tag or technique" /></div><div class="mx-search-actions"><button class="btn" type="submit">Search</button><a href="/machines/all/">Browse all with filters</a><span class="note"> (one large page)</span></div></form>`;
+    `<form class="tf mx-search" action="/machines/all/" method="get" role="search"><div class="tf-field tf-search"><label for="mx-q">Search all ${nf(total)} machines</label><input id="mx-q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Name, tag or technique" /></div><div class="mx-search-actions"><button class="btn" type="submit">Search</button><a href="/machines/all/" title="Opens one large page with every machine">Browse all with filters</a></div></form>`;
   // Where each platform starts, for the jump chips.
   const platformStart = (p) => {
     const idx = items.findIndex((x) => x.sec.p === p);
@@ -667,7 +669,7 @@ for (const m of withPage) {
   const solvedTable =
     `<h2 id="solved">Machines I solved (${solved.length})</h2><p>Each of these has its own attack path page.</p>` +
     `<table class="list"><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>` +
-    solved.map((m) => `<tr><td><a href="${mUrl(m)}">${esc(m.name)}</a></td><td>${esc(PLATFORM_NAME[m.platform] || m.platform)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td></tr>`).join('') +
+    solved.map((m) => `<tr><td><a href="${mUrl(m)}">${esc(m.name)}</a></td><td>${platCell(m.platform)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td></tr>`).join('') +
     `</tbody></table>`;
   const closing = ctaBox({ title: 'Track every box offline.', body: 'ZeroBox gives you a Kanban board for all of these machines.', href: '/tracker/', label: 'Open tracker' });
   const listTitle = fitTitle(`Hack The Box Machines List: ${nf(total)} HTB, THM, PG, VulnHub`, `HTB, THM, PG & VulnHub Machines List: ${nf(total)} Boxes`, `Machines List: ${nf(total)} Boxes`);
@@ -680,12 +682,10 @@ for (const m of withPage) {
     const listAnd = (a) => (a.length > 1 ? `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}` : a[0]);
     const parts = [];
     if (n === 1) {
+      // Short intro so the search and the platform chips sit on the first screen; the exam pointer, the hub chips and the CTA follow the list.
       parts.push(
-        `<p class="lead">Browse ${nf(model.catalogCounts.htbThm)} Hack The Box and TryHackMe machines by platform, operating system and difficulty. ${withPage.length} of them are targets I solved myself and have a writeup and attack path page, listed first below; the rest are listed for reference (Hack The Box, TryHackMe and many VulnHub rows link to the official page; Proving Grounds rows do not) and can be tracked in ZeroBox. The ZeroBox app catalog also holds ${nf(extraBy.PG.length)} Proving Grounds and ${nf(extraBy.VulnHub.length)} VulnHub machines, listed after them without pages. The list runs over ${pageCount} pages of ${MX_PER_PAGE}; the search covers all ${nf(total)} machines.</p>`
+        `<p class="lead">Browse all ${nf(total)} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines by platform, operating system and difficulty. The ones I solved myself, with a writeup and attack path, are listed first, and the search covers every machine.</p>`
       );
-      parts.push(ctaBox({ body: 'Track these machines in ZeroBox: free, offline, no signup.', href: '/tracker/', label: 'Track these machines' }));
-      parts.push(`<p>Preparing for an exam? Start with the <a href="/oscp-like-machines/">OSCP-like machines</a> list, or read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> before you pick boxes.</p>`);
-      parts.push(hubChips);
     } else {
       parts.push(`<p class="lead">Rows ${nf(from)} to ${nf(to)} of the ${nf(total)} machines in the list (${listAnd(onPage)}), by platform, operating system and difficulty. <a href="/machines/">Back to page 1</a> for the machines I solved and the list guides.</p>`);
     }
@@ -695,6 +695,10 @@ for (const m of withPage) {
     parts.push(pager(n));
     parts.push(...renderItems(run));
     parts.push(pager(n, 'end'));
+    if (n === 1) {
+      parts.push(`<p>Preparing for an exam? Start with the <a href="/oscp-like-machines/">OSCP-like machines</a> list, or read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> before you pick boxes.</p>`);
+      parts.push(hubChips);
+    }
     parts.push(closing);
     const html = renderPage({
       path: pageUrl(n),
@@ -849,25 +853,46 @@ emit(
   const fill = (s) => String(s || '').replace(/\{ip\}/g, '{LHOST}').replace(/\{port\}/g, '{LPORT}').replace(/\{shell\}/g, '/bin/bash');
   const body = [
     `<p class="lead">${model.shellAvailableCount} reverse shell, bind shell, MSFVenom, HoaxShell and TTY upgrade one-liners across ${model.shellLangs.length} languages and platforms. Replace <code>{LHOST}</code> with your attacker IP and <code>{LPORT}</code> with your listener port, either in the two fields below or by hand, then copy a command and start the listener first.</p>`,
-    `<div class="tf rs-fill" id="rs-fill" role="group" aria-label="Fill in your values" hidden><div class="tf-controls"><div class="tf-field"><label for="rs-lhost">LHOST (your IP)</label><input id="rs-lhost" type="text" autocomplete="off" spellcheck="false" placeholder="{LHOST}" /></div><div class="tf-field"><label for="rs-lport">LPORT (listener port)</label><input id="rs-lport" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="{LPORT}" /></div></div></div>`,
-    ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell.', href: '/cheatsheets/', label: 'Generate a shell' }),
-    `<div class="chips">${model.shellLangs.map((l) => `<a href="#${esc(l.anchor)}">${esc(l.language)} (${l.availableCount})</a>`).join('')}</div>`,
+    // Hidden until public/revshells-filter.js (or copy-code.js) shows it; the filter script adds search, language and the count to this same bar.
+    `<div class="tf rs-fill" id="rs-fill" role="group" aria-label="Fill in your values" hidden><div class="tf-controls"><div class="tf-field"><label for="rs-lhost">LHOST (your IP)</label><input id="rs-lhost" type="text" autocomplete="off" spellcheck="false" placeholder="{LHOST}" /></div><div class="tf-field"><label for="rs-lport">LPORT (port)</label><input id="rs-lport" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="{LPORT}" /></div></div></div>`,
     `<!--email_off-->`,
     // Each language is a <section class="rs-lang"> and each shell a <div class="rs-item">: public/revshells-filter.js hides them while filtering. Without JS they change nothing.
-    ...model.shellLangs.map(
-      (l) =>
-        `<section class="rs-lang" data-lang="${esc(l.anchor)}"><h2 id="${esc(l.anchor)}">${esc(l.language)} reverse shells</h2>` +
+    // data-label is the short name for the language select. The most common listener (2+ shells) prints once under the heading (data-listener keeps it searchable); a shell with a different listener prints its own.
+    ...model.shellLangs.map((l) => {
+      const live = l.items.filter((s) => !model.shellUnavailable(s));
+      // Hoist the most common listener when two or more shells share it; only shells whose listener differs print their own.
+      const tally = new Map();
+      live.forEach((s) => s.listener && tally.set(fill(s.listener), (tally.get(fill(s.listener)) || 0) + 1));
+      let shared = '';
+      let best = 1;
+      tally.forEach((n, k) => {
+        if (n > best) {
+          best = n;
+          shared = k;
+        }
+      });
+      const where = (p) => (p === 'Both' ? 'Linux and Windows' : p);
+      // A 'Both' shell whose note already names its platforms (e.g. "Linux/Windows/macOS") skips the platform clause so the two never disagree.
+      const note = (s) => {
+        const named = s.platform === 'Both' && /\b(Linux|Windows|macOS)\b/.test(s.notes || '');
+        return `<p class="note">${esc(s.category)} shell${named ? '' : ' for ' + esc(where(s.platform))}${s.notes ? '. ' + esc(s.notes) : ''}</p>`;
+      };
+      return (
+        `<section class="rs-lang" data-lang="${esc(l.anchor)}" data-label="${esc(l.language)}"${shared ? ` data-listener="${esc(shared)}"` : ''}><h2 id="${esc(l.anchor)}">${esc(l.language)} reverse shells</h2>` +
+        (shared ? `<p class="note">Listener:</p>${code(shared)}` : '') +
         l.items
-          .map(
-            (s) =>
-              model.shellUnavailable(s)
-                ? `<div class="rs-item" data-off=""><h3>${esc(s.name)}</h3><p class="note">${esc(s.category)} shell for ${esc(s.platform)}${s.notes ? '. ' + esc(s.notes) : ''}</p><p class="note shell-unavailable"><strong>Unavailable.</strong> No command is listed for this entry.</p></div>`
-                : `<div class="rs-item"><h3>${esc(s.name)}</h3><p class="note">${esc(s.category)} shell for ${esc(s.platform)}${s.notes ? '. ' + esc(s.notes) : ''}</p>${code(fill(s.command))}${s.listener ? `<p class="note">Listener:</p>${code(fill(s.listener))}` : ''}</div>`
+          .map((s) =>
+            model.shellUnavailable(s)
+              ? `<div class="rs-item" data-off=""><h3>${esc(s.name)}</h3>${note(s)}<p class="note shell-unavailable"><strong>Unavailable.</strong> No command is listed for this entry.</p></div>`
+              : `<div class="rs-item"><h3>${esc(s.name)}</h3>${note(s)}${code(fill(s.command))}${s.listener && fill(s.listener) !== shared ? `<p class="note">Listener:</p>${code(fill(s.listener))}` : ''}</div>`
           )
           .join('') +
         `</section>`
-    ),
+      );
+    }),
     `<!--/email_off-->`,
+    // After the list (and the bottom pager the filter script adds), so the shells come first.
+    ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell.', href: '/cheatsheets/', label: 'Generate a shell' }),
     coffeeNote(),
   ].join('\n');
   emit(
@@ -1201,7 +1226,7 @@ for (const hub of certHubs) {
   const intro = [
     `<p class="lead">${esc(info.what)}</p>`,
     `<p>The ${machines.length} machines on this page are tagged ${esc(name)} in the ZeroBox catalog and come from ${esc(plats)}${ippsecCount ? ` (${ippsecCount} with IppSec video walkthroughs)` : ''}. By operating system that is ${esc(osLine(machines))}. ${esc(info.why)}</p>`,
-    `<p>To use the list, start at the easiest group and work upward, spending real time on enumeration before looking at any help. After each box, write down the foothold, the escalation and what you would do faster next time. ${solved ? `${solved} of these ${solved === 1 ? 'is a target' : 'are targets'} I solved myself, so ${solved === 1 ? 'it links' : 'they link'} to an attack path summary on this site; the others link to the official room. ` : 'Each machine links to its official room. '}Once you are comfortable, rehearse under pressure in the <a href="/exam/">exam simulator</a>, and follow the phase-by-phase <a href="/methodology-guide/">pentest methodology checklist</a> so you do not skip steps. You can also browse the <a href="/techniques/">technique hubs</a> to drill one skill at a time.</p>`,
+    `<p>To use the list, start at the easiest group and work upward, spending real time on enumeration before looking at any help. After each box, write down the foothold, the escalation and what you would do faster next time. ${solved ? `${solved} of these ${solved === 1 ? 'is a target' : 'are targets'} I solved myself, so ${solved === 1 ? 'it links' : 'they link'} to an attack path summary on this site; the others link to the official room. ` : 'Each machine links to its official room. '}Once you are comfortable, rehearse under pressure in the <a href="/oscp-exam-simulator/">exam simulator</a>, and follow the phase-by-phase <a href="/methodology-guide/">pentest methodology checklist</a> so you do not skip steps. You can also browse the <a href="/techniques/">technique hubs</a> to drill one skill at a time.</p>`,
   ].join('\n');
   const introWords = wc(intro);
   if (introWords < 150 || introWords > 250) console.warn(`cert intro ${cert}: ${introWords} words (target 150-250)`);
@@ -1217,7 +1242,7 @@ for (const hub of certHubs) {
     certTechniques(hub),
     certOverlap(hub),
     ctaBox({ title: 'Track your progress.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' }),
-    `<h2>Related guides</h2><div class="chips">${guideChips(CERT_GUIDES[cert] || [])}<a href="/exam/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
+    `<h2>Related guides</h2><div class="chips">${guideChips(CERT_GUIDES[cert] || [])}<a href="/oscp-exam-simulator/">Exam simulator</a><a href="/methodology-guide/">Methodology</a><a href="/techniques/">Techniques</a><a href="/machines/">All machines</a>${certHubs.filter((o) => o !== hub).map((o) => `<a href="/${o.slug}/">${esc(o.name)} machines</a>`).join('')}</div>`,
     `<p class="note">Machines belong to ${esc(plats)}. ZeroBox is not affiliated with the platforms or certification bodies named here.</p>`,
   ].join('\n');
   hubWords.cert.push([cert, wc(body)]);
@@ -1404,6 +1429,14 @@ for (const g of guides) {
   emit('guide', g.path, g.html, 0.7, maxDateOf(...srcs), srcs);
 }
 
+// ===================== OSCP exam simulator page (scripts/lib/exam-simulator.cjs) =====================
+// The static front door to the app's /exam/ route (which stays noindex and has no site chrome).
+{
+  const { buildExamSimulatorPage, EXAM_SIM_SRC } = require('./lib/exam-simulator.cjs');
+  const p = buildExamSimulatorPage({ renderPage, model, hasGuide: (x) => guideByPath.has(x), hasRoute: (x) => routes.some((r) => r.path === x) });
+  emit('exam-simulator', p.path, p.html, 0.8, maxDateOf(...EXAM_SIM_SRC), EXAM_SIM_SRC);
+}
+
 // ===================== Privacy and Terms (scripts/lib/legal.cjs) =====================
 {
   const { buildLegalPages, LEGAL_SRC } = require('./lib/legal.cjs');
@@ -1527,6 +1560,7 @@ const LLMS_UPDATED = maxDate(...pages.map((p) => p.lastmod), ...guides.map((g) =
   for (const g of guides) {
     lines.push(`- **[${g.title}](https://ctftracker.com${g.path})**: ${g.description}`);
   }
+  lines.push(`- **[OSCP Exam Simulator](https://ctftracker.com/oscp-exam-simulator/)**: free timed practice run in the browser for ${model.examTracks.length} tracks (${model.examTracks.join(', ')}), with the time limit, pass mark and target layout of each ruleset`);
   lines.push('');
   lines.push('### Eight-Phase Pentest Methodology (https://ctftracker.com/methodology-guide/)');
   for (const ph of model.phases) {

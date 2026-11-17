@@ -22,6 +22,7 @@ const BUILDERS = [
 const LINKS = {
   '/tracker/': 'CTF and HTB machine tracker',
   '/exam/': 'Exam simulator',
+  '/oscp-exam-simulator/': 'OSCP exam simulator',
   '/machines/': 'Hack The Box and TryHackMe machine directory',
   '/oscp-like-machines/': 'OSCP-like machines by difficulty',
   '/cpts-like-machines/': 'CPTS-like machines by difficulty',

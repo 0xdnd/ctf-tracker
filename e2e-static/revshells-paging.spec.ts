@@ -21,15 +21,24 @@ test('pages the list 20 at a time on one URL, with the full list still in the HT
   await expect(page.locator('#rs-list-head')).toBeFocused();
 });
 
-test('a language chip and an outside #hash open the right page and scroll to it', async ({ page }) => {
+test('the control bar replaces the chip row, and an outside #hash opens the right page and scrolls to it', async ({ page }) => {
   await page.goto('/revshells/');
-  const last = page.locator('.chips a[href^="#"]').last();
-  const target = (await last.getAttribute('href'))!;
-  await last.click();
-  await expect(page.locator(target)).toBeInViewport();
+  await expect(page.locator('.chips')).toHaveCount(0);
+  await expect(page.locator('#rs-fill #rsf-q')).toBeVisible();
+  const last = page.locator('section.rs-lang').last();
+  const target = '#' + (await last.getAttribute('data-lang'))!;
   await page.goto('/revshells/' + target);
   await expect(page.locator(target)).toBeInViewport();
   await expect(label(page)).not.toHaveText('Page 1 of 1');
+  await page.goto('/revshells/');
+  await page.selectOption('#rsf-lang', { index: 1 });
+  await expect(page.locator('.rs-item:not([hidden])').first()).toBeVisible();
+});
+
+test('the first shell is on the first screen of a desktop viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/revshells/');
+  await expect(page.locator('.rs-item:not([hidden]) pre').first()).toBeInViewport();
 });
 
 test('search spans every page and LHOST fills shells on later pages', async ({ page }) => {

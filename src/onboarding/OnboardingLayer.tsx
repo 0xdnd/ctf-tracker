@@ -5,6 +5,7 @@ import { useExamStore } from '../store/examStore';
 import { useNotesWorkspaceStore } from '../store/useNotesWorkspaceStore';
 import { guideIdForPath } from './guideMeta';
 import { guideTipAvailability } from './guideRegistry';
+import { FIRST_RUN_KEY, isFirstRunTourExcludedPath } from './useFirstRunTour';
 import { registerGuideNavigator } from './guideLaunch';
 import { CARD_SHADOW, CLOSE_MS, DIM, cardSurface } from './guideMotion';
 import { WelcomeCard } from './WelcomeCard';
@@ -101,6 +102,15 @@ function useLingering<T>(live: T | null): { value: T | null; closing: boolean } 
   return { value: live ?? lingering, closing: live === null && lingering !== null };
 }
 
+// Same key useFirstRunTour writes on the first visit to any other page.
+const firstRunDone = (): boolean => {
+  try {
+    return Boolean(localStorage.getItem(FIRST_RUN_KEY));
+  } catch {
+    return true;
+  }
+};
+
 export const OnboardingLayer: React.FC = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -196,7 +206,9 @@ export const OnboardingLayer: React.FC = () => {
   const guideSurfaceUp = guide !== null || finishedGuide !== null || centerOpen || launchPending !== null;
 
   const free = !tipsOff && !tourActive && !guideSurfaceUp;
-  const showCard = free && candidate !== null;
+  // A first visit to a landing page the welcome tour skips (/exam/, the OSCP calculator, fullscreen notes) shows the page alone: no tips bar either.
+  const skipFirstVisitHint = isFirstRunTourExcludedPath(pathname) && !firstRunDone();
+  const showCard = free && candidate !== null && !skipFirstVisitHint;
   const showTour = tourActive && armed;
 
   // Pages and modals listen for keys on their own: under a guide, the command palette would run its selected

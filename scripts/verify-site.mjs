@@ -301,8 +301,6 @@ const staticNotes = [];
     if (!entries.length) staticFails.push('revshells: no entries found');
     const lead = Number((html.match(/<p class="lead">(\d+) reverse shell/) || [])[1]);
     if (lead !== withCode) staticFails.push(`revshells: lead says ${lead} one-liners, ${withCode} entries have code`);
-    const chips = [...html.matchAll(/<a href="#[^"]*">[^<]*\((\d+)\)<\/a>/g)].reduce((a, m) => a + Number(m[1]), 0);
-    if (chips !== withCode) staticFails.push(`revshells: language chips add up to ${chips}, ${withCode} entries have code`);
     staticNotes.push(`revshells: ${entries.length} entries, ${withCode} with code, ${unavailable} unavailable`);
   }
 

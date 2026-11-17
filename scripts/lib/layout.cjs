@@ -59,7 +59,7 @@ const NAV = [
   ['/cheatsheet-library/', 'Cheatsheets'],
   ['/methodology-guide/', 'Methodology'],
   ['/revshells/', 'Reverse shells'],
-  ['/exam/', 'Exam simulator'],
+  ['/oscp-exam-simulator/', 'Exam simulator'],
 ];
 
 const REPO = 'https://github.com/0xdnd/ctf-tracker';
@@ -85,7 +85,7 @@ const FOOTER_LINKS = {
   ],
   ZeroBox: [
     ['/tracker/', 'Open tracker'],
-    ['/exam/', 'Exam simulator'],
+    ['/oscp-exam-simulator/', 'Exam simulator'],
     [REPO, 'Source code'],
     [REPO + '/blob/main/LICENSE', 'License'],
     ['/privacy/', 'Privacy'],
@@ -178,7 +178,7 @@ function siteFooter({ analyticsNote: note } = {}) {
     <div class="footer-grid">
       <div class="footer-brand">
         <a class="brand" href="/"><img src="/icon-192.png" width="28" height="28" alt="" aria-hidden="true" />ZeroBox</a>
-        <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. only test systems you are authorised to test.</p>
+        <p>ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec. Only test systems you are authorised to test.</p>
         <p class="coffee-line">${coffeeLink()}</p>
       </div>
       <nav class="footer-nav" aria-label="Footer">${cols}</nav>

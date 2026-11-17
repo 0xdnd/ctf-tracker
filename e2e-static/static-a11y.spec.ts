@@ -15,6 +15,7 @@ const PAGES = [
   '/tj-null-list/',
   '/oscp-exam-scoring-and-time-budget/',
   '/oscp-points-calculator/',
+  '/oscp-exam-simulator/',
   // Machine list pages with the search/filter/sort toolbar (public/table-filter.js).
   '/machines/',
   '/machines/page/2/',

@@ -1,7 +1,7 @@
 /* Language filter, search and paging for /revshells/.
    Progressive enhancement: the page ships every shell as plain HTML (<section class="rs-lang"> per language, <div class="rs-item"> per shell).
-   This script only adds a toolbar and toggles `hidden` on items, languages and jump chips, so Copy and the LHOST / LPORT fields (public/copy-code.js)
-   keep working on whatever is visible. Shells are paged PAGE_SIZE at a time on the same URL (a shell is never split, "Unavailable" entries take no slot).
+   This script adds search, a language select and the count to the LHOST / LPORT bar (#rs-fill) and toggles `hidden` on items and languages, so Copy and
+   the fields (public/copy-code.js) keep working on whatever is visible. Shells are paged PAGE_SIZE at a time on the same URL (a shell is never split, "Unavailable" entries take no slot).
    Without JS the full list shows. No network, no storage. The pure helpers are also exported for tests (module.exports). */
 (function () {
   'use strict';
@@ -57,25 +57,19 @@
     var sections = main.querySelectorAll('section.rs-lang');
     if (!sections.length) return;
 
-    var chips = main.querySelector('.chips');
-    var chipByLang = {};
-    if (chips) {
-      var anchors = chips.querySelectorAll('a[href^="#"]');
-      for (var a = 0; a < anchors.length; a++) chipByLang[anchors[a].getAttribute('href').slice(1)] = anchors[a];
-    }
-
-    var langs = []; // { el, lang, label, chip, items: [{ el, hay, lang, off }] }
+    var langs = []; // { el, lang, label, items: [{ el, hay, lang, off }] }
     var total = 0; // shells with a command; entries marked data-off ("Unavailable") are searched but not counted
     for (var i = 0; i < sections.length; i++) {
       var sec = sections[i];
       var lang = sec.getAttribute('data-lang') || '';
       var h2 = sec.querySelector('h2');
-      var chip = chipByLang[lang];
-      var group = { el: sec, h2: h2, h2Text: h2 ? h2.textContent : '', lang: lang, label: chip ? chip.textContent : h2 ? h2.textContent : lang, chip: chip || null, items: [] };
+      // data-label is the short select label ("Bash"); data-listener is a listener printed once for the section instead of under each shell.
+      var listener = sec.getAttribute('data-listener') || '';
+      var group = { el: sec, h2: h2, h2Text: h2 ? h2.textContent : '', lang: lang, label: sec.getAttribute('data-label') || (h2 ? h2.textContent : lang), items: [] };
       var nodes = sec.querySelectorAll('.rs-item');
       for (var j = 0; j < nodes.length; j++) {
         // Name, category, platform and notes, plus every command as served (data-template is the copy script's untouched copy).
-        var text = (h2 ? h2.textContent : '') + ' ' + ((nodes[j].querySelector('h3')||{}).textContent||'');
+        var text = (h2 ? h2.textContent : '') + ' ' + listener + ' ' + ((nodes[j].querySelector('h3')||{}).textContent||'');
         var notes = nodes[j].querySelectorAll('p');
         for (var n = 0; n < notes.length; n++) text += ' ' + notes[n].textContent;
         var codes = nodes[j].querySelectorAll('code');
@@ -90,12 +84,22 @@
 
     var state = { q: '', lang: '' };
     var page = 1;
-    var toolbar = el('div', { class: 'tf rs-filter', role: 'search', 'aria-label': 'Search and filter reverse shells' });
-    var controls = el('div', { class: 'tf-controls' });
+    // The controls live in the LHOST / LPORT bar: one compact row of fields, then the count and Reset. The bar ships hidden; show it here so search never depends on copy-code.js.
+    var bar = document.getElementById('rs-fill');
+    var controls = bar && bar.querySelector('.tf-controls');
+    if (!controls) {
+      bar = el('div', { class: 'tf rs-fill' });
+      controls = el('div', { class: 'tf-controls' });
+      bar.appendChild(controls);
+      langs[0].el.parentNode.insertBefore(bar, langs[0].el);
+    }
+    bar.classList.add('rs-filter');
+    bar.setAttribute('aria-label', 'Fill in your values, search and filter reverse shells');
+    bar.removeAttribute('hidden');
 
-    var searchWrap = el('div', { class: 'tf-field tf-search' });
-    searchWrap.appendChild(el('label', { for: 'rsf-q' }, 'Search shells'));
-    var search = el('input', { id: 'rsf-q', type: 'search', autocomplete: 'off', spellcheck: 'false', placeholder: 'Name, platform or command, e.g. mkfifo' });
+    var searchWrap = el('div', { class: 'tf-field rs-search' });
+    searchWrap.appendChild(el('label', { for: 'rsf-q' }, 'Search'));
+    var search = el('input', { id: 'rsf-q', type: 'search', autocomplete: 'off', spellcheck: 'false', placeholder: 'Search shells' });
     searchWrap.appendChild(search);
     controls.appendChild(searchWrap);
 
@@ -111,21 +115,20 @@
     langWrap.appendChild(select);
     controls.appendChild(langWrap);
 
-    var reset = el('button', { type: 'button', class: 'btn btn-secondary btn-sm tf-reset' }, 'Reset');
-    controls.appendChild(reset);
-    toolbar.appendChild(controls);
+    var meta = el('div', { class: 'rs-meta' });
     var count = el('p', { class: 'tf-count', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, countText(total, total));
-    toolbar.appendChild(count);
+    meta.appendChild(count);
+    var reset = el('button', { type: 'button', class: 'btn btn-secondary btn-sm tf-reset' }, 'Reset');
+    meta.appendChild(reset);
+    bar.appendChild(meta);
     var empty = el('div', { class: 'tf-empty', hidden: '' });
     empty.appendChild(el('p', null, 'No shells match your search and language.'));
     var clear = el('button', { type: 'button', class: 'btn btn-secondary btn-sm' }, 'Clear search and language');
     empty.appendChild(clear);
-    toolbar.appendChild(empty);
-    var anchorEl = chips || langs[0].el;
-    anchorEl.parentNode.insertBefore(toolbar, anchorEl);
+    bar.appendChild(empty);
 
-    // Pager: one above the list and one below it. Focus goes to the list heading (tabindex -1); "Page X of Y" is announced through the count line.
-    var head = el('h2', { class: 'rs-list-head', id: 'rs-list-head', tabindex: '-1', hidden: '' }, 'Reverse shells');
+    // Pager: one above the list and one below it. Focus goes to the list heading (tabindex -1); the pager label shows "Page X of Y".
+    var head = el('h2', { class: 'rs-list-head sr-only', id: 'rs-list-head', tabindex: '-1', hidden: '' }, 'Reverse shells');
     langs[0].el.parentNode.insertBefore(head, langs[0].el);
     var pagers = [];
     function makePager(where) {
@@ -187,7 +190,6 @@
           if (show) onPage++;
         });
         g.el.hidden = !onPage;
-        if (g.chip) g.chip.hidden = !g.first;
         if (g.first) anyVisible = true;
         if (g.h2) {
           var cont = onPage && g.first.page !== page ? ' (continued)' : '';
@@ -195,7 +197,7 @@
         }
       });
       var multi = sl.pages > 1;
-      count.textContent = multi ? rangeText(sl.start, sl.end, counted) + '. Page ' + page + ' of ' + sl.pages : countText(counted, total);
+      count.textContent = multi ? rangeText(sl.start, sl.end, counted) : countText(counted, total);
       empty.hidden = anyVisible;
       head.hidden = !multi;
       pagers.forEach(function (p) {
@@ -236,9 +238,6 @@
         return '';
       }
     }
-    Object.keys(chipByLang).forEach(function (l) {
-      chipByLang[l].addEventListener('click', function () { goToLang(l); });
-    });
     window.addEventListener('hashchange', function () {
       if (hashLang()) goToLang(hashLang());
     });

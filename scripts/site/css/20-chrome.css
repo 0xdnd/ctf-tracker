@@ -74,10 +74,10 @@
 .nav-social svg{width:18px;height:18px}
 @media(hover:hover) and (pointer:fine){.icon-link:hover{color:var(--text);background:var(--hover)}}
 .crumbs{margin:var(--s5) 0 var(--s2);color:var(--muted);font-size:13px;line-height:1.5}
-.crumbs a{color:var(--muted);text-decoration:none}
+.crumbs a{display:inline-block;padding:4px 0;margin:-4px 0;color:var(--muted);text-decoration:none}
 .crumbs .sep{margin:0 2px;color:var(--faint)}
 @media(hover:hover) and (pointer:fine){.crumbs a:hover{color:var(--text);text-decoration:underline}}
-.site-footer{margin-top:var(--s9);padding:var(--s7) 0 var(--s8);border-top:1px solid var(--line);color:var(--muted);font-size:.875rem}
+.site-footer{margin-top:var(--s8);padding:var(--s7) 0 var(--s8);border-top:1px solid var(--line);color:var(--muted);font-size:.875rem}
 .footer-grid{display:grid;gap:var(--s6);margin-bottom:var(--s6)}
 .footer-brand .brand{margin:0 0 var(--s3);font-size:1.0625rem}
 .footer-brand .brand img{width:28px;height:28px}

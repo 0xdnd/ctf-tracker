@@ -29,6 +29,7 @@ export { CHEATSHEET_CATEGORIES, INITIAL_CHEATSHEET } from './src/data/cheatsheet
 export { ALL_SHELL_ITEMS } from './src/data/revshellsData';
 export { MASTER_METHODOLOGY_FRAMEWORK } from './src/data/methodologyFramework';
 export { EXAM_TRACK_CONFIGS } from './src/utils/examComplianceUtils';
+export { RABBIT_HOLE_THRESHOLDS } from './src/utils/rabbitHoleConfig';
 export { PRACTICE_TRACKS } from './src/data/tracksData';
 export { OFFICIAL_HTB_PRO_LABS } from './src/data/proLabsData';
 `,
@@ -195,7 +196,7 @@ function getModel() {
   // Proving Grounds and VulnHub catalog rows (name, OS, difficulty, tags, room link only; no hint, flags or ids beyond the catalog's own).
   const extraMachines = EXTRA_ROWS.flat().map((m) => ({ id: m.id, name: m.name, platform: m.platform, os: m.os, difficulty: m.difficulty, tags: m.tags || [], roomUrl: m.roomUrl || '', hasPage: false }));
 
-  cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, examTrackDurations, catalogCounts, MIN_WORDS };
+  cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, examTrackConfigs: Object.values(d.EXAM_TRACK_CONFIGS), rabbitHoleExamMinutes: d.RABBIT_HOLE_THRESHOLDS.examMinutes, examTrackDurations, catalogCounts, MIN_WORDS };
   return cached;
 }
 
