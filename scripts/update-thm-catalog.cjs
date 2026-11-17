@@ -26,7 +26,7 @@ function main() {
   const NL = src.includes('\r\n') ? '\r\n' : '\n';
 
   // Row spans: "  {" .. "  }," / "  }" at 2-space indent.
-  const re = /^  \{\r?\n[\s\S]*?^  \},?(?:\r?\n|$)/gm;
+  const re = /^ {2}\{\r?\n[\s\S]*?^ {2}\},?(?:\r?\n|$)/gm;
   const rows = [];
   let m;
   while ((m = re.exec(src))) {
@@ -111,8 +111,8 @@ function main() {
       const nd = DIFF[e.difficulty];
       if (!nd) die(`unknown difficulty "${e.difficulty}" for ${e.name}`);
       let t = r.text;
-      t = t.replace(/^(    "difficulty": )"[^"]*"/m, (a, p) => { if (a !== `${p}"${nd}"`) diffChanges++; return `${p}"${nd}"`; });
-      t = t.replace(/^(    "roomUrl": )"[^"]*"/m, (a, p) => { const n = `${p}${JSON.stringify(e.url)}`; if (a !== n) urlChanges++; return n; });
+      t = t.replace(/^( {4}"difficulty": )"[^"]*"/m, (a, p) => { if (a !== `${p}"${nd}"`) diffChanges++; return `${p}"${nd}"`; });
+      t = t.replace(/^( {4}"roomUrl": )"[^"]*"/m, (a, p) => { const n = `${p}${JSON.stringify(e.url)}`; if (a !== n) urlChanges++; return n; });
       out += t;
     } else out += r.text;
     if (r === lastThm) {
