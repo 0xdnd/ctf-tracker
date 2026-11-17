@@ -97,7 +97,7 @@ test('vault loads and a logged entry survives a reload', async ({ page }) => {
   await page.goto('/#/vault');
   await expect(page.getByTestId('evidence-vault-page')).toBeVisible();
 
-  await page.getByTestId('page-header').getByRole('button', { name: 'Log evidence' }).click();
+  await page.getByTestId('evidence-vault-page').getByRole('button', { name: 'Log new evidence' }).click();
   const dialog = page.getByRole('dialog', { name: 'Log new evidence' });
   await expect(dialog).toBeVisible();
   await dialog.getByPlaceholder('e.g. Administrator, root').fill('smoke-admin');
