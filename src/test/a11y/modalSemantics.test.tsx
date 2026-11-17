@@ -147,6 +147,9 @@ describe('modal semantics: prop-driven dialogs', () => {
 
 describe('modal semantics: MobileNav drawer', () => {
   it('exposes a named dialog, locks scroll, and closes on Escape', async () => {
+    // The drawer is a lazy chunk. Under full-suite load its first transform/import can outlast findBy's 1 s default,
+    // so warm the module first (bounded by the test timeout); React.lazy then resolves on the next microtask.
+    await import('../../components/layout/MobileNavDrawer');
     useCtfStore.setState({ mobileMenuOpen: true });
     render(
       <MemoryRouter>
@@ -154,7 +157,6 @@ describe('modal semantics: MobileNav drawer', () => {
       </MemoryRouter>
     );
 
-    // The menu is its own lazy chunk, mounted when the menu first opens.
     const dialog = await screen.findByRole('dialog', { name: 'Navigation menu' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(document.body.style.overflow).toBe('hidden');

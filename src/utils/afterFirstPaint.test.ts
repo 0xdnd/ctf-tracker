@@ -41,4 +41,18 @@ describe('afterFirstPaint', () => {
     expect(done).toHaveBeenCalledTimes(1);
     state.mockRestore();
   });
+
+  it('settles without throwing when window disappears before the idle callback (torn-down environment)', async () => {
+    const done = vi.fn();
+    void afterFirstPaint().then(done);
+    // Frames are queued; run them, then remove window before the settle timer fires.
+    await vi.advanceTimersByTimeAsync(40);
+    vi.stubGlobal('window', undefined);
+    try {
+      await expect(vi.advanceTimersByTimeAsync(5000)).resolves.not.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(done).toHaveBeenCalledTimes(1);
+  });
 });

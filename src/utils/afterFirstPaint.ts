@@ -21,10 +21,14 @@ export function afterFirstPaint(): Promise<void> {
       started = true;
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
+          // The page can be gone by the time a frame or timer fires (a test environment torn down, a detached
+          // document). Settle instead of touching window, so callers are never left waiting or throwing.
+          if (typeof window === 'undefined') return resolve();
           const now = performance.now();
           const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? 0;
           const wait = Math.max(0, SETTLE_FLOOR_MS - now, fcp + AFTER_FCP_MS - now);
           setTimeout(() => {
+            if (typeof window === 'undefined') return resolve();
             if (window.requestIdleCallback) window.requestIdleCallback(() => resolve(), { timeout: IDLE_TIMEOUT_MS });
             else setTimeout(resolve, 0);
           }, wait);

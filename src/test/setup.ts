@@ -32,3 +32,12 @@ vi.mock('../utils/indexedDbVault', () => {
     MAX_IMPORT_SNAPSHOTS: 3,
   };
 });
+
+// jsdom has no ResizeObserver; components that measure their layout (kanban, graph, notes dock) construct one.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof globalThis.ResizeObserver;
+}
