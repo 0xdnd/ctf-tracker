@@ -26,8 +26,6 @@
 
 <a href="https://ctftracker.com/"><img src=".github/assets/screenshot.png" alt="ZeroBox Kanban board tracking HTB and THM machines" width="900" /></a>
 
-<a href="https://ctftracker.com"><img src=".github/assets/demo.gif" alt="ZeroBox demo: browsing HTB targets, dragging a machine across the Kanban board to Root Pwned, and the reverse shell generator" width="800" /></a>
-
 **[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)**
 
 </div>
@@ -45,7 +43,7 @@ Captured from the built-in demo data.
 
 ---
 
-**ZeroBox is a free, source-available CTF tracker** for [Hack The Box](https://www.hackthebox.com/) and [TryHackMe](https://tryhackme.com/). Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
+**ZeroBox is a free, source-available CTF tracker** for [Hack The Box](https://www.hackthebox.com/), [TryHackMe](https://tryhackme.com/), OffSec Proving Grounds and VulnHub. Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
 
 ---
 
@@ -73,7 +71,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 - **2186-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, OffSec Proving Grounds and VulnHub boxes, plus custom targets, Pro Labs and exams.
 - **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
-- **Five views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO).
+- **Four views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO).
 - **Target dossier:** Per-machine detail page with multi-host Nmap/scan import, methodology checklist, flags, and user/root timers.
 - **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus syntax DSL search (`syntaxSearchUtils`) and a global command palette.
 
@@ -180,16 +178,16 @@ Yes. It's free for personal and educational use, needs no account, and has no pa
 Everything is stored locally in your browser (LocalStorage + IndexedDB). There is no backend and nothing is uploaded. You can export a JSON backup at any time.
 
 **Which platforms does it cover?**
-560 retired Hack The Box machines, 20 active Hack The Box machines (name, OS, difficulty and link only), plus 559 TryHackMe CTF rooms. You can also add custom targets from other platforms, such as PG Practice, VulnHub or your own lab, and track your own Pro Labs or exams as personal targets.
+560 retired Hack The Box machines, 20 active Hack The Box machines (name, OS, difficulty and link only), 559 TryHackMe CTF rooms, 339 OffSec Proving Grounds boxes and 708 VulnHub boxes. You can also add custom targets from any other platform or your own lab, and track your own exams as personal targets.
 
 **Can I use it to prepare for OSCP or CPTS?**
 Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
 
 ---
 
-## 👨‍💻 Creator & System Architect
+## 👨‍💻 Creator
 
-**ZeroBox** is designed, engineered, and maintained by **Daniel Dayan** ([@0xdnd](https://github.com/0xdnd)) — Cybersecurity Researcher, Penetration Tester, and Offensive Security Architect.
+**ZeroBox** is designed, engineered, and maintained by **Daniel Dayan** ([@0xdnd](https://github.com/0xdnd)) — junior SOC analyst and penetration tester.
 
 <div align="center">
 
@@ -211,7 +209,7 @@ ZeroBox is engineered to strictly uphold the Terms of Service, Acceptable Use Po
 ### 1. 🛡️ Hack The Box Acceptable Use Policy (§8.2 & §8.3)
 - **Zero Active Content Disclosure:** In strict accordance with HTB AUP §8.2 (*"Sharing solutions, write-ups, flags, or hints for active content is strictly prohibited"*), active machines appear only as metadata-only entries: name, OS, difficulty, release date (recorded in `src/data/activeMachines.json`) and a link to the official machine page. Every hint, solution, flag, tag and note is stripped from them, including anything typed in by the user. The active list is maintained by hand and may lag behind Hack The Box.
 - **Retired Content:** The 560 retired HTB machines stay in the catalog; 141 of them (mostly retired since 2024) are listed by name, OS, difficulty and link only. HTB AUP §8.3 explicitly permits community walkthroughs, educational write-ups, and streaming for content that has been retired.
-- **Pro Labs & Exams Not Bundled:** No Pro Lab, Fortress or certification exam names or content ship with ZeroBox. Users can only add them as personal targets that they name and fill in themselves.
+- **Pro Labs Are Metadata Only:** Pro Lab presets include only public metadata (lab name, host and flag counts, difficulty, official link). No walkthroughs, flags or host details ship. Fortress and certification exam content is not bundled; users add exams as personal targets that they name and fill in themselves.
 - **Anti-Scraping / No-Crawling:** ZeroBox contains zero scrapers, bots, or automated crawlers targeting HTB servers (HTB UA §6.1).
 
 ### 2. 🎯 TryHackMe Terms of Use (§3 & §5)
