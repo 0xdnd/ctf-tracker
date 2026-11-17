@@ -7,7 +7,7 @@
     "os": "Fedora",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 3692,
+    "solves": 3693,
     "release_date": "2023-03-28",
     "description": "Employ enumeration and web enumeration methods to uncover system weaknesses. Apply privilege escalation techniques and capitalize on abusing crontabs for elevated access. This lab enhances your ability to identify and exploit misconfigurations effectively.",
     "groups": [
@@ -47,7 +47,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 4882,
+    "solves": 4883,
     "release_date": "2021-02-08",
     "description": "Utilize enumeration and web enumeration techniques to identify vulnerabilities. Engage in exploiting CuteNews, along with implementing privilege escalation strategies. Additionally, harness the abuse of SUID binaries to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -107,7 +107,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 1834,
+    "solves": 1836,
     "release_date": "2023-01-11",
     "description": "Adopt enumeration and web enumeration strategies to reveal potential weaknesses. Engage in brute force attacks to gain unauthorized access. Leverage privilege escalation by abusing sudo permissions for elevated control. This lab is designed to apply your ability to exploit system vulnerabilities effectively.",
     "groups": [
@@ -246,7 +246,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 2130,
+    "solves": 2131,
     "release_date": "2022-06-30",
     "description": "Employ enumeration and web enumeration techniques to identify vulnerabilities. Engage in exploiting SQL injections and LFI, alongside implementing password cracking and brute-force attacks. Additionally, harness privilege escalation strategies and the abuse of sudo permissions to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -266,7 +266,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 25,
-    "solves": 1093,
+    "solves": 1094,
     "release_date": "2020-10-11",
     "description": "Utilize enumeration and web enumeration techniques to identify vulnerabilities. Engage in exploiting Server-Side Template Injection (SSTI) and implement privilege escalation strategies to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -306,7 +306,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 4090,
+    "solves": 4092,
     "release_date": "2022-06-30",
     "description": "Leverage enumeration and web enumeration techniques to uncover system weaknesses. Apply privilege escalation strategies to gain elevated access. This lab is designed to harness your skills in vulnerability discovery and exploitation.",
     "groups": [
@@ -326,7 +326,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 2820,
+    "solves": 2821,
     "release_date": "2022-06-30",
     "description": "Utilize enumeration and web enumeration techniques to identify vulnerabilities. Engage in exploiting weak file permissions to access sensitive information and escalate privileges. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -366,7 +366,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 5250,
+    "solves": 5251,
     "release_date": "2020-11-16",
     "description": "Utilize enumeration and web enumeration techniques to identify vulnerabilities. Engage in exploiting SQL injection and file upload vulnerabilities, along with implementing privilege escalation strategies. Additionally, harness the abuse of sudo permissions to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -386,7 +386,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 5023,
+    "solves": 5024,
     "release_date": "2021-03-11",
     "description": "Employ enumeration and web enumeration techniques to identify vulnerabilities. Engage in bypassing file uploads, along with implementing privilege escalation strategies. Additionally, harness the abuse of sudo permissions to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -426,7 +426,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 6237,
+    "solves": 6240,
     "release_date": "2021-05-04",
     "description": "Employ enumeration and web enumeration techniques to identify vulnerabilities. Engage in brute-force attacks and implement privilege escalation strategies. Additionally, harness the abuse of SUID binaries to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -565,7 +565,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 6545,
+    "solves": 6546,
     "release_date": "2020-09-04",
     "description": "Employ enumeration techniques to identify vulnerabilities. Engage in privilege escalation strategies and harness the abuse of SUID binaries to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -585,7 +585,7 @@
     "os": "CentOS",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 1427,
+    "solves": 1428,
     "release_date": "2021-01-20",
     "description": "Engage in enumeration, web enumeration, and exploiting SQL injection techniques to identify vulnerabilities. Utilize password cracking methods and implement privilege escalation strategies to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -665,7 +665,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 4270,
+    "solves": 4271,
     "release_date": "2022-11-02",
     "description": "Utilize enumeration and web enumeration to uncover system vulnerabilities. Employ brute force attacks to compromise credentials. Implement privilege escalation by abusing sudo permissions for elevated access. This lab is designed to leverage your skills in system exploitation and privilege escalation.",
     "groups": [
@@ -685,7 +685,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 5,
-    "solves": 4991,
+    "solves": 4992,
     "release_date": "2021-04-01",
     "description": "Engage in exploiting a vulnerability in monitoring software that enables remote code execution. Utilize this exploit to gain access with elevated privileges, as the software operates with high-level permissions. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -745,7 +745,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 4915,
+    "solves": 4916,
     "release_date": "2021-02-23",
     "description": "This lab challenges learners to exploit an exposed FTP service to uncover a hidden SSH private key, allowing initial system access. Privilege escalation is achieved by abusing a misconfigured SUID binary to execute arbitrary commands as root. This exercise reinforces service enumeration, SUID exploitation, and privilege escalation techniques. ",
     "groups": [
@@ -805,7 +805,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 3020,
+    "solves": 3021,
     "release_date": "2020-09-16",
     "description": "Utilize enumeration, web enumeration, and FTP enumeration techniques to identify vulnerabilities. Engage in privilege escalation strategies and harness the abuse of sudo permissions to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -944,7 +944,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 3530,
+    "solves": 3531,
     "release_date": "2021-06-17",
     "description": "Utilize enumeration, web enumeration, and WordPress enumeration techniques to identify vulnerabilities. Engage in database enumeration and implement privilege escalation strategies. Additionally, harness the abuse of sudo permissions to enhance your access. This lab is designed to capitalize on your skills in vulnerability exploitation.",
     "groups": [
@@ -1104,7 +1104,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 6607,
+    "solves": 6608,
     "release_date": "2022-05-18",
     "description": "A foothold in the lab will be gained by leveraging a file upload function in a web application to upload a PHP web shell. Privileges will then be escalated to svc_mysql, abusing SeManageVolumePrivilege to achieve system access. This lab focuses on exploiting file upload vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -1161,7 +1161,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 5,
-    "solves": 14866,
+    "solves": 14871,
     "release_date": "2020-08-03",
     "description": "In this lab, we will exploit a remote code execution vulnerability in build 6985 of the SmarterMail application. This exercise enhances your skills in identifying and exploiting vulnerabilities for gaining access to systems.",
     "groups": [
@@ -1241,7 +1241,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 5,
-    "solves": 8391,
+    "solves": 8393,
     "release_date": "2023-04-06",
     "description": "An Unauthenticated Arbitrary YAML Write/Update vulnerability in Grav CMS will be exploited to gain an initial foothold, leading to remote code execution (RCE). Privilege escalation will be achieved by identifying a vulnerable PHP SUID binary. This lab focuses on exploiting vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -1261,7 +1261,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 10243,
+    "solves": 10249,
     "release_date": "2020-08-03",
     "description": "Exploit the target through Anonymous FTP, deducing the admin credentials to gain access and escalate privileges. This exercise enhances your skills in FTP exploitation and privilege escalation techniques.",
     "groups": [
@@ -1340,7 +1340,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 5866,
+    "solves": 5869,
     "release_date": "2020-08-03",
     "description": "To compromise this lab, you will gain a foothold through basic password guessing. You will then exploit a remote code execution vulnerability in the Sonatype Nexus application. Finally, you will leverage the SMBGhost vulnerability to escalate your privileges, enhancing your skills in authentication bypass and privilege escalation techniques.",
     "groups": [
@@ -1379,7 +1379,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 1941,
+    "solves": 1942,
     "release_date": "2025-01-17",
     "description": "This lab challenges learners to exploit a web application's misconfigurations, retrieve sensitive data, and escalate privileges to gain root access. Using tools to explore exposed .git directories, compromise the SOPlanning application (CVE-2022-37386), and abuse misconfigured permissions, you will develop your skills in enumeration, exploitation, and privilege escalation.",
     "groups": [
@@ -1399,7 +1399,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 25,
-    "solves": 4678,
+    "solves": 4679,
     "release_date": "2022-05-18",
     "description": "Initial access to the target will be obtained through a Redis service. Privilege escalation will then be achieved by exploiting a binary on the target using Return Oriented Programming (ROP). This lab focuses on exploiting service vulnerabilities and advanced exploitation techniques.",
     "groups": [
@@ -1594,7 +1594,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 2674,
+    "solves": 2675,
     "release_date": "2023-08-31",
     "description": "This lab focuses on various enumeration techniques, including network enumeration, web application enumeration, and Git enumeration. Learners will learn how to gather valuable information about the target system, uncovering potential vulnerabilities and sensitive data. This hands-on experience enhances skills in reconnaissance and vulnerability assessment.",
     "groups": [
@@ -1791,7 +1791,7 @@
     "os": "Linux",
     "os_family": "Linux",
     "xp": 5,
-    "solves": 12190,
+    "solves": 12191,
     "release_date": "2020-08-03",
     "description": "Engage in exploiting a remote command execution vulnerability in Sendmail with clamav-milter, a ClamAV filter. This exercise enhances your skills in vulnerability detection and remote exploitation techniques.",
     "groups": [
@@ -1849,7 +1849,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 25,
-    "solves": 4250,
+    "solves": 4252,
     "release_date": "2023-01-10",
     "description": "A Command Execution vulnerability in Freeswitch Event Socket will be exploited to gain an initial foothold. Privileges will then be escalated by locating a vulnerable SUID binary, which will be used to access an SSH private key for obtaining root access. This lab focuses on exploiting command execution vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -1909,7 +1909,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 6661,
+    "solves": 6664,
     "release_date": "2023-04-06",
     "description": "In this lab, we will manually exploit a SQL injection to obtain credentials and leverage write access to a user's filesystem for SSH access. We will then analyze an interesting ELF binary to discover a wildcard bug that facilitates privilege escalation to root access. This lab focuses on SQL injection exploitation and privilege escalation through binary vulnerabilities.",
     "groups": [
@@ -2048,7 +2048,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 5596,
+    "solves": 5597,
     "release_date": "2021-11-02",
     "description": "In this lab, we will employ macros in ODT files uploaded to a resume web form to gain a foothold. We will then migrate to the apache user and abuse the SeImpersonatePrivilege permission to elevate our privileges. This lab focuses on exploiting document vulnerabilities and privilege escalation techniques.",
     "groups": [
@@ -2088,7 +2088,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 4565,
+    "solves": 4566,
     "release_date": "2023-08-31",
     "description": "In this lab, we will perform enumeration to identify potential vulnerabilities. We will conduct web enumeration and exploit CVE-2022-23940 to gain an initial foothold. Privilege escalation will be achieved by abusing sudo permissions. This lab teaches techniques for vulnerability exploitation and privilege escalation.",
     "groups": [
@@ -3126,7 +3126,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 6656,
+    "solves": 6658,
     "release_date": "2022-02-16",
     "description": "A foothold on the target system will be established by exploiting a directory traversal vulnerability in the DVR software to access an SSH key. Privileges will then be elevated by decoding the Administrator password found in a configuration file. This lab focuses on exploiting vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -3225,7 +3225,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 8886,
+    "solves": 8888,
     "release_date": "2021-09-06",
     "description": "In this lab, we will exploit the target through an authenticated file upload bypass vulnerability in Subrion CMS that leads to remote code execution. We will then exploit a root cron job via a script running exiftool every minute.",
     "groups": [
@@ -3265,7 +3265,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 5973,
+    "solves": 5975,
     "release_date": "2023-04-06",
     "description": "This lab demonstrates exploiting a file upload vulnerability in eXtplorer to achieve remote code execution by uploading a PHP web shell. After initial compromise as www-data, learners escalate privileges by exploiting the disk group membership of user dora, using debugfs to access sensitive system files (/etc/passwd, /etc/shadow), cracking the root password hash with john, and obtaining root access.",
     "groups": [
@@ -3305,7 +3305,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 4179,
+    "solves": 4180,
     "release_date": "2022-03-09",
     "description": "This lab will be exploited by leveraging vulnerabilities identified in Grafana v8.3.0. Publicly available exploits will be used to obtain a secret key, which will then be decrypted to retrieve the system admin password, allowing for root-level access to the system. This lab focuses on exploiting application vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -3325,7 +3325,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 302,
+    "solves": 303,
     "release_date": "2023-04-27",
     "description": "A vulnerability in Weblate 4.11 will be exploited to establish an initial foothold. Privilege escalation will be performed by thoroughly enumerating the lab to discover a set of credentials and exploiting an argument injection in Git v1.10.2. This lab focuses on exploiting vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -3364,7 +3364,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 3104,
+    "solves": 3105,
     "release_date": "2024-07-26",
     "description": "In this lab, you will leverage enumeration techniques to identify potential vulnerabilities. The lab involves exploiting CVE-2023-32315 and practicing privilege escalation to gain unauthorized access. This lab focuses on understanding and exploiting vulnerabilities to enhance security awareness.",
     "groups": [
@@ -3383,7 +3383,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 2472,
+    "solves": 2473,
     "release_date": "2021-10-12",
     "description": "In this lab, we will leverage a directory traversal vulnerability in Oracle GlassFish and exploit a credential disclosure in SynaMan to gain a foothold on the target system. We will then elevate our access by abusing the installed antivirus, TotalAV. This lab focuses on exploiting web application vulnerabilities and privilege escalation techniques.",
     "groups": [
@@ -3521,7 +3521,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 4365,
+    "solves": 4367,
     "release_date": "2023-12-15",
     "description": "You are required to leverage enumeration techniques, including web enumeration, to uncover potential vulnerabilities. The lab involves exploiting CVE-2022-26134 and abusing cronjobs to gain unauthorized access. This lab focuses on understanding and exploiting vulnerabilities to enhance security awareness.",
     "groups": [
@@ -3834,7 +3834,7 @@
     "os": "Arch Linux",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 3668,
+    "solves": 3669,
     "release_date": "2021-06-08",
     "description": "In this lab, you will discover the source code for an application, and by analyzing it, you will identify an SQL injection vulnerability that can be exploited to gain remote code execution on the machine, ultimately leading to a root shell, employing techniques to recognize and exploit SQL injection vulnerabilities to escalate privileges effectively.",
     "groups": [
@@ -3854,7 +3854,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 1398,
+    "solves": 1399,
     "release_date": "2020-07-20",
     "description": "In this lab, the machine is exploited through a vulnerability in a web application, leading to unauthorized actions. Initial escalation is achieved by exploiting misconfigured permissions on a binary, which allows the attacker to modify system files and introduce a new root user.",
     "groups": [
@@ -3873,7 +3873,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 25,
-    "solves": 5428,
+    "solves": 5430,
     "release_date": "2021-09-22",
     "description": "In this lab, we will leverage a server-side request forgery (SSRF) vulnerability to retrieve an NTLMv2 handshake via responder. We will then exploit the privileges of two users to gain write permissions on the C:Windowssystem32utilman.exe binary and trigger system-integrity execution through RDP (Remote Desktop Protocol). This lab focuses on privilege escalation techniques and bypassing system integrity protections.",
     "groups": [
@@ -3933,7 +3933,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 5,
-    "solves": 6177,
+    "solves": 6179,
     "release_date": "2023-06-16",
     "description": "This lab focuses on enumeration techniques, particularly web enumeration, to identify potential vulnerabilities. It also covers exploiting a malicious file upload vulnerability to gain initial access. Learners will learn the practical implications of these methods in real-world scenarios.",
     "groups": [
@@ -3953,7 +3953,7 @@
     "os": "Arch Linux",
     "os_family": "Linux",
     "xp": 25,
-    "solves": 3065,
+    "solves": 3066,
     "release_date": "2021-02-01",
     "description": "To exploit this lab, you will enumerate a web application to discover an API endpoint that leaks user information, providing SSH access as a low-privileged user. Finally, you'll escalate your privileges by cloning the repository to your attack lab and injecting a malicious payload using the git account. This lab will improve your skills in information gathering, SSH access exploitation, and privilege escalation through version control systems.",
     "groups": [
@@ -3973,7 +3973,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 9632,
+    "solves": 9633,
     "release_date": "2021-03-01",
     "description": "To exploit this lab, you will enumerate LDAP and utilize the IIS web server with WebDAV enabled to gain code execution then escalate privileges by leveraging Microsoft LAPS, ultimately discovering the random password for the Administrator user through LDAP. This lab will enhance your skills in exploiting LDAP vulnerabilities, utilizing WebDAV for file uploads, and understanding Microsoft LAPS for privilege escalation.",
     "groups": [
@@ -4092,7 +4092,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 5,
-    "solves": 11792,
+    "solves": 11793,
     "release_date": "2020-08-03",
     "description": "In this lab, exploit a vulnerability in an outdated version of the Microsoft Windows SMB server (CVE-2009-3103), discovered through a fingerprinting scan of network services. This exercise enhances your skills in vulnerability detection and exploiting network service weaknesses.",
     "groups": [
@@ -4150,7 +4150,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 9080,
+    "solves": 9081,
     "release_date": "2020-08-03",
     "description": "To compromise this lab, you will discover a misconfigured H2 database with default credentials. You will exploit this misconfiguration to gain command execution. Finally, you will escalate privileges by leveraging a DLL hijacking vulnerability in Fujitsu's Paperstream IP program, enhancing your skills in vulnerability detection and privilege escalation techniques.",
     "groups": [
@@ -4189,7 +4189,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 2022,
+    "solves": 2023,
     "release_date": "2024-10-11",
     "description": "Approaches for identifying potential vulnerabilities are utilized in this lab. The focus is on exploiting CVE-2023-26469, practicing privilege escalation, and abusing SUDO permissions for unauthorized access. This lab emphasizes understanding and exploiting vulnerabilities to enhance security awareness.",
     "groups": [
@@ -4227,7 +4227,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 5,
-    "solves": 12398,
+    "solves": 12399,
     "release_date": "2020-08-03",
     "description": "Engage in leveraging default credentials and a public exploit against HP Power Manager. This process will include successfully exploiting the application using a public Metasploit module. This activity enhances your skills in exploiting vulnerabilities and utilizing available tools for effective system access.",
     "groups": [
@@ -4267,7 +4267,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 25,
-    "solves": 337,
+    "solves": 338,
     "release_date": "2023-08-31",
     "description": "This lab covers various enumeration techniques, including SMB enumeration, to identify potential vulnerabilities within the target system. Learners will engage in binary exploitation, specifically focusing on buffer overflow attacks, to gain initial access. Additionally, exploiting Group Policy Objects (GPOs) will provide further opportunities for privilege escalation. This lab teaches the significance of thorough enumeration and exploitation methods in penetration testing.",
     "groups": [
@@ -4287,7 +4287,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 3504,
+    "solves": 3506,
     "release_date": "2023-12-15",
     "description": "The lab will leverage enumeration techniques, including web enumeration, to uncover potential vulnerabilities. You will also exploit CVE-2021-3129 and demonstrate how to abuse SUDO permissions for unauthorized access. This lab focuses on understanding and exploiting vulnerabilities to enhance security awareness.",
     "groups": [
@@ -4365,7 +4365,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 6887,
+    "solves": 6889,
     "release_date": "2023-06-16",
     "description": "In this lab, we will conduct web enumeration to identify vulnerabilities, specifically focusing on exploiting CVE-2021-32849 and CVE-2021-43857. Following the exploitation, we will escalate privileges to gain higher access on the system. This lab teaches techniques for identifying and exploiting specific vulnerabilities, as well as methods for privilege escalation.",
     "groups": [
@@ -4524,7 +4524,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 1739,
+    "solves": 1740,
     "release_date": "2022-09-01",
     "description": "An authenticated RCE vulnerability in LimeSurvey 5.3.13 will be exploited to gain an initial foothold. Privileges will then be escalated by using mlocate to leak credentials that grant root access. This lab focuses on exploiting application vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -4622,7 +4622,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 7832,
+    "solves": 7834,
     "release_date": "2021-02-15",
     "description": "To compromise this lab, you will exploit an SQL injection vulnerability in a Ruby on Rails web application then escalate your privileges by exploiting insecure folder permissions in the BarracudaDrive v6.5 application, which runs as SYSTEM. This lab will enhance your skills in SQL injection exploitation and privilege escalation through misconfigured application permissions.",
     "groups": [
@@ -4702,7 +4702,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 2600,
+    "solves": 2601,
     "release_date": "2022-03-07",
     "description": "A foothold on the target system will be gained by leveraging a weak password to access the CMS Admin panel. From there, the CMS backup system will be accessed, revealing crackable password hashes that lead to low-privilege access. Privileges will then be elevated to the Administrator account by manipulating writable XAMPP configuration files. This lab focuses on exploiting weak authentication and privilege escalation methods.",
     "groups": [
@@ -4722,7 +4722,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 2588,
+    "solves": 2589,
     "release_date": "2021-08-31",
     "description": "In this lab, we'll exploit an XXE (XML External Entity Expansion) vulnerability to access credentials for a WebDAV service. By using WebDAV, we'll upload a reverse shell to establish a foothold on the target. Finally, we'll leverage a cron job PATH to elevate our access to root.",
     "groups": [
@@ -4801,7 +4801,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 30,
-    "solves": 2887,
+    "solves": 2889,
     "release_date": "2023-06-16",
     "description": "The lab focuses on exploiting enumeration techniques such as SMB enumeration, Kerberoasting, and MSSQL enumeration. You'll also learn password cracking methods and ticket generation processes. This lab emphasizes practical skills in privilege escalation and credential harvesting.",
     "groups": [
@@ -4860,7 +4860,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 8741,
+    "solves": 8742,
     "release_date": "2020-08-03",
     "description": "Leverage a misconfigured PostgreSQL database server that is listening on all interfaces with default credentials to gain code execution in this lab. Next, exploit misconfigured SUID permissions on the /usr/bin/find binary for privilege escalation. This approach enhances your skills in identifying misconfigurations and escalating privileges effectively.",
     "groups": [
@@ -4880,7 +4880,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 8769,
+    "solves": 8775,
     "release_date": "2020-10-28",
     "description": "To exploit this lab, you'll leverage credential disclosure on a web application endpoint to gain an initial foothold. This lab helps you understand how to exploit credential disclosures, crack passwords, and bypass firewall protections for privilege escalation.",
     "groups": [
@@ -4900,7 +4900,7 @@
     "os": "Arch Linux",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 5247,
+    "solves": 5249,
     "release_date": "2020-10-28",
     "description": "To exploit this lab, you'll gain remote code execution (RCE) through a vulnerable plugin in the WordPress installation. This lab teaches you to exploit vulnerabilities in web applications and navigate GUI-based privilege escalation methods.",
     "groups": [
@@ -4998,7 +4998,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 673,
+    "solves": 674,
     "release_date": "2022-10-28",
     "description": "An mPDF vulnerability in version 6.0 will be exploited to obtain an initial foothold. Privileges will then be escalated by exploiting a vulnerability in an outdated version of Webmin 1.996. This lab focuses on exploiting application vulnerabilities and privilege escalation methods.",
     "groups": [
@@ -5018,7 +5018,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 25,
-    "solves": 151,
+    "solves": 152,
     "release_date": "2021-06-24",
     "description": "In this lab, we'll leverage a buffer overflow vulnerability in a custom web server to compromise this target, allowing us to escalate our privileges by modifying a writable batch script executed by an elevated Scheduled Task.",
     "groups": [
@@ -5076,7 +5076,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 8632,
+    "solves": 8634,
     "release_date": "2020-08-03",
     "description": "In this lab, you will exploit a Local File Inclusion (LFI) vulnerability in an outdated version of CS Cart installed on the PayDay lab. This lab enhances your skills in vulnerability detection, exploitation, and system access techniques.",
     "groups": [
@@ -5136,7 +5136,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 11465,
+    "solves": 11468,
     "release_date": "2020-10-11",
     "description": "To exploit this lab, you'll achieve an initial foothold through an unauthenticated command injection vulnerability. Following that, you'll gain root access by leveraging sudo to disclose a password. This lab enhances your skills in identifying and exploiting command injection vulnerabilities and understanding privilege escalation techniques.",
     "groups": [
@@ -5274,7 +5274,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 2680,
+    "solves": 2681,
     "release_date": "2021-04-05",
     "description": "In this lab, you will exploit the target through phishing for user credentials. You will enumerate potential targets by guessing user credentials for a department mailbox and reading their messages. Following this, you will escalate your privileges by abusing Postfix disclaimer functionality and misconfigured sudo permissions on the /usr/bin/mail binary.",
     "groups": [
@@ -5450,7 +5450,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 2658,
+    "solves": 2659,
     "release_date": "2021-11-18",
     "description": "Utilizing a WordPress plugin LFI vulnerability, access will be gained to a Redis service, which will then be combined with the LFI and Redis access to obtain a foothold on the system. Following this, a cron backup script and wildcard injection will be abused to elevate to root access. This lab focuses on exploiting file inclusion vulnerabilities and privilege escalation techniques.",
     "groups": [
@@ -5490,7 +5490,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 25,
-    "solves": 5888,
+    "solves": 5893,
     "release_date": "2022-02-15",
     "description": "Domain controller enumeration will reveal remnants of a password audit that will lead to shell access. Following this, a Resource-Based Constrained Delegation exploitation vector will be leveraged to elevate access to system privileges. This lab focuses on enumeration techniques and privilege escalation methods.",
     "groups": [
@@ -5592,7 +5592,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 10,
-    "solves": 4902,
+    "solves": 4904,
     "release_date": "2023-06-16",
     "description": "In this lab, we will perform web enumeration to identify potential attack vectors. We will then exploit discovered vulnerabilities to gain initial access. Privilege escalation will be achieved by abusing sudo permissions, allowing us to gain elevated access on the system. This lab focuses on web enumeration techniques and methods for privilege escalation through misconfigured sudo settings.",
     "groups": [
@@ -5670,7 +5670,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 2586,
+    "solves": 2587,
     "release_date": "2024-07-06",
     "description": "This lab focuses on exploiting TeamCity 2023.05.4 using CVE-2024-27198 for Remote Code Execution (RCE), extracting SSH keys from Git repositories, and leveraging systemctl misconfigurations for privilege escalation.",
     "groups": [
@@ -5727,7 +5727,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 7827,
+    "solves": 7830,
     "release_date": "2020-08-03",
     "description": "You will discover exposed credentials on an open SMB file share, enabling you to upload a PHP reverse shell to this lab for initial access. Following this, you will exploit an insecure registry configuration to install .msi packages with elevated privileges. This exercise enhances your skills in credential exploitation and privilege escalation through misconfigurations.",
     "groups": [
@@ -5845,7 +5845,7 @@
     "os": "Windows",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 10339,
+    "solves": 10344,
     "release_date": "2020-08-03",
     "description": "In this lab, you will exploit a remote file inclusion vulnerability in a web application. You will then escalate privileges by leveraging misconfigured permissions on an executable that operates under the system job scheduler. This exercise enhances your skills in vulnerability exploitation and privilege escalation techniques.",
     "groups": [
@@ -5885,7 +5885,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 976,
+    "solves": 977,
     "release_date": "2021-08-19",
     "description": "In this lab, we'll leverage a question-answer guessing technique in Nexus Backup Manager to compromise this target by exposing a password for the Nexus Repository Manager Java EL Injection CVE. We'll then employ a Python Library Hijacking attack to escalate our privileges, taking advantage of open permissions on a script that runs as root every minute.",
     "groups": [
@@ -5905,7 +5905,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 5553,
+    "solves": 5555,
     "release_date": "2020-11-02",
     "description": "To exploit this lab, you'll leverage various web server leaks to gain an initial foothold. This lab teaches you about information gathering through web server leaks, exploiting user scripts for shell access, and understanding SUID misconfigurations for privilege escalation.",
     "groups": [
@@ -5965,7 +5965,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 1704,
+    "solves": 1705,
     "release_date": "2025-04-23",
     "description": "This lab challenges learners to uncover and exploit misconfigurations within a seemingly secure network environment. By identifying exposed internal services and leveraging weak credentials, learners gain initial access before pivoting through the system to escalate privileges. The scenario emphasizes enumeration, abuse of common tools, and lateral movement, testing real-world penetration skills in a layered, realistic setup.",
     "groups": [
@@ -6042,7 +6042,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 20,
-    "solves": 7208,
+    "solves": 7212,
     "release_date": "2022-05-18",
     "description": "In this lab, we will enumerate ports behind a Squid proxy to gain an initial foothold through phpMyAdmin. Privileges will then be elevated by creating scheduled tasks to enable restricted privileges. This lab focuses on exploiting proxy configurations and privilege escalation methods.",
     "groups": [
@@ -6279,7 +6279,7 @@
     "os": "CentOS",
     "os_family": "Linux",
     "xp": 5,
-    "solves": 10305,
+    "solves": 10306,
     "release_date": "2020-08-03",
     "description": "In this lab, we will gain access by exploiting a pre-auth remote code execution vulnerability on a SaltStack master. This will allow us to execute commands on the master by creating a runner of salt.cmd using the cmd.exec_code function. This exercise enhances your skills in exploiting vulnerabilities for command execution and system access.",
     "groups": [
@@ -6398,7 +6398,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 25,
-    "solves": 6469,
+    "solves": 6470,
     "release_date": "2021-11-24",
     "description": "A foothold on the target will be gained by using a writable SMB share to execute a URI file attack. Following this, SYSTEM privilege will be elevated by abusing write access on a Group Policy Object. This lab focuses on exploiting SMB vulnerabilities and privilege escalation techniques.",
     "groups": [
@@ -6419,7 +6419,7 @@
     "os": "Windows Server",
     "os_family": "Windows",
     "xp": 25,
-    "solves": 1148,
+    "solves": 1149,
     "release_date": "2021-01-20",
     "description": "To breach this lab, you will perform a padding oracle attack against a web application using an unauthenticated AES-CBC encryption scheme. This lab focuses on exploiting cryptographic vulnerabilities and password recovery techniques.",
     "groups": [
@@ -6497,7 +6497,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 6057,
+    "solves": 6058,
     "release_date": "2021-03-15",
     "description": "To gain control of this lab, you will exploit the enabled web console in a RaspAP web application by using default authentication credentials. You will then escalate privileges by exploiting the Python module import order in a script that can be executed with sudo privileges. This lab will enhance your understanding of web application vulnerabilities and privilege escalation techniques in Python.",
     "groups": [
@@ -6556,7 +6556,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 5,
-    "solves": 7261,
+    "solves": 7263,
     "release_date": "2020-08-03",
     "description": "Leverage a remote code execution vulnerability in a Redis data store to gain root access in this lab. This exercise enhances your skills in identifying and exploiting vulnerabilities for privilege escalation.",
     "groups": [
@@ -6576,7 +6576,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 1568,
+    "solves": 1570,
     "release_date": "2025-06-12",
     "description": "This lab explores an unauthenticated SQL injection vulnerability in the WP-Advanced-Search plugin (CVE-2024-9796). By exploiting this flaw, an attacker can enumerate WordPress users, extract password hashes, and crack them to gain FTP access. Further, the attacker retrieves database credentials from wp-config.php, leading to SSH access. Privilege escalation is achieved via an SUID binary vulnerable to shared object injection, granting full root control.",
     "groups": [
@@ -6596,7 +6596,7 @@
     "os": "Debian",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 3409,
+    "solves": 3411,
     "release_date": "2021-03-24",
     "description": "In this lab, you will exploit an API functionality in a web application then escalate your privileges by taking advantage of misconfigured SUID permissions on the wget binary. This lab will enhance your understanding of API exploitation and privilege escalation through SUID misconfigurations.",
     "groups": [
@@ -6635,7 +6635,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 15,
-    "solves": 803,
+    "solves": 805,
     "release_date": "2025-03-24",
     "description": "## Summary\n\nThis lab challenges you to exploit misconfigurations in Mage AI and Zabbix to escalate privileges to root. Gaining initial access through Mage AI, you'll extract database credentials and leverage port forwarding to access the restricted Zabbix UI. By abusing Zabbix’s script execution feature, you'll execute arbitrary commands, elevate privileges to zabbix, and ultimately escalate to root using rsync misconfigurations.",
     "groups": [
@@ -6654,7 +6654,7 @@
     "os": "Linux offsecsrv",
     "os_family": "Linux",
     "xp": 20,
-    "solves": 6540,
+    "solves": 6541,
     "release_date": "2020-08-03",
     "description": "Employ a remote code execution vulnerability in the Zenphoto web application to compromise the target in this lab. After gaining access, escalate privileges through a local kernel exploit, enhancing your skills in vulnerability detection and system access techniques.",
     "groups": [
@@ -6695,7 +6695,7 @@
     "os": "Ubuntu",
     "os_family": "Linux",
     "xp": 25,
-    "solves": 3092,
+    "solves": 3094,
     "release_date": "2022-10-11",
     "description": "A file upload capability and Local File Inclusion (LFI) will be chained to upload a malicious zip file and gain an initial foothold. Privileges will then be escalated by discovering a cron job that includes a *.zip wildcard, which is vulnerable to an arbitrary error that allows reading a file to obtain root access. This lab focuses on exploiting file upload vulnerabilities and privilege escalation methods.",
     "groups": [
