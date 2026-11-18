@@ -1,6 +1,6 @@
 import { isTauriTarget } from '../../utils/runtimeTarget';
 import { clearLegacyViewerPrefs } from '../../utils/notesViewerPrefs';
-import React, { useState, useMemo, useEffect, useDeferredValue, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Terminal, 
@@ -24,33 +24,25 @@ import {
   getCategoryTopicGroups,
   searchCptsNotes,
   getNoteById,
-  buildCptsFileTree,
   CptsSortOrder,
   sortNotesByNumber,
-  getAllCptsNotes,
-  getBacklinksForNote,
-  mergeUserNotePools,
 } from '../../utils/obsidianManualUtils';
 import { ObsidianNoteViewer } from './ObsidianNoteViewer';
 import { FieldManualShell } from '../notes/FieldManualShell';
-import { NARROW_QUERY, useMediaQuery } from '../../hooks/useMediaQuery';
 import { NotesRibbon, type NotesRibbonPanel } from '../notes/NotesRibbon';
 import { NotesLeftPanel } from '../notes/NotesLeftPanel';
 import { NotesRightPanel } from '../notes/NotesRightPanel';
 import { NotesStatusBar } from '../notes/NotesStatusBar';
-import { countWords, getNoteOutline } from '../../utils/noteMeta';
+import { countWords } from '../../utils/noteMeta';
 import { isFullscreenNotesPath } from '../../utils/fullscreenRoutes';
 import { getLastAppRoute } from '../../utils/lastAppRoute';
 import { useNoteIndex } from '../../hooks/useNoteIndex';
-import { SplitOrientation } from '../../types/workspace';
 import { NewCptsNoteModal } from './NewCptsNoteModal';
 import { YourDetailsCard } from './YourDetailsCard';
 import { PageHeader } from '../common/PageHeader';
 import { CyberButton } from '../common/CyberButton';
 import { EmptyState } from '../common/EmptyState';
 import { confirmAction } from '../../store/useConfirmStore';
-import { useToastStore } from '../../store/useToastStore';
-import { hasUnsavedNoteEdits } from '../../utils/unsavedNoteEdits';
 import type { CptsLanguageMode, CptsDisplayLayout } from './workspace/types';
 import { SNIPPET_PAGE_SIZE } from './workspace/constants';
 import { FieldManualHeader } from './workspace/FieldManualHeader';
@@ -59,6 +51,10 @@ import { NotesCardsGallery } from './workspace/NotesCardsGallery';
 import { EmptyWorkspace } from './workspace/EmptyWorkspace';
 import { SnippetList } from './workspace/SnippetList';
 import { AddSnippetModal } from './workspace/AddSnippetModal';
+import { useWorkspaceTabState, useWorkspaceTabs, useWorkspaceSplitPanes } from './workspace/useWorkspaceTabs';
+import { useActiveNotesPool, useNotesTree } from './workspace/useNotesPool';
+import { useFieldManualRouteSync } from './workspace/useFieldManualRouteSync';
+import { useNotesPanels } from './workspace/useNotesPanels';
 
 export type { CptsLanguageMode, CptsDisplayLayout };
 
@@ -163,142 +159,26 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Multi-Tab Field Manual Workspace State
-  const [openObsidianNotes, setOpenObsidianNotes] = useState<CptsNoteEntry[]>(() => {
-    try {
-      const params = new URLSearchParams(location.search);
-      let noteParam = params.get('note');
-      if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
-        const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
-        noteParam = hashParams.get('note');
-      }
-      if (noteParam) {
-        const found = getNoteById(noteParam);
-        if (found) return [found];
-      }
-      const saved = localStorage.getItem('zerobox_obsidian_open_tabs');
-      if (saved) {
-        const ids: string[] = JSON.parse(saved);
-        const notes = ids.map((id) => getNoteById(id)).filter((n): n is CptsNoteEntry => Boolean(n));
-        if (notes.length > 0) return notes;
-      }
-    } catch { /* best effort */ }
-    const all = getAllCptsNotes();
-    if (all.length > 0 && isManualRoute) return [all[0]];
-    return [];
-  });
-  const [activeObsidianNoteId, setActiveObsidianNoteId] = useState<string | null>(() => {
-    try {
-      const params = new URLSearchParams(location.search);
-      let noteParam = params.get('note');
-      if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
-        const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
-        noteParam = hashParams.get('note');
-      }
-      if (noteParam) {
-        const found = getNoteById(noteParam);
-        if (found) return found.id;
-      }
-      const saved = localStorage.getItem('zerobox_obsidian_active_tab');
-      if (saved) return saved;
-    } catch { /* best effort */ }
-    const all = getAllCptsNotes();
-    return isManualRoute && all.length > 0 ? all[0].id : null;
-  });
-
-  // Check if current view is a detached standalone pop-out window
-  const isPopout = useMemo(() => {
-    return new URLSearchParams(location.search).get('popout') === 'true';
-  }, [location.search]);
+  const { openObsidianNotes, setOpenObsidianNotes, activeObsidianNoteId, setActiveObsidianNoteId, isPopout } =
+    useWorkspaceTabState({ location, isManualRoute });
 
   // Obsidian Field Manual Workspace Sidebar & Navigation State
-  const [isObsidianSidebarOpen, setIsObsidianSidebarOpen] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('zerobox_obsidian_sidebar_open');
-      return saved !== 'false';
-    } catch {
-      return true;
-    }
-  });
-
-  // Right sidebar (backlinks and outline): open state persists like the left one.
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('zerobox_notes_right_panel_open') !== 'false';
-    } catch {
-      return true;
-    }
-  });
-  const setRightPanelOpenPersisted = useCallback((open: boolean) => {
-    setIsRightPanelOpen(open);
-    try {
-      localStorage.setItem('zerobox_notes_right_panel_open', String(open));
-    } catch { /* best effort */ }
-  }, []);
-  // Under 768 px both sidebars are drawers: transient state, never persisted.
-  const isNarrow = useMediaQuery(NARROW_QUERY);
-  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
-  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
-  useEffect(() => {
-    if (!isNarrow) {
-      setLeftDrawerOpen(false);
-      setRightDrawerOpen(false);
-    }
-  }, [isNarrow]);
-  const closeDrawers = useCallback(() => {
-    setLeftDrawerOpen(false);
-    setRightDrawerOpen(false);
-  }, []);
-  const handleToggleRightPanel = useCallback(() => {
-    if (isNarrow) {
-      setRightDrawerOpen((prev) => !prev);
-      setLeftDrawerOpen(false);
-      return;
-    }
-    setIsRightPanelOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('zerobox_notes_right_panel_open', String(next));
-      } catch { /* best effort */ }
-      return next;
-    });
-  }, [isNarrow]);
-  // Outline click: addressed to the active pane's viewer, which acts once per larger nonce.
-  const [headingRequest, setHeadingRequest] = useState<{ paneId: string; slug: string; nonce: number } | null>(null);
-
-  const handleToggleObsidianSidebar = useCallback(() => {
-    if (isNarrow) {
-      setLeftDrawerOpen((prev) => !prev);
-      setRightDrawerOpen(false);
-      if (soundEnabled) playCyberSound('click');
-      return;
-    }
-    setIsObsidianSidebarOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('zerobox_obsidian_sidebar_open', String(next));
-      } catch { /* best effort */ }
-      return next;
-    });
-    if (soundEnabled) playCyberSound('click');
-  }, [soundEnabled, isNarrow]);
-
-  useEffect(() => {
-    if (viewMode !== 'cpts-manual') return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.altKey) && (e.key === 'b' || e.key === 'B')) {
-        const target = e.target as HTMLElement | null;
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-          return;
-        }
-        e.preventDefault();
-        handleToggleObsidianSidebar();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewMode, handleToggleObsidianSidebar]);
+  const {
+    isObsidianSidebarOpen,
+    setIsObsidianSidebarOpen,
+    isRightPanelOpen,
+    setRightPanelOpenPersisted,
+    isNarrow,
+    leftDrawerOpen,
+    setLeftDrawerOpen,
+    rightDrawerOpen,
+    setRightDrawerOpen,
+    closeDrawers,
+    handleToggleRightPanel,
+    headingRequest,
+    setHeadingRequest,
+    handleToggleObsidianSidebar,
+  } = useNotesPanels({ viewMode, soundEnabled });
 
   const [obsidianNavView, setObsidianNavView] = useState<'files' | 'cards' | 'index'>('files');
   const [leftView, setLeftView] = useState<NotesRibbonPanel>('files');
@@ -310,7 +190,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     try {
       localStorage.setItem('zerobox_obsidian_sidebar_open', String(open));
     } catch { /* best effort */ }
-  }, []);
+  }, [setIsObsidianSidebarOpen]);
   const leftOpenNow = isNarrow ? leftDrawerOpen : isObsidianSidebarOpen;
   const ribbonActivePanel: NotesRibbonPanel | null = leftOpenNow ? leftView : null;
   const handleRibbonSelectPanel = useCallback(
@@ -331,205 +211,45 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       }
       if (p === 'search') setSearchFocusTick((n) => n + 1);
     },
-    [ribbonActivePanel, isNarrow, setObsidianSidebarOpenPersisted],
+    [ribbonActivePanel, isNarrow, setObsidianSidebarOpenPersisted, setLeftDrawerOpen, setRightDrawerOpen],
   );
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const noteIndex = useNoteIndex();
   const [treeSearchQuery, setTreeSearchQuery] = useState('');
   const deferredTreeQuery = useDeferredValue(treeSearchQuery);
 
-  // Active Notes Pool: only the user's own notes (authored + imported), minus deleted ones
-  const allActiveNotes = useMemo(() => {
-    const deletedSet = new Set(deletedNoteIds);
-    return mergeUserNotePools(customNotes, userNotes).filter((n) => !deletedSet.has(n.id));
-  }, [deletedNoteIds, customNotes, userNotes]);
-  // Restore only clears tombstones, so it can bring back only deleted notes this tab still holds.
-  const restorableCount = useMemo(() => {
-    if (deletedNoteIds.length === 0) return 0;
-    const held = new Set([...customNotes, ...userNotes].map((n) => n.id));
-    return deletedNoteIds.filter((id) => held.has(id)).length;
-  }, [deletedNoteIds, customNotes, userNotes]);
+  const { allActiveNotes, restorableCount } = useActiveNotesPool({ deletedNoteIds, customNotes, userNotes });
 
-  const activeObsidianNote = useMemo(() => {
-    if (!activeObsidianNoteId) return null;
-    return openObsidianNotes.find((n) => n.id === activeObsidianNoteId) || openObsidianNotes[0] || null;
-  }, [openObsidianNotes, activeObsidianNoteId]);
+  const {
+    activeObsidianNote,
+    handleOpenObsidianNote,
+    handleSelectObsidianTab,
+    handleCloseObsidianTab,
+    handleCloseAllObsidianTabs,
+    highlightByNote,
+    openFromResults,
+    setActiveObsidianNote,
+  } = useWorkspaceTabs({
+    openObsidianNotes,
+    setOpenObsidianNotes,
+    activeObsidianNoteId,
+    setActiveObsidianNoteId,
+    deferredSearchQuery,
+  });
 
-  const handleOpenObsidianNote = useCallback((note: CptsNoteEntry) => {
-    setOpenObsidianNotes((prev) => {
-      const exists = prev.some((n) => n.id === note.id);
-      if (!exists) {
-        return [...prev, note];
-      }
-      return prev;
-    });
-    setActiveObsidianNoteId(note.id);
-  }, []);
-
-  const handleSelectObsidianTab = useCallback((noteId: string) => {
-    setActiveObsidianNoteId(noteId);
-  }, []);
-
-  const handleCloseObsidianTab = useCallback((noteId: string) => {
-    setOpenObsidianNotes((prev) => {
-      const idx = prev.findIndex((n) => n.id === noteId);
-      if (idx === -1) return prev;
-      const nextNotes = prev.filter((n) => n.id !== noteId);
-      setActiveObsidianNoteId((currentActive) => {
-        if (currentActive === noteId) {
-          if (nextNotes.length === 0) return null;
-          const nextActive = nextNotes[Math.min(Math.max(0, idx), nextNotes.length - 1)];
-          return nextActive ? nextActive.id : null;
-        }
-        return currentActive;
-      });
-      return nextNotes;
-    });
-  }, []);
-
-  const handleCloseAllObsidianTabs = useCallback(() => {
-    setOpenObsidianNotes([]);
-    setActiveObsidianNoteId(null);
-  }, []);
-
-  // Search text at the moment a result row was opened, per note id. Clearing the
-  // search box later leaves an existing highlight alone.
-  const [highlightByNote, setHighlightByNote] = useState<Record<string, string>>({});
-
-  const openFromResults = useCallback((note: CptsNoteEntry, query: string = deferredSearchQuery) => {
-    const q = query.trim();
-    setHighlightByNote((prev) => {
-      if (q) return prev[note.id] === q ? prev : { ...prev, [note.id]: q };
-      if (!(note.id in prev)) return prev;
-      const rest = { ...prev };
-      delete rest[note.id];
-      return rest;
-    });
-    handleOpenObsidianNote(note);
-  }, [deferredSearchQuery, handleOpenObsidianNote]);
-
-  // Backward compatibility alias: sets active note or opens as tab
-  const setActiveObsidianNote = useCallback((note: CptsNoteEntry | null) => {
-    if (note) {
-      handleOpenObsidianNote(note);
-    } else {
-      handleCloseAllObsidianTabs();
-    }
-  }, [handleOpenObsidianNote, handleCloseAllObsidianTabs]);
-
-  // Persist open tabs and active tab to localStorage for seamless session resume
-  useEffect(() => {
-    try {
-      localStorage.setItem('zerobox_obsidian_open_tabs', JSON.stringify(openObsidianNotes.map((n) => n.id)));
-      if (activeObsidianNoteId) {
-        localStorage.setItem('zerobox_obsidian_active_tab', activeObsidianNoteId);
-      } else {
-        localStorage.removeItem('zerobox_obsidian_active_tab');
-      }
-    } catch { /* best effort */ }
-  }, [openObsidianNotes, activeObsidianNoteId]);
-
-  // Synchronize active cheatsheet note to the persistent sidecar Notes workspace (staying closed unless already open)
-  useEffect(() => {
-    if (activeObsidianNoteId) {
-      useNotesWorkspaceStore.getState().openNote(activeObsidianNoteId, { stayClosed: true });
-    }
-  }, [activeObsidianNoteId]);
-
-  const exitingFromPathRef = useRef<string | null>(null);
-  const renderWindowPath = typeof window !== 'undefined' ? window.location.pathname : null;
-
-  // Sync viewMode and activeObsidianNote when route or search query changes
-  useEffect(() => {
-    if (exitingFromPathRef.current !== null) {
-      if (exitingFromPathRef.current === location.pathname) return;
-      exitingFromPathRef.current = null;
-    }
-    if (renderWindowPath !== null && typeof window !== 'undefined' && window.location.pathname !== renderWindowPath) {
-      return;
-    }
-    const params = new URLSearchParams(location.search);
-    const isManualParam = location.pathname.includes('note') || 
-      location.pathname.includes('manual') || 
-      location.search.includes('manual') || 
-      location.search.includes('cpts') ||
-      (typeof window !== 'undefined' && (window.location.hash.includes('manual') || window.location.hash.includes('cpts')));
-
-    // Legacy routes that reach the field manual under full chrome move to the full-screen route.
-    // The query (including ?note=) is kept; the remounted view opens the note and strips the param.
-    if (!isFullscreen && /^\/cheatsheets?\/?$/i.test(location.pathname) && (params.has('note') || isManualParam)) {
-      navigate({ pathname: '/field-manual', search: location.search, hash: location.hash }, { replace: true });
-      return;
-    }
-
-    if (isFullscreen || isManualParam) {
-      setViewMode('cpts-manual');
-    } else if (defaultMode) {
-      setViewMode(defaultMode);
-    } else if (location.pathname.startsWith('/cheatsheets') || location.pathname === '/cheatsheet') {
-      setViewMode('tactical');
-    }
-
-    // Check for direct note opening via query parameter, e.g. ?note=cpts-... (supporting both search & hash)
-    let noteParam = params.get('note');
-    let noteFromHash = false;
-    if (!noteParam && typeof window !== 'undefined' && window.location.hash.includes('?')) {
-      const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
-      noteParam = hashParams.get('note');
-      noteFromHash = Boolean(noteParam);
-    }
-    if (noteParam) {
-      const found = getNoteById(noteParam, allActiveNotes.length > 0 ? allActiveNotes : undefined) || getNoteById(noteParam);
-      if (found) {
-        setActiveObsidianNote(found);
-        setViewMode('cpts-manual');
-        setObsidianNavView('files');
-        // One-shot: drop `note` so later edits don't re-open it and the same link can be used again.
-        if (noteFromHash) {
-          const [hashPath, hashQuery = ''] = window.location.hash.split('?');
-          const hashParams = new URLSearchParams(hashQuery);
-          hashParams.delete('note');
-          const restHash = hashParams.toString();
-          window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}${hashPath}${restHash ? `?${restHash}` : ''}`);
-        } else {
-          params.delete('note');
-          const rest = params.toString();
-          navigate({ pathname: location.pathname, search: rest ? `?${rest}` : '', hash: location.hash }, { replace: true });
-        }
-      }
-    }
-
-    const catParam = params.get('category') || params.get('cat') || params.get('tab');
-    if (catParam === 'revshell') {
-      // The generator moved to its own section; old deep links land there.
-      navigate('/reverse-shell', { replace: true });
-      return;
-    }
-    if (catParam && !isFullscreen) {
-      setSelectedCategory(catParam);
-      setViewMode('tactical');
-    }
-  // location.hash is only forwarded on redirect; re-running on hash changes would re-apply deep links.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultMode, isFullscreen, location.pathname, location.search, allActiveNotes, setActiveObsidianNote, navigate]);
-
-  // /notes?new=1 (from the dock's empty state) opens the new-note modal once, then drops the param.
-  useEffect(() => {
-    if (exitingFromPathRef.current !== null) {
-      if (exitingFromPathRef.current === location.pathname) return;
-      exitingFromPathRef.current = null;
-    }
-    if (renderWindowPath !== null && typeof window !== 'undefined' && window.location.pathname !== renderWindowPath) {
-      return;
-    }
-    const params = new URLSearchParams(location.search);
-    if (params.get('new') !== '1') return;
-    setNewNoteInitialDir(undefined);
-    setIsNewCptsModalOpen(true);
-    params.delete('new');
-    const rest = params.toString();
-    navigate({ pathname: location.pathname, search: rest ? `?${rest}` : '' }, { replace: true });
-  }, [location.pathname, location.search, navigate, renderWindowPath]);
+  const { exitingFromPathRef } = useFieldManualRouteSync({
+    location,
+    navigate,
+    defaultMode,
+    isFullscreen,
+    allActiveNotes,
+    setActiveObsidianNote,
+    setViewMode,
+    setObsidianNavView,
+    setSelectedCategory,
+    setNewNoteInitialDir,
+    setIsNewCptsModalOpen,
+  });
 
   // New Custom Command Form Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -597,267 +317,45 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     });
   }, [cheatsheets, selectedCategory, deferredSearchQuery]);
 
-  // Hierarchical Directory Tree & Categories computed from active notes
-  const tagFilteredNotes = useMemo(() => {
-    if (!activeTag) return allActiveNotes;
-    // A tag matches its own notes plus those of any nested child (a includes a/b).
-    const ids = new Set<string>();
-    for (const [key, noteIds] of noteIndex.tags) {
-      if (key === activeTag || key.startsWith(`${activeTag}/`)) noteIds.forEach((id) => ids.add(id));
-    }
-    return allActiveNotes.filter((n) => ids.has(n.id));
-  }, [allActiveNotes, activeTag, noteIndex]);
-
-  // The Search panel looks at every note, ignoring the tag filter.
-  const searchResults = useMemo(() => {
-    if (!deferredTreeQuery.trim()) return [];
-    const q = deferredTreeQuery.toLowerCase().trim();
-    // Body text is only searched from 2 characters up; titles and tags match from 1.
-    const searchBody = q.length >= 2;
-    return allActiveNotes.filter((n) => {
-      return (
-        n.title.toLowerCase().includes(q) ||
-        (n.titleEn && n.titleEn.toLowerCase().includes(q)) ||
-        (n.titleHe && n.titleHe.toLowerCase().includes(q)) ||
-        n.category.toLowerCase().includes(q) ||
-        (n.subCategory && n.subCategory.toLowerCase().includes(q)) ||
-        (n.tags && n.tags.some((t) => t.toLowerCase().includes(q))) ||
-        (searchBody && n.rawMarkdown && n.rawMarkdown.toLowerCase().includes(q))
-      );
-    });
-  }, [allActiveNotes, deferredTreeQuery]);
-
-  const handleSelectTag = useCallback((tag: string | null) => {
-    setActiveTag(tag);
-    if (tag) {
-      setObsidianNavView('files');
-      setLeftView('files');
-    }
-  }, []);
-
-  const cptsFileTree = useMemo(() => buildCptsFileTree(tagFilteredNotes), [tagFilteredNotes]);
-
-  // Persist expanded tree folders
-  useEffect(() => {
-    try {
-      localStorage.setItem('zerobox_obsidian_expanded_folders', JSON.stringify(expandedTreeFolders));
-    } catch { /* best effort */ }
-  }, [expandedTreeFolders]);
-
-  // List of all existing folder paths for new note modal
-  const existingDirectories = useMemo(() => {
-    const set = new Set<string>();
-    for (const n of allActiveNotes) {
-      if (n.relPath && n.relPath.includes('/')) {
-        const parts = n.relPath.split('/');
-        set.add(parts.slice(0, -1).join('/'));
-      }
-    }
-    return Array.from(set).sort();
-  }, [allActiveNotes]);
+  const { searchResults, handleSelectTag, cptsFileTree, existingDirectories } = useNotesTree({
+    allActiveNotes,
+    activeTag,
+    noteIndex,
+    deferredTreeQuery,
+    expandedTreeFolders,
+    setActiveTag,
+    setObsidianNavView,
+    setLeftView,
+  });
 
   // Multi-Pane Split Workspace State
-  const [isSplitView, setIsSplitView] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('zerobox_workspace_is_split_v1') === 'true';
-    } catch {
-      return false;
-    }
+  const {
+    isSplitView,
+    splitOrientation,
+    secondaryOpenNotes,
+    secondaryActiveNote,
+    activePaneId,
+    setActivePaneId,
+    activePanelPaneId,
+    liveActiveNote,
+    panelBacklinks,
+    panelOutline,
+    handleSelectSecondaryTab,
+    handleOpenSecondaryNote,
+    handleCloseSecondaryTab,
+    handleCloseSecondaryPane,
+    handleToggleSplit,
+    handleMoveTabBetweenPanes,
+  } = useWorkspaceSplitPanes({
+    noteIndex,
+    allActiveNotes,
+    deletedNoteIds,
+    activeObsidianNote,
+    openObsidianNotes,
+    setOpenObsidianNotes,
+    handleCloseObsidianTab,
+    handleOpenObsidianNote,
   });
-
-  const [splitOrientation, setSplitOrientation] = useState<SplitOrientation>(() => {
-    try {
-      const saved = localStorage.getItem('zerobox_workspace_split_orient_v1');
-      return saved === 'vertical' ? 'vertical' : 'horizontal';
-    } catch {
-      return 'horizontal';
-    }
-  });
-
-  const [secondaryOpenNotes, setSecondaryOpenNotes] = useState<CptsNoteEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem('zerobox_workspace_secondary_tabs_v1');
-      if (saved) {
-        const ids: string[] = JSON.parse(saved);
-        const resolved = ids.map((id) => getNoteById(id)).filter(Boolean) as CptsNoteEntry[];
-        if (resolved.length > 0) return resolved;
-      }
-    } catch { /* best effort */ }
-    return [];
-  });
-
-  const [secondaryActiveNoteId, setSecondaryActiveNoteId] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('zerobox_workspace_secondary_active_v1') || null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [activePaneId, setActivePaneId] = useState<'pane-primary' | 'pane-secondary'>('pane-primary');
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('zerobox_workspace_is_split_v1', isSplitView ? 'true' : 'false');
-      localStorage.setItem('zerobox_workspace_split_orient_v1', splitOrientation);
-      localStorage.setItem('zerobox_workspace_secondary_tabs_v1', JSON.stringify(secondaryOpenNotes.map((n) => n.id)));
-      if (secondaryActiveNoteId) {
-        localStorage.setItem('zerobox_workspace_secondary_active_v1', secondaryActiveNoteId);
-      } else {
-        localStorage.removeItem('zerobox_workspace_secondary_active_v1');
-      }
-    } catch { /* best effort */ }
-  }, [isSplitView, splitOrientation, secondaryOpenNotes, secondaryActiveNoteId]);
-
-  const secondaryActiveNote = useMemo(() => {
-    if (!secondaryActiveNoteId) return secondaryOpenNotes[0] || null;
-    return secondaryOpenNotes.find((n) => n.id === secondaryActiveNoteId) || secondaryOpenNotes[0] || null;
-  }, [secondaryOpenNotes, secondaryActiveNoteId]);
-
-  // The right panel and status bar follow the active pane. Tab entries are snapshots taken at open
-  // time, so the live copy comes from the shared index.
-  const activePanelPaneId: 'pane-primary' | 'pane-secondary' =
-    isSplitView && activePaneId === 'pane-secondary' && secondaryActiveNote ? 'pane-secondary' : 'pane-primary';
-  const activePanelSnapshot = activePanelPaneId === 'pane-secondary' ? secondaryActiveNote : activeObsidianNote;
-  const liveActiveNote = activePanelSnapshot ? (noteIndex.byId.get(activePanelSnapshot.id) ?? activePanelSnapshot) : null;
-  const panelBacklinks = useMemo(
-    () => (liveActiveNote ? getBacklinksForNote(liveActiveNote.id, noteIndex) : []),
-    [liveActiveNote, noteIndex],
-  );
-  const panelOutline = useMemo(
-    () => (liveActiveNote ? getNoteOutline(liveActiveNote.rawMarkdown ?? '', liveActiveNote) : []),
-    [liveActiveNote],
-  );
-
-  const handleSelectSecondaryTab = useCallback((noteId: string) => {
-    setSecondaryActiveNoteId(noteId);
-  }, []);
-
-  const handleOpenSecondaryNote = useCallback((note: CptsNoteEntry) => {
-    setSecondaryOpenNotes((prev) => {
-      if (!prev.some((n) => n.id === note.id)) {
-        return [...prev, note];
-      }
-      return prev;
-    });
-    setSecondaryActiveNoteId(note.id);
-  }, []);
-
-  const handleCloseSecondaryTab = useCallback((noteId: string) => {
-    setSecondaryOpenNotes((prev) => {
-      const idx = prev.findIndex((n) => n.id === noteId);
-      if (idx === -1) return prev;
-      const nextNotes = prev.filter((n) => n.id !== noteId);
-      setSecondaryActiveNoteId((current) => {
-        if (current === noteId) {
-          if (nextNotes.length === 0) return null;
-          const nextActive = nextNotes[Math.min(Math.max(0, idx), nextNotes.length - 1)];
-          return nextActive ? nextActive.id : null;
-        }
-        return current;
-      });
-      return nextNotes;
-    });
-  }, []);
-
-  // A deleted note's tab closes, wherever it was deleted (this tab, bulk delete, or another tab via the storage
-  // sync). A tab whose editor still holds unsaved edits stays open, with a one-time warning, so they are not lost.
-  const warnedDeletedRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const dead = new Set(deletedNoteIds);
-    for (const id of warnedDeletedRef.current) if (!dead.has(id)) warnedDeletedRef.current.delete(id);
-    if (dead.size === 0) return;
-    const closeDead = (notes: CptsNoteEntry[], close: (id: string) => void) => {
-      for (const n of notes) {
-        if (!dead.has(n.id)) continue;
-        if (!hasUnsavedNoteEdits(n.id)) {
-          close(n.id);
-        } else if (!warnedDeletedRef.current.has(n.id)) {
-          warnedDeletedRef.current.add(n.id);
-          useToastStore.getState().addToast({
-            type: 'warning',
-            title: 'Open note was deleted',
-            message: 'Its tab stays open with your unsaved edits; copy them before closing it, they cannot be saved.',
-          });
-        }
-      }
-    };
-    closeDead(openObsidianNotes, handleCloseObsidianTab);
-    closeDead(secondaryOpenNotes, handleCloseSecondaryTab);
-  }, [deletedNoteIds, openObsidianNotes, secondaryOpenNotes, handleCloseObsidianTab, handleCloseSecondaryTab]);
-
-  const handleCloseSecondaryPane = useCallback(() => {
-    setOpenObsidianNotes((prev) => {
-      const merged = [...prev];
-      for (const sn of secondaryOpenNotes) {
-        if (!merged.some((pn) => pn.id === sn.id)) {
-          merged.push(sn);
-        }
-      }
-      return merged;
-    });
-    setSecondaryOpenNotes([]);
-    setSecondaryActiveNoteId(null);
-    setIsSplitView(false);
-  }, [secondaryOpenNotes]);
-
-  const handleToggleSplit = useCallback((orientation?: SplitOrientation) => {
-    setIsSplitView((prev) => {
-      if (prev) {
-        if (!orientation || orientation === splitOrientation) {
-          setOpenObsidianNotes((currentPrimary) => {
-            const merged = [...currentPrimary];
-            for (const sn of secondaryOpenNotes) {
-              if (!merged.some((pn) => pn.id === sn.id)) {
-                merged.push(sn);
-              }
-            }
-            return merged;
-          });
-          setSecondaryOpenNotes([]);
-          setSecondaryActiveNoteId(null);
-          return false;
-        }
-        setSplitOrientation(orientation);
-        return true;
-      }
-
-      const nextOrient = orientation || 'horizontal';
-      setSplitOrientation(nextOrient);
-
-      if (secondaryOpenNotes.length === 0) {
-        if (openObsidianNotes.length > 1) {
-          const tabToMove = openObsidianNotes[openObsidianNotes.length - 1];
-          setSecondaryOpenNotes([tabToMove]);
-          setSecondaryActiveNoteId(tabToMove.id);
-          setOpenObsidianNotes((p) => p.filter((t) => t.id !== tabToMove.id));
-        } else {
-          const alt = allActiveNotes.find((n) => n.id !== activeObsidianNote?.id) || allActiveNotes[0];
-          if (alt) {
-            setSecondaryOpenNotes([alt]);
-            setSecondaryActiveNoteId(alt.id);
-          }
-        }
-      }
-      return true;
-    });
-  }, [splitOrientation, secondaryOpenNotes, openObsidianNotes, allActiveNotes, activeObsidianNote?.id]);
-
-  const handleMoveTabBetweenPanes = useCallback((tabId: string, fromPane: 'pane-primary' | 'pane-secondary') => {
-    if (fromPane === 'pane-primary') {
-      const noteToMove = openObsidianNotes.find((n) => n.id === tabId);
-      if (!noteToMove || openObsidianNotes.length <= 1) return;
-      handleCloseObsidianTab(tabId);
-      handleOpenSecondaryNote(noteToMove);
-      setActivePaneId('pane-secondary');
-    } else {
-      const noteToMove = secondaryOpenNotes.find((n) => n.id === tabId);
-      if (!noteToMove || secondaryOpenNotes.length <= 1) return;
-      handleCloseSecondaryTab(tabId);
-      handleOpenObsidianNote(noteToMove);
-      setActivePaneId('pane-primary');
-    }
-  }, [openObsidianNotes, secondaryOpenNotes, handleCloseObsidianTab, handleOpenSecondaryNote, handleCloseSecondaryTab, handleOpenObsidianNote]);
 
   const renderWorkspacePanes = (mode: 'page' | 'popout') => {
     if (!activeObsidianNote) return null;
