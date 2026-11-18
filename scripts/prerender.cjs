@@ -80,7 +80,7 @@ try {
   heroShots = [];
 }
 const heroAssets = heroShots.flatMap((x) => (x.srcset || []).map((v) => v.src));
-const staticShellAssets = [CSS_HREF, '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2', ...heroAssets];
+const staticShellAssets = [CSS_HREF, '/app-theme-init.js', '/fonts/inter-latin-var.woff2', '/fonts/jetbrains-mono-latin-var.woff2', ...heroAssets];
 const shellAssets = [...new Set([...[...shell.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]), ...staticShellAssets])];
 const swPath = path.join(distDir, 'sw.js');
 if (fs.existsSync(swPath)) {
@@ -235,7 +235,7 @@ const FAQ = [
   ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under the ZeroBox Source-Available Non-Commercial License (ZNSL 1.0).'],
   ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, the app has no telemetry, and your data stays on your device.'],
   ['Where is my data stored?', 'Only in your own browser, in LocalStorage and IndexedDB. Nothing is uploaded to a server. Clearing site data erases it, so use the built-in JSON backup and restore to keep a copy.'],
-  ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table and grid boards that runs in your browser and works offline.'],
+  ['What is a CTF tracker?', 'A CTF tracker is a place to log the machines and challenges you work on, with each target\'s status, IP address, notes, credentials and flags. ZeroBox is a free CTF tracker with Kanban, table, grid and attack graph views that runs in your browser and works offline.'],
   ['Which platforms and machines are supported?', `ZeroBox ships with a pre-loaded catalog of ${nf.format(CTF_MACHINES)} CTF machines across Hack The Box, TryHackMe, Proving Grounds and VulnHub${GUIDED_LABS > 0 ? `, plus ${GUIDED_LABS} guided labs` : ""}. It also has ${model.proLabs.length} Pro Lab presets, such as Dante, Zephyr and Offshore, that fill in only the public lab name, difficulty and official link when you add a Pro Lab as your own target. You can also add custom targets for any other lab or live CTF. Progress is tracked locally because ZeroBox does not connect to external accounts.`],
   ['Which certification exams can I simulate?', `The exam simulator includes timed practice for ${EXAM_TRACKS.length} tracks: ${listAnd(model.examTrackDurations)}, with live clocks, point burndown against pass thresholds, rabbit-hole warnings, proof uploads and exportable submission reports.`],
   ['Does ZeroBox comply with Hack The Box rules for active machines and Pro Labs?', 'Yes. ZeroBox strictly enforces Hack The Box Acceptable Use Policy (AUP §8.2). Active seasonal machines and enterprise Pro Labs are limited to public listing metadata (name, scope/host count, difficulty, and official link). Walkthroughs, attack vectors, intel hints, flags, and writeups are strictly excluded. ZeroBox operates entirely offline in your browser and transmits no network telemetry.'],
@@ -243,7 +243,7 @@ const FAQ = [
 ];
 
 const CARD_DESC = {
-  '/tracker/': 'CTF progress tracker: Kanban, table and grid board for Hack The Box and TryHackMe machines.',
+  '/tracker/': 'CTF progress tracker: Kanban, table, grid and attack graph board for Hack The Box, TryHackMe, Proving Grounds and VulnHub machines.',
   '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
   '/reverse-shell/': 'Reverse shell generator that fills in your LHOST and LPORT.',
   '/cheatsheets/': 'Interactive pentest cheatsheets with dynamic LHOST, LPORT and IP substitution.',
@@ -296,7 +296,7 @@ const webAppLd = {
         'Free offline CTF tracker for Hack The Box, TryHackMe, Proving Grounds, VulnHub and OSCP/CPTS prep with a Kanban board, reverse shell cheatsheet and 24h OSCP exam simulator.',
       keywords: 'CTF tracker, HTB tracker, Hack The Box tracker, TryHackMe tracker, OSCP tracker, OSCP exam simulator, CTF progress tracker, pentest notes, CPTS',
       featureList: [
-        'Kanban, table and grid CTF tracker for Hack The Box and TryHackMe machines',
+        'Kanban, table, grid and attack graph CTF tracker for Hack The Box, TryHackMe, Proving Grounds and VulnHub machines',
         'OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE exam simulator with scoring and pacing',
         'Attack graph of hosts, services and credentials',
         'Multi-host nmap XML import',
@@ -430,9 +430,9 @@ const GUIDES = [
 // guide's own description is the fallback for any guide added later.
 const GUIDE_CARD = {
   '/oscp-exam-scoring-and-time-budget/': ['OSCP exam scoring and time budget', 'Point structure, passing combinations and an hour-by-hour 24h plan.'],
-  '/tj-null-list/': ['TJ Null OSCP list tracker', 'What the list is, how to work it, and the HTB boxes from it you can track.'],
+  '/tj-null-list/': ['TJ Null OSCP list tracker', 'What the list is, how to work it, and the HTB and Proving Grounds boxes from it you can track.'],
   '/oscp-report-template/': ['OSCP report template', 'A Markdown report skeleton with a finding template and a CVSS 3.1 example.'],
-  '/htb-progress-tracker/': ['HTB and THM progress tracker', 'What the platforms do not track, and a workflow that fills the gap.'],
+  '/htb-progress-tracker/': ['CTF and OSCP progress tracker', 'What the platforms do not track across HTB, THM, PG and VulnHub, and an offline workflow that fills the gap.'],
   '/cpts-exam-guide/': ['HTB CPTS exam guide', 'Exam format, flags, passing requirement and a day-by-day pacing plan.'],
 };
 const guidePages = getGuides();

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus, type SortOption } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
+import { toast } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { playCyberSound } from '../../utils/helpers';
 import { afterFirstPaint } from '../../utils/afterFirstPaint';
@@ -233,11 +234,58 @@ export const TrackerView: React.FC = () => {
 
     // Deep link directly to a specific target machine modal
     const targetParam = params.get('target') || params.get('machine');
-    if (targetParam && machines.length > 0) {
-      const q = targetParam.toLowerCase().trim();
-      const match = machines.find((m) => m.id.toLowerCase() === q || m.name.toLowerCase() === q);
-      if (match) {
-        setSelectedMachineId(match.id);
+    if (targetParam) {
+      if (!isCatalogLoaded) void loadCatalog();
+      if (machines.length > 0) {
+        const q = targetParam.toLowerCase().trim();
+        const match = machines.find((m) => m.id.toLowerCase() === q || m.name.toLowerCase() === q);
+        if (match) {
+          setSelectedMachineId(match.id);
+        }
+      }
+    }
+
+    // Opt-in "Add to my tracker" action from static guides (creates a Custom target once catalog is ready)
+    const addCustomParam = params.get('addCustom');
+    if (addCustomParam) {
+      if (!isCatalogLoaded) {
+        void loadCatalog();
+      } else {
+        const rawName = addCustomParam.trim().slice(0, 64);
+        if (rawName) {
+          const existing = liveMachines.find((m) => m.name.toLowerCase() === rawName.toLowerCase());
+          if (existing) {
+            setSelectedMachineId(existing.id);
+            toast.info(`Opened "${existing.name}" in your tracker.`);
+          } else {
+            const osRaw = params.get('os') || 'Linux';
+            const validOs: OperatingSystem = ['Linux', 'Windows', 'Android', 'BSD', 'macOS', 'Other'].includes(osRaw)
+              ? (osRaw as OperatingSystem)
+              : 'Linux';
+            const certRaw = params.get('cert');
+            addCustomMachine({
+              name: rawName,
+              ip: '',
+              os: validOs,
+              platform: 'Custom',
+              difficulty: 'Medium',
+              status: 'backlog',
+              tags: ['TJ Null'],
+              certifications: certRaw && ['OSCP', 'CPTS', 'CRTO', 'OSEP', 'OSWE', 'CWEE'].includes(certRaw) ? [certRaw as 'OSCP'] : [],
+              timeSpentSeconds: 0,
+            });
+            const created = useCtfStore.getState().machines.find((m) => m.name.toLowerCase() === rawName.toLowerCase());
+            if (created) setSelectedMachineId(created.id);
+            toast.success(`Added "${rawName}" as a Custom target.`);
+          }
+        }
+        const cleaned = new URLSearchParams(location.search);
+        cleaned.delete('addCustom');
+        cleaned.delete('os');
+        cleaned.delete('cert');
+        const nextSearch = cleaned.toString();
+        navigate({ pathname: location.pathname, search: nextSearch ? `?${nextSearch}` : '' }, { replace: true });
+        return;
       }
     }
 
@@ -278,7 +326,7 @@ export const TrackerView: React.FC = () => {
     if (Object.keys(updates).length > 0) {
       setFilters(updates);
     }
-  }, [location.search, machines, setFilters, setSelectedMachineId]);
+  }, [location.pathname, location.search, machines, liveMachines, isCatalogLoaded, loadCatalog, addCustomMachine, navigate, setFilters, setSelectedMachineId]);
 
   // Global search keyboard shortcut ('/') — Ctrl+K / Cmd+K belongs exclusively to CommandPalette
   React.useEffect(() => {

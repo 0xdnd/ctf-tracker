@@ -2,11 +2,11 @@
   {
     "path": "/tracker/",
     "title": "CTF Machine Tracker: HTB, THM, PG & VulnHub | ZeroBox",
-    "description": "Track Hack The Box, TryHackMe, Proving Grounds and VulnHub machines on a Kanban, table or grid board. Free, with IPs, notes and progress stored offline.",
+    "description": "Track Hack The Box, TryHackMe, Proving Grounds and VulnHub machines on a Kanban, table, grid or attack graph board. Free, with IPs and notes stored offline.",
     "h1": "CTF tracker for HTB, TryHackMe, Proving Grounds and VulnHub machines",
     "intro": "Keep every Hack The Box, TryHackMe, Proving Grounds, VulnHub and lab target in one board instead of scattered notes. Move machines through your own workflow, record IPs and findings, and pick up where you left off, all stored locally in your browser.",
     "bullets": [
-      "Kanban, table and grid views of your machines, with search and filters",
+      "Kanban, table, grid and attack graph views of your machines, with search and filters",
       "Pre-loaded machine catalog for Hack The Box, TryHackMe, Proving Grounds and VulnHub",
       "Per-machine detail with IP address, notes and status",
       "Add your own custom targets for any CTF or lab",
@@ -104,7 +104,7 @@
   {
     "path": "/analytics/",
     "title": "Pentest Skill Radar & Progress Analytics | ZeroBox",
-    "description": "See your hacking progress with a skill radar, 90-day activity heatmap, difficulty breakdown and solve-time benchmarks across your HTB and THM machines.",
+    "description": "See your hacking progress with a skill radar, 90-day activity heatmap, difficulty breakdown and solve-time benchmarks across HTB, THM, PG and VulnHub.",
     "h1": "Analytics and skill radar",
     "intro": "Turn your solved machines into a picture of where you are strong and where to practice next. Charts are computed from your own tracker data, locally.",
     "bullets": [

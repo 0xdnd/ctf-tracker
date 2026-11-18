@@ -102,6 +102,8 @@ export const OperatorFlexCardModal: React.FC = () => {
 
   const htbPwned = machines.filter(m => m.platform === 'HTB' && (m.status === 'root' || m.status === 'completed' || m.status === 'foothold')).length;
   const thmPwned = machines.filter(m => m.platform === 'THM' && (m.status === 'root' || m.status === 'completed' || m.status === 'foothold')).length;
+  const pgPwned = machines.filter(m => m.platform === 'PG' && (m.status === 'root' || m.status === 'completed' || m.status === 'foothold')).length;
+  const vhPwned = machines.filter(m => m.platform === 'VulnHub' && (m.status === 'root' || m.status === 'completed' || m.status === 'foothold')).length;
 
   const oscpTrack = TRACK_BY_ID.get('tjnull-oscp');
   const { done: oscpPwned, total: oscpTotal, percent: oscpPct } = oscpTrack
@@ -117,7 +119,7 @@ export const OperatorFlexCardModal: React.FC = () => {
     if (!flexCardModalOpen || mode !== 'achievement') return;
     renderCanvas();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- renderCanvas is redefined each render; redraw only when these inputs change
-  }, [flexCardModalOpen, mode, totalPwned, htbPwned, thmPwned, callsign, rank.tier, gamification.totalXp]);
+  }, [flexCardModalOpen, mode, totalPwned, htbPwned, thmPwned, pgPwned, vhPwned, callsign, rank.tier, gamification.totalXp]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -211,9 +213,10 @@ export const OperatorFlexCardModal: React.FC = () => {
       ctx.fillText(sub, x + 20, y + 115);
     };
 
-    drawStatCard(60, 175, 330, 140, 'Total compromised targets', `${totalPwned}`, `Roster: ${totalMachines} boot-to-root labs`);
-    drawStatCard(415, 175, 330, 140, 'Hack The Box', `${htbPwned} solves`, 'Labs pwned on HTB');
-    drawStatCard(770, 175, 370, 140, 'TryHackMe', `${thmPwned} solves`, 'Rooms and lab challenges');
+    drawStatCard(60, 175, 255, 140, 'Total compromised', `${totalPwned}`, `Roster: ${totalMachines} labs`);
+    drawStatCard(335, 175, 255, 140, 'Hack The Box', `${htbPwned} solves`, 'Labs pwned on HTB');
+    drawStatCard(610, 175, 255, 140, 'TryHackMe', `${thmPwned} solves`, 'Rooms and challenges');
+    drawStatCard(885, 175, 255, 140, 'PG & VulnHub', `${pgPwned + vhPwned} solves`, `${pgPwned} PG · ${vhPwned} VulnHub`);
 
     // 4. Track progress rows
     const drawTrackRow = (x: number, y: number, w: number, h: number, title: string, progressText: string, pct: number) => {
@@ -246,8 +249,8 @@ export const OperatorFlexCardModal: React.FC = () => {
       }
     };
 
-    drawTrackRow(60, 335, 510, 68, 'TJ_Null OSCP 2024 track', `${oscpPwned}/${oscpTotal} (${oscpPct}%)`, Math.max(12, oscpPct));
-    drawTrackRow(595, 335, 545, 68, 'CPTS trophy room track', `${cptsPwned}/${cptsTotal} (${cptsPct}%)`, Math.max(8, cptsPct));
+    drawTrackRow(60, 335, 510, 68, 'TJ Null OSCP track', `${oscpPwned}/${oscpTotal} (${oscpPct}%)`, oscpPct);
+    drawTrackRow(595, 335, 545, 68, 'CPTS trophy room track', `${cptsPwned}/${cptsTotal} (${cptsPct}%)`, cptsPct);
 
     // 5. Unlocked trophies (or default focus areas)
     const drawSkillBadge = (x: number, y: number, text: string) => {
@@ -296,7 +299,7 @@ export const OperatorFlexCardModal: React.FC = () => {
 
     ctx.fillStyle = C.muted;
     ctx.font = `12px ${SANS}`;
-    ctx.fillText('Built by Daniel Dayan (@0xdnd)  ·  0xdnd.github.io', 60, 545);
+    ctx.fillText('Built by Daniel Dayan (@0xdnd)  ·  ctftracker.com', 60, 545);
 
     ctx.fillStyle = C.muted;
     ctx.font = `13px ${MONO}`;

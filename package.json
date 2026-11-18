@@ -1,7 +1,7 @@
 {
   "name": "zerobox",
   "productName": "ZeroBox",
-  "description": "ZeroBox: free, offline CTF tracker for Hack The Box & TryHackMe. Track capture the flag machines, loot, notes and OSCP/CPTS exam prep in one dashboard.",
+  "description": "ZeroBox: free, offline CTF tracker for Hack The Box, TryHackMe, Proving Grounds and VulnHub. Track machines across Kanban, table, grid and attack graph views, store loot and notes locally, and simulate OSCP/CPTS exams.",
   "keywords": [
     "ctf",
     "ctf-tracker",

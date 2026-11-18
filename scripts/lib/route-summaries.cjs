@@ -2,7 +2,7 @@
 // Kept out of src/seo/routeMeta.json because that file ships in the app bundle. {{tokens}} are filled by prerender.cjs.
 module.exports = {
   '/tracker/': [
-    'The tracker is a board for the machines you work on. Each target moves through five stages, from Backlog to Active recon, Foothold, System pwned and Completed, and keeps its own IP address, notes, credentials and flags. Switch between the Kanban board, a sortable table and a grid, and press Ctrl+K to search the whole catalog.',
+    'The tracker is a board for the machines you work on. Each target moves through five stages, from Backlog to Active recon, Foothold, System pwned and Completed, and keeps its own IP address, notes, credentials and flags. Switch between the Kanban board, a sortable table, a card grid and the attack graph, and press Ctrl+K to search the whole catalog.',
     'Everything is saved in your own browser. There is no account and no server, so nothing leaves your device. Export a JSON backup to move your progress to another browser, or paste a list of machines you already solved to mark them done in one step.',
   ],
   '/exam/': [

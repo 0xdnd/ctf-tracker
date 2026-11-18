@@ -18,30 +18,34 @@
     <meta name="description" content="Free offline CTF tracker for HTB, THM, Proving Grounds and VulnHub with an OSCP exam simulator, cheatsheets and a pentest methodology checklist." />
     <meta name="keywords" content="ctf tracker, oscp exam simulator, hack the box tracker, tryhackme room tracker, tj null list, cpts tracker, reverse shell generator, offensive security dashboard" />
     <meta name="theme-color" content="#09090b" />
-    <title>CTF Tracker + OSCP Exam Simulator for HTB &amp; THM | ZeroBox</title>
+    <title>CTF Tracker + OSCP Exam Simulator for HTB, THM, PG &amp; VulnHub | ZeroBox</title>
 
     <script>document.documentElement.classList.add('js');</script>
+    <script src="/app-theme-init.js"></script>
     <style>
       /* Boot splash: JS users only, invisible for the first 300ms so fast loads never see it. React replaces #root children on mount. */
       #boot-splash{display:none}
       .js [data-prerender]{display:none}
-      .js #boot-splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#09090b;color:#a1a1aa;font:500 14px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em;opacity:0;animation:boot-splash-in .3s ease-out .3s forwards}
+      .js #boot-splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#09090b;color:#a1a1aa;font:500 14px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em;opacity:0;animation:boot-splash-in .22s ease-out .3s forwards}
+      .light.js #boot-splash{background:#fafafa;color:#52525b}
       .bs-stage{position:relative;width:260px;height:190px}
-      .bs-stage:after{content:"";position:absolute;left:74px;bottom:-8px;width:112px;height:30px;background:radial-gradient(closest-side,rgba(59,130,246,.35),transparent);animation:bs-g 3s ease-in-out infinite}
-      .bs-stage img{position:absolute;left:78px;bottom:0;width:104px;height:104px;z-index:1;transform-origin:50% 100%;animation:bs-b 3s ease-out infinite}
-      .bs-c{position:absolute;left:50%;top:128px;z-index:0;display:flex;align-items:center;gap:5px;white-space:nowrap;padding:4px 9px;border:1px solid;border-radius:999px;background:#18181b;font:600 11px/1.2 system-ui,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.45);opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) scale(.3);animation:bs-p 3s infinite both}
-      .bs-i{width:12px;height:12px;fill:currentColor;flex:none}
-      .bs-c1{color:#86efac;border-color:rgba(134,239,172,.4);--x:-70px;--y:-66px;--r:-6deg}.bs-c2{color:#fda4af;border-color:rgba(253,164,175,.4);--x:-60px;--y:-108px;--r:6deg;animation-delay:.12s}.bs-c3{color:#5eead4;border-color:rgba(94,234,212,.4);--x:66px;--y:-108px;--r:-6deg;animation-delay:.24s}.bs-c4{color:#fef08a;border-color:rgba(254,240,138,.4);--x:72px;--y:-66px;--r:6deg;animation-delay:.36s}
+      .bs-stage:after{content:"";position:absolute;left:74px;bottom:-8px;width:112px;height:26px;background:radial-gradient(closest-side,rgba(14,165,233,.14),transparent)}
+      .light .bs-stage:after{background:radial-gradient(closest-side,rgba(9,9,11,.08),transparent)}
+      .bs-stage img{position:absolute;left:78px;bottom:0;width:104px;height:104px;z-index:1;transform-origin:50% 100%;animation:bs-b 2.8s cubic-bezier(.22,1,.36,1) infinite}
+      .bs-c{position:absolute;left:50%;top:128px;z-index:0;display:flex;align-items:center;gap:5px;white-space:nowrap;padding:4px 9px;border:1px solid;border-radius:999px;background:#121215;font:600 11px/1.2 system-ui,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.3);opacity:0;transform:translate(-50%,-50%) scale(.96);animation:bs-p 3s cubic-bezier(.22,1,.36,1) infinite both}
+      .light .bs-c{background:#ffffff;box-shadow:0 1px 3px rgba(9,9,11,.08)}
+      .bs-i{width:12px;height:12px;fill:currentColor;flex:none}
+      .bs-c1{color:#86efac;border-color:rgba(134,239,172,.35);--x:-70px;--y:-66px;--r:-4deg}.bs-c2{color:#fda4af;border-color:rgba(253,164,175,.35);--x:-60px;--y:-108px;--r:4deg;animation-delay:.12s}.bs-c3{color:#5eead4;border-color:rgba(94,234,212,.35);--x:66px;--y:-108px;--r:-4deg;animation-delay:.24s}.bs-c4{color:#fde68a;border-color:rgba(253,230,138,.35);--x:72px;--y:-66px;--r:4deg;animation-delay:.36s}
+      .light .bs-c1{color:#15803d;border-color:rgba(21,128,61,.28)}.light .bs-c2{color:#be123c;border-color:rgba(190,18,60,.28)}.light .bs-c3{color:#0f766e;border-color:rgba(15,118,110,.28)}.light .bs-c4{color:#a16207;border-color:rgba(161,98,7,.28)}
       .bs-t{display:flex;flex-direction:column;align-items:center;gap:6px}
-      .bs-n{font:700 20px/1.1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:-.01em;background:linear-gradient(90deg,#7dfcff,#38bdf8 25%,#2f7bff 50%,#38bdf8 75%,#7dfcff) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 0 8px rgba(56,189,248,.35));animation:bs-s 2.6s linear infinite}
-      .bs-l{font:500 11px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;text-transform:uppercase;letter-spacing:.2em;color:#71717a;margin-right:-.2em}
-      .bs-d{animation:bs-q 1.2s ease-in-out infinite}.bs-d:nth-child(2){animation-delay:.2s}.bs-d:nth-child(3){animation-delay:.4s}
-      @keyframes bs-s{to{background-position:200% 0}}
-      @keyframes bs-q{0%,100%{opacity:.2}40%{opacity:1}}
-      @keyframes bs-p{0%,8%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) scale(.3);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}24%,62%{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(0) scale(1);animation-timing-function:ease-in}78%,100%{opacity:0;transform:translate(-50%,-50%) rotate(calc(var(--r)*-.5)) scale(.3)}}
-      @keyframes bs-b{0%{transform:scaleY(1)}5%{transform:scaleY(.9)}13%{transform:scaleY(1.05)}22%,100%{transform:none}}
-      @keyframes bs-g{0%,100%{opacity:.45}12%{opacity:1}40%{opacity:.6}}
-      @media (prefers-reduced-motion:reduce){.js #boot-splash{animation:boot-splash-in 0s linear .3s forwards}.bs-stage:after,.bs-stage img,.bs-c,.bs-n,.bs-d{animation:none}.bs-c{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y)))}}
+      .bs-n{font:600 20px/1.1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:-.015em;color:#f4f4f5}
+      .light .bs-n{color:#09090b}
+      .bs-l{font:500 11px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;text-transform:uppercase;letter-spacing:.18em;color:#71717a;margin-right:-.18em}
+      .bs-d{animation:bs-q 1.2s ease-out infinite}.bs-d:nth-child(2){animation-delay:.2s}.bs-d:nth-child(3){animation-delay:.4s}
+      @keyframes bs-q{0%,100%{opacity:.25}45%{opacity:1}}
+      @keyframes bs-p{0%,10%{opacity:0;transform:translate(-50%,-50%) scale(.96)}26%,68%{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1)}88%,100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(.97)}}
+      @keyframes bs-b{0%,100%{transform:none}10%{transform:translateY(-2px)}}
+      @media (prefers-reduced-motion:reduce){.js #boot-splash{animation:boot-splash-in 0s linear .3s forwards}.bs-stage img,.bs-c,.bs-d{animation:none}.bs-c{opacity:1;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y)))}}
       @keyframes boot-splash-in{to{opacity:1}}
     </style>
 
@@ -72,7 +76,7 @@
     <meta property="og:site_name" content="ZeroBox" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://ctftracker.com/" />
-    <meta property="og:title" content="CTF Tracker + OSCP Exam Simulator for HTB &amp; THM | ZeroBox" />
+    <meta property="og:title" content="CTF Tracker + OSCP Exam Simulator for HTB, THM, PG &amp; VulnHub | ZeroBox" />
     <meta property="og:description" content="Free offline CTF tracker for HTB, THM, Proving Grounds and VulnHub with an OSCP exam simulator, cheatsheets and a pentest methodology checklist." />
     <meta property="og:image" content="https://ctftracker.com/og.png?v=2" />
     <meta property="og:image:width" content="1200" />
@@ -82,7 +86,7 @@
     <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://ctftracker.com/" />
-    <meta name="twitter:title" content="CTF Tracker + OSCP Exam Simulator for HTB &amp; THM | ZeroBox" />
+    <meta name="twitter:title" content="CTF Tracker + OSCP Exam Simulator for HTB, THM, PG &amp; VulnHub | ZeroBox" />
     <meta name="twitter:description" content="Free offline CTF tracker for HTB, THM, Proving Grounds and VulnHub with an OSCP exam simulator, cheatsheets and a pentest methodology checklist." />
     <meta name="twitter:image" content="https://ctftracker.com/og.png?v=2" />
     <meta name="twitter:image:alt" content="ZeroBox logo and the tagline Free offline CTF tracker and OSCP exam simulator, next to a screenshot of the tracker Kanban board on a dark background." />

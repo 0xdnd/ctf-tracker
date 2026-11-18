@@ -69,6 +69,7 @@ export const UpdateControl: React.FC = () => {
 
 export const OperatorDossierModal: React.FC = () => {
   const operatorModalOpen = useCtfStore((s) => s.operatorModalOpen);
+  const machines = useCtfStore((s) => s.machines);
   const [catalog, setCatalog] = React.useState(getLoadedMachinesCatalog);
   useEffect(() => {
     if (!operatorModalOpen || catalog) return;
@@ -77,6 +78,13 @@ export const OperatorDossierModal: React.FC = () => {
     return () => { live = false; };
   }, [operatorModalOpen, catalog]);
   const solved = catalog ? countOwnerSolved(catalog) : null;
+  const pgVhSolved = React.useMemo(
+    () =>
+      machines.filter(
+        (m) => (m.platform === 'PG' || m.platform === 'VulnHub') && (m.status === 'root' || m.status === 'completed')
+      ).length,
+    [machines]
+  );
   const setOperatorModalOpen = useCtfStore((s) => s.setOperatorModalOpen);
   const setLicenseModalOpen = useCtfStore((s) => s.setLicenseModalOpen);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
@@ -159,7 +167,7 @@ export const OperatorDossierModal: React.FC = () => {
                 </div>
 
                 <p className="text-xs text-muted leading-relaxed pt-0.5">
-                  Creator and lead developer of <strong className="font-medium text-primary">ZeroBox</strong>, an offline CTF and lab operations dashboard. Focused on offensive security, penetration testing and exploit engineering.
+                  Creator and lead developer of <strong className="font-medium text-primary">ZeroBox</strong>, an offline CTF tracker and exam simulator across Hack The Box, TryHackMe, Proving Grounds and VulnHub. Focused on offensive security, penetration testing and exploit engineering.
                 </p>
               </div>
             </div>
@@ -338,9 +346,11 @@ export const OperatorDossierModal: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-0.5">
-                <div className="text-primary font-semibold text-base font-mono tabular-nums">{solved ? solved.total : '-'} pwns</div>
-                <div className="text-primary font-medium text-xs">{solved ? `${solved.htb} HTB + ${solved.thm} THM` : '-'} solves</div>
-                <div className="text-[11px] text-muted">Verified pwned targets in active tracker roster.</div>
+                <div className="text-primary font-semibold text-base font-mono tabular-nums">{solved ? solved.total + pgVhSolved : '-'} pwns</div>
+                <div className="text-primary font-medium text-xs">
+                  {solved ? `${solved.htb} HTB + ${solved.thm} THM${pgVhSolved > 0 ? ` + ${pgVhSolved} PG/VH` : ''}` : '-'} solves
+                </div>
+                <div className="text-[11px] text-muted">Verified pwned targets across HTB, THM, PG and VulnHub.</div>
               </div>
 
               <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-0.5">

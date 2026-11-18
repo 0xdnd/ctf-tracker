@@ -26,10 +26,20 @@ export interface ThemeContextValue {
 }
 
 const STORAGE_KEY = 'zerobox-theme-mode';
+const STATIC_SITE_THEME_KEY = 'zb-site-theme';
+
+function persistThemeMode(mode: ThemeMode, effective: 'light' | 'dark') {
+  try {
+    localStorage.setItem(STORAGE_KEY, mode);
+    localStorage.setItem(STATIC_SITE_THEME_KEY, effective);
+  } catch {
+    /* storage unavailable (private mode or quota); theme stays in memory */
+  }
+}
 
 export function getSystemTheme(): 'light' | 'dark' {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
 export function getPrefersReducedMotion(): boolean {
@@ -52,8 +62,13 @@ export function extractCoordinates(
     return { x: event.x, y: event.y };
   }
 
-  // MouseEvent with clientX/clientY
-  if ('clientX' in event && typeof event.clientX === 'number' && event.clientX >= 0) {
+  // MouseEvent with real pointer coordinates (ignore synthetic keyboard click where detail === 0 at 0,0)
+  if (
+    'clientX' in event &&
+    typeof event.clientX === 'number' &&
+    event.clientX >= 0 &&
+    !(event.clientX === 0 && event.clientY === 0 && 'detail' in event && event.detail === 0)
+  ) {
     return { x: event.clientX, y: event.clientY };
   }
 
@@ -108,6 +123,8 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
     root.setAttribute('data-mode', 'light');
     root.style.colorScheme = 'light';
   }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', effective === 'light' ? '#fafafa' : '#09090b');
 
   if (animate) {
     themeTransitionTimeout = window.setTimeout(() => {
@@ -123,12 +140,20 @@ export function useThemeEngine(active = true): ThemeContextValue {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
       if (saved === 'light' || saved === 'dark' || saved === 'system') {
+        if (saved === 'light' || saved === 'dark') {
+          localStorage.setItem(STATIC_SITE_THEME_KEY, saved);
+        }
         return saved;
+      }
+      const legacy = localStorage.getItem(STATIC_SITE_THEME_KEY);
+      if (legacy === 'light' || legacy === 'dark') {
+        localStorage.setItem(STORAGE_KEY, legacy);
+        return legacy;
       }
     } catch {
       // Ignore localStorage errors
     }
-    return 'dark'; // ZeroBox defaults to cyber dark
+    return 'system';
   });
 
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme);
@@ -148,9 +173,9 @@ export function useThemeEngine(active = true): ThemeContextValue {
   // Listen for system theme preference changes
   useEffect(() => {
     if (!active || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
     const handleChange = (e: MediaQueryListEvent) => {
-      const newSys = e.matches ? 'dark' : 'light';
+      const newSys = e.matches ? 'light' : 'dark';
       setSystemTheme(newSys);
       if (theme === 'system') {
         applyThemeToDOM(newSys, true);
@@ -186,7 +211,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
     
     if (eff === currentEff) {
         setThemeState(mode);
-        try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* storage unavailable (private mode or quota); theme stays in memory */ }
+        persistThemeMode(mode, eff);
         return;
     }
 
@@ -194,7 +219,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
       applyThemeToDOM(eff, animate);
       currentEffectiveThemeRef.current = eff;
       setThemeState(mode);
-      try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* storage unavailable (private mode or quota); theme stays in memory */ }
+      persistThemeMode(mode, eff);
     };
 
     if (!getPrefersReducedMotion() && 'startViewTransition' in document) {
@@ -248,9 +273,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
         applyThemeToDOM(nextMode, animate);
         currentEffectiveThemeRef.current = nextMode;
         setThemeState(nextMode);
-        try {
-          localStorage.setItem(STORAGE_KEY, nextMode);
-        } catch { /* storage unavailable (private mode or quota); theme stays in memory */ }
+        persistThemeMode(nextMode, nextMode);
       };
 
       // Use native View Transitions API if available

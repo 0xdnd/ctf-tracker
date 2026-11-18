@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "ZEROBOX // Tactical Cyber Operations Suite",
+        "title": "ZeroBox — Offline CTF Tracker & Exam Simulator",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,
@@ -39,8 +39,8 @@
       "icons/icon.ico"
     ],
     "category": "Utility",
-    "shortDescription": "ZEROBOX // Tactical Cybersecurity Lab",
-    "longDescription": "Tactical cybersecurity HUD, target matrix, methodology engine, notes vault, and CTF/Pentest tracker for offensive security practitioners.",
+    "shortDescription": "ZeroBox — Offline CTF Tracker & Exam Simulator",
+    "longDescription": "Offline-first CTF tracker and 7-track certification exam simulator for Hack The Box, TryHackMe, Proving Grounds and VulnHub, with attack graph, methodology checklist, notes vault and report studio.",
     "linux": {
       "deb": {
         "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]

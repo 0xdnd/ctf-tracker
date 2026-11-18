@@ -400,6 +400,10 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
       const keyEvt = { currentTarget: fakeElement } as unknown as React.KeyboardEvent;
       expect(extractCoordinates(keyEvt)).toEqual({ x: 140, y: 220 });
 
+      // 4b. Synthetic keyboard click on <button> (clientX: 0, clientY: 0, detail: 0) uses element center, never (0, 0)
+      const synthKeyboardClick = { clientX: 0, clientY: 0, detail: 0, currentTarget: fakeElement } as unknown as React.MouseEvent;
+      expect(extractCoordinates(synthKeyboardClick)).toEqual({ x: 140, y: 220 });
+
       // 5. Undefined fallback
       const fallback = extractCoordinates(undefined);
       expect(typeof fallback.x).toBe('number');
@@ -467,7 +471,18 @@ describe('R3 Theme Transitions & Color Contrast Hardening Suite', () => {
       });
 
       expect(localStorage.getItem('zerobox-theme-mode')).toBe('dark');
+      expect(localStorage.getItem('zb-site-theme')).toBe('dark');
       expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+
+    it('migrates zb-site-theme from static pages into zerobox-theme-mode on mount', () => {
+      localStorage.setItem('zb-site-theme', 'light');
+
+      const { result } = renderHook(() => useTheme(), { wrapper: ThemeProvider });
+
+      expect(result.current.effectiveTheme).toBe('light');
+      expect(localStorage.getItem('zerobox-theme-mode')).toBe('light');
+      expect(document.documentElement.classList.contains('light')).toBe(true);
     });
 
     it('handles rapid sequential theme switches without corrupting DOM classes or throwing', () => {

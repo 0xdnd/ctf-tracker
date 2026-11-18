@@ -890,7 +890,7 @@ emit(
     }),
     `<!--/email_off-->`,
     // After the list (and the bottom pager the filter script adds), so the shells come first.
-    ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox cheatsheet inserts your LHOST and LPORT into every shell.', href: '/cheatsheets/', label: 'Generate a shell' }),
+    ctaBox({ title: 'Generate with your values filled in.', body: 'The ZeroBox reverse shell generator inserts your LHOST and LPORT into every payload and listener.', href: '/reverse-shell/', label: 'Generate a shell' }),
     coffeeNote(),
   ].join('\n');
   emit(
