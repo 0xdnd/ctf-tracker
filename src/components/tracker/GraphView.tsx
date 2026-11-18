@@ -1,32 +1,21 @@
 import React, { useState, useRef, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
   Crosshair, 
   X,
   Maximize2,
-  Minimize2,
   Share2,
-  Radio,
-  Focus,
   Network,
-  Download,
-  Undo2,
-  Redo2,
-  Workflow
 } from 'lucide-react';
 import { Machine } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { PlatformIcon, platformFullName } from '../common/PlatformBadge';
+import { PlatformIcon } from '../common/PlatformBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
-import { LINUX_TUX_PATH } from '../common/OsBadge';
 import { classifyMachine } from '../../utils/categoryUtils';
 import { playCyberSound } from '../../utils/helpers';
-import { AttackNodePosition, AttackGraphEdge, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
+import { AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
 import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
 import { computeAutoLayout } from '../../utils/graphAutoLayout';
@@ -48,7 +37,7 @@ import type {
   AttackNodeCardProps,
 } from './graph/types';
 import { getCanvasThemeTokens } from './graph/themeTokens';
-import { getDifficultyColors, getPortColor, extractMachinePorts, WINDOWS_PATH, MACOS_PATH, ANDROID_PATH, BSD_PATH } from './graph/colors';
+import { getDifficultyColors, extractMachinePorts } from './graph/colors';
 import {
   SCOPED_BOUNDS,
   getClusterHub,
@@ -67,7 +56,12 @@ import {
 } from './graph/culling';
 
 export type { GraphNode, ClusterDef, ClusterTemplate, WorldBounds, CanvasThemeTokens, ShowAllLayout, AttackNodeCardProps };
+import { AttackNodeCard } from './graph/AttackNodeCard';
+import { MinimapPanel } from './graph/Minimap';
+import { GraphToolbar } from './graph/GraphToolbar';
+
 export { getCanvasThemeTokens };
+export { AttackNodeCard };
 export { getDifficultyColors, extractMachinePorts };
 export { getClusterHub, computeShowAllLayout, SHOW_ALL_CELL_W, SHOW_ALL_CELL_H };
 export { LOD_SCALE_THRESHOLD, LARGE_GRAPH_NODE_COUNT, LOD_DOT_SCALE_THRESHOLD, isNodeCulled, nodeVisibility, computeCanvasDelta };
@@ -86,573 +80,6 @@ const TOUCH_MOVE_SLOP = 8;
 const TOUCH_HINT_MS = 1500;
 const TOUCH_HINT_FADE_MS = 300;
 const MIN_SCALE_SHOW_ALL = 0.05;
-
-// ---------------------------------------------------------------------------
-// Pure SVG Machine Node Card (<AttackNodeCard>)
-// ---------------------------------------------------------------------------
-export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
-  node,
-  x: xProp,
-  y: yProp,
-  animate = true,
-  lod = 'full',
-  isFocused = false,
-  isSelected,
-  isHovered,
-  isConnectingSource,
-  tokens,
-  onSelect,
-  onHover,
-  onFocusChange,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-}) => {
-  const isRooted = node.status === 'root' || node.status === 'completed';
-  const isFoothold = node.status === 'foothold';
-
-  const statusColor = isRooted 
-    ? tokens.statusRoot 
-    : isFoothold 
-    ? tokens.statusFoothold 
-    : tokens.statusUnsolved;
-
-  // Header row: [platform chip][OS icon][name][status beacon] inside the 164px inner width.
-  // The chip grows with the platform text ("VulnHub"), so the name budget shrinks with it (~8.6px per glyph at 14px).
-  const platformChipW = node.platform ? Math.max(34, Math.round(node.platform.length * 6.8 + 8)) : 0;
-  const nameOffset = node.platform ? 8 + platformChipW + 4 + 16 + 4 : 32;
-  const nameMaxChars = Math.max(6, Math.floor((160 - nameOffset) / 8.6));
-  const displayName = node.name.length > nameMaxChars ? `${node.name.slice(0, nameMaxChars - 1)}…` : node.name;
-  const displayIp = node.ip && node.ip.length > 15 ? `${node.ip.slice(0, 14)}…` : node.ip;
-  const isDark = typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true;
-  const diffColors = getDifficultyColors(node.difficulty, isDark);
-  const ports = extractMachinePorts(node.machine);
-
-  // Card geometry: 180w x 84h centered at (x, y)
-  const x = xProp ?? node.x;
-  const y = yProp ?? node.y;
-  const cardX = x - 90;
-  const cardY = y - 42;
-  // Compact name: 10 glyphs max at 16px (<= ~160px even for wide letters) so it stays inside the 180px rect
-  const compactName = node.name.length > 10 ? `${node.name.slice(0, 9)}…` : node.name;
-  const tier = isSelected || isHovered || isConnectingSource || isFocused ? 'full' : lod;
-
-  return (
-    <g
-      id={`attack-node-${node.id}`}
-      data-testid={`attack-node-${node.id}`}
-      data-node-interactive="true"
-      data-node-id={node.id}
-      tabIndex={0}
-      role="button"
-      aria-label={`Target machine ${node.name}`}
-      className="cursor-grab active:cursor-grabbing select-none"
-      onPointerDown={(e) => onPointerDown(e, node)}
-      onPointerMove={(e) => onPointerMove?.(e, node)}
-      onPointerUp={(e) => onPointerUp?.(e, node)}
-      onFocus={() => onFocusChange?.(node.id)}
-      onBlur={() => onFocusChange?.(null)}
-      onMouseEnter={() => onHover(node.id)}
-      onMouseLeave={() => onHover(null)}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(node);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-          onSelect(node);
-        }
-      }}
-    >
-      {tier === 'dot' ? (
-        /* LOD (far zoom): same footprint, bare status-colored rect, no text */
-        <rect
-          x={cardX}
-          y={cardY}
-          width="180"
-          height="84"
-          rx="8"
-          fill={statusColor}
-          fillOpacity="0.85"
-          stroke={statusColor}
-          strokeWidth="1.5"
-        />
-      ) : tier === 'compact' ? (
-        <>
-          {/* LOD: same 180x84 footprint, status-colored outline, name only */}
-          <rect
-            x={cardX}
-            y={cardY}
-            width="180"
-            height="84"
-            rx="8"
-            fill={tokens.cardBg}
-            stroke={statusColor}
-            strokeWidth="1.5"
-          />
-          <text
-            x={x}
-            y={y + 6}
-            fill={tokens.textPrimary}
-            fontSize="16"
-            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-            fontWeight="600"
-            textAnchor="middle"
-            className="pointer-events-none select-none"
-          >
-            {compactName}
-          </text>
-        </>
-      ) : (
-      <>
-      {/* Connecting Source Pulse Ring */}
-      {isConnectingSource && (
-        <rect
-          x={cardX - 5}
-          y={cardY - 5}
-          width="190"
-          height="94"
-          rx="12"
-          fill="none"
-          stroke="#00F0FF"
-          strokeWidth="2.5"
-          strokeDasharray="8 4"
-          className="pointer-events-none"
-        >
-          <animate attributeName="stroke-dashoffset" values="0;24" dur="1.2s" repeatCount="indefinite" />
-        </rect>
-      )}
-
-      {/* Selection Tactical Targeting Reticles (4 corners) */}
-      {isSelected && (
-        <g className="pointer-events-none">
-          {/* Top-Left Corner */}
-          <path
-            d={`M ${cardX - 4} ${cardY + 12} L ${cardX - 4} ${cardY - 4} L ${cardX + 12} ${cardY - 4}`}
-            stroke={tokens.accent}
-            strokeWidth="2"
-            fill="none"
-          />
-          {/* Top-Right Corner */}
-          <path
-            d={`M ${cardX + 168} ${cardY - 4} L ${cardX + 184} ${cardY - 4} L ${cardX + 184} ${cardY + 12}`}
-            stroke={tokens.accent}
-            strokeWidth="2"
-            fill="none"
-          />
-          {/* Bottom-Left Corner */}
-          <path
-            d={`M ${cardX - 4} ${cardY + 72} L ${cardX - 4} ${cardY + 88} L ${cardX + 12} ${cardY + 88}`}
-            stroke={tokens.accent}
-            strokeWidth="2"
-            fill="none"
-          />
-          {/* Bottom-Right Corner */}
-          <path
-            d={`M ${cardX + 168} ${cardY + 88} L ${cardX + 184} ${cardY + 88} L ${cardX + 184} ${cardY + 72}`}
-            stroke={tokens.accent}
-            strokeWidth="2"
-            fill="none"
-          />
-        </g>
-      )}
-
-      {/* Primary Card Background & Boundary */}
-      <rect
-        x={cardX}
-        y={cardY}
-        width="180"
-        height="84"
-        rx="8"
-        fill={tokens.cardBg}
-        stroke={isSelected ? tokens.accent : isHovered ? tokens.cardHoverBorder : tokens.cardBorder}
-        strokeWidth={isSelected ? '2' : isHovered ? '1.5' : '1.2'}
-        style={{
-          filter: tokens.accentGlow && tokens.accentGlow !== 'none'
-            ? (isSelected 
-                ? `drop-shadow(0 0 10px ${tokens.accentGlow})` 
-                : isHovered 
-                ? `drop-shadow(0 0 6px ${tokens.accentGlow})` 
-                : undefined)
-            : undefined,
-        }}
-      />
-
-      {/* Subtle 1px machined top-edge highlight inside card */}
-      <line
-        x1={cardX + 4}
-        y1={cardY + 1}
-        x2={cardX + 176}
-        y2={cardY + 1}
-        stroke="rgba(255, 255, 255, 0.07)"
-        strokeWidth="1"
-        className="pointer-events-none"
-      />
-
-      {/* Row 1: Header (OS Icon, Machine Name, Status Beacon) */}
-      {/* OS Vector Icon */}
-      {node.platform && (
-        <g className="pointer-events-none" aria-label={`Platform: ${platformFullName(node.platform)}`}>
-          <title>{`Platform: ${platformFullName(node.platform)}`}</title>
-          <rect x={cardX + 8} y={cardY + 7} width={platformChipW} height="18" rx="3" fill={tokens.codeBg} stroke={tokens.codeBorder} strokeWidth="0.8" />
-          <text
-            x={cardX + 8 + platformChipW / 2}
-            y={cardY + 19.5}
-            fill={tokens.accent}
-            fontSize="11"
-            fontFamily="system-ui, -apple-system, sans-serif"
-            fontWeight="700"
-            textAnchor="middle"
-            className="select-none"
-          >
-            {node.platform}
-          </text>
-        </g>
-      )}
-      <g transform={`translate(${cardX + (node.platform ? 8 + platformChipW + 4 : 10)}, ${cardY + 8})`}>
-        {node.os?.toLowerCase() === 'linux' ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#F97316">
-            <path d={LINUX_TUX_PATH} />
-          </svg>
-        ) : node.os?.toLowerCase() === 'windows' ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#00A4EF">
-            <path d={WINDOWS_PATH} />
-          </svg>
-        ) : node.os?.toLowerCase() === 'macos' ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill={tokens.textPrimary}>
-            <path d={MACOS_PATH} />
-          </svg>
-        ) : node.os?.toLowerCase() === 'android' ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#3DDC84">
-            <path d={ANDROID_PATH} />
-          </svg>
-        ) : node.os?.toLowerCase() === 'bsd' ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#E11D48">
-            <path d={BSD_PATH} />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748B" strokeWidth="1.8">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M7 15h10M7 8l3 3-3 3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </g>
-
-      {/* Target Hostname */}
-      <text
-        x={cardX + nameOffset}
-        y={cardY + 20}
-        fill={isSelected ? tokens.accent : tokens.textPrimary}
-        fontSize="14"
-        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        fontWeight="600"
-        letterSpacing="-0.01em"
-        textAnchor="start"
-        className="pointer-events-none select-none"
-      >
-        {displayName}
-      </text>
-
-      {/* Status Beacon (Hardware-grade concentric LED beacon with subtle pulse) */}
-      <g transform={`translate(${cardX + 168}, ${cardY + 16})`} className="pointer-events-none">
-        {isRooted && animate && (
-          <circle
-            cx="0"
-            cy="0"
-            r="4.5"
-            fill="none"
-            stroke={statusColor}
-            strokeWidth="1.2"
-            opacity="0.4"
-          >
-            <animate attributeName="r" values="4.5;7.5;4.5" dur="2.4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.4;0.08;0.4" dur="2.4s" repeatCount="indefinite" />
-          </circle>
-        )}
-        {isFoothold && (
-          <circle
-            cx="0"
-            cy="0"
-            r="5.5"
-            fill="none"
-            stroke={statusColor}
-            strokeWidth="0.8"
-            opacity="0.25"
-          />
-        )}
-        <circle cx="0" cy="0" r="3.5" fill={statusColor} />
-      </g>
-
-      {/* Subtle Row Divider */}
-      <line
-        x1={cardX + 8}
-        y1={cardY + 30}
-        x2={cardX + 172}
-        y2={cardY + 30}
-        stroke={tokens.cardBorder}
-        strokeWidth="0.6"
-        opacity="0.4"
-      />
-
-      {/* Row 2: IP Address Pill & Difficulty Badge */}
-      {/* IP Badge */}
-      <rect
-        x={cardX + 8}
-        y={cardY + 35}
-        width="100"
-        height="18"
-        rx="4"
-        fill={tokens.codeBg}
-        stroke={tokens.codeBorder}
-        strokeWidth="0.8"
-      />
-      <text
-        x={cardX + 58}
-        y={cardY + 48.5}
-        fill={tokens.accent}
-        fontSize="11"
-        fontFamily="'JetBrains Mono', monospace"
-        fontWeight="600"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
-        textAnchor="middle"
-        className="pointer-events-none select-none"
-      >
-        {displayIp}
-      </text>
-
-      {/* Difficulty Pill */}
-      <rect
-        x={cardX + 112}
-        y={cardY + 35}
-        width="60"
-        height="18"
-        rx="4"
-        fill={diffColors.fill}
-        stroke={diffColors.stroke}
-        strokeWidth="0.8"
-      />
-      <text
-        x={cardX + 142}
-        y={cardY + 48.5}
-        fill={diffColors.text}
-        fontSize="11"
-        fontFamily="system-ui, -apple-system, sans-serif"
-        fontWeight="700"
-        letterSpacing="0.02em"
-        textAnchor="middle"
-        className="pointer-events-none select-none"
-      >
-        {String(node.difficulty || 'Easy').toUpperCase()}
-      </text>
-
-      {/* Row 3: Active Open Ports Preview */}
-      {ports.length === 0 ? (
-        <text
-          x={x}
-          y={cardY + 72}
-          fill={tokens.textMuted}
-          fontSize="11"
-          fontFamily="monospace"
-          textAnchor="middle"
-          opacity="0.6"
-          className="pointer-events-none select-none"
-        >
-          No open ports
-        </text>
-      ) : (
-        <g transform={`translate(${cardX + 8}, ${cardY + 58})`}>
-          {(() => {
-            // Render up to 4 port badges, or 3 + overflow badge
-            const maxBadges = 4;
-            const needsOverflow = ports.length > maxBadges;
-            const displayPorts = needsOverflow ? ports.slice(0, 3) : ports.slice(0, 4);
-            const badgeW = 38;
-            const badgeH = 18;
-            const gap = 4;
-
-            return (
-              <>
-                {displayPorts.map((p, idx) => {
-                  const pColors = getPortColor(p, isDark);
-                  return (
-                    <g key={p} transform={`translate(${idx * (badgeW + gap)}, 0)`}>
-                      <rect
-                        width={badgeW}
-                        height={badgeH}
-                        rx="3"
-                        fill={pColors.bg}
-                        stroke={pColors.stroke}
-                        strokeWidth="0.7"
-                      />
-                      <text
-                        x={badgeW / 2}
-                        y="13"
-                        fill={pColors.text}
-                        fontSize="11"
-                        fontFamily="'JetBrains Mono', monospace"
-                        fontWeight="600"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                        textAnchor="middle"
-                        className="pointer-events-none select-none"
-                      >
-                        {p > 9999 ? p : `:${p}`}
-                      </text>
-                    </g>
-                  );
-                })}
-                {needsOverflow && (
-                  <g transform={`translate(${3 * (badgeW + gap)}, 0)`}>
-                    <rect
-                      width={badgeW}
-                      height={badgeH}
-                      rx="3"
-                      fill={tokens.codeBg}
-                      stroke={tokens.codeBorder}
-                      strokeWidth="0.7"
-                    />
-                    <text
-                      x={badgeW / 2}
-                      y="13"
-                      fill={tokens.textMuted}
-                      fontSize="11"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                      className="pointer-events-none select-none"
-                    >
-                      +{ports.length - 3}
-                    </text>
-                  </g>
-                )}
-              </>
-            );
-          })()}
-        </g>
-      )}
-
-      {/* Cardinal Docking Anchors (Top, Right, Bottom, Left) - Ready for Milestone 3 Edges */}
-      <circle cx={x} cy={cardY} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-      <circle cx={cardX + 180} cy={y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-      <circle cx={x} cy={cardY + 84} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-      <circle cx={cardX} cy={y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
-
-      {/* Native Browser Tooltip */}
-      <title>{`${node.name} (${node.ip}) · ${node.os} · ${node.difficulty} · ${node.status}`}</title>
-      </>
-      )}
-    </g>
-  );
-});
-
-// ---------------------------------------------------------------------------
-// Minimap static layers (memoized: unaffected by pan/zoom commits)
-// ---------------------------------------------------------------------------
-interface MinimapStaticLayersProps {
-  tokens: CanvasThemeTokens;
-  clusters: ClusterDef[];
-  graphEdges: AttackGraphEdge[];
-  allNodes: GraphNode[];
-  visibleNodes: GraphNode[];
-  graphNodePositions: Record<string, AttackNodePosition>;
-  defaultNodePositions: Record<string, AttackNodePosition>;
-  transientNodePos: { id: string; x: number; y: number } | null;
-  selectedNodeId: string | null;
-  /** World rect shown by the minimap (4:3) and the size multiplier of its fixed-size glyphs. */
-  bounds: { x: number; y: number; w: number; h: number };
-  unit: number;
-}
-
-const MinimapStaticLayers = React.memo(({
-  tokens,
-  clusters,
-  graphEdges,
-  allNodes,
-  visibleNodes,
-  graphNodePositions,
-  defaultNodePositions,
-  transientNodePos,
-  selectedNodeId,
-  bounds,
-  unit,
-}: MinimapStaticLayersProps) => {
-  const nodeById = useMemo(() => new Map(allNodes.map((n) => [n.id, n])), [allNodes]);
-
-  return (
-    <>
-      {/* Radar grid rings */}
-      <circle cx="800" cy="600" r={300 * unit} fill="none" stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
-      <circle cx="800" cy="600" r={520 * unit} fill="none" stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
-      <line x1="800" y1={bounds.y} x2="800" y2={bounds.y + bounds.h} stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
-      <line x1={bounds.x} y1="600" x2={bounds.x + bounds.w} y2="600" stroke={tokens.gridColor} strokeWidth={unit} opacity="0.12" />
-
-      {/* Subnet cluster hubs on radar */}
-      {clusters.map((c) => {
-        const hub = getClusterHub(c);
-        return (
-          <circle key={`mini-cluster-${c.id}`} cx={hub.x} cy={hub.y} r={28 * unit} fill={c.color} opacity="0.4" />
-        );
-      })}
-
-      {/* Operator Rig on radar */}
-      <circle cx="800" cy="600" r={28 * unit} fill="#10B981" opacity="0.8" />
-
-      {/* Attack Vectors on radar */}
-      {graphEdges.map((e) => {
-        const s = nodeById.get(e.sourceId);
-        const t = nodeById.get(e.targetId);
-        if (!s || !t) return null;
-        const sx = graphNodePositions[s.id]?.x ?? defaultNodePositions[s.id]?.x ?? s.x;
-        const sy = graphNodePositions[s.id]?.y ?? defaultNodePositions[s.id]?.y ?? s.y;
-        const tx = graphNodePositions[t.id]?.x ?? defaultNodePositions[t.id]?.x ?? t.x;
-        const ty = graphNodePositions[t.id]?.y ?? defaultNodePositions[t.id]?.y ?? t.y;
-        const m = ATTACK_EDGE_META[e.type];
-        return (
-          <line
-            key={`mini-edge-${e.id}`}
-            x1={sx}
-            y1={sy}
-            x2={tx}
-            y2={ty}
-            stroke={m?.color || '#00F0FF'}
-            strokeWidth={8 * unit}
-            opacity="0.7"
-          />
-        );
-      })}
-
-      {/* Machine nodes on radar */}
-      {visibleNodes.map((n) => {
-        const nx = transientNodePos?.id === n.id
-          ? transientNodePos.x
-          : (graphNodePositions[n.id]?.x ?? defaultNodePositions[n.id]?.x ?? n.x);
-        const ny = transientNodePos?.id === n.id
-          ? transientNodePos.y
-          : (graphNodePositions[n.id]?.y ?? defaultNodePositions[n.id]?.y ?? n.y);
-
-        const isRoot = n.status === 'root' || n.status === 'completed';
-        const isFoot = n.status === 'foothold';
-        const dotColor = isRoot ? tokens.statusRoot : isFoot ? tokens.statusFoothold : tokens.statusUnsolved;
-        const isSel = selectedNodeId === n.id;
-
-        return (
-          <circle
-            key={`mini-node-${n.id}`}
-            cx={nx}
-            cy={ny}
-            r={(isSel ? 28 : 18) * unit}
-            fill={dotColor}
-            opacity={isSel ? '1' : '0.85'}
-            stroke={isSel ? '#FFFFFF' : 'none'}
-            strokeWidth={4 * unit}
-          />
-        );
-      })}
-    </>
-  );
-});
-MinimapStaticLayers.displayName = 'MinimapStaticLayers';
 
 // ---------------------------------------------------------------------------
 // Primary Attack Graph Component (<GraphView>)
@@ -2176,162 +1603,33 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       </div>
 
       {/* Canvas Navigation Toolbar */}
-      <div 
-        data-testid="canvas-nav-toolbar"
-        className="self-end flex flex-col items-center gap-1 bg-surface-elevated/95 backdrop-blur-sm border border-subtle p-1.5 rounded-xl shadow-md pointer-events-auto machined-edge"
-      >
-        <span className="text-xs font-semibold text-muted select-none font-mono tabular-nums">
-          {Math.round(scale * 100)}%
-        </span>
-
-        {/* Interactive Pivot Vector Connection Mode Button */}
-        <button
-          data-testid="graph-connect-vector"
-          onClick={() => {
-            setIsConnectingMode(!isConnectingMode);
-            setConnectingSourceId(null);
-            if (soundEnabled) playCyberSound('toggle');
-          }}
-          className={`px-2.5 py-1 rounded-md text-xs font-semibold font-mono transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1.5 cursor-pointer ${
-            isConnectingMode
-              ? 'bg-accent text-on-accent font-semibold shadow-xs'
-              : 'hover:bg-surface-hover text-accent border border-transparent hover:border-subtle'
-          }`}
-          title={isConnectingMode ? 'Stop linking (Alt+C)' : 'Link two machines (Alt+C)'}
-          aria-label={isConnectingMode ? 'Stop linking' : 'Add link'}
-        >
-          <Network className="w-3.5 h-3.5" />
-          <span className="hidden text-xs">
-            {isConnectingMode ? 'Linking...' : 'Add link'}
-          </span>
-        </button>
-
-        {/* Export Obsidian Canvas */}
-        <button
-          data-testid="graph-export-canvas"
-          onClick={handleExportObsidian}
-          className="p-1.5 rounded-md hover:bg-surface-hover text-callout-tip-fg hover:text-callout-tip-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
-          title="Export as an Obsidian canvas file (.canvas)"
-          aria-label="Export canvas file"
-        >
-          <Download className="w-4 h-4" />
-          <span className="text-xs font-semibold hidden">Canvas file</span>
-        </button>
-
-        {/* Export SVG */}
-        <button
-          data-testid="graph-export-svg"
-          onClick={handleExportSvg}
-          className="p-1.5 rounded-md hover:bg-surface-hover text-accent hover:text-callout-info-fg transition-[transform,background-color,border-color,color] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
-          title="Export as an SVG image (.svg)"
-          aria-label="Export SVG"
-        >
-          <Share2 className="w-4 h-4" />
-          <span className="text-xs font-semibold hidden">SVG</span>
-        </button>
-
-        <div className="h-px w-4 bg-border-subtle my-0.5" />
-
-        <button
-          type="button"
-          data-testid="graph-undo"
-          onClick={() => { undo(); }}
-          disabled={!canUndo}
-          aria-label="Undo"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
-          title={undoLabel ? `Undo ${undoLabel} (Ctrl/Cmd+Z)` : 'Undo (Ctrl/Cmd+Z)'}
-        >
-          <Undo2 className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-redo"
-          onClick={() => { redo(); }}
-          disabled={!canRedo}
-          aria-label="Redo"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
-          title={redoLabel ? `Redo ${redoLabel} (Ctrl/Cmd+Shift+Z)` : 'Redo (Ctrl/Cmd+Shift+Z)'}
-        >
-          <Redo2 className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-auto-layout"
-          onClick={handleAutoLayout}
-          disabled={allNodes.length === 0 || showAllNodes}
-          aria-disabled={allNodes.length === 0 || showAllNodes ? true : undefined}
-          aria-label="Auto layout"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
-          title={showAllNodes ? 'Auto layout is available in scoped view' : 'Auto layout: arrange nodes by attack path (undoable)'}
-        >
-          <Workflow className="w-4 h-4" />
-        </button>
-
-        <div className="h-px w-4 bg-border-subtle my-0.5" />
-
-        <button
-          type="button"
-          data-testid="graph-zoom-in"
-          onClick={handleZoomIn}
-          aria-label="Zoom In"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-          title="Zoom In (+)"
-        >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-zoom-out"
-          onClick={handleZoomOut}
-          aria-label="Zoom Out"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-          title="Zoom Out (-)"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-reset-view"
-          onClick={handleResetView}
-          aria-label="Reset View"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-          title="Reset View (1:1)"
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-fit-screen"
-          onClick={handleFitToScreen}
-          aria-label="Fit to Screen"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-          title="Fit to Screen (Framing)"
-        >
-          <Focus className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-center-selection"
-          onClick={handleCenterSelection}
-          aria-label="Center on selected machine"
-          className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-          title="Center on the selected machine, or the middle of the graph if none is selected"
-        >
-          <Crosshair className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="graph-fullscreen-toggle"
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          className={`p-1.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-            isFullscreen ? 'bg-accent text-on-accent font-semibold' : 'hover:bg-surface-hover text-muted hover:text-primary'
-          }`}
-          title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </button>
-      </div>
+      <GraphToolbar
+        scale={scale}
+        isConnectingMode={isConnectingMode}
+        onToggleConnecting={() => {
+          setIsConnectingMode(!isConnectingMode);
+          setConnectingSourceId(null);
+          if (soundEnabled) playCyberSound('toggle');
+        }}
+        handleExportObsidian={handleExportObsidian}
+        handleExportSvg={handleExportSvg}
+        undo={undo}
+        redo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        undoLabel={undoLabel}
+        redoLabel={redoLabel}
+        handleAutoLayout={handleAutoLayout}
+        autoLayoutDisabled={allNodes.length === 0 || showAllNodes}
+        showAllNodes={showAllNodes}
+        handleZoomIn={handleZoomIn}
+        handleZoomOut={handleZoomOut}
+        handleResetView={handleResetView}
+        handleFitToScreen={handleFitToScreen}
+        handleCenterSelection={handleCenterSelection}
+        isFullscreen={isFullscreen}
+        setIsFullscreen={setIsFullscreen}
+      />
       </div>
 
       {/* Interactive Vector Connection Mode Banner */}
@@ -2376,90 +1674,25 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               <span className="text-secondary">Backlog or recon</span>
             </span>
           </div>
-        {isMinimapOpen ? (
-          <div 
-            data-testid="graph-minimap-container"
-            className="w-48 p-2 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle shadow-lg space-y-1.5 font-sans machined-edge"
-          >
-            <div className="flex items-center justify-between text-xs font-semibold text-muted px-1">
-              <span className="flex items-center gap-1 text-primary">
-                <Radio className="w-3 h-3 text-accent" />
-                Minimap
-              </span>
-              <button
-                data-testid="graph-minimap-toggle"
-                onClick={() => setIsMinimapOpen(false)}
-                className="p-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary active:scale-[0.97] cursor-pointer"
-                title="Hide minimap"
-                aria-label="Hide minimap"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="w-full aspect-[4/3] rounded-lg bg-surface-sunken border border-subtle overflow-hidden relative">
-              <svg
-                data-testid="graph-minimap-svg"
-                viewBox={`${minimapBounds.x} ${minimapBounds.y} ${minimapBounds.w} ${minimapBounds.h}`}
-                className="w-full h-full cursor-crosshair touch-none"
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  isMinimapDraggingRef.current = true;
-                  handleMinimapPointerEvent(e);
-                }}
-                onPointerMove={(e) => {
-                  if (isMinimapDraggingRef.current) {
-                    handleMinimapPointerEvent(e);
-                  }
-                }}
-                onPointerUp={() => {
-                  isMinimapDraggingRef.current = false;
-                }}
-              >
-                <MinimapStaticLayers
-                  tokens={tokens}
-                  clusters={clusters}
-                  graphEdges={graphEdges}
-                  allNodes={allNodes}
-                  visibleNodes={visibleNodes}
-                  graphNodePositions={graphNodePositions}
-                  defaultNodePositions={defaultNodePositions}
-                  transientNodePos={transientNodePos}
-                  selectedNodeId={selectedNode?.id ?? null}
-                  bounds={minimapBounds}
-                  unit={minimapBounds.unit}
-                />
-
-                {/* Dynamic Viewport Framing Rectangle */}
-                <rect
-                  ref={minimapRectRef}
-                  data-testid="minimap-viewport-rect"
-                  x={-pan.x / scale}
-                  y={-pan.y / scale}
-                  width={1600 / scale}
-                  height={1200 / scale}
-                  fill="rgba(6, 182, 212, 0.16)"
-                  stroke="#06B6D4"
-                  strokeWidth={10 * minimapBounds.unit}
-                  strokeDasharray={`${24 * minimapBounds.unit} ${12 * minimapBounds.unit}`}
-                  rx={12 * minimapBounds.unit}
-                  className="cursor-move"
-                />
-              </svg>
-            </div>
-          </div>
-        ) : (
-          <button
-            data-testid="graph-minimap-toggle"
-            onClick={() => setIsMinimapOpen(true)}
-            className="p-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-primary shadow-xs flex items-center gap-1.5 text-xs font-semibold font-mono active:scale-[0.98] transition-[transform,box-shadow,background-color,border-color,color]"
-            title="Show minimap"
-            aria-label="Show minimap"
-          >
-            <Radio className="w-3.5 h-3.5 text-callout-info-fg" />
-            <span className="hidden sm:inline">Minimap</span>
-          </button>
-        )}
+        <MinimapPanel
+          tokens={tokens}
+          clusters={clusters}
+          graphEdges={graphEdges}
+          allNodes={allNodes}
+          visibleNodes={visibleNodes}
+          graphNodePositions={graphNodePositions}
+          defaultNodePositions={defaultNodePositions}
+          transientNodePos={transientNodePos}
+          selectedNodeId={selectedNode?.id ?? null}
+          minimapBounds={minimapBounds}
+          isMinimapOpen={isMinimapOpen}
+          setIsMinimapOpen={setIsMinimapOpen}
+          isMinimapDraggingRef={isMinimapDraggingRef}
+          handleMinimapPointerEvent={handleMinimapPointerEvent}
+          minimapRectRef={minimapRectRef}
+          pan={pan}
+          scale={scale}
+        />
       </div>
 
       {/* Interactive SVG Canvas */}
