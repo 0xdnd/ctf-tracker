@@ -2,27 +2,13 @@ import { isTauriTarget } from '../../utils/runtimeTarget';
 import { clearLegacyViewerPrefs } from '../../utils/notesViewerPrefs';
 import React, { useState, useMemo, useEffect, useDeferredValue, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { 
   Terminal, 
-  Copy, 
-  Check, 
   Search, 
   Star, 
   Plus, 
-  Trash2, 
-  Code,
   BookOpen,
-  Sparkles,
-  ChevronDown,
-  Folder,
-  FolderOpen,
-  Table,
-  LayoutList,
   Upload,
-  Hash,
-  ArrowUpDown,
-  PanelLeft,
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
@@ -30,8 +16,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { 
   CHEATSHEET_CATEGORIES 
 } from '../../data/cheatsheetsData';
-import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
-import { Modal } from '../common/Modal';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import {
   CptsNoteEntry,
@@ -42,7 +27,6 @@ import {
   buildCptsFileTree,
   CptsSortOrder,
   sortNotesByNumber,
-  formatNoteNumberBadge,
   getAllCptsNotes,
   getBacklinksForNote,
   mergeUserNotePools,
@@ -54,38 +38,29 @@ import { NotesRibbon, type NotesRibbonPanel } from '../notes/NotesRibbon';
 import { NotesLeftPanel } from '../notes/NotesLeftPanel';
 import { NotesRightPanel } from '../notes/NotesRightPanel';
 import { NotesStatusBar } from '../notes/NotesStatusBar';
-import { countWords, displayNoteMeta, getNoteOutline } from '../../utils/noteMeta';
+import { countWords, getNoteOutline } from '../../utils/noteMeta';
 import { isFullscreenNotesPath } from '../../utils/fullscreenRoutes';
 import { getLastAppRoute } from '../../utils/lastAppRoute';
 import { useNoteIndex } from '../../hooks/useNoteIndex';
-import { NoteMatchSnippets } from './NoteMatchSnippets';
 import { SplitOrientation } from '../../types/workspace';
 import { NewCptsNoteModal } from './NewCptsNoteModal';
 import { YourDetailsCard } from './YourDetailsCard';
-import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { PageHeader } from '../common/PageHeader';
-import { SyntaxHighlightedCommand } from '../common/SyntaxHighlightedCommand';
 import { CyberButton } from '../common/CyberButton';
 import { EmptyState } from '../common/EmptyState';
-import { TACTICAL_SPRING, CASCADE_STAGGER_DELAY } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { useToastStore } from '../../store/useToastStore';
 import { hasUnsavedNoteEdits } from '../../utils/unsavedNoteEdits';
+import type { CptsLanguageMode, CptsDisplayLayout } from './workspace/types';
+import { SNIPPET_PAGE_SIZE } from './workspace/constants';
+import { FieldManualHeader } from './workspace/FieldManualHeader';
+import { QuickIndexTable, NotesLoadMore } from './workspace/QuickIndexTable';
+import { NotesCardsGallery } from './workspace/NotesCardsGallery';
+import { EmptyWorkspace } from './workspace/EmptyWorkspace';
+import { SnippetList } from './workspace/SnippetList';
+import { AddSnippetModal } from './workspace/AddSnippetModal';
 
-const SNIPPET_PAGE_SIZE = 30;
-
-const SNIPPET_CATEGORIES: CyberSelectOption[] = [
-  { value: 'network', label: '01. Network Discovery & Port Scanning' },
-  { value: 'web', label: '02. Web Enumeration & Fuzzing' },
-  { value: 'exploitation', label: '03. Exploitation & Payloads' },
-  { value: 'linux-privesc', label: '04. Linux PrivEsc & TTY' },
-  { value: 'active-directory', label: '05. Windows & Active Directory' },
-  { value: 'pivoting', label: '06. Pivoting & Tunneling' },
-  { value: 'file-transfer', label: '07. File Transfers' },
-];
-
-export type CptsLanguageMode = 'en' | 'he';
-export type CptsDisplayLayout = 'cards' | 'quick-index' | 'grouped';
+export type { CptsLanguageMode, CptsDisplayLayout };
 
 interface CheatsheetViewProps {
   defaultMode?: 'tactical' | 'cpts-manual';
@@ -1227,502 +1202,73 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               </div>
             ) : (
               /* EMPTY OBSIDIAN WORKSPACE (NO ACTIVE NOTE) */
-              <div 
-                data-testid="empty-obsidian-workspace"
-                className="w-full h-full min-h-[600px] flex-1 flex flex-col items-center justify-center p-8 text-center space-y-5 bg-surface-card"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent-muted border border-accent/40 flex items-center justify-center text-accent shadow-glow-sm">
-                  <BookOpen className="w-8 h-8" />
-                </div>
-                <div className="space-y-1.5 max-w-md">
-                  <h3 className="text-base font-semibold text-primary">Pick a note</h3>
-                  <p className="text-xs text-muted leading-relaxed">
-                    Choose a note on the left, or create a new one.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                  {allActiveNotes.length > 0 && (
-                    <button
-                      type="button"
-                      data-testid="empty-state-open-first-note"
-                      onClick={() => {
-                        if (soundEnabled) playCyberSound('click');
-                        setActiveObsidianNote(allActiveNotes[0]);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-accent text-on-accent text-xs font-semibold hover:bg-accent-hover transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Open first note ({allActiveNotes[0].titleEn || allActiveNotes[0].title})</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (soundEnabled) playCyberSound('click');
-                      setObsidianNavView('cards');
-                      setCptsDisplayLayout('cards');
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover border border-subtle text-primary text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <LayoutList className="w-3.5 h-3.5 text-muted" />
-                    <span>Browse Cards Gallery</span>
-                  </button>
-                  {!leftOpenNow && (
-                    <button
-                      type="button"
-                      onClick={handleToggleObsidianSidebar}
-                      className="px-3.5 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover border border-accent/40 text-accent text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <PanelLeft className="w-3.5 h-3.5" />
-                      <span>Open File Explorer (Ctrl+B)</span>
-                    </button>
-                  )}
-                </div>
-              </div>
+              <EmptyWorkspace
+                allActiveNotes={allActiveNotes}
+                soundEnabled={soundEnabled}
+                setActiveObsidianNote={setActiveObsidianNote}
+                setObsidianNavView={setObsidianNavView}
+                setCptsDisplayLayout={setCptsDisplayLayout}
+                leftOpenNow={leftOpenNow}
+                handleToggleObsidianSidebar={handleToggleObsidianSidebar}
+              />
             )
           ) : (
             /* CARDS GALLERY / QUICK INDEX TABLE (FULL WIDTH) */
             <div className="p-4 sm:p-5 space-y-4 overflow-y-auto lg:h-full max-h-[calc(100vh-10rem)]">
               {/* HUD Header Bar */}
-              <div className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-3 text-xs">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      data-testid="hud-toggle-sidebar-button"
-                      onClick={handleToggleObsidianSidebar}
-                      className="p-1 mr-1 rounded-lg hover:bg-surface-hover text-muted hover:text-accent transition-colors flex-shrink-0 cursor-pointer"
-                      title={leftOpenNow ? "Collapse explorer (Ctrl+B)" : "Expand explorer (Ctrl+B)"}
-                      aria-label={leftOpenNow ? "Collapse explorer" : "Expand explorer"}
-                    >
-                      <PanelLeft className={`w-4 h-4 ${leftOpenNow ? 'text-accent' : 'text-muted'}`} />
-                    </button>
-                    <BookOpen className="w-4 h-4 text-accent" />
-                    <span className="text-primary font-semibold">
-                      Your notes
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted text-accent font-semibold">
-                      {selectedCptsCategory === 'ALL'
-                        ? allActiveNotes.length > 0
-                          ? `All notes (${allActiveNotes.length})`
-                          : 'No notes yet'
-                        : selectedCptsCategory}
-                    </span>
-                    {selectedCptsSubCategory !== 'ALL' && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent flex items-center gap-1 font-semibold">
-                        <span>📁 {selectedCptsSubCategory}</span>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCptsSubCategory('ALL')}
-                          className="hover:text-primary text-accent ml-1 font-semibold"
-                          title="Clear subcategory filter"
-                          aria-label="Clear subcategory filter"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Jump to Note Combobox */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setJumpDropdownOpen((prev) => !prev)}
-                        className="px-2.5 py-1 rounded-lg bg-surface-card border border-accent/40 text-accent hover:text-accent text-xs flex items-center gap-1.5 font-semibold transition-colors"
-                        title="Quick search and jump to any note directly"
-                      >
-                        <Search className="w-3.5 h-3.5 text-accent" />
-                        <span>Jump to Note...</span>
-                        <ChevronDown className="w-3 h-3 text-accent" />
-                      </button>
-
-                      {jumpDropdownOpen && (
-                        <>
-                          <div
-                            role="presentation"
-                            className="fixed inset-0 z-40"
-                            onClick={() => setJumpDropdownOpen(false)}
-                          />
-                          <div className="absolute right-0 top-full mt-1.5 w-80 max-h-96 rounded-xl border border-accent/50 bg-surface-card/95 backdrop-blur-md shadow-2xl p-2 z-50 space-y-2 animate-fade-in">
-                            <input
-                              id="cpts-jump-search-input"
-                              name="cpts-jump-search"
-                              aria-label="Type note name, tag, or tool"
-                              type="text"
-                              // eslint-disable-next-line jsx-a11y/no-autofocus -- search field in a just-opened dropdown
-                              autoFocus
-                              value={jumpSearchQuery}
-                              onChange={(e) => setJumpSearchQuery(e.target.value)}
-                              placeholder="Type note name, tag, or tool..."
-                              className="w-full bg-surface-card px-2.5 py-1.5 rounded-lg border border-accent/40 text-primary text-xs focus:outline-none focus:border-accent"
-                            />
-                            <div className="max-h-72 overflow-y-auto space-y-1 divide-y divide-subtle/30">
-                              {(jumpSearchQuery.trim() ? allActiveNotes : filteredCptsNotes)
-                                .filter((n) => {
-                                  if (!jumpSearchQuery.trim()) return true;
-                                  const q = jumpSearchQuery.toLowerCase();
-                                  return (
-                                    n.title.toLowerCase().includes(q) ||
-                                    (n.titleEn && n.titleEn.toLowerCase().includes(q)) ||
-                                    (n.titleHe && n.titleHe.toLowerCase().includes(q)) ||
-                                    (n.subCategory && n.subCategory.toLowerCase().includes(q)) ||
-                                    (n.tools && n.tools.some((t) => t.toLowerCase().includes(q)))
-                                  );
-                                })
-                                .slice(0, 40)
-                                .map((note) => (
-                                  <div
-                                    key={note.id}
-                                    className="flex items-center gap-1 w-full rounded hover:bg-accent/40 transition-colors p-1 group"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setJumpDropdownOpen(false);
-                                        setActiveObsidianNote(note);
-                                        setObsidianNavView('files');
-                                        if (soundEnabled) playCyberSound('root');
-                                      }}
-                                      className="flex-1 text-left px-1.5 py-1 rounded transition-colors flex flex-col min-w-0 cursor-pointer"
-                                      title="Open full Obsidian note"
-                                    >
-                                      <div className="flex items-center justify-between gap-1">
-                                        <span className="text-primary text-xs font-semibold group-hover:text-accent truncate flex-1">
-                                          {note.titleEn || note.title}
-                                        </span>
-                                        <span className="text-[9px] px-1 rounded bg-surface-sunken text-accent flex-shrink-0">
-                                          {note.category.split(' ')[0]}
-                                        </span>
-                                      </div>
-                                      <span className="text-[10px] text-muted truncate block">
-                                        {note.subCategory || note.category}
-                                      </span>
-                                    </button>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Sort Order Selector */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsSortOrder('number');
-                          setCptsLimit(30);
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-                          cptsSortOrder === 'number'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                      >
-                        <Hash className="w-3.5 h-3.5" />
-                        <span>Number</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsSortOrder('topic');
-                          setCptsLimit(30);
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          cptsSortOrder === 'topic'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                      >
-                        <Folder className="w-3.5 h-3.5" />
-                        <span>Topic</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsSortOrder('title');
-                          setCptsLimit(30);
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          cptsSortOrder === 'title'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                      >
-                        <ArrowUpDown className="w-3.5 h-3.5" />
-                        <span>A → Z</span>
-                      </button>
-                    </div>
-
-                    {/* Display Layout Switcher */}
-                    <div className="flex items-center gap-1 bg-surface-elevated p-1 rounded-lg border border-accent/40 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setObsidianNavView('files');
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          (obsidianNavView as string) === 'files'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                        title="Switch to Obsidian Note Reader"
-                      >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Notes</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsDisplayLayout('cards');
-                          setObsidianNavView('cards');
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          obsidianNavView === 'cards'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                      >
-                        <LayoutList className="w-3.5 h-3.5" />
-                        <span>Cards</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCptsDisplayLayout('quick-index');
-                          setObsidianNavView('index');
-                          if (soundEnabled) playCyberSound('click');
-                        }}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                          obsidianNavView === 'index'
-                            ? 'bg-accent text-on-accent'
-                            : 'text-secondary hover:text-primary'
-                        }`}
-                      >
-                        <Table className="w-3.5 h-3.5" />
-                        <span>Table</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Active Folder Filter Indicator */}
-                {selectedTreePath && (
-                  <div className="flex items-center justify-between p-2 px-3 rounded-lg bg-accent-muted border border-accent/40 text-xs">
-                    <div className="flex items-center gap-2 text-accent truncate">
-                      <FolderOpen className="w-4 h-4 text-accent flex-shrink-0" />
-                      <span className="truncate">
-                        Folder: <strong className="text-primary font-mono">{selectedTreePath.split('/').pop()?.replace(/^\d+[\s_.-]*/, '') || selectedTreePath}</strong> (<strong className="text-accent">{filteredCptsNotes.length} notes</strong>)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTreePath(null)}
-                      className="text-[10px] text-accent hover:text-accent underline font-semibold flex-shrink-0 cursor-pointer ml-2"
-                    >
-                      ✕ Clear Filter
-                    </button>
-                  </div>
-                )}
-
-                {/* Topic Filter Chips */}
-                {activeCategoryTopicGroups.length > 0 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin pt-1 border-t border-accent/20">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCptsSubCategory('ALL');
-                        setCptsLimit(30);
-                      }}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
-                        selectedCptsSubCategory === 'ALL'
-                          ? 'bg-accent text-on-accent'
-                          : 'bg-surface-elevated border border-subtle text-secondary hover:text-primary'
-                      }`}
-                    >
-                      ALL ({filteredCptsNotes.length})
-                    </button>
-                    {activeCategoryTopicGroups.map((tg) => {
-                      const isGroupActive = selectedCptsSubCategory === tg.group;
-                      return (
-                        <button
-                          key={tg.group}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCptsSubCategory(isGroupActive ? 'ALL' : tg.group);
-                            setCptsLimit(30);
-                          }}
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 transition-colors flex items-center gap-1.5 ${
-                            isGroupActive
-                              ? 'bg-accent text-on-accent border border-accent/40'
-                              : 'bg-surface-elevated border border-subtle text-secondary hover:text-accent'
-                          }`}
-                        >
-                          <span>📁 {tg.group}</span>
-                          <span className={`text-[9px] px-1 rounded-full ${isGroupActive ? 'bg-accent text-on-accent' : 'bg-surface-hover text-accent'}`}>
-                            {tg.count}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <FieldManualHeader
+                handleToggleObsidianSidebar={handleToggleObsidianSidebar}
+                leftOpenNow={leftOpenNow}
+                selectedCptsCategory={selectedCptsCategory}
+                selectedCptsSubCategory={selectedCptsSubCategory}
+                setSelectedCptsSubCategory={setSelectedCptsSubCategory}
+                allActiveNotes={allActiveNotes}
+                filteredCptsNotes={filteredCptsNotes}
+                jumpDropdownOpen={jumpDropdownOpen}
+                setJumpDropdownOpen={setJumpDropdownOpen}
+                jumpSearchQuery={jumpSearchQuery}
+                setJumpSearchQuery={setJumpSearchQuery}
+                setActiveObsidianNote={setActiveObsidianNote}
+                obsidianNavView={obsidianNavView}
+                setObsidianNavView={setObsidianNavView}
+                soundEnabled={soundEnabled}
+                cptsSortOrder={cptsSortOrder}
+                setCptsSortOrder={setCptsSortOrder}
+                setCptsLimit={setCptsLimit}
+                setCptsDisplayLayout={setCptsDisplayLayout}
+                selectedTreePath={selectedTreePath}
+                setSelectedTreePath={setSelectedTreePath}
+                activeCategoryTopicGroups={activeCategoryTopicGroups}
+              />
 
               {/* VIEW 1: QUICK INDEX TABLE */}
               {(obsidianNavView === 'index' || cptsDisplayLayout === 'quick-index') ? (
-                <div className="rounded-xl border border-subtle bg-surface-card overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-surface-sunken/95 border-b border-subtle text-muted text-[10px] sticky top-0 z-10 backdrop-blur">
-                        <tr>
-                          <th className="py-2.5 px-3 w-12 text-center">#</th>
-                          <th className="py-2.5 px-3 w-48">Topic / folder</th>
-                          <th className="py-2.5 px-3">Title / objective</th>
-                          <th className="py-2.5 px-3 w-28 text-center">Stage / level</th>
-                          <th className="py-2.5 px-3 w-32 text-center">Commands</th>
-                          <th className="py-2.5 px-3 w-28 text-right pr-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-subtle/40">
-                        {visibleCptsNotes.map((note, index) => {
-                          return (
-                            <tr 
-                              key={note.id}
-                              id={`cpts-note-${note.id}`}
-                              onClick={() => {
-                                openFromResults(note);
-                                setObsidianNavView('files');
-                                if (isNarrow) closeDrawers();
-                              }}
-                              className="hover:bg-accent-muted/40 transition-colors cursor-pointer group"
-                            >
-                              <td className="py-2 px-3 text-center font-mono text-[11px] text-muted">
-                                {formatNoteNumberBadge(note) || String(index + 1).padStart(2, '0')}
-                              </td>
-                              <td className="py-2 px-3 text-muted text-[11px] truncate max-w-48">
-                                {note.subCategory || note.category}
-                              </td>
-                              <td className="py-2 px-3 font-medium text-primary group-hover:text-accent">
-                                {note.titleEn || note.title}
-                                <NoteMatchSnippets markdown={note.rawMarkdown} query={deferredSearchQuery} />
-                              </td>
-                              <td className="py-2 px-3 text-center">
-                                {displayNoteMeta(note, 'stage') && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-sunken text-muted">
-                                    {note.stage}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-2 px-3 text-center font-mono text-[11px] text-accent">
-                                {note.commands?.length || 0}
-                              </td>
-                              <td className="py-2 px-3 text-right pr-4">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openFromResults(note);
-                                    setObsidianNavView('files');
-                                    if (isNarrow) closeDrawers();
-                                  }}
-                                  className="px-2.5 py-1 rounded bg-accent text-on-accent text-[11px] font-semibold hover:bg-accent-hover transition-colors"
-                                >
-                                  Open
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <QuickIndexTable
+                visibleCptsNotes={visibleCptsNotes}
+                openFromResults={openFromResults}
+                setObsidianNavView={setObsidianNavView}
+                isNarrow={isNarrow}
+                closeDrawers={closeDrawers}
+                deferredSearchQuery={deferredSearchQuery}
+                />
               ) : (
                 /* VIEW 2: FULL-WIDTH CARDS GALLERY */
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {visibleCptsNotes.map((note) => (
-                    <div
-                      key={note.id}
-                      id={`cpts-note-${note.id}`}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
-                        e.preventDefault();
-                        openFromResults(note);
-                        setObsidianNavView('files');
-                        if (isNarrow) closeDrawers();
-                      }}
-                      onClick={() => {
-                        openFromResults(note);
-                        setObsidianNavView('files');
-                        if (isNarrow) closeDrawers();
-                      }}
-                      className="p-4 rounded-xl border border-subtle bg-surface-card hover:border-accent transition-colors cursor-pointer group flex flex-col justify-between space-y-3"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-semibold text-sm text-primary group-hover:text-accent transition-colors">
-                            {note.titleEn || note.title}
-                          </h4>
-                          {formatNoteNumberBadge(note) && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle flex-shrink-0">
-                              #{formatNoteNumberBadge(note)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted line-clamp-2">
-                          {note.summary || 'Playbook documentation and operational commands.'}
-                        </p>
-                        <NoteMatchSnippets markdown={note.rawMarkdown} query={deferredSearchQuery} />
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-subtle/50 text-[11px]">
-                        <span className="text-muted">
-                          📁 {note.subCategory || note.category.split(' ')[0]}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {note.commands && note.commands.length > 0 && (
-                            <span className="font-mono text-accent">
-                              {note.commands.length} cmds
-                            </span>
-                          )}
-                          <span className="px-2 py-0.5 rounded bg-accent/20 text-accent font-semibold group-hover:bg-accent group-hover:text-on-accent transition-colors">
-                            Read ›
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <NotesCardsGallery
+                visibleCptsNotes={visibleCptsNotes}
+                openFromResults={openFromResults}
+                setObsidianNavView={setObsidianNavView}
+                isNarrow={isNarrow}
+                closeDrawers={closeDrawers}
+                deferredSearchQuery={deferredSearchQuery}
+                />
               )}
 
               {/* Sliced Pagination Controls */}
-              {visibleCptsNotes.length < filteredCptsNotes.length && (
-                <div className="p-4 rounded-xl border border-subtle bg-surface-card flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCptsLimit((prev) => prev + 30)}
-                    className="px-5 py-2 rounded-lg bg-accent/20 border border-accent/50 hover:bg-accent-hover hover:text-on-accent text-accent font-semibold text-xs transition-colors flex items-center gap-2"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Load next 30 notes ({filteredCptsNotes.length - visibleCptsNotes.length} remaining)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCptsLimit(filteredCptsNotes.length)}
-                    className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary text-xs font-semibold transition-colors"
-                  >
-                    Show all ({filteredCptsNotes.length})
-                  </button>
-                </div>
-              )}
+              <NotesLoadMore
+                visibleCount={visibleCptsNotes.length}
+                totalCount={filteredCptsNotes.length}
+                setCptsLimit={setCptsLimit}
+              />
             </div>
           )}
         </div>
@@ -1965,262 +1511,37 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               </div>
 
               {/* COMMAND SNIPPETS LIST with Scroll Entrance */}
-              <div className="space-y-3">
-                {filteredCommands.length === 0 ? (
-                  <div className="p-8 text-center rounded-xl border border-dashed border-subtle bg-surface-card/50 text-muted text-xs">
-                    No command snippets matching this query.
-                  </div>
-                ) : (
-                  filteredCommands.slice(0, visibleCommandCount).map((cmd, idx) => {
-                    const interpolated = interpolateCommand(cmd.commandTemplate, effectiveVars);
-                    const isCopied = copiedId === cmd.id;
-
-                    return (
-                      <motion.div
-                        key={cmd.id}
-                        initial={{ opacity: 0, y: 15 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: '-30px' }}
-                        transition={{ ...TACTICAL_SPRING, delay: CASCADE_STAGGER_DELAY(idx) }}
-                        className="cyber-snippet-contain p-3.5 rounded-xl border border-subtle bg-surface-card hover:border-strong transition-colors group"
-                      >
-                        {/* Snippet Header */}
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-primary text-sm">
-                                {cmd.title}
-                              </span>
-                              {cmd.isCustom && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-surface-sunken border border-subtle text-secondary font-semibold">
-                                  CUSTOM
-                                </span>
-                              )}
-                              {cmd.platform && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-surface-sunken border border-subtle text-muted">
-                                  {cmd.platform}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-muted mt-0.5">{cmd.description}</p>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <motion.button aria-label="Star snippet"
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => toggleStarCommand(cmd.id)}
-                              className="p-1 max-md:p-2 rounded text-muted hover:text-callout-warn-fg transition-colors"
-                              title="Bookmark / Star Snippet"
-                            >
-                              <Star
-                                className={`w-3.5 h-3.5 ${
-                                  cmd.isStarred ? 'fill-current text-callout-warn-fg' : ''
-                                }`}
-                              />
-                            </motion.button>
-
-                            {cmd.isCustom && (
-                              <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={async () => {
-                                  if (await confirmAction({ title: 'Delete this custom snippet?', body: 'This custom command will be permanently removed.', confirmLabel: 'Delete snippet', tone: 'danger' })) {
-                                    deleteCustomCommand(cmd.id);
-                                  }
-                                }}
-                                className="p-1 max-md:p-2 rounded text-muted hover:text-callout-danger-fg transition-colors"
-                                title="Delete Snippet"
-                                aria-label="Delete snippet"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </motion.button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => useNotesWorkspaceStore.getState().openCheat(cmd.id)}
-                              className="p-1 max-md:p-2 rounded text-muted hover:text-primary transition-colors"
-                              title="Open in Notes"
-                              aria-label={`Open ${cmd.title} in Notes`}
-                            >
-                              <BookOpen className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => handleCopy(interpolated, cmd.id)}
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] ${
-                                isCopied
-                                  ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
-                                  : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
-                              }`}
-                            >
-                              {isCopied ? (
-                                <>
-                                  <Check className="w-3 h-3 text-callout-success-fg" />
-                                  <span className="text-callout-success-fg">Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3 h-3" />
-                                  <span>Copy</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Rendered Command Code Box */}
-                        <div className="relative">
-                          <pre className="p-3 rounded-lg bg-surface-inverse text-xs text-on-inverse overflow-x-auto whitespace-pre-wrap break-all font-mono tabular-nums select-all">
-                            {interpolated.includes('\n') ? (
-                              interpolated
-                            ) : (
-                              <SyntaxHighlightedCommand command={interpolated} className="!bg-transparent !p-0 !rounded-none" />
-                            )}
-                          </pre>
-                        </div>
-
-                        {/* Tags */}
-                        {cmd.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {cmd.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </motion.div>
-                    );
-                  })
-                )}
-                {filteredCommands.length > visibleCommandCount && (
-                  <button
-                    type="button"
-                    onClick={() => setVisibleCommandCount((n) => n + SNIPPET_PAGE_SIZE)}
-                    className="inline-flex min-h-8 items-center rounded-md border border-subtle bg-surface-card px-3 text-xs font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary cursor-pointer [@media(pointer:coarse)]:min-h-11"
-                  >
-                    Show more ({filteredCommands.length - visibleCommandCount} left)
-                  </button>
-                )}
-              </div>
+              <SnippetList
+                filteredCommands={filteredCommands}
+                visibleCommandCount={visibleCommandCount}
+                setVisibleCommandCount={setVisibleCommandCount}
+                effectiveVars={effectiveVars}
+                copiedId={copiedId}
+                toggleStarCommand={toggleStarCommand}
+                deleteCustomCommand={deleteCustomCommand}
+                handleCopy={handleCopy}
+              />
             </div>
           </div>
         </>
       )}
 
       {/* New Custom Command Modal */}
-      <Modal
-        open={isNewModalOpen}
+      <AddSnippetModal
+        isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
-        labelledBy="add-custom-snippet-title"
-        size="lg"
-      >
-        <div className="p-6 space-y-4">
-          <h3 id="add-custom-snippet-title" className="text-base font-semibold text-primary flex items-center gap-2">
-            <Code className="w-4 h-4 text-muted" /> Add custom snippet
-          </h3>
-
-          <form onSubmit={handleCreateCustom} className="space-y-3 text-xs">
-            <div>
-              <label htmlFor="custom-snippet-title" className="block text-muted mb-1 font-semibold">
-                Command Title *
-              </label>
-              <input
-                type="text"
-                id="custom-snippet-title"
-                name="custom-snippet-title"
-                required
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="e.g. Chamilo LMS RCE Exploit"
-                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="custom-snippet-category" className="block text-muted mb-1 font-semibold">
-                Category
-              </label>
-              <CyberSelect
-                id="custom-snippet-category"
-                name="custom-snippet-category"
-                value={newCategory}
-                onChange={setNewCategory}
-                options={SNIPPET_CATEGORIES}
-                variant="default"
-                size="md"
-                className="w-full"
-                triggerClassName="w-full bg-surface-sunken"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="custom-snippet-desc" className="block text-muted mb-1 font-semibold">
-                Description
-              </label>
-              <input
-                type="text"
-                id="custom-snippet-desc"
-                name="custom-snippet-desc"
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Brief note on exploit parameters..."
-                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="custom-snippet-template" className="block text-muted mb-1 font-semibold">
-                Command Template (Supports &#x7B;TARGET_IP&#x7D;, &#x7B;LHOST&#x7D;, &#x7B;LPORT&#x7D;) *
-              </label>
-              <textarea
-                id="custom-snippet-template"
-                name="custom-snippet-template"
-                rows={3}
-                required
-                value={newTemplate}
-                onChange={(e) => setNewTemplate(e.target.value)}
-                placeholder="python3 exploit.py -t {TARGET_IP} -l {LHOST} -p {LPORT}"
-                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent font-mono resize-none"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="custom-snippet-tags" className="block text-muted mb-1 font-semibold">
-                Tags (Comma-separated)
-              </label>
-              <input
-                type="text"
-                id="custom-snippet-tags"
-                name="custom-snippet-tags"
-                value={newTags}
-                onChange={(e) => setNewTags(e.target.value)}
-                placeholder="rce, python, cve-2023-xxxx"
-                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
-              />
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
-              <button
-                type="button"
-                onClick={() => setIsNewModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-lg bg-accent text-on-accent font-semibold text-xs hover:bg-accent/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
-              >
-                Save Snippet
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+        onSubmit={handleCreateCustom}
+        newTitle={newTitle}
+        setNewTitle={setNewTitle}
+        newCategory={newCategory}
+        setNewCategory={setNewCategory}
+        newDesc={newDesc}
+        setNewDesc={setNewDesc}
+        newTemplate={newTemplate}
+        setNewTemplate={setNewTemplate}
+        newTags={newTags}
+        setNewTags={setNewTags}
+      />
 
       {/* New note modal */}
       <NewCptsNoteModal
