@@ -13,22 +13,44 @@
   function isPlaceholder(v) {
     if (!v) return true;
     var s = String(v).trim();
-    return !s || /10\.10\.\d+\.x/i.test(s) || /^target\.htb$/i.test(s);
+    return !s || /10\.10\.\d+\.x/i.test(s) || /^10\.10\.x\.x$/i.test(s) || /^target\.htb$/i.test(s);
+  }
+
+  function resolveProfileKey() {
+    var profileId = 'guest';
+    try {
+      var appRaw = localStorage.getItem(APP_STORE_KEY);
+      if (appRaw) {
+        var parsed = JSON.parse(appRaw);
+        var pid = parsed && parsed.state && parsed.state.currentProfileId;
+        if (typeof pid === 'string' && pid.trim()) profileId = pid.trim();
+      }
+    } catch { /* ignore */ }
+    return 'zerobox_operator_profile_' + profileId;
+  }
+
+  function applyGvToOut(gv, out) {
+    if (!gv || typeof gv !== 'object') return;
+    if (!isPlaceholder(gv.targetIp)) out.targetIp = String(gv.targetIp).trim();
+    if (!isPlaceholder(gv.lhost)) out.lhost = String(gv.lhost).trim();
+    if (gv.lport && String(gv.lport).trim() !== '4444') out.lport = String(gv.lport).trim();
+    if (!isPlaceholder(gv.domain)) out.domain = String(gv.domain).trim();
   }
 
   function readSaved() {
     var out = { targetIp: '', lhost: '', lport: '', domain: '' };
     try {
+      var profRaw = localStorage.getItem(resolveProfileKey());
+      if (profRaw) {
+        var prof = JSON.parse(profRaw);
+        applyGvToOut(prof && (prof.globalVars || (prof.state && prof.state.globalVars)), out);
+      }
+    } catch { /* ignore */ }
+    try {
       var appRaw = localStorage.getItem(APP_STORE_KEY);
       if (appRaw) {
         var parsed = JSON.parse(appRaw);
-        var gv = parsed && parsed.state && parsed.state.globalVars;
-        if (gv) {
-          if (!isPlaceholder(gv.targetIp)) out.targetIp = String(gv.targetIp).trim();
-          if (!isPlaceholder(gv.lhost)) out.lhost = String(gv.lhost).trim();
-          if (gv.lport && String(gv.lport).trim() !== '4444') out.lport = String(gv.lport).trim();
-          if (!isPlaceholder(gv.domain)) out.domain = String(gv.domain).trim();
-        }
+        applyGvToOut(parsed && parsed.state && parsed.state.globalVars, out);
       }
     } catch { /* ignore */ }
     try {
@@ -46,23 +68,45 @@
     return out;
   }
 
+  function patchGlobalVarsInBlob(key, patchFn) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      var gv = (parsed && parsed.state && parsed.state.globalVars) || (parsed && parsed.globalVars);
+      if (gv && typeof gv === 'object') {
+        patchFn(gv);
+        localStorage.setItem(key, JSON.stringify(parsed));
+      }
+    } catch { /* ignore */ }
+  }
+
   function writeSaved(vals) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(vals));
     } catch { /* ignore */ }
+    var syncFn = function (gv) {
+      gv.targetIp = vals.targetIp || '10.10.x.x';
+      gv.lhost = vals.lhost || '10.10.14.x';
+      gv.lport = vals.lport || '4444';
+      if (vals.domain !== undefined) gv.domain = vals.domain || 'target.htb';
+    };
+    patchGlobalVarsInBlob(APP_STORE_KEY, syncFn);
+    patchGlobalVarsInBlob(resolveProfileKey(), syncFn);
+  }
+
+  function clearSaved(clearDomain) {
     try {
-      var appRaw = localStorage.getItem(APP_STORE_KEY);
-      if (appRaw) {
-        var parsed = JSON.parse(appRaw);
-        if (parsed && parsed.state && parsed.state.globalVars) {
-          if (vals.targetIp) parsed.state.globalVars.targetIp = vals.targetIp;
-          if (vals.lhost) parsed.state.globalVars.lhost = vals.lhost;
-          if (vals.lport) parsed.state.globalVars.lport = vals.lport;
-          if (vals.domain) parsed.state.globalVars.domain = vals.domain;
-          localStorage.setItem(APP_STORE_KEY, JSON.stringify(parsed));
-        }
-      }
+      localStorage.removeItem(STORAGE_KEY);
     } catch { /* ignore */ }
+    var resetFn = function (gv) {
+      gv.targetIp = '10.10.x.x';
+      gv.lhost = '10.10.14.x';
+      gv.lport = '4444';
+      if (clearDomain) gv.domain = 'target.htb';
+    };
+    patchGlobalVarsInBlob(APP_STORE_KEY, resetFn);
+    patchGlobalVarsInBlob(resolveProfileKey(), resetFn);
   }
 
   function el(tag, attrs, text) {
@@ -159,7 +203,8 @@
       inLhost.value = '';
       inLport.value = '';
       if (inDomain) inDomain.value = '';
-      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      saved.domain = '';
+      clearSaved(hasDomain);
       apply(false);
     });
 

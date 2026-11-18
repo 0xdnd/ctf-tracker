@@ -8,7 +8,7 @@ import { MobileNav } from './components/layout/MobileNav';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTopButton } from './components/common/BackToTopButton';
 import { ScrollProvider, useScrollActions } from './context/ScrollContext';
-import { TrackerView } from './components/tracker/TrackerView';
+import { TrackerView, warmTrackerViewsInDev } from './components/tracker/TrackerView';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { ViewSkeleton } from './components/common/Skeleton';
 import { useTacticalHotkeys } from './hooks/useTacticalHotkeys';
@@ -275,7 +275,9 @@ const MainAppContent: React.FC = () => {
     // load, two frames and an idle moment, so the chunk requests start after the largest contentful paint.
     // Routes that need it sooner (target detail, the importers) call loadCatalog() themselves.
     let live = true;
-    void afterFirstPaint().then(() => {
+    void afterFirstPaint().then(async () => {
+      if (!live) return;
+      await warmTrackerViewsInDev();
       if (live) void useCtfStore.getState().loadCatalog();
     });
     return () => {

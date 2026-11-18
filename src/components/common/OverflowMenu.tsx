@@ -117,13 +117,22 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
       window.addEventListener('scroll', onScroll, true);
       window.addEventListener('resize', onResize);
     }
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) {
+        e.preventDefault();
+        e.stopPropagation();
+        close(true);
+      }
+    };
+    window.addEventListener('keydown', onEsc);
     return () => {
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('touchstart', onPointerDown);
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('keydown', onEsc);
     };
-  }, [open, portal]);
+  }, [open, portal, close]);
 
   if (items.length === 0) return null;
 
@@ -180,7 +189,12 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
   const originClass = align === 'right' ? 'right-0 origin-top-right' : 'left-0 origin-top-left';
 
   return (
-    <div ref={rootRef} className={`relative inline-flex ${className}`}>
+    <div
+      ref={rootRef}
+      data-escape-consumer={open ? 'true' : undefined}
+      data-escape-open={open ? 'true' : undefined}
+      className={`relative inline-flex ${className}`}
+    >
       <button
         ref={triggerRef}
         type="button"
@@ -207,6 +221,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
             id={menuId}
             role="menu"
             aria-label={label}
+            data-escape-consumer="true"
             onKeyDown={handleMenuKeyDown}
             onClick={portal ? (e) => e.stopPropagation() : undefined}
             style={portal ? { top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden' } : undefined}
@@ -214,7 +229,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: skipMotion ? 0 : 0.12, ease: 'easeOut' } }}
             transition={skipMotion ? { duration: 0 } : TACTICAL_SPRING}
-            className={`${portal ? 'fixed' : 'absolute top-full mt-1'} z-[100] min-w-[180px] max-w-[260px] rounded-xl border border-subtle bg-surface-elevated p-1 shadow-lg machined-edge ${portal ? '' : originClass}`}
+            className={`${portal ? 'fixed z-popover' : `absolute top-full mt-1 z-[100] ${originClass}`} min-w-[180px] max-w-[260px] rounded-xl border border-subtle bg-surface-elevated p-1 shadow-lg machined-edge`}
           >
             {items.map((item) => (
               <button

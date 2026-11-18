@@ -17,7 +17,6 @@ import {
   ClipboardPaste,
   AlertCircle
 } from 'lucide-react';
-import { downloadMachinesCsv } from '../../utils/machineCsvExport';
 import { useCtfStore, FilterState, HtbTargetStatus, type SortOption } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import { toast } from '../../store/useToastStore';
@@ -32,9 +31,25 @@ import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
 import { KanbanBoard } from './KanbanBoard';
 import { TrackPicker } from './TrackPicker';
 import { parseTrackParam } from '../../utils/trackUrl';
-const TableView = React.lazy(() => import('./TableView').then((m) => ({ default: m.TableView })));
-const GridView = React.lazy(() => import('./GridView').then((m) => ({ default: m.GridView })));
-const GraphView = React.lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })));
+const loadTableView = () => import('./TableView');
+const loadGridView = () => import('./GridView');
+const loadGraphView = () => import('./GraphView');
+let devViewsWarmPromise: Promise<unknown> | null = null;
+export const warmTrackerViewsInDev = (): Promise<unknown> => {
+  if (!import.meta.env.DEV || import.meta.env.MODE === 'test') return Promise.resolve();
+  return (devViewsWarmPromise ??= loadTableView()
+    .then(() => loadGraphView())
+    .then(() => loadGridView())
+    .catch(() => undefined));
+};
+export const preloadTrackerView = (mode: string) => {
+  if (mode === 'table') void loadTableView();
+  else if (mode === 'grid') void loadGridView();
+  else if (mode === 'graph') void loadGraphView();
+};
+const TableView = React.lazy(() => loadTableView().then((m) => ({ default: m.TableView })));
+const GridView = React.lazy(() => loadGridView().then((m) => ({ default: m.GridView })));
+const GraphView = React.lazy(() => loadGraphView().then((m) => ({ default: m.GraphView })));
 const MultiRecordImportModal = React.lazy(() => import('./MultiRecordImportModal').then((m) => ({ default: m.MultiRecordImportModal })));
 const ImportPanels = React.lazy(() => import('../import/ImportPanels').then((m) => ({ default: m.ImportPanels })));
 const loadFilterDrawer = () => import('../layout/FilterDrawer');
@@ -200,8 +215,13 @@ export const TrackerView: React.FC = () => {
   }, [loadCatalog]);
   React.useEffect(() => {
     let live = true;
+    void warmTrackerViewsInDev();
     void afterFirstPaint()
-      .then(() => (live ? loadCatalog() : undefined))
+      .then(async () => {
+        if (!live) return;
+        await warmTrackerViewsInDev();
+        if (live) await loadCatalog();
+      })
       .then(() => {
         const s = useCtfStore.getState();
         if (live && !s.isCatalogLoaded && !s.isCatalogLoading) setCatalogFailed(true);
@@ -556,7 +576,8 @@ export const TrackerView: React.FC = () => {
     </span>
   );
 
-  const handleExportCsv = useCallback(() => {
+  const handleExportCsv = useCallback(async () => {
+    const { downloadMachinesCsv } = await import('../../utils/machineCsvExport');
     downloadMachinesCsv(filteredMachines);
     if (soundEnabled) playCyberSound('export');
     toast.success(`Exported ${filteredMachines.length.toLocaleString('en-US')} machine${filteredMachines.length === 1 ? '' : 's'} to CSV`);

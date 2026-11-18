@@ -305,6 +305,11 @@ export const Sidebar: React.FC = () => {
                   aria-label={collapsed ? title : undefined}
                   data-testid={`view-${id}`}
                   aria-pressed={viewMode === id}
+                  onPointerEnter={() => {
+                    if (id === 'table') void import('../tracker/TableView');
+                    else if (id === 'grid') void import('../tracker/GridView');
+                    else if (id === 'graph') void import('../tracker/GraphView');
+                  }}
                   onClick={() => {
                     setViewMode(id);
                     if (soundEnabled) playCyberSound('click');

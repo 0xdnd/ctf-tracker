@@ -88,6 +88,20 @@ describe('field manual shell navigation', () => {
     expect(loc.pathname).toBe('/tracker');
   });
 
+  it('back from /field-manual to /cheatsheets resets exit guard so subsequent note deep-links still sync', async () => {
+    sessionStorage.setItem('zerobox_last_app_route', '/cheatsheets');
+    render(
+      <MemoryRouter initialEntries={['/field-manual']}>
+        <Probe />
+        <CheatsheetView />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('field-manual-shell')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to app' }));
+    await waitFor(() => expect(loc.pathname).toBe('/cheatsheets'));
+    await waitFor(() => expect(screen.queryByTestId('field-manual-shell')).toBeNull());
+  });
+
   it('rememberAppRoute ignores notes paths', () => {
     rememberAppRoute('/x');
     rememberAppRoute('/notes?note=A');

@@ -4,6 +4,24 @@
   root.classList.add('js');
   var mode = null;
   var preset = 'obsidian';
+  function mapPreset(raw) {
+    var p = String(raw || '').toLowerCase().trim();
+    if (p === 'htb' || p === 'hackthebox' || p === 'hack-the-box' || p === 'htb-oled' || p === 'hack the box') return 'htb';
+    if (
+      p === 'offsec' ||
+      p === 'red-team' ||
+      p === 'redteam' ||
+      p === 'red team' ||
+      p === 'crimson' ||
+      p === 'monolith' ||
+      p === 'clean monolith' ||
+      p === 'clean-monolith' ||
+      p === 'light'
+    ) {
+      return 'offsec';
+    }
+    return 'obsidian';
+  }
   try {
     var primary = localStorage.getItem('zerobox-theme-mode');
     var legacy = localStorage.getItem('zb-site-theme');
@@ -16,9 +34,7 @@
     var rawStore = localStorage.getItem('zerobox-tactical-store');
     if (rawStore) {
       var parsed = JSON.parse(rawStore);
-      var p = String((parsed && parsed.state && parsed.state.themePreset) || '').toLowerCase().trim();
-      if (p === 'htb' || p === 'hack the box' || p === 'hack-the-box') preset = 'htb';
-      else if (p === 'offsec' || p === 'red-team' || p === 'monolith' || p === 'clean monolith' || p === 'clean-monolith' || p === 'light') preset = 'offsec';
+      preset = mapPreset(parsed && parsed.state && parsed.state.themePreset);
     }
   } catch {
     /* localStorage unavailable */

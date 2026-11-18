@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { motion, useMotionValue, useReducedMotion } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -284,25 +285,28 @@ export const PersistentNotesWorkspace: React.FC = () => {
 
       {/* ========================================================
           MOBILE SLIDE-UP BOTTOM SHEET (< 768px)
-          Large, spacious bottom sheet (75vh/88vh) with tabs, backdrop, and proper safe-area docking.
+          Portaled to document.body above Header/PayloadBar/MobileNav, below Modal (z-100).
          ======================================================== */}
-      {/* Mobile Backdrop */}
-      <div
-        className="md:hidden fixed inset-0 z-[35] bg-surface-inverse/50 backdrop-blur-xs transition-opacity duration-200"
-        onClick={() => setIsOpen(false)}
-        aria-hidden="true"
-      />
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            {/* Mobile Backdrop */}
+            <div
+              className="md:hidden fixed inset-0 z-[45] bg-surface-inverse/50 backdrop-blur-xs transition-opacity duration-200"
+              onClick={() => setIsOpen(false)}
+              aria-hidden="true"
+            />
 
-      <motion.div
-        ref={mobileSheetRef}
-        role={isMobileSheet ? 'dialog' : undefined}
-        aria-modal={isMobileSheet ? true : undefined}
-        aria-label="Mobile Notes Workspace"
-        style={{ y: sheetDragY }}
-        className={`md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-surface-card border-t border-subtle rounded-t-2xl shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-sans ${
-          dockSize === 'expanded' ? 'h-[88vh] max-h-[calc(100dvh-4.5rem)]' : 'h-[75vh] max-h-[calc(100dvh-4.5rem)]'
-        }`}
-      >
+            <motion.div
+              ref={mobileSheetRef}
+              role={isMobileSheet ? 'dialog' : undefined}
+              aria-modal={isMobileSheet ? true : undefined}
+              aria-label="Mobile Notes Workspace"
+              style={{ y: sheetDragY }}
+              className={`md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-overlay bg-surface-card border-t border-subtle rounded-t-2xl shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-sans ${
+                dockSize === 'expanded' ? 'h-[88vh] max-h-[calc(100dvh-4.5rem)]' : 'h-[75vh] max-h-[calc(100dvh-4.5rem)]'
+              }`}
+            >
         {/* Mobile Drag Header */}
         <div
           {...mobileDragHandlers}
@@ -465,7 +469,10 @@ export const PersistentNotesWorkspace: React.FC = () => {
             </div>
           )}
         </div>
-      </motion.div>
+            </motion.div>
+          </>,
+          document.body
+        )}
 
       {activeNote && (
         <TemplatizeNotesModal

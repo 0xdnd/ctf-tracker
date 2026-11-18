@@ -62,3 +62,61 @@ for (const url of PAGES) {
     expect(summary, `serious/critical axe violations on ${url}`).toEqual([]);
   });
 }
+
+test('axe (light mode + dynamic bridges): no serious/critical violations on /, /techniques/active-directory/, and /oscp-like-machines/', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('zerobox-theme-mode', 'light');
+    localStorage.setItem('zb-site-theme', 'light');
+    localStorage.setItem(
+      'zerobox-tactical-store',
+      JSON.stringify({
+        state: {
+          currentProfileId: 'guest',
+          globalVars: { targetIp: '10.10.11.24', lhost: '10.10.14.5', lport: '4444', domain: 'corp.local' },
+        },
+      }),
+    );
+    localStorage.setItem(
+      'zerobox_operator_profile_guest',
+      JSON.stringify({
+        machines: [
+          { id: 'htb-archetype', name: 'Archetype', platform: 'HTB', status: 'completed' },
+          { id: 'htb-active', name: 'Active', platform: 'HTB', status: 'root' },
+        ],
+      }),
+    );
+  });
+
+  for (const url of ['/', '/techniques/active-directory/', '/oscp-like-machines/']) {
+    const response = await page.goto(url, { waitUntil: 'load' });
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    if (url === '/techniques/active-directory/') {
+      await expect(page.locator('#zb-vars-bar')).toBeVisible();
+    }
+    if (url === '/oscp-like-machines/') {
+      await expect(page.locator('.lp-summary')).toBeVisible();
+      expect(await page.locator('tr[data-local-solved="true"]').count()).toBeGreaterThan(0);
+    }
+
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.timeline instanceof DocumentTimeline)
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+    );
+    await page.evaluate(axeSource);
+    const violations = await page.evaluate(async () => {
+      const axe = (window as unknown as { axe: { run: (ctx: Document, opts: object) => Promise<{ violations: AxeViolation[] }> } }).axe;
+      const result = await axe.run(document, { resultTypes: ['violations'] });
+      return result.violations;
+    });
+    const blocking = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+    const summary = blocking.map(
+      (v) => `${v.id} (${v.impact}) x${v.nodes.length}: ${v.help} -> ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`,
+    );
+    expect(summary, `light-mode serious/critical axe violations on ${url}`).toEqual([]);
+  }
+});

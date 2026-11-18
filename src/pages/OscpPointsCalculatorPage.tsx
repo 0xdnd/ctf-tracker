@@ -11,11 +11,19 @@ export const OscpPointsCalculatorPage: React.FC = () => (
       title="OSCP points calculator"
       description="Tick the flags you have and see your total, the pass mark and what is still needed."
       icon={<Calculator aria-hidden="true" />}
+      actions={
+        <Link
+          to="/exam?track=OSCP"
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-xs font-semibold text-primary transition-colors"
+        >
+          Start timed OSCP mock exam →
+        </Link>
+      }
     />
     <OscpPointsCalculator />
     <p className="text-sm text-secondary">
       Want to rehearse the full 23 hours 45 minutes? Open the{' '}
-      <Link to="/exam" className="text-accent underline underline-offset-2 hover:text-primary">
+      <Link to="/exam?track=OSCP" className="text-accent underline underline-offset-2 hover:text-primary">
         exam simulator
       </Link>{' '}
       or read the{' '}

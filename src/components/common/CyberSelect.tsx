@@ -170,6 +170,20 @@ export function CyberSelect<T extends string = string>({
     }
   }, [searchQuery, isOpen]);
 
+  // Close open dropdown on Escape even when focus moved outside the trigger/search input
+  useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [isOpen]);
+
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
@@ -203,6 +217,7 @@ export function CyberSelect<T extends string = string>({
         break;
       case 'Escape':
         e.preventDefault();
+        e.stopPropagation();
         setIsOpen(false);
         break;
       case 'Tab':
@@ -247,6 +262,7 @@ export function CyberSelect<T extends string = string>({
       ref={containerRef}
       role="presentation"
       data-escape-consumer={isOpen ? 'true' : undefined}
+      data-escape-open={isOpen ? 'true' : undefined}
       className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={handleKeyDown}
     >
@@ -555,6 +571,19 @@ export function CyberMultiSelect<T extends string = string>({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [isOpen]);
+
   const toggleOption = (val: T) => {
     if (selectedValues.includes(val)) {
       onChange(selectedValues.filter((v) => v !== val));
@@ -597,10 +626,12 @@ export function CyberMultiSelect<T extends string = string>({
       ref={containerRef}
       role="presentation"
       data-escape-consumer={isOpen ? 'true' : undefined}
+      data-escape-open={isOpen ? 'true' : undefined}
       className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
+          e.stopPropagation();
           setIsOpen(false);
         }
       }}

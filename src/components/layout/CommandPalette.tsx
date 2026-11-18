@@ -37,6 +37,15 @@ import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
 import { isDueForReview } from '../../utils/spacedRepetition';
 import { getSearchIndex, searchDocs, type Range, type SearchHit, type SearchSection } from '../../utils/searchIndex';
+import { isPlaceholderIp } from '../../utils/ipInput';
+
+const PALETTE_STATUS_LABELS: Record<string, string> = {
+  backlog: 'Backlog',
+  recon: 'Recon',
+  foothold: 'Foothold',
+  root: 'Rooted',
+  completed: 'Completed',
+};
 
 /** Renders text with <mark> around the given ranges (token-styled, no raw HTML). */
 const Highlight: React.FC<{ text: string; ranges: Range[] }> = ({ text, ranges }) => {
@@ -559,6 +568,12 @@ export const CommandPalette: React.FC = () => {
     return list;
   }, [filteredActions, filteredMachines, searchHits, executeHit, filteredCheats, openCheatInDock, setSelectedMachineId, setCommandPaletteOpen, setActiveTab, navigate]);
 
+  const itemIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    allItems.forEach((item, idx) => map.set(item.id, idx));
+    return map;
+  }, [allItems]);
+
   // Reset selectedIndex to 0 on query change
   useEffect(() => {
     setSelectedIndex(0);
@@ -599,7 +614,7 @@ export const CommandPalette: React.FC = () => {
     if (!commandPaletteOpen) return;
     const activeEl = trapRef.current?.querySelector(`[data-palette-index="${selectedIndex}"]`);
     if (activeEl) {
-      activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' as ScrollBehavior });
     }
   }, [selectedIndex, commandPaletteOpen, trapRef]);
 
@@ -659,7 +674,7 @@ export const CommandPalette: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {filteredActions.map((action) => {
-                  const itemIndex = allItems.findIndex((i) => i.id === action.id);
+                  const itemIndex = itemIndexById.get(action.id) ?? -1;
                   const isSelected = itemIndex === selectedIndex;
                   const Icon = action.icon;
                   return (
@@ -698,7 +713,7 @@ export const CommandPalette: React.FC = () => {
                 <div className="px-3 py-2 text-muted text-center">No matching machines found.</div>
               ) : (
                 filteredMachines.map((m) => {
-                  const itemIndex = allItems.findIndex((i) => i.id === `machine-${m.id}`);
+                  const itemIndex = itemIndexById.get(`machine-${m.id}`) ?? -1;
                   const isSelected = itemIndex === selectedIndex;
                   return (
                     <button
@@ -720,7 +735,9 @@ export const CommandPalette: React.FC = () => {
                         <span className="font-medium text-primary">
                           {m.name}
                         </span>
-                        <span className="text-[11px] text-muted font-mono tabular-nums">{m.ip}</span>
+                        {m.ip && !isPlaceholderIp(m.ip) && (
+                          <span className="text-[11px] text-muted font-mono tabular-nums">{m.ip}</span>
+                        )}
                         <span className="text-[11px] text-muted">
                           {m.os}
                         </span>
@@ -730,7 +747,7 @@ export const CommandPalette: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-2 text-muted group-hover:text-primary">
-                        <span className="text-[11px]">{m.status}</span>
+                        <span className="text-[11px]">{PALETTE_STATUS_LABELS[m.status] || m.status}</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </div>
                     </button>
@@ -752,7 +769,7 @@ export const CommandPalette: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   {sectionHits.map((h) => {
-                    const itemIndex = allItems.findIndex((i) => i.id === `hit-${h.doc.id}`);
+                    const itemIndex = itemIndexById.get(`hit-${h.doc.id}`) ?? -1;
                     const isSelected = itemIndex === selectedIndex;
                     return (
                       <button
@@ -790,7 +807,7 @@ export const CommandPalette: React.FC = () => {
 
               <div className="space-y-1">
                 {filteredCheats.map((c) => {
-                  const itemIndex = allItems.findIndex((i) => i.id === `cheat-${c.id}`);
+                  const itemIndex = itemIndexById.get(`cheat-${c.id}`) ?? -1;
                   const isSelected = itemIndex === selectedIndex;
                   return (
                     <button

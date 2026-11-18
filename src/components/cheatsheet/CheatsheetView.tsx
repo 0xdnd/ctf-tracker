@@ -461,8 +461,18 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     }
   }, [activeObsidianNoteId]);
 
+  const exitingFromPathRef = useRef<string | null>(null);
+  const renderWindowPath = typeof window !== 'undefined' ? window.location.pathname : null;
+
   // Sync viewMode and activeObsidianNote when route or search query changes
   useEffect(() => {
+    if (exitingFromPathRef.current !== null) {
+      if (exitingFromPathRef.current === location.pathname) return;
+      exitingFromPathRef.current = null;
+    }
+    if (renderWindowPath !== null && typeof window !== 'undefined' && window.location.pathname !== renderWindowPath) {
+      return;
+    }
     const params = new URLSearchParams(location.search);
     const isManualParam = location.pathname.includes('note') || 
       location.pathname.includes('manual') || 
@@ -530,6 +540,13 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
   // /notes?new=1 (from the dock's empty state) opens the new-note modal once, then drops the param.
   useEffect(() => {
+    if (exitingFromPathRef.current !== null) {
+      if (exitingFromPathRef.current === location.pathname) return;
+      exitingFromPathRef.current = null;
+    }
+    if (renderWindowPath !== null && typeof window !== 'undefined' && window.location.pathname !== renderWindowPath) {
+      return;
+    }
     const params = new URLSearchParams(location.search);
     if (params.get('new') !== '1') return;
     setNewNoteInitialDir(undefined);
@@ -537,7 +554,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     params.delete('new');
     const rest = params.toString();
     navigate({ pathname: location.pathname, search: rest ? `?${rest}` : '' }, { replace: true });
-  }, [location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, navigate, renderWindowPath]);
 
   // New Custom Command Form Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -1729,7 +1746,10 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               activePanel={hasNotes ? ribbonActivePanel : null}
               onSelectPanel={handleRibbonSelectPanel}
               onOpenSwitcher={() => useNotesWorkspaceStore.getState().openNoteSwitcher()}
-              onBack={() => navigate(getLastAppRoute() ?? '/tracker')}
+              onBack={() => {
+                exitingFromPathRef.current = location.pathname;
+                navigate(getLastAppRoute() ?? '/tracker');
+              }}
             />
           }
           left={hasNotes ? renderNotesLeft() : null}

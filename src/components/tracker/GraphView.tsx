@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Machine, Platform, OperatingSystem, Difficulty } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { PlatformIcon, platformFullName } from '../common/PlatformBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
@@ -30,6 +31,7 @@ import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
 import { computeAutoLayout } from '../../utils/graphAutoLayout';
 import { useGraphHistory } from '../../hooks/useGraphHistory';
+import { hasActiveFocusTrap } from '../../hooks/useFocusTrap';
 import {
   SCOPED_CLUSTER_CAP,
   splitScopedOverflow,
@@ -1225,6 +1227,8 @@ MinimapStaticLayers.displayName = 'MinimapStaticLayers';
 // Primary Attack Graph Component (<GraphView>)
 // ---------------------------------------------------------------------------
 const GRAPH_STATUS_LABELS: Record<string, string> = {
+  backlog: 'Target Backlog',
+  recon: 'Active Recon',
   todo: 'Target Backlog',
   'in-progress': 'Active Recon',
   foothold: 'Foothold',
@@ -1237,6 +1241,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const setSelectedMachineId = useCtfStore((s) => s.setSelectedMachineId);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const globalLhost = useCtfStore((s) => s.globalVars.lhost);
+  const operatorCallsign = useAuthStore((s) => s.user?.callsign || s.user?.name || '');
+  const rigHeaderLabel = operatorCallsign.trim()
+    ? `${operatorCallsign.trim().slice(0, 14).toUpperCase()} // KALI`
+    : 'OPERATOR // KALI';
   const rigLhostLabel =
     globalLhost && globalLhost.trim() && !/x/i.test(globalLhost) && globalLhost.trim() !== '10.10.14.5'
       ? globalLhost.trim()
@@ -2622,10 +2630,17 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     });
   };
 
-  // Exit fullscreen on Escape when no nested edge inspector or node flyout is open
+  // Exit fullscreen on Escape when no nested edge inspector, modal trap, or node flyout is open
   useEffect(() => {
     if (!isFullscreen) return;
     const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.defaultPrevented ||
+        hasActiveFocusTrap() ||
+        (typeof document !== 'undefined' && Boolean(document.querySelector('[data-escape-open="true"]')))
+      ) {
+        return;
+      }
       if (e.key === 'Escape' && !selectedEdgeId) {
         if (selectedNode) {
           setSelectedNode(null);
@@ -3408,7 +3423,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 fontWeight="bold"
                 textAnchor="middle"
               >
-                OPERATOR // KALI
+                {rigHeaderLabel}
               </text>
               <text
                 x={centerX}

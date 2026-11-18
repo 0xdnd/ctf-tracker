@@ -88,7 +88,18 @@ export default defineConfig(({ mode }) => {
   const isTauri = mode === 'tauri';
   const mermaidPkgs = mermaidOnlyPackages();
   return {
-  plugins: [react(), ...(isTauri ? [] : [pagesFallbackPreview()])],
+  plugins: [
+    react(),
+    ...(isTauri
+      ? [
+          {
+            name: 'tauri-strip-web-csp-meta',
+            transformIndexHtml: (html: string) =>
+              html.replace(/\s*<meta\s+http-equiv="Content-Security-Policy"[^>]*>/gi, ''),
+          },
+        ]
+      : [pagesFallbackPreview()]),
+  ],
   base: isTauri ? './' : '/',
   esbuild: { legalComments: 'eof' },
   define: {
@@ -103,7 +114,32 @@ export default defineConfig(({ mode }) => {
     port: 3000,
     open: false,
     watch: {
-      ignored: ['**/dist/**', '**/docs/**', '**/assets/**', '**/scratch/**', '**/release/**', '**/*.tmp**', '**/*.zip', '**/.kilo/**', '**/*.log'],
+      ignored: [
+        '**/dist/**',
+        '**/docs/**',
+        '**/assets/**',
+        '**/scratch/**',
+        '**/release/**',
+        '**/src-tauri/**',
+        '**/promo-*/**',
+        '**/second-brain/**',
+        '**/coverage/**',
+        '**/test-results/**',
+        '**/playwright-report/**',
+        '**/ctftracker.com-audit/**',
+        '**/design-preview/**',
+        '**/catalog-candidates/**',
+        '**/reports/**',
+        '**/.claude/**',
+        '**/.agents/**',
+        '**/.agentsroom/**',
+        '**/.playwright-mcp/**',
+        '**/.superpowers/**',
+        '**/*.tmp**',
+        '**/*.zip',
+        '**/.kilo/**',
+        '**/*.log',
+      ],
     },
   },
   preview: {
@@ -111,7 +147,7 @@ export default defineConfig(({ mode }) => {
     port: 3000,
   },
   optimizeDeps: {
-    entries: ['index.html', 'src/**/*.{ts,tsx}'],
+    entries: ['index.html', 'src/**/*.{ts,tsx}', '!src/test/**', '!src/**/*.test.{ts,tsx}'],
   },
   build: {
     outDir: 'dist',

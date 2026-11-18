@@ -26,6 +26,9 @@ export const TRAP_COMPANION_ATTR = 'data-trap-companion';
 // Stack of active traps; only the top-most trap handles keys (nested modals).
 const activeTrapStack: symbol[] = [];
 
+/** True while at least one modal/drawer focus trap is active. */
+export const hasActiveFocusTrap = (): boolean => activeTrapStack.length > 0;
+
 export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
   options: UseFocusTrapOptions
 ) {
@@ -68,7 +71,10 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
       if (e.key === 'Escape') {
         if (e.defaultPrevented) return;
         const origin = e.target instanceof Element ? e.target : document.activeElement;
-        if (origin && typeof origin.closest === 'function' && origin.closest('[data-escape-consumer="true"]')) {
+        if (
+          (origin && typeof origin.closest === 'function' && origin.closest('[data-escape-consumer="true"]')) ||
+          containerRef.current?.querySelector('[data-escape-open="true"]')
+        ) {
           return;
         }
         if (onCloseRef.current) {

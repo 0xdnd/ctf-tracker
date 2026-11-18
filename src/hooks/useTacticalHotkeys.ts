@@ -9,6 +9,7 @@ import { playCyberSound } from '../utils/helpers';
 import { ViewMode } from '../types';
 import { stripTrailingSlash } from '../utils/pathUtils';
 import { useOnboardingStore } from '../onboarding/useOnboardingStore';
+import { hasActiveFocusTrap } from './useFocusTrap';
 
 export function useTacticalHotkeys() {
   const navigate = useNavigate();
@@ -99,6 +100,12 @@ export function useTacticalHotkeys() {
 
       // 0. Escape Key: Dismiss open modals / selections, but blur active inputs first
       if (e.key === 'Escape') {
+        if (
+          e.defaultPrevented ||
+          (typeof document !== 'undefined' && Boolean(document.querySelector('[data-escape-open="true"]')))
+        ) {
+          return;
+        }
         const activeEl = document.activeElement as HTMLElement | null;
         if (
           activeEl &&
@@ -254,9 +261,34 @@ export function useTacticalHotkeys() {
         return;
       }
 
-      // The command palette owns plain typing while open; never fall through to single-key hotkeys.
-      if (useCtfStore.getState().commandPaletteOpen && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        return;
+      // Open modals/drawers own plain single-key typing; never fire background hotkeys behind them.
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        const s = useCtfStore.getState();
+        const anyStoreModal =
+          s.commandPaletteOpen ||
+          s.settingsModalOpen ||
+          s.shortcutsModalOpen ||
+          s.newMachineModalOpen ||
+          s.backupModalOpen ||
+          s.reconAutomationModalOpen ||
+          s.selectedMachineId !== null ||
+          s.reportMachineId !== null ||
+          s.operatorModalOpen ||
+          s.licenseModalOpen ||
+          s.notesImportModalOpen ||
+          s.flexCardModalOpen ||
+          s.snippetsDrawerOpen ||
+          s.revShellModalOpen ||
+          s.filterDrawerOpen ||
+          useExamStore.getState().isQuickDrawerOpen ||
+          useAuthStore.getState().operatorProfileModalOpen ||
+          useNotesWorkspaceStore.getState().isNoteSwitcherOpen;
+        const modalAncestor = (e.target instanceof Element ? e.target : document.activeElement)?.closest?.('[aria-modal="true"]');
+        const staleClosedShortcuts =
+          modalAncestor?.getAttribute('aria-labelledby') === 'keyboard-shortcuts-title' && !s.shortcutsModalOpen;
+        if (anyStoreModal || (hasActiveFocusTrap() && modalAncestor && !staleClosedShortcuts)) {
+          return;
+        }
       }
 
       // Ignore single-character keybindings when active element is an input, textarea, or select
