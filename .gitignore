@@ -129,3 +129,7 @@ skills-lock.json
 
 # Second updater key (public half stays local)
 src-tauri/updater2.key.pub
+
+# Promo/preview scratch folders (not part of the app)
+promo-*/
+design-preview/
