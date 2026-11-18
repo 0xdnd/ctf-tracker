@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -290,12 +291,14 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
 
   const trackConfig = EXAM_TRACK_CONFIGS[selectedTrack] || EXAM_TRACK_CONFIGS.OSCP;
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
     <motion.div
       key="exam-report-modal"
-      className="fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-[125] overflow-y-auto flex items-center justify-center p-3 sm:p-6 font-sans"
       data-testid="exam-report-modal-container"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
@@ -672,6 +675,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       </motion.div>
     </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

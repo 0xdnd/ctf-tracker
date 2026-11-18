@@ -1567,7 +1567,7 @@ export const useCtfStore = create<CtfStoreState>()(
       crtOverlay: false,
       soundEnabled: true,
       themePreset: 'obsidian' as ThemePreset,
-      uiScale: 'auto',
+      uiScale: 'normal',
       focusMode: false,
       snippetsDrawerOpen: false,
       revShellModalOpen: false,
@@ -1808,8 +1808,9 @@ export const useCtfStore = create<CtfStoreState>()(
         return { uiScale: steps[nextIdx] };
       }),
       cycleUiScale: () => set((s) => {
-        const order: UiScale[] = ['auto', 'tiny', 'compact', 'normal', 'large', 'huge'];
-        const currentIdx = order.indexOf(s.uiScale || 'auto');
+        const order: UiScale[] = ['normal', 'compact', 'tiny', 'large', 'huge'];
+        const normalized = !s.uiScale || s.uiScale === 'auto' ? 'normal' : s.uiScale;
+        const currentIdx = order.indexOf(normalized);
         const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % order.length;
         return { uiScale: order[nextIdx] };
       }),
@@ -3480,8 +3481,8 @@ export const useCtfStore = create<CtfStoreState>()(
         if (!persisted.appBrand || persisted.appBrand === 'rootvector' || persisted.appBrand === 'specter') {
           persisted.appBrand = 'zerobox';
         }
-        if (!persisted.uiScale || persisted.uiScale === 'normal') {
-          persisted.uiScale = 'auto';
+        if (!persisted.uiScale || persisted.uiScale === 'auto') {
+          persisted.uiScale = 'normal';
         }
         const userSolvesReset = Boolean(persisted.userSolvesReset);
         const rawPreset = (persisted.themePreset as string) || 'obsidian';
@@ -3499,7 +3500,7 @@ export const useCtfStore = create<CtfStoreState>()(
           ...persisted,
           appBrand: 'zerobox',
           themePreset,
-          uiScale: (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : persisted.uiScale,
+          uiScale: (!persisted.uiScale || persisted.uiScale === 'auto') ? 'normal' : persisted.uiScale,
           userSolvesReset,
           customNotes: persisted.customNotes || [],
           deletedNoteIds: persisted.deletedNoteIds || [],
@@ -3521,7 +3522,7 @@ export const useCtfStore = create<CtfStoreState>()(
         const rawPreset = (persisted.themePreset as string) || 'obsidian';
         const themePreset: ThemePreset = normalizeThemePreset(rawPreset);
         applyThemePreset(themePreset);
-        const resolvedUiScale: UiScale = (!persisted.uiScale || persisted.uiScale === 'normal') ? 'auto' : (persisted.uiScale as UiScale);
+        const resolvedUiScale: UiScale = (!persisted.uiScale || persisted.uiScale === 'auto') ? 'normal' : (persisted.uiScale as UiScale);
 
         // Fail-safe: Ensure isolated custom machines are never lost during store rehydration
         const storedMachines: Machine[] = Array.isArray(persisted.machines) ? persisted.machines : [];
@@ -3548,8 +3549,8 @@ export const useCtfStore = create<CtfStoreState>()(
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
-          if (!state.uiScale || state.uiScale === 'normal') {
-            state.uiScale = 'auto';
+          if (!state.uiScale || state.uiScale === 'auto') {
+            state.uiScale = 'normal';
           }
         }
       },

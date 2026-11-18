@@ -136,9 +136,13 @@ const MainAppContent: React.FC = () => {
   const noteSwitcherOpen = useNotesWorkspaceStore((s) => s.isNoteSwitcherOpen);
   const mountNoteSwitcher = useEverTrue(noteSwitcherOpen);
   const operatorProfileModalOpen = useAuthStore((s) => s.operatorProfileModalOpen);
+  const filterDrawerOpen = useCtfStore((s) => s.filterDrawerOpen);
+  const mountOperatorProfile = useEverTrue(operatorProfileModalOpen);
+  const mountNotesImport = useEverTrue(notesImportModalOpen);
+  const mountSettings = useEverTrue(settingsModalOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
-  const uiScale = useCtfStore((s) => s.uiScale || 'auto');
+  const uiScale = useCtfStore((s) => s.uiScale || 'normal');
   const isHydrated = useCtfStore((s) => s.isHydrated);
   const chrome = useMemo(
     () => getShellChrome({ pathname: location.pathname, isPopout, focusMode }),
@@ -195,7 +199,12 @@ const MainAppContent: React.FC = () => {
           notesImportModalOpen ||
           flexCardModalOpen ||
           shortcutsModalOpen ||
-          settingsModalOpen
+          settingsModalOpen ||
+          snippetsDrawerOpen ||
+          revShellModalOpen ||
+          filterDrawerOpen ||
+          examDrawerOpen ||
+          noteSwitcherOpen
         );
         if (!isAnyModalOpen) {
           setFocusMode(false);
@@ -221,58 +230,39 @@ const MainAppContent: React.FC = () => {
     flexCardModalOpen,
     shortcutsModalOpen,
     settingsModalOpen,
+    snippetsDrawerOpen,
+    revShellModalOpen,
+    filterDrawerOpen,
+    examDrawerOpen,
+    noteSwitcherOpen,
   ]);
 
-  // Handle global UI scale with Viewport-Aware Auto-Resolution Engine
+  // Handle opt-in UI scale (native 1:1 token sizing by default; no unconditional viewport zoom)
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
     const zoomMap: Record<Exclude<UiScale, 'auto'>, string> = {
       tiny: '0.80',
       compact: '0.90',
-      normal: '1.0',
+      normal: '',
       large: '1.10',
       huge: '1.22',
     };
 
-    const getAutoZoom = (width: number): string => {
-      if (width >= 1200) return '1.0';
-      if (width >= 1024) return '0.90';
-      if (width >= 768) return '0.85';
-      return '1.0';
-    };
-
-    // Writing zoom / --app-zoom invalidates style and layout for the whole document, so only write
-    // when the computed value actually differs from what is already applied, and do it inside rAF.
     const rootStyle = document.documentElement.style as CSSStyleDeclaration & { zoom?: string };
-    const writeZoom = (zoom: string) => {
-      if (rootStyle.zoom === zoom && rootStyle.getPropertyValue('--app-zoom') === zoom) return;
-      rootStyle.zoom = zoom;
-      rootStyle.setProperty('--app-zoom', zoom);
-    };
+    const zoomVal = uiScale === 'auto' || uiScale === 'normal' ? '' : (zoomMap[uiScale] || '');
 
-    if (uiScale === 'auto') {
-      let rafId: number | null = null;
-      const scheduleAutoZoom = () => {
-        if (rafId !== null) return;
-        rafId = requestAnimationFrame(() => {
-          rafId = null;
-          writeZoom(getAutoZoom(window.innerWidth));
-        });
-      };
-
-      scheduleAutoZoom();
-
-      window.addEventListener('resize', scheduleAutoZoom);
-      return () => {
-        window.removeEventListener('resize', scheduleAutoZoom);
-        if (rafId !== null) cancelAnimationFrame(rafId);
-      };
-    } else {
-      const zoomVal = zoomMap[uiScale] || '1.0';
-      const rafId = requestAnimationFrame(() => writeZoom(zoomVal));
-      return () => cancelAnimationFrame(rafId);
-    }
+    const rafId = requestAnimationFrame(() => {
+      if (!zoomVal) {
+        if (rootStyle.zoom) rootStyle.zoom = '';
+        if (rootStyle.getPropertyValue('--app-zoom')) rootStyle.removeProperty('--app-zoom');
+        return;
+      }
+      if (rootStyle.zoom === zoomVal && rootStyle.getPropertyValue('--app-zoom') === zoomVal) return;
+      rootStyle.zoom = zoomVal;
+      rootStyle.setProperty('--app-zoom', zoomVal);
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [uiScale]);
 
   // The persist `merge` already merges machines with the catalog and forces the ZEROBOX brand on
@@ -315,8 +305,6 @@ const MainAppContent: React.FC = () => {
       setActiveTab('exam');
     } else if (path.startsWith('/vault') || path.startsWith('/evidence') || path.startsWith('/loot')) {
       setActiveTab('vault');
-    } else if (path.startsWith('/theme')) {
-      setActiveTab('theme');
     } else {
       setActiveTab('tracker');
     }
@@ -426,24 +414,18 @@ const MainAppContent: React.FC = () => {
           <AnimatePresence>
             {operatorModalOpen && <OperatorDossierModal key="operator-dossier-modal" />}
           </AnimatePresence>
-          <AnimatePresence>
-            {operatorProfileModalOpen && <OperatorProfileModal key="operator-profile-modal" />}
-          </AnimatePresence>
+          {mountOperatorProfile && <OperatorProfileModal />}
           <AnimatePresence>
             {licenseModalOpen && <LicenseModal key="license-modal" />}
           </AnimatePresence>
-          <AnimatePresence>
-            {notesImportModalOpen && <NotesImportModal key="notes-import-modal" />}
-          </AnimatePresence>
+          {mountNotesImport && <NotesImportModal />}
           <AnimatePresence>
             {flexCardModalOpen && <OperatorFlexCardModal key="flex-card-modal" />}
           </AnimatePresence>
           <AnimatePresence>
             {shortcutsModalOpen && <KeyboardShortcutsModal key="shortcuts-modal" />}
           </AnimatePresence>
-          <AnimatePresence>
-            {settingsModalOpen && <SettingsModal key="settings-modal" />}
-          </AnimatePresence>
+          {mountSettings && <SettingsModal />}
         </Suspense>
       </RouteErrorBoundary>
 
@@ -473,31 +455,31 @@ const MainAppContent: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-4 right-4 z-50 p-4 rounded-xl bg-slate-900 border border-amber-500/80 shadow-2xl text-xs font-mono max-w-md flex flex-col gap-2.5"
+            className="fixed bottom-4 right-4 z-drawer p-4 rounded-xl bg-surface-inverse text-on-inverse border border-callout-warn-border shadow-xl text-xs font-mono max-w-md flex flex-col gap-2.5"
           >
-            <div className="flex items-center gap-2 text-amber-400 font-bold">
-              <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
-              <span>STORAGE ALERT</span>
+            <div className="flex items-center gap-2 text-callout-warn-fg font-semibold font-sans">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>Storage quota warning</span>
             </div>
-            <p className="text-slate-200 text-[11px] leading-relaxed">
+            <p className="text-on-inverse text-[11px] leading-relaxed font-sans">
               {storageAlert.message}
             </p>
-            <div className="flex items-center justify-end gap-2 pt-1">
+            <div className="flex items-center justify-end gap-2 pt-1 font-sans">
               <button
                 type="button"
                 onClick={() => {
                   useCtfStore.getState().exportWorkspace();
                   setStorageAlert(null);
                 }}
-                className="px-3 py-1 bg-cyber-emerald text-black font-bold rounded-lg text-xs hover:brightness-110 active:scale-[0.97] transition-[filter,transform] flex items-center gap-1.5 cursor-pointer shadow-glow-emerald"
+                className="px-3 py-1.5 bg-accent text-on-accent font-semibold rounded-lg text-xs hover:bg-accent-hover active:scale-[0.97] transition-[background-color,transform] flex items-center gap-1.5 cursor-pointer"
               >
                 <Database className="w-3.5 h-3.5" />
-                <span>Export Backup Now</span>
+                <span>Export Backup</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStorageAlert(null)}
-                className="px-2 py-1 text-slate-400 hover:text-white text-xs cursor-pointer"
+                className="px-2 py-1 text-on-inverse-muted hover:text-on-inverse text-xs cursor-pointer"
               >
                 Dismiss
               </button>
@@ -519,7 +501,7 @@ const MainAppContent: React.FC = () => {
           id="main"
           tabIndex={-1}
           ref={setScrollElement}
-          className={`outline-none flex-1 min-h-0 relative bg-slate-50/70 dark:bg-cyber-bg transition-colors ${
+          className={`outline-none flex-1 min-h-0 relative bg-surface-base transition-colors ${
             chrome.mainLayout === 'fullscreen' ? 'overflow-hidden' : 'overflow-y-auto'
           } ${
             chrome.mainLayout === 'default' ? 'p-3 pb-24 sm:p-4 md:p-6 md:pb-12' : chrome.mainLayout === 'bare' ? 'p-0 pb-0' : 'p-0'
@@ -530,11 +512,11 @@ const MainAppContent: React.FC = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              className={`relative z-10 ${chrome.mainLayout === 'fullscreen' ? 'h-full' : ''}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+              className={chrome.mainLayout === 'fullscreen' ? 'h-full' : undefined}
             >
               <RouteErrorBoundary resetKey={location.pathname}>
                 <Suspense fallback={<CyberRouteLoader />}>

@@ -59,20 +59,20 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
       }
     }
 
-    // 3. Tab trapping & Escape listener
+    // 3. Tab trapping (capture) & Escape listener (bubble so child pickers/inputs can consume Escape first)
     const token = Symbol('focus-trap');
     activeTrapStack.push(token);
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (activeTrapStack[activeTrapStack.length - 1] !== token) return;
+      if (onCloseRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        onCloseRef.current();
+      }
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeTrapStack[activeTrapStack.length - 1] !== token) return;
-      if (e.key === 'Escape') {
-        if (onCloseRef.current) {
-          e.preventDefault();
-          e.stopPropagation();
-          onCloseRef.current();
-        }
-        return;
-      }
-
       if (e.key !== 'Tab') return;
 
       const currentContainer = containerRef.current;
@@ -116,9 +116,11 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keydown', handleEscape);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keydown', handleEscape);
       const idx = activeTrapStack.indexOf(token);
       if (idx !== -1) activeTrapStack.splice(idx, 1);
       // 4. Restore focus to the triggering element

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { confirmAction } from '../../store/useConfirmStore';
 import { 
   X, 
@@ -99,15 +101,11 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     onClose();
   }, [flushNotes, onClose]);
 
-  // Trap Escape key to close drawer
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleClose]);
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: Boolean(isOpen && edge),
+    onClose: handleClose,
+    autoFocusFirst: false,
+  });
 
   const meta = edge ? (ATTACK_EDGE_META[edge.type] || ATTACK_EDGE_META['pivot-ssh']) : ATTACK_EDGE_META['pivot-ssh'];
   const srcIp = sourceMachine?.ip || edge?.sourceId || '';
@@ -207,19 +205,32 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     }
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && edge && (
-        <motion.div 
-          key={`edge-drawer-${edge.id}`}
-          variants={DRAWER_RIGHT_VARIANTS}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="fixed inset-y-0 right-0 z-[120] w-full max-w-md bg-surface-elevated border-l border-subtle shadow-2xl flex flex-col font-sans machined-edge"
-          role="dialog"
-          aria-label="Attack Vector Inspector"
-        >
+        <div className="fixed inset-0 z-drawer pointer-events-none font-sans">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            role="presentation"
+            className="fixed inset-0 bg-surface-inverse/35 pointer-events-auto"
+            onClick={handleClose}
+          />
+          <motion.div 
+            key={`edge-drawer-${edge.id}`}
+            ref={trapRef}
+            variants={DRAWER_RIGHT_VARIANTS}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="fixed inset-y-0 right-0 z-10 w-full max-w-md bg-surface-elevated border-l border-subtle shadow-2xl flex flex-col font-sans machined-edge pointer-events-auto"
+            role="dialog"
+            aria-label="Attack Vector Inspector"
+          >
       {/* Header */}
       <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-sunken/90 backdrop-blur-sm machined-edge">
         <div className="flex items-center gap-2.5">
@@ -511,8 +522,10 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
           Done
         </button>
       </div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

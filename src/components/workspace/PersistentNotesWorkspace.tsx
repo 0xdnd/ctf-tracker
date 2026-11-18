@@ -1,5 +1,8 @@
 import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { motion, useMotionValue, useReducedMotion } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useSheetDrag } from '../../onboarding/useSheetDrag';
 import { 
   X, 
   Maximize2, 
@@ -210,6 +213,39 @@ export const PersistentNotesWorkspace: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   }, [fontSize, setFontSize, soundEnabled]);
 
+  const [isMobileSheet, setIsMobileSheet] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobileSheet(mq.matches);
+    sync();
+    mq.addEventListener?.('change', sync);
+    return () => mq.removeEventListener?.('change', sync);
+  }, []);
+
+  const reducedMotion = Boolean(useReducedMotion());
+  const sheetDragY = useMotionValue(0);
+  useEffect(() => {
+    if (isOpen) sheetDragY.set(0);
+  }, [isOpen, sheetDragY]);
+
+  const mobileSheetRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen && isMobileSheet,
+    onClose: () => setIsOpen(false),
+    autoFocusFirst: false,
+  });
+
+  const { handlers: mobileDragHandlers } = useSheetDrag({
+    y: sheetDragY,
+    direction: 1,
+    enabled: isOpen && isMobileSheet,
+    reducedMotion,
+    height: () => mobileSheetRef.current?.offsetHeight ?? 480,
+    onDismiss: () => setIsOpen(false),
+  });
+
   if (!isOpen) return null;
 
   // The aside is a flex sibling of <main>, so its width alone reflows the page.
@@ -252,19 +288,27 @@ export const PersistentNotesWorkspace: React.FC = () => {
          ======================================================== */}
       {/* Mobile Backdrop */}
       <div
-        className="md:hidden fixed inset-0 z-30 bg-surface-inverse/50 backdrop-blur-xs transition-opacity duration-200"
+        className="md:hidden fixed inset-0 z-[35] bg-surface-inverse/50 backdrop-blur-xs transition-opacity duration-200"
         onClick={() => setIsOpen(false)}
         aria-hidden="true"
       />
 
-      <div
+      <motion.div
+        ref={mobileSheetRef}
+        role={isMobileSheet ? 'dialog' : undefined}
+        aria-modal={isMobileSheet ? true : undefined}
         aria-label="Mobile Notes Workspace"
-        className={`md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-surface-card border-t border-subtle shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-sans ${
+        style={{ y: sheetDragY }}
+        className={`md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-surface-card border-t border-subtle rounded-t-2xl shadow-2xl flex flex-col transition-[box-shadow,background-color,border-color,color] duration-200 font-sans ${
           dockSize === 'expanded' ? 'h-[88vh] max-h-[calc(100dvh-4.5rem)]' : 'h-[75vh] max-h-[calc(100dvh-4.5rem)]'
         }`}
       >
         {/* Mobile Drag Header */}
-        <div className="flex items-center justify-between px-3 h-10 bg-surface-sunken border-b border-subtle flex-shrink-0">
+        <div
+          {...mobileDragHandlers}
+          className="relative flex items-center justify-between px-3 pt-2.5 pb-1.5 bg-surface-sunken border-b border-subtle rounded-t-2xl flex-shrink-0 touch-none select-none"
+        >
+          <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1 -translate-x-1/2 h-1 w-8 rounded-full bg-surface-hover border border-subtle" />
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
             <span className="text-xs font-semibold text-primary truncate max-w-[120px] sm:max-w-[180px]">
@@ -421,7 +465,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {activeNote && (
         <TemplatizeNotesModal

@@ -148,11 +148,12 @@ describe('welcome gate script', () => {
     expect(runGate({ search: '?import=1' }).classes.has('zb-first')).toBe(true);
   });
 
-  it('applies the same auto zoom as App so the card does not resize on mount', () => {
-    expect(runGate({ width: 412 }).root.style.zoom).toBe('');
-    expect(runGate({ width: 800 }).root.style.zoom).toBe('0.85');
-    expect(runGate({ width: 1100 }).styleProps['--app-zoom']).toBe('0.90');
-    expect(runGate({ width: 1350 }).root.style.zoom).toBe('');
+  it('keeps native 1:1 scale across viewports matching App so the card does not resize on mount', () => {
+    for (const width of [412, 800, 1100, 1350]) {
+      const gate = runGate({ width });
+      expect(gate.root.style.zoom).toBe('');
+      expect(gate.styleProps['--app-zoom']).toBeUndefined();
+    }
   });
 
   it('records a pressed button for React and hides the card on Skip', () => {

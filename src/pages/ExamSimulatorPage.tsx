@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { confirmAction } from '../store/useConfirmStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -141,6 +141,7 @@ export const ExamSimulatorPage: React.FC = () => {
   // Machine pool for target rolls: the lazy catalog chunk plus the user custom machines. The store never
   // imports the catalog; the page loads it and passes it (with the solved ids) into the store actions.
   const [catalog, setCatalog] = useState<Machine[] | null>(() => getLoadedMachinesCatalog());
+  const location = useLocation();
   const userMachines = useCtfStore((s) => s.machines);
   useEffect(() => {
     if (catalog) return;
@@ -169,6 +170,16 @@ export const ExamSimulatorPage: React.FC = () => {
     [userMachines]
   );
   const solvedIds = useMemo(() => (solvedKey ? solvedKey.split(',') : []), [solvedKey]);
+
+  // Support ?track=CPTS / ?track=OSCP deep-linking on the idle setup screen
+  useEffect(() => {
+    if (!location.search || status !== 'idle') return;
+    const rawTrack = new URLSearchParams(location.search).get('track')?.trim().toUpperCase();
+    if (rawTrack && rawTrack in EXAM_TRACK_CONFIGS && rawTrack !== useExamStore.getState().track) {
+      setTrack(rawTrack as ExamTrack, pool, solvedIds);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, status]);
 
   // Once the catalog is available (or the solved set changes) re-roll the idle preview from the current seed.
   useEffect(() => {
@@ -445,18 +456,13 @@ export const ExamSimulatorPage: React.FC = () => {
                 const conf = EXAM_TRACK_CONFIGS[t];
                 const isSelected = track === t;
                 return (
-                  <div
+                  <button
                     key={t}
-                    role="button"
-                    tabIndex={0}
+                    type="button"
+                    aria-pressed={isSelected}
                     data-testid={`exam-track-select-${t.toLowerCase()}`}
                     onClick={() => setTrack(t, pool, solvedIds)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setTrack(t, pool, solvedIds);
-                      }
-                    }}
-                    className={`flex h-full cursor-pointer flex-col p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge ${
+                    className={`flex h-full w-full cursor-pointer flex-col p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
  isSelected
  ? 'bg-surface-sunken border-accent ring-1 ring-accent'
  : 'bg-surface-card border-subtle hover:border-strong'
@@ -493,10 +499,21 @@ export const ExamSimulatorPage: React.FC = () => {
                       </span>
                       <span>{conf.targetSummary}</span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
+
+            {track === 'OSCP' && (
+              <div className="p-3 rounded-xl bg-surface-sunken border border-subtle text-xs text-secondary flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <strong className="text-primary font-semibold">1 Dec 2026 OSCP+ scoring update:</strong> OffSec moves OSCP+ exams starting on or after 1 Dec 2026 08:00 GMT to Equated Scaled Scoring (<span className="font-mono tabular-nums">100–500</span> scale, <span className="font-mono tabular-nums">400</span> to pass; raw flag weights stay <span className="font-mono tabular-nums">10/10/20</span> AD + <span className="font-mono tabular-nums">3×20</span> standalones). This mock tracks the <span className="font-mono tabular-nums">100</span>-point raw breakdown.
+                </span>
+                <Link to="/oscp-points-calculator/" className="text-accent font-medium hover:underline whitespace-nowrap">
+                  Open OSCP+ points calculator →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Candidate Profile & Configuration */}
@@ -683,7 +700,16 @@ export const ExamSimulatorPage: React.FC = () => {
           <div className="space-y-4">
             <PageHeader
               title={trackConfig.name}
-              description={`Candidate ${candidateName} (${candidateCallsign}) · OSID ${osid}`}
+              description={
+                [
+                  candidateName.trim() || candidateCallsign.trim()
+                    ? `Candidate ${[candidateName.trim(), candidateCallsign.trim() ? `(${candidateCallsign.trim()})` : ''].filter(Boolean).join(' ')}`
+                    : null,
+                  osid.trim() ? `OSID ${osid.trim()}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || trackConfig.targetSummary
+              }
               icon={<GraduationCap />}
               overflowAnchor="exam-room-menu"
               actions={

@@ -18,8 +18,6 @@ const GATE_SCRIPT =
   `if(/^\\/(oscp-points-calculator|exam)\\/?$/.test(l.pathname)||/^\\/(field-manual|notes)\\/?$/i.test(l.pathname)||/[?&]popout=true(&|$)/.test(l.search)||/[?&](target|machine)=/.test(l.search))return;` +
   `if(localStorage.getItem('${FIRST_RUN_KEY}'))return;` +
   `try{var o=JSON.parse(localStorage.getItem('${ONBOARDING_KEY}')||'null');if(o&&o.tourDone===true)return}catch(e){}` +
-  `var w=innerWidth,z=w>=1200?'':w>=1024?'0.90':w>=768?'0.85':'';` +
-  `if(z){d.style.zoom=z;d.style.setProperty('--app-zoom',z)}` +
   `d.classList.add('zb-first');` +
   `document.addEventListener('click',function(e){var t=e.target;t=t&&t.closest&&t.closest('[data-zb-act]');if(!t)return;` +
   `window.__zbWelcomeIntent=t.getAttribute('data-zb-act');if(window.__zbWelcomeIntent==='skip')d.classList.remove('zb-first')},true)` +

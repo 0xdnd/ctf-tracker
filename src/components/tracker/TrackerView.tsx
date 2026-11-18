@@ -10,7 +10,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   SlidersHorizontal,
-  Share2,
+  Radio,
   X,
   Upload,
   ClipboardPaste,
@@ -66,6 +66,7 @@ const MOBILE_VIEWS = [
   { mode: 'kanban', label: 'Kanban', Icon: Kanban },
   { mode: 'table', label: 'Table', Icon: Table },
   { mode: 'grid', label: 'Grid', Icon: LayoutGrid },
+  { mode: 'graph', label: 'Graph', Icon: Radio },
 ] as const;
 
 const STATUS_PILL_OPTIONS: { value: HtbTargetStatus; label: string }[] = [
@@ -279,7 +280,7 @@ export const TrackerView: React.FC = () => {
     }
   }, [location.search, machines, setFilters, setSelectedMachineId]);
 
-  // Global search keyboard shortcut ('/' or 'Ctrl+K' / 'Cmd+K' like GitHub / Linear)
+  // Global search keyboard shortcut ('/') — Ctrl+K / Cmd+K belongs exclusively to CommandPalette
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement as HTMLElement | null;
@@ -287,11 +288,12 @@ export const TrackerView: React.FC = () => {
         activeEl &&
         (activeEl.tagName === 'INPUT' ||
           activeEl.tagName === 'TEXTAREA' ||
+          activeEl.tagName === 'SELECT' ||
           activeEl.isContentEditable)
       ) {
         return;
       }
-      if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
         const searchInput = (document.getElementById('tracker-search-input') || document.getElementById('tracker-search-input-mobile')) as HTMLInputElement | null;
         if (searchInput) {
@@ -795,7 +797,7 @@ export const TrackerView: React.FC = () => {
             {/* The sidebar owns the desktop view switch; focus mode hides the sidebar, so the toolbar carries one then. */}
             {focusMode && (
               <div role="group" aria-label="View mode" className={SEGMENT_WRAP}>
-                {[...MOBILE_VIEWS, { mode: 'graph', label: 'Attack Graph', Icon: Share2 }].map(({ mode, label, Icon }) => (
+                {MOBILE_VIEWS.map(({ mode, label, Icon }) => (
                   <button
                     key={mode}
                     type="button"

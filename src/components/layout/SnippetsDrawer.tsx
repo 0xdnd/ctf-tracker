@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 import { 
   X, 
   Search, 
@@ -92,27 +95,38 @@ export const SnippetsDrawer: React.FC = () => {
     setTimeout(() => setCopiedId(null), 1800);
   };
 
-  if (!snippetsDrawerOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden font-sans">
-      {/* Backdrop */}
-      <div
-        role="presentation"
-        className="absolute inset-0 bg-surface-inverse/60 transition-opacity animate-in fade-in duration-200"
-        onClick={() => setSnippetsDrawerOpen(false)}
-      />
-
-      {/* Slide-over panel (intentionally dark in both color modes) */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div
-          ref={trapRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Tactical snippets cheatsheet drawer"
-          className="w-screen max-w-md md:max-w-lg bg-surface-inverse text-on-inverse border-l border-inverse shadow-xl flex flex-col h-full transform transition-transform will-change-transform animate-in slide-in-from-right duration-200"
-          style={{ transform: 'translate3d(0, 0, 0)', contain: 'layout paint' }}
+  return createPortal(
+    <AnimatePresence>
+      {snippetsDrawerOpen && (
+        <motion.div
+          key="snippets-drawer"
+          className="fixed inset-0 z-drawer overflow-hidden font-sans"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } }}
+          exit={{ opacity: 0, transition: { duration: 0.14, ease: 'easeOut' } }}
         >
+          {/* Backdrop */}
+          <div
+            role="presentation"
+            className="absolute inset-0 bg-surface-inverse/60"
+            onClick={() => setSnippetsDrawerOpen(false)}
+          />
+
+          {/* Slide-over panel (intentionally dark in both color modes) */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <motion.div
+              ref={trapRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Tactical snippets cheatsheet drawer"
+              className="w-screen max-w-md md:max-w-lg bg-surface-inverse text-on-inverse border-l border-inverse shadow-xl flex flex-col h-full will-change-transform"
+              style={{ contain: 'layout paint' }}
+              initial={{ x: '100%' }}
+              animate={{ x: 0, transition: DRAWER_SLIDE_TRANSITION.enter }}
+              exit={{ x: '100%', transition: DRAWER_SLIDE_TRANSITION.exit }}
+            >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-surface-inverse-elevated border-b border-inverse">
             <div className="flex items-center gap-2">
@@ -146,11 +160,12 @@ export const SnippetsDrawer: React.FC = () => {
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-xs text-on-inverse-muted hover:text-on-inverse cursor-pointer"
+                  className="absolute right-2 top-1.5 p-1 rounded text-on-inverse-muted hover:text-on-inverse cursor-pointer"
                   aria-label="Clear search"
                 >
-                  âœ•
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -219,7 +234,7 @@ export const SnippetsDrawer: React.FC = () => {
                       {unresolved.length > 0 && (
                         <span
                           className="text-[11px] px-1.5 py-0.5 rounded border border-syntax-number/50 text-syntax-number font-medium flex items-center gap-1"
-                          title={`Unresolved variable: ${unresolved.join(', ')} â€” check LHOST/Target IP in cockpit header`}
+                          title={`Unresolved variable: ${unresolved.join(', ')} — check LHOST/Target IP in cockpit header`}
                         >
                           <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
                           <span>Missing: <span className="font-mono">{unresolved.join(', ')}</span></span>
@@ -298,8 +313,11 @@ export const SnippetsDrawer: React.FC = () => {
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
@@ -121,10 +122,12 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
   const sectionLabel = 'text-[11px] font-medium text-muted px-1 mb-1';
   const iconCls = 'w-4 h-4 text-muted flex-shrink-0';
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-[60] flex font-sans">
+          <div className="md:hidden fixed inset-0 z-drawer flex font-sans">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -327,7 +330,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                       <AnalyticsMonitorIcon className={iconCls} />
                       <span>Analytics</span>
                       {dueReviews > 0 && (
-                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-mono font-bold tabular-nums">
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border font-mono font-bold tabular-nums">
                           {dueReviews}
                           <span className="sr-only"> {dueReviews === 1 ? 'review' : 'reviews'} due</span>
                         </span>
@@ -498,7 +501,8 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+    document.body
   );
 };
 

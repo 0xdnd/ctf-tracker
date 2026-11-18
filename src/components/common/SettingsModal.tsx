@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { Modal } from './Modal';
 import { 
   Settings, 
   X, 
@@ -17,7 +15,6 @@ import {
   Layers,
   Zap,
   Copy,
-  ExternalLink,
   Sparkles,
   ShieldCheck,
   Crosshair,
@@ -25,7 +22,7 @@ import {
 import { useCtfStore, ThemePreset, normalizeThemePreset } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '../../hooks/useTheme';
-import { playCyberSound } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { GuideControls } from '../../onboarding/GuideControls';
 import { DesktopNotificationsToggle } from './DesktopNotificationsToggle';
 
@@ -88,7 +85,6 @@ const QUICK_DESIGN_TOKENS = [
 ];
 
 export const SettingsModal: React.FC = () => {
-  const navigate = useNavigate();
   const { 
     settingsModalOpen, 
     setSettingsModalOpen, 
@@ -121,46 +117,23 @@ export const SettingsModal: React.FC = () => {
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   const normalizedActivePreset: ThemePreset = normalizeThemePreset(themePreset);
-
-  const modalRef = useFocusTrap<HTMLDivElement>({
-    isActive: settingsModalOpen,
-    onClose: () => setSettingsModalOpen(false),
-  });
+  const activeScale = !uiScale || uiScale === 'auto' ? 'normal' : uiScale;
 
   const handleCopyToken = (varName: string) => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(varName).catch(() => {});
-      }
-    } catch {
-      // Graceful fallback for non-secure contexts
-    }
+    void safeCopyToClipboard(varName);
     setCopiedToken(varName);
     if (soundEnabled) playCyberSound('click');
     setTimeout(() => setCopiedToken(null), 1500);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-surface-inverse/70 font-sans"
-      onClick={() => setSettingsModalOpen(false)}
+    <Modal
+      open={settingsModalOpen}
+      onClose={() => setSettingsModalOpen(false)}
+      ariaLabel="Settings configuration modal"
+      size="xl"
     >
-      <motion.div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Settings configuration modal"
-        initial={{ scale: 0.98, opacity: 0, y: 8 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.98, opacity: 0, y: 8, transition: { duration: 0.12 } }}
-        transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-        className="relative w-full max-w-2xl bg-surface-card border border-subtle rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90dvh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
           {/* Header Bar */}
           <div className="px-6 py-4 border-b border-subtle flex items-center justify-between bg-surface-sunken">
             <div className="flex items-center gap-2.5">
@@ -315,31 +288,6 @@ export const SettingsModal: React.FC = () => {
                   );
                 })}
               </div>
-
-              {/* Deep Link to Full Studio Matrix */}
-              <div className="mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 p-3 rounded-xl bg-surface-sunken border border-subtle">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-surface-card border border-subtle flex items-center justify-center text-secondary flex-shrink-0">
-                    <Palette className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-xs text-primary">Theme and color matrix</div>
-                    <div className="text-[10px] text-muted">Inspect tokens, type scale and WCAG contrast</div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettingsModalOpen(false);
-                    navigate('/theme');
-                    if (soundEnabled) playCyberSound('click');
-                  }}
-                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-strong text-primary font-medium text-xs flex items-center justify-center gap-1.5 transition-[box-shadow,background-color,border-color,color] shadow-sm group whitespace-nowrap"
-                >
-                  <span>Open Full Studio</span>
-                  <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-              </div>
             </div>
 
             {/* Section 2: Mode & Display Settings */}
@@ -424,19 +372,21 @@ export const SettingsModal: React.FC = () => {
                     <span>Interface scale</span>
                   </div>
                   <span className="text-[10px] text-muted font-semibold">
-                    {uiScale || 'normal'}
+                    {activeScale}
                   </span>
                 </div>
                 <div className="grid grid-cols-5 gap-1.5">
                   {(['tiny', 'compact', 'normal', 'large', 'huge'] as const).map((scale) => (
                     <button
                       key={scale}
+                      type="button"
+                      aria-pressed={activeScale === scale}
                       onClick={() => {
                         setUiScale(scale);
                         if (soundEnabled) playCyberSound('click');
                       }}
                       className={`py-1.5 rounded-lg border text-center font-semibold text-[10px] transition-colors ${
-                        uiScale === scale
+                        activeScale === scale
                           ? 'bg-surface-card border-accent text-primary'
                           : 'bg-surface-card border-subtle text-secondary hover:border-strong'
                       }`}
@@ -538,7 +488,7 @@ export const SettingsModal: React.FC = () => {
               Done
             </button>
           </div>
-        </motion.div>
-    </motion.div>
+      </div>
+    </Modal>
   );
 };

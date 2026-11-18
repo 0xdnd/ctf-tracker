@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Modal } from '../common/Modal';
 import { 
   X, 
   User, 
@@ -79,7 +80,6 @@ export const OperatorProfileModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [trophyCategoryFilter, setTrophyCategoryFilter] = useState<'all' | TrophyCategory>('all');
 
-  const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Gamification & Trophies Evaluator
@@ -106,16 +106,6 @@ export const OperatorProfileModal: React.FC = () => {
       );
     }
   }, [gamification.trophies, gamification.totalXp, gamification.currentRank, user, updateUserTrophies]);
-
-  // Close on Escape & trap focus
-  useEffect(() => {
-    if (!operatorProfileModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOperatorProfileModalOpen(false);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [operatorProfileModalOpen, setOperatorProfileModalOpen]);
 
   // Focus input when switching to "new" tab
   useEffect(() => {
@@ -240,26 +230,16 @@ export const OperatorProfileModal: React.FC = () => {
     }
   };
 
-  // Safe early exit placed immediately before JSX render to preserve strict hook execution order
-  if (!operatorProfileModalOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        role="presentation"
-        className="fixed inset-0 bg-surface-inverse/60 backdrop-blur-md transition-opacity animate-in fade-in"
-        onClick={() => setOperatorProfileModalOpen(false)}
-      />
-
-      {/* Modal Dialog */}
-      <div 
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Operator Identity and Profile Hub"
-        className="relative w-full max-w-2xl bg-surface-card border border-strong rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] font-sans transition-[box-shadow,background-color,border-color,color] animate-in zoom-in-95 duration-150"
-      >
+    <Modal
+      open={operatorProfileModalOpen}
+      onClose={() => setOperatorProfileModalOpen(false)}
+      ariaLabel="Operator Identity and Profile Hub"
+      size="xl"
+      zIndex="modalNested"
+      instant
+    >
+      <div className="flex flex-col max-h-[90dvh] min-h-0">
         {/* Header */}
         <div className="px-5 py-4 border-b border-subtle flex items-center justify-between bg-surface-base backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -320,6 +300,7 @@ export const OperatorProfileModal: React.FC = () => {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveActiveCallsign();
                           if (e.key === 'Escape') {
+                            e.preventDefault();
                             e.stopPropagation();
                             setIsEditingActiveCallsign(false);
                           }
@@ -601,6 +582,7 @@ export const OperatorProfileModal: React.FC = () => {
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSaveRename(p.id);
                                     if (e.key === 'Escape') {
+                                      e.preventDefault();
                                       e.stopPropagation();
                                       setEditingProfileId(null);
                                     }
@@ -1127,6 +1109,6 @@ export const OperatorProfileModal: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

@@ -49,9 +49,10 @@ const ctf = () => useCtfStore.getState();
 
 const HOTKEY_MAP: Record<string, Binding> = {
   '1': { init: { key: '1' }, check: () => ctf().viewMode === 'kanban' },
-  '2': { init: { key: '2' }, check: () => ctf().viewMode === 'grid' },
-  '3': { init: { key: '3' }, check: () => ctf().viewMode === 'table' },
+  '2': { init: { key: '2' }, check: () => ctf().viewMode === 'table' },
+  '3': { init: { key: '3' }, check: () => ctf().viewMode === 'grid' },
   '4': { init: { key: '4' }, check: () => ctf().viewMode === 'graph' },
+  f: { init: { key: 'f' }, check: () => ctf().focusMode },
   j: { init: { key: 'j' } },
   'Alt+↓': { init: { key: 'ArrowDown', altKey: true } },
   k: { init: { key: 'k' } },
@@ -105,6 +106,7 @@ const resetSlices = () => {
     reconAutomationModalOpen: false,
     reportMachineId: null,
     isTimerRunning: false,
+    focusMode: false,
     viewMode: 'kanban',
     uiScale: 'large',
   });

@@ -1224,10 +1224,23 @@ MinimapStaticLayers.displayName = 'MinimapStaticLayers';
 // ---------------------------------------------------------------------------
 // Primary Attack Graph Component (<GraphView>)
 // ---------------------------------------------------------------------------
+const GRAPH_STATUS_LABELS: Record<string, string> = {
+  todo: 'Target Backlog',
+  'in-progress': 'Active Recon',
+  foothold: 'Foothold',
+  root: 'Root Pwned',
+  completed: 'Completed',
+};
+
 export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) => {
   const setActiveTarget = useCtfStore((s) => s.setActiveTarget);
   const setSelectedMachineId = useCtfStore((s) => s.setSelectedMachineId);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
+  const globalLhost = useCtfStore((s) => s.globalVars.lhost);
+  const rigLhostLabel =
+    globalLhost && globalLhost.trim() && !/x/i.test(globalLhost) && globalLhost.trim() !== '10.10.14.5'
+      ? globalLhost.trim()
+      : '10.10.14.x';
   
   // Zustand Store Slice for M1/M2 coordinate persistence & M3 edges
   const allMachines = useCtfStore((s) => s.machines);
@@ -2609,11 +2622,27 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     });
   };
 
-  return (
+  // Exit fullscreen on Escape when no nested edge inspector or node flyout is open
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !selectedEdgeId) {
+        if (selectedNode) {
+          setSelectedNode(null);
+        } else {
+          setIsFullscreen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isFullscreen, selectedEdgeId, selectedNode]);
+
+  const graphShell = (
     <div 
       ref={containerRef}
-      className={`relative w-full rounded-2xl border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none touch-pan-x touch-pan-y transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
-        isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen' : 'h-[720px]'
+      className={`relative w-full border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none touch-pan-x touch-pan-y transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
+        isFullscreen ? 'fixed inset-0 z-modal rounded-none h-dvh' : 'rounded-2xl h-[720px]'
       }`}
       onPointerDownCapture={handleCanvasPointerDownCapture}
       onPointerDown={handleCanvasPointerDown}
@@ -3355,11 +3384,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 cy={centerY}
                 r="34"
                 fill={tokens.cardBg}
-                stroke="#10B981"
-                strokeWidth="2.8"
-                style={{ filter: 'drop-shadow(0 0 16px #10B981)' }}
+                stroke={tokens.statusRoot}
+                strokeWidth="2.4"
               />
-              <circle cx={centerX} cy={centerY} r="12" fill="#10B981" />
+              <circle cx={centerX} cy={centerY} r="12" fill={tokens.statusRoot} />
               <rect
                 x={centerX - 85}
                 y={centerY + 36}
@@ -3368,13 +3396,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 rx="6"
                 fill={tokens.cardBg}
                 fillOpacity="0.95"
-                stroke="#10B981"
+                stroke={tokens.statusRoot}
                 strokeWidth="1.2"
               />
               <text
                 x={centerX}
                 y={centerY + 49}
-                fill="#10B981"
+                fill={tokens.statusRoot}
                 fontSize="11"
                 fontFamily="monospace"
                 fontWeight="bold"
@@ -3390,7 +3418,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 fontFamily="monospace"
                 textAnchor="middle"
               >
-                10.10.14.x [ATTACK RIG]
+                {`${rigLhostLabel} [ATTACK RIG]`}
               </text>
             </g>
           </g>
@@ -3405,7 +3433,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.16 }}
-            className="absolute bottom-4 right-4 z-30 w-80 p-3.5 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle hover:border-accent shadow-xl space-y-2.5 pointer-events-auto font-sans machined-edge"
+            className={`absolute right-4 z-30 w-80 max-w-[calc(100%-2rem)] p-3.5 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle hover:border-accent shadow-xl space-y-2.5 pointer-events-auto font-sans machined-edge ${
+              isFullscreen ? 'bottom-6' : 'bottom-16'
+            }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1">
@@ -3424,6 +3454,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 onClick={() => setSelectedNode(null)}
                 className="p-1 rounded-md text-muted hover:text-primary flex-shrink-0 active:scale-[0.97] transition-transform cursor-pointer"
                 title="Close details"
+                aria-label="Close details"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -3443,7 +3474,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                     ? 'text-callout-warn-fg'
                     : 'text-accent'
                 }`}>
-                  {selectedNode.status}
+                  {GRAPH_STATUS_LABELS[selectedNode.status] || selectedNode.status}
                 </div>
               </div>
             </div>
@@ -3503,4 +3534,6 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       />
     </div>
   );
+
+  return graphShell;
 };

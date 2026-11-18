@@ -221,7 +221,7 @@ export const Sidebar: React.FC = () => {
                     <span
                       data-testid="review-due-badge"
                       title={`${item.dueBadge} ${item.dueBadge === 1 ? 'review' : 'reviews'} due`}
-                      className="text-[11px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning flex-shrink-0 font-mono font-bold whitespace-nowrap tabular-nums"
+                      className="text-[11px] px-1.5 py-0.5 rounded-full bg-callout-warn-bg text-callout-warn-fg border border-callout-warn-border flex-shrink-0 font-mono font-bold whitespace-nowrap tabular-nums"
                     >
                       {item.dueBadge}
                       <span className="sr-only"> {item.dueBadge === 1 ? 'review' : 'reviews'} due</span>
@@ -230,7 +230,7 @@ export const Sidebar: React.FC = () => {
                 </div>
               )}
               {collapsed && 'dueBadge' in item && item.dueBadge > 0 && (
-                <span data-testid="review-due-dot" className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-warning">
+                <span data-testid="review-due-dot" className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-callout-warn-fg">
                   <span className="sr-only">{item.dueBadge} {item.dueBadge === 1 ? 'review' : 'reviews'} due</span>
                 </span>
               )}
@@ -381,8 +381,22 @@ export const Sidebar: React.FC = () => {
             <span className="text-[11px] text-muted flex-shrink-0 group-hover:text-secondary">About</span>
           </button>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 text-[11px] text-muted">
-            <a href="https://ctftracker.com/privacy/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Privacy</a>
-            <a href="https://ctftracker.com/terms/" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Terms</a>
+            <a
+              href={isTauriTarget() ? 'https://ctftracker.com/privacy/' : '/privacy/'}
+              target={isTauriTarget() ? '_blank' : undefined}
+              rel={isTauriTarget() ? 'noopener noreferrer' : undefined}
+              className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+            >
+              Privacy
+            </a>
+            <a
+              href={isTauriTarget() ? 'https://ctftracker.com/terms/' : '/terms/'}
+              target={isTauriTarget() ? '_blank' : undefined}
+              rel={isTauriTarget() ? 'noopener noreferrer' : undefined}
+              className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+            >
+              Terms
+            </a>
             <CoffeeLink />
           </div>
         </div>

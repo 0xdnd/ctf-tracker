@@ -31,6 +31,7 @@ import {
   CHEATSHEET_CATEGORIES 
 } from '../../data/cheatsheetsData';
 import { interpolateCommand, playCyberSound } from '../../utils/helpers';
+import { Modal } from '../common/Modal';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import {
   CptsNoteEntry,
@@ -2091,116 +2092,115 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
       )}
 
       {/* New Custom Command Modal */}
-      {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-lg rounded-2xl border border-subtle bg-surface-card shadow-2xl p-6 space-y-4"
-          >
-            <h3 className="text-base font-semibold text-primary flex items-center gap-2">
-              <Code className="w-4 h-4 text-muted" /> Add custom snippet
-            </h3>
+      <Modal
+        open={isNewModalOpen}
+        onClose={() => setIsNewModalOpen(false)}
+        labelledBy="add-custom-snippet-title"
+        size="lg"
+      >
+        <div className="p-6 space-y-4">
+          <h3 id="add-custom-snippet-title" className="text-base font-semibold text-primary flex items-center gap-2">
+            <Code className="w-4 h-4 text-muted" /> Add custom snippet
+          </h3>
 
-            <form onSubmit={handleCreateCustom} className="space-y-3 text-xs">
-              <div>
-                <label htmlFor="custom-snippet-title" className="block text-muted mb-1 font-semibold">
-                  Command Title *
-                </label>
-                <input
-                  type="text"
-                  id="custom-snippet-title"
-                  name="custom-snippet-title"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Chamilo LMS RCE Exploit"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
-                />
-              </div>
+          <form onSubmit={handleCreateCustom} className="space-y-3 text-xs">
+            <div>
+              <label htmlFor="custom-snippet-title" className="block text-muted mb-1 font-semibold">
+                Command Title *
+              </label>
+              <input
+                type="text"
+                id="custom-snippet-title"
+                name="custom-snippet-title"
+                required
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="e.g. Chamilo LMS RCE Exploit"
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
+              />
+            </div>
 
-              <div>
-                <label htmlFor="custom-snippet-category" className="block text-muted mb-1 font-semibold">
-                  Category
-                </label>
-                <CyberSelect
-                  id="custom-snippet-category"
-                  name="custom-snippet-category"
-                  value={newCategory}
-                  onChange={setNewCategory}
-                  options={SNIPPET_CATEGORIES}
-                  variant="default"
-                  size="md"
-                  className="w-full"
-                  triggerClassName="w-full bg-surface-sunken"
-                />
-              </div>
+            <div>
+              <label htmlFor="custom-snippet-category" className="block text-muted mb-1 font-semibold">
+                Category
+              </label>
+              <CyberSelect
+                id="custom-snippet-category"
+                name="custom-snippet-category"
+                value={newCategory}
+                onChange={setNewCategory}
+                options={SNIPPET_CATEGORIES}
+                variant="default"
+                size="md"
+                className="w-full"
+                triggerClassName="w-full bg-surface-sunken"
+              />
+            </div>
 
-              <div>
-                <label htmlFor="custom-snippet-desc" className="block text-muted mb-1 font-semibold">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  id="custom-snippet-desc"
-                  name="custom-snippet-desc"
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Brief note on exploit parameters..."
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
-                />
-              </div>
+            <div>
+              <label htmlFor="custom-snippet-desc" className="block text-muted mb-1 font-semibold">
+                Description
+              </label>
+              <input
+                type="text"
+                id="custom-snippet-desc"
+                name="custom-snippet-desc"
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="Brief note on exploit parameters..."
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
+              />
+            </div>
 
-              <div>
-                <label htmlFor="custom-snippet-template" className="block text-muted mb-1 font-semibold">
-                  Command Template (Supports &#x7B;TARGET_IP&#x7D;, &#x7B;LHOST&#x7D;, &#x7B;LPORT&#x7D;) *
-                </label>
-                <textarea
-                  id="custom-snippet-template"
-                  name="custom-snippet-template"
-                  rows={3}
-                  required
-                  value={newTemplate}
-                  onChange={(e) => setNewTemplate(e.target.value)}
-                  placeholder="python3 exploit.py -t {TARGET_IP} -l {LHOST} -p {LPORT}"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent font-mono resize-none"
-                />
-              </div>
+            <div>
+              <label htmlFor="custom-snippet-template" className="block text-muted mb-1 font-semibold">
+                Command Template (Supports &#x7B;TARGET_IP&#x7D;, &#x7B;LHOST&#x7D;, &#x7B;LPORT&#x7D;) *
+              </label>
+              <textarea
+                id="custom-snippet-template"
+                name="custom-snippet-template"
+                rows={3}
+                required
+                value={newTemplate}
+                onChange={(e) => setNewTemplate(e.target.value)}
+                placeholder="python3 exploit.py -t {TARGET_IP} -l {LHOST} -p {LPORT}"
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent font-mono resize-none"
+              />
+            </div>
 
-              <div>
-                <label htmlFor="custom-snippet-tags" className="block text-muted mb-1 font-semibold">
-                  Tags (Comma-separated)
-                </label>
-                <input
-                  type="text"
-                  id="custom-snippet-tags"
-                  name="custom-snippet-tags"
-                  value={newTags}
-                  onChange={(e) => setNewTags(e.target.value)}
-                  placeholder="rce, python, cve-2023-xxxx"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
-                />
-              </div>
+            <div>
+              <label htmlFor="custom-snippet-tags" className="block text-muted mb-1 font-semibold">
+                Tags (Comma-separated)
+              </label>
+              <input
+                type="text"
+                id="custom-snippet-tags"
+                name="custom-snippet-tags"
+                value={newTags}
+                onChange={(e) => setNewTags(e.target.value)}
+                placeholder="rce, python, cve-2023-xxxx"
+                className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-accent"
+              />
+            </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
-                <button
-                  type="button"
-                  onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-accent text-on-accent font-semibold text-xs hover:bg-accent/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
-                >
-                  Save Snippet
-                </button>
-              </div>
-            </form>
-          </motion.div>
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
+              <button
+                type="button"
+                onClick={() => setIsNewModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-surface-sunken border border-subtle text-muted hover:text-primary text-xs transition-[transform,background-color,border-color,color] active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-accent text-on-accent font-semibold text-xs hover:bg-accent/90 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98]"
+              >
+                Save Snippet
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </Modal>
 
       {/* New note modal */}
       <NewCptsNoteModal

@@ -190,8 +190,9 @@ export const EXAM_TRACK_CONFIGS: Record<ExamTrack, ExamTrackConfig> = {
     maxScore: OSCP_MAX_POINTS,
     // AD points count per machine (10 / 10 / 20), so passing never requires the full chain.
     requiresAdFullChain: false,
-    description: 'An Active Directory set of 3 machines plus 3 standalone machines, 70 of 100 points to pass.',
+    description: 'An Active Directory set of 3 machines plus 3 standalone machines (70 of 100 raw points before 1 Dec 2026; 100–500 equated scale, 400 to pass, from 1 Dec 2026 08:00 GMT).',
     targetSummary: '3-Box AD Set (40 pts) + 3 Standalone Targets (60 pts)',
+    scoringNote: '100–500 scale from 1 Dec 2026',
   },
   CPTS: {
     id: 'CPTS',

@@ -13,9 +13,10 @@ interface ShortcutEntry {
 const SHORTCUTS: ShortcutEntry[] = [
   // Navigation
   { keys: ['1'], description: 'Switch to Kanban Board view', category: 'navigation' },
-  { keys: ['2'], description: 'Switch to Cards view', category: 'navigation' },
-  { keys: ['3'], description: 'Switch to Full Table view', category: 'navigation' },
+  { keys: ['2'], description: 'Switch to Full Table view', category: 'navigation' },
+  { keys: ['3'], description: 'Switch to Cards view', category: 'navigation' },
   { keys: ['4'], description: 'Switch to Topology Graph view', category: 'navigation' },
+  { keys: ['f'], description: 'Toggle Zen Focus mode (or Alt+F)', category: 'navigation' },
   { keys: ['j', 'Alt+↓'], description: 'Select next target machine', category: 'navigation' },
   { keys: ['k', 'Alt+↑'], description: 'Select previous target machine', category: 'navigation' },
   { keys: ['Space'], description: 'Inspect active target details modal', category: 'navigation' },

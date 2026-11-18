@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
   Download, 
@@ -34,15 +36,10 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
   const [exportScope, setExportScope] = useState<'all' | 'filtered'>('all');
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
 
-  // Trap Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen,
+    onClose,
+  });
 
   const activeItems = exportScope === 'filtered' ? filteredItems : items;
 
@@ -148,44 +145,59 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
     }, 1800);
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          key="export-loot-drawer"
-          variants={DRAWER_RIGHT_VARIANTS}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="fixed inset-y-0 right-0 z-[120] w-full max-w-md bg-surface-elevated border-l border-subtle shadow-2xl flex flex-col font-sans machined-edge"
-          role="dialog"
-          aria-label="Evidence Vault Exporter"
-        >
-          {/* Header */}
-          <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-card/90 backdrop-blur-sm machined-edge">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-sunken border border-subtle text-secondary">
-                <Database className="w-4 h-4" />
+        <div className="fixed inset-0 z-drawer overflow-hidden font-sans">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            role="presentation"
+            className="fixed inset-0 bg-surface-inverse/50"
+            onClick={onClose}
+          />
+          <motion.div
+            key="export-loot-drawer"
+            ref={trapRef}
+            variants={DRAWER_RIGHT_VARIANTS}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="fixed inset-y-0 right-0 z-10 w-full max-w-md bg-surface-elevated border-l border-subtle shadow-2xl flex flex-col font-sans machined-edge"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Evidence Vault Exporter"
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-card/90 backdrop-blur-sm machined-edge">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-sunken border border-subtle text-secondary">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-primary">
+                    Export evidence
+                  </h3>
+                  <p className="text-[11px] text-muted">
+                    Package artifacts as portable reports and tables
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-primary">
-                  Export evidence
-                </h3>
-                <p className="text-[11px] text-muted">
-                  Package artifacts as portable reports and tables
-                </p>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
-              title="Close (Esc)"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+              <button
+                type="button"
+                aria-label="Close export drawer"
+                onClick={onClose}
+                className="p-1.5 max-sm:p-3 rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
@@ -338,8 +350,10 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
               Done
             </button>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

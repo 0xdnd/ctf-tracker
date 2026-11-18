@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Database, X, Sparkles, Terminal, Check } from 'lucide-react';
 import { Machine } from '../../types';
 import { VaultEvidenceItem, EvidenceCategory } from '../../pages/EvidenceVaultPage';
-import { MODAL_ASYMMETRIC_TRANSITION } from '../../utils/motionTokens';
 import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { identifyHash, getCrackingCommands } from '../../utils/hashIdentifier';
 import { toast } from '../../store/useToastStore';
 import { CyberSelect } from '../common/CyberSelect';
+import { Modal } from '../common/Modal';
 
 // A real catalog can list over a thousand machines; render a page of matches and ask for more typing.
 const TARGET_OPTIONS_MAX_RENDERED = 50;
@@ -76,17 +75,6 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
     }
   }, [isOpen, defaultTargetId]);
 
-  // Trap Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // An open picker handles Escape itself (closing only the list), so leave the dialog open
-      if (e.key === 'Escape' && !e.defaultPrevented) onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!secret.trim()) return;
@@ -124,19 +112,15 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/60 backdrop-blur-xs font-sans">
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="add-loot-title"
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0, transition: MODAL_ASYMMETRIC_TRANSITION.enter }}
-            exit={{ opacity: 0, scale: 0.96, y: 8, transition: MODAL_ASYMMETRIC_TRANSITION.exit }}
-            className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl border border-subtle bg-surface-elevated p-6 shadow-2xl space-y-4 machined-edge"
-          >
-            {/* Header */}
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      labelledBy="add-loot-title"
+      size="lg"
+      panelClassName="bg-surface-elevated machined-edge"
+    >
+      <div className="p-6 space-y-4">
+        {/* Header */}
             <div className="flex items-center justify-between border-b border-subtle pb-3">
               <div className="flex items-center gap-2 font-semibold text-primary text-base tracking-[-0.01em]" id="add-loot-title">
                 <Database className="w-4 h-4 text-accent" />
@@ -297,9 +281,7 @@ export const AddLootModal: React.FC<AddLootModalProps> = ({
                 </button>
               </div>
             </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+      </div>
+    </Modal>
   );
 };

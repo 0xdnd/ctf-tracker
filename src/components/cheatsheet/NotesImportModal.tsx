@@ -91,8 +91,6 @@ export const NotesImportModal: React.FC = () => {
     if (notesImportModalOpen) void refreshSnapshotState();
   }, [notesImportModalOpen]);
 
-  if (!notesImportModalOpen) return null;
-
   // Importing replaces the whole vault, so ask first when there is something to lose.
   const confirmReplaceNotes = async () => {
     if (userNotes.length === 0) return true;
@@ -427,11 +425,11 @@ export const NotesImportModal: React.FC = () => {
 
   return (
     <Modal
-      open
+      open={notesImportModalOpen}
       onClose={handleClose}
       labelledBy="notes-import-title"
       size="xl"
-      className="!bg-black/85 backdrop-blur-md"
+      className="!bg-surface-inverse/75 backdrop-blur-md"
       panelClassName="!shadow-2xl"
     >
       <div className="flex flex-col max-h-[90dvh] min-h-0">

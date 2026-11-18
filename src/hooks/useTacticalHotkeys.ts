@@ -146,7 +146,7 @@ export function useTacticalHotkeys() {
       }
 
       // Key repeat bounce protection for modal and drawer triggers
-      if (e.repeat && (e.ctrlKey || e.altKey || e.metaKey || ['?', '/', '1', '2', '3', '4', 't', 'T', 'v', 'V', 'u', 'U', 'r', 'R', 'e', 'E', ' '].includes(e.key))) {
+      if (e.repeat && (e.ctrlKey || e.altKey || e.metaKey || ['?', '/', '1', '2', '3', '4', 'f', 'F', 't', 'T', 'v', 'V', 'u', 'U', 'r', 'R', 'e', 'E', ' '].includes(e.key))) {
         return;
       }
 
@@ -233,10 +233,10 @@ export function useTacticalHotkeys() {
       }
 
       // Alt+F: Toggle Focus Mode
-      if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault();
         e.stopPropagation();
-        
+        useCtfStore.getState().toggleFocusMode();
         if (soundEnabled) playCyberSound('toggle');
         return;
       }
@@ -274,7 +274,7 @@ export function useTacticalHotkeys() {
       // Focus Mode toggle: 'f' or 'F' (when outside inputs)
       if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
-        
+        useCtfStore.getState().toggleFocusMode();
         if (soundEnabled) playCyberSound('toggle');
         return;
       }
@@ -287,7 +287,7 @@ export function useTacticalHotkeys() {
         return;
       }
 
-      // 2. View Mode Switchers: '1' -> Kanban, '2' -> Grid, '3' -> Table, '4' -> Graph
+      // 2. View Mode Switchers: '1' -> Kanban, '2' -> Table, '3' -> Grid (Cards), '4' -> Graph
       if (['1', '2', '3', '4'].includes(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
         const currentPath = stripTrailingSlash(location.pathname);
@@ -296,8 +296,8 @@ export function useTacticalHotkeys() {
         }
         const viewMap: Record<string, ViewMode> = {
           '1': 'kanban',
-          '2': 'grid',
-          '3': 'table',
+          '2': 'table',
+          '3': 'grid',
           '4': 'graph',
         };
         setViewMode(viewMap[e.key]);

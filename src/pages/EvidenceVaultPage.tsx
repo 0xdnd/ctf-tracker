@@ -831,7 +831,7 @@ export const EvidenceVaultPage: React.FC = () => {
                 {filteredItems.slice(0, shownLimit).map((item) => {
                   const isRevealed = Boolean(revealedIds[item.id] || allRevealed);
                   const isCopied = copiedId === item.id;
-                  const hashCandidates = (item.category === 'hash' || item.category === 'password')
+                  const hashCandidates = item.category === 'hash'
                     ? identifyHash(item.secret)
                     : [];
 
@@ -886,7 +886,7 @@ export const EvidenceVaultPage: React.FC = () => {
                       {/* Secret (masked by default) */}
                       <td role="cell" className="block sm:table-cell py-2.5 sm:px-4 max-sm:w-full">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 min-w-0 sm:max-w-md bg-surface-sunken border border-subtle rounded-lg px-2.5 py-1.5 font-mono text-xs text-secondary select-all overflow-hidden text-ellipsis whitespace-nowrap tabular-nums">
+                          <div className={`flex-1 min-w-0 sm:max-w-md bg-surface-sunken border border-subtle rounded-lg px-2.5 py-1.5 font-mono text-xs text-secondary overflow-hidden text-ellipsis whitespace-nowrap tabular-nums ${isRevealed ? 'select-all' : 'select-none'}`}>
                             {isRevealed ? item.secret : '••••••••••••••••••••••••'}
                           </div>
                           <button

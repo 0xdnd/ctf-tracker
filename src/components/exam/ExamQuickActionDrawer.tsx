@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -175,13 +176,15 @@ export const ExamQuickActionDrawer: React.FC = () => {
     navigate('/exam');
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <>
     <AnimatePresence>
       {isQuickDrawerOpen && (
     <motion.div
       key="exam-quick-drawer"
-      className="fixed inset-0 z-50 overflow-hidden"
+      className="fixed inset-0 z-drawer overflow-hidden"
       data-testid="exam-quick-action-drawer"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
@@ -648,6 +651,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
           onClose={() => setIsReportModalOpen(false)}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 };

@@ -10,7 +10,8 @@ export default tseslint.config(
       'dist/**',
       'src-tauri/**',
       'node_modules/**',
-      'promo-video/**',
+      'promo-*/**',
+      'design-preview/**',
       'coverage/**',
       'scripts/*.py',
       // Local tool directories that are not part of the repo

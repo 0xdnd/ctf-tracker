@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -92,12 +93,14 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
     }
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           key="exam-bio-break"
-          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-modal overflow-y-auto flex items-center justify-center p-4 sm:p-6 font-sans"
           data-testid="exam-bio-break-dialog-container"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
@@ -347,6 +350,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
