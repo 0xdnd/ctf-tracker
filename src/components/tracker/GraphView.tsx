@@ -17,7 +17,7 @@ import {
   Redo2,
   Workflow
 } from 'lucide-react';
-import { Machine, Platform, OperatingSystem, Difficulty } from '../../types';
+import { Machine } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { PlatformIcon, platformFullName } from '../common/PlatformBadge';
@@ -38,407 +38,44 @@ import {
   decideScopedVisibility,
   formatShowMoreLabel,
 } from './graphScopedVisibility';
+import type {
+  GraphNode,
+  ClusterDef,
+  ClusterTemplate,
+  WorldBounds,
+  CanvasThemeTokens,
+  ShowAllLayout,
+  AttackNodeCardProps,
+} from './graph/types';
+import { getCanvasThemeTokens } from './graph/themeTokens';
+import { getDifficultyColors, getPortColor, extractMachinePorts, WINDOWS_PATH, MACOS_PATH, ANDROID_PATH, BSD_PATH } from './graph/colors';
+import {
+  SCOPED_BOUNDS,
+  getClusterHub,
+  computeShowAllLayout,
+  SHOW_ALL_CELL_W,
+  SHOW_ALL_CELL_H,
+  SHOW_ALL_BOUNDS_PADDING,
+} from './graph/layout';
+import {
+  LOD_SCALE_THRESHOLD,
+  LARGE_GRAPH_NODE_COUNT,
+  LOD_DOT_SCALE_THRESHOLD,
+  isNodeCulled,
+  nodeVisibility,
+  computeCanvasDelta,
+} from './graph/culling';
+
+export type { GraphNode, ClusterDef, ClusterTemplate, WorldBounds, CanvasThemeTokens, ShowAllLayout, AttackNodeCardProps };
+export { getCanvasThemeTokens };
+export { getDifficultyColors, extractMachinePorts };
+export { getClusterHub, computeShowAllLayout, SHOW_ALL_CELL_W, SHOW_ALL_CELL_H };
+export { LOD_SCALE_THRESHOLD, LARGE_GRAPH_NODE_COUNT, LOD_DOT_SCALE_THRESHOLD, isNodeCulled, nodeVisibility, computeCanvasDelta };
 
 export interface GraphViewProps {
   filteredMachines: Machine[];
 }
 
-export interface GraphNode {
-  id: string;
-  name: string;
-  ip: string;
-  os: OperatingSystem | string;
-  platform: Platform;
-  difficulty: Difficulty | string;
-  status: string;
-  cluster: string;
-  x: number;
-  y: number;
-  machine: Machine;
-}
-
-export interface ClusterDef {
-  id: string;
-  name: string;
-  angle: number;
-  radius: number;
-  color: string;
-  /** Explicit hub position (SHOW ALL layout); the scoped layout derives it from angle/radius. */
-  x?: number;
-  y?: number;
-}
-
-export interface ClusterTemplate {
-  id: string;
-  name: string;
-  color: string;
-  matcher: (m: Machine) => boolean;
-}
-
-export interface WorldBounds {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-}
-
-// Scoped layout lives entirely inside the 1600x1200 SVG basis
-const SCOPED_BOUNDS: WorldBounds = { minX: 0, minY: 0, maxX: 1600, maxY: 1200 };
-
-// Hub position of a cluster in world coordinates (rig is at 800, 600)
-export function getClusterHub(c: ClusterDef): { x: number; y: number } {
-  return {
-    x: c.x ?? 800 + Math.cos(c.angle) * c.radius,
-    y: c.y ?? 600 + Math.sin(c.angle) * c.radius,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Multi-Theme Tokens Engine
-// ---------------------------------------------------------------------------
-export interface CanvasThemeTokens {
-  canvasBg: string;
-  cardBg: string;
-  cardBorder: string;
-  cardHoverBorder: string;
-  textPrimary: string;
-  textMuted: string;
-  codeBg: string;
-  codeBorder: string;
-  accent: string;
-  accentGlow: string;
-  gridColor: string;
-  statusRoot: string;
-  statusFoothold: string;
-  statusUnsolved: string;
-}
-
-export function getCanvasThemeTokens(themePreset: string = 'obsidian', isDark: boolean = true): CanvasThemeTokens {
-  const p = String(themePreset || 'obsidian').toLowerCase().trim();
-  if (!isDark || p === 'light') {
-    if (p === 'offsec' || p === 'monolith' || p === 'clean-monolith' || p === 'clean monolith' || p === 'red-team' || p === 'redteam' || p === 'red team' || p === 'crimson') {
-      return {
-        canvasBg: '#F8FAFC',
-        cardBg: '#FFFFFF',
-        cardBorder: '#CBD5E1',
-        cardHoverBorder: '#B91C1C',
-        textPrimary: '#0F172A',
-        textMuted: '#475569',
-        codeBg: '#E2E8F0',
-        codeBorder: '#CBD5E1',
-        accent: '#B91C1C',
-        accentGlow: 'none',
-        gridColor: '#CBD5E1',
-        statusRoot: '#15803D',
-        statusFoothold: '#D97706',
-        statusUnsolved: '#B91C1C',
-      };
-    }
-    if (p === 'htb' || p === 'hackthebox' || p === 'hack-the-box' || p === 'hack the box') {
-      return {
-        canvasBg: '#F1F5F9',
-        cardBg: '#FFFFFF',
-        cardBorder: '#CBD5E1',
-        cardHoverBorder: '#15803D',
-        textPrimary: '#0F172A',
-        textMuted: '#475569',
-        codeBg: '#E2E8F0',
-        codeBorder: '#CBD5E1',
-        accent: '#15803D',
-        accentGlow: 'none',
-        gridColor: '#CBD5E1',
-        statusRoot: '#15803D',
-        statusFoothold: '#D97706',
-        statusUnsolved: '#475569',
-      };
-    }
-    if (p === 'light') {
-      return {
-        canvasBg: '#F8FAFC',
-        cardBg: '#FFFFFF',
-        cardBorder: '#E2E8F0',
-        cardHoverBorder: '#008B99',
-        textPrimary: '#0F172A',
-        textMuted: '#64748B',
-        codeBg: '#F1F5F9',
-        codeBorder: '#CBD5E1',
-        accent: '#008B99',
-        accentGlow: 'none',
-        gridColor: '#E2E8F0',
-        statusRoot: '#059669',
-        statusFoothold: '#D97706',
-        statusUnsolved: '#008B99',
-      };
-    }
-    if (p === 'obsidian' || p === 'obsidian-dark' || p === 'obsidian dark') {
-      return {
-        canvasBg: '#F4F4F5',
-        cardBg: '#FFFFFF',
-        cardBorder: '#E4E4E7',
-        cardHoverBorder: '#0284C7',
-        textPrimary: '#09090B',
-        textMuted: '#52525B',
-        codeBg: '#E4E4E7',
-        codeBorder: '#D4D4D8',
-        accent: '#0284C7',
-        accentGlow: 'none',
-        gridColor: '#E4E4E7',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#0284C7',
-      };
-    }
-    return {
-      canvasBg: '#F8FAFC',
-      cardBg: '#FFFFFF',
-      cardBorder: '#CBD5E1',
-      cardHoverBorder: '#008B99',
-      textPrimary: '#0F172A',
-      textMuted: '#64748B',
-      codeBg: '#F1F5F9',
-      codeBorder: '#CBD5E1',
-      accent: '#008B99',
-      accentGlow: 'none',
-      gridColor: '#008B99',
-      statusRoot: '#059669',
-      statusFoothold: '#D97706',
-      statusUnsolved: '#0284C7',
-    };
-  }
-
-  switch (p) {
-    case 'industrial':
-      return {
-        canvasBg: '#000000',
-        cardBg: '#0A0A0A',
-        cardBorder: '#323232',
-        cardHoverBorder: '#00FF66',
-        textPrimary: '#FFFFFF',
-        textMuted: '#AAAAAA',
-        codeBg: '#050505',
-        codeBorder: '#323232',
-        accent: '#00FF66',
-        accentGlow: 'none',
-        gridColor: '#323232',
-        statusRoot: '#00FF66',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#00FF66',
-      };
-    case 'oled':
-      return {
-        canvasBg: '#000000',
-        cardBg: '#0A0A0A',
-        cardBorder: '#262626',
-        cardHoverBorder: '#38BDF8',
-        textPrimary: '#F1F5F9',
-        textMuted: '#737373',
-        codeBg: '#050505',
-        codeBorder: '#1F1F1F',
-        accent: '#38BDF8',
-        accentGlow: 'none',
-        gridColor: '#38BDF8',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#38BDF8',
-      };
-    case 'offsec':
-    case 'monolith':
-    case 'clean-monolith':
-    case 'clean monolith':
-    case 'red-team':
-    case 'redteam':
-    case 'red team':
-    case 'crimson':
-      return {
-        canvasBg: '#09090C',
-        cardBg: '#101015',
-        cardBorder: '#272730',
-        cardHoverBorder: '#FF4646',
-        textPrimary: '#F4F4F5',
-        textMuted: '#A1A1AA',
-        codeBg: '#050508',
-        codeBorder: '#272730',
-        accent: '#FF4646',
-        accentGlow: 'none',
-        gridColor: '#272730',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#FF4646',
-      };
-    case 'htb':
-    case 'hackthebox':
-    case 'hack-the-box':
-    case 'hack the box':
-      return {
-        canvasBg: '#000000',
-        cardBg: '#0B1015',
-        cardBorder: '#1C2633',
-        cardHoverBorder: '#9FEF00',
-        textPrimary: '#FFFFFF',
-        textMuted: '#94A3B8',
-        codeBg: '#05070A',
-        codeBorder: '#1C2633',
-        accent: '#9FEF00',
-        accentGlow: 'none',
-        gridColor: '#1C2633',
-        statusRoot: '#9FEF00',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#64748B',
-      };
-    case 'zerobox':
-      return {
-        canvasBg: '#070B14',
-        cardBg: '#0D1527',
-        cardBorder: '#1E2D4A',
-        cardHoverBorder: '#00F0FF',
-        textPrimary: '#E2E8F0',
-        textMuted: '#94A3B8',
-        codeBg: '#060A12',
-        codeBorder: '#162238',
-        accent: '#00F0FF',
-        accentGlow: 'none',
-        gridColor: '#1E2D4A',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#06B6D4',
-      };
-    case 'obsidian':
-    case 'obsidian-dark':
-    case 'obsidian dark':
-    case 'neon':
-    default:
-      return {
-        canvasBg: '#09090B',
-        cardBg: '#121215',
-        cardBorder: '#27272A',
-        cardHoverBorder: '#0EA5E9',
-        textPrimary: '#F4F4F5',
-        textMuted: '#A1A1AA',
-        codeBg: '#0C0C0F',
-        codeBorder: '#27272A',
-        accent: '#0EA5E9',
-        accentGlow: 'none',
-        gridColor: '#27272A',
-        statusRoot: '#10B981',
-        statusFoothold: '#F59E0B',
-        statusUnsolved: '#0EA5E9',
-      };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Telemetry Extraction & Badge Helpers
-// ---------------------------------------------------------------------------
-export function extractMachinePorts(machine: Machine): number[] {
-  if (Array.isArray(machine.openPorts) && machine.openPorts.length > 0) {
-    return machine.openPorts;
-  }
-  if (Array.isArray(machine.services) && machine.services.length > 0) {
-    return machine.services
-      .map((s) => s.port)
-      .filter((p) => typeof p === 'number' && p > 0);
-  }
-  return [];
-}
-
-export function getDifficultyColors(
-  diff: Difficulty | string,
-  isDark?: boolean
-): { fill: string; stroke: string; text: string } {
-  const dark = isDark !== undefined 
-    ? isDark 
-    : (typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true);
-
-  if (!dark) {
-    switch (diff) {
-      case 'Very Easy':
-        return { fill: 'rgba(14, 116, 144, 0.15)', stroke: 'rgba(14, 116, 144, 0.6)', text: '#0E7490' };
-      case 'Easy':
-        return { fill: 'rgba(4, 120, 87, 0.15)', stroke: 'rgba(4, 120, 87, 0.6)', text: '#047857' };
-      case 'Medium':
-        return { fill: 'rgba(180, 83, 9, 0.15)', stroke: 'rgba(180, 83, 9, 0.6)', text: '#B45309' };
-      case 'Hard':
-        return { fill: 'rgba(190, 18, 60, 0.15)', stroke: 'rgba(190, 18, 60, 0.6)', text: '#BE123C' };
-      case 'Insane':
-        return { fill: 'rgba(126, 34, 206, 0.15)', stroke: 'rgba(126, 34, 206, 0.6)', text: '#7E22CE' };
-      default:
-        return { fill: 'rgba(71, 85, 105, 0.15)', stroke: 'rgba(71, 85, 105, 0.6)', text: '#475569' };
-    }
-  }
-
-  switch (diff) {
-    case 'Very Easy':
-      return { fill: 'rgba(6, 182, 212, 0.15)', stroke: 'rgba(6, 182, 212, 0.6)', text: '#06B6D4' };
-    case 'Easy':
-      return { fill: 'rgba(16, 185, 129, 0.15)', stroke: 'rgba(16, 185, 129, 0.6)', text: '#10B981' };
-    case 'Medium':
-      return { fill: 'rgba(245, 158, 11, 0.15)', stroke: 'rgba(245, 158, 11, 0.6)', text: '#F59E0B' };
-    case 'Hard':
-      return { fill: 'rgba(244, 63, 94, 0.15)', stroke: 'rgba(244, 63, 94, 0.6)', text: '#F43F5E' };
-    case 'Insane':
-      return { fill: 'rgba(168, 85, 247, 0.15)', stroke: 'rgba(168, 85, 247, 0.6)', text: '#A855F7' };
-    default:
-      return { fill: 'rgba(148, 163, 184, 0.15)', stroke: 'rgba(148, 163, 184, 0.6)', text: '#94A3B8' };
-  }
-}
-
-function getPortColor(port: number, isDark?: boolean): { text: string; stroke: string; bg: string } {
-  const dark = isDark !== undefined 
-    ? isDark 
-    : (typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true);
-
-  if (!dark) {
-    if (port === 22 || port === 2222) {
-      return { text: '#047857', stroke: 'rgba(4, 120, 87, 0.5)', bg: 'rgba(4, 120, 87, 0.12)' };
-    }
-    if (port === 80 || port === 443 || port === 8080 || port === 8443) {
-      return { text: '#0E7490', stroke: 'rgba(14, 116, 144, 0.5)', bg: 'rgba(14, 116, 144, 0.12)' };
-    }
-    if (port === 445 || port === 139 || port === 135) {
-      return { text: '#B45309', stroke: 'rgba(180, 83, 9, 0.5)', bg: 'rgba(180, 83, 9, 0.12)' };
-    }
-    if (port === 88 || port === 389 || port === 636) {
-      return { text: '#BE123C', stroke: 'rgba(190, 18, 60, 0.5)', bg: 'rgba(190, 18, 60, 0.12)' };
-    }
-    if (port === 3389 || port === 5900) {
-      return { text: '#0369A1', stroke: 'rgba(3, 105, 161, 0.5)', bg: 'rgba(3, 105, 161, 0.12)' };
-    }
-    return { text: '#475569', stroke: 'rgba(71, 85, 105, 0.4)', bg: 'rgba(71, 85, 105, 0.08)' };
-  }
-
-  if (port === 22 || port === 2222) {
-    return { text: '#10B981', stroke: 'rgba(16, 185, 129, 0.5)', bg: 'rgba(16, 185, 129, 0.12)' };
-  }
-  if (port === 80 || port === 443 || port === 8080 || port === 8443) {
-    return { text: '#06B6D4', stroke: 'rgba(6, 182, 212, 0.5)', bg: 'rgba(6, 182, 212, 0.12)' };
-  }
-  if (port === 445 || port === 139 || port === 135) {
-    return { text: '#F59E0B', stroke: 'rgba(245, 158, 11, 0.5)', bg: 'rgba(245, 158, 11, 0.12)' };
-  }
-  if (port === 88 || port === 389 || port === 636) {
-    return { text: '#EC4899', stroke: 'rgba(236, 72, 153, 0.5)', bg: 'rgba(236, 72, 153, 0.12)' };
-  }
-  if (port === 3389 || port === 5900) {
-    return { text: '#38BDF8', stroke: 'rgba(56, 189, 248, 0.5)', bg: 'rgba(56, 189, 248, 0.12)' };
-  }
-  return { text: '#94A3B8', stroke: 'rgba(148, 163, 184, 0.4)', bg: 'rgba(148, 163, 184, 0.08)' };
-}
-
-// OS Vector Paths
-const WINDOWS_PATH = "M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.901-1.801";
-const MACOS_PATH = "M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.96c.64-.78 1.08-1.86.96-2.96-1 .04-2.12.67-2.78 1.45-.58.67-1.1 1.77-.96 2.84 1.12.09 2.19-.58 2.78-1.33z";
-const ANDROID_PATH = "M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4116 13.8533 8.082 12 8.082s-3.5902.3296-5.1368.8677L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396";
-const BSD_PATH = "M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm-2.2 4.5c.5 0 .9.2 1.2.5.3.3.4.7.4 1.1 0 .6-.3 1.2-.7 1.6-.4.4-1 .6-1.6.6-.7 0-1.3-.2-1.7-.7-.4-.5-.6-1.1-.6-1.8 0-.4.1-.7.4-.9.3-.2.7-.4 1-.4zm6.4 0c.4 0 .8.2 1.1.4.3.2.4.5.4.9 0 .7-.2 1.3-.6 1.8-.4.5-1 .7-1.7.7-.6 0-1.2-.2-1.6-.6-.4-.4-.7-1-.7-1.6 0-.4.1-.8.4-1.1.3-.3.7-.5 1.3-.5zM12 18.2c-3.1 0-5.5-2-5.7-4.7h11.4c-.2 2.7-2.6 4.7-5.7 4.7z";
-
-// ---------------------------------------------------------------------------
-// Large-graph performance thresholds
-// ---------------------------------------------------------------------------
-// Below this committed zoom (and above LARGE_GRAPH_NODE_COUNT nodes) distant cards render compact.
-export const LOD_SCALE_THRESHOLD = 0.6;
-// Above this many visible nodes: pulse animations stop and off-screen cards are culled.
-export const LARGE_GRAPH_NODE_COUNT = 60;
-// Below this zoom (large graphs only) cards collapse to a bare status-coloured rect.
-export const LOD_DOT_SCALE_THRESHOLD = 0.3;
 // SHOW ALL spans a much larger world, so it may zoom out further than the scoped view (0.2).
 const MIN_SCALE_SCOPED = 0.2;
 
@@ -451,165 +88,8 @@ const TOUCH_HINT_FADE_MS = 300;
 const MIN_SCALE_SHOW_ALL = 0.05;
 
 // ---------------------------------------------------------------------------
-// SHOW ALL layout: every machine in its matching cluster (no capacity cap), packed in a
-// grid of cells around the cluster hub. Deterministic; positions never overlap.
-// ---------------------------------------------------------------------------
-export const SHOW_ALL_CELL_W = 200;
-export const SHOW_ALL_CELL_H = 104;
-const SHOW_ALL_HUB_GAP = 110;
-const SHOW_ALL_BOUNDS_PADDING = 80;
-
-export interface ShowAllLayout {
-  positions: Record<string, AttackNodePosition>;
-  clusters: ClusterDef[];
-  clusterOf: Record<string, string>;
-  bounds: WorldBounds;
-}
-
-export function computeShowAllLayout(machines: Machine[], templates: ClusterTemplate[]): ShowAllLayout {
-  const positions: Record<string, AttackNodePosition> = {};
-  const clusterOf: Record<string, string> = {};
-  if (machines.length === 0 || templates.length === 0) {
-    return { positions, clusters: [], clusterOf, bounds: SCOPED_BOUNDS };
-  }
-
-  const buckets = new Map<string, Machine[]>();
-  templates.forEach((t) => buckets.set(t.id, []));
-  const fallback = templates[templates.length - 1];
-  machines.forEach((m) => {
-    const t = templates.find((c) => c.matcher(m)) ?? fallback;
-    buckets.get(t.id)!.push(m);
-    clusterOf[m.id] = t.id;
-  });
-
-  const active = templates.filter((t) => buckets.get(t.id)!.length > 0);
-  const count = active.length;
-  const blocks = active.map((t, idx) => {
-    const list = buckets.get(t.id)!;
-    const cols = Math.ceil(Math.sqrt(list.length));
-    const rows = Math.ceil(list.length / cols);
-    return {
-      t,
-      list,
-      cols,
-      w: cols * SHOW_ALL_CELL_W,
-      h: rows * SHOW_ALL_CELL_H,
-      angle: -Math.PI / 2 + (idx * 2 * Math.PI) / count,
-    };
-  });
-
-  type Box = { l: number; t: number; r: number; b: number };
-  const overlaps = (a: Box, b: Box, margin: number) =>
-    a.l < b.r + margin && b.l < a.r + margin && a.t < b.b + margin && b.t < a.b + margin;
-  const rigBox: Box = { l: 800 - 130, t: 600 - 100, r: 800 + 130, b: 600 + 100 };
-
-  // Hubs sit on a ring; each block extends outward from its hub (clear of the hub label)
-  const place = (ringRadius: number) =>
-    blocks.map((b) => {
-      const dx = Math.cos(b.angle);
-      const dy = Math.sin(b.angle);
-      const hubX = Math.round(800 + dx * ringRadius);
-      const hubY = Math.round(600 + dy * ringRadius);
-      const reach = Math.abs(dx) * (b.w / 2) + Math.abs(dy) * (b.h / 2) + SHOW_ALL_HUB_GAP;
-      const left = Math.round(hubX + dx * reach - b.w / 2);
-      const top = Math.round(hubY + dy * reach - b.h / 2);
-      const block: Box = { l: left, t: top, r: left + b.w, b: top + b.h };
-      const hubBox: Box = { l: hubX - 90, t: hubY - 50, r: hubX + 90, b: hubY + 50 };
-      const foot: Box = {
-        l: Math.min(block.l, hubBox.l),
-        t: Math.min(block.t, hubBox.t),
-        r: Math.max(block.r, hubBox.r),
-        b: Math.max(block.b, hubBox.b),
-      };
-      return { hubX, hubY, block, foot };
-    });
-
-  // Smallest ring (50-unit steps) where no two cluster footprints touch each other or the rig
-  let ringRadius = 300;
-  let placed = place(ringRadius);
-  const isClear = (p: typeof placed) => {
-    for (let i = 0; i < p.length; i++) {
-      if (overlaps(p[i].foot, rigBox, 40)) return false;
-      for (let j = i + 1; j < p.length; j++) {
-        if (overlaps(p[i].foot, p[j].foot, 60)) return false;
-      }
-    }
-    return true;
-  };
-  while (!isClear(placed) && ringRadius < 200000) {
-    ringRadius += 50;
-    placed = place(ringRadius);
-  }
-
-  const clusters: ClusterDef[] = [];
-  let minX = rigBox.l;
-  let minY = rigBox.t;
-  let maxX = rigBox.r;
-  let maxY = rigBox.b;
-  blocks.forEach((b, i) => {
-    const p = placed[i];
-    clusters.push({
-      id: b.t.id,
-      name: b.t.name,
-      angle: b.angle,
-      radius: ringRadius,
-      color: b.t.color,
-      x: p.hubX,
-      y: p.hubY,
-    });
-    b.list.forEach((m, idx) => {
-      const col = idx % b.cols;
-      const row = Math.floor(idx / b.cols);
-      positions[m.id] = {
-        x: p.block.l + SHOW_ALL_CELL_W / 2 + col * SHOW_ALL_CELL_W,
-        y: p.block.t + SHOW_ALL_CELL_H / 2 + row * SHOW_ALL_CELL_H,
-      };
-    });
-    minX = Math.min(minX, p.foot.l);
-    minY = Math.min(minY, p.foot.t);
-    maxX = Math.max(maxX, p.foot.r);
-    maxY = Math.max(maxY, p.foot.b);
-  });
-
-  return {
-    positions,
-    clusters,
-    clusterOf,
-    bounds: {
-      minX: minX - SHOW_ALL_BOUNDS_PADDING,
-      minY: minY - SHOW_ALL_BOUNDS_PADDING,
-      maxX: maxX + SHOW_ALL_BOUNDS_PADDING,
-      maxY: maxY + SHOW_ALL_BOUNDS_PADDING,
-    },
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Pure SVG Machine Node Card (<AttackNodeCard>)
 // ---------------------------------------------------------------------------
-export interface AttackNodeCardProps {
-  node: GraphNode;
-  /** Live world position; falls back to node.x / node.y so node identity can stay stable across drags. */
-  x?: number;
-  y?: number;
-  /** Render SMIL pulse animations (disabled on large graphs). */
-  animate?: boolean;
-  /** Level-of-detail tier; selected / hovered / focused / connecting-source cards always render full. */
-  lod?: 'full' | 'compact' | 'dot';
-  isFocused?: boolean;
-  isSelected: boolean;
-  isHovered: boolean;
-  isConnectingSource?: boolean;
-  tokens: CanvasThemeTokens;
-  onSelect: (node: GraphNode) => void;
-  onHover: (nodeId: string | null) => void;
-  /** Keyboard focus tracking so the focused card is never culled out from under the user. */
-  onFocusChange?: (nodeId: string | null) => void;
-  onPointerDown: (e: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
-  onPointerMove?: (e: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
-  onPointerUp?: (e: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
-}
-
 export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
   node,
   x: xProp,
@@ -1065,55 +545,6 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
     </g>
   );
 });
-
-// ---------------------------------------------------------------------------
-// Viewport culling predicate: true when the 180x84 card at (x, y) lies fully outside rect.
-// Exempt cards (selected, hovered, focused, connecting source, being dragged) are never culled.
-// ---------------------------------------------------------------------------
-export function isNodeCulled(
-  rect: { minX: number; maxX: number; minY: number; maxY: number } | null,
-  x: number,
-  y: number,
-  exempt: boolean
-): boolean {
-  if (!rect || exempt) return false;
-  return x + 90 < rect.minX || x - 90 > rect.maxX || y + 42 < rect.minY || y - 42 > rect.maxY;
-}
-
-// Three-way culling: 'culled' (outside the margin-expanded rect), 'ring' (inside the margin
-// but outside the real visible rect, rendered cheap) or 'visible'. Exempt cards are always visible.
-export function nodeVisibility(
-  rect: { minX: number; maxX: number; minY: number; maxY: number } | null,
-  innerRect: { minX: number; maxX: number; minY: number; maxY: number } | null,
-  x: number,
-  y: number,
-  exempt: boolean
-): 'culled' | 'ring' | 'visible' {
-  if (!rect || exempt) return 'visible';
-  if (isNodeCulled(rect, x, y, false)) return 'culled';
-  if (!innerRect || !isNodeCulled(innerRect, x, y, false)) return 'visible';
-  return 'ring';
-}
-
-// ---------------------------------------------------------------------------
-// Analytical Coordinate Delta Fallback Helper
-// ---------------------------------------------------------------------------
-export function computeCanvasDelta(
-  screenDeltaX: number,
-  screenDeltaY: number,
-  scale: number,
-  containerRect?: { width: number; height: number }
-): { dx: number; dy: number } {
-  const width = containerRect && containerRect.width > 0 ? containerRect.width : 1600;
-  const height = containerRect && containerRect.height > 0 ? containerRect.height : 1200;
-  const aspectScale = Math.min(width / 1600, height / 1200) || 1;
-  const effectiveScale = scale * aspectScale;
-
-  return {
-    dx: screenDeltaX / effectiveScale,
-    dy: screenDeltaY / effectiveScale,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Minimap static layers (memoized: unaffected by pan/zoom commits)
