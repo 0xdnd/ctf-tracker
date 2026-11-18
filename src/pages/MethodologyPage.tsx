@@ -318,18 +318,6 @@ export const MethodologyPage: React.FC = () => {
       <PageHeader
         title="Attack Methodology"
         description="Eight-phase playbook with copyable commands that fill in your target and attacker values."
-        badges={
-          !activeTargetMachine
-            ? [
-                <span
-                  key="scratchpad-pill"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-subtle bg-surface-sunken px-2 py-0.5 text-xs font-medium text-secondary"
-                >
-                  Global scratchpad · Engage a target to save progress per box
-                </span>,
-              ]
-            : undefined
-        }
         primaryAction={
           <CyberButton
             variant="secondary"
@@ -343,6 +331,13 @@ export const MethodologyPage: React.FC = () => {
           </CyberButton>
         }
       >
+        {!activeTargetMachine && (
+          <div className="mb-2">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-subtle bg-surface-sunken px-2.5 py-1 text-xs font-medium text-secondary">
+              Global scratchpad · Engage a target to save progress per box
+            </span>
+          </div>
+        )}
         {/* View mode: reference playbook vs live target checklist vs transfers vs tty vs encoder */}
         <div data-tour="methodology-tabs" className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">

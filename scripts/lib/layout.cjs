@@ -39,6 +39,12 @@ const BT_SRC = '/back-to-top.js?v=' + crypto.createHash('sha1').update(BT_JS).di
 // Language filter and search for /revshells/ (public/revshells-filter.js), loaded only where renderPage gets shellFilter: true.
 const RF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'revshells-filter.js'), 'utf8');
 const RF_SRC = '/revshells-filter.js?v=' + crypto.createHash('sha1').update(RF_JS).digest('hex').slice(0, 8);
+// Live {TARGET_IP}/{LHOST}/{LPORT} fill-in bar for static cheatsheets, methodology and techniques (public/vars-bar.js).
+const VB_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'vars-bar.js'), 'utf8');
+const VB_SRC = '/vars-bar.js?v=' + crypto.createHash('sha1').update(VB_JS).digest('hex').slice(0, 8);
+// Local progress highlighter for certification hubs and /tj-null-list/ (public/local-progress.js).
+const LP_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'local-progress.js'), 'utf8');
+const LP_SRC = '/local-progress.js?v=' + crypto.createHash('sha1').update(LP_JS).digest('hex').slice(0, 8);
 // Old /machines/?tag= and ?q= links go to /machines/all/ (public/machines-redirect.js), loaded only where renderPage gets redirectListQuery: true.
 const MR_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'machines-redirect.js'), 'utf8');
 const MR_SRC = '/machines-redirect.js?v=' + crypto.createHash('sha1').update(MR_JS).digest('hex').slice(0, 8);
@@ -400,7 +406,9 @@ ${ICON_LINKS}
   <link rel="stylesheet" href="${CSS_HREF}" />${opts.tableFilter ? `
   <script src="${TF_SRC}" defer></script>` : ''}${opts.tableFilter || opts.backToTop ? `
   <script src="${BT_SRC}" defer></script>` : ''}${opts.copyCode || /<pre[\s>]/.test(opts.body || '') ? `
-  <script src="${CC_SRC}" defer></script>` : ''}${opts.shellFilter ? `
+  <script src="${CC_SRC}" defer></script>` : ''}${opts.varsBar ? `
+  <script src="${VB_SRC}" defer></script>` : ''}${opts.localProgress ? `
+  <script src="${LP_SRC}" defer></script>` : ''}${opts.shellFilter ? `
   <script src="${RF_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />

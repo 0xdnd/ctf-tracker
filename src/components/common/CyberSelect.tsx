@@ -246,6 +246,7 @@ export function CyberSelect<T extends string = string>({
     <div
       ref={containerRef}
       role="presentation"
+      data-escape-consumer={isOpen ? 'true' : undefined}
       className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={handleKeyDown}
     >
@@ -595,6 +596,7 @@ export function CyberMultiSelect<T extends string = string>({
     <div
       ref={containerRef}
       role="presentation"
+      data-escape-consumer={isOpen ? 'true' : undefined}
       className={`relative inline-block text-left font-sans ${isOpen ? 'z-[70]' : 'z-10'} ${className}`}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {

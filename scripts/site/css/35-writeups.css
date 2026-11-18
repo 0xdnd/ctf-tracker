@@ -20,6 +20,6 @@
 .wu-time td{white-space:nowrap}
 @media(min-width:900px){
 .wu-layout{flex-wrap:nowrap}
-.wu-toc{position:sticky;top:calc(var(--header-h) + var(--s4));order:2}
+.wu-toc{position:sticky;top:calc(var(--header-h) + var(--s4));max-height:calc(100dvh - var(--header-h) - 2rem);overflow-y:auto;order:2}
 }
 @media(hover:hover) and (pointer:fine){.wu-toc a:hover{color:var(--accent);text-decoration:underline}}

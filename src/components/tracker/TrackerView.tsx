@@ -13,9 +13,11 @@ import {
   Radio,
   X,
   Upload,
+  Download,
   ClipboardPaste,
   AlertCircle
 } from 'lucide-react';
+import { downloadMachinesCsv } from '../../utils/machineCsvExport';
 import { useCtfStore, FilterState, HtbTargetStatus, type SortOption } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
 import { toast } from '../../store/useToastStore';
@@ -554,6 +556,12 @@ export const TrackerView: React.FC = () => {
     </span>
   );
 
+  const handleExportCsv = useCallback(() => {
+    downloadMachinesCsv(filteredMachines);
+    if (soundEnabled) playCyberSound('export');
+    toast.success(`Exported ${filteredMachines.length.toLocaleString('en-US')} machine${filteredMachines.length === 1 ? '' : 's'} to CSV`);
+  }, [filteredMachines, soundEnabled]);
+
   const importItems: OverflowItem[] = [
     {
       id: 'solved',
@@ -841,6 +849,18 @@ export const TrackerView: React.FC = () => {
                 </>
               }
             />
+
+            {/* Export filtered machines to CSV */}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className={`${TOOLBAR_BTN} h-8 px-2.5`}
+              title={`Export ${hiddenByFilters ? 'filtered ' : ''}machines to CSV`}
+              aria-label={`Export ${hiddenByFilters ? 'filtered ' : ''}machines to CSV`}
+            >
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className="hidden 2xl:inline">Export CSV</span>
+            </button>
 
             {/* The sidebar owns the desktop view switch; focus mode hides the sidebar, so the toolbar carries one then. */}
             {focusMode && (

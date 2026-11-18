@@ -649,8 +649,18 @@ for (const m of withPage) {
   const total = model.catalogCounts.htbThm + extraTotal;
   const pager = (n, where) => {
     if (pageCount < 2) return '';
-    const link = (k, label, rel) => (k === n ? `<span aria-current="page">${label}</span>` : `<a href="${pageUrl(k)}"${rel ? ` rel="${rel}"` : ''}>${label}</a>`);
-    const nums = Array.from({ length: pageCount }, (_, i) => link(i + 1, String(i + 1)));
+    const isFar = (k) => k !== 1 && k !== pageCount && Math.abs(k - n) > 1;
+    const link = (k, label, rel) => {
+      if (k === n) return `<span aria-current="page">${label}</span>`;
+      const cls = isFar(k) ? ' class="pg-far"' : '';
+      return `<a href="${pageUrl(k)}"${cls}${rel ? ` rel="${rel}"` : ''}>${label}</a>`;
+    };
+    const nums = [];
+    for (let k = 1; k <= pageCount; k++) {
+      if (k === 2 && n > 3) nums.push('<span class="pg-dots" aria-hidden="true">…</span>');
+      if (k === pageCount && n < pageCount - 2) nums.push('<span class="pg-dots" aria-hidden="true">…</span>');
+      nums.push(link(k, String(k)));
+    }
     return `<nav class="pager" aria-label="Machine list pages${where === 'end' ? ', end of list' : ''}">${n > 1 ? `<a href="${pageUrl(n - 1)}" rel="prev">Previous</a>` : ''}${nums.join('')}${n < pageCount ? `<a href="${pageUrl(n + 1)}" rel="next">Next</a>` : ''}</nav>`;
   };
   const searchForm = () =>
@@ -764,6 +774,7 @@ for (const t of model.topics) {
       h1: `${t.name} cheatsheet`,
       body,
       crumbs: [['Home', '/'], ['Cheatsheets', '/cheatsheet-library/'], [t.name, p]],
+      varsBar: true,
     }),
     0.7
   );
@@ -816,6 +827,7 @@ for (const ph of model.phases) {
       h1: ph.title,
       body,
       crumbs: [['Home', '/'], ['Methodology', '/methodology-guide/'], [ph.shortTitle, p]],
+      varsBar: true,
       ld: [
         techArticleLd({
           headline: `${ph.title}: pentest methodology checklist`,
@@ -1258,6 +1270,7 @@ for (const hub of certHubs) {
       crumbs: [['Home', '/'], ['Machines', '/machines/'], [label, p]],
       ogType: 'website',
       tableFilter: true,
+      localProgress: true,
       ld: [itemListLd(`${label} list`, p, ordered)],
     }),
     0.8,
@@ -1369,32 +1382,53 @@ for (const g of techGroups) {
       body,
       crumbs: [['Home', '/'], ['Techniques', '/techniques/'], [g.name, p]],
       ogType: 'article',
+      varsBar: true,
       ld: [itemListLd(`${g.name} practice machines`, p, ordered)],
     }),
     0.7,
     techLastmod
   );
 }
-emit(
-  'technique-hub',
-  '/techniques/',
-  renderPage({
-    path: '/techniques/',
-    title: `Pentest Techniques: ${techGroups.length} Topics with Practice Boxes | ZeroBox`,
-    description: `${techGroups.length} pentest techniques, from Active Directory and SQL injection to privesc and pivoting, each with key commands and matching HTB and THM boxes.`,
-    h1: 'Pentest techniques with practice machines',
-    body: [
-      `<p class="lead">Pick a technique to see what it is, the commands that matter and the Hack The Box and TryHackMe machines that practise it. Counts show how many catalog machines carry a matching tag.</p>`,
-      `<div class="grid">${techGroups.map((g) => card(`/techniques/${g.slug}/`, g.name, `${g.machines.length} machines`)).join('')}</div>`,
-      `<h2>Certification machine lists</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/machines/">All machines</a></div>`,
-      ctaBox({ body: 'Track your practice offline.', href: '/tracker/', label: 'Open tracker' }),
-    ].join('\n'),
-    crumbs: [['Home', '/'], ['Techniques', '/techniques/']],
-    ogType: 'website',
-  }),
-  0.8,
-  techLastmod
-);
+{
+  const subCard = (href, title, desc) =>
+    `<a class="card" href="${href}"><h3>${esc(title)}</h3><p>${esc(desc)}</p></a>`;
+  const TECH_BUCKETS = [
+    ['Recon & Enumeration', ['network-services', 'smb', 'source-code-review']],
+    ['Web & Application', ['sql-injection', 'lfi-path-traversal', 'command-injection', 'ssti', 'deserialization', 'file-upload', 'ssrf-xxe', 'cms-exploitation', 'api-abuse']],
+    ['Active Directory & Network', ['active-directory', 'kerberos', 'windows-lateral-movement', 'pivoting-tunneling', 'password-cracking']],
+    ['Privilege Escalation & Post-Exploitation', ['linux-suid', 'sudo-misconfig', 'cron-jobs', 'linux-capabilities', 'windows-privesc', 'buffer-overflow', 'docker-escape']],
+  ];
+  const assignedSlugs = new Set(TECH_BUCKETS.flatMap(([, slugs]) => slugs));
+  const groupedSections = TECH_BUCKETS.map(([heading, slugs], idx) => {
+    const bucketGroups = [
+      ...slugs.map((s) => techGroups.find((g) => g.slug === s)).filter(Boolean),
+      ...(idx === TECH_BUCKETS.length - 1 ? techGroups.filter((g) => !assignedSlugs.has(g.slug)) : []),
+    ];
+    if (!bucketGroups.length) return '';
+    return `<h2 id="${slugify(heading)}">${esc(heading)} (${bucketGroups.length})</h2>\n<div class="grid">${bucketGroups.map((g) => subCard(`/techniques/${g.slug}/`, g.name, `${g.machines.length} machines`)).join('')}</div>`;
+  }).filter(Boolean);
+
+  emit(
+    'technique-hub',
+    '/techniques/',
+    renderPage({
+      path: '/techniques/',
+      title: `Pentest Techniques: ${techGroups.length} Topics with Practice Boxes | ZeroBox`,
+      description: `${techGroups.length} pentest techniques, from Active Directory and SQL injection to privesc and pivoting, each with key commands and matching HTB and THM boxes.`,
+      h1: 'Pentest techniques with practice machines',
+      body: [
+        `<p class="lead">Pick a technique to see what it is, the commands that matter and the Hack The Box and TryHackMe machines that practise it. Counts show how many catalog machines carry a matching tag.</p>`,
+        ...groupedSections,
+        `<h2>Certification machine lists</h2><div class="chips">${certHubs.map((c) => `<a href="/${c.slug}/">${esc(c.name)} machines (${c.machines.length})</a>`).join('')}<a href="/machines/">All machines</a></div>`,
+        ctaBox({ body: 'Track your practice offline.', href: '/tracker/', label: 'Open tracker' }),
+      ].join('\n'),
+      crumbs: [['Home', '/'], ['Techniques', '/techniques/']],
+      ogType: 'website',
+    }),
+    0.8,
+    techLastmod
+  );
+}
 
 // ---- Hub stats (build log) ----
 {

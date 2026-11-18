@@ -54,8 +54,35 @@ function sourcesSection(sources) {
   return `<h2>Sources</h2>\n<ul>${sources.map(([href, label, note]) => `<li>${externalLink(href, label)}${note ? ` (${esc(note)})` : ''}</li>`).join('')}</ul>`;
 }
 
+function slugId(text, seen) {
+  const base = String(text)
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/&[a-z0-9#]+;/gi, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'section';
+  const count = (seen.get(base) || 0) + 1;
+  seen.set(base, count);
+  return count > 1 ? `${base}-${count}` : base;
+}
+
+function addHeadingIdsAndToc(html) {
+  const seen = new Map();
+  const headings = [];
+  const withIds = html.replace(/<h2(\b[^>]*)>([\s\S]*?)<\/h2>/g, (m, attrs, inner) => {
+    const plain = inner.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+    const existing = /\bid="([^"]+)"/.exec(attrs);
+    const id = existing ? existing[1] : slugId(plain, seen);
+    headings.push([id, plain]);
+    return existing ? m : `<h2${attrs} id="${esc(id)}">${inner}</h2>`;
+  });
+  if (headings.length < 3) return { toc: '', html: withIds };
+  const toc = `<nav class="guide-toc" aria-label="On this page"><span class="guide-toc-label">On this page</span><div class="chips">${headings.map(([id, label]) => `<a href="#${esc(id)}">${esc(label)}</a>`).join('')}</div></nav>`;
+  return { toc, html: withIds };
+}
+
 function faqSection(faq) {
-  return `<h2>Frequently asked questions</h2>\n${faq.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}`;
+  return `<h2>Frequently asked questions</h2>\n<div class="faq">\n${faq.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('\n')}\n</div>`;
 }
 
 function relatedSection(related) {
@@ -70,15 +97,22 @@ function buildGuidePages({ model, renderPage, site } = {}) {
     for (const p of g.related) if (!LINKS[p]) throw new Error(`guides: unknown related link ${p} on ${g.path}`);
     if (g.related.length < 3 || g.related.length > 5) throw new Error(`guides: ${g.path} needs 3-5 related links`);
     const url = ORIGIN + g.path;
-    const body = [
-      `<p class="lead">${g.lead}</p>`,
-      g.topCta ? ctaBox({ body: esc(g.topCta.body), href: g.topCta.href, label: g.topCta.label }) : '',
+    const mainSections = [
       g.directAnswer || '',
       g.body,
       ctaBox({ title: esc(g.cta.title), body: esc(g.cta.body), href: g.cta.href, label: g.cta.label }),
       g.faq && g.faq.length ? faqSection(g.faq) : '',
       relatedSection(g.related),
       sourcesSection(g.sources),
+    ]
+      .filter(Boolean)
+      .join('\n');
+    const { toc, html: numberedBody } = addHeadingIdsAndToc(mainSections);
+    const body = [
+      `<p class="lead">${g.lead}</p>`,
+      g.topCta ? ctaBox({ body: esc(g.topCta.body), href: g.topCta.href, label: g.topCta.label }) : '',
+      toc,
+      numberedBody,
       `<p class="note">${esc(g.affil)}</p>`,
     ]
       .filter(Boolean)
@@ -115,6 +149,7 @@ function buildGuidePages({ model, renderPage, site } = {}) {
       body,
       crumbs: [['Home', '/'], [g.crumb, g.path]],
       ld,
+      localProgress: g.path === '/tj-null-list/',
     });
     return { path: g.path, title: g.title, description: g.description, html, lastmod: LAST_REVIEWED };
   });

@@ -131,6 +131,21 @@
   }
 
   function init() {
+    if (
+      typeof window !== 'undefined' &&
+      window.__zbTfLastSynced &&
+      window.__zbTfLastSynced.toolbar &&
+      !document.contains(window.__zbTfLastSynced.toolbar) &&
+      typeof location !== 'undefined' &&
+      location.search === window.__zbTfLastSynced.search
+    ) {
+      try {
+        if (typeof history !== 'undefined' && history.replaceState) {
+          history.replaceState(null, '', location.pathname + (location.hash || ''));
+        }
+      } catch { /* ignore */ }
+      window.__zbTfLastSynced = null;
+    }
     var main = document.getElementById('main') || document.body;
     var tables = main.querySelectorAll('table.list');
     var groups = []; // one per table: { table, body, heading, rows: [{ el, ...row }] }
@@ -286,20 +301,48 @@
     }
 
     var timer = 0;
+    var readyForUrlSync = false;
+
+    function syncUrl() {
+      if (!readyForUrlSync) return;
+      try {
+        if (typeof history === 'undefined' || !history.replaceState || typeof location === 'undefined') return;
+        var next = new URLSearchParams();
+        var qTrim = (state.q || '').trim();
+        if (qTrim) next.set('q', qTrim);
+        if (state.os) next.set('os', state.os);
+        if (state.difficulty) next.set('difficulty', state.difficulty);
+        if (state.platform) next.set('platform', state.platform);
+        if (state.tag) next.set('tag', state.tag);
+        if (sortMode) next.set('sort', sortMode);
+        var qs = next.toString();
+        var targetUrl = location.pathname + (qs ? '?' + qs : '') + (location.hash || '');
+        var currentUrl = location.pathname + (location.search || '') + (location.hash || '');
+        if (targetUrl !== currentUrl) history.replaceState(null, '', targetUrl);
+        if (typeof window !== 'undefined') {
+          window.__zbTfLastSynced = qs ? { search: '?' + qs, toolbar: toolbar } : null;
+        }
+      } catch {
+        /* history unavailable */
+      }
+    }
+
     search.addEventListener('input', function () {
       clearTimeout(timer);
       timer = setTimeout(function () {
         state.q = search.value;
         applyFilters();
+        syncUrl();
       }, 120);
     });
     ['os', 'difficulty', 'platform', 'tag'].forEach(function (k) {
       var s = fields[k];
-      if (s) s.addEventListener('change', function () { state[k] = s.value; applyFilters(); });
+      if (s) s.addEventListener('change', function () { state[k] = s.value; applyFilters(); syncUrl(); });
     });
     fields.sort.addEventListener('change', function () {
       sortMode = fields.sort.value;
       applySort();
+      syncUrl();
     });
     function clearAll() {
       clearTimeout(timer);
@@ -309,18 +352,43 @@
       Object.keys(fields).forEach(function (k) { fields[k].value = ''; });
       applyFilters();
       applySort();
+      syncUrl();
     }
-    // ?tag=<tag> preselects the Tag filter. A tag used by one machine only is not in the select on big pages, so its option is added.
+    // URL parameters preselect controls on load (?tag=, ?q=, ?os=, ?difficulty=, ?platform=, ?sort=).
     var wanted = '';
     var wantedQ = '';
+    var wantedOs = '';
+    var wantedDiff = '';
+    var wantedPlat = '';
+    var wantedSort = '';
     try {
       var params = new URLSearchParams(location.search);
       wanted = params.get('tag') || '';
       wantedQ = (params.get('q') || '').slice(0, 100);
+      wantedOs = params.get('os') || '';
+      wantedDiff = params.get('difficulty') || '';
+      wantedPlat = params.get('platform') || '';
+      wantedSort = params.get('sort') || '';
     } catch {
       wanted = '';
       wantedQ = '';
     }
+    function applySelectParam(key, rawVal) {
+      if (!rawVal || !fields[key]) return false;
+      var selEl = fields[key];
+      for (var idxOpt = 1; idxOpt < selEl.options.length; idxOpt++) {
+        if (norm(selEl.options[idxOpt].value) === norm(rawVal)) {
+          selEl.selectedIndex = idxOpt;
+          state[key] = selEl.options[idxOpt].value;
+          return true;
+        }
+      }
+      return false;
+    }
+    var changedFromUrl = false;
+    if (applySelectParam('os', wantedOs)) changedFromUrl = true;
+    if (applySelectParam('difficulty', wantedDiff)) changedFromUrl = true;
+    if (applySelectParam('platform', wantedPlat)) changedFromUrl = true;
     var wantedLabel = wanted && fields.tag ? findTag(all, wanted) : '';
     if (wantedLabel) {
       var sel = fields.tag;
@@ -338,14 +406,38 @@
         sel.selectedIndex = at;
         state.tag = sel.options[at].value;
       }
-      applyFilters();
+      changedFromUrl = true;
     }
-    // ?q=<text> fills the search box and filters on it, together with any ?tag=.
     if (wantedQ.trim()) {
       search.value = wantedQ;
       state.q = wantedQ;
-      applyFilters();
+      changedFromUrl = true;
     }
+    if (changedFromUrl) applyFilters();
+    if (wantedSort && fields.sort) {
+      for (var sIdx = 1; sIdx < fields.sort.options.length; sIdx++) {
+        if (fields.sort.options[sIdx].value === wantedSort) {
+          fields.sort.selectedIndex = sIdx;
+          sortMode = wantedSort;
+          applySort();
+          break;
+        }
+      }
+    }
+    readyForUrlSync = true;
+
+    if (typeof window !== 'undefined') {
+      if (window.__zbTfKeyHandler) document.removeEventListener('keydown', window.__zbTfKeyHandler);
+      window.__zbTfKeyHandler = function (e) {
+        if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+        var active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) return;
+        e.preventDefault();
+        search.focus();
+      };
+      document.addEventListener('keydown', window.__zbTfKeyHandler);
+    }
+
     reset.addEventListener('click', clearAll);
     clear.addEventListener('click', function () {
       clearAll();

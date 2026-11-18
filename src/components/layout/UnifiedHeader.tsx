@@ -258,40 +258,45 @@ export const UnifiedHeader: React.FC = () => {
   const tabletToolItems = useMemo<OverflowItem[]>(
     () => [
       {
+        id: 'deploy',
         label: 'Deploy Target',
-        icon: Plus,
+        icon: <Plus className="w-3.5 h-3.5" />,
         onSelect: () => {
           setNewMachineModalOpen(true);
           if (soundEnabled) playCyberSound('click');
         },
       },
       {
+        id: 'scans',
         label: 'Scans Hub',
-        icon: Zap,
+        icon: <Zap className="w-3.5 h-3.5" />,
         onSelect: () => {
           setReconAutomationModalOpen(true);
           if (soundEnabled) playCyberSound('click');
         },
       },
       {
+        id: 'revshell',
         label: 'Reverse Shell Crafter',
-        icon: Radio,
+        icon: <Radio className="w-3.5 h-3.5" />,
         onSelect: () => {
           setRevShellModalOpen(true);
           if (soundEnabled) playCyberSound('click');
         },
       },
       {
+        id: 'snippets',
         label: 'Snippets Drawer',
-        icon: Terminal,
+        icon: <Terminal className="w-3.5 h-3.5" />,
         onSelect: () => {
           setSnippetsDrawerOpen(true);
           if (soundEnabled) playCyberSound('click');
         },
       },
       {
+        id: 'notes',
         label: isNotesOpen ? 'Hide Field Notes' : 'Field Notes',
-        icon: BookOpen,
+        icon: <BookOpen className="w-3.5 h-3.5" />,
         onSelect: () => {
           toggleNotesWorkspace();
           if (soundEnabled) playCyberSound('click');
@@ -770,9 +775,10 @@ export const UnifiedHeader: React.FC = () => {
           )}
         </button>
 
-        {/* Tablet / split-screen quick tools menu (768px..1279px where individual buttons collapse) */}
-        <div className="hidden md:flex xl:hidden flex-shrink-0">
+        {/* Tablet / split-screen quick tools + search (768px..1279px where xl buttons collapse) */}
+        <div className="hidden md:flex xl:hidden items-center gap-1 flex-shrink-0">
           <OverflowMenu
+            portal
             items={tabletToolItems}
             label="Quick tools"
             align="right"
@@ -784,22 +790,34 @@ export const UnifiedHeader: React.FC = () => {
               </>
             }
           />
+          <button
+            type="button"
+            onClick={() => {
+              setCommandPaletteOpen(true);
+              if (soundEnabled) playCyberSound('click');
+            }}
+            className="flex items-center justify-center h-8 w-8 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            title="Quick Search (Ctrl+K)"
+            aria-label="Quick search (Ctrl+K)"
+          >
+            <Search className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+          </button>
         </div>
 
-        {/* Command palette trigger (visible on md+ so tablet & split-screen operators always have 1-click search) */}
+        {/* Command palette trigger */}
         <button
           onClick={() => {
             setCommandPaletteOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden md:flex items-center gap-1.5 h-8 px-2 xl:px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           title="Open Command Palette (Ctrl+K)"
           data-tour="command-palette"
           aria-label="Search Ctrl+K, open command palette"
         >
           <Search className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="hidden 2xl:inline">Search</span>
-          <kbd className="hidden xl:inline-block px-1 text-[10px] font-medium font-mono rounded bg-surface-card text-muted border border-subtle">
+          <kbd className="px-1 text-[10px] font-medium font-mono rounded bg-surface-card text-muted border border-subtle">
             Ctrl+K
           </kbd>
         </button>

@@ -2,11 +2,12 @@
 const PATH = '/htb-progress-tracker/';
 
 function build({ model, esc }) {
-  const total = model.catalogCounts.htbThm;
+  const total = model.catalogCounts.ctf.toLocaleString('en-US');
+  const htbThm = model.catalogCounts.htbThm.toLocaleString('en-US');
   const cmp = [
-    ['Counts machines you own', 'Yes, on that platform only', 'Only what you type in', 'Yes, across both platforms and your own targets'],
-    ['Covers other labs (Proving Grounds, Vulnhub, custom)', 'No', 'Yes, manually', 'Yes, add any target'],
-    ['Your notes, IPs and commands per box', 'Limited or none', 'One cell at a time', 'Per machine, with a detail view'],
+    ['Counts machines you own', 'Yes, on that platform only', 'Only what you type in', 'Yes, across HTB, THM, PG, VulnHub and custom targets'],
+    ['Covers Proving Grounds, VulnHub and custom labs', 'No', 'Yes, manually', `Yes, ${total} machines pre-loaded plus custom targets`],
+    ['Your notes, IPs and commands per box', 'Limited or none', 'One cell at a time', 'Per machine, with a detail view and vault'],
     ['Time to foothold and to root', 'Not in the profile', 'If you type it', 'Recorded per machine'],
     ['Imports nmap output', 'No', 'No', 'Yes, .nmap, .gnmap, XML or raw text'],
     ['Works offline', 'No', 'Depends on the tool', 'Yes, after first load'],
@@ -14,6 +15,9 @@ function build({ model, esc }) {
   ]
     .map(([a, b, c, d]) => `<tr><th scope="row">${esc(a)}</th><td>${esc(b)}</td><td>${esc(c)}</td><td>${esc(d)}</td></tr>`)
     .join('');
+
+  const directAnswer = `<h2>What is the best way to track OSCP and CTF lab progress offline?</h2>
+<p>ZeroBox is a free, offline-first OSCP study and CTF progress tracker that runs in your browser with no account. It ships with ${total} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines (${htbThm} HTB and THM plus PG and VulnHub), imports Nmap scans, and stores notes, credentials and flags locally.</p>`;
 
   const faq = [
     [
@@ -30,7 +34,7 @@ function build({ model, esc }) {
     ],
     [
       'Can I track machines that are not in the catalogue?',
-      'Yes. Add a custom target with its own name, platform, operating system and difficulty, which suits Proving Grounds boxes, CTF events and your own lab.',
+      `Yes. ZeroBox already includes ${total} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines, and you can add custom targets for event CTFs, Pro Labs or your own home lab.`,
     ],
     [
       'Can ZeroBox import nmap scan output?',
@@ -40,18 +44,18 @@ function build({ model, esc }) {
 
   const body = `<h2>What the platform profiles cover</h2>
 <p>Hack The Box and TryHackMe both show you a profile: owned machines or completed rooms, a rank or level, and badges. That is useful as a scoreboard and tells you nothing about how you got there. A profile will not tell you which technique cost you three hours, which box you abandoned at the foothold, or what you did differently the second time.</p>
-<p>It also stops at the platform's edge. Proving Grounds, Vulnhub, event CTFs and a home lab do not appear on either profile, and neither platform keeps your private notes in a form you can search later.</p>
+<p>It also stops at each platform's edge. Proving Grounds, VulnHub, event CTFs and a home lab do not appear on your HTB or THM profile, and neither platform keeps your private notes in a form you can search offline later.</p>
 <h2>Profile, spreadsheet or ZeroBox</h2>
 <table><thead><tr><th scope="col">Need</th><th scope="col">Platform profile</th><th scope="col">Spreadsheet</th><th scope="col">ZeroBox</th></tr></thead><tbody>${cmp}</tbody></table>
 <p>A spreadsheet is a fine answer if you only want a list and a status column. It gets slow once you want the target IP, a log of commands, flags and screenshots in the same place. ZeroBox is built for that case, and has the weakness of any local tool: your data lives in one browser until you back it up.</p>
 <h2>A workflow that holds up</h2>
 <ol>
-<li>Pick a machine from the catalogue of ${total} Hack The Box and TryHackMe machines, or add a custom one, and move it from Backlog to Active recon.</li>
+<li>Pick a machine from the catalogue of ${total} Hack The Box, TryHackMe, Proving Grounds and VulnHub machines, or add a custom one, and move it from Backlog to Recon.</li>
 <li>Put the target IP in the machine record. Start the clock when you start the box.</li>
 <li>Run your scan and import the result, as described below, so open ports and services are stored with the machine.</li>
 <li>Keep notes as you go: what you tried, what failed, the exact commands that worked.</li>
 <li>Record the user and root flags when you get them, then add a short retrospective.</li>
-<li>Review the board weekly. A column full of boxes stuck in Active recon points at an enumeration habit worth fixing.</li>
+<li>Review the board weekly. A column full of boxes stuck in Recon points at an enumeration habit worth fixing.</li>
 </ol>
 <h2>Importing from nmap</h2>
 <p>Save scan output with <code>-oN</code> (or <code>-oA</code>) and drop the file onto a machine card, or paste raw output into the scan box. ZeroBox accepts <code>.nmap</code>, <code>.gnmap</code>, XML and plain text, and fills in the open ports so you do not retype them. Always keep the original scan files too; the import is a convenience, not a replacement for your evidence folder. The <a href="/methodology-guide/">methodology checklist</a> shows where the scan fits in the wider process.</p>
@@ -61,23 +65,24 @@ function build({ model, esc }) {
 
   return {
     path: PATH,
-    crumb: 'HTB and THM progress tracker',
-    title: 'HTB & TryHackMe Progress Tracker (Free, Offline)',
+    crumb: 'CTF and OSCP progress tracker',
+    title: 'OSCP & CTF Progress Tracker: HTB, THM, PG (Offline)',
     description:
-      'What HTB and TryHackMe profiles do not track, how a spreadsheet compares with ZeroBox, plus a workflow with nmap imports. Free and offline.',
-    h1: 'A free, offline Hack The Box and TryHackMe progress tracker',
-    lead: 'Hack The Box and TryHackMe profiles count what you have owned, not how you solved it or what you would change, so most people keep a separate tracker. This page compares a profile, a spreadsheet and ZeroBox, and describes a workflow with nmap imports and local-only storage.',
+      `Free offline OSCP and CTF progress tracker for ${total} HTB, TryHackMe, Proving Grounds and VulnHub machines, with Nmap imports and local notes.`,
+    h1: 'A free, offline OSCP and CTF progress tracker for HTB, TryHackMe and Proving Grounds',
+    lead: 'Platform profiles count what you have owned, not how you solved it or what you practised across Hack The Box, TryHackMe, Proving Grounds and VulnHub. This guide compares a platform profile, a spreadsheet and ZeroBox, and walks through an offline study workflow with Nmap imports.',
+    directAnswer,
     body,
     cta: {
       title: 'Try it with your next box.',
-      body: 'Add a machine, import a scan, keep notes and flags in one place. It runs in your browser and needs no account.',
+      body: 'Track HTB, TryHackMe, Proving Grounds, VulnHub and custom targets in one offline board. No account.',
       href: '/tracker/',
       label: 'Open tracker',
     },
     faq,
     related: ['/tracker/', '/machines/', '/methodology-guide/', '/tj-null-list/', '/oscp-exam-simulator/'],
     sources: [],
-    affil: 'ZeroBox is an independent project and is not affiliated with Hack The Box or TryHackMe.',
+    affil: 'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.',
   };
 }
 

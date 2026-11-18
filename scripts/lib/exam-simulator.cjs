@@ -37,7 +37,7 @@ function rulesetRows(configs) {
 
 function rulesetTable(rows) {
   const tr = (r) =>
-    `<tr><th scope="row">${esc(r.name)}${r.note ? ` <span class="tag">${esc(r.note)}</span>` : ''}</th>` +
+    `<tr><th scope="row"><a href="${APP_PATH}?track=${encodeURIComponent(r.id)}">${esc(r.name)}</a>${r.note ? ` <span class="tag">${esc(r.note)}</span>` : ''}</th>` +
     `<td data-label="Time limit">${esc(r.time)}${r.report ? `<span class="sub">${esc(r.report)}</span>` : ''}</td>` +
     `<td data-label="Pass mark">${esc(r.pass)}</td>` +
     `<td data-label="Target layout">${esc(r.layout)}</td></tr>`;
@@ -104,6 +104,12 @@ function buildExamSimulatorPage({ renderPage, model, hasGuide = () => false, has
       `<li><strong>Log flags and evidence.</strong> Each flag needs a proof screenshot plus the output of whoami and your network configuration, and the page counts what is still missing. Add findings with a CVSS 3.1 vector, then export the report as Markdown or HTML, or as a zip bundle with the proofs.</li>` +
     `</ol>`,
     `<p>Everything stays in your browser. There is no account and no server that receives your session, so you can rehearse on the boxes you already know.</p>`,
+    `<h2>Frequently asked questions</h2>`,
+    `<div class="faq">` +
+      `<details open><summary>Does the OSCP exam simulator include the Active Directory set?</summary><p>Yes. Selecting the OSCP / OSCP+ ruleset allocates a 40-point Active Directory set alongside three 20-point standalone targets, with the 23h 45m lab timer and 24h reporting window.</p></details>` +
+      `<details><summary>Does ZeroBox upload my mock exam notes, screenshots or flags?</summary><p>No. Every timer, flag check, screenshot proof and Markdown report stays inside LocalStorage and IndexedDB in your browser. No account is required and nothing is sent to a server.</p></details>` +
+      `<details><summary>Can I pick a specific certification ruleset directly?</summary><p>Yes. Click any ruleset name in the table above to open the simulator pre-selected to that certification track, or switch tracks inside the setup screen before starting the clock.</p></details>` +
+    `</div>`,
     related.length
       ? `<h2>Related guides and tools</h2><ul>${related.map(([h, t, d]) => `<li><a href="${h}">${esc(t)}</a>: ${esc(d)}.</li>`).join('')}</ul>`
       : '',

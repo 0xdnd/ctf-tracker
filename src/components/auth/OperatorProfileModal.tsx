@@ -294,6 +294,7 @@ export const OperatorProfileModal: React.FC = () => {
                     <div className="flex items-center gap-1.5">
                       <input
                         type="text"
+                        data-escape-consumer="true"
                         value={activeCallsignInput}
                         maxLength={24}
                         onChange={(e) => setActiveCallsignInput(e.target.value)}
@@ -576,6 +577,7 @@ export const OperatorProfileModal: React.FC = () => {
                               <div className="flex items-center gap-1">
                                 <input
                                   type="text"
+                                  data-escape-consumer="true"
                                   value={editingName}
                                   maxLength={24}
                                   onChange={(e) => setEditingName(e.target.value)}

@@ -17,8 +17,10 @@ import {
   ExternalLink,
   ListChecks,
   Maximize2,
-  Lock
+  Lock,
+  Download
 } from 'lucide-react';
+import { downloadMachinesCsv } from '../../utils/machineCsvExport';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -792,6 +794,19 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
         />
 
         <div className="ml-auto flex items-center gap-2">
+          <CyberButton
+            size="xs"
+            variant="secondary"
+            iconLeft={<Download className="h-3 w-3" />}
+            onClick={() => {
+              const picked = sortedMachines.filter((m) => selectedIds.has(m.id));
+              downloadMachinesCsv(picked);
+              if (soundEnabled) playCyberSound('export');
+            }}
+            aria-label={`Export ${selectedIds.size} selected targets to CSV`}
+          >
+            Export CSV
+          </CyberButton>
           <CyberButton size="xs" variant="danger" iconLeft={<Trash2 className="h-3 w-3" />} onClick={handleBulkDelete} aria-label={`Delete ${selectedIds.size} selected targets`}>
             Delete
           </CyberButton>

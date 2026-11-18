@@ -81,6 +81,21 @@
     var lport = document.getElementById('rs-lport');
     if (box && lhost && lport) {
       box.removeAttribute('hidden');
+      try {
+        var svRaw = localStorage.getItem('zerobox-static-vars');
+        var sv = svRaw ? JSON.parse(svRaw) : null;
+        if (sv && sv.lhost && !lhost.value) lhost.value = sv.lhost;
+        if (sv && sv.lport && !lport.value) lport.value = sv.lport;
+      } catch { /* storage unavailable */ }
+      var persistRs = function () {
+        try {
+          var prevRaw = localStorage.getItem('zerobox-static-vars');
+          var prev = prevRaw ? JSON.parse(prevRaw) : {};
+          prev.lhost = lhost.value.trim();
+          prev.lport = lport.value.trim();
+          localStorage.setItem('zerobox-static-vars', JSON.stringify(prev));
+        } catch { /* storage unavailable */ }
+      };
       var apply = function () {
         var h = lhost.value.trim();
         var p = lport.value.trim();
@@ -90,8 +105,8 @@
           code.textContent = t.replace(/\{LHOST\}|\{LPORT\}/g, function (m) { return m === '{LHOST}' ? (h || m) : (p || m); });
         });
       };
-      lhost.addEventListener('input', apply);
-      lport.addEventListener('input', apply);
+      lhost.addEventListener('input', function () { apply(); persistRs(); });
+      lport.addEventListener('input', function () { apply(); persistRs(); });
       apply();
     }
   }
