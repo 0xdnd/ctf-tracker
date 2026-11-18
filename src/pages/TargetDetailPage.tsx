@@ -23,7 +23,7 @@ import { PipelineStatus } from '../types';
 import { communityLink, ownWriteupHref, resolveHubRootWriteupHref } from '../utils/machineLinks';
 import { isTauriTarget } from '../utils/runtimeTarget';
 import { ChecklistWorkspace } from '../components/checklist/ChecklistWorkspace';
-import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../utils/helpers';
+import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl, safeCopyToClipboard } from '../utils/helpers';
 import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../utils/roomLink';
 import { PlatformBadge } from '../components/common/PlatformBadge';
 import { OsBadge } from '../components/common/OsBadge';
@@ -180,7 +180,7 @@ export const TargetDetailPage: React.FC = () => {
 
   const handleCopy = (text: string, type: 'user' | 'root') => {
     if (!text) return;
-    navigator.clipboard.writeText(text).catch(() => {});
+    void safeCopyToClipboard(text);
     if (type === 'user') {
       setCopiedUser(true);
       setTimeout(() => setCopiedUser(false), 2000);
@@ -260,8 +260,8 @@ export const TargetDetailPage: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
       className="mx-auto max-w-6xl space-y-5 pb-12 text-sm"
     >

@@ -34,7 +34,7 @@ import {
 } from '../data/methodologyFramework';
 import { hiddenItemsMessage } from '../utils/hiddenItems';
 import { ServiceBranchType } from '../types/checklist';
-import { playCyberSound } from '../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../utils/helpers';
 import { resolveTemplate, contextFromGlobalVars } from '../utils/variableSubstitution';
 import { isNtHash, encodeUtf16LeBase64 } from '../utils/shellEncoders';
 import { toast } from '../store/useToastStore';
@@ -232,7 +232,7 @@ export const MethodologyPage: React.FC = () => {
   // Command Copy Handler
   const handleCopy = (commandSnippet: string, id: string) => {
     const finalCmd = formatMethodologyCommand(commandSnippet);
-    navigator.clipboard?.writeText(finalCmd);
+    void safeCopyToClipboard(finalCmd);
     toast.success('Command copied to clipboard');
     setCopiedId(id);
     if (soundEnabled) playCyberSound('copy');
@@ -244,7 +244,7 @@ export const MethodologyPage: React.FC = () => {
     const finalCmd = formatMethodologyCommand(commandSnippet);
     const b64 = encodeUtf16LeBase64(finalCmd);
     const psCmd = `powershell -nop -w hidden -EncodedCommand ${b64}`;
-    navigator.clipboard?.writeText(psCmd);
+    void safeCopyToClipboard(psCmd);
     toast.success('PowerShell Base64 command copied');
     setCopiedPsId(id);
     if (soundEnabled) playCyberSound('copy');
@@ -282,7 +282,7 @@ export const MethodologyPage: React.FC = () => {
       md += `---\n\n`;
     });
 
-    navigator.clipboard?.writeText(md);
+    void safeCopyToClipboard(md);
     toast.success('Playbook markdown copied');
     setCopiedAllMd(true);
     if (soundEnabled) playCyberSound('copy');
@@ -310,14 +310,26 @@ export const MethodologyPage: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={TACTICAL_SPRING}
       className="mx-auto max-w-6xl space-y-6 pb-20 text-sm"
     >
       <PageHeader
         title="Attack Methodology"
         description="Eight-phase playbook with copyable commands that fill in your target and attacker values."
+        badges={
+          !activeTargetMachine
+            ? [
+                <span
+                  key="scratchpad-pill"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-subtle bg-surface-sunken px-2 py-0.5 text-xs font-medium text-secondary"
+                >
+                  Global scratchpad · Engage a target to save progress per box
+                </span>,
+              ]
+            : undefined
+        }
         primaryAction={
           <CyberButton
             variant="secondary"

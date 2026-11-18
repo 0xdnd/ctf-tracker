@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   Link as LinkIcon,
   Search,
+  FolderGit2,
+  ImageOff,
 } from 'lucide-react';
 import { resolveWikilink, ObsidianCallout } from '../../utils/obsidianManualUtils';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
@@ -105,7 +107,12 @@ export interface ObsidianMarkdownBodyProps {
    * still address the right source line.
    */
   hideTitleHeading?: readonly string[];
+  /** Resolved object URLs for `![alt](zerobox-img://<id>)` screenshots (Writeup Studio). */
+  imageUrls?: ReadonlyMap<string, string | null>;
 }
+
+const ZEROBOX_IMG_LINE_RE = /^!\[([^\]]*)\]\(zerobox-img:\/\/([A-Za-z0-9_-]+)\)\s*$/;
+const INLINE_EMPH_LINK_RE = /(\*\*[^*]+\*\*|__[^_]+__|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|(?<!\*)\*[^*\n]+\*(?!\*))/g;
 
 /**
  * Obsidian markdown renderer shared by the notes workspace and machine quick
@@ -124,6 +131,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
   onToggleCheckbox,
   onTagClick,
   hideTitleHeading,
+  imageUrls,
 }) => {
   const [openCallouts, setOpenCallouts] = useState<Record<number, boolean>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
@@ -237,6 +245,39 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
     return out;
   };
 
+  const renderRichSegment = (text: string, tags: boolean, keyBase: number, atStart: boolean): React.ReactNode => {
+    if (!text.includes('*') && !text.includes('_') && !text.includes('[')) {
+      return renderTextWithTags(text, tags, keyBase, atStart);
+    }
+    const tokens = text.split(INLINE_EMPH_LINK_RE);
+    if (tokens.length === 1) return renderTextWithTags(text, tags, keyBase, atStart);
+    return tokens.map((tok, idx) => {
+      if (!tok) return null;
+      const k = `${keyBase}-${idx}`;
+      if ((tok.startsWith('**') && tok.endsWith('**')) || (tok.startsWith('__') && tok.endsWith('__'))) {
+        return <strong key={`b-${k}`} className="font-semibold text-primary">{tok.slice(2, -2)}</strong>;
+      }
+      const linkMatch = tok.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (linkMatch) {
+        return (
+          <a
+            key={`a-${k}`}
+            href={linkMatch[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline font-medium"
+          >
+            {linkMatch[1]}
+          </a>
+        );
+      }
+      if (tok.startsWith('*') && tok.endsWith('*') && tok.length >= 3) {
+        return <em key={`i-${k}`} className="italic text-secondary">{tok.slice(1, -1)}</em>;
+      }
+      return <React.Fragment key={`t-${k}`}>{renderTextWithTags(tok, tags, keyBase + idx * 100, atStart && idx === 0)}</React.Fragment>;
+    });
+  };
+
   const renderWikilinks = (text: string, tags = true, chunkStart = true) => {
     const parts: React.ReactNode[] = [];
     const wikiRegex = /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g;
@@ -245,7 +286,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
     while ((match = wikiRegex.exec(text)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(renderTextWithTags(text.slice(lastIndex, match.index), tags, lastIndex, chunkStart && lastIndex === 0));
+        parts.push(renderRichSegment(text.slice(lastIndex, match.index), tags, lastIndex, chunkStart && lastIndex === 0));
       }
 
       const targetRaw = match[1].trim();
@@ -307,7 +348,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
     }
 
     if (lastIndex < text.length) {
-      parts.push(renderTextWithTags(text.slice(lastIndex), tags, lastIndex, chunkStart && lastIndex === 0));
+      parts.push(renderRichSegment(text.slice(lastIndex), tags, lastIndex, chunkStart && lastIndex === 0));
     }
 
     return parts.length > 0 ? parts : text;
@@ -436,6 +477,27 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
     let inTable = false;
     let tableBuffer: string[] = [];
+    let bulletBuffer: React.ReactElement[] = [];
+    let orderedBuffer: React.ReactElement[] = [];
+
+    const flushLists = (idx: number) => {
+      if (bulletBuffer.length > 0) {
+        elements.push(
+          <ul key={`ul-${idx}`} className={`my-2 ml-5 list-disc space-y-1 ${sizeClasses.body} text-secondary font-sans`}>
+            {bulletBuffer}
+          </ul>
+        );
+        bulletBuffer = [];
+      }
+      if (orderedBuffer.length > 0) {
+        elements.push(
+          <ol key={`ol-${idx}`} className={`my-2 ml-5 list-decimal space-y-1 ${sizeClasses.body} text-secondary font-sans`}>
+            {orderedBuffer}
+          </ol>
+        );
+        orderedBuffer = [];
+      }
+    };
 
     const flushCodeBlock = (idx: number) => {
       if (codeBuffer.length === 0) return;
@@ -538,11 +600,31 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       inTable = false;
     };
 
-    for (let i = 0; i < lines.length; i++) {
+    let startLineIdx = 0;
+    if (raw === content && lines[0]?.trim() === '---') {
+      const endFm = lines.findIndex((l, idx) => idx > 0 && l.trim() === '---');
+      if (endFm > 0) {
+        const fmLines = lines.slice(1, endFm);
+        elements.push(
+          <div key="fm-0" className="mb-4 p-3 rounded-lg bg-surface-sunken border border-subtle text-[11px] font-mono text-secondary space-y-0.5">
+            <div className="text-[11px] font-semibold text-muted mb-1 flex items-center gap-1">
+              <FolderGit2 className="w-3 h-3" /> YAML frontmatter
+            </div>
+            {fmLines.map((fl, fIdx) => (
+              <div key={fIdx}>{fl}</div>
+            ))}
+          </div>
+        );
+        startLineIdx = endFm + 1;
+      }
+    }
+
+    for (let i = startLineIdx; i < lines.length; i++) {
       const line = lines[i];
 
       // Code block start/end
       if (line.trim().startsWith('```')) {
+        flushLists(i);
         if (inCodeBlock) {
           flushCodeBlock(i);
         } else {
@@ -560,6 +642,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
       // Markdown Tables
       if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        flushLists(i);
         inTable = true;
         tableBuffer.push(line);
         continue;
@@ -567,8 +650,52 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
         flushTable(i);
       }
 
+      // Pasted screenshot stored in the local image store (`zerobox-img://<id>`)
+      const imageMatch = line.match(ZEROBOX_IMG_LINE_RE);
+      if (imageMatch) {
+        flushLists(i);
+        const url = imageUrls?.get(imageMatch[2]);
+        elements.push(
+          url ? (
+            <img
+              key={`img-${i}`}
+              src={url}
+              alt={imageMatch[1] || 'screenshot'}
+              loading="lazy"
+              className="my-2 max-w-full h-auto rounded-lg border border-subtle"
+            />
+          ) : (
+            <div
+              key={`img-miss-${i}`}
+              className="my-2 flex items-center gap-2 rounded-lg border border-subtle bg-surface-sunken px-3 py-2 text-[11px] text-muted"
+            >
+              <ImageOff className="w-3.5 h-3.5" />
+              {url === null ? 'Image not found in this browser' : 'Loading image...'}
+            </div>
+          )
+        );
+        continue;
+      }
+
       // Headings with slugified ID anchors
+      if (line.startsWith('#### ')) {
+        flushLists(i);
+        const titleText = line.replace('#### ', '').trim();
+        const headingSlug = slugifyHeading(titleText);
+        elements.push(
+          <h4
+            key={`h4-${i}`}
+            id={`section-${headingSlug}`}
+            className="text-xs sm:text-sm font-semibold text-secondary mt-3 mb-1 scroll-mt-6"
+          >
+            {renderWithWikilinks(titleText, false)}
+          </h4>
+        );
+        continue;
+      }
+
       if (line.startsWith('# ')) {
+        flushLists(i);
         if (i === hiddenTitleLine) continue;
         const titleText = line.replace('# ', '').trim();
         const headingSlug = slugifyHeading(titleText);
@@ -585,6 +712,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       }
 
       if (line.startsWith('## ')) {
+        flushLists(i);
         const titleText = line.replace('## ', '').trim();
         const headingSlug = slugifyHeading(titleText);
         elements.push(
@@ -601,6 +729,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       }
 
       if (line.startsWith('### ')) {
+        flushLists(i);
         const titleText = line.replace('### ', '').trim();
         const headingSlug = slugifyHeading(titleText);
         elements.push(
@@ -617,6 +746,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
 
       // Callouts > [!type]
       if (line.startsWith('> [!')) {
+        flushLists(i);
         const headerMatch = line.match(/^>\s*\[!([a-zA-Z_-]+)\]([+-])?\s*(.*)$/);
         if (headerMatch) {
           const rawType = headerMatch[1].toLowerCase();
@@ -662,8 +792,24 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
         }
       }
 
+      // Plain Blockquotes (> text)
+      if (line.startsWith('>')) {
+        flushLists(i);
+        const cleanQuote = line.replace(/^>\s?/, '');
+        elements.push(
+          <blockquote
+            key={`bq-${i}`}
+            className={`my-2 pl-3.5 border-l-2 border-accent/50 ${sizeClasses.body} text-secondary italic font-sans`}
+          >
+            {renderWithWikilinks(cleanQuote)}
+          </blockquote>
+        );
+        continue;
+      }
+
       // Checklists - [ ] or - [x]
       if (/^[-*]\s+\[([ xX])\]\s+(.*)$/.test(line.trim())) {
+        flushLists(i);
         const chkMatch = line.trim().match(/^[-*]\s+\[([ xX])\]\s+(.*)$/);
         if (chkMatch) {
           const isInitialChecked = chkMatch[1].toLowerCase() === 'x';
@@ -697,17 +843,31 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
         }
       }
 
-      // Bullets
+      // Unordered Bullets (- or *)
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+        if (orderedBuffer.length > 0) flushLists(i);
         const bulletText = line.trim().slice(2);
-        elements.push(
-          <div key={`bullet-${i}`} className={`flex items-start gap-2 my-1.5 ${sizeClasses.body} text-secondary font-sans`}>
-            <span className="text-accent mt-1">•</span>
-            <div className="flex-1">{renderWithWikilinks(bulletText)}</div>
-          </div>
+        bulletBuffer.push(
+          <li key={`bullet-${i}`} className="text-secondary leading-relaxed">
+            {renderWithWikilinks(bulletText)}
+          </li>
         );
         continue;
       }
+
+      // Ordered Lists (1. / 2. / ...)
+      const orderedMatch = line.trim().match(/^\d+\.\s+(.*)$/);
+      if (orderedMatch) {
+        if (bulletBuffer.length > 0) flushLists(i);
+        orderedBuffer.push(
+          <li key={`ol-li-${i}`} className="text-secondary leading-relaxed">
+            {renderWithWikilinks(orderedMatch[1])}
+          </li>
+        );
+        continue;
+      }
+
+      flushLists(i);
 
       // Horizontal Rule
       if (['---', '***'].includes(line.trim())) {
@@ -747,6 +907,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       }
     }
 
+    flushLists(lines.length);
     if (inCodeBlock) flushCodeBlock(lines.length);
     if (inTable) flushTable(lines.length);
 

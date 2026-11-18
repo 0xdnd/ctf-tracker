@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { useTargetIpField } from '../../hooks/useTargetIpField';
@@ -23,8 +24,10 @@ import {
   Copy,
   Check,
   BookOpen,
-  User
+  User,
+  Wrench
 } from 'lucide-react';
+import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
 import { isTauriTarget } from '../../utils/runtimeTarget';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
@@ -113,6 +116,8 @@ export const UnifiedHeader: React.FC = () => {
   // Draft while typing in R; committed on blur or Enter (updateMachine bumps the unexported-change counter).
   const [targetIpDraft, setTargetIpDraft] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const targetPopoverRef = useRef<HTMLDivElement>(null);
+  const [popoverCoords, setPopoverCoords] = useState<{ top: number; left: number }>({ top: 54, left: 0 });
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleCopyVar = (val: string | undefined, type: 'lhost' | 'lport' | 'target') => {
@@ -153,7 +158,6 @@ export const UnifiedHeader: React.FC = () => {
     if (p.startsWith('/methodology')) return 'Attack Methodology';
     if (p.startsWith('/exam')) return 'Exam Simulator';
     if (p.startsWith('/target')) return activeMachine ? activeMachine.name : 'Target Cockpit';
-    if (p.startsWith('/theme')) return 'Theme Matrix';
     return 'Tracker';
   }, [location.pathname, activeMachine]);
 
@@ -203,10 +207,36 @@ export const UnifiedHeader: React.FC = () => {
       .slice(0, 10);
   }, [machines, targetSearch]);
 
+  // Anchor portaled Target Selector popover below trigger
+  useLayoutEffect(() => {
+    if (!targetDropdownOpen || !dropdownRef.current) return;
+    const updatePosition = () => {
+      if (!dropdownRef.current) return;
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const maxLeft = Math.max(8, window.innerWidth - 296);
+      setPopoverCoords({
+        top: rect.bottom + 6,
+        left: Math.min(Math.max(8, rect.left), maxLeft),
+      });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition, { passive: true });
+    window.addEventListener('scroll', updatePosition, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [targetDropdownOpen]);
+
   // Close dropdowns on outside click or Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        (!targetPopoverRef.current || !targetPopoverRef.current.contains(target))
+      ) {
         setTargetDropdownOpen(false);
       }
     };
@@ -224,6 +254,60 @@ export const UnifiedHeader: React.FC = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [targetDropdownOpen]);
+
+  const tabletToolItems = useMemo<OverflowItem[]>(
+    () => [
+      {
+        label: 'Deploy Target',
+        icon: Plus,
+        onSelect: () => {
+          setNewMachineModalOpen(true);
+          if (soundEnabled) playCyberSound('click');
+        },
+      },
+      {
+        label: 'Scans Hub',
+        icon: Zap,
+        onSelect: () => {
+          setReconAutomationModalOpen(true);
+          if (soundEnabled) playCyberSound('click');
+        },
+      },
+      {
+        label: 'Reverse Shell Crafter',
+        icon: Radio,
+        onSelect: () => {
+          setRevShellModalOpen(true);
+          if (soundEnabled) playCyberSound('click');
+        },
+      },
+      {
+        label: 'Snippets Drawer',
+        icon: Terminal,
+        onSelect: () => {
+          setSnippetsDrawerOpen(true);
+          if (soundEnabled) playCyberSound('click');
+        },
+      },
+      {
+        label: isNotesOpen ? 'Hide Field Notes' : 'Field Notes',
+        icon: BookOpen,
+        onSelect: () => {
+          toggleNotesWorkspace();
+          if (soundEnabled) playCyberSound('click');
+        },
+      },
+    ],
+    [
+      isNotesOpen,
+      setNewMachineModalOpen,
+      setReconAutomationModalOpen,
+      setRevShellModalOpen,
+      setSnippetsDrawerOpen,
+      soundEnabled,
+      toggleNotesWorkspace,
+    ]
+  );
 
   const ghostBtn =
     'items-center justify-center gap-1.5 h-8 px-2 rounded-lg text-secondary hover:bg-surface-hover hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
@@ -400,63 +484,72 @@ export const UnifiedHeader: React.FC = () => {
           </button>
         )}
 
-        {/* Target selector popover */}
-        {targetDropdownOpen && (
-          <div className="fixed left-1/2 -translate-x-1/2 top-[54px] w-72 p-2.5 rounded-xl bg-surface-elevated border border-subtle shadow-xl machined-edge z-[60] text-xs space-y-2">
-            <div className="text-[11px] text-muted px-1 font-medium flex items-center justify-between">
-              <span>Engage target</span>
-              <span className="text-secondary font-mono tabular-nums">{totalMachines} total</span>
-            </div>
-            <input
-              type="text"
-              value={targetSearch}
-              onChange={(e) => setTargetSearch(e.target.value)}
-              placeholder="Search target name or IP..."
-              className="w-full px-2.5 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent tabular-nums"
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- search field in a dropdown the user just opened
-              autoFocus
-            />
-            {activeTargetId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTarget(null);
-                  setTargetDropdownOpen(false);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="w-full p-1.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border/30 flex items-center justify-center gap-1.5 text-callout-danger-fg text-[11px] font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-              >
-                <X className="w-3 h-3" />
-                <span>Disengage target</span>
-              </button>
-            )}
-            <div className="max-h-56 overflow-y-auto space-y-1">
-              {filteredTargets.map((m) => (
+        {/* Target selector popover (portaled out of overflow-hidden header) */}
+        {targetDropdownOpen &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              ref={targetPopoverRef}
+              style={{ top: popoverCoords.top, left: popoverCoords.left }}
+              className="fixed w-72 p-2.5 rounded-xl bg-surface-elevated border border-subtle shadow-xl machined-edge z-popover font-sans text-xs space-y-2"
+            >
+              <div className="text-[11px] text-muted px-1 font-medium flex items-center justify-between">
+                <span>Engage target</span>
+                <span className="text-secondary font-mono tabular-nums">{totalMachines} total</span>
+              </div>
+              <input
+                type="text"
+                value={targetSearch}
+                onChange={(e) => setTargetSearch(e.target.value)}
+                placeholder="Search target name or IP..."
+                className="w-full px-2.5 py-1.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent tabular-nums"
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- search field in a dropdown the user just opened
+                autoFocus
+              />
+              {activeTargetId && (
                 <button
-                  key={m.id}
+                  type="button"
                   onClick={() => {
+                    setActiveTarget(null);
                     setTargetDropdownOpen(false);
-                    engage(m.id);
+                    if (soundEnabled) playCyberSound('click');
                   }}
-                  className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
-                    activeTargetId === m.id
-                      ? 'bg-surface-hover border border-strong text-primary font-semibold'
-                      : 'hover:bg-surface-hover text-secondary border border-transparent'
-                  }`}
+                  className="w-full p-1.5 rounded-lg bg-callout-danger-bg border border-callout-danger-border/30 flex items-center justify-center gap-1.5 text-callout-danger-fg text-[11px] font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
                 >
-                  <div className="flex items-center gap-1.5 truncate mr-2">
-                    <PlatformIcon platform={m.platform} className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="font-medium truncate">{m.name}</span>
-                  </div>
-                  <span className="text-[10px] text-muted font-mono tabular-nums flex-shrink-0">{m.ip}</span>
+                  <X className="w-3 h-3" />
+                  <span>Disengage target</span>
                 </button>
-              ))}
-              {filteredTargets.length === 0 && (
-                <div className="text-center py-2 text-muted text-[11px]">No targets matching query</div>
               )}
-            </div>
-          </div>
-        )}
+              <div className="max-h-56 overflow-y-auto space-y-1">
+                {filteredTargets.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      setTargetDropdownOpen(false);
+                      engage(m.id);
+                    }}
+                    className={`w-full p-2 rounded-lg flex items-center justify-between text-left transition-colors text-xs cursor-pointer ${
+                      activeTargetId === m.id
+                        ? 'bg-surface-hover border border-strong text-primary font-semibold'
+                        : 'hover:bg-surface-hover text-secondary border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate mr-2">
+                      <PlatformIcon platform={m.platform} className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="font-medium truncate">{m.name}</span>
+                    </div>
+                    {m.ip && !isPlaceholderIp(m.ip) && (
+                      <span className="text-[10px] text-muted font-mono tabular-nums flex-shrink-0">{m.ip}</span>
+                    )}
+                  </button>
+                ))}
+                {filteredTargets.length === 0 && (
+                  <div className="text-center py-2 text-muted text-[11px]">No targets matching query</div>
+                )}
+              </div>
+            </div>,
+            document.body
+          )}
       </div>
 
       {/* 3. Right: telemetry, tools, theme, operator */}
@@ -677,20 +770,36 @@ export const UnifiedHeader: React.FC = () => {
           )}
         </button>
 
-        {/* Command palette trigger */}
+        {/* Tablet / split-screen quick tools menu (768px..1279px where individual buttons collapse) */}
+        <div className="hidden md:flex xl:hidden flex-shrink-0">
+          <OverflowMenu
+            items={tabletToolItems}
+            label="Quick tools"
+            align="right"
+            triggerClassName={`flex ${ghostBtn}`}
+            triggerContent={
+              <>
+                <Wrench className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                <span className="hidden lg:inline">Tools</span>
+              </>
+            }
+          />
+        </div>
+
+        {/* Command palette trigger (visible on md+ so tablet & split-screen operators always have 1-click search) */}
         <button
           onClick={() => {
             setCommandPaletteOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="hidden md:flex items-center gap-1.5 h-8 px-2 xl:px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           title="Open Command Palette (Ctrl+K)"
           data-tour="command-palette"
           aria-label="Search Ctrl+K, open command palette"
         >
           <Search className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="hidden 2xl:inline">Search</span>
-          <kbd className="hidden sm:inline-block px-1 text-[10px] font-medium font-mono rounded bg-surface-card text-muted border border-subtle">
+          <kbd className="hidden xl:inline-block px-1 text-[10px] font-medium font-mono rounded bg-surface-card text-muted border border-subtle">
             Ctrl+K
           </kbd>
         </button>

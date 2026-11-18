@@ -241,15 +241,21 @@ const TableRow = React.memo<TableRowProps>(({
   onOpenReport,
   onOpenWriteup,
 }) => {
+  const stickyCellBg = isActiveTarget
+    ? 'bg-[color-mix(in_srgb,rgb(var(--border-accent))_15%,rgb(var(--surface-card)))] group-hover:bg-surface-hover'
+    : isChecked
+      ? 'bg-surface-sunken group-hover:bg-surface-hover'
+      : 'bg-surface-card group-hover:bg-surface-hover';
+
   return (
     <tr
       className={`interactive-surface hover:bg-surface-hover transition-colors group cursor-pointer border-b border-subtle ${
-        isActiveTarget ? 'bg-accent-muted border-l-2 border-l-accent' : isChecked ? 'bg-surface-sunken' : ''
+        isActiveTarget ? 'bg-accent-muted border-l-2 border-l-accent' : isChecked ? 'bg-surface-sunken' : 'bg-surface-card'
       }`}
       onClick={() => onSelect(m.id)}
     >
       {/* Bulk select */}
-      <td className="sticky left-0 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 pl-4 pr-0 w-10" onClick={(e) => e.stopPropagation()}>
+      <td className={`sticky left-0 z-[1] ${stickyCellBg} py-2.5 pl-4 pr-0 w-10`} onClick={(e) => e.stopPropagation()}>
         <label className={CHECK_CELL}>
           <input
             type="checkbox"
@@ -263,7 +269,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Target name & IP */}
-      <td className="sticky left-10 z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-3">
+      <td className={`sticky left-10 z-[1] ${stickyCellBg} border-r border-subtle/60 py-2.5 px-3`}>
         <div className="flex items-center gap-2.5">
           <PlatformIcon platform={m.platform} className="w-4 h-4 flex-shrink-0" />
           <div>
@@ -358,7 +364,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Actions */}
-      <td className="xl:sticky xl:right-0 xl:z-[1] bg-surface-card group-hover:bg-surface-hover py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[120px] xl:min-w-[140px]" onClick={(e) => e.stopPropagation()}>
+      <td className={`xl:sticky xl:right-0 xl:z-[1] ${stickyCellBg} xl:border-l xl:border-subtle/60 py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[120px] xl:min-w-[140px]`} onClick={(e) => e.stopPropagation()}>
         <RowActions
           machine={m}
           isActiveTarget={isActiveTarget}
@@ -796,8 +802,8 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
       </div>
     )}
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={TACTICAL_SPRING}
       className="rounded-2xl border border-subtle bg-surface-card overflow-hidden text-xs pb-4 mb-20 surface-card-depth machined-edge"
     >

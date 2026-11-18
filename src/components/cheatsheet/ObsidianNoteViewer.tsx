@@ -1025,7 +1025,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         data-testid="workspace-keepalive-container"
         onClickCapture={handleContainerLinkClick}
         onAuxClickCapture={handleContainerAuxClick}
-        className="flex-1 min-h-0 relative overflow-hidden flex flex-col bg-cyber-bg/50"
+        className="flex-1 min-h-0 relative overflow-hidden flex flex-col bg-surface-base"
       >
         {safeOpenNotes.map((tabNote) => {
           const isActive = tabNote.id === note.id;

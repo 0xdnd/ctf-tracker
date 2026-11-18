@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
-import { playCyberSound, triggerRootCelebration } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { PlatformBadge, PlatformIcon } from '../common/PlatformBadge';
 import { OsBadge } from '../common/OsBadge';
 import { CyberSelect } from '../common/CyberSelect';
@@ -277,7 +277,6 @@ export const ReconAutomationModal: React.FC = () => {
 
     setAppliedSuccess(true);
     if (soundEnabled) playCyberSound('flag');
-    triggerRootCelebration();
 
     setTimeout(() => {
       setAppliedSuccess(false);
@@ -314,7 +313,7 @@ export const ReconAutomationModal: React.FC = () => {
   }, [tacticalPayloads, payloadCategory, payloadSearch]);
 
   const copyPayload = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
+    void safeCopyToClipboard(text);
     setCopiedPayloadKey(key);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopiedPayloadKey(null), 2000);
@@ -326,7 +325,7 @@ export const ReconAutomationModal: React.FC = () => {
       onClose={() => setReconAutomationModalOpen(false)}
       labelledBy="recon-automation-title"
       size="full"
-      className="!bg-black/85 backdrop-blur-md max-sm:!p-0"
+      className="!bg-surface-inverse/75 backdrop-blur-md max-sm:!p-0"
       panelClassName="!max-w-5xl !shadow-2xl max-sm:!mx-0 max-sm:!rounded-none max-sm:!border-0 max-sm:!h-full max-sm:!max-h-none sm:h-[92dvh] sm:!max-h-[860px]"
     >
       <div className="flex flex-col h-full min-h-0">
@@ -352,8 +351,10 @@ export const ReconAutomationModal: React.FC = () => {
           </div>
 
           <button
+            type="button"
+            aria-label="Close automation hub"
             onClick={() => setReconAutomationModalOpen(false)}
-            className="p-1.5 rounded-lg border border-subtle bg-surface-sunken text-muted hover:text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="p-1.5 rounded-lg border border-subtle bg-surface-sunken text-muted hover:text-primary hover:border-strong active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -549,8 +550,8 @@ export const ReconAutomationModal: React.FC = () => {
                 />
 
                 {isDragging && (
-                  <div className="absolute inset-0 bg-black/75 backdrop-blur-sm rounded-xl flex items-center justify-center pointer-events-none">
-                    <div className="text-center text-secondary space-y-1">
+                  <div className="absolute inset-0 bg-surface-inverse/75 backdrop-blur-sm rounded-xl flex items-center justify-center pointer-events-none">
+                    <div className="text-center text-on-inverse space-y-1">
                       <Upload className="w-8 h-8 mx-auto animate-bounce" />
                       <p className="font-semibold text-sm">Drop scan file (.xml, .nmap, .gnmap, .txt) to parse</p>
                     </div>
@@ -811,7 +812,7 @@ export const ReconAutomationModal: React.FC = () => {
                         className={`px-2.5 py-1 rounded-md text-xs font-medium transition-[transform,background-color,border-color,color] flex items-center gap-1.5 active:scale-[0.97] ${
                           isSelected
                             ? 'bg-callout-success-fg text-on-accent border border-callout-success-border'
-                            : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-cyber-borderGlow'
+                            : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
                         }`}
                       >
                         <span>{enc.badge}</span>
@@ -870,7 +871,7 @@ export const ReconAutomationModal: React.FC = () => {
                   return (
                     <div
                       key={item.id}
-                      className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-2.5 hover:border-cyber-borderGlow transition-colors"
+                      className="p-3.5 rounded-xl border border-subtle bg-surface-card space-y-2.5 hover:border-strong transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1029,8 +1030,9 @@ export const ReconAutomationModal: React.FC = () => {
           </span>
 
           <button
+            type="button"
             onClick={() => setReconAutomationModalOpen(false)}
-            className="px-4 py-1.5 rounded-lg bg-surface-card border border-subtle text-primary hover:border-cyber-borderGlow active:scale-[0.98] transition-[transform,background-color,border-color,color]"
+            className="px-4 py-1.5 rounded-lg bg-surface-card border border-subtle text-primary hover:border-strong active:scale-[0.98] transition-[transform,background-color,border-color,color]"
           >
             Close
           </button>

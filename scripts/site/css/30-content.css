@@ -165,9 +165,9 @@ table.list td.hide-sm a,table.list td>a.ext{display:inline-block;min-width:24px;
 .cc-wrap{position:relative}
 .cc-wrap pre{position:relative}
 pre.cc{padding-top:48px}
-.cc-btn{position:absolute;top:8px;right:8px;z-index:1;min-width:64px;min-height:32px;padding:0 var(--s3);border:1px solid #52525b;border-radius:var(--r-md);background:#27272a;color:#f4f4f5;font:inherit;font-size:.8125rem;font-weight:600;line-height:1;cursor:pointer}
-.cc-btn:hover{background:#3f3f46}
-.cc-btn:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.cc-btn{position:absolute;top:8px;right:8px;z-index:1;min-width:64px;min-height:32px;padding:0 var(--s3);border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--elev);color:var(--text);font:inherit;font-size:.8125rem;font-weight:600;line-height:1;cursor:pointer}
+.cc-btn:hover{background:var(--hover,#3f3f46)}
+.cc-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(min-width:640px){pre.cc{padding-top:var(--s4);padding-right:5.5rem}}
 main:focus{outline:none}
 /* Machines list pages: search form and pager. */

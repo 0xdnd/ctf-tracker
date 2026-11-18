@@ -8,8 +8,8 @@ import { ReverseShellGenerator } from '../components/cheatsheet/ReverseShellGene
 /** Reverse shell generator as its own section. LHOST / LPORT / TARGET are shared with the Snippets page. */
 export const ReverseShellsPage: React.FC = () => (
   <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
     transition={{ duration: 0.2 }}
     className="mx-auto w-full max-w-6xl space-y-6 pb-12 text-sm"
   >

@@ -6,7 +6,7 @@ import './index.css';
 import { isTauriTarget } from './utils/runtimeTarget';
 import { installExternalLinkHandler } from './utils/externalLinks';
 import { initServiceWorkerUpdates } from './utils/swUpdate';
-import { flushProfileSave } from './store/useCtfStore';
+import { flushProfileSave, useCtfStore } from './store/useCtfStore';
 import { useToastStore } from './store/useToastStore';
 import { registerBackupImageProvider } from './store/backupFile';
 import { imageBackupProvider } from './utils/backupImageProvider';
@@ -82,6 +82,17 @@ if (typeof window !== 'undefined' && 'storage' in navigator) {
           console.warn(
             `[ZeroBox Storage Warning] Approaching quota limits: ${percentUsed.toFixed(1)}% used (${Math.round(usage / (1024 * 1024))}MB / ${Math.round(quota / (1024 * 1024))}MB). Consider exporting a workspace backup.`
           );
+        }
+        if (percentUsed > 85) {
+          useToastStore.getState().addToast({
+            type: 'warning',
+            message: `Browser storage is ${percentUsed.toFixed(0)}% full (${Math.round(usage / (1024 * 1024))} MB used). Export a workspace backup to avoid quota failures.`,
+            durationMs: 0,
+            action: {
+              label: 'Export Backup',
+              onClick: () => useCtfStore.getState().setBackupModalOpen(true),
+            },
+          });
         }
       }
     }).catch(() => {});

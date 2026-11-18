@@ -15,14 +15,12 @@ import {
   Code,
   Eye,
   BookOpen,
-  FolderGit2,
   Printer,
   X,
   Search,
   Plus,
   Globe,
   Lock,
-  ImageOff,
   ListChecks,
   Bold,
   Terminal,
@@ -59,9 +57,9 @@ import { IMAGE_URL_SCHEME, compressToWebp, getImage, newImageId, putImage } from
 import { buildLabSummaryMarkdown } from '../../utils/labMarkdownSummary';
 import { BacklinksPanel, buildBacklinkDocs, getBacklinks } from './BacklinksPanel';
 import { inlineIndexedDbImages } from '../../utils/imageExportInliner';
+import { ObsidianMarkdownBody } from '../cheatsheet/ObsidianMarkdownBody';
+import { isPlaceholderIp } from '../../utils/ipInput';
 
-// Whole-line pasted screenshot: ![alt](zerobox-img://<id>)
-const IMAGE_LINE_REGEX = /^!\[([^\]]*)\]\(zerobox-img:\/\/([A-Za-z0-9_-]+)\)\s*$/;
 const IMAGE_ID_REGEX = /zerobox-img:\/\/([A-Za-z0-9_-]+)/g;
 
 /** Resolved object URL per image id; null = not found in the store, absent = still loading. */
@@ -201,284 +199,18 @@ export const renderInlineMarkdown = (text: string, keyPrefix: string | number): 
   });
 };
 
-const renderLineWithWikilinks = (text: string, keyPrefix: string | number) => {
-  return renderInlineMarkdown(text, keyPrefix);
-};
-
-const renderMarkdownPreview = (text: string, imageUrls?: ImageUrlMap) => {
-  const lines = text.split('\n');
-  let inFrontmatter = false;
-  const frontmatterLines: string[] = [];
-  let inCodeBlock = false;
-  let codeBlockLang = '';
-  let codeBlockLines: string[] = [];
-  let tableBuffer: string[] = [];
-
-  const elements: React.ReactNode[] = [];
-
-  const flushTable = (keyIdx: number) => {
-    if (tableBuffer.length === 0) return;
-    const rows = tableBuffer
-      .map((r) => r.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim()))
-      .filter((r) => r.length > 0 && !r.every((cell) => /^:?-+:?$/.test(cell)));
-
-    if (rows.length > 0) {
-      const [header, ...body] = rows;
-      elements.push(
-        <div key={`tbl-${keyIdx}`} className="my-3 overflow-x-auto rounded-lg border border-subtle">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-surface-sunken border-b border-subtle text-secondary">
-              <tr>
-                {header.map((cell, cIdx) => (
-                  <th key={cIdx} className="px-3 py-2 font-semibold">
-                    {renderLineWithWikilinks(cell, `th-${keyIdx}-${cIdx}`)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-subtle bg-surface-card">
-              {body.map((row, rIdx) => (
-                <tr key={rIdx} className="hover:bg-surface-sunken/60 transition-colors">
-                  {row.map((cell, cIdx) => (
-                    <td key={cIdx} className="px-3 py-1.5 text-primary font-sans">
-                      {renderLineWithWikilinks(cell, `td-${keyIdx}-${rIdx}-${cIdx}`)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-    tableBuffer = [];
-  };
-
-  lines.forEach((line, idx) => {
-    // Frontmatter detection
-    if (idx === 0 && line.trim() === '---') {
-      inFrontmatter = true;
-      return;
-    }
-    if (inFrontmatter) {
-      if (line.trim() === '---') {
-        inFrontmatter = false;
-        elements.push(
-          <div key={`fm-${idx}`} className="mb-4 p-3 rounded-lg bg-surface-sunken border border-subtle text-[11px] font-mono text-secondary space-y-0.5">
-            <div className="text-[11px] font-semibold text-muted mb-1 flex items-center gap-1">
-              <FolderGit2 className="w-3 h-3" /> YAML frontmatter
-            </div>
-            {frontmatterLines.map((fl, fIdx) => (
-              <div key={fIdx}>{fl}</div>
-            ))}
-          </div>
-        );
-        return;
-      }
-      frontmatterLines.push(line);
-      return;
-    }
-
-    // Codeblock detection
-    if (line.startsWith('```')) {
-      flushTable(idx);
-      if (!inCodeBlock) {
-        inCodeBlock = true;
-        codeBlockLang = line.replace('```', '').trim();
-        codeBlockLines = [];
-      } else {
-        inCodeBlock = false;
-        const rawCmdText = codeBlockLines.join('\n');
-        elements.push(
-          <div key={`cb-${idx}`} className="my-3 rounded-lg overflow-hidden border border-inverse bg-surface-inverse group relative">
-            <div className="bg-surface-inverse-elevated px-3 py-1 text-[11px] text-on-inverse-muted font-mono border-b border-inverse flex items-center justify-between">
-              <span>{codeBlockLang || 'shell'}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  safeCopyToClipboard(rawCmdText);
-                  useToastStore.getState().addToast({ type: 'success', message: 'Copied code block' });
-                }}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 max-md:min-h-6 rounded bg-surface-card/10 hover:bg-surface-card/20 text-[10px] text-on-inverse cursor-pointer"
-                title="Copy code block"
-              >
-                <Copy className="w-2.5 h-2.5" />
-                <span>Copy</span>
-              </button>
-            </div>
-            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable code block must be keyboard-focusable */}
-            <pre tabIndex={0} aria-label={codeBlockLang ? `${codeBlockLang} code block` : 'Code block'} className="p-3 text-xs text-on-inverse font-mono overflow-x-auto whitespace-pre-wrap">
-              {rawCmdText}
-            </pre>
-          </div>
-        );
-      }
-      return;
-    }
-
-    if (inCodeBlock) {
-      codeBlockLines.push(line);
-      return;
-    }
-
-    // Markdown Table line detection
-    if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
-      tableBuffer.push(line);
-      return;
-    } else if (tableBuffer.length > 0) {
-      flushTable(idx);
-    }
-
-    // Pasted screenshot stored in the local image store
-    const imageMatch = line.match(IMAGE_LINE_REGEX);
-    if (imageMatch) {
-      const url = imageUrls?.get(imageMatch[2]);
-      elements.push(
-        url ? (
-          <img
-            key={idx}
-            src={url}
-            alt={imageMatch[1] || 'screenshot'}
-            loading="lazy"
-            className="my-2 max-w-full h-auto rounded-lg border border-subtle"
-          />
-        ) : (
-          <div
-            key={idx}
-            className="my-2 flex items-center gap-2 rounded-lg border border-subtle bg-surface-sunken px-3 py-2 text-[11px] text-muted"
-          >
-            <ImageOff className="w-3.5 h-3.5" />
-            {url === null ? 'Image not found in this browser' : 'Loading image...'}
-          </div>
-        )
-      );
-      return;
-    }
-
-    // Obsidian Callouts & Blockquotes (> [!NOTE] or > text)
-    if (line.startsWith('>')) {
-      const cleanQuote = line.replace(/^>\s?/, '');
-      const calloutMatch = cleanQuote.match(/^\[!(NOTE|TIP|WARNING|DANGER|INFO)\]\s*(.*)$/i);
-      if (calloutMatch) {
-        const kind = calloutMatch[1].toUpperCase();
-        const title = calloutMatch[2] || kind;
-        const styleMap: Record<string, string> = {
-          NOTE: 'border-callout-info-border bg-callout-info-bg text-callout-info-fg',
-          INFO: 'border-callout-info-border bg-callout-info-bg text-callout-info-fg',
-          TIP: 'border-callout-success-border bg-callout-success-bg text-callout-success-fg',
-          WARNING: 'border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg',
-          DANGER: 'border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg',
-        };
-        elements.push(
-          <div key={idx} className={`my-2 px-3 py-2 rounded-lg border-l-4 text-xs font-semibold ${styleMap[kind] || styleMap.NOTE}`}>
-            {renderLineWithWikilinks(title, idx)}
-          </div>
-        );
-      } else {
-        elements.push(
-          <blockquote key={idx} className="my-1 pl-3 border-l-2 border-accent/50 text-xs text-secondary italic">
-            {renderLineWithWikilinks(cleanQuote, idx)}
-          </blockquote>
-        );
-      }
-      return;
-    }
-
-    // Task Checklists (- [ ] or - [x])
-    const taskMatch = line.match(/^-\s+\[([ xX])\]\s+(.*)$/);
-    if (taskMatch) {
-      const checked = taskMatch[1].toLowerCase() === 'x';
-      elements.push(
-        <div key={idx} className="flex items-start gap-2 my-1 ml-1 text-xs max-md:min-h-6 max-md:items-center">
-          <input
-            type="checkbox"
-            checked={checked}
-            readOnly
-            className="mt-0.5 rounded border-subtle accent-red-500 pointer-events-none max-md:mt-0 max-md:h-6 max-md:w-6"
-          />
-          <span className={checked ? 'line-through text-muted' : 'text-primary'}>
-            {renderLineWithWikilinks(taskMatch[2], idx)}
-          </span>
-        </div>
-      );
-      return;
-    }
-
-    // Headings
-    if (line.startsWith('# ')) {
-      elements.push(
-        <h1 key={idx} className="text-xl font-semibold text-primary mt-4 mb-2 pb-1 border-b border-subtle">
-          {renderLineWithWikilinks(line.replace('# ', ''), idx)}
-        </h1>
-      );
-    } else if (line.startsWith('## ')) {
-      elements.push(
-        <h2 key={idx} className="text-base font-semibold text-accent mt-4 mb-1.5 flex items-center gap-2">
-          {renderLineWithWikilinks(line.replace('## ', ''), idx)}
-        </h2>
-      );
-    } else if (line.startsWith('### ')) {
-      elements.push(
-        <h3 key={idx} className="text-sm font-semibold text-primary mt-3 mb-1">
-          {renderLineWithWikilinks(line.replace('### ', ''), idx)}
-        </h3>
-      );
-    } else if (line.startsWith('---')) {
-      elements.push(<hr key={idx} className="my-3 border-subtle" />);
-    } else if (line.startsWith('- ')) {
-      elements.push(
-        <li key={idx} className="ml-4 text-xs text-primary list-disc my-0.5">
-          {renderLineWithWikilinks(line.replace('- ', ''), idx)}
-        </li>
-      );
-    } else if (line.trim() === '') {
-      elements.push(<div key={idx} className="h-2" />);
-    } else {
-      elements.push(
-        <p key={idx} className="text-xs text-primary leading-relaxed font-sans">
-          {renderLineWithWikilinks(line, idx)}
-        </p>
-      );
-    }
-  });
-
-  flushTable(lines.length);
-
-  // Group consecutive list items into a real <ul> so <li> always has a list parent.
-  const grouped: React.ReactNode[] = [];
-  let listBuf: React.ReactElement[] = [];
-  const flushList = () => {
-    if (listBuf.length > 0) {
-      grouped.push(
-        <ul key={`ul-${grouped.length}`} className="list-disc">
-          {listBuf}
-        </ul>
-      );
-      listBuf = [];
-    }
-  };
-  elements.forEach((el) => {
-    if (React.isValidElement(el) && el.type === 'li') {
-      listBuf.push(el);
-    } else {
-      flushList();
-      grouped.push(el);
-    }
-  });
-  flushList();
-
-  return grouped;
-};
-
 interface DeferredMarkdownPreviewPaneProps {
   content: string;
+  targetIp?: string;
 }
 
-const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = React.memo(({ content }) => {
+const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = React.memo(({ content, targetIp }) => {
   const deferredContent = useDeferredValue(content);
   const isStale = deferredContent !== content;
 
   const profileId = useCtfStore((s) => s.currentProfileId) || 'guest';
+  const globalVars = useCtfStore((s) => s.globalVars);
+  const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const imageUrls = useResolvedImageUrls(deferredContent, profileId);
 
   const headings = useMemo(() => {
@@ -488,10 +220,6 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
       .map((l) => l.replace('## ', '').trim())
       .slice(0, 6);
   }, [deferredContent]);
-
-  const renderedPreview = useMemo(() => {
-    return renderMarkdownPreview(deferredContent, imageUrls);
-  }, [deferredContent, imageUrls]);
 
   return (
     <div
@@ -526,7 +254,14 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
 
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable */}
       <div tabIndex={0} role="region" aria-label="Rendered markdown preview" className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-surface-card">
-        {renderedPreview}
+        <ObsidianMarkdownBody
+          content={deferredContent}
+          imageUrls={imageUrls}
+          globalVars={globalVars}
+          soundEnabled={soundEnabled}
+          fontSize="sm"
+          targetIp={targetIp}
+        />
       </div>
     </div>
   );
@@ -1014,7 +749,7 @@ cat /root/root.txt
 
   const handleCopyMarkdown = async () => {
     const inlined = await inlineIndexedDbImages(editorContent, profileId);
-    navigator.clipboard.writeText(inlined);
+    await safeCopyToClipboard(inlined);
     setCopied(true);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopied(false), 2000);
@@ -1236,7 +971,7 @@ cat /root/root.txt
             {selectedMachine && !selectedMachine.isActive && (
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                 <span className="px-2 py-1 rounded-md border border-subtle bg-surface-sunken font-mono text-secondary">
-                  {selectedMachine.ip || '10.10.x.x'}
+                  {selectedMachine.ip && !isPlaceholderIp(selectedMachine.ip) ? selectedMachine.ip : 'IP unset'}
                 </span>
                 <span className="px-2 py-1 rounded-md border border-subtle bg-surface-sunken text-secondary">
                   {selectedMachine.os} · {selectedMachine.difficulty}
@@ -1613,7 +1348,7 @@ cat /root/root.txt
                       onClick={() => setSnippetPopoverOpen((p) => !p)}
                       data-testid="writeup-snippets-btn"
                       className="inline-flex items-center gap-1 px-2 py-1 rounded border border-subtle bg-surface-card text-secondary hover:text-primary text-[10px] font-semibold cursor-pointer"
-                      title="Drop command from 85+ Cheatsheets"
+                      title={`Drop command from ${cheatsheets.length} Cheatsheets`}
                     >
                       <Sparkles className="w-3 h-3 text-accent" />
                       <span>Snippets</span>
@@ -1624,7 +1359,7 @@ cat /root/root.txt
                           type="text"
                           value={snippetQuery}
                           onChange={(e) => setSnippetQuery(e.target.value)}
-                          placeholder="Search 85+ commands..."
+                          placeholder={`Search ${cheatsheets.length} commands...`}
                           // eslint-disable-next-line jsx-a11y/no-autofocus -- snippet search opened on demand
                           autoFocus
                           className="w-full h-7 px-2 rounded border border-subtle bg-surface-sunken text-[11px] text-primary"
@@ -1672,7 +1407,10 @@ cat /root/root.txt
 
             {/* Right Pane: Live Rendered Preview (with Tables, Callouts, Checklists & Copyable Code Blocks) */}
             {studioLayout !== 'editor' && (
-              <DeferredMarkdownPreviewPane content={editorContent} />
+              <DeferredMarkdownPreviewPane
+                content={editorContent}
+                targetIp={selectedMachine?.ip || undefined}
+              />
             )}
 
           </div>

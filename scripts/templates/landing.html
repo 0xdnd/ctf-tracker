@@ -256,14 +256,21 @@ Nmap scan report for 10.129.14.21
       var raf = function (fn) { return window.requestAnimationFrame(fn); };
 
       frames.forEach(function (f) {
-        var pending = 0, last = null;
+        var pending = 0, last = null, rect = null;
+        var clearRect = function () { rect = null; };
+        window.addEventListener('scroll', clearRect, { passive: true });
+        window.addEventListener('resize', clearRect, { passive: true });
+        f.addEventListener('pointerenter', function (e) {
+          if (canMove(e)) rect = f.getBoundingClientRect();
+        });
         f.addEventListener('pointermove', function (e) {
           if (!canMove(e)) return;
           last = e;
           if (pending) return;
           pending = raf(function () {
             pending = 0;
-            var r = f.getBoundingClientRect(), x = (last.clientX - r.left) / r.width, y = (last.clientY - r.top) / r.height;
+            var r = rect || (rect = f.getBoundingClientRect());
+            var x = (last.clientX - r.left) / r.width, y = (last.clientY - r.top) / r.height;
             var k = r.width > 800 ? 2.2 : 4;
             f.classList.add('is-tilting');
             f.style.setProperty('--tx', ((0.5 - y) * k).toFixed(2) + 'deg');
@@ -274,6 +281,7 @@ Nmap scan report for 10.129.14.21
         });
         f.addEventListener('pointerleave', function () {
           if (pending) { window.cancelAnimationFrame(pending); pending = 0; }
+          rect = null;
           f.classList.remove('is-tilting');
           ['--tx', '--ty', '--mx', '--my'].forEach(function (p) { f.style.removeProperty(p); });
         });
@@ -282,20 +290,27 @@ Nmap scan report for 10.129.14.21
       var hero = d.querySelector('.hero');
       var media = d.querySelector('.hero-media');
       if (hero && media) {
-        var hpending = 0, hlast = null;
+        var hpending = 0, hlast = null, hrect = null;
+        var clearHeroRect = function () { hrect = null; };
+        window.addEventListener('scroll', clearHeroRect, { passive: true });
+        window.addEventListener('resize', clearHeroRect, { passive: true });
+        hero.addEventListener('pointerenter', function (e) {
+          if (canMove(e)) hrect = hero.getBoundingClientRect();
+        });
         hero.addEventListener('pointermove', function (e) {
           if (!canMove(e)) return;
           hlast = e;
           if (hpending) return;
           hpending = raf(function () {
             hpending = 0;
-            var r = hero.getBoundingClientRect();
+            var r = hrect || (hrect = hero.getBoundingClientRect());
             media.style.setProperty('--hx', Math.max(-1, Math.min(1, ((hlast.clientX - r.left) / r.width - 0.5) * 2)).toFixed(3));
             media.style.setProperty('--hy', Math.max(-1, Math.min(1, ((hlast.clientY - r.top) / r.height - 0.5) * 2)).toFixed(3));
           });
         });
         hero.addEventListener('pointerleave', function () {
           if (hpending) { window.cancelAnimationFrame(hpending); hpending = 0; }
+          hrect = null;
           media.style.removeProperty('--hx');
           media.style.removeProperty('--hy');
         });

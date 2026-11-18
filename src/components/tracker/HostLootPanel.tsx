@@ -5,6 +5,7 @@ import type { Machine } from '../../types';
 import type { Credential, CredService } from '../../types/loot';
 import type { HostCredEntry, HostCredLevel, MachineLoot } from '../../utils/machineLoot';
 import { CyberBadge } from '../common/CyberBadge';
+import { safeCopyToClipboard } from '../../utils/helpers';
 
 interface HostLootPanelProps {
   machine: Machine;
@@ -38,7 +39,7 @@ const CredRow: React.FC<CredRowProps> = ({ credential, level, services = [], pro
 
   const handleCopy = () => {
     if (redacted) return;
-    navigator.clipboard.writeText(credential.secret).catch(() => {});
+    void safeCopyToClipboard(credential.secret);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

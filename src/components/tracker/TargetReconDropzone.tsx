@@ -19,7 +19,7 @@ import { detectAndParseScan, ScanImportResult, ParsedHost } from '../../utils/sc
 import { buildMachineDraftFromHost, deriveServiceTags, toTargetServices } from '../../utils/scanCardHelper';
 import { useCtfStore } from '../../store/useCtfStore';
 import { MultiHostImportPanel } from './MultiHostImportPanel';
-import { playCyberSound } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { confirmAction } from '../../store/useConfirmStore';
 
 interface TargetReconDropzoneProps {
@@ -167,7 +167,7 @@ export const TargetReconDropzone: React.FC<TargetReconDropzoneProps> = ({
       .replace(/<TARGET_IP>/g, machine.ip)
       .replace(/10\.10\.10\.3/g, machine.ip);
 
-    navigator.clipboard.writeText(interpolated);
+    void safeCopyToClipboard(interpolated);
     setCopiedTool(toolCmd);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopiedTool(null), 1800);

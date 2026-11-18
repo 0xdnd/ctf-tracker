@@ -87,7 +87,7 @@ export const NotesRibbon: React.FC<NotesRibbonProps> = ({
             type="button"
             aria-label="Back to app"
             onClick={() => onBack?.()}
-            className={`${btn} border border-subtle text-secondary hover:bg-surface-hover hover:text-primary`}
+            className={`${btn} border border-subtle text-secondary hover:bg-surface-hover hover:text-primary max-md:h-10 max-md:w-10 max-md:bg-accent-muted max-md:border-accent/40 max-md:text-accent`}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </button>

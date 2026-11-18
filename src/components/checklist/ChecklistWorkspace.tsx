@@ -31,7 +31,7 @@ import { Modal } from '../common/Modal';
 import { computeChecklistProgress } from '../../utils/checklistProgress';
 import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter';
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
-import { interpolateCommand, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
+import { interpolateCommand, playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import { phaseSectionId } from '../methodology/PhaseNav';
 import { NextUpCard } from '../methodology/NextUpCard';
@@ -211,7 +211,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
   const handleCopySnippet = (rawSnippet: string, itemId: string) => {
     const interpolated = interpolateCommand(rawSnippet, effectiveVars);
-    navigator.clipboard?.writeText(interpolated);
+    void safeCopyToClipboard(interpolated);
     toast.success('Command copied to clipboard');
     setCopiedItemId(itemId);
     if (soundEnabled) playCyberSound('copy');
@@ -220,7 +220,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
   const handleExportMarkdown = () => {
     const md = exportChecklistToMarkdown(machine);
-    navigator.clipboard?.writeText(md);
+    void safeCopyToClipboard(md);
     toast.success('Checklist markdown copied');
     setCopiedMarkdown(true);
     if (soundEnabled) playCyberSound('copy');

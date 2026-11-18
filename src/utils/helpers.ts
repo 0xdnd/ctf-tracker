@@ -177,7 +177,7 @@ export function triggerRootCelebration() {
 export async function safeCopyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
   try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText && window.isSecureContext !== false) {
       await navigator.clipboard.writeText(text);
       return true;
     }

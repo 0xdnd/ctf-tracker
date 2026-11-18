@@ -30,7 +30,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { 
   CHEATSHEET_CATEGORIES 
 } from '../../data/cheatsheetsData';
-import { interpolateCommand, playCyberSound } from '../../utils/helpers';
+import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { Modal } from '../common/Modal';
 import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
 import {
@@ -548,7 +548,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [newTags, setNewTags] = useState('');
 
   const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
+    void safeCopyToClipboard(text);
     setCopiedId(id);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => {

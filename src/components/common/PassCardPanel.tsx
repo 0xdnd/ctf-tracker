@@ -3,7 +3,7 @@ import { Check, Copy, Download } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useExamStore } from '../../store/examStore';
-import { playCyberSound } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import {
   DEFAULT_PASS_STAT_TOGGLES,
   PASS_CARD_HEIGHT,
@@ -128,8 +128,8 @@ export const PassCardPanel: React.FC = () => {
 
   const handleCopyText = async () => {
     try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(summary);
+      const ok = await safeCopyToClipboard(summary);
+      if (!ok) throw new Error('Clipboard unavailable');
       setCopyStatus('copied');
       if (soundEnabled) playCyberSound('copy');
     } catch {

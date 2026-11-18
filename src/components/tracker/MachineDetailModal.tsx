@@ -282,7 +282,29 @@ export const MachineDetailModal: React.FC = () => {
 
   const activeBrand = BRAND_THEMES.find((b) => b.id === appBrand) || BRAND_THEMES[0];
 
+  const findingRank: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+  const sortedFindings = [...(machine.findings ?? [])].sort(
+    (a, b) => (findingRank[a.severity] ?? 9) - (findingRank[b.severity] ?? 9) || (b.cvssScore ?? 0) - (a.cvssScore ?? 0)
+  );
+
+  const topFindingSummary = (() => {
+    if (sortedFindings.length === 0) return null;
+    const top = sortedFindings[0];
+    const sev = top.severity.toUpperCase();
+    return top.cvssScore !== undefined ? `CVSS ${top.cvssScore.toFixed(1)} ${sev}` : `${sev} (${sortedFindings.length} finding${sortedFindings.length === 1 ? '' : 's'})`;
+  })();
+
   const handleCopyReportMd = () => {
+    const findingsBlock =
+      sortedFindings.length > 0
+        ? sortedFindings
+            .map((f) => {
+              const cvss = f.cvssScore !== undefined ? `, CVSS ${f.cvssScore.toFixed(1)}` : '';
+              return `- **${f.title}** (${f.severity.toUpperCase()}${cvss})`;
+            })
+            .join('\n')
+        : '_No scored findings recorded for this target yet._';
+
     const md = `# EXECUTIVE PENETRATION TESTING REPORT
 **Classification:** STRICTLY CONFIDENTIAL // PROPRIETARY
 **Target:** ${machine.name} (${machine.ip})
@@ -292,11 +314,14 @@ export const MachineDetailModal: React.FC = () => {
 **Assessor:** ${activeBrand.namePrefix}${activeBrand.nameSuffix} Offensive Operations
 
 ## 1. Executive Summary
-During the security assessment of target host ${machine.name} (${machine.ip}), security vulnerabilities were identified allowing adversaries to establish unauthorized footholds and escalate to administrative root privileges.
+${
+  sortedFindings.length > 0
+    ? `During the security assessment of target host ${machine.name} (${machine.ip}), ${sortedFindings.length} finding${sortedFindings.length === 1 ? ' was' : 's were'} documented across the engagement.`
+    : `Security assessment record for target host ${machine.name} (${machine.ip}). No scored findings have been recorded yet.`
+}
 
 ## 2. Threat Findings Matrix
-- **Initial Foothold:** ${machine.tags.slice(0, 3).join(', ') || 'Remote Service Exploitation'} (CVSS 8.8 - HIGH)
-- **Privilege Escalation:** ${machine.tags.slice(3, 6).join(', ') || 'Local Misconfiguration'} (CVSS 9.4 - CRITICAL)
+${findingsBlock}
 
 ## 3. Proof of Concept & Compromise Flags
 - **User Flag:** ${machine.userFlag || (machine.userPwnedAt ? 'CAPTURED' : 'PENDING')}
@@ -308,7 +333,7 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 2. Short-Term: Enforce strict least-privilege policies.
 3. Long-Term: Deploy centralized audit logging and EDR telemetry.
 `;
-    navigator.clipboard.writeText(md);
+    void safeCopyToClipboard(md);
     setCopiedReportMd(true);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopiedReportMd(false), 2000);
@@ -652,10 +677,17 @@ During the security assessment of target host ${machine.name} (${machine.ip}), s
 
                 <div className="p-3.5 rounded-xl bg-surface-sunken border border-subtle machined-edge">
                   <div className="text-xs text-tertiary font-semibold mb-1">Risk severity</div>
-                  <div className="text-sm font-semibold text-callout-danger-fg flex items-center gap-1.5">
-                    <ShieldAlert className="w-4 h-4" />
-                    <span className="tabular-nums">CVSS 9.4 CRITICAL</span>
-                  </div>
+                  {topFindingSummary ? (
+                    <div className="text-sm font-semibold text-callout-danger-fg flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4" />
+                      <span className="tabular-nums">{topFindingSummary}</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm font-semibold text-muted flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Unscored (no findings)</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-surface-sunken border border-subtle machined-edge">

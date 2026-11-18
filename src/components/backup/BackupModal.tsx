@@ -358,9 +358,8 @@ export const BackupModal: React.FC = () => {
   const handleCopyBackup = async () => {
     const text = encrypting ? await buildEncryptedExport() : await buildPlainExport();
     if (text === null) return;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
+    const ok = await safeCopyToClipboard(text);
+    if (!ok) {
       setExportError('Could not write to the clipboard. Use Download instead.');
       return;
     }

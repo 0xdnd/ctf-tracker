@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Pencil, Check, X, Copy, CheckCheck } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
-import { playCyberSound } from '../../utils/helpers';
+import { playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
 import { sanitizeIpInput } from '../../utils/ipInput';
 
 export interface EditableIpBadgeProps {
@@ -117,7 +117,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!initialIp) return;
-    navigator.clipboard.writeText(initialIp).catch(() => {});
+    void safeCopyToClipboard(initialIp);
     setCopied(true);
     if (soundEnabled) playCyberSound('copy');
     setTimeout(() => setCopied(false), 1800);
